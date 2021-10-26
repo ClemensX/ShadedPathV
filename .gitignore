@@ -1,5 +1,4 @@
-# Prerequisites
-*.d
+.vs/**
 
 # Compiled Object files
 *.slo
@@ -18,7 +17,6 @@
 
 # Fortran module files
 *.mod
-*.smod
 
 # Compiled Static libraries
 *.lai
@@ -30,5 +28,16 @@
 *.exe
 *.out
 *.app
+/data
 
-.vs/**
+ShadedPathV/.vs/**
+ShadedPathV/ShadedPathTest/x64
+ShadedPathV/ShadedPathVLib/x64
+ShadedPathV/x64
+
+/*.bak
+
+# Test Framework
+ShadedPathV/packages/**
+*.bmp
+xapp_run.log
