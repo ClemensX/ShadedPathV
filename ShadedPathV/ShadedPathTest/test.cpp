@@ -61,3 +61,10 @@ TEST(Util, Logs) {
     // log to debug console and append to spe_run.log (depending on LOGFILE defined or not):
     Log("Hi, Shaded Path Engine!\n");
 }
+
+TEST(Engine, Initialization) {
+    {
+        ShadedPathEngine engine;
+    }
+    Log("Test end. (Should appear after destructor log)\n");
+}

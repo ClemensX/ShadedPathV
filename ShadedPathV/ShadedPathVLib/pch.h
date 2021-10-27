@@ -17,6 +17,7 @@
 // c++ standard lib headers
 #include <iostream>
 #include <fstream>
+#include <sstream>
 using namespace std;
 
 // headers for used libraries

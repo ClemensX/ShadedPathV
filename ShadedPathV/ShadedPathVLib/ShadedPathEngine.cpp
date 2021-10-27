@@ -1,6 +1,7 @@
 #include "pch.h"
-#include "ShadedPathEngine.h"
 
 void ShadedPathEngine::init()
 {
+    WCHAR wc = 0;
+    wstringstream s;
 }
