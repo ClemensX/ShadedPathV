@@ -40,4 +40,4 @@ ShadedPathV/x64
 # Test Framework
 ShadedPathV/packages/**
 *.bmp
-xapp_run.log
+spe_run.log
