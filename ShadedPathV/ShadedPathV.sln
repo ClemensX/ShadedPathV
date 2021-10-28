@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShadedPathTest", "ShadedPat
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShadedPathVLib", "ShadedPathVLib\ShadedPathVLib.vcxproj", "{D66993E2-4E30-4489-9668-B2B116293E39}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShadedPathV", "ShadedPathV\ShadedPathV.vcxproj", "{AFCFADB6-9526-4436-B194-B4801F3A06AD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{D66993E2-4E30-4489-9668-B2B116293E39}.Release|x64.Build.0 = Release|x64
 		{D66993E2-4E30-4489-9668-B2B116293E39}.Release|x86.ActiveCfg = Release|Win32
 		{D66993E2-4E30-4489-9668-B2B116293E39}.Release|x86.Build.0 = Release|Win32
+		{AFCFADB6-9526-4436-B194-B4801F3A06AD}.Debug|x64.ActiveCfg = Debug|x64
+		{AFCFADB6-9526-4436-B194-B4801F3A06AD}.Debug|x64.Build.0 = Debug|x64
+		{AFCFADB6-9526-4436-B194-B4801F3A06AD}.Debug|x86.ActiveCfg = Debug|Win32
+		{AFCFADB6-9526-4436-B194-B4801F3A06AD}.Debug|x86.Build.0 = Debug|Win32
+		{AFCFADB6-9526-4436-B194-B4801F3A06AD}.Release|x64.ActiveCfg = Release|x64
+		{AFCFADB6-9526-4436-B194-B4801F3A06AD}.Release|x64.Build.0 = Release|x64
+		{AFCFADB6-9526-4436-B194-B4801F3A06AD}.Release|x86.ActiveCfg = Release|Win32
+		{AFCFADB6-9526-4436-B194-B4801F3A06AD}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

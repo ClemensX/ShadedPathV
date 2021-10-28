@@ -33,6 +33,7 @@
 ShadedPathV/.vs/**
 ShadedPathV/ShadedPathTest/x64
 ShadedPathV/ShadedPathVLib/x64
+ShadedPathV/ShadedPathV/x64
 ShadedPathV/x64
 
 /*.bak

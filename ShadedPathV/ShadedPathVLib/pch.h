@@ -87,6 +87,7 @@ inline void ErrorExt(string msg, const char* file, DWORD line)
 
 #include "Util.h"
 #include "ShadedPathEngine.h"
+#include "SimpleApp.h"
 
 
 #endif //PCH_H

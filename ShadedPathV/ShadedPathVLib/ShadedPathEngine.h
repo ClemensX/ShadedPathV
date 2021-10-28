@@ -10,6 +10,13 @@ public:
         Log("Engine destructor\n");
     };
 
+    // initialize Vulkan
     void init();
+    // exit Vulkan and free resources
+    void shutdown();
+private:
+    GLFWwindow* window = nullptr;
+    VkInstance vkInstance;
+
 };
 
