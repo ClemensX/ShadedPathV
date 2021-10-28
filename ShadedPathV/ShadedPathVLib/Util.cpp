@@ -2,12 +2,6 @@
 #include "Util.h"
 
 
-// Read all lines of log file for analysis
-int Util::scanLogFile()
-{
-    return 0;
-}
-
 LogfileScanner::LogfileScanner()
 {
     string line;

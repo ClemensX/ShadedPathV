@@ -2,8 +2,11 @@
 class Util
 {
 public:
-    // Read all lines of log file for analysis
-    static int scanLogFile();
+    static void printCStringList(vector<const char *> &exts) {
+        for (uint32_t i = 0; i < exts.size(); i++) {
+            Log("  " << exts[i] << endl);
+        }
+    };
 };
 
 class LogfileScanner
