@@ -18,6 +18,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <vector>
 using namespace std;
 
 // headers for used libraries
@@ -52,7 +53,8 @@ inline void LogFile(const char* s) {
 {\
     wstringstream s1764;  s1764 << x; \
     OutputDebugString(s1764.str().c_str()); \
-    LogFile(x); \
+    stringstream s1765; s1765 << x; \
+    LogFile(s1765.str().c_str()); \
 }
 #elif defined(LOGFILE)
 #define Log(x)\
@@ -65,8 +67,25 @@ inline void LogFile(const char* s) {
 #define LogCond(y,x)
 #endif
 
+inline void ErrorExt(string msg, const char* file, DWORD line)
+{
+	stringstream s;
+	s << "ERROR " << msg << " ";
+	s << file << " " << line << '\n';
+	Log(s.str().c_str());
+	//exit(0);
+	s << "\n\nClick 'yes' to debug break and 'no' to hard exit.";
+	int nResult = MessageBox(GetForegroundWindow(), L"Click 'yes' to debug break or 'no' to hard exit.", L"Unexpected error encountered", MB_YESNO | MB_ICONERROR);
+	if (nResult == IDYES)
+		DebugBreak();
+	else exit(0);
+}
+
+#define Error(x) ErrorExt((x), __FILE__,  (DWORD)__LINE__)
+
 // engine headers
 
+#include "Util.h"
 #include "ShadedPathEngine.h"
 
 

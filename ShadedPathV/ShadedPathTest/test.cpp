@@ -1,5 +1,6 @@
 
 #include "pch.h"
+#include "test.h"
 
 TEST(Environment, GLM) {
     glm::mat4 m1;
@@ -67,4 +68,9 @@ TEST(Engine, Initialization) {
         ShadedPathEngine engine;
     }
     Log("Test end. (Should appear after destructor log)\n");
+    LogfileScanner log;
+    EXPECT_GT(log.searchForLine("Engine destructor"), -1);
+    EXPECT_GT(log.searchForLine("Test end."), -1);
+    //Log(" found in logfile: " << log.searchForLine("Engine destructor") << endl);
+    EXPECT_TRUE(log.assertLineBefore("Engine destructor", "Test end."));
 }
