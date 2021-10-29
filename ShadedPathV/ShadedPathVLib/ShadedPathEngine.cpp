@@ -62,6 +62,10 @@ void ShadedPathEngine::init()
         Error("failed to create instance!");
     }
     setupDebugMessenger();
+    // list available devices:
+    pickPhysicalDevice(true);
+    // pick device
+    pickPhysicalDevice();
 }
 
 void ShadedPathEngine::shutdown()
@@ -155,4 +159,63 @@ VKAPI_ATTR VkBool32 VKAPI_CALL ShadedPathEngine::debugCallback(VkDebugUtilsMessa
     std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
     return VK_FALSE;
+}
+
+void ShadedPathEngine::pickPhysicalDevice(bool listmode)
+{
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(vkInstance, &deviceCount, nullptr);
+    if (deviceCount == 0) {
+        Error("no physical vulkan device available");
+    }
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(vkInstance, &deviceCount, devices.data());
+    for (const auto& device : devices) {
+        if (isDeviceSuitable(device, listmode)) {
+            physicalDevice = device;
+            break;
+        }
+    }
+    if (listmode)
+        return;
+    if (physicalDevice == VK_NULL_HANDLE) {
+        Error("failed to find a suitable GPU!");
+    }
+}
+
+bool ShadedPathEngine::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
+{
+    VkPhysicalDeviceProperties deviceProperties;
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+    if (listmode) {
+        Log(deviceProperties.deviceName << " " << Util::decodeVulkanVersion(deviceProperties.apiVersion).c_str() << " type: " << Util::decodeDeviceType(deviceProperties.deviceType) << endl);
+        return false;
+    }
+    // we just pick the first device for now
+    Log("picked physical device: " << deviceProperties.deviceName << " " << Util::decodeVulkanVersion(deviceProperties.apiVersion).c_str() << endl);
+
+    // now look for queue families:
+    QueueFamilyIndices indices = findQueueFamilies(device);
+    return indices.isComplete();
+}
+
+QueueFamilyIndices ShadedPathEngine::findQueueFamilies(VkPhysicalDevice device)
+{
+    QueueFamilyIndices indices;
+
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+    int i = 0;
+    for (const auto& queueFamily : queueFamilies) {
+        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            indices.graphicsFamily = i;
+        }
+        i++;
+    }
+    return indices;
 }

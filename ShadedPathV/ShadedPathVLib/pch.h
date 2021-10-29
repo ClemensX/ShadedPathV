@@ -19,6 +19,7 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
+#include <optional>
 using namespace std;
 
 // headers for used libraries
