@@ -14,6 +14,11 @@ void ShadedPathEngine::init()
 {
     // GLFW
     glfwInit();
+    if (presentationEnabled) {
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        window = glfwCreateWindow(win_width, win_height, win_name, nullptr, nullptr);
+    }
 
     // Vulkan
     VkApplicationInfo appInfo{};
@@ -64,6 +69,7 @@ void ShadedPathEngine::init()
     setupDebugMessenger();
     // list available devices:
     pickPhysicalDevice(true);
+    createSurface();
     // pick device
     pickPhysicalDevice();
     createLogicalDevice();
@@ -71,11 +77,15 @@ void ShadedPathEngine::init()
 
 void ShadedPathEngine::shutdown()
 {
+    vkDestroySurfaceKHR(vkInstance, surface, nullptr);
     if (enableValidationLayers) {
         DestroyDebugUtilsMessengerEXT(vkInstance, debugMessenger, nullptr);
     }
     vkDestroyDevice(device, nullptr);
     vkDestroyInstance(vkInstance, nullptr);
+    if (presentationEnabled) {
+        glfwDestroyWindow(window);
+    }
     glfwTerminate();
 }
 
@@ -199,8 +209,8 @@ bool ShadedPathEngine::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
     Log("picked physical device: " << deviceProperties.deviceName << " " << Util::decodeVulkanVersion(deviceProperties.apiVersion).c_str() << endl);
 
     // now look for queue families:
-    QueueFamilyIndices indices = findQueueFamilies(device);
-    return indices.isComplete();
+    familyIndices = findQueueFamilies(device);
+    return isCompleteFamilyIndices();
 }
 
 QueueFamilyIndices ShadedPathEngine::findQueueFamilies(VkPhysicalDevice device)
@@ -217,6 +227,13 @@ QueueFamilyIndices ShadedPathEngine::findQueueFamilies(VkPhysicalDevice device)
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphicsFamily = i;
         }
+        if (presentationEnabled) {
+            VkBool32 presentSupport = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
+            if (presentSupport) {
+                indices.presentFamily = i;
+            }
+        }
         i++;
     }
     return indices;
@@ -226,20 +243,29 @@ void ShadedPathEngine::createLogicalDevice()
 {
     QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
 
-    VkDeviceQueueCreateInfo queueCreateInfo{};
-    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
-    queueCreateInfo.queueCount = 1;
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+    std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value() };
+    if (presentationEnabled) {
+        uniqueQueueFamilies.insert({ indices.presentFamily.value() });
+    }
+
     float queuePriority = 1.0f;
-    queueCreateInfo.pQueuePriorities = &queuePriority;
-    
+    for (uint32_t queueFamily : uniqueQueueFamilies) {
+        VkDeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = queueFamily;
+        queueCreateInfo.queueCount = 1;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+        queueCreateInfos.push_back(queueCreateInfo);
+    }
+
     VkPhysicalDeviceFeatures deviceFeatures{};
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
-    createInfo.pQueueCreateInfos = &queueCreateInfo;
-    createInfo.queueCreateInfoCount = 1;
+    createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
+    createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
     createInfo.pEnabledFeatures = &deviceFeatures;
     createInfo.enabledExtensionCount = 0;
@@ -249,4 +275,16 @@ void ShadedPathEngine::createLogicalDevice()
         Error("failed to create logical device!");
     }
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+    if (presentationEnabled) {
+        vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
+    }
+}
+
+void ShadedPathEngine::createSurface()
+{
+    if (!presentationEnabled) return;
+    if (glfwCreateWindowSurface(vkInstance, window, nullptr, &surface) != VK_SUCCESS) {
+        Error("failed to create window surface!");
+    }
+
 }
