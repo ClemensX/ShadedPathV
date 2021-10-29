@@ -25,6 +25,8 @@ public:
 private:
     GLFWwindow* window = nullptr;
     VkInstance vkInstance;
+    VkDevice device;
+    VkQueue graphicsQueue;
     // validation layer
     VkDebugUtilsMessengerEXT debugMessenger;
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
@@ -41,5 +43,6 @@ private:
     void pickPhysicalDevice(bool listmode = false);
     bool isDeviceSuitable(VkPhysicalDevice device, bool listmode = false);
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+    void createLogicalDevice();
 };
 
