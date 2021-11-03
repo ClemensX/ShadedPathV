@@ -3,6 +3,18 @@
 struct QueueFamilyIndices {
     optional<uint32_t> graphicsFamily;
     optional<uint32_t> presentFamily;
+    bool isComplete(bool presentationEnabled) {
+        if (presentationEnabled)
+            return graphicsFamily.has_value() && presentFamily.has_value();
+        else
+            return graphicsFamily.has_value();
+    }
+};
+
+struct SwapChainSupportDetails {
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> presentModes;
 };
 
 class ShadedPathEngine
@@ -38,6 +50,7 @@ private:
     VkQueue graphicsQueue = nullptr;
     VkQueue presentQueue = nullptr;
     VkSurfaceKHR surface = nullptr;
+    VkSwapchainKHR swapChain;
     QueueFamilyIndices familyIndices;
     // validation layer
     VkDebugUtilsMessengerEXT debugMessenger;
@@ -56,17 +69,20 @@ private:
     bool isDeviceSuitable(VkPhysicalDevice device, bool listmode = false);
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
     void createLogicalDevice();
-    bool isCompleteFamilyIndices() {
-        if (presentationEnabled)
-            return familyIndices.graphicsFamily.has_value() && familyIndices.presentFamily.has_value();
-        else
-            return familyIndices.graphicsFamily.has_value();
-    }
 
     // presentation
     void createSurface();
     int win_width;
     int win_height;
     const char* win_name;
+
+    // swap chain
+    bool checkDeviceExtensionSupport(VkPhysicalDevice phys_device);
+    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+    // choose swap chain format or list available formats
+    VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats, bool listmode = false);
+    VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes, bool listmode = false);
+    VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+    void createSwapChain();
 };
 

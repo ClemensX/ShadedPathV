@@ -21,6 +21,8 @@
 #include <vector>
 #include <optional>
 #include <set>
+#include <cstdint>
+#include <algorithm>
 using namespace std;
 
 // headers for used libraries

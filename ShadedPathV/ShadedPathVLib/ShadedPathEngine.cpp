@@ -1,7 +1,12 @@
 #include "pch.h"
 
+// some const definitions for validation and extension levels
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
+};
+
+const std::vector<const char*> deviceExtensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
 #ifdef NDEBUG
@@ -73,10 +78,12 @@ void ShadedPathEngine::init()
     // pick device
     pickPhysicalDevice();
     createLogicalDevice();
+    createSwapChain();
 }
 
 void ShadedPathEngine::shutdown()
 {
+    vkDestroySwapchainKHR(device, swapChain, nullptr);
     vkDestroySurfaceKHR(vkInstance, surface, nullptr);
     if (enableValidationLayers) {
         DestroyDebugUtilsMessengerEXT(vkInstance, debugMessenger, nullptr);
@@ -210,7 +217,14 @@ bool ShadedPathEngine::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
 
     // now look for queue families:
     familyIndices = findQueueFamilies(device);
-    return isCompleteFamilyIndices();
+
+    bool extensionsSupported = checkDeviceExtensionSupport(device);
+    bool swapChainAdequate = false;
+    if (extensionsSupported) {
+        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+    }
+    return familyIndices.isComplete(presentationEnabled) && extensionsSupported && swapChainAdequate;
 }
 
 QueueFamilyIndices ShadedPathEngine::findQueueFamilies(VkPhysicalDevice device)
@@ -233,6 +247,9 @@ QueueFamilyIndices ShadedPathEngine::findQueueFamilies(VkPhysicalDevice device)
             if (presentSupport) {
                 indices.presentFamily = i;
             }
+        }
+        if (indices.isComplete(presentationEnabled)) {
+            break;
         }
         i++;
     }
@@ -268,7 +285,8 @@ void ShadedPathEngine::createLogicalDevice()
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
 
     createInfo.pEnabledFeatures = &deviceFeatures;
-    createInfo.enabledExtensionCount = 0;
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+    createInfo.ppEnabledExtensionNames = deviceExtensions.data();
     createInfo.enabledLayerCount = 0; // no longer used - validation layers handled in kvInstance
 
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
@@ -287,4 +305,151 @@ void ShadedPathEngine::createSurface()
         Error("failed to create window surface!");
     }
 
+}
+
+bool ShadedPathEngine::checkDeviceExtensionSupport(VkPhysicalDevice phys_device)
+{
+    uint32_t extensionCount;
+    vkEnumerateDeviceExtensionProperties(phys_device, nullptr, &extensionCount, nullptr);
+
+    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(phys_device, nullptr, &extensionCount, availableExtensions.data());
+
+    std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+
+    for (const auto& extension : availableExtensions) {
+        requiredExtensions.erase(extension.extensionName);
+    }
+
+    return requiredExtensions.empty();
+}
+
+SwapChainSupportDetails ShadedPathEngine::querySwapChainSupport(VkPhysicalDevice device) {
+    SwapChainSupportDetails details;
+
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+    uint32_t formatCount;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
+
+    if (formatCount != 0) {
+        details.formats.resize(formatCount);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
+    }
+    uint32_t presentModeCount;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
+
+    if (presentModeCount != 0) {
+        details.presentModes.resize(presentModeCount);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
+    }
+    return details;
+}
+
+VkSurfaceFormatKHR ShadedPathEngine::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats, bool listmode) {
+    for (const auto& availableFormat : availableFormats) {
+        if (listmode) {
+            Log("swap chain possible format: " << availableFormat.format << " color Space: " << availableFormat.colorSpace << endl);
+        }
+        else {
+            if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+                return availableFormat;
+            }
+        }
+    }
+    if (listmode) return availableFormats[0];
+    Error("could not find right swap chain format");
+    return availableFormats[0];
+}
+
+// list available modes or sleect preferred one
+VkPresentModeKHR ShadedPathEngine::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes, bool listmode) {
+    for (const auto& availablePresentMode : availablePresentModes) {
+        if (listmode) {
+            Log("swap chain possible present mode: " << availablePresentMode << endl);
+        }
+        else {
+            if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
+                // enable tripple buffering: newer images replace older ones not yet displayed from the queue
+                return availablePresentMode;
+            }
+        }
+    }
+
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+VkExtent2D ShadedPathEngine::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
+    if (capabilities.currentExtent.width != UINT32_MAX) {
+        return capabilities.currentExtent;
+    }
+    else {
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+
+        VkExtent2D actualExtent = {
+            static_cast<uint32_t>(width),
+            static_cast<uint32_t>(height)
+        };
+
+        actualExtent.width = clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+        actualExtent.height = clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+        return actualExtent;
+    }
+}
+
+void ShadedPathEngine::createSwapChain() {
+    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
+
+    // list available modes
+    VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats, true);
+    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes, true);
+    // select preferred mode
+    surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+    presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+    VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
+    Log("swap chain min max images: " << swapChainSupport.capabilities.minImageCount << " " << swapChainSupport.capabilities.maxImageCount << endl);
+    uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+    if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
+        imageCount = swapChainSupport.capabilities.maxImageCount;
+    }
+
+    VkSwapchainCreateInfoKHR createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.surface = surface;
+    createInfo.minImageCount = imageCount;
+    createInfo.imageFormat = surfaceFormat.format;
+    createInfo.imageColorSpace = surfaceFormat.colorSpace;
+    createInfo.imageExtent = extent;
+    createInfo.imageArrayLayers = 1;
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+    uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+
+    if (indices.graphicsFamily != indices.presentFamily) {
+        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices = queueFamilyIndices;
+    }
+    else {
+        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        createInfo.queueFamilyIndexCount = 0; // Optional
+        createInfo.pQueueFamilyIndices = nullptr; // Optional
+    }
+    // we only want EXCLUSIVE mode:
+    if (createInfo.imageSharingMode != VK_SHARING_MODE_EXCLUSIVE) {
+        Error("VK_SHARING_MODE_EXCLUSIVE required");
+    }
+    // no transform necessary
+    createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+    // no alpha blending with other windows
+    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    createInfo.presentMode = presentMode;
+    createInfo.clipped = VK_TRUE;
+    // only one fixed swap chain - no resizing
+    createInfo.oldSwapchain = VK_NULL_HANDLE;
+    if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+        Error("failed to create swap chain!");
+    }
 }
