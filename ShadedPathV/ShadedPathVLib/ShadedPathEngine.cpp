@@ -26,6 +26,9 @@ void ShadedPathEngine::init()
     }
 
     // Vulkan
+    if (enableValidationLayers && !checkValidationLayerSupport()) {
+        Error("validation layers requested, but not available!");
+    }
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = "ShadedPathV";
@@ -209,7 +212,7 @@ bool ShadedPathEngine::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
     if (listmode) {
-        Log(deviceProperties.deviceName << " " << Util::decodeVulkanVersion(deviceProperties.apiVersion).c_str() << " type: " << Util::decodeDeviceType(deviceProperties.deviceType) << endl);
+        Log("Physical Device properties: " << deviceProperties.deviceName << " Vulkan API Version: " << Util::decodeVulkanVersion(deviceProperties.apiVersion).c_str() << " type: " << Util::decodeDeviceType(deviceProperties.deviceType) << endl);
         return false;
     }
     // we just pick the first device for now
@@ -452,4 +455,11 @@ void ShadedPathEngine::createSwapChain() {
     if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
         Error("failed to create swap chain!");
     }
+    // retrieve swap chain images:
+    vkGetSwapchainImagesKHR(device, swapChain, &imageCount, nullptr);
+    swapChainImages.resize(imageCount);
+    vkGetSwapchainImagesKHR(device, swapChain, &imageCount, swapChainImages.data());
+    swapChainImageFormat = surfaceFormat.format;
+    swapChainExtent = extent;
+    Log("swap chain create with # images: " << imageCount << endl);
 }

@@ -52,6 +52,9 @@ private:
     VkSurfaceKHR surface = nullptr;
     VkSwapchainKHR swapChain;
     QueueFamilyIndices familyIndices;
+    vector<VkImage> swapChainImages;
+    VkFormat swapChainImageFormat;
+    VkExtent2D swapChainExtent;
     // validation layer
     VkDebugUtilsMessengerEXT debugMessenger;
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
