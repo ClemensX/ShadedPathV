@@ -8,6 +8,7 @@ void SimpleApp::run()
         ShadedPathEngine engine;
         engine.enablePresentation(800, 600, "Vulkan Simple App");
         engine.init();
+        engine.global.initiateShader_Triangle();
         while (!glfwWindowShouldClose(engine.window)) {
             glfwPollEvents();
         }

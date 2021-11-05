@@ -90,6 +90,7 @@ inline void ErrorExt(string msg, const char* file, DWORD line)
 // engine headers
 
 #include "Util.h"
+#include "GlobalRendering.h"
 #include "ShadedPathEngine.h"
 #include "SimpleApp.h"
 

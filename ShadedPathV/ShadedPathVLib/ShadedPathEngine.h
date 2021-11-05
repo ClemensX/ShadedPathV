@@ -43,6 +43,9 @@ public:
         presentationEnabled = true;
     };
     GLFWwindow* window = nullptr;
+    // non-Vulkan members
+    GlobalRendering global;
+
 private:
     bool presentationEnabled = false;
     VkInstance vkInstance = nullptr;

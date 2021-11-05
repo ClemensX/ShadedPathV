@@ -27,6 +27,9 @@
     <ClInclude Include="SimpleApp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GlobalRendering.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -39,6 +42,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SimpleApp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GlobalRendering.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
