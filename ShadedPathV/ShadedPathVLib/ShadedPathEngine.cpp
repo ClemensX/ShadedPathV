@@ -17,15 +17,31 @@ const bool enableValidationLayers = true;
 
 void ShadedPathEngine::init()
 {
-    // GLFW
+    initGLFW();
+    initVulkanInstance();
+    setupDebugMessenger();
+    // list available devices:
+    pickPhysicalDevice(true);
+    createSurface();
+    // pick device
+    pickPhysicalDevice();
+    createLogicalDevice();
+    createSwapChain();
+    createImageViews();
+}
+
+void ShadedPathEngine::initGLFW()
+{
     glfwInit();
     if (presentationEnabled) {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         window = glfwCreateWindow(win_width, win_height, win_name, nullptr, nullptr);
     }
+}
 
-    // Vulkan
+void ShadedPathEngine::initVulkanInstance()
+{
     if (enableValidationLayers && !checkValidationLayerSupport()) {
         Error("validation layers requested, but not available!");
     }
@@ -58,7 +74,7 @@ void ShadedPathEngine::init()
 
         createInfo.pNext = nullptr;
     }
-    
+
     // list available extensions:
     uint32_t extensionCount = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
@@ -74,18 +90,14 @@ void ShadedPathEngine::init()
     if (vkCreateInstance(&createInfo, nullptr, &vkInstance) != VK_SUCCESS) {
         Error("failed to create instance!");
     }
-    setupDebugMessenger();
-    // list available devices:
-    pickPhysicalDevice(true);
-    createSurface();
-    // pick device
-    pickPhysicalDevice();
-    createLogicalDevice();
-    createSwapChain();
 }
 
 void ShadedPathEngine::shutdown()
 {
+    // destroy swap chain image views
+    for (auto imageView : swapChainImageViews) {
+        vkDestroyImageView(device, imageView, nullptr);
+    }
     vkDestroySwapchainKHR(device, swapChain, nullptr);
     vkDestroySurfaceKHR(vkInstance, surface, nullptr);
     if (enableValidationLayers) {
@@ -146,6 +158,7 @@ std::vector<const char*> ShadedPathEngine::getRequiredExtensions() {
     if (enableValidationLayers) {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
+    extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     Log("requested Vulkan extensions:" << endl)
     Util::printCStringList(extensions);
 
@@ -211,8 +224,18 @@ bool ShadedPathEngine::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
     VkPhysicalDeviceFeatures deviceFeatures;
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+    // query extension details (mesh shader)
+    VkPhysicalDeviceMeshShaderPropertiesNV meshProperties = {};
+    meshProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_NV;
+    meshProperties.pNext = nullptr;
+    VkPhysicalDeviceProperties2 deviceProperties2 = {};
+    deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    deviceProperties2.pNext = &meshProperties;
+    vkGetPhysicalDeviceProperties2(device, &deviceProperties2);
+
     if (listmode) {
         Log("Physical Device properties: " << deviceProperties.deviceName << " Vulkan API Version: " << Util::decodeVulkanVersion(deviceProperties.apiVersion).c_str() << " type: " << Util::decodeDeviceType(deviceProperties.deviceType) << endl);
+        Log("    Mesh shader Supported with max output vertices: " << meshProperties.maxMeshOutputVertices << endl);
         return false;
     }
     // we just pick the first device for now
@@ -462,4 +485,28 @@ void ShadedPathEngine::createSwapChain() {
     swapChainImageFormat = surfaceFormat.format;
     swapChainExtent = extent;
     Log("swap chain create with # images: " << imageCount << endl);
+}
+
+void ShadedPathEngine::createImageViews()
+{
+    swapChainImageViews.resize(swapChainImages.size());
+    for (size_t i = 0; i < swapChainImages.size(); i++) {
+        VkImageViewCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image = swapChainImages[i];
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.format = swapChainImageFormat;
+        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        createInfo.subresourceRange.baseMipLevel = 0;
+        createInfo.subresourceRange.levelCount = 1;
+        createInfo.subresourceRange.baseArrayLayer = 0;
+        createInfo.subresourceRange.layerCount = 1;
+        if (vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS) {
+            Error("failed to create image views!");
+        }
+    }
 }
