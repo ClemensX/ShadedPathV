@@ -31,8 +31,8 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\ShadedPathVLib\shader\triangle.vert">
+    <CustomBuild Include="..\ShadedPathVLib\shader\triangle.vert">
       <Filter>Shader</Filter>
-    </None>
+    </CustomBuild>
   </ItemGroup>
 </Project>
