@@ -190,9 +190,12 @@ bool ShadedPathEngine::checkValidationLayerSupport() {
     return true;
 }
 
+
+// central debug messages callback
+// select to debug to std::cerr or log file
 VKAPI_ATTR VkBool32 VKAPI_CALL ShadedPathEngine::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
     std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-
+    //Log(pCallbackData->pMessage << std::endl);
     return VK_FALSE;
 }
 
