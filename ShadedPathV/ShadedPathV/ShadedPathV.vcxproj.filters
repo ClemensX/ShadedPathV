@@ -35,4 +35,9 @@
       <Filter>Shader</Filter>
     </CustomBuild>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\ShadedPathVLib\shader\triangle.frag">
+      <Filter>Shader</Filter>
+    </None>
+  </ItemGroup>
 </Project>
