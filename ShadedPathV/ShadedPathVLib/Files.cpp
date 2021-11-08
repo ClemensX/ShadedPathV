@@ -16,17 +16,17 @@ string Files::findFile(string filename, FileCategory cat, bool errorIfNotFound, 
 	if (!bfile) {
 		// try with Debug or release path:
 		switch (cat) {
-		case FX:
+		case FileCategory::FX:
 			filename = FX_PATH + filename;
 			break;
-		case TEXTURE:
-		case TEXTUREPAK:
+		case FileCategory::TEXTURE:
+		case FileCategory::TEXTUREPAK:
 			filename = TEXTURE_PATH + filename;
 			break;
-		case MESH:
+		case FileCategory::MESH:
 			filename = MESH_PATH + filename;
 			break;
-		case SOUND:
+		case FileCategory::SOUND:
 			filename = SOUND_PATH + filename;
 			break;
 		}
@@ -34,7 +34,7 @@ string Files::findFile(string filename, FileCategory cat, bool errorIfNotFound, 
 			return filename.c_str();
 		}
 		bfile.open(filename.c_str(), ios::in | ios::binary);
-		if (!bfile && cat == TEXTURE) {
+		if (!bfile && cat == FileCategory::TEXTURE) {
 			string oldname = filename;
 			// try loading default texture
 			filename = TEXTURE_PATH + string("default.dds");

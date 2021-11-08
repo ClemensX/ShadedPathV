@@ -54,25 +54,25 @@ public:
     // non-Vulkan members
     Files files;
     GlobalRendering global;
+    VkDevice device = nullptr;
 
 private:
     bool presentationEnabled = false;
     VkInstance vkInstance = nullptr;
-    VkDevice device = nullptr;
     VkQueue graphicsQueue = nullptr;
     VkQueue presentQueue = nullptr;
     VkSurfaceKHR surface = nullptr;
-    VkSwapchainKHR swapChain;
+    VkSwapchainKHR swapChain{};
     QueueFamilyIndices familyIndices;
     vector<VkImage> swapChainImages;
-    VkFormat swapChainImageFormat;
-    VkExtent2D swapChainExtent;
+    VkFormat swapChainImageFormat{};
+    VkExtent2D swapChainExtent{};
     vector<VkImageView> swapChainImageViews;
     // initialization
     void initGLFW();
     void initVulkanInstance();
     // validation layer
-    VkDebugUtilsMessengerEXT debugMessenger;
+    VkDebugUtilsMessengerEXT debugMessenger = nullptr;
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
     bool checkValidationLayerSupport();
     vector<const char*> getRequiredExtensions();
@@ -91,9 +91,9 @@ private:
 
     // presentation
     void createSurface();
-    int win_width;
-    int win_height;
-    const char* win_name;
+    int win_width = 0;
+    int win_height = 0;
+    const char* win_name = nullptr;
 
     // swap chain
     bool checkDeviceExtensionSupport(VkPhysicalDevice phys_device);

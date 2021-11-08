@@ -1,7 +1,7 @@
 #pragma once
 
-// alle files hav an associated category
-enum FileCategory { FX, TEXTURE, MESH, SOUND, TEXTUREPAK };
+// all files hav an associated category
+enum class FileCategory { FX, TEXTURE, MESH, SOUND, TEXTUREPAK };
 
 // File handling: all file types that need to be read or written at runtime go through here
 class Files

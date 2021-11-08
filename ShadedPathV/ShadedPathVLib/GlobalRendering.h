@@ -10,9 +10,10 @@ private:
 
 public:
 	GlobalRendering(ShadedPathEngine& s) : engine(s) {
-		//
+		// initializations
 	};
 	void initiateShader_Triangle();
 	Files files;
+	VkShaderModule createShaderModule(const vector<byte>& code);
 };
 
