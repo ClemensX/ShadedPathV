@@ -23,6 +23,7 @@
 #include <set>
 #include <cstdint>
 #include <algorithm>
+#include <filesystem>
 using namespace std;
 
 // headers for used libraries
@@ -89,6 +90,7 @@ inline void ErrorExt(string msg, const char* file, DWORD line)
 
 // engine headers
 
+#include "Files.h"
 #include "Util.h"
 #include "GlobalRendering.h"
 #include "ShadedPathEngine.h"

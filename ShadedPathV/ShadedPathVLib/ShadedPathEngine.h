@@ -17,16 +17,24 @@ struct SwapChainSupportDetails {
     std::vector<VkPresentModeKHR> presentModes;
 };
 
+class GlobalRendering;
+
 class ShadedPathEngine
 {
 public:
-    ShadedPathEngine() {
+    ShadedPathEngine() : global(*this)
+    {
         Log("Engine c'tor\n");
     }
 
-    virtual ~ShadedPathEngine() {
+    virtual ~ShadedPathEngine()
+    {
         Log("Engine destructor\n");
     };
+
+    // prevent copy and assigment
+    //ShadedPathEngine(ShadedPathEngine const&) = delete;
+    //void operator=(ShadedPathEngine const&) = delete;
 
     // initialize Vulkan
     void init();
@@ -44,6 +52,7 @@ public:
     };
     GLFWwindow* window = nullptr;
     // non-Vulkan members
+    Files files;
     GlobalRendering global;
 
 private:
