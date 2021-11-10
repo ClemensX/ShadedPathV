@@ -249,9 +249,14 @@ bool ShadedPathEngine::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
 
     bool extensionsSupported = checkDeviceExtensionSupport(device);
     bool swapChainAdequate = false;
-    if (extensionsSupported) {
-        SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
-        swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+    if (presentationEnabled) {
+        if (extensionsSupported) {
+            SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
+            swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
+        }
+    }
+    else {
+        swapChainAdequate = true;
     }
     return familyIndices.isComplete(presentationEnabled) && extensionsSupported && swapChainAdequate;
 }
@@ -354,7 +359,8 @@ bool ShadedPathEngine::checkDeviceExtensionSupport(VkPhysicalDevice phys_device)
 }
 
 SwapChainSupportDetails ShadedPathEngine::querySwapChainSupport(VkPhysicalDevice device) {
-    SwapChainSupportDetails details;
+    SwapChainSupportDetails details{};
+    if (!presentationEnabled) return details;
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
     uint32_t formatCount;
@@ -428,6 +434,7 @@ VkExtent2D ShadedPathEngine::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& ca
 }
 
 void ShadedPathEngine::createSwapChain() {
+    if (!presentationEnabled) return;
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
 
     // list available modes
