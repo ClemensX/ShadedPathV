@@ -1,5 +1,6 @@
 #include "pch.h"
 
+// intialize global shader resources
 void GlobalRendering::initiateShader_Triangle()
 {
 	// load shader binary code
@@ -10,26 +11,23 @@ void GlobalRendering::initiateShader_Triangle()
 	Log("read vertex shader: " << file_buffer_vert.size() << endl);
 	Log("read fragment shader: " << file_buffer_frag.size() << endl);
 	// create shader modules
-	VkShaderModule vertShaderModule = createShaderModule(file_buffer_vert);
-	VkShaderModule fragShaderModule = createShaderModule(file_buffer_frag);
+	vertShaderModuleTriangle = createShaderModule(file_buffer_vert);
+	fragShaderModuleTriangle = createShaderModule(file_buffer_frag);
 	// create shader stage
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vertShaderStageInfo.module = vertShaderModule;
+	vertShaderStageInfo.module = vertShaderModuleTriangle;
 	vertShaderStageInfo.pName = "main";
 
 	VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
 	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	fragShaderStageInfo.module = fragShaderModule;
+	fragShaderStageInfo.module = fragShaderModuleTriangle;
 	fragShaderStageInfo.pName = "main";
 
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
-	// destroy 
-	vkDestroyShaderModule(engine.device, fragShaderModule, nullptr);
-	vkDestroyShaderModule(engine.device, vertShaderModule, nullptr);
 }
 
 VkShaderModule GlobalRendering::createShaderModule(const vector<byte>& code)
@@ -43,4 +41,15 @@ VkShaderModule GlobalRendering::createShaderModule(const vector<byte>& code)
 		Error("failed to create shader module!");
 	}
 	return shaderModule;
+}
+
+void GlobalRendering::destroy()
+{
+	// destroy 
+	vkDestroyShaderModule(engine.device, fragShaderModuleTriangle, nullptr);
+	vkDestroyShaderModule(engine.device, vertShaderModuleTriangle, nullptr);
+}
+
+GlobalRendering::~GlobalRendering()
+{
 }

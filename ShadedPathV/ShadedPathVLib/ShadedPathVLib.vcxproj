@@ -184,6 +184,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="ShadedPathEngine.h" />
     <ClInclude Include="SimpleApp.h" />
+    <ClInclude Include="ThreadResources.h" />
     <ClInclude Include="Util.h" />
   </ItemGroup>
   <ItemGroup>
@@ -197,6 +198,7 @@
     </ClCompile>
     <ClCompile Include="ShadedPathEngine.cpp" />
     <ClCompile Include="SimpleApp.cpp" />
+    <ClCompile Include="ThreadResources.cpp" />
     <ClCompile Include="Util.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

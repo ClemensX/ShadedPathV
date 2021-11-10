@@ -22,7 +22,9 @@ class GlobalRendering;
 class ShadedPathEngine
 {
 public:
-    ShadedPathEngine() : global(*this)
+    // construct engine instance together with its needed aggregates
+    ShadedPathEngine() :
+        global(*this)
     {
         Log("Engine c'tor\n");
     }
@@ -30,6 +32,8 @@ public:
     virtual ~ShadedPathEngine()
     {
         Log("Engine destructor\n");
+        global.destroy();
+        shutdown();
     };
 
     // prevent copy and assigment

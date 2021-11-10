@@ -12,7 +12,7 @@ void SimpleApp::run()
         while (!glfwWindowShouldClose(engine.window)) {
             glfwPollEvents();
         }
-        engine.shutdown();
+        //engine.shutdown();
     }
     Log("SimpleApp ended" << endl);
 }
