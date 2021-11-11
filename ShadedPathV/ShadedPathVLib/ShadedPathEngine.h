@@ -52,13 +52,19 @@ public:
         win_width = w;
         win_height = h;
         win_name = name;
+        currentExtent.width = w;
+        currentExtent.height = h;
         presentationEnabled = true;
     };
+
+    // we need a method to get current extent that work for presentation mode and without swap chain
+    VkExtent2D getCurrentExtent();
     GLFWwindow* window = nullptr;
+    VkDevice device = nullptr;
+    VkRenderPass renderPass;
     // non-Vulkan members
     Files files;
     GlobalRendering global;
-    VkDevice device = nullptr;
 
 private:
     bool presentationEnabled = false;
@@ -98,6 +104,9 @@ private:
     int win_width = 0;
     int win_height = 0;
     const char* win_name = nullptr;
+    // if no window or backbuffer size was set by application:
+    VkExtent2D defaultExtent = { 500, 400 };
+    VkExtent2D currentExtent = defaultExtent;
 
     // swap chain
     bool checkDeviceExtensionSupport(VkPhysicalDevice phys_device);
@@ -109,5 +118,8 @@ private:
     void createSwapChain();
     // swap chain image views
     void createImageViews();
+
+    // render pass
+    void createRenderPass();
 };
 

@@ -14,7 +14,7 @@ private:
 	// for now we just assemble all global shader resources here
 	VkShaderModule vertShaderModuleTriangle = nullptr;
 	VkShaderModule fragShaderModuleTriangle = nullptr;
-
+	VkPipelineLayout pipelineLayoutTriangle = nullptr;
 
 public:
 	GlobalRendering(ShadedPathEngine& s) : engine(s) {

@@ -28,6 +28,7 @@ void ShadedPathEngine::init()
     createLogicalDevice();
     createSwapChain();
     createImageViews();
+    createRenderPass();
 }
 
 void ShadedPathEngine::initGLFW()
@@ -94,6 +95,8 @@ void ShadedPathEngine::initVulkanInstance()
 
 void ShadedPathEngine::shutdown()
 {
+    // TODO check for correct cleanup in non-presentation mode
+    vkDestroyRenderPass(device, renderPass, nullptr);
     // destroy swap chain image views
     for (auto imageView : swapChainImageViews) {
         vkDestroyImageView(device, imageView, nullptr);
@@ -433,6 +436,17 @@ VkExtent2D ShadedPathEngine::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& ca
     }
 }
 
+VkExtent2D ShadedPathEngine::getCurrentExtent()
+{
+    // use swap chain extent for now - should be backbuffer size later
+    if (presentationEnabled) {
+        return swapChainExtent;
+    }
+    else {
+        return currentExtent;
+    }
+}
+
 void ShadedPathEngine::createSwapChain() {
     if (!presentationEnabled) return;
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice);
@@ -518,5 +532,45 @@ void ShadedPathEngine::createImageViews()
         if (vkCreateImageView(device, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS) {
             Error("failed to create image views!");
         }
+    }
+}
+
+void ShadedPathEngine::createRenderPass()
+{
+    // we currently cannot have a render pass without swap chain - should change later
+    if (!presentationEnabled) {
+        return;
+    }
+
+    // attachment
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = swapChainImageFormat;
+    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    // subpasses and attachment references
+    VkAttachmentReference colorAttachmentRef{};
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentRef;
+
+    // render pass
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+
+    if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+        Error("failed to create render pass!");
     }
 }
