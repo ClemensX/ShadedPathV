@@ -9,8 +9,10 @@ void SimpleApp::run()
         engine.enablePresentation(800, 600, "Vulkan Simple App");
         engine.init();
         engine.global.initiateShader_Triangle();
+        engine.prepareDrawing();
         while (!glfwWindowShouldClose(engine.window)) {
             glfwPollEvents();
+            engine.drawFrame();
         }
         //engine.shutdown();
     }

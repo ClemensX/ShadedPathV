@@ -29,6 +29,9 @@ void ShadedPathEngine::init()
     createSwapChain();
     createImageViews();
     createRenderPass();
+    createFramebuffers();
+    createCommandPool();
+    //createCommandBuffers(); done in prepareDrawing
 }
 
 void ShadedPathEngine::initGLFW()
@@ -91,27 +94,6 @@ void ShadedPathEngine::initVulkanInstance()
     if (vkCreateInstance(&createInfo, nullptr, &vkInstance) != VK_SUCCESS) {
         Error("failed to create instance!");
     }
-}
-
-void ShadedPathEngine::shutdown()
-{
-    // TODO check for correct cleanup in non-presentation mode
-    vkDestroyRenderPass(device, renderPass, nullptr);
-    // destroy swap chain image views
-    for (auto imageView : swapChainImageViews) {
-        vkDestroyImageView(device, imageView, nullptr);
-    }
-    vkDestroySwapchainKHR(device, swapChain, nullptr);
-    vkDestroySurfaceKHR(vkInstance, surface, nullptr);
-    if (enableValidationLayers) {
-        DestroyDebugUtilsMessengerEXT(vkInstance, debugMessenger, nullptr);
-    }
-    vkDestroyDevice(device, nullptr);
-    vkDestroyInstance(vkInstance, nullptr);
-    if (presentationEnabled) {
-        glfwDestroyWindow(window);
-    }
-    glfwTerminate();
 }
 
 VkResult ShadedPathEngine::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
@@ -562,6 +544,15 @@ void ShadedPathEngine::createRenderPass()
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
 
+    // subpasses
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
     // render pass
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -569,8 +560,123 @@ void ShadedPathEngine::createRenderPass()
     renderPassInfo.pAttachments = &colorAttachment;
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
 
     if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
         Error("failed to create render pass!");
     }
+}
+
+void ShadedPathEngine::createFramebuffers()
+{
+    if (!presentationEnabled) return;
+
+    framebuffers.resize(swapChainImageViews.size());
+    for (size_t i = 0; i < swapChainImageViews.size(); i++) {
+        VkImageView attachments[] = {
+            swapChainImageViews[i]
+        };
+
+        VkFramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = renderPass;
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.width = swapChainExtent.width;
+        framebufferInfo.height = swapChainExtent.height;
+        framebufferInfo.layers = 1;
+
+        if (vkCreateFramebuffer(device, &framebufferInfo, nullptr, &framebuffers[i]) != VK_SUCCESS) {
+            Error("failed to create framebuffer!");
+        }
+    }
+}
+
+void ShadedPathEngine::createCommandPool()
+{
+    QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
+
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+    poolInfo.flags = 0; // Optional
+    if (vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+        Error("failed to create command pool!");
+    }
+}
+
+void ShadedPathEngine::createCommandBuffers()
+{
+    // TODO should be shader code in GlobalRendering ??
+    commandBuffers.resize(framebuffers.size());
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = commandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
+
+    if (vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data()) != VK_SUCCESS) {
+        Error("failed to allocate command buffers!");
+    }
+    for (size_t i = 0; i < commandBuffers.size(); i++) {
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = 0; // Optional
+        beginInfo.pInheritanceInfo = nullptr; // Optional
+
+        if (vkBeginCommandBuffer(commandBuffers[i], &beginInfo) != VK_SUCCESS) {
+            Error("failed to begin recording command buffer!");
+        }
+        VkRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = renderPass;
+        renderPassInfo.framebuffer = framebuffers[i];
+        renderPassInfo.renderArea.offset = { 0, 0 };
+        renderPassInfo.renderArea.extent = getCurrentExtent();
+        VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+        renderPassInfo.clearValueCount = 1;
+        renderPassInfo.pClearValues = &clearColor;
+        vkCmdBeginRenderPass(commandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        global.recordDrawCommand_Triangle(commandBuffers[i]);
+        vkCmdEndRenderPass(commandBuffers[i]);
+        if (vkEndCommandBuffer(commandBuffers[i]) != VK_SUCCESS) {
+            Error("failed to record command buffer!");
+        }
+    }
+}
+
+void ShadedPathEngine::prepareDrawing()
+{
+    createCommandBuffers();
+}
+
+void ShadedPathEngine::drawFrame()
+{
+    global.drawFrame_Triangle();
+}
+
+void ShadedPathEngine::shutdown()
+{
+    // TODO check for correct cleanup in non-presentation mode
+    vkDestroyCommandPool(device, commandPool, nullptr);
+    for (auto framebuffer : framebuffers) {
+        vkDestroyFramebuffer(device, framebuffer, nullptr);
+    }
+    vkDestroyRenderPass(device, renderPass, nullptr);
+    // destroy swap chain image views
+    for (auto imageView : swapChainImageViews) {
+        vkDestroyImageView(device, imageView, nullptr);
+    }
+    vkDestroySwapchainKHR(device, swapChain, nullptr);
+    vkDestroySurfaceKHR(vkInstance, surface, nullptr);
+    if (enableValidationLayers) {
+        DestroyDebugUtilsMessengerEXT(vkInstance, debugMessenger, nullptr);
+    }
+    vkDestroyDevice(device, nullptr);
+    vkDestroyInstance(vkInstance, nullptr);
+    if (presentationEnabled) {
+        glfwDestroyWindow(window);
+    }
+    glfwTerminate();
 }

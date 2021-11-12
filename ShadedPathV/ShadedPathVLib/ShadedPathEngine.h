@@ -19,6 +19,8 @@ struct SwapChainSupportDetails {
 
 class GlobalRendering;
 
+// Engine initialization and global object that are not shader specific
+// like framebuffer, swap chain and render passes
 class ShadedPathEngine
 {
 public:
@@ -57,6 +59,13 @@ public:
         presentationEnabled = true;
     };
 
+    // called once to setup commandbuffers for the shaders
+    // has to be called after all shaders have been initialized
+    void prepareDrawing();
+
+    // call render cod in shaders for one frame
+    void drawFrame();
+
     // we need a method to get current extent that work for presentation mode and without swap chain
     VkExtent2D getCurrentExtent();
     GLFWwindow* window = nullptr;
@@ -65,14 +74,17 @@ public:
     // non-Vulkan members
     Files files;
     GlobalRendering global;
+    vector<VkFramebuffer> framebuffers;
+    VkCommandPool commandPool;
+    vector<VkCommandBuffer> commandBuffers;
+    VkSwapchainKHR swapChain{};
+    VkQueue graphicsQueue = nullptr;
+    VkQueue presentQueue = nullptr;
 
 private:
     bool presentationEnabled = false;
     VkInstance vkInstance = nullptr;
-    VkQueue graphicsQueue = nullptr;
-    VkQueue presentQueue = nullptr;
     VkSurfaceKHR surface = nullptr;
-    VkSwapchainKHR swapChain{};
     QueueFamilyIndices familyIndices;
     vector<VkImage> swapChainImages;
     VkFormat swapChainImageFormat{};
@@ -121,5 +133,14 @@ private:
 
     // render pass
     void createRenderPass();
+
+    // frame buffers
+    void createFramebuffers();
+
+    // command pool
+    void createCommandPool();
+
+    // command buffers
+    void createCommandBuffers();
 };
 

@@ -147,6 +147,16 @@ void GlobalRendering::initiateShader_Triangle()
 	if (vkCreateGraphicsPipelines(engine.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipelineTriangle) != VK_SUCCESS) {
 		Error("failed to create graphics pipeline!");
 	}
+
+	// semaphores
+	VkSemaphoreCreateInfo semaphoreInfo{};
+	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	if (vkCreateSemaphore(engine.device, &semaphoreInfo, nullptr, &imageAvailableSemaphoreTriangle) != VK_SUCCESS) {
+		Error("failed to create semaphores!");
+	}
+	if (vkCreateSemaphore(engine.device, &semaphoreInfo, nullptr, &renderFinishedSemaphoreTriangle) != VK_SUCCESS) {
+		Error("failed to create semaphores!");
+	}
 }
 
 VkShaderModule GlobalRendering::createShaderModule(const vector<byte>& code)
@@ -162,9 +172,41 @@ VkShaderModule GlobalRendering::createShaderModule(const vector<byte>& code)
 	return shaderModule;
 }
 
+void GlobalRendering::recordDrawCommand_Triangle(VkCommandBuffer& commandBuffer)
+{
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipelineTriangle);
+	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+}
+
+void GlobalRendering::drawFrame_Triangle()
+{
+	uint32_t imageIndex;
+	vkAcquireNextImageKHR(engine.device, engine.swapChain, UINT64_MAX, imageAvailableSemaphoreTriangle, VK_NULL_HANDLE, &imageIndex);
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+	VkSemaphore waitSemaphores[] = { imageAvailableSemaphoreTriangle };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &engine.commandBuffers[imageIndex];
+	VkSemaphore signalSemaphores[] = { renderFinishedSemaphoreTriangle };
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+	if (vkQueueSubmit(engine.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+		Error("failed to submit draw command buffer!");
+	}
+
+}
+
 void GlobalRendering::destroy()
 {
 	// destroy 
+	vkDestroySemaphore(engine.device, renderFinishedSemaphoreTriangle, nullptr);
+	vkDestroySemaphore(engine.device, imageAvailableSemaphoreTriangle, nullptr);
 	vkDestroyPipeline(engine.device, graphicsPipelineTriangle, nullptr);
 	vkDestroyPipelineLayout(engine.device, pipelineLayoutTriangle, nullptr);
 	vkDestroyShaderModule(engine.device, fragShaderModuleTriangle, nullptr);
