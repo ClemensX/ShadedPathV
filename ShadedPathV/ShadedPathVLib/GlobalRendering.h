@@ -15,6 +15,7 @@ private:
 	VkShaderModule vertShaderModuleTriangle = nullptr;
 	VkShaderModule fragShaderModuleTriangle = nullptr;
 	VkPipelineLayout pipelineLayoutTriangle = nullptr;
+	VkPipeline graphicsPipelineTriangle = nullptr;
 
 public:
 	GlobalRendering(ShadedPathEngine& s) : engine(s) {

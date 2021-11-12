@@ -125,6 +125,28 @@ void GlobalRendering::initiateShader_Triangle()
 	if (vkCreatePipelineLayout(engine.device, &pipelineLayoutInfo, nullptr, &pipelineLayoutTriangle) != VK_SUCCESS) {
 		Error("failed to create pipeline layout!");
 	}
+
+	// create pipeline
+	VkGraphicsPipelineCreateInfo pipelineInfo{};
+	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineInfo.stageCount = 2;
+	pipelineInfo.pStages = shaderStages;
+	pipelineInfo.pVertexInputState = &vertexInputInfo;
+	pipelineInfo.pInputAssemblyState = &inputAssembly;
+	pipelineInfo.pViewportState = &viewportState;
+	pipelineInfo.pRasterizationState = &rasterizer;
+	pipelineInfo.pMultisampleState = &multisampling;
+	pipelineInfo.pDepthStencilState = nullptr; // Optional
+	pipelineInfo.pColorBlendState = &colorBlending;
+	pipelineInfo.pDynamicState = nullptr; // Optional
+	pipelineInfo.layout = pipelineLayoutTriangle;
+	pipelineInfo.renderPass = engine.renderPass;
+	pipelineInfo.subpass = 0;
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
+	pipelineInfo.basePipelineIndex = -1; // Optional
+	if (vkCreateGraphicsPipelines(engine.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipelineTriangle) != VK_SUCCESS) {
+		Error("failed to create graphics pipeline!");
+	}
 }
 
 VkShaderModule GlobalRendering::createShaderModule(const vector<byte>& code)
@@ -143,6 +165,7 @@ VkShaderModule GlobalRendering::createShaderModule(const vector<byte>& code)
 void GlobalRendering::destroy()
 {
 	// destroy 
+	vkDestroyPipeline(engine.device, graphicsPipelineTriangle, nullptr);
 	vkDestroyPipelineLayout(engine.device, pipelineLayoutTriangle, nullptr);
 	vkDestroyShaderModule(engine.device, fragShaderModuleTriangle, nullptr);
 	vkDestroyShaderModule(engine.device, vertShaderModuleTriangle, nullptr);
