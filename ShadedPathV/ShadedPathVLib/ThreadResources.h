@@ -1,12 +1,19 @@
 #pragma once
 
-// all resources needed for running ina separate thread.
+// forward declarations
+class ShadedPathEngine;
+
+// all resources needed for running in a separate thread.
 // it is ok to also READ from GlobalRendering and engine
 class ThreadResources
 {
 public:
-	virtual ~ThreadResources() {
-
-	};
+	ThreadResources();
+	virtual ~ThreadResources();
+	static ShadedPathEngine* engine;
+	VkSemaphore imageAvailableSemaphore = nullptr;
+	VkSemaphore renderFinishedSemaphore = nullptr;
+	void init();
+	static void initAll(ShadedPathEngine* engine);
 };
 

@@ -7,6 +7,7 @@ void SimpleApp::run()
     {
         ShadedPathEngine engine;
         engine.enablePresentation(800, 600, "Vulkan Simple App");
+        engine.setFramesInFlight(2);
         engine.init();
         engine.global.initiateShader_Triangle();
         engine.prepareDrawing();

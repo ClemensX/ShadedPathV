@@ -34,6 +34,8 @@ public:
     virtual ~ShadedPathEngine()
     {
         Log("Engine destructor\n");
+        vkDeviceWaitIdle(device);
+        threadResources.clear();
         global.destroy();
         shutdown();
     };
@@ -59,6 +61,15 @@ public:
         presentationEnabled = true;
     };
 
+    // set number of frames that can be worked on in parallel
+    // default is 2
+    void setFramesInFlight(int n) {
+        framesInFlight = n;
+        threadResources.resize(framesInFlight);
+    }
+    // current frame index - always within 0 .. threadResources.size() - 1
+    size_t currentFrame = 0;
+
     // called once to setup commandbuffers for the shaders
     // has to be called after all shaders have been initialized
     void prepareDrawing();
@@ -80,8 +91,10 @@ public:
     VkSwapchainKHR swapChain{};
     VkQueue graphicsQueue = nullptr;
     VkQueue presentQueue = nullptr;
+    vector<ThreadResources> threadResources;
 
 private:
+    int framesInFlight = 2;
     bool presentationEnabled = false;
     VkInstance vkInstance = nullptr;
     VkSurfaceKHR surface = nullptr;

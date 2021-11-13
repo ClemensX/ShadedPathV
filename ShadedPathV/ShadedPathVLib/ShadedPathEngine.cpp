@@ -648,6 +648,7 @@ void ShadedPathEngine::createCommandBuffers()
 
 void ShadedPathEngine::prepareDrawing()
 {
+    ThreadResources::initAll(this);
     createCommandBuffers();
 }
 

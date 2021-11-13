@@ -30,7 +30,5 @@ public:
 	VkShaderModule fragShaderModuleTriangle = nullptr;
 	VkPipelineLayout pipelineLayoutTriangle = nullptr;
 	VkPipeline graphicsPipelineTriangle = nullptr;
-	VkSemaphore imageAvailableSemaphoreTriangle;
-	VkSemaphore renderFinishedSemaphoreTriangle;
 };
 
