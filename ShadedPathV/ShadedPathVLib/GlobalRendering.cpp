@@ -171,22 +171,30 @@ void GlobalRendering::recordDrawCommand_Triangle(VkCommandBuffer& commandBuffer)
 
 void GlobalRendering::drawFrame_Triangle()
 {
+	// select the right thread resources
+	auto& tr = engine.threadResources[engine.currentFrame];
+
+	// wait for fence signal
+	vkWaitForFences(engine.device, 1, &tr.inFlightFence, VK_TRUE, UINT64_MAX);
+	vkResetFences(engine.device, 1, &tr.inFlightFence);
+
+
 	uint32_t imageIndex;
-	vkAcquireNextImageKHR(engine.device, engine.swapChain, UINT64_MAX, engine.threadResources[engine.currentFrame].imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+	vkAcquireNextImageKHR(engine.device, engine.swapChain, UINT64_MAX, tr.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-	VkSemaphore waitSemaphores[] = { engine.threadResources[engine.currentFrame].imageAvailableSemaphore };
+	VkSemaphore waitSemaphores[] = { tr.imageAvailableSemaphore };
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &engine.commandBuffers[imageIndex];
-	VkSemaphore signalSemaphores[] = { engine.threadResources[engine.currentFrame].renderFinishedSemaphore };
+	VkSemaphore signalSemaphores[] = { tr.renderFinishedSemaphore };
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
-	if (vkQueueSubmit(engine.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+	if (vkQueueSubmit(engine.graphicsQueue, 1, &submitInfo, tr.inFlightFence) != VK_SUCCESS) {
 		Error("failed to submit draw command buffer!");
 	}
 	VkPresentInfoKHR presentInfo{};

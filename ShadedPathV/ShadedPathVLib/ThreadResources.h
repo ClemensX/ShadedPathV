@@ -13,6 +13,7 @@ public:
 	static ShadedPathEngine* engine;
 	VkSemaphore imageAvailableSemaphore = nullptr;
 	VkSemaphore renderFinishedSemaphore = nullptr;
+	VkFence inFlightFence = nullptr;
 	void init();
 	static void initAll(ShadedPathEngine* engine);
 };
