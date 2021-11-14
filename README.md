@@ -18,5 +18,6 @@ Course of action should be like this
 
 ### Issues
 
-* configure validation  layers with Vulkan Configurator. Didn't succeed in configuring via app. Storing will enable debug config still active after configurator closes, but ALL Vulkan apps may be affected!
+* configure validation layers with Vulkan Configurator. Didn't succeed in configuring via app. Storing will enable debug config still active after configurator closes, but ALL Vulkan apps may be affected!
+* Enable *Debug Output* option to see messages in debug console 
 
