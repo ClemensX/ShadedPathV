@@ -21,9 +21,11 @@
 #include <vector>
 #include <optional>
 #include <set>
+#include <unordered_map>
 #include <cstdint>
 #include <algorithm>
 #include <filesystem>
+#include <chrono>
 using namespace std;
 
 // headers for used libraries
@@ -91,6 +93,7 @@ inline void ErrorExt(string msg, const char* file, DWORD line)
 // engine headers
 
 #include "Files.h"
+#include "GameTime.h"
 #include "Util.h"
 #include "ThreadResources.h"
 #include "GlobalRendering.h"

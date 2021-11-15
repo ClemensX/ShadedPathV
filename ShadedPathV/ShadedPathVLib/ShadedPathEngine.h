@@ -92,6 +92,7 @@ public:
     VkQueue graphicsQueue = nullptr;
     VkQueue presentQueue = nullptr;
     vector<ThreadResources> threadResources;
+    GameTime gameTime;
 
 private:
     int framesInFlight = 2;
