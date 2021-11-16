@@ -209,6 +209,7 @@ void GlobalRendering::drawFrame_Triangle()
 	presentInfo.pImageIndices = &imageIndex;
 	presentInfo.pResults = nullptr; // Optional
 	vkQueuePresentKHR(engine.presentQueue, &presentInfo);
+	ThemedTimer::getInstance()->add("SwapChain");
 	engine.currentFrame = (engine.currentFrame + 1) % engine.threadResources.size() - 1;
 }
 

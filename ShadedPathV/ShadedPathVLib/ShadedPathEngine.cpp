@@ -17,6 +17,8 @@ const bool enableValidationLayers = true;
 
 void ShadedPathEngine::init()
 {
+    Log("engine absolute start time (hours and fraction): " << gameTime.getTimeAbs() << endl);
+    ThemedTimer::getInstance()->create("SwapChain", 1000);
     initGLFW();
     initVulkanInstance();
     setupDebugMessenger();
@@ -659,6 +661,8 @@ void ShadedPathEngine::drawFrame()
 
 void ShadedPathEngine::shutdown()
 {
+    ThemedTimer::getInstance()->logInfo("SwapChain");
+    ThemedTimer::getInstance()->logFPS("SwapChain");
     // TODO check for correct cleanup in non-presentation mode
     vkDestroyCommandPool(device, commandPool, nullptr);
     for (auto framebuffer : framebuffers) {
