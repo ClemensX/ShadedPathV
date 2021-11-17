@@ -16,6 +16,6 @@ void Shaders::drawFrame_Triangle()
 	//Log("draw index " << engine.currentFrameIndex << endl);
 
 	// wait for fence signal
-	//vkWaitForFences(engine.global.device, 1, &tr.inFlightFence, VK_TRUE, UINT64_MAX);
-	//vkResetFences(engine.global.device, 1, &tr.inFlightFence);
+	vkWaitForFences(engine.global.device, 1, &tr.inFlightFence, VK_TRUE, UINT64_MAX);
+	vkResetFences(engine.global.device, 1, &tr.inFlightFence);
 }

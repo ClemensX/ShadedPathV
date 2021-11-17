@@ -83,7 +83,7 @@ TEST(Engine, Headless) {
     {
         ShadedPathEngine engine;
         engine.init();
-        engine.global.initiateShader_Triangle();
+        engine.shaders.initiateShader_Triangle();
         engine.prepareDrawing();
         engine.drawFrame();
     }
