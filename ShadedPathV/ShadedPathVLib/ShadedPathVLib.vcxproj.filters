@@ -39,6 +39,12 @@
     <ClInclude Include="GameTime.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Presentation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Shaders.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -63,6 +69,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GameTime.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Presentation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Shaders.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

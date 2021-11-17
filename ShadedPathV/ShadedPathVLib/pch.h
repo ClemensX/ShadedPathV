@@ -95,8 +95,10 @@ inline void ErrorExt(string msg, const char* file, DWORD line)
 #include "Files.h"
 #include "GameTime.h"
 #include "Util.h"
-#include "ThreadResources.h"
+#include "Presentation.h"
 #include "GlobalRendering.h"
+#include "Shaders.h"
+#include "ThreadResources.h"
 #include "ShadedPathEngine.h"
 #include "SimpleApp.h"
 

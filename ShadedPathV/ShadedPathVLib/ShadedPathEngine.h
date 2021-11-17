@@ -1,32 +1,15 @@
 #pragma once
 
-struct QueueFamilyIndices {
-    optional<uint32_t> graphicsFamily;
-    optional<uint32_t> presentFamily;
-    bool isComplete(bool presentationEnabled) {
-        if (presentationEnabled)
-            return graphicsFamily.has_value() && presentFamily.has_value();
-        else
-            return graphicsFamily.has_value();
-    }
-};
-
-struct SwapChainSupportDetails {
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
-};
-
-class GlobalRendering;
-
-// Engine initialization and global object that are not shader specific
-// like framebuffer, swap chain and render passes
+// Engine contains options and aggregates GlobalRendering, Presentation, Shaders, ThreadResources
+// who do the vulkan work
 class ShadedPathEngine
 {
 public:
     // construct engine instance together with its needed aggregates
     ShadedPathEngine() :
-        global(*this)
+        global(*this),
+        presentation(*this),
+        shaders(*this)
     {
         Log("Engine c'tor\n");
     }
@@ -34,11 +17,15 @@ public:
     virtual ~ShadedPathEngine()
     {
         Log("Engine destructor\n");
-        if (device) vkDeviceWaitIdle(device);
-        threadResources.clear();
-        global.destroy();
-        shutdown();
+        ThemedTimer::getInstance()->logInfo("DrawFrame");
+        ThemedTimer::getInstance()->logFPS("DrawFrame");
     };
+
+    GlobalRendering global;
+    Presentation presentation;
+    Shaders shaders;
+    vector<ThreadResources> threadResources;
+
 
     // prevent copy and assigment
     //ShadedPathEngine(ShadedPathEngine const&) = delete;
@@ -46,9 +33,10 @@ public:
 
     // initialize Vulkan
     void init();
+
     // enable output window, withour calling this only background processing is possible
     void enablePresentation(int w, int h, const char* name) {
-        if (vkInstance) {
+        if (false) {
             Error("Changing presentation mode after initialization is not possible!");
         }
         win_width = w;
@@ -65,68 +53,44 @@ public:
         framesInFlight = n;
         threadResources.resize(framesInFlight);
     }
+
+    void setFrameCountLimit(long max) {
+        limitFrameCount = max;
+    }
+
     // current frame index - always within 0 .. threadResources.size() - 1
-    size_t currentFrame = 0;
+    size_t currentFrameIndex = 0;
+
+    // count all frames
+    long frameNum = 0;
 
     // called once to setup commandbuffers for the shaders
     // has to be called after all shaders have been initialized
     void prepareDrawing();
 
-    // call render cod in shaders for one frame
+    // call render code in shaders for one frame
     void drawFrame();
 
-    // we need a method to get current extent that work for presentation mode and without swap chain
-    VkExtent2D getCurrentExtent();
-    GLFWwindow* window = nullptr;
-    VkDevice device = nullptr;
-    VkRenderPass renderPass = nullptr;
-    vector<VkFramebuffer> framebuffers;
-    VkCommandPool commandPool;
-    vector<VkCommandBuffer> commandBuffers;
-    VkSwapchainKHR swapChain{};
-    VkQueue graphicsQueue = nullptr;
-    VkQueue presentQueue = nullptr;
+    // poll events from glfw
+    void pollEvents();
+
+    // check if engine should shutdown.
+    // if presenting glfw will tell us window was closed
+    // if background processing some other threshold like max number of frames might have been reached
+    bool shouldClose();
+
     // non-Vulkan members
     Files files;
-    GlobalRendering global;
-    vector<ThreadResources> threadResources;
     GameTime gameTime;
-
+    VkExtent2D getCurrentExtent();
 private:
+    long limitFrameCount = 0;
     int framesInFlight = 2;
     bool presentationEnabled = false;
-    VkInstance vkInstance = nullptr;
-    VkSurfaceKHR surface = nullptr;
-    QueueFamilyIndices familyIndices;
-    vector<VkImage> swapChainImages;
-    VkFormat swapChainImageFormat{};
-    VkExtent2D swapChainExtent{};
-    vector<VkImageView> swapChainImageViews;
-    // initialization
-    void initGLFW();
-    void initVulkanInstance();
     // exit Vulkan and free resources
     void shutdown();
-    // validation layer
-    VkDebugUtilsMessengerEXT debugMessenger = nullptr;
-    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
-    bool checkValidationLayerSupport();
-    vector<const char*> getRequiredExtensions();
-    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-    void setupDebugMessenger();
-    void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
-    VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
-
-    // devices
-    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-    // list or select physical devices
-    void pickPhysicalDevice(bool listmode = false);
-    bool isDeviceSuitable(VkPhysicalDevice device, bool listmode = false);
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
-    void createLogicalDevice();
 
     // presentation
-    void createSurface();
     int win_width = 0;
     int win_height = 0;
     const char* win_name = nullptr;
@@ -134,27 +98,5 @@ private:
     VkExtent2D defaultExtent = { 500, 400 };
     VkExtent2D currentExtent = defaultExtent;
 
-    // swap chain
-    bool checkDeviceExtensionSupport(VkPhysicalDevice phys_device);
-    SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
-    // choose swap chain format or list available formats
-    VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats, bool listmode = false);
-    VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes, bool listmode = false);
-    VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-    void createSwapChain();
-    // swap chain image views
-    void createImageViews();
-
-    // render pass
-    void createRenderPass();
-
-    // frame buffers
-    void createFramebuffers();
-
-    // command pool
-    void createCommandPool();
-
-    // command buffers
-    void createCommandBuffers();
 };
 

@@ -15,20 +15,13 @@ private:
 
 public:
 	GlobalRendering(ShadedPathEngine& s) : engine(s) {
-		// initializations
+		Log("GlobalRendering c'tor\n");
+	};
+	~GlobalRendering() {
+		Log("GlobalRendering destructor\n");
 	};
 	// detroy global resources, should only be called from engine dtor
 	void destroy();
-	~GlobalRendering();
-	void initiateShader_Triangle();
-	void recordDrawCommand_Triangle(VkCommandBuffer &commandBuffer);
-	void drawFrame_Triangle();
 	Files files;
-	VkShaderModule createShaderModule(const vector<byte>& code);
-	// for now we just assemble all global shader resources here
-	VkShaderModule vertShaderModuleTriangle = nullptr;
-	VkShaderModule fragShaderModuleTriangle = nullptr;
-	VkPipelineLayout pipelineLayoutTriangle = nullptr;
-	VkPipeline graphicsPipelineTriangle = nullptr;
 };
 
