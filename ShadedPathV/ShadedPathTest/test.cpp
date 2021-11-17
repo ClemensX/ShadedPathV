@@ -68,7 +68,7 @@ TEST(Engine, Initialization) {
         ShadedPathEngine engine;
         engine.init();
         //engine.enablePresentation();
-        engine.shutdown();
+        //engine.shutdown();
     }
     Log("Test end. (Should appear after destructor log)\n");
     LogfileScanner log;

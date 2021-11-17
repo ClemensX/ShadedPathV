@@ -34,7 +34,7 @@ public:
     virtual ~ShadedPathEngine()
     {
         Log("Engine destructor\n");
-        vkDeviceWaitIdle(device);
+        if (device) vkDeviceWaitIdle(device);
         threadResources.clear();
         global.destroy();
         shutdown();
@@ -46,8 +46,6 @@ public:
 
     // initialize Vulkan
     void init();
-    // exit Vulkan and free resources
-    void shutdown();
     // enable output window, withour calling this only background processing is possible
     void enablePresentation(int w, int h, const char* name) {
         if (vkInstance) {
@@ -81,7 +79,7 @@ public:
     VkExtent2D getCurrentExtent();
     GLFWwindow* window = nullptr;
     VkDevice device = nullptr;
-    VkRenderPass renderPass;
+    VkRenderPass renderPass = nullptr;
     // non-Vulkan members
     Files files;
     GlobalRendering global;
@@ -107,6 +105,8 @@ private:
     // initialization
     void initGLFW();
     void initVulkanInstance();
+    // exit Vulkan and free resources
+    void shutdown();
     // validation layer
     VkDebugUtilsMessengerEXT debugMessenger = nullptr;
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);

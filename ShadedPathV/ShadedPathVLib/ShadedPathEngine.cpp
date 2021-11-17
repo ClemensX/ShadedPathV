@@ -679,7 +679,9 @@ void ShadedPathEngine::shutdown()
         DestroyDebugUtilsMessengerEXT(vkInstance, debugMessenger, nullptr);
     }
     vkDestroyDevice(device, nullptr);
+    device = nullptr;
     vkDestroyInstance(vkInstance, nullptr);
+    vkInstance = nullptr;
     if (presentationEnabled) {
         glfwDestroyWindow(window);
     }
