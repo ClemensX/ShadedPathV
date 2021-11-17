@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "test.h"
 
+
 TEST(Environment, GLM) {
     glm::mat4 m1;
     glm::vec4 vec;
@@ -76,4 +77,24 @@ TEST(Engine, Initialization) {
     EXPECT_GT(log.searchForLine("Test end."), -1);
     //Log(" found in logfile: " << log.searchForLine("Engine destructor") << endl);
     EXPECT_TRUE(log.assertLineBefore("Engine destructor", "Test end."));
+}
+
+TEST(Engine, Headless) {
+    {
+        ShadedPathEngine engine;
+        engine.init();
+        engine.global.initiateShader_Triangle();
+        engine.prepareDrawing();
+        engine.drawFrame();
+    }
+}
+
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    // enable single tests
+    //::testing::GTEST_FLAG(filter) = "Environment.GLFW";
+    ::testing::GTEST_FLAG(filter) = "Engine.Headless";
+    // all test but excluded one:
+    //::testing::GTEST_FLAG(filter) = "-Engine.Headless";
+    return RUN_ALL_TESTS();
 }

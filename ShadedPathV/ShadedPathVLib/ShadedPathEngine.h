@@ -80,15 +80,15 @@ public:
     GLFWwindow* window = nullptr;
     VkDevice device = nullptr;
     VkRenderPass renderPass = nullptr;
-    // non-Vulkan members
-    Files files;
-    GlobalRendering global;
     vector<VkFramebuffer> framebuffers;
     VkCommandPool commandPool;
     vector<VkCommandBuffer> commandBuffers;
     VkSwapchainKHR swapChain{};
     VkQueue graphicsQueue = nullptr;
     VkQueue presentQueue = nullptr;
+    // non-Vulkan members
+    Files files;
+    GlobalRendering global;
     vector<ThreadResources> threadResources;
     GameTime gameTime;
 
