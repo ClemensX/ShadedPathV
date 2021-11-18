@@ -8,7 +8,7 @@ GameTime::GameTime()
 	//Log("Realtime Tick per Second: " << ticks_per_sec << endl);
 }
 
-void GameTime::init(LONGLONG gamedayFactor)
+void GameTime::initBeforePresentation(LONGLONG gamedayFactor)
 {
 	this->gamedayFactor = (double)gamedayFactor;
 }

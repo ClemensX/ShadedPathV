@@ -1,12 +1,8 @@
 #include "pch.h"
 
 // some const definitions for validation and extension levels
-const std::vector<const char*> validationLayers = {
+const vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
-};
-
-const std::vector<const char*> deviceExtensions = {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
 #ifdef NDEBUG
@@ -16,10 +12,15 @@ const bool enableValidationLayers = true;
 #endif
 
 
-void GlobalRendering::init()
+void GlobalRendering::initBeforePresentation()
 {
+    gatherDeviceExtensions();
     initVulkanInstance();
     setupDebugMessenger();
+}
+
+void GlobalRendering::initAfterPresentation()
+{
     // list available devices:
     pickPhysicalDevice(true);
     // pick device
@@ -30,6 +31,11 @@ void GlobalRendering::init()
 void GlobalRendering::destroy()
 {
     // destroy 
+}
+
+void GlobalRendering::gatherDeviceExtensions()
+{
+    engine.presentation.possiblyAddDeviceExtensions(deviceExtensions);
 }
 
 void GlobalRendering::initVulkanInstance()
@@ -250,7 +256,7 @@ QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device)
         }
         if (engine.presentation.enabled) {
             VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, nullptr /* TODO surface */, &presentSupport);
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, engine.presentation.surface, &presentSupport);
             if (presentSupport) {
                 indices.presentFamily = i;
             }
@@ -326,20 +332,20 @@ SwapChainSupportDetails GlobalRendering::querySwapChainSupport(VkPhysicalDevice 
     SwapChainSupportDetails details{};
     if (!engine.presentation.enabled) return details;
 
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, nullptr /* TODO surface */, &details.capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, engine.presentation.surface, &details.capabilities);
     uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device, nullptr /* TODO surface */, &formatCount, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, engine.presentation.surface, &formatCount, nullptr);
 
     if (formatCount != 0) {
         details.formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, nullptr /* TODO surface */, &formatCount, details.formats.data());
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, engine.presentation.surface, &formatCount, details.formats.data());
     }
     uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(device, nullptr /* TODO surface */, &presentModeCount, nullptr);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, engine.presentation.surface, &presentModeCount, nullptr);
 
     if (presentModeCount != 0) {
         details.presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, nullptr /* TODO surface */, &presentModeCount, details.presentModes.data());
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, engine.presentation.surface, &presentModeCount, details.presentModes.data());
     }
     return details;
 }

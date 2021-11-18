@@ -11,12 +11,6 @@ struct QueueFamilyIndices {
 	}
 };
 
-struct SwapChainSupportDetails {
-	VkSurfaceCapabilitiesKHR capabilities;
-	std::vector<VkSurfaceFormatKHR> formats;
-	std::vector<VkPresentModeKHR> presentModes;
-};
-
 // forward declarations
 class ShadedPathEngine;
 
@@ -33,21 +27,32 @@ private:
 public:
 	GlobalRendering(ShadedPathEngine& s) : engine(s) {
 		Log("GlobalRendering c'tor\n");
-		init();
 	};
+
 	~GlobalRendering() {
 		Log("GlobalRendering destructor\n");
 	};
-	// detroy global resources, should only be called from engine dtor
+
+	// initialize all global Vulkan stuff - engine configuration settings
+	// cannot be changed after calling this, because some settings influence Vulkan creation options
+	void initBeforePresentation();
+	void initAfterPresentation();
+
+	// destroy global resources, should only be called from engine dtor
 	void destroy();
 	Files files;
+	void createLogicalDevice();
 
 	// Vulkan 
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice device = nullptr;
+	VkInstance vkInstance = nullptr;
 
 private:
-	void init();
+	vector<const char*> deviceExtensions = {
+	};
+
+	void gatherDeviceExtensions();
 	void initVulkanInstance();
 	void setupDebugMessenger();
 
@@ -62,7 +67,6 @@ private:
 
 	// devices
 	void pickPhysicalDevice(bool listmode = false);
-	void createLogicalDevice();
 	QueueFamilyIndices familyIndices;
 	// list or select physical devices
 	bool isDeviceSuitable(VkPhysicalDevice device, bool listmode = false);
@@ -71,7 +75,5 @@ private:
 	// swap chain query
 	bool checkDeviceExtensionSupport(VkPhysicalDevice phys_device);
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
-
-	VkInstance vkInstance = nullptr;
 };
 

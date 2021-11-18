@@ -11,8 +11,12 @@ public:
 	void initiateShader_Triangle();
 	void drawFrame_Triangle();
 	bool shouldClose();
+	VkShaderModule createShaderModule(const vector<byte>& code);
 
 private:
+	void initiateShader_TriangleSingle(ThreadResources &res);
 	ShadedPathEngine& engine;
+	VkShaderModule vertShaderModuleTriangle = nullptr;
+	VkShaderModule fragShaderModuleTriangle = nullptr;
 };
 

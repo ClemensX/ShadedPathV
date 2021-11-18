@@ -5,6 +5,11 @@ void ShadedPathEngine::init()
 {
     Log("engine absolute start time (hours and fraction): " << gameTime.getTimeAbs() << endl);
     ThemedTimer::getInstance()->create("DrawFrame", 1000);
+    presentation.initGLFW();
+    global.initBeforePresentation();
+    presentation.init();
+    global.initAfterPresentation();
+    ThreadResources::initAll(this);
 }
 
 
@@ -16,7 +21,6 @@ VkExtent2D ShadedPathEngine::getCurrentExtent()
 
 void ShadedPathEngine::prepareDrawing()
 {
-    ThreadResources::initAll(this);
 }
 
 void ShadedPathEngine::drawFrame()

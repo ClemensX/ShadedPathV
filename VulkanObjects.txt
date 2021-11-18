@@ -37,8 +37,57 @@ ThreadResources:
 	VkFence inFlightFence = nullptr;
 
 
+################ copy
+engine:
+
+    vector<VkFramebuffer> framebuffers;
+    VkCommandPool commandPool;
+    vector<VkCommandBuffer> commandBuffers;
+    VkSwapchainKHR swapChain{};
+    VkQueue graphicsQueue = nullptr;
+    VkQueue presentQueue = nullptr;
+    QueueFamilyIndices familyIndices;
+    vector<VkImage> swapChainImages;
+    VkFormat swapChainImageFormat{};
+    VkExtent2D swapChainExtent{};
+    vector<VkImageView> swapChainImageViews;
+
+GlobalRendering:
+
+
+ThreadResources:
+
+	VkSemaphore imageAvailableSemaphore = nullptr;
+	VkSemaphore renderFinishedSemaphore = nullptr;
+	VkFence inFlightFence = nullptr;
+
+################
+
 planned:
 split up: Engine, Presentation, GlobalRendering, Shaders, ThreadResources
 
 Engine
   aggregate Presentation, GlobalRendering, Shaders, ThreadResources
+    size_t currentFrame = 0;
+  
+GlobalRendering
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkDevice device = nullptr;
+    VkInstance vkInstance = nullptr;
+
+Shaders
+
+	VkShaderModule createShaderModule(const vector<byte>& code);
+	VkShaderModule vertShaderModuleTriangle = nullptr;
+	VkShaderModule fragShaderModuleTriangle = nullptr;
+
+ThreadResources
+
+	VkPipelineLayout pipelineLayoutTriangle = nullptr;
+	VkPipeline graphicsPipelineTriangle = nullptr;
+    VkRenderPass renderPass = nullptr;
+
+Presentation
+
+    VkSurfaceKHR surface = nullptr;
+    GLFWwindow* window = nullptr;

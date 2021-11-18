@@ -16,5 +16,12 @@ public:
 	VkFence inFlightFence = nullptr;
 	void init();
 	static void initAll(ShadedPathEngine* engine);
+
+	VkPipelineLayout pipelineLayoutTriangle = nullptr;
+	VkPipeline graphicsPipelineTriangle = nullptr;
+	VkRenderPass renderPass = nullptr;
+private:
+	void createFencesAndSemaphores();
+	void createRenderPass();
 };
 

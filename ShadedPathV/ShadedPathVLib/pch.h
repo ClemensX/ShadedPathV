@@ -97,8 +97,8 @@ inline void ErrorExt(string msg, const char* file, DWORD line)
 #include "Util.h"
 #include "Presentation.h"
 #include "GlobalRendering.h"
-#include "Shaders.h"
 #include "ThreadResources.h"
+#include "Shaders.h"
 #include "ShadedPathEngine.h"
 #include "SimpleApp.h"
 

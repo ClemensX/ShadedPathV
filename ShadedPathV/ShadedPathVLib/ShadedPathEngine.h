@@ -48,10 +48,13 @@ public:
     };
 
     // set number of frames that can be worked on in parallel
-    // default is 2
     void setFramesInFlight(int n) {
         framesInFlight = n;
         threadResources.resize(framesInFlight);
+    }
+
+    int getFramesInFlight() {
+        return framesInFlight;
     }
 
     void setFrameCountLimit(long max) {
@@ -83,6 +86,10 @@ public:
     Files files;
     GameTime gameTime;
     VkExtent2D getCurrentExtent();
+    // presentation
+    int win_width = 0;
+    int win_height = 0;
+    const char* win_name = nullptr;
 private:
     long limitFrameCount = 0;
     int framesInFlight = 2;
@@ -90,10 +97,6 @@ private:
     // exit Vulkan and free resources
     void shutdown();
 
-    // presentation
-    int win_width = 0;
-    int win_height = 0;
-    const char* win_name = nullptr;
     // if no window or backbuffer size was set by application:
     VkExtent2D defaultExtent = { 500, 400 };
     VkExtent2D currentExtent = defaultExtent;
