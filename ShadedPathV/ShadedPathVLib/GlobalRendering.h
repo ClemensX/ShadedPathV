@@ -46,7 +46,7 @@ public:
 	Files files;
 	void createLogicalDevice();
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, bool listmode = false);
-
+	uint32_t findMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags properties);
 	// Vulkan 
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice device = nullptr;

@@ -92,11 +92,13 @@ void ThreadResources::createRenderPass()
 
 void ThreadResources::createImage()
 {
+    auto& device = engine->global.device;
+    auto& global = engine->global;
     // Color attachment
     VkImageCreateInfo image{};
     image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image.imageType = VK_IMAGE_TYPE_2D;
-    image.format = engine->global.ImageFormat;
+    image.format = global.ImageFormat;
     image.extent.width = engine->getCurrentExtent().width;
     image.extent.height = engine->getCurrentExtent().height;
     image.extent.depth = 1;
@@ -107,20 +109,26 @@ void ThreadResources::createImage()
     image.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
     VkMemoryAllocateInfo memAlloc{};
-    VkMemoryRequirements memReqs{};
+    memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    VkMemoryRequirements memReqs;
 
-    if (vkCreateImage(engine->global.device, &image, nullptr, &colorAttachment.image) != VK_SUCCESS) {
+    if (vkCreateImage(device, &image, nullptr, &colorAttachment.image) != VK_SUCCESS) {
         Error("failed to create render image!");
     }
-    vkGetImageMemoryRequirements(engine->global.device, colorAttachment.image, &memReqs);
+    vkGetImageMemoryRequirements(device, colorAttachment.image, &memReqs);
     memAlloc.allocationSize = memReqs.size;
-/*    memAlloc.memoryTypeIndex = getMemoryTypeIndex(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &colorAttachment.memory));
-    VK_CHECK_RESULT(vkBindImageMemory(device, colorAttachment.image, colorAttachment.memory, 0));
+    memAlloc.memoryTypeIndex = global.findMemoryTypeIndex(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    if (vkAllocateMemory(device, &memAlloc, nullptr, &colorAttachment.memory) != VK_SUCCESS) {
+        Error("failed to allocate image memory");
+    }
+    if (vkBindImageMemory(device, colorAttachment.image, colorAttachment.memory, 0) != VK_SUCCESS) {
+        Error("failed to bind image memory");
+    }
 
-    VkImageViewCreateInfo colorImageView = vks::initializers::imageViewCreateInfo();
+    VkImageViewCreateInfo colorImageView{};
+    colorImageView.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     colorImageView.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    colorImageView.format = colorFormat;
+    colorImageView.format = global.ImageFormat;
     colorImageView.subresourceRange = {};
     colorImageView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     colorImageView.subresourceRange.baseMipLevel = 0;
@@ -128,9 +136,11 @@ void ThreadResources::createImage()
     colorImageView.subresourceRange.baseArrayLayer = 0;
     colorImageView.subresourceRange.layerCount = 1;
     colorImageView.image = colorAttachment.image;
-    VK_CHECK_RESULT(vkCreateImageView(device, &colorImageView, nullptr, &colorAttachment.view));
+    if (vkCreateImageView(device, &colorImageView, nullptr, &colorAttachment.view) != VK_SUCCESS) {
+        Error("failed to create image view");
+    }
 
-    // Depth stencil attachment
+/*    // Depth stencil attachment
     image.format = depthFormat;
     image.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
