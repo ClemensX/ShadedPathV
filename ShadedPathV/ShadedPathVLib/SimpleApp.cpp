@@ -7,7 +7,7 @@ void SimpleApp::run()
     {
         ShadedPathEngine engine;
         engine.setFrameCountLimit(10);
-        engine.gameTime.initBeforePresentation(GameTime::GAMEDAY_1_MINUTE);
+        engine.gameTime.init(GameTime::GAMEDAY_1_MINUTE);
         engine.enablePresentation(800, 600, "Vulkan Simple App");
         engine.setFramesInFlight(2);
         engine.init();

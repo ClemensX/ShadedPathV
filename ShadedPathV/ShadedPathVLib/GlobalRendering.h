@@ -33,6 +33,8 @@ public:
 		Log("GlobalRendering destructor\n");
 	};
 
+	const VkFormat ImageFormat = VK_FORMAT_B8G8R8A8_SRGB;
+
 	// initialize all global Vulkan stuff - engine configuration settings
 	// cannot be changed after calling this, because some settings influence Vulkan creation options
 	void initBeforePresentation();
@@ -48,6 +50,8 @@ public:
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice device = nullptr;
 	VkInstance vkInstance = nullptr;
+	VkQueue graphicsQueue = nullptr;
+	VkQueue presentQueue = nullptr;
 
 private:
 	vector<const char*> deviceExtensions = {
@@ -71,7 +75,7 @@ private:
 	QueueFamilyIndices familyIndices;
 	// list or select physical devices
 	bool isDeviceSuitable(VkPhysicalDevice device, bool listmode = false);
-	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device);
+	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, bool listmode = false);
 
 	// swap chain query
 	bool checkDeviceExtensionSupport(VkPhysicalDevice phys_device);

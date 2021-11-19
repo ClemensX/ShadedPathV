@@ -25,6 +25,8 @@ void GlobalRendering::initAfterPresentation()
     pickPhysicalDevice(true);
     // pick device
     pickPhysicalDevice();
+    // list queue properties:
+    findQueueFamilies(physicalDevice, true);
     createLogicalDevice();
 }
 
@@ -240,7 +242,7 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
     return familyIndices.isComplete(engine.presentation.enabled) && extensionsSupported && swapChainAdequate;
 }
 
-QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device)
+QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, bool listmode)
 {
     QueueFamilyIndices indices;
 
@@ -253,6 +255,9 @@ QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device)
     for (const auto& queueFamily : queueFamilies) {
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphicsFamily = i;
+            if (listmode) {
+                Log("found graphics queue, max queues: " << queueFamily.queueCount << endl);
+            }
         }
         if (engine.presentation.enabled) {
             VkBool32 presentSupport = false;
@@ -261,7 +266,7 @@ QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device)
                 indices.presentFamily = i;
             }
         }
-        if (indices.isComplete(engine.presentation.enabled)) {
+        if (!listmode && indices.isComplete(engine.presentation.enabled)) {
             break;
         }
         i++;
@@ -305,10 +310,10 @@ void GlobalRendering::createLogicalDevice()
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
         Error("failed to create logical device!");
     }
-    //vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
-    //if (engine.presentation.enabled) {
-    //    vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
-    //}
+    vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+    if (engine.presentation.enabled) {
+        vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
+    }
 }
 
 bool GlobalRendering::checkDeviceExtensionSupport(VkPhysicalDevice phys_device)

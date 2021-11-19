@@ -18,7 +18,7 @@ void ThreadResources::initAll(ShadedPathEngine* engine)
 void ThreadResources::init()
 {
     createFencesAndSemaphores();
-    //createRenderPass();
+    createRenderPass();
 }
 
 void ThreadResources::createFencesAndSemaphores()
@@ -46,7 +46,7 @@ void ThreadResources::createRenderPass()
 {
     // attachment
     VkAttachmentDescription colorAttachment{};
-    //colorAttachment.format = nullptr; // swapChainImageFormat;
+    colorAttachment.format = engine->global.ImageFormat;
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;

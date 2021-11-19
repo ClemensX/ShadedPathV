@@ -44,8 +44,6 @@ engine:
     VkCommandPool commandPool;
     vector<VkCommandBuffer> commandBuffers;
     VkSwapchainKHR swapChain{};
-    VkQueue graphicsQueue = nullptr;
-    VkQueue presentQueue = nullptr;
     QueueFamilyIndices familyIndices;
     vector<VkImage> swapChainImages;
     VkFormat swapChainImageFormat{};
@@ -74,6 +72,8 @@ GlobalRendering
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device = nullptr;
     VkInstance vkInstance = nullptr;
+    VkQueue graphicsQueue = nullptr;
+    VkQueue presentQueue = nullptr;
 
 Shaders
 

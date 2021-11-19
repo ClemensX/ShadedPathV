@@ -28,14 +28,8 @@ public:
 
 	void possiblyAddDeviceExtensions(vector<const char*> &ext);
 
-	// choose swap chain format or list available formats
-	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats, bool listmode = false);
-	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes, bool listmode = false);
-	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
-	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
-
 	// if false we run on headless mode
-	bool enabled = true;
+	bool enabled = false;
 
 	VkSurfaceKHR surface = nullptr;
 	GLFWwindow* window = nullptr;
@@ -45,5 +39,11 @@ private:
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
 	void createSurface();
+	// choose swap chain format or list available formats
+	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats, bool listmode = false);
+	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes, bool listmode = false);
+	VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities);
+	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+
 };
 

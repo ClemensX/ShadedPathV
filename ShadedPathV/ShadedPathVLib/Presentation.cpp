@@ -1,5 +1,31 @@
 #include "pch.h"
 
+void Presentation::init()
+{
+    if (!enabled) return;
+    createSurface();
+}
+
+void Presentation::initAfterDeviceCreation()
+{
+    if (!enabled) return;
+    // list available modes
+    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(engine.global.physicalDevice);
+    chooseSwapSurfaceFormat(swapChainSupport.formats, true);
+    chooseSwapPresentMode(swapChainSupport.presentModes, true);
+}
+
+void Presentation::initGLFW()
+{
+    if (!enabled) return;
+    glfwInit();
+    if (true) {
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        window = glfwCreateWindow(engine.win_width, engine.win_height, engine.win_name, nullptr, nullptr);
+    }
+}
+
 bool Presentation::shouldClose()
 {
 	return true;
@@ -11,29 +37,6 @@ void Presentation::possiblyAddDeviceExtensions(vector<const char*> &ext)
 		for (auto& s : deviceExtensions)
 			ext.push_back(s);
 	}
-}
-
-void Presentation::init()
-{
-    createSurface();
-}
-
-void Presentation::initAfterDeviceCreation()
-{
-    // list available modes
-    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(engine.global.physicalDevice);
-    chooseSwapSurfaceFormat(swapChainSupport.formats, true);
-    chooseSwapPresentMode(swapChainSupport.presentModes, true);
-}
-
-void Presentation::initGLFW()
-{
-    glfwInit();
-    if (true) {
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        window = glfwCreateWindow(engine.win_width, engine.win_height, engine.win_name, nullptr, nullptr);
-    }
 }
 
 void Presentation::createSurface()

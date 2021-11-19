@@ -15,13 +15,8 @@ VkShaderModule Shaders::createShaderModule(const vector<byte>& code)
 
 void Shaders::initiateShader_Triangle()
 {
-	for (auto &res : engine.threadResources) {
-		initiateShader_TriangleSingle(res);
-	}
-}
-
-void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
-{
+	// initialization of globals like shader code
+	//  
 	// load shader binary code
 	vector<byte> file_buffer_vert;
 	vector<byte> file_buffer_frag;
@@ -32,6 +27,15 @@ void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
 	// create shader modules
 	vertShaderModuleTriangle = createShaderModule(file_buffer_vert);
 	fragShaderModuleTriangle = createShaderModule(file_buffer_frag);
+
+	// pipelines must be created for every rendering thread
+	for (auto &res : engine.threadResources) {
+		initiateShader_TriangleSingle(res);
+	}
+}
+
+void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
+{
 	// create shader stage
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -159,7 +163,7 @@ void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = nullptr; // Optional
 	pipelineInfo.layout = res.pipelineLayoutTriangle;
-	pipelineInfo.renderPass = nullptr; // TODO  engine.renderPass;
+	pipelineInfo.renderPass = res.renderPass;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional

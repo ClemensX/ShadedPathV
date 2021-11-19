@@ -8,7 +8,7 @@ public:
 	enum GametimePredefs { GAMEDAY_1_MINUTE = 24 * 60, GAMEDAY_20_SECONDS = 24 * 60 * 3, GAMEDAY_10_SECONDS = 24 * 60 * 6 };
 	// set how much faster a game day passes, 1 == real time, 24*60 is a one minute day
 	// init needs be called before any other time method
-	void initBeforePresentation(LONGLONG gamedayFactor);
+	void init(LONGLONG gamedayFactor);
 private:
 	// measurements:
 	chrono::steady_clock::time_point now;
