@@ -9,6 +9,7 @@ void ShadedPathEngine::init()
     global.initBeforePresentation();
     presentation.init();
     global.initAfterPresentation();
+    presentation.initAfterDeviceCreation();
     ThreadResources::initAll(this);
 }
 

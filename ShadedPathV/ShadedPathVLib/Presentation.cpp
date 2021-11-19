@@ -16,9 +16,14 @@ void Presentation::possiblyAddDeviceExtensions(vector<const char*> &ext)
 void Presentation::init()
 {
     createSurface();
+}
+
+void Presentation::initAfterDeviceCreation()
+{
     // list available modes
-    //chooseSwapSurfaceFormat(swapChainSupport.formats, true);
-    //chooseSwapPresentMode(swapChainSupport.presentModes, true);
+    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(engine.global.physicalDevice);
+    chooseSwapSurfaceFormat(swapChainSupport.formats, true);
+    chooseSwapPresentMode(swapChainSupport.presentModes, true);
 }
 
 void Presentation::initGLFW()

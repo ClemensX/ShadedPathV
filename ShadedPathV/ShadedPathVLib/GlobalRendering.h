@@ -36,6 +36,7 @@ public:
 	// initialize all global Vulkan stuff - engine configuration settings
 	// cannot be changed after calling this, because some settings influence Vulkan creation options
 	void initBeforePresentation();
+	// device selection and creation
 	void initAfterPresentation();
 
 	// destroy global resources, should only be called from engine dtor

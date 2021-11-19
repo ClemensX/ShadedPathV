@@ -20,6 +20,7 @@ public:
 	};
 	
 	void init();
+	void initAfterDeviceCreation();
 	void initGLFW();
 
 
