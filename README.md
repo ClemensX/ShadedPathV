@@ -2,23 +2,24 @@
 
 ## TODO
 Course of action should be like this
-1. (done via themed timer) re-use old fps counter
-1. Decouple Swap chain and backbuffer image rendering
-2. backbuffer image saving
-3. image based tests
-4. Thread pool for backbuffer rendering
-5. optimze thread performance
-6. vr view
-7. asset loading (library)
-8. Shaders
-9. vr controllers
-10. animation
-11. Demos
-12. Games
+
+- [x] \(done via themed timer) re-use old fps counter
+- [ ] Decouple Swap chain and backbuffer image rendering
+- [ ] backbuffer image saving
+- [ ] image based tests
+- [ ] Thread pool for backbuffer rendering
+- [ ] optimze thread performance
+- [ ] vr view
+- [ ] asset loading (library)
+- [ ] Shaders
+- [ ] vr controllers
+- [ ] animation
+- [ ] Demos
+- [ ] Games
 
 ## Formats
 
-To decide formats to use we can run the engine in presentation mode and get a list of all supported swap chain formats and presentation modes. On my Laptop an PC I get list below. We decided for the formats in **bold**
+To decide formats to use we can run the engine in presentation mode and get a list of all supported swap chain formats and presentation modes. On my Laptop and PC I get list below. We decided for the formats in **bold**
 
 ### Swap Chain Color Fomat and Space
 | Format | VkFormat | Color Space | VkColorSpaceKHR |
