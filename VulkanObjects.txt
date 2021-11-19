@@ -41,7 +41,6 @@ ThreadResources:
 engine:
 
     vector<VkFramebuffer> framebuffers;
-    VkCommandPool commandPool;
     vector<VkCommandBuffer> commandBuffers;
     VkSwapchainKHR swapChain{};
     QueueFamilyIndices familyIndices;
@@ -55,9 +54,6 @@ GlobalRendering:
 
 ThreadResources:
 
-	VkSemaphore imageAvailableSemaphore = nullptr;
-	VkSemaphore renderFinishedSemaphore = nullptr;
-	VkFence inFlightFence = nullptr;
 
 ################
 
@@ -83,9 +79,13 @@ Shaders
 
 ThreadResources
 
+	VkSemaphore imageAvailableSemaphore = nullptr;
+	VkSemaphore renderFinishedSemaphore = nullptr;
+	VkFence inFlightFence = nullptr;
 	VkPipelineLayout pipelineLayoutTriangle = nullptr;
 	VkPipeline graphicsPipelineTriangle = nullptr;
     VkRenderPass renderPass = nullptr;
+    VkCommandPool commandPool;
 
 Presentation
 

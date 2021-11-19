@@ -20,8 +20,12 @@ public:
 	VkPipelineLayout pipelineLayoutTriangle = nullptr;
 	VkPipeline graphicsPipelineTriangle = nullptr;
 	VkRenderPass renderPass = nullptr;
+	VkCommandPool commandPool;
 private:
 	void createFencesAndSemaphores();
 	void createRenderPass();
+	void createImage();
+	void createCommandPool();
+	FrameBufferAttachment colorAttachment, depthAttachment;
 };
 

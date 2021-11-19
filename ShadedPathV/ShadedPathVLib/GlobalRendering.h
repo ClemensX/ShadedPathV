@@ -45,6 +45,7 @@ public:
 	void destroy();
 	Files files;
 	void createLogicalDevice();
+	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, bool listmode = false);
 
 	// Vulkan 
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
@@ -75,7 +76,6 @@ private:
 	QueueFamilyIndices familyIndices;
 	// list or select physical devices
 	bool isDeviceSuitable(VkPhysicalDevice device, bool listmode = false);
-	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, bool listmode = false);
 
 	// swap chain query
 	bool checkDeviceExtensionSupport(VkPhysicalDevice phys_device);

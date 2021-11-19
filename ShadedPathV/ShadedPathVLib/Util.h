@@ -36,3 +36,9 @@ private:
     vector<string> lines;
 };
 
+struct FrameBufferAttachment {
+    VkImage image;
+    VkDeviceMemory memory;
+    VkImageView view;
+};
+
