@@ -20,6 +20,7 @@ void ThreadResources::init()
     createFencesAndSemaphores();
     createRenderPass();
     createImage();
+    createFrameBuffer();
     createCommandPool();
 }
 
@@ -166,6 +167,26 @@ void ThreadResources::createImage()
 */
 }
 
+void ThreadResources::createFrameBuffer()
+{
+    VkImageView attachments[] = {
+        colorAttachment.view
+    };
+
+    VkFramebufferCreateInfo framebufferInfo{};
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass = renderPass;
+    framebufferInfo.attachmentCount = 1;
+    framebufferInfo.pAttachments = attachments;
+    framebufferInfo.width = engine->getCurrentExtent().width;
+    framebufferInfo.height = engine->getCurrentExtent().height;
+    framebufferInfo.layers = 1;
+
+    if (vkCreateFramebuffer(engine->global.device, &framebufferInfo, nullptr, &framebuffer) != VK_SUCCESS) {
+        Error("failed to create framebuffer!");
+    }
+}
+
 void ThreadResources::createCommandPool()
 {
     QueueFamilyIndices queueFamilyIndices = engine->global.findQueueFamilies(engine->global.physicalDevice);
@@ -179,6 +200,45 @@ void ThreadResources::createCommandPool()
     }
 }
 
+// individual shader methods
+void ThreadResources::createCommandBufferTriangle()
+{
+    auto& device = engine->global.device;
+    auto& global = engine->global;
+    auto& shaders = engine->shaders;
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = commandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = (uint32_t)1;
+
+    if (vkAllocateCommandBuffers(device, &allocInfo, &commandBufferTriangle) != VK_SUCCESS) {
+        Error("failed to allocate command buffers!");
+    }
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = 0; // Optional
+    beginInfo.pInheritanceInfo = nullptr; // Optional
+
+    if (vkBeginCommandBuffer(commandBufferTriangle, &beginInfo) != VK_SUCCESS) {
+        Error("failed to begin recording triangle command buffer!");
+    }
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = renderPass;
+    renderPassInfo.framebuffer = framebuffer;
+    renderPassInfo.renderArea.offset = { 0, 0 };
+    renderPassInfo.renderArea.extent = engine->getCurrentExtent();
+    VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues = &clearColor;
+    vkCmdBeginRenderPass(commandBufferTriangle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    shaders.recordDrawCommand_Triangle(commandBufferTriangle, *this);
+    vkCmdEndRenderPass(commandBufferTriangle);
+    if (vkEndCommandBuffer(commandBufferTriangle) != VK_SUCCESS) {
+        Error("failed to record triangle command buffer!");
+    }
+}
 
 ThreadResources::~ThreadResources()
 {

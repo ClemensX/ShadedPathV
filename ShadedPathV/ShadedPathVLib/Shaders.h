@@ -12,6 +12,7 @@ public:
 	void drawFrame_Triangle();
 	bool shouldClose();
 	VkShaderModule createShaderModule(const vector<byte>& code);
+	void recordDrawCommand_Triangle(VkCommandBuffer& commandBuffer, ThreadResources &tr);
 
 private:
 	void initiateShader_TriangleSingle(ThreadResources &res);

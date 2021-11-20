@@ -21,9 +21,15 @@ public:
 	VkPipeline graphicsPipelineTriangle = nullptr;
 	VkRenderPass renderPass = nullptr;
 	VkCommandPool commandPool;
+	VkFramebuffer framebuffer = nullptr;
+
+	// for each shader: command buffer 
+	void createCommandBufferTriangle();
+	VkCommandBuffer commandBufferTriangle;
 private:
 	void createFencesAndSemaphores();
 	void createRenderPass();
+	void createFrameBuffer();
 	void createImage();
 	void createCommandPool();
 	FrameBufferAttachment colorAttachment, depthAttachment;

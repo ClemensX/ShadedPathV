@@ -40,10 +40,7 @@ ThreadResources:
 ################ copy
 engine:
 
-    vector<VkFramebuffer> framebuffers;
-    vector<VkCommandBuffer> commandBuffers;
     VkSwapchainKHR swapChain{};
-    QueueFamilyIndices familyIndices;
     vector<VkImage> swapChainImages;
     VkFormat swapChainImageFormat{};
     VkExtent2D swapChainExtent{};
@@ -70,6 +67,7 @@ GlobalRendering
     VkInstance vkInstance = nullptr;
     VkQueue graphicsQueue = nullptr;
     VkQueue presentQueue = nullptr;
+    QueueFamilyIndices familyIndices;
 
 Shaders
 
@@ -86,6 +84,8 @@ ThreadResources
 	VkPipeline graphicsPipelineTriangle = nullptr;
     VkRenderPass renderPass = nullptr;
     VkCommandPool commandPool;
+    VkFramebuffer framebuffer;
+    VkCommandBuffer commandBuffer;
 
 Presentation
 

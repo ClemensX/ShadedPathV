@@ -22,6 +22,9 @@ VkExtent2D ShadedPathEngine::getCurrentExtent()
 
 void ShadedPathEngine::prepareDrawing()
 {
+    for (ThreadResources& tr : threadResources) {
+        tr.createCommandBufferTriangle();
+    }
 }
 
 void ShadedPathEngine::drawFrame()

@@ -177,6 +177,12 @@ bool Shaders::shouldClose()
 	return false;
 }
 
+void Shaders::recordDrawCommand_Triangle(VkCommandBuffer& commandBuffer, ThreadResources& tr)
+{
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.graphicsPipelineTriangle);
+	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+}
+
 void Shaders::drawFrame_Triangle()
 {
 	// select the right thread resources
