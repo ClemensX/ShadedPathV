@@ -192,4 +192,47 @@ void Shaders::drawFrame_Triangle()
 	// wait for fence signal
 	vkWaitForFences(engine.global.device, 1, &tr.inFlightFence, VK_TRUE, UINT64_MAX);
 	vkResetFences(engine.global.device, 1, &tr.inFlightFence);
+
+
+	//uint32_t imageIndex;
+	//vkAcquireNextImageKHR(engine.device, engine.swapChain, UINT64_MAX, tr.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+	//VkSemaphore waitSemaphores[] = { tr.imageAvailableSemaphore };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submitInfo.waitSemaphoreCount = 0;
+	submitInfo.pWaitSemaphores = nullptr;//waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &tr.commandBufferTriangle;
+	VkSemaphore signalSemaphores[] = { tr.renderFinishedSemaphore };
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+	if (vkQueueSubmit(engine.global.graphicsQueue, 1, &submitInfo, tr.inFlightFence) != VK_SUCCESS) {
+		Error("failed to submit draw command buffer!");
+	}
+	//VkPresentInfoKHR presentInfo{};
+	//presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+	//presentInfo.waitSemaphoreCount = 1;
+	//presentInfo.pWaitSemaphores = signalSemaphores;
+
+	//VkSwapchainKHR swapChains[] = { engine.swapChain };
+	//presentInfo.swapchainCount = 1;
+	//presentInfo.pSwapchains = swapChains;
+	//presentInfo.pImageIndices = &imageIndex;
+	//presentInfo.pResults = nullptr; // Optional
+	//vkQueuePresentKHR(engine.presentQueue, &presentInfo);
+	const uint64_t waitValue = 1;
+	VkSemaphore signalWaitSemaphores[] = { tr.renderFinishedSemaphore };
+	VkSemaphoreWaitInfo waitInfo;
+	waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
+	waitInfo.pNext = NULL;
+	waitInfo.flags = 0;
+	waitInfo.semaphoreCount = 1;
+	waitInfo.pSemaphores = signalWaitSemaphores;
+	waitInfo.pValues = &waitValue;
+	//vkWaitSemaphores(engine.global.device, &waitInfo, UINT64_MAX);
+	ThemedTimer::getInstance()->add("DrawFrame");
 }

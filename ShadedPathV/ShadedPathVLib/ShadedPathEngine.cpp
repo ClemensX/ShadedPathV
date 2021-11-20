@@ -32,6 +32,7 @@ void ShadedPathEngine::drawFrame()
     ThemedTimer::getInstance()->add("DrawFrame");
     shaders.drawFrame_Triangle();
     frameNum++;
+    currentFrameIndex = frameNum % framesInFlight;
 }
 
 void ShadedPathEngine::pollEvents()
