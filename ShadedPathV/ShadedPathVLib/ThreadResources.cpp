@@ -245,5 +245,6 @@ ThreadResources::~ThreadResources()
 	vkDestroySemaphore(engine->global.device, imageAvailableSemaphore, nullptr);
 	vkDestroySemaphore(engine->global.device, renderFinishedSemaphore, nullptr);
 	vkDestroyFence(engine->global.device, inFlightFence, nullptr);
+    Log("ThreadResource destructed: " << this << endl);
 };
 

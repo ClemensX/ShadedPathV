@@ -206,9 +206,9 @@ void Shaders::drawFrame_Triangle()
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &tr.commandBufferTriangle;
-	VkSemaphore signalSemaphores[] = { tr.renderFinishedSemaphore };
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
+	//VkSemaphore signalSemaphores[] = { tr.renderFinishedSemaphore };
+	submitInfo.signalSemaphoreCount = 0;
+	submitInfo.pSignalSemaphores = nullptr; // signalSemaphores;
 	if (vkQueueSubmit(engine.global.graphicsQueue, 1, &submitInfo, tr.inFlightFence) != VK_SUCCESS) {
 		Error("failed to submit draw command buffer!");
 	}
@@ -224,15 +224,16 @@ void Shaders::drawFrame_Triangle()
 	//presentInfo.pImageIndices = &imageIndex;
 	//presentInfo.pResults = nullptr; // Optional
 	//vkQueuePresentKHR(engine.presentQueue, &presentInfo);
-	const uint64_t waitValue = 1;
-	VkSemaphore signalWaitSemaphores[] = { tr.renderFinishedSemaphore };
-	VkSemaphoreWaitInfo waitInfo;
-	waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
-	waitInfo.pNext = NULL;
-	waitInfo.flags = 0;
-	waitInfo.semaphoreCount = 1;
-	waitInfo.pSemaphores = signalWaitSemaphores;
-	waitInfo.pValues = &waitValue;
+
+	//const uint64_t waitValue = 1;
+	//VkSemaphore signalWaitSemaphores[] = { tr.renderFinishedSemaphore };
+	//VkSemaphoreWaitInfo waitInfo;
+	//waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
+	//waitInfo.pNext = NULL;
+	//waitInfo.flags = 0;
+	//waitInfo.semaphoreCount = 0;
+	//waitInfo.pSemaphores = nullptr;//signalWaitSemaphores;
+	//waitInfo.pValues = &waitValue;
 	//vkWaitSemaphores(engine.global.device, &waitInfo, UINT64_MAX);
 	ThemedTimer::getInstance()->add("DrawFrame");
 }

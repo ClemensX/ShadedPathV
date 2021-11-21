@@ -17,6 +17,7 @@ public:
     virtual ~ShadedPathEngine()
     {
         Log("Engine destructor\n");
+        if (global.device) vkDeviceWaitIdle(global.device);
         ThemedTimer::getInstance()->logInfo("DrawFrame");
         ThemedTimer::getInstance()->logFPS("DrawFrame");
     };
