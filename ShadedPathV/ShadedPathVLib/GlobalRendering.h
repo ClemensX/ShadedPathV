@@ -31,6 +31,7 @@ public:
 
 	~GlobalRendering() {
 		Log("GlobalRendering destructor\n");
+		shutdown();
 	};
 
 	const VkFormat ImageFormat = VK_FORMAT_B8G8R8A8_SRGB;
@@ -42,7 +43,7 @@ public:
 	void initAfterPresentation();
 
 	// destroy global resources, should only be called from engine dtor
-	void destroy();
+	void shutdown();
 	Files files;
 	void createLogicalDevice();
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, bool listmode = false);

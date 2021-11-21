@@ -30,9 +30,31 @@ void GlobalRendering::initAfterPresentation()
     createLogicalDevice();
 }
 
-void GlobalRendering::destroy()
+void GlobalRendering::shutdown()
 {
-    // destroy 
+    // TODO check for correct cleanup in non-presentation mode
+    //vkDestroyCommandPool(device, commandPool, nullptr);
+    //for (auto framebuffer : framebuffers) {
+    //    vkDestroyFramebuffer(device, framebuffer, nullptr);
+    //}
+    //vkDestroyRenderPass(device, renderPass, nullptr);
+    //// destroy swap chain image views
+    //for (auto imageView : swapChainImageViews) {
+    //    vkDestroyImageView(device, imageView, nullptr);
+    //}
+    //vkDestroySwapchainKHR(device, swapChain, nullptr);
+    //vkDestroySurfaceKHR(vkInstance, surface, nullptr);
+    if (enableValidationLayers) {
+        DestroyDebugUtilsMessengerEXT(vkInstance, debugMessenger, nullptr);
+    }
+    vkDestroyDevice(device, nullptr);
+    device = nullptr;
+    vkDestroyInstance(vkInstance, nullptr);
+    vkInstance = nullptr;
+    //if (presentationEnabled) {
+    //    glfwDestroyWindow(window);
+    //}
+    glfwTerminate();
 }
 
 void GlobalRendering::gatherDeviceExtensions()

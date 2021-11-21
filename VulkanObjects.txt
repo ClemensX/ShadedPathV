@@ -86,7 +86,9 @@ ThreadResources
     VkCommandPool commandPool;
     VkFramebuffer framebuffer;
     VkCommandBuffer commandBuffer;
-
+	FrameBufferAttachment colorAttachment, depthAttachment; (VkImage,VkDeviceMemory,VkImageView)
+})
+	
 Presentation
 
     VkSurfaceKHR surface = nullptr;

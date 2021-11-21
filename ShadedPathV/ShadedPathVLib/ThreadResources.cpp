@@ -242,9 +242,27 @@ void ThreadResources::createCommandBufferTriangle()
 
 ThreadResources::~ThreadResources()
 {
-	vkDestroySemaphore(engine->global.device, imageAvailableSemaphore, nullptr);
-	vkDestroySemaphore(engine->global.device, renderFinishedSemaphore, nullptr);
-	vkDestroyFence(engine->global.device, inFlightFence, nullptr);
+    auto& device = engine->global.device;
+    auto& global = engine->global;
+    auto& shaders = engine->shaders;
+    vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
+	vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
+	vkDestroyFence(device, inFlightFence, nullptr);
+    vkDestroyCommandPool(device, commandPool, nullptr);
+    vkDestroyFramebuffer(device, framebuffer, nullptr);
+    vkDestroyRenderPass(device, renderPass, nullptr);
+    vkDestroyImageView(device, imageDumpAttachment.view, nullptr);
+    vkDestroyImage(device, imageDumpAttachment.image, nullptr);
+    vkFreeMemory(device, imageDumpAttachment.memory, nullptr);
+    vkDestroyImageView(device, colorAttachment.view, nullptr);
+    vkDestroyImage(device, colorAttachment.image, nullptr);
+    vkFreeMemory(device, colorAttachment.memory, nullptr);
+    vkDestroyPipeline(device, graphicsPipelineTriangle, nullptr);
+    vkDestroyPipelineLayout(device, pipelineLayoutTriangle, nullptr);
+    // destroy swap chain image views
+    //for (auto imageView : swapChainImageViews) {
+    //    vkDestroyImageView(device, imageView, nullptr);
+    //}
     Log("ThreadResource destructed: " << this << endl);
 };
 

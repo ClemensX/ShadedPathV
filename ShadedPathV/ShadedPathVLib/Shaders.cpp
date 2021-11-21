@@ -172,6 +172,50 @@ void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
 	}
 }
 
+void Shaders::initiateShader_BackBufferImageDump()
+{
+	for (auto& res : engine.threadResources) {
+		initiateShader_BackBufferImageDumpSingle(res);
+	}
+}
+
+void Shaders::initiateShader_BackBufferImageDumpSingle(ThreadResources& res)
+{
+	auto& device = engine.global.device;
+	auto& global = engine.global;
+	VkImageCreateInfo image{};
+	image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	image.imageType = VK_IMAGE_TYPE_2D;
+	image.format = engine.global.ImageFormat;
+	image.extent.width = engine.getCurrentExtent().width;
+	image.extent.height = engine.getCurrentExtent().height;
+	image.extent.depth = 1;
+	image.mipLevels = 1;
+	image.arrayLayers = 1;
+
+	image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	image.samples = VK_SAMPLE_COUNT_1_BIT;
+	image.tiling = VK_IMAGE_TILING_LINEAR;
+	image.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	VkMemoryAllocateInfo memAlloc{};
+	memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	VkMemoryRequirements memReqs;
+
+	if (vkCreateImage(device, &image, nullptr, &res.imageDumpAttachment.image) != VK_SUCCESS) {
+		Error("failed to create image dump image!");
+	}
+	vkGetImageMemoryRequirements(device, res.imageDumpAttachment.image, &memReqs);
+	memAlloc.allocationSize = memReqs.size;
+	memAlloc.memoryTypeIndex = global.findMemoryTypeIndex(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	if (vkAllocateMemory(device, &memAlloc, nullptr, &res.imageDumpAttachment.memory) != VK_SUCCESS) {
+		Error("failed to allocate image dump memory");
+	}
+	if (vkBindImageMemory(device, res.imageDumpAttachment.image, res.imageDumpAttachment.memory, 0) != VK_SUCCESS) {
+		Error("failed to bind image memory");
+	}
+
+}
+
 bool Shaders::shouldClose()
 {
 	return false;
@@ -236,4 +280,11 @@ void Shaders::drawFrame_Triangle()
 	//waitInfo.pValues = &waitValue;
 	//vkWaitSemaphores(engine.global.device, &waitInfo, UINT64_MAX);
 	ThemedTimer::getInstance()->add("DrawFrame");
+}
+
+Shaders::~Shaders()
+{
+	Log("Shaders destructor\n");
+	vkDestroyShaderModule(engine.global.device, fragShaderModuleTriangle, nullptr);
+	vkDestroyShaderModule(engine.global.device, vertShaderModuleTriangle, nullptr);
 }

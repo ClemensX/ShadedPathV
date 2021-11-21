@@ -12,6 +12,7 @@ void SimpleApp::run()
         engine.setFramesInFlight(2);
         engine.init();
         engine.shaders.initiateShader_Triangle();
+        engine.shaders.initiateShader_BackBufferImageDump();
         engine.prepareDrawing();
         while (!engine.shouldClose()) {
             engine.pollEvents();
