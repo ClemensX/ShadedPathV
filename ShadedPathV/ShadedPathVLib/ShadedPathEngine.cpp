@@ -25,12 +25,16 @@ void ShadedPathEngine::prepareDrawing()
     for (ThreadResources& tr : threadResources) {
         tr.createCommandBufferTriangle();
     }
+    //for (ThreadResources& tr : threadResources) {
+    //    shaders.createCommandBufferBackBufferImageDump(tr);
+    //}
 }
 
 void ShadedPathEngine::drawFrame()
 {
     ThemedTimer::getInstance()->add("DrawFrame");
     shaders.drawFrame_Triangle();
+    shaders.executeBufferImageDump();
     frameNum++;
     currentFrameIndex = frameNum % framesInFlight;
 }

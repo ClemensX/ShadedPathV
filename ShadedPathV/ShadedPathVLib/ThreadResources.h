@@ -28,14 +28,16 @@ public:
 
 	// for each shader: command buffer 
 	void createCommandBufferTriangle();
+	FrameBufferAttachment colorAttachment, depthAttachment;
 	VkCommandBuffer commandBufferTriangle;
 	FrameBufferAttachment imageDumpAttachment{};
+	VkCommandBuffer commandBufferImageDump;
+	VkFence imageDumpFence = nullptr;
 private:
 	void createFencesAndSemaphores();
 	void createRenderPass();
 	void createFrameBuffer();
 	void createImage();
 	void createCommandPool();
-	FrameBufferAttachment colorAttachment, depthAttachment;
 };
 

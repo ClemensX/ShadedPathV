@@ -43,6 +43,9 @@ void ThreadResources::createFencesAndSemaphores()
     if (vkCreateFence(engine->global.device, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
         Error("failed to create inFlightFence for a frame");
     }
+    if (vkCreateFence(engine->global.device, &fenceInfo, nullptr, &imageDumpFence) != VK_SUCCESS) {
+        Error("failed to create inFlightFence for a frame");
+    }
 }
 
 void ThreadResources::createRenderPass()
@@ -56,7 +59,7 @@ void ThreadResources::createRenderPass()
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 
     // subpasses and attachment references
     VkAttachmentReference colorAttachmentRef{};
@@ -247,7 +250,8 @@ ThreadResources::~ThreadResources()
     auto& shaders = engine->shaders;
     vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
 	vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
-	vkDestroyFence(device, inFlightFence, nullptr);
+    vkDestroyFence(device, imageDumpFence, nullptr);
+    vkDestroyFence(device, inFlightFence, nullptr);
     vkDestroyCommandPool(device, commandPool, nullptr);
     vkDestroyFramebuffer(device, framebuffer, nullptr);
     vkDestroyRenderPass(device, renderPass, nullptr);

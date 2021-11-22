@@ -282,6 +282,105 @@ void Shaders::drawFrame_Triangle()
 	ThemedTimer::getInstance()->add("DrawFrame");
 }
 
+void Shaders::executeBufferImageDump()
+{
+	auto& res = engine.threadResources[engine.currentFrameIndex];
+	auto& device = engine.global.device;
+	auto& global = engine.global;
+	VkCommandBufferAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.commandPool = res.commandPool;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandBufferCount = (uint32_t)1;
+
+	if (vkAllocateCommandBuffers(device, &allocInfo, &res.commandBufferImageDump) != VK_SUCCESS) {
+		Error("failed to allocate command buffers!");
+	}
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = 0; // Optional
+	beginInfo.pInheritanceInfo = nullptr; // Optional
+
+	if (vkBeginCommandBuffer(res.commandBufferImageDump, &beginInfo) != VK_SUCCESS) {
+		Error("failed to begin recording triangle command buffer!");
+	}
+
+	// Transition destination image to transfer destination layout
+	VkImageMemoryBarrier dstBarrier{};
+	dstBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	dstBarrier.srcAccessMask = 0;
+	dstBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	dstBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	dstBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	dstBarrier.image = res.imageDumpAttachment.image;
+	dstBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+	vkCmdPipelineBarrier(res.commandBufferImageDump, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+		0, 0, nullptr, 0, nullptr, 1, &dstBarrier);
+
+	VkImageCopy imageCopyRegion{};
+	imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageCopyRegion.srcSubresource.layerCount = 1;
+	imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageCopyRegion.dstSubresource.layerCount = 1;
+	imageCopyRegion.extent.width = engine.getCurrentExtent().width;
+	imageCopyRegion.extent.height = engine.getCurrentExtent().height;
+	imageCopyRegion.extent.depth = 1;
+
+	vkCmdCopyImage(
+		res.commandBufferImageDump,
+		res.colorAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		res.imageDumpAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		1,
+		&imageCopyRegion);
+
+/*
+				copyCmd,
+				dstImage,
+				VK_ACCESS_TRANSFER_WRITE_BIT,
+				VK_ACCESS_MEMORY_READ_BIT,
+				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				VK_IMAGE_LAYOUT_GENERAL,
+				VK_PIPELINE_STAGE_TRANSFER_BIT,
+				VK_PIPELINE_STAGE_TRANSFER_BIT,
+				VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
+
+*/
+	VkImageMemoryBarrier dstBarrier2{};
+	dstBarrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	dstBarrier2.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	dstBarrier2.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+	dstBarrier2.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	dstBarrier2.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+	dstBarrier2.image = res.imageDumpAttachment.image;
+	dstBarrier2.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+	vkCmdPipelineBarrier(res.commandBufferImageDump, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+		0, 0, nullptr, 0, nullptr, 1, &dstBarrier2);
+	//VkRenderPassBeginInfo renderPassInfo{};
+	//renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	//renderPassInfo.renderPass = renderPass;
+	//renderPassInfo.framebuffer = framebuffer;
+	//renderPassInfo.renderArea.offset = { 0, 0 };
+	//renderPassInfo.renderArea.extent = engine->getCurrentExtent();
+	//VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+	//renderPassInfo.clearValueCount = 1;
+	//renderPassInfo.pClearValues = &clearColor;
+	//vkCmdBeginRenderPass(commandBufferTriangle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	//shaders.recordDrawCommand_Triangle(commandBufferTriangle, *this);
+	//vkCmdEndRenderPass(res.commandBufferImageDump);
+	if (vkEndCommandBuffer(res.commandBufferImageDump) != VK_SUCCESS) {
+		Error("failed to record triangle command buffer!");
+	}
+	vkWaitForFences(engine.global.device, 1, &res.imageDumpFence, VK_TRUE, UINT64_MAX);
+	vkResetFences(engine.global.device, 1, &res.imageDumpFence);
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &res.commandBufferImageDump;
+	if (vkQueueSubmit(engine.global.graphicsQueue, 1, &submitInfo, res.imageDumpFence) != VK_SUCCESS) {
+		Error("failed to submit draw command buffer!");
+	}
+}
+
 Shaders::~Shaders()
 {
 	Log("Shaders destructor\n");
