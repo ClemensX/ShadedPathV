@@ -6,7 +6,7 @@
 #define FX_PATH "..\\x64\\Release\\"
 #endif
 
-#define TEXTURE_PATH "..\\..\\data\\texture\\"
+#define TEXTURE_PATH "..\\..\\..\\data\\texture\\"
 #define MESH_PATH "..\\..\\data\\mesh\\"
 #define SOUND_PATH "..\\..\\data\\sound\\"
 
@@ -57,6 +57,18 @@ string Files::findFile(string filename, FileCategory cat, bool errorIfNotFound, 
 		return filename;
 	}
 	return string();
+}
+
+bool Files::checkFileForWrite(string filename)
+{
+	std::ofstream file(filename, std::ios::out | std::ios::binary);
+	if (file.fail()) {
+		Log("could not open file for write " << filesystem::absolute(filename) << endl);
+		file.close();
+		return false;
+	}
+	file.close();
+	return true;
 }
 
 void Files::readFile(string filename, vector<byte>& buffer, FileCategory cat) {

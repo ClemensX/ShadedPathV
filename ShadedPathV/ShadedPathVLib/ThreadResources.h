@@ -28,6 +28,8 @@ public:
 	FrameBufferAttachment imageDumpAttachment{};
 	VkCommandBuffer commandBufferImageDump;
 	VkFence imageDumpFence = nullptr;
+	VkSubresourceLayout subResourceLayout;
+
 
 	// triangle shader 
 	void createCommandBufferTriangle();

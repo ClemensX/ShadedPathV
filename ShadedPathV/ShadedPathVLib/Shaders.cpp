@@ -223,7 +223,7 @@ void Shaders::initiateShader_BackBufferImageDumpSingle(ThreadResources& res)
 	// Map image memory so we can start copying from it
 	vkMapMemory(device, res.imageDumpAttachment.memory, 0, VK_WHOLE_SIZE, 0, (void**)&res.imagedata);
 	res.imagedata += subResourceLayout.offset;
-
+	res.subResourceLayout = subResourceLayout;
 }
 
 bool Shaders::shouldClose()
@@ -389,21 +389,43 @@ void Shaders::executeBufferImageDump()
 	if (vkQueueSubmit(engine.global.graphicsQueue, 1, &submitInfo, res.imageDumpFence) != VK_SUCCESS) {
 		Error("failed to submit draw command buffer!");
 	}
-	//// Get layout of the image (including row pitch)
-	//VkImageSubresource subResource{};
-	//subResource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	//VkSubresourceLayout subResourceLayout;
 
-	//vkGetImageSubresourceLayout(device, res.imageDumpAttachment.image, &subResource, &subResourceLayout);
+	// now copy image data to file:
 
-	//// Map image memory so we can start copying from it
-	//const char* imagedata = nullptr;
-	//vkMapMemory(device, res.imageDumpAttachment.memory, 0, VK_WHOLE_SIZE, 0, (void**)&imagedata);
-	//imagedata += subResourceLayout.offset;
-	// Save host visible framebuffer image to disk (ppm format)
+	stringstream name;
+	name << "out_" << setw(2) << setfill('0') << imageCouter++ << ".ppm";
+	auto filename = engine.files.findFile(name.str(), FileCategory::TEXTURE, false, true);
+	if (!engine.files.checkFileForWrite(filename)) {
+		return;
+	}
+	std::ofstream file(filename, std::ios::out | std::ios::binary);
+	int32_t height = imageCopyRegion.extent.height;
+	int32_t width = imageCopyRegion.extent.width;
+	// ppm header
+	file << "P6\n" << imageCopyRegion.extent.width << "\n" << imageCopyRegion.extent.height << "\n" << 255 << "\n";
 
-	//vkUnmapMemory(device, dstImageMemory);
-	//vkFreeMemory(device, dstImageMemory, nullptr);
+	// If source is BGR (destination is always RGB) and we can't use blit (which does automatic conversion), we'll have to manually swizzle color components
+	// Check if source is BGR and needs swizzle
+	std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
+	const bool colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), VK_FORMAT_R8G8B8A8_UNORM) != formatsBGR.end());
+	const char* imagedata = res.imagedata;
+	// ppm binary pixel data
+	for (int32_t y = 0; y < height; y++) {
+		unsigned int* row = (unsigned int*)imagedata;
+		for (int32_t x = 0; x < width; x++) {
+			if (colorSwizzle) {
+				file.write((char*)row + 2, 1);
+				file.write((char*)row + 1, 1);
+				file.write((char*)row, 1);
+			}
+			else {
+				file.write((char*)row, 3);
+			}
+			row++;
+		}
+		imagedata += res.subResourceLayout.rowPitch;
+	}
+	file.close();
 }
 
 Shaders::~Shaders()

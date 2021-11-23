@@ -10,8 +10,10 @@ public:
 	// find absolute filename for a name and category, defaults to display error dialog, returns empty filename if not found and errorIfNotFound is set to false,
 	// returns full file path if generateFilenameMode == true (use to create files)
 	string findFile(string filename, FileCategory cat, bool errorIfNotFound = true, bool generateFilenameMode = false);
-	//string findFileForCreation(string filename, FileCategory cat) { return findFile(filename, cat, false, true); };
+	string findFileForCreation(string filename, FileCategory cat) { return findFile(filename, cat, false, true); };
 	void readFile(string filename, vector<byte>& buffer, FileCategory cat);
+	// check file can be opened for write operation. Logs error if not.
+	bool checkFileForWrite(string filename);
 	//void readFile(PakEntry* pakEntry, vector<byte>& buffer, FileCategory cat);
 	//PakEntry* findFileInPak(wstring filename);
 	void initPakFiles();

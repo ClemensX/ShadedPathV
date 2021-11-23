@@ -20,5 +20,6 @@ private:
 	ShadedPathEngine& engine;
 	VkShaderModule vertShaderModuleTriangle = nullptr;
 	VkShaderModule fragShaderModuleTriangle = nullptr;
+	unsigned int imageCouter = 0;
 };
 
