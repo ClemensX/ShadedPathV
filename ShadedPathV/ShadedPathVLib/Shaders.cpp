@@ -213,6 +213,16 @@ void Shaders::initiateShader_BackBufferImageDumpSingle(ThreadResources& res)
 	if (vkBindImageMemory(device, res.imageDumpAttachment.image, res.imageDumpAttachment.memory, 0) != VK_SUCCESS) {
 		Error("failed to bind image memory");
 	}
+	// Get layout of the image (including row pitch)
+	VkImageSubresource subResource{};
+	subResource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	VkSubresourceLayout subResourceLayout;
+
+	vkGetImageSubresourceLayout(device, res.imageDumpAttachment.image, &subResource, &subResourceLayout);
+
+	// Map image memory so we can start copying from it
+	vkMapMemory(device, res.imageDumpAttachment.memory, 0, VK_WHOLE_SIZE, 0, (void**)&res.imagedata);
+	res.imagedata += subResourceLayout.offset;
 
 }
 
@@ -379,6 +389,21 @@ void Shaders::executeBufferImageDump()
 	if (vkQueueSubmit(engine.global.graphicsQueue, 1, &submitInfo, res.imageDumpFence) != VK_SUCCESS) {
 		Error("failed to submit draw command buffer!");
 	}
+	//// Get layout of the image (including row pitch)
+	//VkImageSubresource subResource{};
+	//subResource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	//VkSubresourceLayout subResourceLayout;
+
+	//vkGetImageSubresourceLayout(device, res.imageDumpAttachment.image, &subResource, &subResourceLayout);
+
+	//// Map image memory so we can start copying from it
+	//const char* imagedata = nullptr;
+	//vkMapMemory(device, res.imageDumpAttachment.memory, 0, VK_WHOLE_SIZE, 0, (void**)&imagedata);
+	//imagedata += subResourceLayout.offset;
+	// Save host visible framebuffer image to disk (ppm format)
+
+	//vkUnmapMemory(device, dstImageMemory);
+	//vkFreeMemory(device, dstImageMemory, nullptr);
 }
 
 Shaders::~Shaders()

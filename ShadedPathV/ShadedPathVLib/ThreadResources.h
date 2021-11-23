@@ -23,16 +23,16 @@ public:
 	VkCommandPool commandPool;
 	VkFramebuffer framebuffer = nullptr;
 
-	// framebuffer image dump:
-	const char* imagedata;
-
-	// for each shader: command buffer 
-	void createCommandBufferTriangle();
-	FrameBufferAttachment colorAttachment, depthAttachment;
-	VkCommandBuffer commandBufferTriangle;
+	// backbuffer image dump:
+	const char* imagedata = nullptr;
 	FrameBufferAttachment imageDumpAttachment{};
 	VkCommandBuffer commandBufferImageDump;
 	VkFence imageDumpFence = nullptr;
+
+	// triangle shader 
+	void createCommandBufferTriangle();
+	FrameBufferAttachment colorAttachment, depthAttachment;
+	VkCommandBuffer commandBufferTriangle;
 private:
 	void createFencesAndSemaphores();
 	void createRenderPass();
