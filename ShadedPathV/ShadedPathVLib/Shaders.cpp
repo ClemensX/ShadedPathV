@@ -69,14 +69,14 @@ void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
 	VkViewport viewport{};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = (float)engine.getCurrentExtent().width;
-	viewport.height = (float)engine.getCurrentExtent().height;
+	viewport.width = (float)engine.getBackBufferExtent().width;
+	viewport.height = (float)engine.getBackBufferExtent().height;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	VkRect2D scissor{};
 	scissor.offset = { 0, 0 };
-	scissor.extent = engine.getCurrentExtent();
+	scissor.extent = engine.getBackBufferExtent();
 
 	VkPipelineViewportStateCreateInfo viewportState{};
 	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -187,8 +187,8 @@ void Shaders::initiateShader_BackBufferImageDumpSingle(ThreadResources& res)
 	image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	image.imageType = VK_IMAGE_TYPE_2D;
 	image.format = engine.global.ImageFormat;
-	image.extent.width = engine.getCurrentExtent().width;
-	image.extent.height = engine.getCurrentExtent().height;
+	image.extent.width = engine.getBackBufferExtent().width;
+	image.extent.height = engine.getBackBufferExtent().height;
 	image.extent.depth = 1;
 	image.mipLevels = 1;
 	image.arrayLayers = 1;
@@ -332,8 +332,8 @@ void Shaders::executeBufferImageDump()
 	imageCopyRegion.srcSubresource.layerCount = 1;
 	imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	imageCopyRegion.dstSubresource.layerCount = 1;
-	imageCopyRegion.extent.width = engine.getCurrentExtent().width;
-	imageCopyRegion.extent.height = engine.getCurrentExtent().height;
+	imageCopyRegion.extent.width = engine.getBackBufferExtent().width;
+	imageCopyRegion.extent.height = engine.getBackBufferExtent().height;
 	imageCopyRegion.extent.depth = 1;
 
 	vkCmdCopyImage(

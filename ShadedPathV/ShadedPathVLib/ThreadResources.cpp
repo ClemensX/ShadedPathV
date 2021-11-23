@@ -19,7 +19,7 @@ void ThreadResources::init()
 {
     createFencesAndSemaphores();
     createRenderPass();
-    createImage();
+    createBackBufferImage();
     createFrameBuffer();
     createCommandPool();
 }
@@ -94,7 +94,7 @@ void ThreadResources::createRenderPass()
     }
 }
 
-void ThreadResources::createImage()
+void ThreadResources::createBackBufferImage()
 {
     auto& device = engine->global.device;
     auto& global = engine->global;
@@ -103,8 +103,8 @@ void ThreadResources::createImage()
     image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image.imageType = VK_IMAGE_TYPE_2D;
     image.format = global.ImageFormat;
-    image.extent.width = engine->getCurrentExtent().width;
-    image.extent.height = engine->getCurrentExtent().height;
+    image.extent.width = engine->getBackBufferExtent().width;
+    image.extent.height = engine->getBackBufferExtent().height;
     image.extent.depth = 1;
     image.mipLevels = 1;
     image.arrayLayers = 1;
@@ -181,8 +181,8 @@ void ThreadResources::createFrameBuffer()
     framebufferInfo.renderPass = renderPass;
     framebufferInfo.attachmentCount = 1;
     framebufferInfo.pAttachments = attachments;
-    framebufferInfo.width = engine->getCurrentExtent().width;
-    framebufferInfo.height = engine->getCurrentExtent().height;
+    framebufferInfo.width = engine->getBackBufferExtent().width;
+    framebufferInfo.height = engine->getBackBufferExtent().height;
     framebufferInfo.layers = 1;
 
     if (vkCreateFramebuffer(engine->global.device, &framebufferInfo, nullptr, &framebuffer) != VK_SUCCESS) {
@@ -231,7 +231,7 @@ void ThreadResources::createCommandBufferTriangle()
     renderPassInfo.renderPass = renderPass;
     renderPassInfo.framebuffer = framebuffer;
     renderPassInfo.renderArea.offset = { 0, 0 };
-    renderPassInfo.renderArea.extent = engine->getCurrentExtent();
+    renderPassInfo.renderArea.extent = engine->getBackBufferExtent();
     VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
     renderPassInfo.clearValueCount = 1;
     renderPassInfo.pClearValues = &clearColor;

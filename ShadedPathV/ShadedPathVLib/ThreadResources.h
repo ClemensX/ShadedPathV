@@ -39,7 +39,7 @@ private:
 	void createFencesAndSemaphores();
 	void createRenderPass();
 	void createFrameBuffer();
-	void createImage();
+	void createBackBufferImage();
 	void createCommandPool();
 };
 

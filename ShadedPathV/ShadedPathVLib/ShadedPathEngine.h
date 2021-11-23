@@ -22,6 +22,12 @@ public:
         ThemedTimer::getInstance()->logFPS("DrawFrame");
     };
 
+    enum class Resolution { FourK, TwoK, OneK, DeviceDefault, Small };
+
+    void setBackBufferResolution(VkExtent2D e);
+    void setBackBufferResolution(ShadedPathEngine::Resolution r);
+    VkExtent2D getExtentForResolution(ShadedPathEngine::Resolution r);
+
     GlobalRendering global;
     Presentation presentation;
     Shaders shaders;
@@ -43,8 +49,6 @@ public:
         win_width = w;
         win_height = h;
         win_name = name;
-        currentExtent.width = w;
-        currentExtent.height = h;
         presentationEnabled = true;
     };
 
@@ -86,7 +90,7 @@ public:
     // non-Vulkan members
     Files files;
     GameTime gameTime;
-    VkExtent2D getCurrentExtent();
+    VkExtent2D getBackBufferExtent();
     // presentation
     int win_width = 0;
     int win_height = 0;
@@ -98,9 +102,8 @@ private:
     // exit Vulkan and free resources
     void shutdown();
 
-    // if no window or backbuffer size was set by application:
-    VkExtent2D defaultExtent = { 500, 400 };
-    VkExtent2D currentExtent = defaultExtent;
+    // backbuffer size:
+    VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);
 
 };
 
