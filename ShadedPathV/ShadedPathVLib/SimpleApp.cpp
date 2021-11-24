@@ -5,16 +5,25 @@ void SimpleApp::run()
 {
     Log("SimpleApp started" << endl);
     {
+        // engine configuration
         ShadedPathEngine engine;
         engine.setFrameCountLimit(4);
         engine.gameTime.init(GameTime::GAMEDAY_1_MINUTE);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::Small);
-        engine.enablePresentation(800, 600, "Vulkan Simple App");
+        //engine.enablePresentation(800, 600, "Vulkan Simple App");
         engine.setFramesInFlight(2);
+
+        // engine initialization
         engine.init();
+
+        // shader initialization
         engine.shaders.initiateShader_Triangle();
         engine.shaders.initiateShader_BackBufferImageDump();
+
+        // some shaders may need additional preparation
         engine.prepareDrawing();
+
+        // rendering
         while (!engine.shouldClose()) {
             engine.pollEvents();
             engine.drawFrame();

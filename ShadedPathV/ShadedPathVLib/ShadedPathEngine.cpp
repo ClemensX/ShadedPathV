@@ -11,6 +11,32 @@ void ShadedPathEngine::init()
     global.initAfterPresentation();
     presentation.initAfterDeviceCreation();
     ThreadResources::initAll(this);
+    initialized = true;
+}
+
+void ShadedPathEngine::enablePresentation(int w, int h, const char* name) {
+    if (initialized) Error("Configuration after intialization not allowed");
+    if (limitFrameCountEnabled) Error("Only one of presentation or frameCountLimit can be active");
+    if (false) {
+        Error("Changing presentation mode after initialization is not possible!");
+    }
+    win_width = w;
+    win_height = h;
+    win_name = name;
+    presentation.enabled = true;
+};
+
+void ShadedPathEngine::setFramesInFlight(int n) {
+    if (initialized) Error("Configuration after intialization not allowed");
+    framesInFlight = n;
+    threadResources.resize(framesInFlight);
+}
+
+void ShadedPathEngine::setFrameCountLimit(long max) {
+    if (initialized) Error("Configuration after intialization not allowed");
+    if (presentation.enabled) Error("Only one of presentation or frameCountLimit can be active");
+    limitFrameCount = max;
+    limitFrameCountEnabled = true;
 }
 
 
@@ -22,6 +48,7 @@ VkExtent2D ShadedPathEngine::getBackBufferExtent()
 
 void ShadedPathEngine::prepareDrawing()
 {
+    if (!initialized) Error("Engine was not initialized");
     for (ThreadResources& tr : threadResources) {
         tr.createCommandBufferTriangle();
     }
@@ -32,6 +59,7 @@ void ShadedPathEngine::prepareDrawing()
 
 void ShadedPathEngine::drawFrame()
 {
+    if (!initialized) Error("Engine was not initialized");
     ThemedTimer::getInstance()->add("DrawFrame");
     shaders.drawFrame_Triangle();
     shaders.executeBufferImageDump();
@@ -41,10 +69,12 @@ void ShadedPathEngine::drawFrame()
 
 void ShadedPathEngine::pollEvents()
 {
+    if (!initialized) Error("Engine was not initialized");
 }
 
 void ShadedPathEngine::setBackBufferResolution(VkExtent2D e)
 {
+    if (initialized) Error("Configuration after intialization not allowed");
     backBufferExtent = e;
 }
 
@@ -67,6 +97,7 @@ VkExtent2D ShadedPathEngine::getExtentForResolution(ShadedPathEngine::Resolution
 
 void ShadedPathEngine::setBackBufferResolution(ShadedPathEngine::Resolution res)
 {
+    if (initialized) Error("Configuration after intialization not allowed");
     setBackBufferResolution(getExtentForResolution(res));
 }
 
@@ -77,7 +108,7 @@ bool ShadedPathEngine::shouldClose()
     }
 
     // max frames reached?
-    if (frameNum >= limitFrameCount) {
+    if (limitFrameCountEnabled && frameNum >= limitFrameCount) {
         return true;
     }
     return false;

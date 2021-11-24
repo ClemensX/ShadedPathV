@@ -14,6 +14,8 @@ public:
 	void readFile(string filename, vector<byte>& buffer, FileCategory cat);
 	// check file can be opened for write operation. Logs error if not.
 	bool checkFileForWrite(string filename);
+	// get abslolute file path
+	string absoluteFilePath(string filename);
 	//void readFile(PakEntry* pakEntry, vector<byte>& buffer, FileCategory cat);
 	//PakEntry* findFileInPak(wstring filename);
 	void initPakFiles();

@@ -24,53 +24,31 @@ public:
 
     enum class Resolution { FourK, TwoK, OneK, DeviceDefault, Small };
 
+    // backbuffer sizing
     void setBackBufferResolution(VkExtent2D e);
     void setBackBufferResolution(ShadedPathEngine::Resolution r);
     VkExtent2D getExtentForResolution(ShadedPathEngine::Resolution r);
-
-    GlobalRendering global;
-    Presentation presentation;
-    Shaders shaders;
-    vector<ThreadResources> threadResources;
-
+    VkExtent2D getBackBufferExtent();
 
     // prevent copy and assigment
     //ShadedPathEngine(ShadedPathEngine const&) = delete;
     //void operator=(ShadedPathEngine const&) = delete;
 
-    // initialize Vulkan
-    void init();
-
     // enable output window, withour calling this only background processing is possible
-    void enablePresentation(int w, int h, const char* name) {
-        if (false) {
-            Error("Changing presentation mode after initialization is not possible!");
-        }
-        win_width = w;
-        win_height = h;
-        win_name = name;
-        presentationEnabled = true;
-    };
+    void enablePresentation(int w, int h, const char* name);
 
     // set number of frames that can be worked on in parallel
-    void setFramesInFlight(int n) {
-        framesInFlight = n;
-        threadResources.resize(framesInFlight);
-    }
+    void setFramesInFlight(int n);
 
     int getFramesInFlight() {
         return framesInFlight;
     }
 
-    void setFrameCountLimit(long max) {
-        limitFrameCount = max;
-    }
+    void setFrameCountLimit(long max);
 
-    // current frame index - always within 0 .. threadResources.size() - 1
-    size_t currentFrameIndex = 0;
-
-    // count all frames
-    long frameNum = 0;
+    // initialize Vulkan and other libraries, also internal lists and instances
+    // no config methods after calling init
+    void init();
 
     // called once to setup commandbuffers for the shaders
     // has to be called after all shaders have been initialized
@@ -87,10 +65,20 @@ public:
     // if background processing some other threshold like max number of frames might have been reached
     bool shouldClose();
 
+    // current frame index - always within 0 .. threadResources.size() - 1
+    size_t currentFrameIndex = 0;
+
+    // count all frames
+    long frameNum = 0;
+
+    GlobalRendering global;
+    Presentation presentation;
+    Shaders shaders;
+    vector<ThreadResources> threadResources;
+
     // non-Vulkan members
     Files files;
     GameTime gameTime;
-    VkExtent2D getBackBufferExtent();
     // presentation
     int win_width = 0;
     int win_height = 0;
@@ -98,7 +86,8 @@ public:
 private:
     long limitFrameCount = 0;
     int framesInFlight = 2;
-    bool presentationEnabled = false;
+    bool limitFrameCountEnabled = false;
+    bool initialized = false;
     // exit Vulkan and free resources
     void shutdown();
 

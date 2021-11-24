@@ -343,18 +343,6 @@ void Shaders::executeBufferImageDump()
 		1,
 		&imageCopyRegion);
 
-/*
-				copyCmd,
-				dstImage,
-				VK_ACCESS_TRANSFER_WRITE_BIT,
-				VK_ACCESS_MEMORY_READ_BIT,
-				VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-				VK_IMAGE_LAYOUT_GENERAL,
-				VK_PIPELINE_STAGE_TRANSFER_BIT,
-				VK_PIPELINE_STAGE_TRANSFER_BIT,
-				VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 });
-
-*/
 	VkImageMemoryBarrier dstBarrier2{};
 	dstBarrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	dstBarrier2.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -365,18 +353,6 @@ void Shaders::executeBufferImageDump()
 	dstBarrier2.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 	vkCmdPipelineBarrier(res.commandBufferImageDump, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
 		0, 0, nullptr, 0, nullptr, 1, &dstBarrier2);
-	//VkRenderPassBeginInfo renderPassInfo{};
-	//renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	//renderPassInfo.renderPass = renderPass;
-	//renderPassInfo.framebuffer = framebuffer;
-	//renderPassInfo.renderArea.offset = { 0, 0 };
-	//renderPassInfo.renderArea.extent = engine->getCurrentExtent();
-	//VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
-	//renderPassInfo.clearValueCount = 1;
-	//renderPassInfo.pClearValues = &clearColor;
-	//vkCmdBeginRenderPass(commandBufferTriangle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	//shaders.recordDrawCommand_Triangle(commandBufferTriangle, *this);
-	//vkCmdEndRenderPass(res.commandBufferImageDump);
 	if (vkEndCommandBuffer(res.commandBufferImageDump) != VK_SUCCESS) {
 		Error("failed to record triangle command buffer!");
 	}
@@ -426,6 +402,7 @@ void Shaders::executeBufferImageDump()
 		imagedata += res.subResourceLayout.rowPitch;
 	}
 	file.close();
+	Log("written image dump file: " << engine.files.absoluteFilePath(filename).c_str() << endl);
 }
 
 Shaders::~Shaders()

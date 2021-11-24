@@ -91,3 +91,8 @@ void Files::readFile(string filename, vector<byte>& buffer, FileCategory cat) {
 
 }
 
+string Files::absoluteFilePath(string filename)
+{
+	string absfile(filesystem::absolute(filename).string());
+	return absfile;
+}
