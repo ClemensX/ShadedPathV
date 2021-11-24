@@ -53,7 +53,6 @@ public:
 	VkDevice device = nullptr;
 	VkInstance vkInstance = nullptr;
 	VkQueue graphicsQueue = nullptr;
-	VkQueue presentQueue = nullptr;
 
 private:
 	vector<const char*> deviceExtensions = {

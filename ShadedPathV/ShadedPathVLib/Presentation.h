@@ -20,6 +20,7 @@ public:
 	void init();
 	void initAfterDeviceCreation();
 	void initGLFW();
+	void createPresentQueue(unsigned int value);
 
 
 	// poll events from glfw
@@ -29,17 +30,28 @@ public:
 
 	void possiblyAddDeviceExtensions(vector<const char*> &ext);
 
+	// copy image from backbuffer to presentation window
+	void presentBackBufferImage();
+
 	// if false we run on headless mode
 	bool enabled = false;
 
 	VkSurfaceKHR surface = nullptr;
 	GLFWwindow* window = nullptr;
+	VkQueue presentQueue = nullptr;
+	VkSwapchainKHR swapChain{};
+	vector<VkImage> swapChainImages;
+	VkFormat swapChainImageFormat{};
+	VkExtent2D swapChainExtent{};
+	vector<VkImageView> swapChainImageViews;
 private:
 	ShadedPathEngine& engine;
 	const vector<const char*> deviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
 	void createSurface();
+	void createSwapChain();
+	void createImageViews();
 	// choose swap chain format or list available formats
 	VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats, bool listmode = false);
 	VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes, bool listmode = false);

@@ -60,6 +60,7 @@ void ShadedPathEngine::drawFrame()
     ThemedTimer::getInstance()->add("DrawFrame");
     shaders.drawFrame_Triangle();
     shaders.executeBufferImageDump();
+    presentation.presentBackBufferImage();
     frameNum++;
     currentFrameIndex = frameNum % framesInFlight;
 }

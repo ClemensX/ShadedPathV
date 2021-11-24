@@ -9,10 +9,8 @@ void Presentation::init()
 void Presentation::initAfterDeviceCreation()
 {
     if (!enabled) return;
-    // list available modes
-    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(engine.global.physicalDevice);
-    chooseSwapSurfaceFormat(swapChainSupport.formats, true);
-    chooseSwapPresentMode(swapChainSupport.presentModes, true);
+    createSwapChain();
+    createImageViews();
 }
 
 void Presentation::initGLFW()
@@ -126,7 +124,123 @@ VkExtent2D Presentation::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabi
     }
 }
 
+void Presentation::createSwapChain() {
+    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(engine.global.physicalDevice);
+
+    // list available modes
+    VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats, true);
+    VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes, true);
+    // select preferred mode
+    surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+    presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
+    VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
+    Log("swap chain min max images: " << swapChainSupport.capabilities.minImageCount << " " << swapChainSupport.capabilities.maxImageCount << endl);
+    uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+    if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
+        imageCount = swapChainSupport.capabilities.maxImageCount;
+    }
+
+    VkSwapchainCreateInfoKHR createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.surface = surface;
+    createInfo.minImageCount = imageCount;
+    createInfo.imageFormat = surfaceFormat.format;
+    createInfo.imageColorSpace = surfaceFormat.colorSpace;
+    createInfo.imageExtent = extent;
+    createInfo.imageArrayLayers = 1;
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    QueueFamilyIndices indices = engine.global.findQueueFamilies(engine.global.physicalDevice);
+    uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+
+    if (indices.graphicsFamily != indices.presentFamily) {
+        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices = queueFamilyIndices;
+    }
+    else {
+        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        createInfo.queueFamilyIndexCount = 0; // Optional
+        createInfo.pQueueFamilyIndices = nullptr; // Optional
+    }
+    // we only want EXCLUSIVE mode:
+    if (createInfo.imageSharingMode != VK_SHARING_MODE_EXCLUSIVE) {
+        Error("VK_SHARING_MODE_EXCLUSIVE required");
+    }
+    // no transform necessary
+    createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+    // no alpha blending with other windows
+    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    createInfo.presentMode = presentMode;
+    createInfo.clipped = VK_TRUE;
+    // only one fixed swap chain - no resizing
+    createInfo.oldSwapchain = VK_NULL_HANDLE;
+    if (vkCreateSwapchainKHR(engine.global.device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+        Error("failed to create swap chain!");
+    }
+    // retrieve swap chain images:
+    vkGetSwapchainImagesKHR(engine.global.device, swapChain, &imageCount, nullptr);
+    swapChainImages.resize(imageCount);
+    vkGetSwapchainImagesKHR(engine.global.device, swapChain, &imageCount, swapChainImages.data());
+    swapChainImageFormat = surfaceFormat.format;
+    swapChainExtent = extent;
+    Log("swap chain create with # images: " << imageCount << endl);
+}
+
+void Presentation::createImageViews()
+{
+    swapChainImageViews.resize(swapChainImages.size());
+    for (size_t i = 0; i < swapChainImages.size(); i++) {
+        VkImageViewCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image = swapChainImages[i];
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.format = swapChainImageFormat;
+        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        createInfo.subresourceRange.baseMipLevel = 0;
+        createInfo.subresourceRange.levelCount = 1;
+        createInfo.subresourceRange.baseArrayLayer = 0;
+        createInfo.subresourceRange.layerCount = 1;
+        if (vkCreateImageView(engine.global.device, &createInfo, nullptr, &swapChainImageViews[i]) != VK_SUCCESS) {
+            Error("failed to create image views!");
+        }
+    }
+}
+
+void Presentation::createPresentQueue(unsigned int value)
+{
+    if (!enabled) return;
+    vkGetDeviceQueue(engine.global.device, value, 0, &presentQueue);
+}
+
+void Presentation::presentBackBufferImage()
+{
+    // select the right thread resources
+    auto& tr = engine.threadResources[engine.currentFrameIndex];
+    auto& device = engine.global.device;
+    auto& global = engine.global;
+
+    // wait for fence signal
+    vkWaitForFences(device, 1, &tr.inFlightFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(device, 1, &tr.inFlightFence);
+
+
+    uint32_t imageIndex;
+    if (vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, tr.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS) {
+        Error("cannot aquire next image KHR");
+    }
+}
+
 Presentation::~Presentation() {
+    // destroy swap chain image views
+    for (auto imageView : swapChainImageViews) {
+        vkDestroyImageView(engine.global.device, imageView, nullptr);
+    }
+    vkDestroySwapchainKHR(engine.global.device, swapChain, nullptr);
     vkDestroySurfaceKHR(engine.global.vkInstance, surface, nullptr);
     Log("Presentation destructor\n");
 };
