@@ -15,14 +15,15 @@ public:
 	Presentation(ShadedPathEngine& s) : engine(s) {
 		Log("Presentation c'tor\n");
 	};
-	~Presentation() {
-		Log("Presentation destructor\n");
-	};
+	~Presentation();
 	
 	void init();
 	void initAfterDeviceCreation();
 	void initGLFW();
 
+
+	// poll events from glfw
+	void pollEvents();
 
 	bool shouldClose();
 

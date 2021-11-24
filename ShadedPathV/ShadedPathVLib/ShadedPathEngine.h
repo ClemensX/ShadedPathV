@@ -57,7 +57,7 @@ public:
     // call render code in shaders for one frame
     void drawFrame();
 
-    // poll events from glfw
+    // poll events via presentation layer
     void pollEvents();
 
     // check if engine should shutdown.

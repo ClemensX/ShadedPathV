@@ -26,9 +26,14 @@ void Presentation::initGLFW()
     }
 }
 
+void Presentation::pollEvents()
+{
+    glfwPollEvents();
+}
+
 bool Presentation::shouldClose()
 {
-	return true;
+	return glfwWindowShouldClose(window);
 }
 
 void Presentation::possiblyAddDeviceExtensions(vector<const char*> &ext)
@@ -121,4 +126,7 @@ VkExtent2D Presentation::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabi
     }
 }
 
-
+Presentation::~Presentation() {
+    vkDestroySurfaceKHR(engine.global.vkInstance, surface, nullptr);
+    Log("Presentation destructor\n");
+};

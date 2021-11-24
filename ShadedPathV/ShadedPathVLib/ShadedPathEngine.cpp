@@ -17,9 +17,6 @@ void ShadedPathEngine::init()
 void ShadedPathEngine::enablePresentation(int w, int h, const char* name) {
     if (initialized) Error("Configuration after intialization not allowed");
     if (limitFrameCountEnabled) Error("Only one of presentation or frameCountLimit can be active");
-    if (false) {
-        Error("Changing presentation mode after initialization is not possible!");
-    }
     win_width = w;
     win_height = h;
     win_name = name;
@@ -70,6 +67,7 @@ void ShadedPathEngine::drawFrame()
 void ShadedPathEngine::pollEvents()
 {
     if (!initialized) Error("Engine was not initialized");
+    presentation.pollEvents();
 }
 
 void ShadedPathEngine::setBackBufferResolution(VkExtent2D e)

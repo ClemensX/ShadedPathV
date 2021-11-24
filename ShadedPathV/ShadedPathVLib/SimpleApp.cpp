@@ -7,10 +7,10 @@ void SimpleApp::run()
     {
         // engine configuration
         ShadedPathEngine engine;
-        engine.setFrameCountLimit(4);
         engine.gameTime.init(GameTime::GAMEDAY_1_MINUTE);
+        //engine.setFrameCountLimit(4);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::Small);
-        //engine.enablePresentation(800, 600, "Vulkan Simple App");
+        engine.enablePresentation(800, 600, "Vulkan Simple App");
         engine.setFramesInFlight(2);
 
         // engine initialization
