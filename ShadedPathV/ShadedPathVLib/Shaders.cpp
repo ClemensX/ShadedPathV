@@ -15,6 +15,7 @@ VkShaderModule Shaders::createShaderModule(const vector<byte>& code)
 
 void Shaders::initiateShader_Triangle()
 {
+	enabledTriangle = true;
 	// initialization of globals like shader code
 	//  
 	// load shader binary code
@@ -174,6 +175,7 @@ void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
 
 void Shaders::initiateShader_BackBufferImageDump()
 {
+	enabledImageDump = true;
 	for (auto& res : engine.threadResources) {
 		initiateShader_BackBufferImageDumpSingle(res);
 	}
@@ -181,6 +183,7 @@ void Shaders::initiateShader_BackBufferImageDump()
 
 void Shaders::initiateShader_BackBufferImageDumpSingle(ThreadResources& res)
 {
+	enabledImageDump = true;
 	auto& device = engine.global.device;
 	auto& global = engine.global;
 	VkImageCreateInfo image{};
@@ -226,19 +229,16 @@ void Shaders::initiateShader_BackBufferImageDumpSingle(ThreadResources& res)
 	res.subResourceLayout = subResourceLayout;
 }
 
-bool Shaders::shouldClose()
-{
-	return false;
-}
-
 void Shaders::recordDrawCommand_Triangle(VkCommandBuffer& commandBuffer, ThreadResources& tr)
 {
+	if (!enabledTriangle) return;
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.graphicsPipelineTriangle);
 	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 }
 
 void Shaders::drawFrame_Triangle()
 {
+	if (!enabledTriangle) return;
 	// select the right thread resources
 	auto& tr = engine.threadResources[engine.currentFrameIndex];
 	//Log("draw index " << engine.currentFrameIndex << endl);
@@ -294,6 +294,7 @@ void Shaders::drawFrame_Triangle()
 
 void Shaders::executeBufferImageDump()
 {
+	if (!enabledImageDump) return;
 	auto& res = engine.threadResources[engine.currentFrameIndex];
 	auto& device = engine.global.device;
 	auto& global = engine.global;
@@ -408,6 +409,8 @@ void Shaders::executeBufferImageDump()
 Shaders::~Shaders()
 {
 	Log("Shaders destructor\n");
-	vkDestroyShaderModule(engine.global.device, fragShaderModuleTriangle, nullptr);
-	vkDestroyShaderModule(engine.global.device, vertShaderModuleTriangle, nullptr);
+	if (enabledTriangle) {
+		vkDestroyShaderModule(engine.global.device, fragShaderModuleTriangle, nullptr);
+		vkDestroyShaderModule(engine.global.device, vertShaderModuleTriangle, nullptr);
+	}
 }

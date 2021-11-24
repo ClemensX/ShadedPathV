@@ -18,7 +18,7 @@ void SimpleApp::run()
 
         // shader initialization
         engine.shaders.initiateShader_Triangle();
-        engine.shaders.initiateShader_BackBufferImageDump();
+        //engine.shaders.initiateShader_BackBufferImageDump();
 
         // some shaders may need additional preparation
         engine.prepareDrawing();
