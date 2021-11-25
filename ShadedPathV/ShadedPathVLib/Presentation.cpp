@@ -219,12 +219,14 @@ void Presentation::createPresentQueue(unsigned int value)
 
 void Presentation::initBackBufferPresentation()
 {
+    if (!enabled) return;
     auto& device = engine.global.device;
     auto& global = engine.global;
 }
 
 void Presentation::presentBackBufferImage()
 {
+    if (!enabled) return;
     // select the right thread resources
     auto& res = engine.threadResources[engine.currentFrameIndex];
     auto& device = engine.global.device;
@@ -332,6 +334,7 @@ void Presentation::presentBackBufferImage()
 }
 
 Presentation::~Presentation() {
+    if (!enabled) return;
     // destroy swap chain image views
     for (auto imageView : swapChainImageViews) {
         vkDestroyImageView(engine.global.device, imageView, nullptr);

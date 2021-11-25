@@ -366,9 +366,9 @@ void Shaders::executeBufferImageDump()
 	if (vkQueueSubmit(engine.global.graphicsQueue, 1, &submitInfo, res.imageDumpFence) != VK_SUCCESS) {
 		Error("failed to submit draw command buffer!");
 	}
-
+	vkDeviceWaitIdle(device);
+	vkFreeCommandBuffers(device, res.commandPool, 1, &res.commandBufferImageDump);
 	// now copy image data to file:
-
 	stringstream name;
 	name << "out_" << setw(2) << setfill('0') << imageCouter++ << ".ppm";
 	auto filename = engine.files.findFile(name.str(), FileCategory::TEXTURE, false, true);

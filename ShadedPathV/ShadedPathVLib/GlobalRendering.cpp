@@ -348,9 +348,8 @@ void GlobalRendering::createLogicalDevice()
         Error("failed to create logical device!");
     }
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
-    engine.presentation.createPresentQueue(indices.presentFamily.value());
     if (engine.presentation.enabled) {
-        //vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
+        engine.presentation.createPresentQueue(indices.presentFamily.value());
     }
 }
 
