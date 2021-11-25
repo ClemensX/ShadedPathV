@@ -4,8 +4,9 @@
 Course of action should be like this
 
 - [x] \(done via themed timer) re-use old fps counter
-- [ ] Decouple Swap chain and backbuffer image rendering
-- [ ] backbuffer image saving
+- [x] Decouple Swap chain and backbuffer image rendering
+- [x] backbuffer image saving
+- [ ] adapt backbuffer image size during rendering to window size
 - [ ] image based tests
 - [ ] Thread pool for backbuffer rendering
 - [ ] optimze thread performance
