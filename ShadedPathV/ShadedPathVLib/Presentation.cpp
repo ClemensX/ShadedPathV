@@ -217,11 +217,28 @@ void Presentation::createPresentQueue(unsigned int value)
     vkGetDeviceQueue(engine.global.device, value, 0, &presentQueue);
 }
 
+void Presentation::initBackBufferPresentationSingle(ThreadResources &res)
+{
+    auto& device = engine.global.device;
+    auto& global = engine.global;
+
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = res.commandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = (uint32_t)1;
+
+    if (vkAllocateCommandBuffers(device, &allocInfo, &res.commandBufferPresentBack) != VK_SUCCESS) {
+        Error("failed to allocate command buffers!");
+    }
+}
+
 void Presentation::initBackBufferPresentation()
 {
     if (!enabled) return;
-    auto& device = engine.global.device;
-    auto& global = engine.global;
+    for (auto& res : engine.threadResources) {
+        initBackBufferPresentationSingle(res);
+    }
 }
 
 void Presentation::presentBackBufferImage()
@@ -236,21 +253,20 @@ void Presentation::presentBackBufferImage()
     vkWaitForFences(device, 1, &res.inFlightFence, VK_TRUE, UINT64_MAX);
     vkResetFences(device, 1, &res.inFlightFence);
 
-
     uint32_t imageIndex;
     if (vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, res.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS) {
         Error("cannot aquire next image KHR");
     }
 
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = res.commandPool;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = (uint32_t)1;
+    //VkCommandBufferAllocateInfo allocInfo{};
+    //allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    //allocInfo.commandPool = res.commandPool;
+    //allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    //allocInfo.commandBufferCount = (uint32_t)1;
 
-    if (vkAllocateCommandBuffers(device, &allocInfo, &res.commandBufferPresentBack) != VK_SUCCESS) {
-        Error("failed to allocate command buffers!");
-    }
+    //if (vkAllocateCommandBuffers(device, &allocInfo, &res.commandBufferPresentBack) != VK_SUCCESS) {
+    //    Error("failed to allocate command buffers!");
+    //}
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = 0; // Optional
@@ -331,6 +347,10 @@ void Presentation::presentBackBufferImage()
     presentInfo.pImageIndices = &imageIndex;
     presentInfo.pResults = nullptr; // Optional
     vkQueuePresentKHR(presentQueue, &presentInfo);
+    //vkResetCommandBuffer(res.commandBufferPresentBack, 0);
+    //vkWaitForFences(device, 1, &res.inFlightFence, VK_TRUE, UINT64_MAX);
+    //vkResetFences(device, 1, &res.inFlightFence);
+    //vkFreeCommandBuffers(device, res.commandPool, 1, &res.commandBufferPresentBack);
 }
 
 Presentation::~Presentation() {

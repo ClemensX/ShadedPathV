@@ -8,6 +8,7 @@ struct SwapChainSupportDetails {
 
 // forward declarations
 class ShadedPathEngine;
+class ThreadResources;
 
 class Presentation
 {
@@ -33,6 +34,7 @@ public:
 	// copy image from backbuffer to presentation window
 	// prepare command buffer for copy of back buffer to swap chain images
 	void initBackBufferPresentation();
+	void initBackBufferPresentationSingle(ThreadResources &res);
 	// perform the copy and display the image in app window
 	void presentBackBufferImage();
 
