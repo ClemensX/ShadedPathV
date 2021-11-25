@@ -49,6 +49,7 @@ void ShadedPathEngine::prepareDrawing()
     for (ThreadResources& tr : threadResources) {
         tr.createCommandBufferTriangle();
     }
+    presentation.initBackBufferPresentation();
     //for (ThreadResources& tr : threadResources) {
     //    shaders.createCommandBufferBackBufferImageDump(tr);
     //}

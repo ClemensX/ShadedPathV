@@ -31,6 +31,9 @@ public:
 	void possiblyAddDeviceExtensions(vector<const char*> &ext);
 
 	// copy image from backbuffer to presentation window
+	// prepare command buffer for copy of back buffer to swap chain images
+	void initBackBufferPresentation();
+	// perform the copy and display the image in app window
 	void presentBackBufferImage();
 
 	// if false we run on headless mode

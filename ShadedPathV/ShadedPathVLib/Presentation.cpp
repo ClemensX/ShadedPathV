@@ -148,7 +148,7 @@ void Presentation::createSwapChain() {
     createInfo.imageColorSpace = surfaceFormat.colorSpace;
     createInfo.imageExtent = extent;
     createInfo.imageArrayLayers = 1;
-    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT| VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
     QueueFamilyIndices indices = engine.global.findQueueFamilies(engine.global.physicalDevice);
     uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
@@ -217,22 +217,113 @@ void Presentation::createPresentQueue(unsigned int value)
     vkGetDeviceQueue(engine.global.device, value, 0, &presentQueue);
 }
 
+void Presentation::initBackBufferPresentation()
+{
+    auto& device = engine.global.device;
+    auto& global = engine.global;
+}
+
 void Presentation::presentBackBufferImage()
 {
     // select the right thread resources
-    auto& tr = engine.threadResources[engine.currentFrameIndex];
+    auto& res = engine.threadResources[engine.currentFrameIndex];
     auto& device = engine.global.device;
     auto& global = engine.global;
 
     // wait for fence signal
-    vkWaitForFences(device, 1, &tr.inFlightFence, VK_TRUE, UINT64_MAX);
-    vkResetFences(device, 1, &tr.inFlightFence);
+    vkWaitForFences(device, 1, &res.inFlightFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(device, 1, &res.inFlightFence);
 
 
     uint32_t imageIndex;
-    if (vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, tr.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS) {
+    if (vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, res.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS) {
         Error("cannot aquire next image KHR");
     }
+
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = res.commandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = (uint32_t)1;
+
+    if (vkAllocateCommandBuffers(device, &allocInfo, &res.commandBufferPresentBack) != VK_SUCCESS) {
+        Error("failed to allocate command buffers!");
+    }
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = 0; // Optional
+    beginInfo.pInheritanceInfo = nullptr; // Optional
+
+    if (vkBeginCommandBuffer(res.commandBufferPresentBack, &beginInfo) != VK_SUCCESS) {
+        Error("failed to begin recording triangle command buffer!");
+    }
+
+    // Transition destination image to transfer destination layout
+    VkImageMemoryBarrier dstBarrier{};
+    dstBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    dstBarrier.srcAccessMask = 0;
+    dstBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    dstBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    dstBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    dstBarrier.image = this->swapChainImages[imageIndex];
+    dstBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    vkCmdPipelineBarrier(res.commandBufferPresentBack, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0, 0, nullptr, 0, nullptr, 1, &dstBarrier);
+
+    VkImageCopy imageCopyRegion{};
+    imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageCopyRegion.srcSubresource.layerCount = 1;
+    imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageCopyRegion.dstSubresource.layerCount = 1;
+    imageCopyRegion.extent.width = engine.getBackBufferExtent().width;
+    imageCopyRegion.extent.height = engine.getBackBufferExtent().height;
+    imageCopyRegion.extent.depth = 1;
+
+    vkCmdCopyImage(
+        res.commandBufferPresentBack,
+        res.colorAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        this->swapChainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1,
+        &imageCopyRegion);
+
+    //VkImageMemoryBarrier dstBarrier2{};
+    //dstBarrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    //dstBarrier2.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    //dstBarrier2.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+    //dstBarrier2.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    //dstBarrier2.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    //dstBarrier2.image = res.imageDumpAttachment.image;
+    //dstBarrier2.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    //vkCmdPipelineBarrier(res.commandBufferPresentBack, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+    //    0, 0, nullptr, 0, nullptr, 1, &dstBarrier2);
+    if (vkEndCommandBuffer(res.commandBufferPresentBack) != VK_SUCCESS) {
+        Error("failed to record triangle command buffer!");
+    }
+    vkWaitForFences(engine.global.device, 1, &res.imageDumpFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(engine.global.device, 1, &res.imageDumpFence);
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &res.commandBufferPresentBack;
+    VkSemaphore signalSemaphores[] = { res.renderFinishedSemaphore };
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
+
+    if (vkQueueSubmit(engine.global.graphicsQueue, 1, &submitInfo, res.imageDumpFence) != VK_SUCCESS) {
+        Error("failed to submit draw command buffer!");
+    }
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores;
+
+    VkSwapchainKHR swapChains[] = { swapChain };
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapChains;
+    presentInfo.pImageIndices = &imageIndex;
+    presentInfo.pResults = nullptr; // Optional
+    vkQueuePresentKHR(presentQueue, &presentInfo);
 }
 
 Presentation::~Presentation() {

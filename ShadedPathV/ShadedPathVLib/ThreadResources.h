@@ -30,6 +30,8 @@ public:
 	VkFence imageDumpFence = nullptr;
 	VkSubresourceLayout subResourceLayout;
 
+	// copy backbuffer to swap chain image
+	VkCommandBuffer commandBufferPresentBack;
 
 	// triangle shader 
 	void createCommandBufferTriangle();
