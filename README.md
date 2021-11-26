@@ -6,7 +6,7 @@ Course of action should be like this
 - [x] \(done via themed timer) re-use old fps counter
 - [x] Decouple Swap chain and backbuffer image rendering
 - [x] backbuffer image saving
-- [ ] adapt backbuffer image size during rendering to window size
+- [x] adapt backbuffer image size during rendering to window size
 - [ ] image based tests
 - [ ] Thread pool for backbuffer rendering
 - [ ] optimze thread performance
@@ -47,4 +47,8 @@ To decide formats to use we can run the engine in presentation mode and get a li
 
 ```C:\dev\vulkan>C:\dev\vulkan\libraries\vulkan\Bin\gfxrecon-replay.exe --paused gfxrecon_capture_frames_100_through_105_20211116T131643.gfxr```
 
+### Integrate Renderdoc
+* Download renderdoc
+* Add this extension https://github.com/baldurk/renderdoc-contrib/tree/main/baldurk/whereismydraw
+* See what it tells you
 

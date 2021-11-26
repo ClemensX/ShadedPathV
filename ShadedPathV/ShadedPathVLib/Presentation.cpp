@@ -21,6 +21,12 @@ void Presentation::initGLFW()
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         window = glfwCreateWindow(engine.win_width, engine.win_height, engine.win_name, nullptr, nullptr);
+        // validate requested window size:
+        int width, height;
+        glfwGetFramebufferSize(window, &width, &height);
+        if (width != engine.win_width || height != engine.win_height) {
+            Error("Could not create window with requested size");
+        }
     }
 }
 
@@ -288,21 +294,47 @@ void Presentation::presentBackBufferImage()
     vkCmdPipelineBarrier(res.commandBufferPresentBack, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
         0, 0, nullptr, 0, nullptr, 1, &dstBarrier);
 
-    VkImageCopy imageCopyRegion{};
-    imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    imageCopyRegion.srcSubresource.layerCount = 1;
-    imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    imageCopyRegion.dstSubresource.layerCount = 1;
-    imageCopyRegion.extent.width = engine.getBackBufferExtent().width;
-    imageCopyRegion.extent.height = engine.getBackBufferExtent().height;
-    imageCopyRegion.extent.depth = 1;
+    //VkImageCopy imageCopyRegion{};
+    //imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    //imageCopyRegion.srcSubresource.layerCount = 1;
+    //imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    //imageCopyRegion.dstSubresource.layerCount = 1;
+    //imageCopyRegion.extent.width = engine.getBackBufferExtent().width;
+    //imageCopyRegion.extent.height = engine.getBackBufferExtent().height;
+    //imageCopyRegion.extent.depth = 1;
 
-    vkCmdCopyImage(
+    //vkCmdCopyImage(
+    //    res.commandBufferPresentBack,
+    //    res.colorAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+    //    this->swapChainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+    //    1,
+    //    &imageCopyRegion);
+
+    // Define the region to blit (we will blit the whole swapchain image)
+    VkOffset3D blitSizeSrc;
+    blitSizeSrc.x = engine.getBackBufferExtent().width;
+    blitSizeSrc.y = engine.getBackBufferExtent().height;
+    blitSizeSrc.z = 1;
+    VkOffset3D blitSizeDst;
+    blitSizeDst.x = engine.win_width;
+    blitSizeDst.y = engine.win_height;
+    blitSizeDst.z = 1;
+
+    VkImageBlit imageBlitRegion{};
+    imageBlitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageBlitRegion.srcSubresource.layerCount = 1;
+    imageBlitRegion.srcOffsets[1] = blitSizeSrc;
+    imageBlitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageBlitRegion.dstSubresource.layerCount = 1;
+    imageBlitRegion.dstOffsets[1] = blitSizeDst;
+
+    vkCmdBlitImage(
         res.commandBufferPresentBack,
         res.colorAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         this->swapChainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        1,
-        &imageCopyRegion);
+        1, &imageBlitRegion,
+        VK_FILTER_LINEAR
+        );
 
     VkImageMemoryBarrier dstBarrier2{};
     dstBarrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
