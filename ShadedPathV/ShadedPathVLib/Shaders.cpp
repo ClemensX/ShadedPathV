@@ -236,11 +236,9 @@ void Shaders::recordDrawCommand_Triangle(VkCommandBuffer& commandBuffer, ThreadR
 	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 }
 
-void Shaders::drawFrame_Triangle()
+void Shaders::drawFrame_Triangle(ThreadResources& tr)
 {
 	if (!enabledTriangle) return;
-	// select the right thread resources
-	auto& tr = engine.threadResources[engine.currentFrameIndex];
 	//Log("draw index " << engine.currentFrameIndex << endl);
 
 	// wait for fence signal
@@ -292,19 +290,18 @@ void Shaders::drawFrame_Triangle()
 	ThemedTimer::getInstance()->add("DrawFrame");
 }
 
-void Shaders::executeBufferImageDump()
+void Shaders::executeBufferImageDump(ThreadResources& tr)
 {
 	if (!enabledImageDump) return;
-	auto& res = engine.threadResources[engine.currentFrameIndex];
 	auto& device = engine.global.device;
 	auto& global = engine.global;
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.commandPool = res.commandPool;
+	allocInfo.commandPool = tr.commandPool;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = (uint32_t)1;
 
-	if (vkAllocateCommandBuffers(device, &allocInfo, &res.commandBufferImageDump) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(device, &allocInfo, &tr.commandBufferImageDump) != VK_SUCCESS) {
 		Error("failed to allocate command buffers!");
 	}
 	VkCommandBufferBeginInfo beginInfo{};
@@ -312,7 +309,7 @@ void Shaders::executeBufferImageDump()
 	beginInfo.flags = 0; // Optional
 	beginInfo.pInheritanceInfo = nullptr; // Optional
 
-	if (vkBeginCommandBuffer(res.commandBufferImageDump, &beginInfo) != VK_SUCCESS) {
+	if (vkBeginCommandBuffer(tr.commandBufferImageDump, &beginInfo) != VK_SUCCESS) {
 		Error("failed to begin recording triangle command buffer!");
 	}
 
@@ -323,9 +320,9 @@ void Shaders::executeBufferImageDump()
 	dstBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 	dstBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	dstBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	dstBarrier.image = res.imageDumpAttachment.image;
+	dstBarrier.image = tr.imageDumpAttachment.image;
 	dstBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-	vkCmdPipelineBarrier(res.commandBufferImageDump, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+	vkCmdPipelineBarrier(tr.commandBufferImageDump, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
 		0, 0, nullptr, 0, nullptr, 1, &dstBarrier);
 
 	VkImageCopy imageCopyRegion{};
@@ -338,9 +335,9 @@ void Shaders::executeBufferImageDump()
 	imageCopyRegion.extent.depth = 1;
 
 	vkCmdCopyImage(
-		res.commandBufferImageDump,
-		res.colorAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		res.imageDumpAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		tr.commandBufferImageDump,
+		tr.colorAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		tr.imageDumpAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		1,
 		&imageCopyRegion);
 
@@ -350,24 +347,24 @@ void Shaders::executeBufferImageDump()
 	dstBarrier2.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 	dstBarrier2.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	dstBarrier2.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-	dstBarrier2.image = res.imageDumpAttachment.image;
+	dstBarrier2.image = tr.imageDumpAttachment.image;
 	dstBarrier2.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-	vkCmdPipelineBarrier(res.commandBufferImageDump, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+	vkCmdPipelineBarrier(tr.commandBufferImageDump, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
 		0, 0, nullptr, 0, nullptr, 1, &dstBarrier2);
-	if (vkEndCommandBuffer(res.commandBufferImageDump) != VK_SUCCESS) {
+	if (vkEndCommandBuffer(tr.commandBufferImageDump) != VK_SUCCESS) {
 		Error("failed to record triangle command buffer!");
 	}
-	vkWaitForFences(engine.global.device, 1, &res.imageDumpFence, VK_TRUE, UINT64_MAX);
-	vkResetFences(engine.global.device, 1, &res.imageDumpFence);
+	vkWaitForFences(engine.global.device, 1, &tr.imageDumpFence, VK_TRUE, UINT64_MAX);
+	vkResetFences(engine.global.device, 1, &tr.imageDumpFence);
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &res.commandBufferImageDump;
-	if (vkQueueSubmit(engine.global.graphicsQueue, 1, &submitInfo, res.imageDumpFence) != VK_SUCCESS) {
+	submitInfo.pCommandBuffers = &tr.commandBufferImageDump;
+	if (vkQueueSubmit(engine.global.graphicsQueue, 1, &submitInfo, tr.imageDumpFence) != VK_SUCCESS) {
 		Error("failed to submit draw command buffer!");
 	}
 	vkDeviceWaitIdle(device);
-	vkFreeCommandBuffers(device, res.commandPool, 1, &res.commandBufferImageDump);
+	vkFreeCommandBuffers(device, tr.commandPool, 1, &tr.commandBufferImageDump);
 	// now copy image data to file:
 	stringstream name;
 	name << "out_" << setw(2) << setfill('0') << imageCouter++ << ".ppm";
@@ -385,7 +382,7 @@ void Shaders::executeBufferImageDump()
 	// Check if source is BGR and needs swizzle
 	std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
 	const bool colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), VK_FORMAT_R8G8B8A8_UNORM) != formatsBGR.end());
-	const char* imagedata = res.imagedata;
+	const char* imagedata = tr.imagedata;
 	// ppm binary pixel data
 	for (int32_t y = 0; y < height; y++) {
 		unsigned int* row = (unsigned int*)imagedata;
@@ -400,7 +397,7 @@ void Shaders::executeBufferImageDump()
 			}
 			row++;
 		}
-		imagedata += res.subResourceLayout.rowPitch;
+		imagedata += tr.subResourceLayout.rowPitch;
 	}
 	file.close();
 	Log("written image dump file: " << engine.files.absoluteFilePath(filename).c_str() << endl);

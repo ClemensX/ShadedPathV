@@ -59,11 +59,19 @@ void ShadedPathEngine::drawFrame()
 {
     if (!initialized) Error("Engine was not initialized");
     ThemedTimer::getInstance()->add("DrawFrame");
-    shaders.drawFrame_Triangle();
-    shaders.executeBufferImageDump();
-    presentation.presentBackBufferImage();
+    if (threadModeSingle) {
+        auto& tr = threadResources[currentFrameIndex];
+        drawFrame(tr);
+    }
     frameNum++;
     currentFrameIndex = frameNum % framesInFlight;
+}
+
+void ShadedPathEngine::drawFrame(ThreadResources& tr)
+{
+    shaders.drawFrame_Triangle(tr);
+    shaders.executeBufferImageDump(tr);
+    presentation.presentBackBufferImage(tr);
 }
 
 void ShadedPathEngine::pollEvents()

@@ -44,7 +44,13 @@ public:
         return framesInFlight;
     }
 
+    // limit number of rendered frames - cannot be used together with presentation enabled
     void setFrameCountLimit(long max);
+
+    // default is multi thread mode - use this for all in one single thread
+    void setThreadModeSingle() {
+        threadModeSingle = true;
+    };
 
     // initialize Vulkan and other libraries, also internal lists and instances
     // no config methods after calling init
@@ -56,6 +62,8 @@ public:
 
     // call render code in shaders for one frame
     void drawFrame();
+    // possibly multi-threaded draw command
+    void drawFrame(ThreadResources &tr);
 
     // poll events via presentation layer
     void pollEvents();
@@ -83,6 +91,7 @@ public:
     int win_width = 0;
     int win_height = 0;
     const char* win_name = nullptr;
+    bool threadModeSingle = false;
 private:
     long limitFrameCount = 0;
     int framesInFlight = 2;

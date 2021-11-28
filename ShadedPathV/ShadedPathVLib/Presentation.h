@@ -36,7 +36,7 @@ public:
 	void initBackBufferPresentation();
 	void initBackBufferPresentationSingle(ThreadResources &res);
 	// perform the copy and display the image in app window
-	void presentBackBufferImage();
+	void presentBackBufferImage(ThreadResources& tr);
 
 	// if false we run on headless mode
 	bool enabled = false;

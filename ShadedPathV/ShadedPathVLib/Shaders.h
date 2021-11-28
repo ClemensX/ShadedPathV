@@ -8,10 +8,10 @@ public:
 	~Shaders();
 	void initiateShader_Triangle();
 	void initiateShader_BackBufferImageDump();
-	void drawFrame_Triangle();
+	void drawFrame_Triangle(ThreadResources& tr);
 	VkShaderModule createShaderModule(const vector<byte>& code);
 	void recordDrawCommand_Triangle(VkCommandBuffer& commandBuffer, ThreadResources &tr);
-	void executeBufferImageDump();
+	void executeBufferImageDump(ThreadResources& tr);
 
 private:
 	void initiateShader_TriangleSingle(ThreadResources &res);

@@ -37,6 +37,9 @@ public:
 	void createCommandBufferTriangle();
 	FrameBufferAttachment colorAttachment, depthAttachment;
 	VkCommandBuffer commandBufferTriangle;
+
+	// frame management
+	long frameNum = -1;
 private:
 	void createFencesAndSemaphores();
 	void createRenderPass();

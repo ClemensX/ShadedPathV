@@ -247,20 +247,19 @@ void Presentation::initBackBufferPresentation()
     }
 }
 
-void Presentation::presentBackBufferImage()
+void Presentation::presentBackBufferImage(ThreadResources& tr)
 {
     if (!enabled) return;
     // select the right thread resources
-    auto& res = engine.threadResources[engine.currentFrameIndex];
     auto& device = engine.global.device;
     auto& global = engine.global;
 
     // wait for fence signal
-    vkWaitForFences(device, 1, &res.inFlightFence, VK_TRUE, UINT64_MAX);
-    vkResetFences(device, 1, &res.inFlightFence);
+    vkWaitForFences(device, 1, &tr.inFlightFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(device, 1, &tr.inFlightFence);
 
     uint32_t imageIndex;
-    if (vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, res.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS) {
+    if (vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, tr.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS) {
         Error("cannot aquire next image KHR");
     }
 
@@ -278,7 +277,7 @@ void Presentation::presentBackBufferImage()
     beginInfo.flags = 0; // Optional
     beginInfo.pInheritanceInfo = nullptr; // Optional
 
-    if (vkBeginCommandBuffer(res.commandBufferPresentBack, &beginInfo) != VK_SUCCESS) {
+    if (vkBeginCommandBuffer(tr.commandBufferPresentBack, &beginInfo) != VK_SUCCESS) {
         Error("failed to begin recording back buffer copy command buffer!");
     }
 
@@ -291,7 +290,7 @@ void Presentation::presentBackBufferImage()
     dstBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     dstBarrier.image = this->swapChainImages[imageIndex];
     dstBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-    vkCmdPipelineBarrier(res.commandBufferPresentBack, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+    vkCmdPipelineBarrier(tr.commandBufferPresentBack, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
         0, 0, nullptr, 0, nullptr, 1, &dstBarrier);
 
     //VkImageCopy imageCopyRegion{};
@@ -329,8 +328,8 @@ void Presentation::presentBackBufferImage()
     imageBlitRegion.dstOffsets[1] = blitSizeDst;
 
     vkCmdBlitImage(
-        res.commandBufferPresentBack,
-        res.colorAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        tr.commandBufferPresentBack,
+        tr.colorAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         this->swapChainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1, &imageBlitRegion,
         VK_FILTER_LINEAR
@@ -344,27 +343,27 @@ void Presentation::presentBackBufferImage()
     dstBarrier2.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
     dstBarrier2.image = this->swapChainImages[imageIndex];
     dstBarrier2.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-    vkCmdPipelineBarrier(res.commandBufferPresentBack, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+    vkCmdPipelineBarrier(tr.commandBufferPresentBack, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
         0, 0, nullptr, 0, nullptr, 1, &dstBarrier2);
-    if (vkEndCommandBuffer(res.commandBufferPresentBack) != VK_SUCCESS) {
+    if (vkEndCommandBuffer(tr.commandBufferPresentBack) != VK_SUCCESS) {
         Error("failed to record back buffer copy command buffer!");
     }
     //vkWaitForFences(engine.global.device, 1, &res.imageDumpFence, VK_TRUE, UINT64_MAX);
     //vkResetFences(engine.global.device, 1, &res.imageDumpFence);
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    VkSemaphore waitSemaphores[] = { res.imageAvailableSemaphore };
+    VkSemaphore waitSemaphores[] = { tr.imageAvailableSemaphore };
     VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
     submitInfo.pWaitDstStageMask = waitStages;
     submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &res.commandBufferPresentBack;
-    VkSemaphore signalSemaphores[] = { res.renderFinishedSemaphore };
+    submitInfo.pCommandBuffers = &tr.commandBufferPresentBack;
+    VkSemaphore signalSemaphores[] = { tr.renderFinishedSemaphore };
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    if (vkQueueSubmit(engine.global.graphicsQueue, 1, &submitInfo, res.inFlightFence) != VK_SUCCESS) {
+    if (vkQueueSubmit(engine.global.graphicsQueue, 1, &submitInfo, tr.inFlightFence) != VK_SUCCESS) {
         Error("failed to submit draw command buffer!");
     }
     VkPresentInfoKHR presentInfo{};
