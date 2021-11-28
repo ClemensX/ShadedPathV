@@ -62,6 +62,8 @@ void ShadedPathEngine::drawFrame()
     if (threadModeSingle) {
         auto& tr = threadResources[currentFrameIndex];
         drawFrame(tr);
+        shaders.queueSubmit(tr);
+        presentation.presentBackBufferImage(tr);
     }
     frameNum++;
     currentFrameIndex = frameNum % framesInFlight;
@@ -71,7 +73,6 @@ void ShadedPathEngine::drawFrame(ThreadResources& tr)
 {
     shaders.drawFrame_Triangle(tr);
     shaders.executeBufferImageDump(tr);
-    presentation.presentBackBufferImage(tr);
 }
 
 void ShadedPathEngine::pollEvents()

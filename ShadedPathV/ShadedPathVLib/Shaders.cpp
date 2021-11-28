@@ -261,9 +261,7 @@ void Shaders::drawFrame_Triangle(ThreadResources& tr)
 	//VkSemaphore signalSemaphores[] = { tr.renderFinishedSemaphore };
 	submitInfo.signalSemaphoreCount = 0;
 	submitInfo.pSignalSemaphores = nullptr; // signalSemaphores;
-	if (vkQueueSubmit(engine.global.graphicsQueue, 1, &submitInfo, tr.inFlightFence) != VK_SUCCESS) {
-		Error("failed to submit draw command buffer!");
-	}
+	tr.submitinfos.push_back(submitInfo);
 	//VkPresentInfoKHR presentInfo{};
 	//presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
@@ -401,6 +399,13 @@ void Shaders::executeBufferImageDump(ThreadResources& tr)
 	}
 	file.close();
 	Log("written image dump file: " << engine.files.absoluteFilePath(filename).c_str() << endl);
+}
+
+void Shaders::queueSubmit(ThreadResources& tr)
+{
+	if (vkQueueSubmit(engine.global.graphicsQueue, 1, &tr.submitinfos.at(0), tr.inFlightFence) != VK_SUCCESS) {
+		Error("failed to submit draw command buffer!");
+	}
 }
 
 Shaders::~Shaders()

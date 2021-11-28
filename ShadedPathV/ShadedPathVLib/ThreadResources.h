@@ -40,6 +40,7 @@ public:
 
 	// frame management
 	long frameNum = -1;
+	vector<VkSubmitInfo> submitinfos;
 private:
 	void createFencesAndSemaphores();
 	void createRenderPass();
