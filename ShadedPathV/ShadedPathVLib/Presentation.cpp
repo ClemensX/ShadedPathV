@@ -338,7 +338,7 @@ void Presentation::presentBackBufferImage()
 
     VkImageMemoryBarrier dstBarrier2{};
     dstBarrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    dstBarrier2.srcAccessMask = 0;
+    dstBarrier2.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     dstBarrier2.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     dstBarrier2.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     dstBarrier2.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
