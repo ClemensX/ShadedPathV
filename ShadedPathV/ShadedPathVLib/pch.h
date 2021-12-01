@@ -26,6 +26,9 @@
 #include <algorithm>
 #include <filesystem>
 #include <chrono>
+#include <thread>
+#include <mutex>
+#include <queue>
 using namespace std;
 
 // headers for used libraries
@@ -74,6 +77,12 @@ inline void LogFile(const char* s) {
 #define LogCond(y,x)
 #endif
 
+#define LogF(x)\
+{\
+	stringstream s1764;  s1764 << x; \
+	LogFile(s1764.str().c_str()); \
+}
+
 inline void ErrorExt(string msg, const char* file, DWORD line)
 {
 	stringstream s;
@@ -95,6 +104,7 @@ inline void ErrorExt(string msg, const char* file, DWORD line)
 #include "Files.h"
 #include "GameTime.h"
 #include "Util.h"
+#include "Threads.h"
 #include "Presentation.h"
 #include "GlobalRendering.h"
 #include "ThreadResources.h"

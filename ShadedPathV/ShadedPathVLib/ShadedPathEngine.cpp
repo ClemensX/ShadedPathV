@@ -46,10 +46,17 @@ VkExtent2D ShadedPathEngine::getBackBufferExtent()
 void ShadedPathEngine::prepareDrawing()
 {
     if (!initialized) Error("Engine was not initialized");
-    for (ThreadResources& tr : threadResources) {
+    for (int i = 0; i < threadResources.size(); i++) {
+        auto& tr = threadResources[i];
+        tr.frameIndex = i;
         tr.createCommandBufferTriangle();
     }
     presentation.initBackBufferPresentation();
+
+    if (!threadModeSingle) {
+        startQueueSubmitThread();
+        startRenderThreads();
+    }
     //for (ThreadResources& tr : threadResources) {
     //    shaders.createCommandBufferBackBufferImageDump(tr);
     //}
@@ -123,7 +130,70 @@ bool ShadedPathEngine::shouldClose()
     return false;
 }
 
-void ShadedPathEngine::shutdown()
+// multi threading
+
+void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance, ThreadResources* tr)
 {
-    // TODO needed?
+    LogF("run DrawFrame start " << tr->frameIndex << endl);
+    //this_thread::sleep_for(chrono::milliseconds(1000 * (10 - tr->frameIndex)));
+    while (engine_instance->isShutdown() == false) {
+        engine_instance->drawFrame(*tr); // TODO not really a copy, right?
+        engine_instance->queue.push(tr);
+        LogF("pushed frame: " << tr->frameNum << endl);
+    }
+    LogF("run DrawFrame end " << tr->frameIndex << endl);
 }
+
+void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
+{
+    LogF("run QueueSubmit start " << endl);
+    //pipeline_instance->setRunning(true);
+    while (engine_instance->isShutdown() == false) {
+        auto v = engine_instance->queue.pop();
+        if (v == nullptr) {
+            LogF("pipeline shutdown" << endl);
+            break;
+        }
+        LogF("pipeline received frame: " << v->frameNum << endl);
+        engine_instance->shaders.queueSubmit(*v);
+        engine_instance->presentation.presentBackBufferImage(*v);
+    }
+    //engine_instance->setRunning(false);
+    LogF("run QueueSubmit end " << endl);
+}
+
+void ShadedPathEngine::startRenderThreads()
+{
+    if (!initialized) {
+        Error("cannot start render threads: pipeline not initialized\n");
+        return;
+    }
+    //if (consumer == nullptr) {
+    //    Error("cannot start render threads: no frame consumer specified\n");
+    //    return;
+    //}
+    //pipelineStartTime = chrono::high_resolution_clock::now();
+    for (int i = 0; i < framesInFlight; i++) {
+        auto* tr = &threadResources[i];
+        void* native_handle = threads.add_t(runDrawFrame, this, tr);
+        wstring mod_name = wstring(L"render_thread").append(L"_").append(to_wstring(i));
+        SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
+    }
+}
+
+void ShadedPathEngine::startQueueSubmitThread()
+{
+    if (!initialized) {
+        Error("cannot start update thread: pipeline not initialized\n");
+        return;
+    }
+    //if (updateCallback == nullptr) {
+    //    Error(L"cannot start update thread: no update consumer specified\n");
+    //    return;
+    //}
+    // one queue submit thread for all threads:
+    void* native_handle = threads.add_t(runQueueSubmit, this);
+    wstring mod_name = wstring(L"queue_submit");//.append(L"_").append(to_wstring(i));
+    SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
+}
+

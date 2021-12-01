@@ -40,6 +40,7 @@ public:
 
 	// frame management
 	long frameNum = -1;
+	long frameIndex = -1;
 	vector<VkSubmitInfo> submitinfos;
 private:
 	void createFencesAndSemaphores();
@@ -48,4 +49,3 @@ private:
 	void createBackBufferImage();
 	void createCommandPool();
 };
-

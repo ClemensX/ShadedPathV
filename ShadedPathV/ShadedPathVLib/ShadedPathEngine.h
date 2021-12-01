@@ -16,6 +16,7 @@ public:
 
     virtual ~ShadedPathEngine()
     {
+        shutdown();
         Log("Engine destructor\n");
         if (global.device) vkDeviceWaitIdle(global.device);
         ThemedTimer::getInstance()->logInfo("DrawFrame");
@@ -79,6 +80,11 @@ public:
     // count all frames
     long frameNum = 0;
 
+    // Is engine in shutdown mode? 
+    bool isShutdown() { return shutdown_mode; }
+    // enable shutdown mode: The run thread will dry out and terminate
+    void shutdown() { shutdown_mode = true; queue.shutdown(); }
+
     GlobalRendering global;
     Presentation presentation;
     Shaders shaders;
@@ -97,11 +103,19 @@ private:
     int framesInFlight = 2;
     bool limitFrameCountEnabled = false;
     bool initialized = false;
-    // exit Vulkan and free resources
-    void shutdown();
 
     // backbuffer size:
     VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);
+
+    // thread support:
+    ThreadGroup threads;
+    RenderQueue queue;
+    void startRenderThreads();
+    void startQueueSubmitThread();
+    // start the processing thread in the background and return immediately. May only be called once
+    static void runDrawFrame(ShadedPathEngine* engine_instance, ThreadResources* tr);
+    static void runQueueSubmit(ShadedPathEngine* engine_instance);
+    atomic<bool> shutdown_mode = false;
 
 };
 

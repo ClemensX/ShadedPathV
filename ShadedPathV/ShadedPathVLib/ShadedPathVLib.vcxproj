@@ -188,6 +188,7 @@
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="SimpleApp.h" />
     <ClInclude Include="ThreadResources.h" />
+    <ClInclude Include="Threads.h" />
     <ClInclude Include="Util.h" />
   </ItemGroup>
   <ItemGroup>
@@ -205,6 +206,7 @@
     <ClCompile Include="Shaders.cpp" />
     <ClCompile Include="SimpleApp.cpp" />
     <ClCompile Include="ThreadResources.cpp" />
+    <ClCompile Include="Threads.cpp" />
     <ClCompile Include="Util.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
