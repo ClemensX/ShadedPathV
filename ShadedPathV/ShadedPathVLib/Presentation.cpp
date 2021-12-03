@@ -255,8 +255,10 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     auto& global = engine.global;
 
     // wait for fence signal
+    LogF("wait present fence image index " << tr.frameIndex << endl);
     vkWaitForFences(device, 1, &tr.inFlightFence, VK_TRUE, UINT64_MAX);
     vkResetFences(device, 1, &tr.inFlightFence);
+    LogF("signalled present fence image index " << tr.frameIndex << endl);
 
     uint32_t imageIndex;
     if (vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, tr.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS) {
@@ -363,7 +365,7 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    if (vkQueueSubmit(engine.global.graphicsQueue, 1, &submitInfo, tr.inFlightFence) != VK_SUCCESS) {
+    if (vkQueueSubmit(engine.global.graphicsQueue, 1, &submitInfo, tr.presentFence) != VK_SUCCESS) {
         Error("failed to submit draw command buffer!");
     }
     VkPresentInfoKHR presentInfo{};

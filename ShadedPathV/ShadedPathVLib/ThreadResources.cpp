@@ -40,10 +40,15 @@ void ThreadResources::createFencesAndSemaphores()
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; // otherwise first wait() will wait forever
 
-    if (vkCreateFence(engine->global.device, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
+    if (vkCreateFence(engine->global.device, &fenceInfo, nullptr, &imageDumpFence) != VK_SUCCESS) {
         Error("failed to create inFlightFence for a frame");
     }
-    if (vkCreateFence(engine->global.device, &fenceInfo, nullptr, &imageDumpFence) != VK_SUCCESS) {
+    //fenceInfo.flags = 0; // present fence will be set during 1st present in queue submit thread
+    if (vkCreateFence(engine->global.device, &fenceInfo, nullptr, &presentFence) != VK_SUCCESS) {
+        Error("failed to create presentFence for a frame");
+    }
+    fenceInfo.flags = 0; // present fence will be set during 1st present in queue submit thread
+    if (vkCreateFence(engine->global.device, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
         Error("failed to create inFlightFence for a frame");
     }
 }
@@ -252,6 +257,7 @@ ThreadResources::~ThreadResources()
 	vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
     vkDestroyFence(device, imageDumpFence, nullptr);
     vkDestroyFence(device, inFlightFence, nullptr);
+    vkDestroyFence(device, presentFence, nullptr);
     vkDestroyCommandPool(device, commandPool, nullptr);
     vkDestroyFramebuffer(device, framebuffer, nullptr);
     vkDestroyRenderPass(device, renderPass, nullptr);

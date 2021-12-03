@@ -32,8 +32,8 @@ public:
     VkExtent2D getBackBufferExtent();
 
     // prevent copy and assigment
-    //ShadedPathEngine(ShadedPathEngine const&) = delete;
-    //void operator=(ShadedPathEngine const&) = delete;
+    ShadedPathEngine(ShadedPathEngine const&) = delete;
+    void operator=(ShadedPathEngine const&) = delete;
 
     // enable output window, withour calling this only background processing is possible
     void enablePresentation(int w, int h, const char* name);
@@ -83,7 +83,9 @@ public:
     // Is engine in shutdown mode? 
     bool isShutdown() { return shutdown_mode; }
     // enable shutdown mode: The run thread will dry out and terminate
-    void shutdown() { shutdown_mode = true; queue.shutdown(); }
+    void shutdown() { shutdown_mode = true; /*queue.shutdown();*/ }
+    // Wait until engine threads have ended rendering.
+    void waitUntilShutdown();
 
     GlobalRendering global;
     Presentation presentation;
@@ -103,19 +105,19 @@ private:
     int framesInFlight = 2;
     bool limitFrameCountEnabled = false;
     bool initialized = false;
-
+    bool threadsAreFinished();
     // backbuffer size:
     VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);
 
     // thread support:
     ThreadGroup threads;
     RenderQueue queue;
+    static bool queueThreadFinished;
     void startRenderThreads();
     void startQueueSubmitThread();
     // start the processing thread in the background and return immediately. May only be called once
     static void runDrawFrame(ShadedPathEngine* engine_instance, ThreadResources* tr);
     static void runQueueSubmit(ShadedPathEngine* engine_instance);
     atomic<bool> shutdown_mode = false;
-
 };
 

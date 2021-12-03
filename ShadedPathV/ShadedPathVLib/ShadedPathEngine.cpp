@@ -78,6 +78,12 @@ void ShadedPathEngine::drawFrame()
 
 void ShadedPathEngine::drawFrame(ThreadResources& tr)
 {
+    // wait for fence signal
+    LogF("wait drawFrame() present fence image index " << tr.frameIndex << endl);
+    vkWaitForFences(global.device, 1, &tr.presentFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(global.device, 1, &tr.presentFence);
+    LogF("fence drawFrame() present fence signalled image index " << tr.frameIndex << endl);
+
     shaders.drawFrame_Triangle(tr);
     shaders.executeBufferImageDump(tr);
 }
@@ -119,8 +125,21 @@ void ShadedPathEngine::setBackBufferResolution(ShadedPathEngine::Resolution res)
 
 bool ShadedPathEngine::shouldClose()
 {
-    if (presentation.enabled) {
-        return presentation.shouldClose();
+    if (presentation.enabled && presentation.shouldClose()) {
+        if (threadModeSingle) {
+            return true;
+        }
+        else {
+            if (!isShutdown()) {
+                // initialte shutdown
+                shutdown();
+                return false;
+            }
+            else {
+                // wait until threads have died
+                return threadsAreFinished();
+            }
+        }
     }
 
     // max frames reached?
@@ -137,11 +156,12 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance, ThreadRes
     LogF("run DrawFrame start " << tr->frameIndex << endl);
     //this_thread::sleep_for(chrono::milliseconds(1000 * (10 - tr->frameIndex)));
     while (engine_instance->isShutdown() == false) {
-        engine_instance->drawFrame(*tr); // TODO not really a copy, right?
+        engine_instance->drawFrame(*tr);
         engine_instance->queue.push(tr);
         LogF("pushed frame: " << tr->frameNum << endl);
     }
     LogF("run DrawFrame end " << tr->frameIndex << endl);
+    tr->threadFinished = true;
 }
 
 void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
@@ -151,16 +171,21 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
     while (engine_instance->isShutdown() == false) {
         auto v = engine_instance->queue.pop();
         if (v == nullptr) {
-            LogF("pipeline shutdown" << endl);
+            LogF("engine shutdown" << endl);
             break;
         }
-        LogF("pipeline received frame: " << v->frameNum << endl);
+        LogF("engine received frame: " << v->frameNum << endl);
         engine_instance->shaders.queueSubmit(*v);
+        // if we are pop()ed by drawing thread we can be sure to own the thread until presentFence is signalled,
+        // we still have to wat for inFlightFence to make sure rendering has ended
         engine_instance->presentation.presentBackBufferImage(*v);
     }
     //engine_instance->setRunning(false);
     LogF("run QueueSubmit end " << endl);
+    queueThreadFinished = true;
 }
+
+bool ShadedPathEngine::queueThreadFinished = false;
 
 void ShadedPathEngine::startRenderThreads()
 {
@@ -197,3 +222,20 @@ void ShadedPathEngine::startQueueSubmitThread()
     SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
 }
 
+void ShadedPathEngine::waitUntilShutdown()
+{
+    if (!threadModeSingle) {
+        queue.shutdown();
+        threads.join_all();
+    }
+}
+
+bool ShadedPathEngine::threadsAreFinished()
+{
+    if (!queueThreadFinished) return false;
+    for (int i = 0; i < framesInFlight; i++) {
+        auto* tr = &threadResources[i];
+        if (!tr->threadFinished) return false;
+    }
+    return true;
+}

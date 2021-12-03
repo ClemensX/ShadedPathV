@@ -241,11 +241,6 @@ void Shaders::drawFrame_Triangle(ThreadResources& tr)
 	if (!enabledTriangle) return;
 	//Log("draw index " << engine.currentFrameIndex << endl);
 
-	// wait for fence signal
-	vkWaitForFences(engine.global.device, 1, &tr.inFlightFence, VK_TRUE, UINT64_MAX);
-	vkResetFences(engine.global.device, 1, &tr.inFlightFence);
-
-
 	//uint32_t imageIndex;
 	//vkAcquireNextImageKHR(engine.device, engine.swapChain, UINT64_MAX, tr.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 	VkSubmitInfo submitInfo{};
@@ -261,6 +256,7 @@ void Shaders::drawFrame_Triangle(ThreadResources& tr)
 	//VkSemaphore signalSemaphores[] = { tr.renderFinishedSemaphore };
 	submitInfo.signalSemaphoreCount = 0;
 	submitInfo.pSignalSemaphores = nullptr; // signalSemaphores;
+	tr.submitinfos.clear();
 	tr.submitinfos.push_back(submitInfo);
 	//VkPresentInfoKHR presentInfo{};
 	//presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -403,6 +399,7 @@ void Shaders::executeBufferImageDump(ThreadResources& tr)
 
 void Shaders::queueSubmit(ThreadResources& tr)
 {
+	LogF("queue submit image index " << tr.frameIndex << endl);
 	if (vkQueueSubmit(engine.global.graphicsQueue, 1, &tr.submitinfos.at(0), tr.inFlightFence) != VK_SUCCESS) {
 		Error("failed to submit draw command buffer!");
 	}

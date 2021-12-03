@@ -144,6 +144,7 @@ public:
 			LogF("RenderQueue wait suspended\n");
 			if (in_shutdown) {
 				LogF("RenderQueue shutdown in pop\n");
+				cond.notify_all();
 				return nullptr;
 			}
 		}
@@ -158,7 +159,9 @@ public:
 	void push(ThreadResources* frame) {
 		unique_lock<mutex> lock(monitorMutex);
 		if (in_shutdown) {
-			throw "RenderQueue shutdown in push";
+			//throw "RenderQueue shutdown in push";
+			LogF("RenderQueue shutdown in push\n");
+			return;
 		}
 		myqueue.push(frame);
 		LogF("RenderQueue length " << myqueue.size() << endl);

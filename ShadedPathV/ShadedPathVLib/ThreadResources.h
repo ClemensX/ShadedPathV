@@ -10,6 +10,14 @@ class ThreadResources
 public:
 	ThreadResources();
 	virtual ~ThreadResources();
+
+	// prevent copy and assigment
+	ThreadResources(ThreadResources const&) = delete;
+	void operator=(ThreadResources const&) = delete;
+	// we need ability to move for putting into vector
+	ThreadResources(ThreadResources&&) = default;
+	ThreadResources& operator=(ThreadResources&&) = default;
+
 	static ShadedPathEngine* engine;
 	VkSemaphore imageAvailableSemaphore = nullptr;
 	VkSemaphore renderFinishedSemaphore = nullptr;
@@ -42,6 +50,10 @@ public:
 	long frameNum = -1;
 	long frameIndex = -1;
 	vector<VkSubmitInfo> submitinfos;
+	VkFence presentFence = nullptr;
+
+
+	bool threadFinished = false;
 private:
 	void createFencesAndSemaphores();
 	void createRenderPass();
