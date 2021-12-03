@@ -91,6 +91,8 @@ public:
     Presentation presentation;
     Shaders shaders;
     vector<ThreadResources> threadResources;
+    atomic_flag at_flag0{};
+    atomic_flag at_flag1{};
 
     // non-Vulkan members
     Files files;

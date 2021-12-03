@@ -27,6 +27,7 @@
 #include <filesystem>
 #include <chrono>
 #include <thread>
+#include <atomic>
 #include <mutex>
 #include <queue>
 using namespace std;

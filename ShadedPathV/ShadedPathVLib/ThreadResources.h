@@ -51,6 +51,7 @@ public:
 	long frameIndex = -1;
 	vector<VkSubmitInfo> submitinfos;
 	VkFence presentFence = nullptr;
+	atomic_flag* renderThreadContinue = nullptr;
 
 
 	bool threadFinished = false;

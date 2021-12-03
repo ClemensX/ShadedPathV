@@ -50,6 +50,15 @@ void ShadedPathEngine::prepareDrawing()
         auto& tr = threadResources[i];
         tr.frameIndex = i;
         tr.createCommandBufferTriangle();
+        if (i == 0) {
+            tr.renderThreadContinue = &at_flag0; // TODO remove hack!!!!
+            tr.renderThreadContinue->test_and_set();
+            tr.renderThreadContinue->notify_one();
+        } else if (i == 1) {
+            tr.renderThreadContinue = &at_flag1;
+            tr.renderThreadContinue->test_and_set();
+            tr.renderThreadContinue->notify_one();
+        }
     }
     presentation.initBackBufferPresentation();
 
@@ -156,6 +165,9 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance, ThreadRes
     LogF("run DrawFrame start " << tr->frameIndex << endl);
     //this_thread::sleep_for(chrono::milliseconds(1000 * (10 - tr->frameIndex)));
     while (engine_instance->isShutdown() == false) {
+        // wait until queue submit thread issued all present commands
+        tr->renderThreadContinue->wait(false);
+        // draw next frame
         engine_instance->drawFrame(*tr);
         engine_instance->queue.push(tr);
         LogF("pushed frame: " << tr->frameNum << endl);
@@ -179,6 +191,9 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
         // if we are pop()ed by drawing thread we can be sure to own the thread until presentFence is signalled,
         // we still have to wat for inFlightFence to make sure rendering has ended
         engine_instance->presentation.presentBackBufferImage(*v);
+        // tell render thread to continue:
+        v->renderThreadContinue->test_and_set();
+        v->renderThreadContinue->notify_one();
     }
     //engine_instance->setRunning(false);
     LogF("run QueueSubmit end " << endl);
