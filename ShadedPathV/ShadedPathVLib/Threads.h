@@ -141,9 +141,9 @@ public:
 		unique_lock<mutex> lock(monitorMutex);
 		while (myqueue.empty()) {
 			cond.wait_for(lock, chrono::milliseconds(3000));
-			LogF("RenderQueue wait suspended\n");
+			LogCondF(LOG_QUEUE, "RenderQueue wait suspended\n");
 			if (in_shutdown) {
-				LogF("RenderQueue shutdown in pop\n");
+				LogCondF(LOG_QUEUE, "RenderQueue shutdown in pop\n");
 				cond.notify_all();
 				return nullptr;
 			}
@@ -160,11 +160,11 @@ public:
 		unique_lock<mutex> lock(monitorMutex);
 		if (in_shutdown) {
 			//throw "RenderQueue shutdown in push";
-			LogF("RenderQueue shutdown in push\n");
+			LogCondF(LOG_QUEUE, "RenderQueue shutdown in push\n");
 			return;
 		}
 		myqueue.push(frame);
-		LogF("RenderQueue length " << myqueue.size() << endl);
+		LogCondF(LOG_QUEUE, "RenderQueue length " << myqueue.size() << endl);
 		cond.notify_one();
 	}
 

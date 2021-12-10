@@ -88,10 +88,11 @@ void ShadedPathEngine::drawFrame()
 void ShadedPathEngine::drawFrame(ThreadResources& tr)
 {
     // wait for fence signal
-    LogF("wait drawFrame() present fence image index " << tr.frameIndex << endl);
+    LogCondF(LOG_QUEUE, "wait drawFrame() present fence image index " << tr.frameIndex << endl);
+    LogCondF(LOG_FENCE, "render thread wait present fence " << hex << ThreadInfo::thread_osid() << endl);
     vkWaitForFences(global.device, 1, &tr.presentFence, VK_TRUE, UINT64_MAX);
     vkResetFences(global.device, 1, &tr.presentFence);
-    LogF("fence drawFrame() present fence signalled image index " << tr.frameIndex << endl);
+    LogCondF(LOG_QUEUE, "fence drawFrame() present fence signalled image index " << tr.frameIndex << endl);
 
     shaders.drawFrame_Triangle(tr);
     shaders.executeBufferImageDump(tr);
@@ -162,7 +163,7 @@ bool ShadedPathEngine::shouldClose()
 
 void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance, ThreadResources* tr)
 {
-    LogF("run DrawFrame start " << tr->frameIndex << endl);
+    LogCondF(LOG_QUEUE, "run DrawFrame start " << tr->frameIndex << endl);
     //this_thread::sleep_for(chrono::milliseconds(1000 * (10 - tr->frameIndex)));
     while (engine_instance->isShutdown() == false) {
         // wait until queue submit thread issued all present commands
@@ -170,9 +171,9 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance, ThreadRes
         // draw next frame
         engine_instance->drawFrame(*tr);
         engine_instance->queue.push(tr);
-        LogF("pushed frame: " << tr->frameNum << endl);
+        LogCondF(LOG_QUEUE, "pushed frame: " << tr->frameNum << endl);
     }
-    LogF("run DrawFrame end " << tr->frameIndex << endl);
+    LogCondF(LOG_QUEUE, "run DrawFrame end " << tr->frameIndex << endl);
     tr->threadFinished = true;
 }
 
@@ -186,7 +187,7 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
             LogF("engine shutdown" << endl);
             break;
         }
-        LogF("engine received frame: " << v->frameNum << endl);
+        LogCondF(LOG_QUEUE, "engine received frame: " << v->frameNum << endl);
         engine_instance->shaders.queueSubmit(*v);
         // if we are pop()ed by drawing thread we can be sure to own the thread until presentFence is signalled,
         // we still have to wat for inFlightFence to make sure rendering has ended

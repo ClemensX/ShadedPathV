@@ -38,6 +38,37 @@ To decide formats to use we can run the engine in presentation mode and get a li
 | 2 | VK_PRESENT_MODE_FIFO_KHR | 
 | 3 | VK_PRESENT_MODE_FIFO_RELAXED_KHR | 
 
+### Thread Model
+
+* renderThreadContinue: atomic_flag
+* queue: FIFO queue (host controlled)
+* presentFence: VkFence
+* inFlightFence: VkFence
+
+| **Thread Synchronization**  | Queue Submit Thread | Render Threads |
+| -------------             | ------ | ------ |
+| renderThreadContinue set + notify               |                  | renderThreadContinue->wait() |
+|                                                 |                  | drawFrame() |
+|                                                 | queue.pop()      |             |
+| presentFence was created in set mode            |                  | vkWaitForFences(presentFence) |
+|                                                 |                  | vkReset |
+|                                                 |                  | create graphics command buffers |
+|                                                 |                  | queue.push() |
+|                                                 | vkQueueSubmit(inFlightFence) | |
+|                                                 |                  | vkWaitForFences(presentFence) |
+|                                                 | vkWaitForFence(inFlightFence) |
+|                                                 | vkReset |
+|                                                 | vkAcquireNextImageKHR(swapChain) |
+|                                                 | copy back buffer image to swapChain image |
+|                                                 | vkQueueSubmit(presentFence) | |
+|                                                 |                  | vkReset |
+| Validation Error: VkFence is simultaneously used | vkQueueSubmit(presentFence) | |
+|                                                 |                  | drawFrame() |
+|                                                 |                  | vkWaitForFences(presentFence) |
+|                                                 | vkQueuePresentKHR() |
+|                                                 | renderThreadContinue set + notify
+|                                                 | queue.pop()      |             |
+
 ## Issues
 
 * configure validation layers with Vulkan Configurator. Didn't succeed in configuring via app. Storing will enable debug config still active after configurator closes, but ALL Vulkan apps may be affected!

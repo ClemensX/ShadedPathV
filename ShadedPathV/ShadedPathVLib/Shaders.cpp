@@ -399,7 +399,7 @@ void Shaders::executeBufferImageDump(ThreadResources& tr)
 
 void Shaders::queueSubmit(ThreadResources& tr)
 {
-	LogF("queue submit image index " << tr.frameIndex << endl);
+	LogCondF(LOG_QUEUE, "queue submit image index " << tr.frameIndex << endl);
 	if (vkQueueSubmit(engine.global.graphicsQueue, 1, &tr.submitinfos.at(0), tr.inFlightFence) != VK_SUCCESS) {
 		Error("failed to submit draw command buffer!");
 	}

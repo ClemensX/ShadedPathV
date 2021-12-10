@@ -7,6 +7,13 @@
 #ifndef PCH_H
 #define PCH_H
 
+// global defines to enable/disable features:
+// set to true for logging render queue operations
+#define LOG_QUEUE false
+#define LOG_FENCE true
+
+
+
 // add headers that you want to pre-compile here
 
 // Windows headers
@@ -83,6 +90,8 @@ inline void LogFile(const char* s) {
 	stringstream s1764;  s1764 << x; \
 	LogFile(s1764.str().c_str()); \
 }
+
+#define LogCondF(y,x) if(y){LogF(x)}
 
 inline void ErrorExt(string msg, const char* file, DWORD line)
 {
