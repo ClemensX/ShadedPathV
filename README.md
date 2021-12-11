@@ -54,18 +54,20 @@ To decide formats to use we can run the engine in presentation mode and get a li
 |                                                 |                  | vkReset |
 |                                                 |                  | create graphics command buffers |
 |                                                 |                  | queue.push() |
+|                                                 |                  | renderThreadContinue->wait() |
 |                                                 | vkQueueSubmit(inFlightFence) | |
 |                                                 |                  | vkWaitForFences(presentFence) |
 |                                                 | vkWaitForFence(inFlightFence) |
 |                                                 | vkReset |
 |                                                 | vkAcquireNextImageKHR(swapChain) |
 |                                                 | copy back buffer image to swapChain image |
-|                                                 | vkQueueSubmit(presentFence) | |
-|                                                 |                  | vkReset |
 | Validation Error: VkFence is simultaneously used | vkQueueSubmit(presentFence) | |
+|                                                 |                  | vkReset |
 |                                                 |                  | drawFrame() |
 |                                                 |                  | vkWaitForFences(presentFence) |
 |                                                 | vkQueuePresentKHR() |
+|                                                 |                  | create graphics command buffers |
+|                                                 |                  | queue.push() |
 |                                                 | renderThreadContinue set + notify
 |                                                 | queue.pop()      |             |
 
