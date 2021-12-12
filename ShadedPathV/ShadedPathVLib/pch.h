@@ -9,7 +9,11 @@
 
 // global defines to enable/disable features:
 // set to true for logging render queue operations
+// submit queue logging
 #define LOG_QUEUE false
+// render thread continuation logging:
+#define LOG_RENDER_CONTINUATION true
+
 #define LOG_FENCE true
 
 

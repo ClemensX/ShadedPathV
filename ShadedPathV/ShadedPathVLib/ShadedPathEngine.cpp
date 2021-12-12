@@ -50,16 +50,9 @@ void ShadedPathEngine::prepareDrawing()
         auto& tr = threadResources[i];
         tr.frameIndex = i;
         tr.createCommandBufferTriangle();
+        string name = "renderContinueQueue_" + to_string(i);
+        tr.renderThreadContinueQueue.setLoggingInfo(LOG_RENDER_CONTINUATION, name);
         tr.renderThreadContinueQueue.push(0);
-        //if (i == 0) {
-        //    tr.renderThreadContinue = &at_flag0; // TODO remove hack!!!!
-        //    tr.renderThreadContinue->test_and_set();
-        //    tr.renderThreadContinue->notify_one();
-        //} else if (i == 1) {
-        //    tr.renderThreadContinue = &at_flag1;
-        //    tr.renderThreadContinue->test_and_set();
-        //    tr.renderThreadContinue->notify_one();
-        //}
     }
     presentation.initBackBufferPresentation();
 
