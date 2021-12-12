@@ -7,8 +7,10 @@ Course of action should be like this
 - [x] Decouple Swap chain and backbuffer image rendering
 - [x] backbuffer image saving
 - [x] adapt backbuffer image size during rendering to window size
+- [ ] fix renderThreadContinue->wait() not waiting correctly (atomic_flag not suitable)
+- [ ] finalize thread architecture
 - [ ] image based tests
-- [ ] Thread pool for backbuffer rendering
+- [x] Thread pool for backbuffer rendering
 - [ ] optimze thread performance
 - [ ] vr view
 - [ ] asset loading (library)
@@ -54,18 +56,20 @@ To decide formats to use we can run the engine in presentation mode and get a li
 |                                                 |                  | vkReset |
 |                                                 |                  | create graphics command buffers |
 |                                                 |                  | queue.push() |
+|                                                 |                  | renderThreadContinue->wait() |
 |                                                 | vkQueueSubmit(inFlightFence) | |
 |                                                 |                  | vkWaitForFences(presentFence) |
 |                                                 | vkWaitForFence(inFlightFence) |
 |                                                 | vkReset |
 |                                                 | vkAcquireNextImageKHR(swapChain) |
 |                                                 | copy back buffer image to swapChain image |
-|                                                 | vkQueueSubmit(presentFence) | |
-|                                                 |                  | vkReset |
 | Validation Error: VkFence is simultaneously used | vkQueueSubmit(presentFence) | |
+|                                                 |                  | vkReset |
 |                                                 |                  | drawFrame() |
 |                                                 |                  | vkWaitForFences(presentFence) |
 |                                                 | vkQueuePresentKHR() |
+|                                                 |                  | create graphics command buffers |
+|                                                 |                  | queue.push() |
 |                                                 | renderThreadContinue set + notify
 |                                                 | queue.pop()      |             |
 
