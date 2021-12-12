@@ -19,8 +19,10 @@ public:
         shutdown();
         Log("Engine destructor\n");
         if (global.device) vkDeviceWaitIdle(global.device);
-        ThemedTimer::getInstance()->logInfo("DrawFrame");
-        ThemedTimer::getInstance()->logFPS("DrawFrame");
+        ThemedTimer::getInstance()->logInfo(TIMER_DRAW_FRAME);
+        ThemedTimer::getInstance()->logFPS(TIMER_DRAW_FRAME);
+        ThemedTimer::getInstance()->logInfo(TIMER_PRESENT_FRAME);
+        ThemedTimer::getInstance()->logFPS(TIMER_PRESENT_FRAME);
     };
 
     enum class Resolution { FourK, TwoK, OneK, DeviceDefault, Small };

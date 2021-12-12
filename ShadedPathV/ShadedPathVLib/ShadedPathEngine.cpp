@@ -4,7 +4,8 @@
 void ShadedPathEngine::init()
 {
     Log("engine absolute start time (hours and fraction): " << gameTime.getTimeAbs() << endl);
-    ThemedTimer::getInstance()->create("DrawFrame", 1000);
+    ThemedTimer::getInstance()->create(TIMER_DRAW_FRAME, 1000);
+    ThemedTimer::getInstance()->create(TIMER_PRESENT_FRAME, 1000);
     presentation.initGLFW();
     global.initBeforePresentation();
     presentation.init();
@@ -68,15 +69,15 @@ void ShadedPathEngine::prepareDrawing()
 void ShadedPathEngine::drawFrame()
 {
     if (!initialized) Error("Engine was not initialized");
-    ThemedTimer::getInstance()->add("DrawFrame");
     if (threadModeSingle) {
+        ThemedTimer::getInstance()->add(TIMER_DRAW_FRAME);
         auto& tr = threadResources[currentFrameIndex];
         drawFrame(tr);
         shaders.queueSubmit(tr);
         presentation.presentBackBufferImage(tr);
+        frameNum++;
+        currentFrameIndex = frameNum % framesInFlight;
     }
-    frameNum++;
-    currentFrameIndex = frameNum % framesInFlight;
 }
 
 void ShadedPathEngine::drawFrame(ThreadResources& tr)
@@ -190,6 +191,7 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
         // if we are pop()ed by drawing thread we can be sure to own the thread until presentFence is signalled,
         // we still have to wat for inFlightFence to make sure rendering has ended
         engine_instance->presentation.presentBackBufferImage(*v);
+        ThemedTimer::getInstance()->add(TIMER_PRESENT_FRAME);
         // tell render thread to continue:
         //v->renderThreadContinue->test_and_set();
         //v->renderThreadContinue->notify_one();

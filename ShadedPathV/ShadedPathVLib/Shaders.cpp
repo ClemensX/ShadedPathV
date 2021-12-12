@@ -281,7 +281,7 @@ void Shaders::drawFrame_Triangle(ThreadResources& tr)
 	//waitInfo.pSemaphores = nullptr;//signalWaitSemaphores;
 	//waitInfo.pValues = &waitValue;
 	//vkWaitSemaphores(engine.global.device, &waitInfo, UINT64_MAX);
-	ThemedTimer::getInstance()->add("DrawFrame");
+	//ThemedTimer::getInstance()->add("DrawFrame");
 }
 
 void Shaders::executeBufferImageDump(ThreadResources& tr)

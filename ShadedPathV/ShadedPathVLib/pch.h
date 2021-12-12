@@ -16,7 +16,9 @@
 
 #define LOG_FENCE true
 
-
+// timer topics:
+#define TIMER_DRAW_FRAME "DrawFrame"
+#define TIMER_PRESENT_FRAME "PresentFrame"
 
 // add headers that you want to pre-compile here
 
