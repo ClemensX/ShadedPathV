@@ -131,6 +131,74 @@ private:
 	chrono::time_point<chrono::steady_clock> lastCallTime;
 };
 
+template<typename T>
+class ThreadsafeWaitingQueue {
+	queue<T> myqueue;
+	mutable mutex monitorMutex;
+	condition_variable cond;
+	bool in_shutdown{ false };
+	bool logEnable;
+	string logName;
+
+public:
+	// allow no moves of a queue
+	ThreadsafeWaitingQueue(const ThreadsafeWaitingQueue<T>&) = delete;
+	ThreadsafeWaitingQueue& operator=(const ThreadsafeWaitingQueue<T>&) = delete;
+	ThreadsafeWaitingQueue(ThreadsafeWaitingQueue<T>&& other) {
+		unique_lock<mutex> lock(monitorMutex);
+		myqueue = std::move(other.myqueue);
+	}
+	//	ThreadsafeWaitingQueue(ThreadsafeWaitingQueue<T>&& other) = delete;
+	ThreadsafeWaitingQueue() = default;
+	// Create queue with logging info, waiting threads will be suspended every 3 seconds
+	// to check for shutdown mode
+	//ThreadsafeWaitingQueue(T t, const bool enableLogging, const string loggingName) {
+	//	logEnable = enableLogging;
+	//	logName = loggingName;
+	//}
+	virtual ~ThreadsafeWaitingQueue() {};
+
+	// wait until item available, if nothing is returned queue is in shutdown
+	optional<T> pop() {
+		unique_lock<mutex> lock(monitorMutex);
+		while (myqueue.empty()) {
+			cond.wait_for(lock, chrono::milliseconds(3000));
+			//LogCondF(logEnable, logName + " wait suspended\n");
+			if (in_shutdown) {
+				//LogCondF(LOG_QUEUE, "RenderQueue shutdown in pop\n");
+				cond.notify_all();
+				return nullopt;
+			}
+		}
+		assert(myqueue.empty() == false);
+		T tmp = myqueue.front();
+		myqueue.pop();
+		cond.notify_one();
+		return tmp;
+	}
+
+	// push item and notify one waiting thread
+	void push(const T &item) {
+		unique_lock<mutex> lock(monitorMutex);
+		if (in_shutdown) {
+			//throw "RenderQueue shutdown in push";
+			//LogCondF(logEnable, logName + " shutdown in push\n");
+			return;
+		}
+		myqueue.push(item);
+		//LogCondF(logEnable, logName + " length " << myqueue.size() << endl);
+		cond.notify_one();
+	}
+
+	void shutdown() {
+		unique_lock<mutex> lock(monitorMutex);
+		in_shutdown = true;
+		cond.notify_all();
+	}
+};
+
+ //typedef ThreadsafeWaitingQueue<unsigned long> RenderThreadContinueQueue;
+
 class ThreadResources;
 
 // queue for syncing render and queue submit threads:
