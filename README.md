@@ -7,7 +7,8 @@ Course of action should be like this
 - [x] Decouple Swap chain and backbuffer image rendering
 - [x] backbuffer image saving
 - [x] adapt backbuffer image size during rendering to window size
-- [ ] fix renderThreadContinue->wait() not waiting correctly (atomic_flag not suitable)
+- [x] fix renderThreadContinue->wait() not waiting correctly (atomic_flag not suitable)
+- [ ] fix no shutdown for > 1 render threads
 - [ ] finalize thread architecture
 - [ ] image based tests
 - [x] Thread pool for backbuffer rendering
