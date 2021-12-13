@@ -6,6 +6,7 @@ void ShadedPathEngine::init()
     Log("engine absolute start time (hours and fraction): " << gameTime.getTimeAbs() << endl);
     ThemedTimer::getInstance()->create(TIMER_DRAW_FRAME, 1000);
     ThemedTimer::getInstance()->create(TIMER_PRESENT_FRAME, 1000);
+    ThemedTimer::getInstance()->create(TIMER_INPUT_THREAD, 1000);
     presentation.initGLFW();
     global.initBeforePresentation();
     presentation.init();
@@ -97,6 +98,12 @@ void ShadedPathEngine::pollEvents()
 {
     if (!initialized) Error("Engine was not initialized");
     presentation.pollEvents();
+    // measure how often we run the input cycle:
+    if (!threadModeSingle) {
+        ThemedTimer::getInstance()->add(TIMER_INPUT_THREAD);
+        limiter.waitForLimit();
+        //Log("Input Thread\n");
+    }
 }
 
 void ShadedPathEngine::setBackBufferResolution(VkExtent2D e)

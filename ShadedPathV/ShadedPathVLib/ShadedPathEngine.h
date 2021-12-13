@@ -9,7 +9,8 @@ public:
     ShadedPathEngine() :
         global(*this),
         presentation(*this),
-        shaders(*this)
+        shaders(*this),
+        limiter(60.0f)
     {
         Log("Engine c'tor\n");
     }
@@ -23,6 +24,8 @@ public:
         ThemedTimer::getInstance()->logFPS(TIMER_DRAW_FRAME);
         ThemedTimer::getInstance()->logInfo(TIMER_PRESENT_FRAME);
         ThemedTimer::getInstance()->logFPS(TIMER_PRESENT_FRAME);
+        ThemedTimer::getInstance()->logInfo(TIMER_INPUT_THREAD);
+        ThemedTimer::getInstance()->logFPS(TIMER_INPUT_THREAD);
     };
 
     enum class Resolution { FourK, TwoK, OneK, DeviceDefault, Small };
@@ -123,5 +126,6 @@ private:
     static void runDrawFrame(ShadedPathEngine* engine_instance, ThreadResources* tr);
     static void runQueueSubmit(ShadedPathEngine* engine_instance);
     atomic<bool> shutdown_mode = false;
+    ThreadLimiter limiter;
 };
 

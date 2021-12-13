@@ -117,13 +117,13 @@ public:
 			// we are above threshold: sleep for the remaining milliseconds
 			unsigned long d = (unsigned long)(limitMicro - length) / 1000; // sleep time in millis
 			//Log(" limit length duration " << limitMicro << " " << length << " " << d << endl);
-			Sleep(d);
+			this_thread::sleep_for(chrono::milliseconds(d));
 		}
 		else {
-			// sleep at least 10ms to give other update threads a chance
-			Sleep(10);
+			// sleep at least 2ms to give other update threads a chance
+			Sleep(2);
 		}
-		lastCallTime = chrono::high_resolution_clock::now();
+		lastCallTime = now;// chrono::high_resolution_clock::now();
 	};
 private:
 	long long limitMicro;
@@ -165,7 +165,12 @@ public:
 		unique_lock<mutex> lock(monitorMutex);
 		while (myqueue.empty()) {
 			cond.wait_for(lock, chrono::milliseconds(3000));
-			LogCondF(logEnable, logName + " wait suspended\n");
+			if (myqueue.empty()) {
+				LogCondF(logEnable, logName + " timeout wait suspended\n");
+			}
+			else {
+				LogCondF(logEnable, logName + " pop\n");
+			}
 			if (in_shutdown) {
 				LogCondF(LOG_QUEUE, "RenderQueue shutdown in pop\n");
 				cond.notify_all();

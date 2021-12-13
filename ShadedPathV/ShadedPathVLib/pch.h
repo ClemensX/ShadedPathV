@@ -12,13 +12,14 @@
 // submit queue logging
 #define LOG_QUEUE false
 // render thread continuation logging:
-#define LOG_RENDER_CONTINUATION true
+#define LOG_RENDER_CONTINUATION false
 
-#define LOG_FENCE true
+#define LOG_FENCE false
 
 // timer topics:
 #define TIMER_DRAW_FRAME "DrawFrame"
 #define TIMER_PRESENT_FRAME "PresentFrame"
+#define TIMER_INPUT_THREAD "InputThread"
 
 // add headers that you want to pre-compile here
 
