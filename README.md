@@ -42,36 +42,36 @@ To decide formats to use we can run the engine in presentation mode and get a li
 
 ### Thread Model
 
-* renderThreadContinue: atomic_flag
+* renderThreadContinue: ThreadsafeWaitingQueue<unsigned long>
 * queue: FIFO queue (host controlled)
 * presentFence: VkFence
 * inFlightFence: VkFence
 
 | **Thread Synchronization**  | Queue Submit Thread | Render Threads |
 | -------------             | ------ | ------ |
-| renderThreadContinue set + notify               |                  | renderThreadContinue->wait() |
+| renderThreadContinue push()                     |                  | renderThreadContinue->pop() |
 |                                                 |                  | drawFrame() |
 |                                                 | queue.pop()      |             |
 | presentFence was created in set mode            |                  | vkWaitForFences(presentFence) |
 |                                                 |                  | vkReset |
 |                                                 |                  | create graphics command buffers |
 |                                                 |                  | queue.push() |
-|                                                 |                  | renderThreadContinue->wait() |
+|                                                 |                  | renderThreadContinue->pop() |
 |                                                 | vkQueueSubmit(inFlightFence) | |
-|                                                 |                  | vkWaitForFences(presentFence) |
 |                                                 | vkWaitForFence(inFlightFence) |
 |                                                 | vkReset |
 |                                                 | vkAcquireNextImageKHR(swapChain) |
 |                                                 | copy back buffer image to swapChain image |
-| Validation Error: VkFence is simultaneously used | vkQueueSubmit(presentFence) | |
+|                                                 | vkQueueSubmit(presentFence) | |
+|                                                 | vkQueuePresentKHR() |
+|                                                 | renderThreadContinue push()
+|                                                 |                  | vkWaitForFences(presentFence) |
 |                                                 |                  | vkReset |
 |                                                 |                  | drawFrame() |
-|                                                 |                  | vkWaitForFences(presentFence) |
-|                                                 | vkQueuePresentKHR() |
-|                                                 |                  | create graphics command buffers |
 |                                                 |                  | queue.push() |
-|                                                 | renderThreadContinue set + notify
 |                                                 | queue.pop()      |             |
+|                                                 |                  | renderThreadContinue->pop() |
+|                                                 | vkQueueSubmit(inFlightFence) | |
 
 ## Issues
 
