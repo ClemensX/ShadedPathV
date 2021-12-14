@@ -15,18 +15,7 @@ public:
         Log("Engine c'tor\n");
     }
 
-    virtual ~ShadedPathEngine()
-    {
-        shutdown();
-        Log("Engine destructor\n");
-        if (global.device) vkDeviceWaitIdle(global.device);
-        ThemedTimer::getInstance()->logInfo(TIMER_DRAW_FRAME);
-        ThemedTimer::getInstance()->logFPS(TIMER_DRAW_FRAME);
-        ThemedTimer::getInstance()->logInfo(TIMER_PRESENT_FRAME);
-        ThemedTimer::getInstance()->logFPS(TIMER_PRESENT_FRAME);
-        ThemedTimer::getInstance()->logInfo(TIMER_INPUT_THREAD);
-        ThemedTimer::getInstance()->logFPS(TIMER_INPUT_THREAD);
-    };
+    virtual ~ShadedPathEngine();
 
     enum class Resolution { FourK, TwoK, OneK, DeviceDefault, Small };
 
@@ -87,8 +76,8 @@ public:
 
     // Is engine in shutdown mode? 
     bool isShutdown() { return shutdown_mode; }
-    // enable shutdown mode: The run thread will dry out and terminate
-    void shutdown() { shutdown_mode = true; /*queue.shutdown();*/ }
+    // enable shutdown mode: The run threads will dry out and terminate
+    void shutdown();
     // Wait until engine threads have ended rendering.
     void waitUntilShutdown();
 

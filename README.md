@@ -8,7 +8,7 @@ Course of action should be like this
 - [x] backbuffer image saving
 - [x] adapt backbuffer image size during rendering to window size
 - [x] fix renderThreadContinue->wait() not waiting correctly (atomic_flag not suitable)
-- [ ] fix no shutdown for > 1 render threads
+- [x] fix no shutdown for > 1 render threads
 - [ ] finalize thread architecture
 - [ ] image based tests
 - [x] Thread pool for backbuffer rendering
@@ -43,13 +43,13 @@ To decide formats to use we can run the engine in presentation mode and get a li
 
 ### Thread Model
 
-* renderThreadContinue: ThreadsafeWaitingQueue<unsigned long>
+* renderThreadContinue: ThreadsafeWaitingQueue<> (host controlled)
 * queue: FIFO queue (host controlled)
 * presentFence: VkFence
 * inFlightFence: VkFence
 
-| **Thread Synchronization**  | Queue Submit Thread | Render Threads |
-| -------------             | ------ | ------ |
+| Remarks                                         | Queue Submit Thread | Render Threads |
+| -------------                                   | ------           | ------ |
 | renderThreadContinue push()                     |                  | renderThreadContinue->pop() |
 |                                                 |                  | drawFrame() |
 |                                                 | queue.pop()      |             |

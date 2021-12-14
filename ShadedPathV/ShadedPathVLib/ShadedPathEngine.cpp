@@ -76,6 +76,7 @@ void ShadedPathEngine::drawFrame()
         drawFrame(tr);
         shaders.queueSubmit(tr);
         presentation.presentBackBufferImage(tr);
+        ThemedTimer::getInstance()->add(TIMER_PRESENT_FRAME);
         frameNum++;
         currentFrameIndex = frameNum % framesInFlight;
     }
@@ -172,7 +173,7 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance, ThreadRes
 //        tr->renderThreadContinue->wait(false);
         optional<unsigned long> o = tr->renderThreadContinueQueue.pop();
         if (!o) {
-            return;
+            break;
         }
         // draw next frame
         engine_instance->drawFrame(*tr);
@@ -246,6 +247,16 @@ void ShadedPathEngine::startQueueSubmitThread()
     SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
 }
 
+void ShadedPathEngine::shutdown()
+{
+    shutdown_mode = true;
+    /*queue.shutdown();*/
+    for (int i = 0; i < framesInFlight; i++) {
+        auto& tr = threadResources[i];
+        tr.renderThreadContinueQueue.shutdown();
+    }
+}
+
 void ShadedPathEngine::waitUntilShutdown()
 {
     if (!threadModeSingle) {
@@ -263,3 +274,17 @@ bool ShadedPathEngine::threadsAreFinished()
     }
     return true;
 }
+
+ShadedPathEngine::~ShadedPathEngine()
+{
+    shutdown();
+    Log("Engine destructor\n");
+    if (global.device) vkDeviceWaitIdle(global.device);
+    //ThemedTimer::getInstance()->logInfo(TIMER_DRAW_FRAME);
+    //ThemedTimer::getInstance()->logFPS(TIMER_DRAW_FRAME);
+    ThemedTimer::getInstance()->logInfo(TIMER_PRESENT_FRAME);
+    ThemedTimer::getInstance()->logFPS(TIMER_PRESENT_FRAME);
+    ThemedTimer::getInstance()->logInfo(TIMER_INPUT_THREAD);
+    ThemedTimer::getInstance()->logFPS(TIMER_INPUT_THREAD);
+}
+
