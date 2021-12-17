@@ -7,6 +7,7 @@ void ShadedPathEngine::init()
     ThemedTimer::getInstance()->create(TIMER_DRAW_FRAME, 1000);
     ThemedTimer::getInstance()->create(TIMER_PRESENT_FRAME, 1000);
     ThemedTimer::getInstance()->create(TIMER_INPUT_THREAD, 1000);
+    ThemedTimer::getInstance()->create(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT, 1000);
     presentation.initGLFW();
     global.initBeforePresentation();
     presentation.init();
@@ -198,7 +199,9 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
         engine_instance->shaders.queueSubmit(*v);
         // if we are pop()ed by drawing thread we can be sure to own the thread until presentFence is signalled,
         // we still have to wat for inFlightFence to make sure rendering has ended
+        ThemedTimer::getInstance()->start(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
         engine_instance->presentation.presentBackBufferImage(*v);
+        ThemedTimer::getInstance()->stop(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
         ThemedTimer::getInstance()->add(TIMER_PRESENT_FRAME);
         // tell render thread to continue:
         //v->renderThreadContinue->test_and_set();
@@ -286,5 +289,6 @@ ShadedPathEngine::~ShadedPathEngine()
     ThemedTimer::getInstance()->logFPS(TIMER_PRESENT_FRAME);
     ThemedTimer::getInstance()->logInfo(TIMER_INPUT_THREAD);
     ThemedTimer::getInstance()->logFPS(TIMER_INPUT_THREAD);
+    ThemedTimer::getInstance()->logInfo(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
 }
 

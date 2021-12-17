@@ -28,7 +28,11 @@ public:
 
 };
 
-// Store accumulated time info and for individual frames
+// Store accumulated time info and for arbitrary named topics.
+// for FPS like things use add() and it will give you FPS and runtime info at the end.
+// Timing is always the time passed between 2 adds.
+// For timing specific parts use the start() / stop() combo. That only
+// counts time between them without any FPS in mind.
 class ThemedTimer {
 	struct TimerEntry {
 		long long time;
@@ -73,7 +77,22 @@ public:
 		//Log(" micro since last " << td.totalTimeMicros << endl);
 		add(td, microsSinceLast);
 	}
-		
+
+	void start(string name) {
+		if (!check_name(name)) return;
+		auto& td = timerMap[name];
+		chrono::steady_clock::time_point current = chrono::steady_clock::now();
+		td.now = current;
+	}
+
+	void stop(string name) {
+		if (!check_name(name)) return;
+		auto& td = timerMap[name];
+		chrono::steady_clock::time_point current = chrono::steady_clock::now();
+		auto microsSinceLast = chrono::duration_cast<chrono::microseconds>(current - td.now).count();
+		add(td, microsSinceLast);
+	}
+
 	int usedSlots(string name) {
 		if (!check_name(name)) return -1;
 		auto& td = timerMap[name];

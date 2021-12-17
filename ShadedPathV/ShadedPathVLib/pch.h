@@ -17,9 +17,12 @@
 #define LOG_FENCE false
 
 // timer topics:
+// FPS like
 #define TIMER_DRAW_FRAME "DrawFrame"
 #define TIMER_PRESENT_FRAME "PresentFrame"
 #define TIMER_INPUT_THREAD "InputThread"
+// part timers for sub-frame timings like presenting or buffer upload
+#define TIMER_PART_BACKBUFFER_COPY_AND_PRESENT "PartPresentBackBuffer"
 
 // add headers that you want to pre-compile here
 
