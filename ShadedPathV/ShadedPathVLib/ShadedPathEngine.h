@@ -68,12 +68,6 @@ public:
     // if background processing some other threshold like max number of frames might have been reached
     bool shouldClose();
 
-    // current frame index - always within 0 .. threadResources.size() - 1
-    size_t currentFrameIndex = 0;
-
-    // count all frames
-    long frameNum = 0;
-
     // Is engine in shutdown mode? 
     bool isShutdown() { return shutdown_mode; }
     // enable shutdown mode: The run threads will dry out and terminate
@@ -85,8 +79,6 @@ public:
     Presentation presentation;
     Shaders shaders;
     vector<ThreadResources> threadResources;
-    atomic_flag at_flag0{};
-    atomic_flag at_flag1{};
 
     // non-Vulkan members
     Files files;
@@ -116,5 +108,17 @@ private:
     static void runQueueSubmit(ShadedPathEngine* engine_instance);
     atomic<bool> shutdown_mode = false;
     ThreadLimiter limiter;
+
+    // advance currentFrameIndex and frameNum
+    void advanceFrameCountersAfterPresentation();
+    // get next frame number for drawing threads:
+    long getNextFrameNumber();
+    // current frame index - always within 0 .. threadResources.size() - 1
+    atomic<size_t> currentFrameIndex = 0;
+
+    // count all frames
+    atomic<long> frameNum = 0;
+    // for rendering threads
+    atomic<long> nextFreeFrameNum = 0;
 };
 

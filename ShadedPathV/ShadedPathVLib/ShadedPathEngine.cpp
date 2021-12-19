@@ -78,13 +78,16 @@ void ShadedPathEngine::drawFrame()
         shaders.queueSubmit(tr);
         presentation.presentBackBufferImage(tr);
         ThemedTimer::getInstance()->add(TIMER_PRESENT_FRAME);
-        frameNum++;
-        currentFrameIndex = frameNum % framesInFlight;
+        advanceFrameCountersAfterPresentation();
     }
 }
 
 void ShadedPathEngine::drawFrame(ThreadResources& tr)
 {
+    // set new frameNum
+    long oldNum = tr.frameNum;
+    tr.frameNum = getNextFrameNumber();
+    assert(oldNum < tr.frameNum);
     // wait for fence signal
     LogCondF(LOG_QUEUE, "wait drawFrame() present fence image index " << tr.frameIndex << endl);
     LogCondF(LOG_FENCE, "render thread wait present fence " << hex << ThreadInfo::thread_osid() << endl);
@@ -201,6 +204,11 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
         // we still have to wat for inFlightFence to make sure rendering has ended
         ThemedTimer::getInstance()->start(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
         engine_instance->presentation.presentBackBufferImage(*v);
+        if (v->frameNum != engine_instance->frameNum) {
+            LogF("Frames async: drawing:" << v->frameNum << " present: " << engine_instance->frameNum << endl);
+            //Error("Frames out of sync");
+        }
+        engine_instance->advanceFrameCountersAfterPresentation();
         ThemedTimer::getInstance()->stop(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
         ThemedTimer::getInstance()->add(TIMER_PRESENT_FRAME);
         // tell render thread to continue:
@@ -248,6 +256,18 @@ void ShadedPathEngine::startQueueSubmitThread()
     void* native_handle = threads.add_t(runQueueSubmit, this);
     wstring mod_name = wstring(L"queue_submit");//.append(L"_").append(to_wstring(i));
     SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
+}
+
+long ShadedPathEngine::getNextFrameNumber()
+{
+    long n = nextFreeFrameNum++;
+    return n;
+}
+
+void ShadedPathEngine::advanceFrameCountersAfterPresentation()
+{
+    frameNum++;
+    currentFrameIndex = frameNum % framesInFlight;
 }
 
 void ShadedPathEngine::shutdown()

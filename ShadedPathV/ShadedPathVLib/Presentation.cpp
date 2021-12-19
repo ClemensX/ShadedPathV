@@ -382,10 +382,7 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     presentInfo.pImageIndices = &imageIndex;
     presentInfo.pResults = nullptr; // Optional
     vkQueuePresentKHR(presentQueue, &presentInfo);
-    //vkResetCommandBuffer(res.commandBufferPresentBack, 0);
-    //vkWaitForFences(device, 1, &res.inFlightFence, VK_TRUE, UINT64_MAX);
-    //vkResetFences(device, 1, &res.inFlightFence);
-    //vkFreeCommandBuffers(device, res.commandPool, 1, &res.commandBufferPresentBack);
+    //LogF("Frame presented: " << tr.frameNum << endl);
 }
 
 Presentation::~Presentation() {
