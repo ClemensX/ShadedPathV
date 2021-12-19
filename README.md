@@ -9,6 +9,8 @@ Course of action should be like this
 - [x] adapt backbuffer image size during rendering to window size
 - [x] fix renderThreadContinue->wait() not waiting correctly (atomic_flag not suitable)
 - [x] fix no shutdown for > 1 render threads
+- [x] add *Release* version to the current *Debug* config in VS
+- [ ] Include *Dear ImGui* with basic info (FPS)
 - [ ] finalize thread architecture
 - [ ] image based tests
 - [x] Thread pool for backbuffer rendering
