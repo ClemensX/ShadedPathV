@@ -14,6 +14,7 @@ void ShadedPathEngine::init()
     global.initAfterPresentation();
     presentation.initAfterDeviceCreation();
     ThreadResources::initAll(this);
+    ui.init(this);
     initialized = true;
 }
 

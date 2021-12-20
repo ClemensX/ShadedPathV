@@ -49,6 +49,7 @@ public:
 	VkFormat swapChainImageFormat{};
 	VkExtent2D swapChainExtent{};
 	vector<VkImageView> swapChainImageViews;
+	uint32_t imageCount;
 private:
 	ShadedPathEngine& engine;
 	const vector<const char*> deviceExtensions = {

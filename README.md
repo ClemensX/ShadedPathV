@@ -90,3 +90,7 @@ To decide formats to use we can run the engine in presentation mode and get a li
 * Add this extension https://github.com/baldurk/renderdoc-contrib/tree/main/baldurk/whereismydraw
 * See what it tells you
 
+
+## Copyrights of used Components
+
+* Dear ImGui: https://github.com/ocornut/imgui/blob/master/LICENSE.txt Copyright (c) 2014-2021 Omar Cornut

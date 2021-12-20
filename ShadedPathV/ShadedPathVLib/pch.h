@@ -26,6 +26,12 @@
 
 // add headers that you want to pre-compile here
 
+// Dear ImGui headers:
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_vulkan.h"
+
+
 // Windows headers
 
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
@@ -129,6 +135,7 @@ inline void ErrorExt(string msg, const char* file, DWORD line)
 #include "GlobalRendering.h"
 #include "ThreadResources.h"
 #include "Shaders.h"
+#include "ui.h"
 #include "ShadedPathEngine.h"
 #include "SimpleApp.h"
 

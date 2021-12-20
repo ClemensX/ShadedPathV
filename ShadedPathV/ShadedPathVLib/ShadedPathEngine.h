@@ -89,6 +89,7 @@ public:
     const char* win_name = nullptr;
     bool threadModeSingle = false;
 private:
+    UI ui;
     long limitFrameCount = 0;
     int framesInFlight = 2;
     bool limitFrameCountEnabled = false;

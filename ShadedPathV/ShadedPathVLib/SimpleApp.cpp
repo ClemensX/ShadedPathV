@@ -11,7 +11,7 @@ void SimpleApp::run()
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::Small);
         engine.enablePresentation(800, (int)(800/1.77f), "Vulkan Simple App");
-        engine.setFramesInFlight(20);
+        engine.setFramesInFlight(2);
         //engine.setThreadModeSingle();
 
         // engine initialization
