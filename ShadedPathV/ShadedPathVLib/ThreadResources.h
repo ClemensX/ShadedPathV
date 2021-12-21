@@ -28,7 +28,7 @@ public:
 	VkPipelineLayout pipelineLayoutTriangle = nullptr;
 	VkPipeline graphicsPipelineTriangle = nullptr;
 	VkRenderPass renderPass = nullptr;
-	VkCommandPool commandPool;
+	VkCommandPool commandPool = nullptr;
 	VkFramebuffer framebuffer = nullptr;
 
 	// backbuffer image dump:

@@ -4,7 +4,8 @@ class UI
 public:
 	void init(ShadedPathEngine *engine);
 	~UI();
-	VkDescriptorPool         g_DescriptorPool = VK_NULL_HANDLE;
+	ShadedPathEngine* engine = nullptr;
+	VkDescriptorPool g_DescriptorPool = VK_NULL_HANDLE;
 	VkRenderPass imGuiRenderPass = nullptr;
 };
 

@@ -2,6 +2,7 @@
 
 void UI::init(ShadedPathEngine* engine)
 {
+    this->engine = engine;
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -100,11 +101,18 @@ void UI::init(ShadedPathEngine* engine)
     init_info.ImageCount = engine->presentation.imageCount;
     //init_info.CheckVkResultFn = check_vk_result;
     ImGui_ImplVulkan_Init(&init_info, imGuiRenderPass);
+
+    // upload fonts to GPU
+    VkCommandBuffer command_buffer = engine->global.beginSingleTimeCommands();
+    ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
+    engine->global.endSingleTimeCommands(command_buffer);
+
 }
 
 UI::~UI()
 {
-
+    vkDestroyRenderPass(engine->global.device, imGuiRenderPass, nullptr);
+    vkDestroyDescriptorPool(engine->global.device, g_DescriptorPool, nullptr);
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

@@ -55,6 +55,13 @@ public:
 	VkInstance vkInstance = nullptr;
 	VkQueue graphicsQueue = nullptr;
 
+	// create command pool for use outside rendering threads
+	void createCommandPool();
+	VkCommandPool commandPool = nullptr;
+	void createCommandPool(VkCommandPool& pool);
+	VkCommandBuffer beginSingleTimeCommands();
+	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+
 private:
 	vector<const char*> deviceExtensions = {
 	};
