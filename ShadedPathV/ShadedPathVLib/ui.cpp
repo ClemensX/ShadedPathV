@@ -109,6 +109,35 @@ void UI::init(ShadedPathEngine* engine)
 
 }
 
+void UI::update(ThreadResources& tr)
+{
+    beginFrame(tr);
+    buildUI(tr);
+    endFrame(tr);
+}
+
+void UI::render(ThreadResources& tr)
+{
+}
+
+void UI::beginFrame(ThreadResources& tr)
+{
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+}
+
+void UI::endFrame(ThreadResources& tr)
+{
+    ImGuiIO& io = ImGui::GetIO();
+    ImGui::Render();
+}
+
+void UI::buildUI(ThreadResources& tr)
+{
+    ImGui::ShowDemoWindow();
+}
+
 UI::~UI()
 {
     vkDestroyRenderPass(engine->global.device, imGuiRenderPass, nullptr);
