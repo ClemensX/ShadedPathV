@@ -121,8 +121,8 @@ public:
 	void logInfo(string name) {
 		if (!check_name(name)) return;
 		auto& td = timerMap[name];
-		LogF("ThemedTimer: " << name.c_str() << endl);
-		LogF("  #calls: " << td.calls << " average time: " << td.averageTimeBetweenMicroS << " [microseconds] / " << (td.averageTimeBetweenMicroS / 1000) << " [ms]" << endl);
+		Log("ThemedTimer: " << name.c_str() << endl);
+		Log("  #calls: " << td.calls << " average time: " << td.averageTimeBetweenMicroS << " [microseconds] / " << (td.averageTimeBetweenMicroS / 1000) << " [ms]" << endl);
 	}
 
 	// log ThemedTimer as FPS
@@ -131,7 +131,7 @@ public:
 		auto& td = timerMap[name];
 		double fps = 1000000.0 / (double)td.averageTimeBetweenMicroS;
 		double totalSeconds = ((double)td.totalTimeMicros) / 1000000;
-		LogF("   FPS: " << fps << " over " << totalSeconds << " [s]" << endl);
+		Log("   FPS: " << fps << " over " << totalSeconds << " [s]" << endl);
 	}
 
 private:

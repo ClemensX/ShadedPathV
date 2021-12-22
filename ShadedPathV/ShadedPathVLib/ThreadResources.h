@@ -42,7 +42,6 @@ public:
 	VkCommandBuffer commandBufferPresentBack;
 
 	// triangle shader 
-	void createCommandBufferTriangle();
 	FrameBufferAttachment colorAttachment, depthAttachment;
 	VkCommandBuffer commandBufferTriangle;
 
@@ -51,11 +50,6 @@ public:
 	long frameIndex = -1;
 	vector<VkSubmitInfo> submitinfos;
 	VkFence presentFence = nullptr;
-	//atomic_flag* renderThreadContinue = nullptr;
-	//ThreadsafeWaitingQueue<unsigned long> renderThreadContinueQueue(unsigned long, true, "renderThreadContinue");
-	//typedef ThreadsafeWaitingQueue<unsigned long> RenderThreadContinueQueue;
-	//RenderThreadContinueQueue renderThreadContinueQueue();
-	//RenderThreadContinueQueue q(0, const false, "");
 	ThreadsafeWaitingQueue<unsigned long> renderThreadContinueQueue;
 
 

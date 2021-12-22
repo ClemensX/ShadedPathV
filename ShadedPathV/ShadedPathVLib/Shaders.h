@@ -6,13 +6,27 @@ public:
 		Log("Shaders c'tor\n");
 	};
 	~Shaders();
-	void initiateShader_Triangle();
-	void initiateShader_BackBufferImageDump();
-	void drawFrame_Triangle(ThreadResources& tr);
-	VkShaderModule createShaderModule(const vector<byte>& code);
-	void recordDrawCommand_Triangle(VkCommandBuffer& commandBuffer, ThreadResources &tr);
-	void executeBufferImageDump(ThreadResources& tr);
+
+	// general methods
 	void queueSubmit(ThreadResources& tr);
+	VkShaderModule createShaderModule(const vector<byte>& code);
+
+	// SHADERS
+
+	// Triangle shader (most simple beginner shader - just one triangle, no MVP necessary)
+	// initiate before rendering first frame
+	void initiateShader_Triangle();
+	void createCommandBufferTriangle(ThreadResources& tr);
+	void recordDrawCommand_Triangle(VkCommandBuffer& commandBuffer, ThreadResources& tr);
+	// draw triangle during frame creation
+	void drawFrame_Triangle(ThreadResources& tr);
+
+	// BackBufferImageDump shader: copy backbuffer to image file
+	// initiate before rendering first frame
+	void initiateShader_BackBufferImageDump();
+	// write backbuffer image to file (during frame creation)
+	void executeBufferImageDump(ThreadResources& tr);
+
 private:
 	void initiateShader_TriangleSingle(ThreadResources &res);
 	void initiateShader_BackBufferImageDumpSingle(ThreadResources& res);

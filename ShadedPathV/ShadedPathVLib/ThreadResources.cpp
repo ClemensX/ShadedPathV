@@ -148,31 +148,6 @@ void ThreadResources::createBackBufferImage()
     if (vkCreateImageView(device, &colorImageView, nullptr, &colorAttachment.view) != VK_SUCCESS) {
         Error("failed to create image view");
     }
-
-/*    // Depth stencil attachment
-    image.format = depthFormat;
-    image.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-
-    VK_CHECK_RESULT(vkCreateImage(device, &image, nullptr, &depthAttachment.image));
-    vkGetImageMemoryRequirements(device, depthAttachment.image, &memReqs);
-    memAlloc.allocationSize = memReqs.size;
-    memAlloc.memoryTypeIndex = getMemoryTypeIndex(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &depthAttachment.memory));
-    VK_CHECK_RESULT(vkBindImageMemory(device, depthAttachment.image, depthAttachment.memory, 0));
-
-    VkImageViewCreateInfo depthStencilView = vks::initializers::imageViewCreateInfo();
-    depthStencilView.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    depthStencilView.format = depthFormat;
-    depthStencilView.flags = 0;
-    depthStencilView.subresourceRange = {};
-    depthStencilView.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
-    depthStencilView.subresourceRange.baseMipLevel = 0;
-    depthStencilView.subresourceRange.levelCount = 1;
-    depthStencilView.subresourceRange.baseArrayLayer = 0;
-    depthStencilView.subresourceRange.layerCount = 1;
-    depthStencilView.image = depthAttachment.image;
-    VK_CHECK_RESULT(vkCreateImageView(device, &depthStencilView, nullptr, &depthAttachment.view));
-*/
 }
 
 void ThreadResources::createFrameBuffer()
@@ -198,46 +173,6 @@ void ThreadResources::createFrameBuffer()
 void ThreadResources::createCommandPool()
 {
     engine->global.createCommandPool(commandPool);
-}
-
-// individual shader methods
-void ThreadResources::createCommandBufferTriangle()
-{
-    auto& device = engine->global.device;
-    auto& global = engine->global;
-    auto& shaders = engine->shaders;
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = commandPool;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = (uint32_t)1;
-
-    if (vkAllocateCommandBuffers(device, &allocInfo, &commandBufferTriangle) != VK_SUCCESS) {
-        Error("failed to allocate command buffers!");
-    }
-    VkCommandBufferBeginInfo beginInfo{};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    beginInfo.flags = 0; // Optional
-    beginInfo.pInheritanceInfo = nullptr; // Optional
-
-    if (vkBeginCommandBuffer(commandBufferTriangle, &beginInfo) != VK_SUCCESS) {
-        Error("failed to begin recording triangle command buffer!");
-    }
-    VkRenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    renderPassInfo.renderPass = renderPass;
-    renderPassInfo.framebuffer = framebuffer;
-    renderPassInfo.renderArea.offset = { 0, 0 };
-    renderPassInfo.renderArea.extent = engine->getBackBufferExtent();
-    VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
-    renderPassInfo.clearValueCount = 1;
-    renderPassInfo.pClearValues = &clearColor;
-    vkCmdBeginRenderPass(commandBufferTriangle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-    shaders.recordDrawCommand_Triangle(commandBufferTriangle, *this);
-    vkCmdEndRenderPass(commandBufferTriangle);
-    if (vkEndCommandBuffer(commandBufferTriangle) != VK_SUCCESS) {
-        Error("failed to record triangle command buffer!");
-    }
 }
 
 ThreadResources::~ThreadResources()

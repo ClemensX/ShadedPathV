@@ -13,6 +13,8 @@ VkShaderModule Shaders::createShaderModule(const vector<byte>& code)
 	return shaderModule;
 }
 
+// SHADER Triangle
+
 void Shaders::initiateShader_Triangle()
 {
 	enabledTriangle = true;
@@ -173,60 +175,43 @@ void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
 	}
 }
 
-void Shaders::initiateShader_BackBufferImageDump()
+void Shaders::createCommandBufferTriangle(ThreadResources& tr)
 {
-	enabledImageDump = true;
-	for (auto& res : engine.threadResources) {
-		initiateShader_BackBufferImageDumpSingle(res);
-	}
-}
-
-void Shaders::initiateShader_BackBufferImageDumpSingle(ThreadResources& res)
-{
-	enabledImageDump = true;
 	auto& device = engine.global.device;
 	auto& global = engine.global;
-	VkImageCreateInfo image{};
-	image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	image.imageType = VK_IMAGE_TYPE_2D;
-	image.format = engine.global.ImageFormat;
-	image.extent.width = engine.getBackBufferExtent().width;
-	image.extent.height = engine.getBackBufferExtent().height;
-	image.extent.depth = 1;
-	image.mipLevels = 1;
-	image.arrayLayers = 1;
+	auto& shaders = engine.shaders;
+	VkCommandBufferAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.commandPool = tr.commandPool;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandBufferCount = (uint32_t)1;
 
-	image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	image.samples = VK_SAMPLE_COUNT_1_BIT;
-	image.tiling = VK_IMAGE_TILING_LINEAR;
-	image.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-	VkMemoryAllocateInfo memAlloc{};
-	memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	VkMemoryRequirements memReqs;
-
-	if (vkCreateImage(device, &image, nullptr, &res.imageDumpAttachment.image) != VK_SUCCESS) {
-		Error("failed to create image dump image!");
+	if (vkAllocateCommandBuffers(device, &allocInfo, &tr.commandBufferTriangle) != VK_SUCCESS) {
+		Error("failed to allocate command buffers!");
 	}
-	vkGetImageMemoryRequirements(device, res.imageDumpAttachment.image, &memReqs);
-	memAlloc.allocationSize = memReqs.size;
-	memAlloc.memoryTypeIndex = global.findMemoryTypeIndex(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	if (vkAllocateMemory(device, &memAlloc, nullptr, &res.imageDumpAttachment.memory) != VK_SUCCESS) {
-		Error("failed to allocate image dump memory");
-	}
-	if (vkBindImageMemory(device, res.imageDumpAttachment.image, res.imageDumpAttachment.memory, 0) != VK_SUCCESS) {
-		Error("failed to bind image memory");
-	}
-	// Get layout of the image (including row pitch)
-	VkImageSubresource subResource{};
-	subResource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	VkSubresourceLayout subResourceLayout;
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = 0; // Optional
+	beginInfo.pInheritanceInfo = nullptr; // Optional
 
-	vkGetImageSubresourceLayout(device, res.imageDumpAttachment.image, &subResource, &subResourceLayout);
-
-	// Map image memory so we can start copying from it
-	vkMapMemory(device, res.imageDumpAttachment.memory, 0, VK_WHOLE_SIZE, 0, (void**)&res.imagedata);
-	res.imagedata += subResourceLayout.offset;
-	res.subResourceLayout = subResourceLayout;
+	if (vkBeginCommandBuffer(tr.commandBufferTriangle, &beginInfo) != VK_SUCCESS) {
+		Error("failed to begin recording triangle command buffer!");
+	}
+	VkRenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = tr.renderPass;
+	renderPassInfo.framebuffer = tr.framebuffer;
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = engine.getBackBufferExtent();
+	VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+	renderPassInfo.clearValueCount = 1;
+	renderPassInfo.pClearValues = &clearColor;
+	vkCmdBeginRenderPass(tr.commandBufferTriangle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	recordDrawCommand_Triangle(tr.commandBufferTriangle, tr);
+	vkCmdEndRenderPass(tr.commandBufferTriangle);
+	if (vkEndCommandBuffer(tr.commandBufferTriangle) != VK_SUCCESS) {
+		Error("failed to record triangle command buffer!");
+	}
 }
 
 void Shaders::recordDrawCommand_Triangle(VkCommandBuffer& commandBuffer, ThreadResources& tr)
@@ -282,6 +267,64 @@ void Shaders::drawFrame_Triangle(ThreadResources& tr)
 	//waitInfo.pValues = &waitValue;
 	//vkWaitSemaphores(engine.global.device, &waitInfo, UINT64_MAX);
 	//ThemedTimer::getInstance()->add("DrawFrame");
+}
+
+void Shaders::initiateShader_BackBufferImageDump()
+{
+	enabledImageDump = true;
+	for (auto& res : engine.threadResources) {
+		initiateShader_BackBufferImageDumpSingle(res);
+	}
+}
+
+// SHADER BackBufferImageDump
+
+void Shaders::initiateShader_BackBufferImageDumpSingle(ThreadResources& res)
+{
+	enabledImageDump = true;
+	auto& device = engine.global.device;
+	auto& global = engine.global;
+	VkImageCreateInfo image{};
+	image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+	image.imageType = VK_IMAGE_TYPE_2D;
+	image.format = engine.global.ImageFormat;
+	image.extent.width = engine.getBackBufferExtent().width;
+	image.extent.height = engine.getBackBufferExtent().height;
+	image.extent.depth = 1;
+	image.mipLevels = 1;
+	image.arrayLayers = 1;
+
+	image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	image.samples = VK_SAMPLE_COUNT_1_BIT;
+	image.tiling = VK_IMAGE_TILING_LINEAR;
+	image.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	VkMemoryAllocateInfo memAlloc{};
+	memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	VkMemoryRequirements memReqs;
+
+	if (vkCreateImage(device, &image, nullptr, &res.imageDumpAttachment.image) != VK_SUCCESS) {
+		Error("failed to create image dump image!");
+	}
+	vkGetImageMemoryRequirements(device, res.imageDumpAttachment.image, &memReqs);
+	memAlloc.allocationSize = memReqs.size;
+	memAlloc.memoryTypeIndex = global.findMemoryTypeIndex(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	if (vkAllocateMemory(device, &memAlloc, nullptr, &res.imageDumpAttachment.memory) != VK_SUCCESS) {
+		Error("failed to allocate image dump memory");
+	}
+	if (vkBindImageMemory(device, res.imageDumpAttachment.image, res.imageDumpAttachment.memory, 0) != VK_SUCCESS) {
+		Error("failed to bind image memory");
+	}
+	// Get layout of the image (including row pitch)
+	VkImageSubresource subResource{};
+	subResource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	VkSubresourceLayout subResourceLayout;
+
+	vkGetImageSubresourceLayout(device, res.imageDumpAttachment.image, &subResource, &subResourceLayout);
+
+	// Map image memory so we can start copying from it
+	vkMapMemory(device, res.imageDumpAttachment.memory, 0, VK_WHOLE_SIZE, 0, (void**)&res.imagedata);
+	res.imagedata += subResourceLayout.offset;
+	res.subResourceLayout = subResourceLayout;
 }
 
 void Shaders::executeBufferImageDump(ThreadResources& tr)
