@@ -88,8 +88,8 @@ public:
     int win_height = 0;
     const char* win_name = nullptr;
     bool threadModeSingle = false;
-private:
     UI ui;
+private:
     long limitFrameCount = 0;
     int framesInFlight = 2;
     bool limitFrameCountEnabled = false;

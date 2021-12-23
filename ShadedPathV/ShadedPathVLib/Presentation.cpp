@@ -283,6 +283,51 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
         Error("failed to begin recording back buffer copy command buffer!");
     }
 
+    // UI code
+    if (true)
+    {
+        // Transition src image to LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+        VkImageMemoryBarrier dstBarrier{};
+        dstBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        dstBarrier.srcAccessMask = 0;
+        dstBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dstBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        dstBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        dstBarrier.image = tr.colorAttachment.image;
+        dstBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+        vkCmdPipelineBarrier(tr.commandBufferPresentBack, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+            0, 0, nullptr, 0, nullptr, 1, &dstBarrier);
+
+        VkRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = tr.renderPassDraw;
+        renderPassInfo.framebuffer = tr.framebufferDraw;
+        renderPassInfo.renderArea.offset = { 0, 0 };
+        renderPassInfo.renderArea.extent = engine.getBackBufferExtent();
+        VkClearValue clearColor = { {{0.0f, 0.0f, 1.0f, 1.0f}} };
+        renderPassInfo.clearValueCount = 0;
+        renderPassInfo.pClearValues = &clearColor;
+        vkCmdBeginRenderPass(tr.commandBufferPresentBack, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        //recordDrawCommand_Triangle(tr.commandBufferTriangle, tr);
+        engine.ui.render(tr);
+        vkCmdEndRenderPass(tr.commandBufferPresentBack);
+        // Transition src image back to to LAYOUT_TRANSFER_SRC_OPTIMAL
+        //dstBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        //dstBarrier.srcAccessMask = 0;
+        //dstBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        //dstBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        //dstBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        //dstBarrier.image = tr.colorAttachment.image;
+        //dstBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+        //vkCmdPipelineBarrier(tr.commandBufferPresentBack, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        //    0, 0, nullptr, 0, nullptr, 1, &dstBarrier);
+        //vkCmdSetEvent(tr.commandBufferPresentBack, tr.uiRenderFinished, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+        //vkCmdWaitEvents(tr.commandBufferPresentBack, 1, &tr.uiRenderFinished, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        //    0, nullptr, 0, nullptr, 0, nullptr);
+        //vkCmdResetEvent(tr.commandBufferPresentBack, tr.uiRenderFinished, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+
+    }
+
     // Transition destination image to transfer destination layout
     VkImageMemoryBarrier dstBarrier{};
     dstBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;

@@ -27,6 +27,9 @@ public:
 	// write backbuffer image to file (during frame creation)
 	void executeBufferImageDump(ThreadResources& tr);
 
+	// UI shader
+	void createCommandBufferUI(ThreadResources& tr);
+
 private:
 	void initiateShader_TriangleSingle(ThreadResources &res);
 	void initiateShader_BackBufferImageDumpSingle(ThreadResources& res);

@@ -109,31 +109,38 @@ void UI::init(ShadedPathEngine* engine)
 
 }
 
-void UI::update(ThreadResources& tr)
+void UI::update()
 {
-    beginFrame(tr);
-    buildUI(tr);
-    endFrame(tr);
+    unique_lock<mutex> lock(monitorMutex);
+    beginFrame();
+    buildUI();
+    endFrame();
+    uiRenderAvailable = true;
 }
 
 void UI::render(ThreadResources& tr)
 {
+    unique_lock<mutex> lock(monitorMutex);
+    if (!uiRenderAvailable) {
+        return;
+    }
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), tr.commandBufferPresentBack);
 }
 
-void UI::beginFrame(ThreadResources& tr)
+void UI::beginFrame()
 {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 }
 
-void UI::endFrame(ThreadResources& tr)
+void UI::endFrame()
 {
     ImGuiIO& io = ImGui::GetIO();
     ImGui::Render();
 }
 
-void UI::buildUI(ThreadResources& tr)
+void UI::buildUI()
 {
     ImGui::ShowDemoWindow();
 }

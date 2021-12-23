@@ -18,7 +18,8 @@ void ThreadResources::initAll(ShadedPathEngine* engine)
 void ThreadResources::init()
 {
     createFencesAndSemaphores();
-    createRenderPass();
+    createRenderPassInit();
+    createRenderPassDraw();
     createBackBufferImage();
     createFrameBuffer();
     createCommandPool();
@@ -51,9 +52,16 @@ void ThreadResources::createFencesAndSemaphores()
     if (vkCreateFence(engine->global.device, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
         Error("failed to create inFlightFence for a frame");
     }
+
+    VkEventCreateInfo eventInfo{};
+    eventInfo.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    eventInfo.flags = 0;
+    if (vkCreateEvent(engine->global.device, &eventInfo, nullptr, &uiRenderFinished) != VK_SUCCESS) {
+        Error("failed to create event uiRenderFinished for a frame");
+    }
 }
 
-void ThreadResources::createRenderPass()
+void ThreadResources::createRenderPassInit()
 {
     // attachment
     VkAttachmentDescription colorAttachment{};
@@ -95,6 +103,52 @@ void ThreadResources::createRenderPass()
     renderPassInfo.pDependencies = &dependency;
 
     if (vkCreateRenderPass(engine->global.device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+        Error("failed to create render pass!");
+    }
+}
+
+void ThreadResources::createRenderPassDraw()
+{
+    // attachment
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = engine->global.ImageFormat;
+    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+
+    // subpasses and attachment references
+    VkAttachmentReference colorAttachmentRef{};
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentRef;
+
+    // subpasses
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    // render pass
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
+
+    if (vkCreateRenderPass(engine->global.device, &renderPassInfo, nullptr, &renderPassDraw) != VK_SUCCESS) {
         Error("failed to create render pass!");
     }
 }
@@ -168,6 +222,17 @@ void ThreadResources::createFrameBuffer()
     if (vkCreateFramebuffer(engine->global.device, &framebufferInfo, nullptr, &framebuffer) != VK_SUCCESS) {
         Error("failed to create framebuffer!");
     }
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass = renderPassDraw;
+    framebufferInfo.attachmentCount = 1;
+    framebufferInfo.pAttachments = attachments;
+    framebufferInfo.width = engine->getBackBufferExtent().width;
+    framebufferInfo.height = engine->getBackBufferExtent().height;
+    framebufferInfo.layers = 1;
+
+    if (vkCreateFramebuffer(engine->global.device, &framebufferInfo, nullptr, &framebufferDraw) != VK_SUCCESS) {
+        Error("failed to create framebuffer!");
+    }
 }
 
 void ThreadResources::createCommandPool()
@@ -185,9 +250,12 @@ ThreadResources::~ThreadResources()
     vkDestroyFence(device, imageDumpFence, nullptr);
     vkDestroyFence(device, inFlightFence, nullptr);
     vkDestroyFence(device, presentFence, nullptr);
+    vkDestroyEvent(device, uiRenderFinished, nullptr);
     vkDestroyCommandPool(device, commandPool, nullptr);
     vkDestroyFramebuffer(device, framebuffer, nullptr);
+    vkDestroyFramebuffer(device, framebufferDraw, nullptr);
     vkDestroyRenderPass(device, renderPass, nullptr);
+    vkDestroyRenderPass(device, renderPassDraw, nullptr);
     vkDestroyImageView(device, imageDumpAttachment.view, nullptr);
     vkDestroyImage(device, imageDumpAttachment.image, nullptr);
     vkFreeMemory(device, imageDumpAttachment.memory, nullptr);

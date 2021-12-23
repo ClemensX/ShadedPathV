@@ -22,14 +22,17 @@ public:
 	VkSemaphore imageAvailableSemaphore = nullptr;
 	VkSemaphore renderFinishedSemaphore = nullptr;
 	VkFence inFlightFence = nullptr;
+	VkEvent uiRenderFinished = nullptr;
 	void init();
 	static void initAll(ShadedPathEngine* engine);
 
 	VkPipelineLayout pipelineLayoutTriangle = nullptr;
 	VkPipeline graphicsPipelineTriangle = nullptr;
 	VkRenderPass renderPass = nullptr;
+	VkRenderPass renderPassDraw = nullptr;
 	VkCommandPool commandPool = nullptr;
 	VkFramebuffer framebuffer = nullptr;
+	VkFramebuffer framebufferDraw = nullptr;
 
 	// backbuffer image dump:
 	const char* imagedata = nullptr;
@@ -56,7 +59,8 @@ public:
 	bool threadFinished = false;
 private:
 	void createFencesAndSemaphores();
-	void createRenderPass();
+	void createRenderPassInit();
+	void createRenderPassDraw();
 	void createFrameBuffer();
 	void createBackBufferImage();
 	void createCommandPool();

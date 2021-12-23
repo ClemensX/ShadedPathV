@@ -203,7 +203,7 @@ void Shaders::createCommandBufferTriangle(ThreadResources& tr)
 	renderPassInfo.framebuffer = tr.framebuffer;
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = engine.getBackBufferExtent();
-	VkClearValue clearColor = { {{0.0f, 0.0f, 0.0f, 1.0f}} };
+	VkClearValue clearColor = { {{0.5f, 0.5f, 0.5f, 0.5f}} };
 	renderPassInfo.clearValueCount = 1;
 	renderPassInfo.pClearValues = &clearColor;
 	vkCmdBeginRenderPass(tr.commandBufferTriangle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -212,6 +212,10 @@ void Shaders::createCommandBufferTriangle(ThreadResources& tr)
 	if (vkEndCommandBuffer(tr.commandBufferTriangle) != VK_SUCCESS) {
 		Error("failed to record triangle command buffer!");
 	}
+}
+
+void Shaders::createCommandBufferUI(ThreadResources& tr)
+{
 }
 
 void Shaders::recordDrawCommand_Triangle(VkCommandBuffer& commandBuffer, ThreadResources& tr)

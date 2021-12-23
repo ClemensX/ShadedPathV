@@ -97,7 +97,6 @@ void ShadedPathEngine::drawFrame(ThreadResources& tr)
     LogCondF(LOG_QUEUE, "fence drawFrame() present fence signalled image index " << tr.frameIndex << endl);
 
     shaders.drawFrame_Triangle(tr);
-    ui.update(tr);
     shaders.executeBufferImageDump(tr);
 }
 
@@ -105,7 +104,7 @@ void ShadedPathEngine::pollEvents()
 {
     if (!initialized) Error("Engine was not initialized");
     presentation.pollEvents();
-    //ui.update();
+    ui.update();
 
     // measure how often we run the input cycle:
     if (!threadModeSingle) {
