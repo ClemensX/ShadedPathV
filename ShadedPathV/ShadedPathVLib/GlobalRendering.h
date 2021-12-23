@@ -34,7 +34,9 @@ public:
 		shutdown();
 	};
 
-	const VkFormat ImageFormat = VK_FORMAT_B8G8R8A8_SRGB;
+	//static const VkFormat ImageFormat = VK_FORMAT_B8G8R8A8_SRGB;
+	static const VkFormat ImageFormat = VK_FORMAT_B8G8R8A8_UNORM;
+	static const VkColorSpaceKHR ImageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 
 	// initialize all global Vulkan stuff - engine configuration settings
 	// cannot be changed after calling this, because some settings influence Vulkan creation options

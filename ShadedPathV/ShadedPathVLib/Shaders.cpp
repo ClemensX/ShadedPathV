@@ -203,7 +203,7 @@ void Shaders::createCommandBufferTriangle(ThreadResources& tr)
 	renderPassInfo.framebuffer = tr.framebuffer;
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = engine.getBackBufferExtent();
-	VkClearValue clearColor = { {{0.5f, 0.5f, 0.5f, 0.5f}} };
+	VkClearValue clearColor = { {{0.1f, 0.1f, 0.1f, 0.5f}} };
 	renderPassInfo.clearValueCount = 1;
 	renderPassInfo.pClearValues = &clearColor;
 	vkCmdBeginRenderPass(tr.commandBufferTriangle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);

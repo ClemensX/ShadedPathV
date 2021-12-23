@@ -2062,7 +2062,8 @@ void    ImFontAtlas::GetTexDataAsRGBA32(unsigned char** out_pixels, int* out_wid
             const unsigned char* src = pixels;
             unsigned int* dst = TexPixelsRGBA32;
             for (int n = TexWidth * TexHeight; n > 0; n--)
-                *dst++ = IM_COL32(255, 255, 255, (unsigned int)(*src++));
+                *dst++ = IM_COL32(127, 127, 127, 127); //TODO HERE
+                //*dst++ = IM_COL32(255, 255, 255, (unsigned int)(*src++));
         }
     }
 

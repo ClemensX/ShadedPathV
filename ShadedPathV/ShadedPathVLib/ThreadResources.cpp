@@ -161,7 +161,7 @@ void ThreadResources::createBackBufferImage()
     VkImageCreateInfo image{};
     image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image.imageType = VK_IMAGE_TYPE_2D;
-    image.format = global.ImageFormat;
+    image.format = VK_FORMAT_R8G8B8A8_UNORM;//global.ImageFormat;
     image.extent.width = engine->getBackBufferExtent().width;
     image.extent.height = engine->getBackBufferExtent().height;
     image.extent.depth = 1;
