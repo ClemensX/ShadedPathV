@@ -124,7 +124,7 @@ void UI::render(ThreadResources& tr)
     if (!uiRenderAvailable) {
         return;
     }
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), tr.commandBufferPresentBack);
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), tr.commandBufferUI);
 }
 
 void UI::beginFrame()

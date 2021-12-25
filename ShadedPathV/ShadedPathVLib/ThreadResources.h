@@ -44,6 +44,9 @@ public:
 	// copy backbuffer to swap chain image
 	VkCommandBuffer commandBufferPresentBack;
 
+	// draw UI
+	VkCommandBuffer commandBufferUI;
+
 	// triangle shader 
 	FrameBufferAttachment colorAttachment, depthAttachment;
 	VkCommandBuffer commandBufferTriangle;

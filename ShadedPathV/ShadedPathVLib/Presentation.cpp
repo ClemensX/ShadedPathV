@@ -237,6 +237,9 @@ void Presentation::initBackBufferPresentationSingle(ThreadResources &res)
     if (vkAllocateCommandBuffers(device, &allocInfo, &res.commandBufferPresentBack) != VK_SUCCESS) {
         Error("failed to allocate command buffers!");
     }
+    if (vkAllocateCommandBuffers(device, &allocInfo, &res.commandBufferUI) != VK_SUCCESS) {
+        Error("failed to allocate command buffers!");
+    }
 }
 
 void Presentation::initBackBufferPresentation()
@@ -286,6 +289,9 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     // UI code
     if (true)
     {
+        if (vkBeginCommandBuffer(tr.commandBufferUI, &beginInfo) != VK_SUCCESS) {
+            Error("failed to begin recording back buffer copy command buffer!");
+        }
         // Transition src image to LAYOUT_COLOR_ATTACHMENT_OPTIMAL
         VkImageMemoryBarrier dstBarrier{};
         dstBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -295,7 +301,7 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
         dstBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         dstBarrier.image = tr.colorAttachment.image;
         dstBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-        vkCmdPipelineBarrier(tr.commandBufferPresentBack, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        vkCmdPipelineBarrier(tr.commandBufferUI, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             0, 0, nullptr, 0, nullptr, 1, &dstBarrier);
 
         VkRenderPassBeginInfo renderPassInfo{};
@@ -307,10 +313,10 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
         VkClearValue clearColor = { {{0.0f, 0.0f, 1.0f, 1.0f}} };
         renderPassInfo.clearValueCount = 0;
         renderPassInfo.pClearValues = &clearColor;
-        vkCmdBeginRenderPass(tr.commandBufferPresentBack, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRenderPass(tr.commandBufferUI, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
         //recordDrawCommand_Triangle(tr.commandBufferTriangle, tr);
         engine.ui.render(tr);
-        vkCmdEndRenderPass(tr.commandBufferPresentBack);
+        vkCmdEndRenderPass(tr.commandBufferUI);
         // Transition src image back to to LAYOUT_TRANSFER_SRC_OPTIMAL
         //dstBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         //dstBarrier.srcAccessMask = 0;
@@ -325,6 +331,28 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
         //vkCmdWaitEvents(tr.commandBufferPresentBack, 1, &tr.uiRenderFinished, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
         //    0, nullptr, 0, nullptr, 0, nullptr);
         //vkCmdResetEvent(tr.commandBufferPresentBack, tr.uiRenderFinished, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+        if (vkEndCommandBuffer(tr.commandBufferUI) != VK_SUCCESS) {
+            Error("failed to record back buffer copy command buffer!");
+        }
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        VkSemaphore waitSemaphores[] = { tr.imageAvailableSemaphore };
+        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &tr.commandBufferUI;
+        VkSemaphore signalSemaphores[] = { tr.renderFinishedSemaphore };
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = signalSemaphores;
+
+        //vkDeviceWaitIdle(global.device); does not help
+        LogCondF(LOG_FENCE, "queue thread submit present fence " << hex << ThreadInfo::thread_osid() << endl);
+        if (vkQueueSubmit(engine.global.graphicsQueue, 1, &submitInfo, nullptr/*tr.presentFence*/) != VK_SUCCESS) {
+            Error("failed to submit draw command buffer!");
+        }
 
     }
 
@@ -399,7 +427,7 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     //vkResetFences(engine.global.device, 1, &res.imageDumpFence);
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    VkSemaphore waitSemaphores[] = { tr.imageAvailableSemaphore };
+    VkSemaphore waitSemaphores[] = { tr.renderFinishedSemaphore };
     VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
     submitInfo.waitSemaphoreCount = 1;
     submitInfo.pWaitSemaphores = waitSemaphores;
