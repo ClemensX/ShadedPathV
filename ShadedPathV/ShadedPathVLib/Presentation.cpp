@@ -300,7 +300,7 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
 
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = tr.renderPassDraw;
+        renderPassInfo.renderPass = engine.ui.imGuiRenderPass;//tr.renderPassDraw;
         renderPassInfo.framebuffer = tr.framebufferDraw;
         renderPassInfo.renderArea.offset = { 0, 0 };
         renderPassInfo.renderArea.extent = engine.getBackBufferExtent();

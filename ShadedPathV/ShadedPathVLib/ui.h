@@ -15,13 +15,13 @@ public:
 	// render pre-build UI
 	// update() and render() are mutually exclusive (mutex protection inside)
 	void render(ThreadResources& tr);
+	VkRenderPass imGuiRenderPass = nullptr;
 private:
 	void beginFrame();
 	void buildUI();
 	void endFrame();
 	ShadedPathEngine* engine = nullptr;
 	VkDescriptorPool g_DescriptorPool = VK_NULL_HANDLE;
-	VkRenderPass imGuiRenderPass = nullptr;
 	mutable mutex monitorMutex;
 	atomic<bool> uiRenderAvailable = false;
 };
