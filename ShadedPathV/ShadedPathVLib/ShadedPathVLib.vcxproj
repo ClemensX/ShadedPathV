@@ -195,6 +195,7 @@
     <ClInclude Include="ShadedPathEngine.h" />
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="SimpleApp.h" />
+    <ClInclude Include="SimpleShader.h" />
     <ClInclude Include="ThreadResources.h" />
     <ClInclude Include="Threads.h" />
     <ClInclude Include="ui.h" />
@@ -221,12 +222,13 @@
     <ClCompile Include="ShadedPathEngine.cpp" />
     <ClCompile Include="Shaders.cpp" />
     <ClCompile Include="SimpleApp.cpp" />
+    <ClCompile Include="SimpleShader.cpp" />
     <ClCompile Include="ThreadResources.cpp" />
     <ClCompile Include="Threads.cpp" />
     <ClCompile Include="ui.cpp" />
     <ClCompile Include="Util.cpp" />
   </ItemGroup>
-    <ItemGroup>
+  <ItemGroup>
     <CustomBuild Include="..\ShadedPathVLib\shader\triangle.vert">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
@@ -262,7 +264,6 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../x64/$(Configuration)/%(Filename)_frag.spv</Outputs>
     </CustomBuild>
   </ItemGroup>
-
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

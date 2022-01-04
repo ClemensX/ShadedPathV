@@ -53,6 +53,7 @@
 #include <atomic>
 #include <mutex>
 #include <queue>
+#include <array>
 using namespace std;
 
 // headers for used libraries
@@ -134,6 +135,7 @@ inline void ErrorExt(string msg, const char* file, DWORD line)
 #include "Presentation.h"
 #include "GlobalRendering.h"
 #include "ThreadResources.h"
+#include "SimpleShader.h"
 #include "Shaders.h"
 #include "ui.h"
 #include "ShadedPathEngine.h"

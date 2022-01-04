@@ -31,6 +31,37 @@ void Shaders::initiateShader_Triangle()
 	vertShaderModuleTriangle = createShaderModule(file_buffer_vert);
 	fragShaderModuleTriangle = createShaderModule(file_buffer_frag);
 
+	// create vertex buffer
+	VkBufferCreateInfo bufferInfo{};
+	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	bufferInfo.size = sizeof(SimpleShader::vertices[0]) * simpleShader.vertices.size();
+	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+	if (vkCreateBuffer(engine.global.device, &bufferInfo, nullptr, &vertexBufferTriangle) != VK_SUCCESS) {
+		Error("failed to create vertex buffer!");
+	}
+
+	// create vertex buffer memory:
+	VkMemoryRequirements memRequirements;
+	vkGetBufferMemoryRequirements(engine.global.device, vertexBufferTriangle, &memRequirements);
+
+	VkMemoryAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocInfo.allocationSize = memRequirements.size;
+	allocInfo.memoryTypeIndex = engine.global.findMemoryTypeIndex(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+	if (vkAllocateMemory(engine.global.device, &allocInfo, nullptr, &vertexBufferMemoryTriangle) != VK_SUCCESS) {
+		Error("failed to allocate vertex buffer memory!");
+	}
+	vkBindBufferMemory(engine.global.device, vertexBufferTriangle, vertexBufferMemoryTriangle, 0);
+
+	// copy vertex data to GPU
+	void* data;
+	vkMapMemory(engine.global.device, vertexBufferMemoryTriangle, 0, bufferInfo.size, 0, &data);
+	memcpy(data, simpleShader.vertices.data(), (size_t)bufferInfo.size);
+	vkUnmapMemory(engine.global.device, vertexBufferMemoryTriangle);
+
 	// pipelines must be created for every rendering thread
 	for (auto &res : engine.threadResources) {
 		initiateShader_TriangleSingle(res);
@@ -55,12 +86,14 @@ void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
 	// vertex input
+	auto bindingDescription = SimpleShader::getBindingDescription();
+	auto attributeDescriptions = SimpleShader::getAttributeDescriptions();
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 0;
-	vertexInputInfo.pVertexBindingDescriptions = nullptr; // Optional
-	vertexInputInfo.vertexAttributeDescriptionCount = 0;
-	vertexInputInfo.pVertexAttributeDescriptions = nullptr; // Optional
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t> (attributeDescriptions.size());
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 	// input assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -173,6 +206,7 @@ void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
 	if (vkCreateGraphicsPipelines(engine.global.device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &res.graphicsPipelineTriangle) != VK_SUCCESS) {
 		Error("failed to create graphics pipeline!");
 	}
+
 }
 
 void Shaders::createCommandBufferTriangle(ThreadResources& tr)
@@ -222,7 +256,11 @@ void Shaders::recordDrawCommand_Triangle(VkCommandBuffer& commandBuffer, ThreadR
 {
 	if (!enabledTriangle) return;
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.graphicsPipelineTriangle);
-	vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+	VkBuffer vertexBuffers[] = { vertexBufferTriangle };
+	VkDeviceSize offsets[] = { 0 };
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+	vkCmdDraw(commandBuffer, static_cast<uint32_t>(simpleShader.vertices.size()), 1, 0, 0);
 }
 
 void Shaders::drawFrame_Triangle(ThreadResources& tr)
@@ -456,6 +494,8 @@ Shaders::~Shaders()
 {
 	Log("Shaders destructor\n");
 	if (enabledTriangle) {
+		vkDestroyBuffer(engine.global.device, vertexBufferTriangle, nullptr);
+		vkFreeMemory(engine.global.device, vertexBufferMemoryTriangle, nullptr);
 		vkDestroyShaderModule(engine.global.device, fragShaderModuleTriangle, nullptr);
 		vkDestroyShaderModule(engine.global.device, vertShaderModuleTriangle, nullptr);
 	}
