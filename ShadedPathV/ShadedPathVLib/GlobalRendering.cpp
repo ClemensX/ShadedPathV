@@ -105,9 +105,11 @@ void GlobalRendering::initVulkanInstance()
     std::vector<VkExtensionProperties> availExtensions(extensionCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availExtensions.data());
 
-    Log("available Vulkan extensions:\n");
-    for (const auto& extension : availExtensions) {
-        Log("  " << extension.extensionName << '\n');
+    if (LIST_EXTENSIONS) {
+        Log("available Vulkan instance extensions:\n");
+        for (const auto& extension : availExtensions) {
+            Log("  " << extension.extensionName << '\n');
+        }
     }
     createInfo.enabledLayerCount = 0;
 
@@ -164,9 +166,12 @@ std::vector<const char*> GlobalRendering::getRequiredExtensions() {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
     extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+    //extensions.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     //extensions.push_back(VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME);
-    Log("requested Vulkan extensions:" << endl)
+    Log("requested Vulkan instance extensions:" << endl)
         Util::printCStringList(extensions);
+    Log("requested Vulkan device extensions:" << endl)
+        Util::printCStringList(deviceExtensions);
 
     return extensions;
 }
@@ -245,6 +250,7 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
     if (listmode) {
         Log("Physical Device properties: " << deviceProperties.deviceName << " Vulkan API Version: " << Util::decodeVulkanVersion(deviceProperties.apiVersion).c_str() << " type: " << Util::decodeDeviceType(deviceProperties.deviceType) << endl);
         Log("    Mesh shader Supported with max output vertices: " << meshProperties.maxMeshOutputVertices << endl);
+        checkDeviceExtensionSupport(device, listmode);
         return false;
     }
     // we just pick the first device for now
@@ -253,7 +259,7 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
     // now look for queue families:
     familyIndices = findQueueFamilies(device);
 
-    bool extensionsSupported = checkDeviceExtensionSupport(device);
+    bool extensionsSupported = checkDeviceExtensionSupport(device, false);
     bool swapChainAdequate = false;
     if (engine.presentation.enabled) {
         if (extensionsSupported) {
@@ -356,13 +362,20 @@ void GlobalRendering::createLogicalDevice()
     }
 }
 
-bool GlobalRendering::checkDeviceExtensionSupport(VkPhysicalDevice phys_device)
+bool GlobalRendering::checkDeviceExtensionSupport(VkPhysicalDevice phys_device, bool listmode)
 {
     uint32_t extensionCount;
     vkEnumerateDeviceExtensionProperties(phys_device, nullptr, &extensionCount, nullptr);
 
     std::vector<VkExtensionProperties> availableExtensions(extensionCount);
     vkEnumerateDeviceExtensionProperties(phys_device, nullptr, &extensionCount, availableExtensions.data());
+
+    if (listmode && LIST_EXTENSIONS) {
+        Log("available Vulkan Device extensions:\n");
+        for (const auto& extension : availableExtensions) {
+            Log("  " << extension.extensionName << '\n');
+        }
+    }
 
     std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
 

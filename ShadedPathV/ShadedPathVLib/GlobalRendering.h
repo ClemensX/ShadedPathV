@@ -34,8 +34,11 @@ public:
 		shutdown();
 	};
 
-	//static const VkFormat ImageFormat = VK_FORMAT_B8G8R8A8_SRGB;
-	static const VkFormat ImageFormat = VK_FORMAT_B8G8R8A8_UNORM;
+	// list device and instance extensions
+	static const bool LIST_EXTENSIONS = false;
+
+	static const VkFormat ImageFormat = VK_FORMAT_B8G8R8A8_SRGB;
+	//static const VkFormat ImageFormat = VK_FORMAT_B8G8R8A8_UNORM;
 	static const VkColorSpaceKHR ImageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 
 	// initialize all global Vulkan stuff - engine configuration settings
@@ -66,6 +69,7 @@ public:
 
 private:
 	vector<const char*> deviceExtensions = {
+		VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
 	};
 
 	void gatherDeviceExtensions();
@@ -87,7 +91,7 @@ private:
 	bool isDeviceSuitable(VkPhysicalDevice device, bool listmode = false);
 
 	// swap chain query
-	bool checkDeviceExtensionSupport(VkPhysicalDevice phys_device);
+	bool checkDeviceExtensionSupport(VkPhysicalDevice phys_device, bool listmode);
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 };
 
