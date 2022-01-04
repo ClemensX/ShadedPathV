@@ -16,6 +16,9 @@
     <Filter Include="ImGui">
       <UniqueIdentifier>{bbad549d-dfb1-4fc6-b5ef-c46bba467724}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader">
+      <UniqueIdentifier>{b8cc1ef8-1c62-41c7-b454-08fdbf23a411}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -137,5 +140,15 @@
     <ClCompile Include="ui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\ShadedPathVLib\shader\triangle.vert">
+      <Filter>Shader</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\ShadedPathVLib\shader\triangle.frag">
+      <Filter>Shader</Filter>
+    </None>
   </ItemGroup>
 </Project>
