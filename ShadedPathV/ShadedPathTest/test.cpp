@@ -67,9 +67,14 @@ TEST(Util, Logs) {
 TEST(Engine, Initialization) {
     {
         ShadedPathEngine engine;
+        engine.setFrameCountLimit(10);
+        engine.setBackBufferResolution(ShadedPathEngine::Resolution::Small);
+        //engine.enablePresentation(800, (int)(800 / 1.77f), "Vulkan Simple App");
+        engine.setFramesInFlight(2);
+        engine.setThreadModeSingle();
+
+        // engine initialization
         engine.init();
-        //engine.enablePresentation();
-        //engine.shutdown();
     }
     Log("Test end. (Should appear after destructor log)\n");
     LogfileScanner log;
@@ -82,18 +87,61 @@ TEST(Engine, Initialization) {
 TEST(Engine, Headless) {
     {
         ShadedPathEngine engine;
+        engine.setFrameCountLimit(10);
+        engine.setBackBufferResolution(ShadedPathEngine::Resolution::Small);
+        engine.setFramesInFlight(2);
+        engine.setThreadModeSingle();
         engine.init();
+
         engine.shaders.initiateShader_Triangle();
         engine.prepareDrawing();
         engine.drawFrame();
     }
 }
 
+TEST(Timer, Average) {
+    ThemedTimer::getInstance()->create("AVG", 10);
+    auto td = ThemedTimer::getInstance()->test_add("AVG", 3);
+    EXPECT_EQ(1, td->calls);
+    EXPECT_EQ(3, td->averageTimeBetweenMicroS);
+    ThemedTimer::getInstance()->test_add("AVG", 5);
+    EXPECT_EQ(4, td->averageTimeBetweenMicroS);
+    ThemedTimer::getInstance()->test_add("AVG", 7);
+    EXPECT_EQ(5, td->averageTimeBetweenMicroS);
+}
+
+TEST(Timer, FPS) {
+    ThemedTimer::getInstance()->create("FPS", 10);
+    auto td = ThemedTimer::getInstance()->test_add("FPS");
+    // first call does not count for FPS:
+    EXPECT_EQ(0, td->calls);
+    EXPECT_EQ(0, td->averageTimeBetweenMicroS);
+    // sleep half a second
+    this_thread::sleep_for(chrono::milliseconds(500));
+    ThemedTimer::getInstance()->test_add("FPS");
+    double fps = ThemedTimer::getInstance()->getFPS("FPS");
+    // 2 time points .5s apart should be around 2 fps
+    EXPECT_NEAR(2.0f, fps, 0.1f);
+
+    this_thread::sleep_for(chrono::milliseconds(1500));
+    ThemedTimer::getInstance()->test_add("FPS");
+    fps = ThemedTimer::getInstance()->getFPS("FPS");
+    // 3rd time point again 500ms apart
+    EXPECT_NEAR(1.0f, fps, 0.1f);
+
+    this_thread::sleep_for(chrono::milliseconds(100));
+    ThemedTimer::getInstance()->test_add("FPS");
+    this_thread::sleep_for(chrono::milliseconds(100));
+    ThemedTimer::getInstance()->test_add("FPS");
+    fps = ThemedTimer::getInstance()->getFPS("FPS");
+    EXPECT_NEAR(1.82f, fps, 0.1f);
+}
+
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     // enable single tests
     //::testing::GTEST_FLAG(filter) = "Environment.GLFW";
-    ::testing::GTEST_FLAG(filter) = "Engine.Headless";
+    //::testing::GTEST_FLAG(filter) = "Engine.Headless";
     // all test but excluded one:
     //::testing::GTEST_FLAG(filter) = "-Engine.Headless";
     return RUN_ALL_TESTS();

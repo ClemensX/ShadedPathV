@@ -8,6 +8,7 @@ void ShadedPathEngine::init()
     ThemedTimer::getInstance()->create(TIMER_PRESENT_FRAME, 1000);
     ThemedTimer::getInstance()->create(TIMER_INPUT_THREAD, 1000);
     ThemedTimer::getInstance()->create(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT, 1000);
+    ThemedTimer::getInstance()->create(TIMER_PART_BUFFER_COPY, 10);
     presentation.initGLFW();
     global.initBeforePresentation();
     presentation.init();
@@ -313,5 +314,6 @@ ShadedPathEngine::~ShadedPathEngine()
     ThemedTimer::getInstance()->logInfo(TIMER_INPUT_THREAD);
     ThemedTimer::getInstance()->logFPS(TIMER_INPUT_THREAD);
     ThemedTimer::getInstance()->logInfo(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
+    ThemedTimer::getInstance()->logInfo(TIMER_PART_BUFFER_COPY);
 }
 

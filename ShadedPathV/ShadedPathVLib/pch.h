@@ -23,6 +23,7 @@
 #define TIMER_INPUT_THREAD "InputThread"
 // part timers for sub-frame timings like presenting or buffer upload
 #define TIMER_PART_BACKBUFFER_COPY_AND_PRESENT "PartPresentBackBuffer"
+#define TIMER_PART_BUFFER_COPY "PartBufferCopy"
 
 // add headers that you want to pre-compile here
 

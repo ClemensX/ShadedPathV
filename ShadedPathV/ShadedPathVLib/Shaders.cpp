@@ -31,6 +31,7 @@ void Shaders::initiateShader_Triangle()
 	vertShaderModuleTriangle = createShaderModule(file_buffer_vert);
 	fragShaderModuleTriangle = createShaderModule(file_buffer_frag);
 
+	ThemedTimer::getInstance()->start(TIMER_PART_BUFFER_COPY);
 	// create vertex buffer
 	VkDeviceSize bufferSize = sizeof(simpleShader.vertices[0]) * simpleShader.vertices.size();
 	engine.global.createBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -41,6 +42,7 @@ void Shaders::initiateShader_Triangle()
 	vkMapMemory(engine.global.device, vertexBufferMemoryTriangle, 0, bufferSize, 0, &data);
 	memcpy(data, simpleShader.vertices.data(), (size_t)bufferSize);
 	vkUnmapMemory(engine.global.device, vertexBufferMemoryTriangle);
+	ThemedTimer::getInstance()->stop(TIMER_PART_BUFFER_COPY);
 
 	// pipelines must be created for every rendering thread
 	for (auto &res : engine.threadResources) {

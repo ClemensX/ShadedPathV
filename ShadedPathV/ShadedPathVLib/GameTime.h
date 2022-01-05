@@ -43,9 +43,10 @@ class ThemedTimer {
 		int numSlots; // number of allocated TimerEntry slots
 		int pos = 0;  // next input position
 		long calls = 0L; // count calls to add()
-		long long averageTimeBetweenMicroS; // accumulate time between calls in [microseconds] (1/1000 000 s)
+		long long averageTimeBetweenMicroS = 0; // accumulate time between calls in [microseconds] (1/1000 000 s)
 		long long totalTimeMicros = 0; 
 		chrono::steady_clock::time_point now;
+		bool firstCall = true;
 	};
 
 public:
@@ -73,9 +74,13 @@ public:
 		chrono::steady_clock::time_point current = chrono::steady_clock::now();
 		auto microsSinceLast = chrono::duration_cast<chrono::microseconds>(current - td.now).count();
 		td.now = current;
-		//Log(" micro since last " << microsSinceLast << endl);
-		//Log(" micro since last " << td.totalTimeMicros << endl);
-		add(td, microsSinceLast);
+		Log(" micro since last " << microsSinceLast << endl);
+		//Log(" total since last " << td.totalTimeMicros << endl);
+		if (td.firstCall) {
+			td.firstCall = false;
+		} else {
+			add(td, microsSinceLast);
+		}
 	}
 
 	void start(string name) {
@@ -125,13 +130,35 @@ public:
 		Log("  #calls: " << td.calls << " average time: " << td.averageTimeBetweenMicroS << " [microseconds] / " << (td.averageTimeBetweenMicroS / 1000) << " [ms]" << endl);
 	}
 
+	double getFPS(string name) {
+		if (!check_name(name)) return 0.0f;
+		auto& td = timerMap[name];
+		double fps = 1000000.0 / (double)td.averageTimeBetweenMicroS;
+		return fps;
+	}
 	// log ThemedTimer as FPS
 	void logFPS(string name) {
 		if (!check_name(name)) return;
 		auto& td = timerMap[name];
-		double fps = 1000000.0 / (double)td.averageTimeBetweenMicroS;
+		double fps = getFPS(name);
 		double totalSeconds = ((double)td.totalTimeMicros) / 1000000;
 		Log("   FPS: " << fps << " over " << totalSeconds << " [s]" << endl);
+	}
+
+	// do not use - test helper method
+	TimerDesc* test_add(string name, long long value) {
+		if (!check_name(name)) return nullptr;
+		auto& td = timerMap[name];
+		add(td, value);
+		return &td;
+	}
+
+	// do not use - test helper method
+	TimerDesc* test_add(string name) {
+		if (!check_name(name)) return nullptr;
+		auto& td = timerMap[name];
+		add(name);
+		return &td;
 	}
 
 private:
@@ -139,10 +166,10 @@ private:
 	void add(TimerDesc &td, long long value) {
 		td.calls++;
 		if (td.calls == 1) {
-			td.averageTimeBetweenMicroS = 0;
+			td.averageTimeBetweenMicroS = value;
 		}
 		else {
-			td.averageTimeBetweenMicroS = (td.averageTimeBetweenMicroS * (td.calls - 2) + value) / (td.calls - 1);
+			td.averageTimeBetweenMicroS = (td.averageTimeBetweenMicroS * (static_cast<long long>(td.calls) - 1) + value) / (td.calls);
 			td.totalTimeMicros += value;
 		}
 		TimerEntry& t = td.entries[td.pos];
