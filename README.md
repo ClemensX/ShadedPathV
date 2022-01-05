@@ -76,6 +76,11 @@ To decide formats to use we can run the engine in presentation mode and get a li
 |                                                 |                  | renderThreadContinue->pop() |
 |                                                 | vkQueueSubmit(inFlightFence) | |
 
+## Vulcan Device Coordinates
+
+![Device Coordinates](DeviceCoordinates.drawio.svg)
+
+
 ## Issues
 
 * configure validation layers with Vulkan Configurator. Didn't succeed in configuring via app. Storing will enable debug config still active after configurator closes, but ALL Vulkan apps may be affected!
