@@ -32,34 +32,14 @@ void Shaders::initiateShader_Triangle()
 	fragShaderModuleTriangle = createShaderModule(file_buffer_frag);
 
 	// create vertex buffer
-	VkBufferCreateInfo bufferInfo{};
-	bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	bufferInfo.size = sizeof(SimpleShader::vertices[0]) * simpleShader.vertices.size();
-	bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-	if (vkCreateBuffer(engine.global.device, &bufferInfo, nullptr, &vertexBufferTriangle) != VK_SUCCESS) {
-		Error("failed to create vertex buffer!");
-	}
-
-	// create vertex buffer memory:
-	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(engine.global.device, vertexBufferTriangle, &memRequirements);
-
-	VkMemoryAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocInfo.allocationSize = memRequirements.size;
-	allocInfo.memoryTypeIndex = engine.global.findMemoryTypeIndex(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-	if (vkAllocateMemory(engine.global.device, &allocInfo, nullptr, &vertexBufferMemoryTriangle) != VK_SUCCESS) {
-		Error("failed to allocate vertex buffer memory!");
-	}
-	vkBindBufferMemory(engine.global.device, vertexBufferTriangle, vertexBufferMemoryTriangle, 0);
+	VkDeviceSize bufferSize = sizeof(simpleShader.vertices[0]) * simpleShader.vertices.size();
+	engine.global.createBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		vertexBufferTriangle, vertexBufferMemoryTriangle);
 
 	// copy vertex data to GPU
 	void* data;
-	vkMapMemory(engine.global.device, vertexBufferMemoryTriangle, 0, bufferInfo.size, 0, &data);
-	memcpy(data, simpleShader.vertices.data(), (size_t)bufferInfo.size);
+	vkMapMemory(engine.global.device, vertexBufferMemoryTriangle, 0, bufferSize, 0, &data);
+	memcpy(data, simpleShader.vertices.data(), (size_t)bufferSize);
 	vkUnmapMemory(engine.global.device, vertexBufferMemoryTriangle);
 
 	// pipelines must be created for every rendering thread

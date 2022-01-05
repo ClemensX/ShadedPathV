@@ -49,12 +49,19 @@ public:
 
 	// destroy global resources, should only be called from engine dtor
 	void shutdown();
+
 	Files files;
 	void createLogicalDevice();
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, bool listmode = false);
 	QueueFamilyIndices familyIndices;
 	uint32_t findMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags properties);
-	// Vulkan 
+
+	// Vulkan helper
+
+	// Buffer Creation helper method
+	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+
+	// Vulkan entities
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice device = nullptr;
 	VkInstance vkInstance = nullptr;
