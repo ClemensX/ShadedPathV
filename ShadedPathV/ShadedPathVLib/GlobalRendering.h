@@ -60,6 +60,8 @@ public:
 
 	// Buffer Creation helper method
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+	// copy buffer helper method
+	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
 	// Vulkan entities
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;

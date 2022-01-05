@@ -34,15 +34,24 @@ void Shaders::initiateShader_Triangle()
 	ThemedTimer::getInstance()->start(TIMER_PART_BUFFER_COPY);
 	// create vertex buffer
 	VkDeviceSize bufferSize = sizeof(simpleShader.vertices[0]) * simpleShader.vertices.size();
-	engine.global.createBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+	engine.global.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		stagingBuffer, stagingBufferMemory);
+
+	void* data;
+	vkMapMemory(engine.global.device, stagingBufferMemory, 0, bufferSize, 0, &data);
+	memcpy(data, simpleShader.vertices.data(), (size_t)bufferSize);
+	vkUnmapMemory(engine.global.device, stagingBufferMemory);
+
+	engine.global.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_HEAP_DEVICE_LOCAL_BIT,
 		vertexBufferTriangle, vertexBufferMemoryTriangle);
 
-	// copy vertex data to GPU
-	void* data;
-	vkMapMemory(engine.global.device, vertexBufferMemoryTriangle, 0, bufferSize, 0, &data);
-	//for (int i = 0; i < 1000000; i++)
-	memcpy(data, simpleShader.vertices.data(), (size_t)bufferSize);
-	vkUnmapMemory(engine.global.device, vertexBufferMemoryTriangle);
+	//for (int i = 0; i < 10000; i++)
+	engine.global.copyBuffer(stagingBuffer, vertexBufferTriangle, bufferSize);
+
+	vkDestroyBuffer(engine.global.device, stagingBuffer, nullptr);
+	vkFreeMemory(engine.global.device, stagingBufferMemory, nullptr);
 	ThemedTimer::getInstance()->stop(TIMER_PART_BUFFER_COPY);
 
 	// pipelines must be created for every rendering thread
