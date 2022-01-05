@@ -40,6 +40,7 @@ void Shaders::initiateShader_Triangle()
 	// copy vertex data to GPU
 	void* data;
 	vkMapMemory(engine.global.device, vertexBufferMemoryTriangle, 0, bufferSize, 0, &data);
+	//for (int i = 0; i < 1000000; i++)
 	memcpy(data, simpleShader.vertices.data(), (size_t)bufferSize);
 	vkUnmapMemory(engine.global.device, vertexBufferMemoryTriangle);
 	ThemedTimer::getInstance()->stop(TIMER_PART_BUFFER_COPY);

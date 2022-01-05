@@ -90,6 +90,11 @@ To decide formats to use we can run the engine in presentation mode and get a li
 * Add this extension https://github.com/baldurk/renderdoc-contrib/tree/main/baldurk/whereismydraw
 * See what it tells you
 
+### Some arbitrary timings (we be moved elsewhere eventually)
+
+All timings in [microseconds]
+* [38000] Create/Copy small VertexBuffer (1 million times)
+* [50] all w/o actual memcpy()
 
 ## Copyrights of used Components
 
