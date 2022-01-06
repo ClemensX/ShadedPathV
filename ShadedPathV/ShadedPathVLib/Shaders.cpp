@@ -34,25 +34,12 @@ void Shaders::initiateShader_Triangle()
 	ThemedTimer::getInstance()->start(TIMER_PART_BUFFER_COPY);
 	// create vertex buffer
 	VkDeviceSize bufferSize = sizeof(simpleShader.vertices[0]) * simpleShader.vertices.size();
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
-	engine.global.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		stagingBuffer, stagingBufferMemory);
-
-	void* data;
-	vkMapMemory(engine.global.device, stagingBufferMemory, 0, bufferSize, 0, &data);
-	memcpy(data, simpleShader.vertices.data(), (size_t)bufferSize);
-	vkUnmapMemory(engine.global.device, stagingBufferMemory);
-
-	engine.global.createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_HEAP_DEVICE_LOCAL_BIT,
-		vertexBufferTriangle, vertexBufferMemoryTriangle);
-
-	//for (int i = 0; i < 10000; i++)
-	engine.global.copyBuffer(stagingBuffer, vertexBufferTriangle, bufferSize);
-
-	vkDestroyBuffer(engine.global.device, stagingBuffer, nullptr);
-	vkFreeMemory(engine.global.device, stagingBufferMemory, nullptr);
+	engine.global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, simpleShader.vertices.data(), vertexBufferTriangle, vertexBufferMemoryTriangle);
 	ThemedTimer::getInstance()->stop(TIMER_PART_BUFFER_COPY);
+
+	// create index buffer
+	bufferSize = sizeof(simpleShader.indices[0]) * simpleShader.indices.size();
+	engine.global.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, bufferSize, simpleShader.indices.data(), indexBufferTriangle, indexBufferMemoryTriangle);
 
 	// pipelines must be created for every rendering thread
 	for (auto &res : engine.threadResources) {
@@ -251,8 +238,10 @@ void Shaders::recordDrawCommand_Triangle(VkCommandBuffer& commandBuffer, ThreadR
 	VkBuffer vertexBuffers[] = { vertexBufferTriangle };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+	vkCmdBindIndexBuffer(commandBuffer, indexBufferTriangle, 0, VK_INDEX_TYPE_UINT16);
 
-	vkCmdDraw(commandBuffer, static_cast<uint32_t>(simpleShader.vertices.size()), 1, 0, 0);
+	//vkCmdDraw(commandBuffer, static_cast<uint32_t>(simpleShader.vertices.size()), 1, 0, 0);
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint16_t>(simpleShader.indices.size()), 1, 0, 0, 0);
 }
 
 void Shaders::drawFrame_Triangle(ThreadResources& tr)
@@ -488,6 +477,8 @@ Shaders::~Shaders()
 	if (enabledTriangle) {
 		vkDestroyBuffer(engine.global.device, vertexBufferTriangle, nullptr);
 		vkFreeMemory(engine.global.device, vertexBufferMemoryTriangle, nullptr);
+		vkDestroyBuffer(engine.global.device, indexBufferTriangle, nullptr);
+		vkFreeMemory(engine.global.device, indexBufferMemoryTriangle, nullptr);
 		vkDestroyShaderModule(engine.global.device, fragShaderModuleTriangle, nullptr);
 		vkDestroyShaderModule(engine.global.device, vertShaderModuleTriangle, nullptr);
 	}

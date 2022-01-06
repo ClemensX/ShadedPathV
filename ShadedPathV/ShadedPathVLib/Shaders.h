@@ -39,6 +39,8 @@ private:
 	VkShaderModule fragShaderModuleTriangle = nullptr;
 	VkBuffer vertexBufferTriangle = nullptr;
 	VkDeviceMemory vertexBufferMemoryTriangle = nullptr;
+	VkBuffer indexBufferTriangle = nullptr;
+	VkDeviceMemory indexBufferMemoryTriangle = nullptr;
 
 	unsigned int imageCouter = 0;
 	bool enabledTriangle = false;

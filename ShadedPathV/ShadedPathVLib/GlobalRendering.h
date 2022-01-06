@@ -58,9 +58,11 @@ public:
 
 	// Vulkan helper
 
-	// Buffer Creation helper method
+	// Upload index or vertex buffer
+	void uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize bufferSize, const void *src, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+	// Buffer Creation
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-	// copy buffer helper method
+	// copy buffer
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
 
 	// Vulkan entities
