@@ -58,14 +58,21 @@ public:
     }
 
     // one time effect initialization
-    void init(VkDevice device);
+    void init(ShadedPathEngine& engine);
     ~SimpleShader();
+
+    // updates that need to be done once per frame
+    void updatePerFrame(ThreadResources& tr);
 
     // create descriptor set layout (one per effect)
     void createDescriptorSetLayout();
+    // create uniform buffers (one per render thread)
+    void createUniformBuffer(ThreadResources& res);
     VkDescriptorSetLayout descriptorSetLayout;
 
 private:
     VkDevice device = nullptr;
+    GlobalRendering *global = nullptr;
+    ShadedPathEngine* engine = nullptr;
 };
 

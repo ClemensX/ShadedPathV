@@ -3,7 +3,7 @@
 
 void ShadedPathEngine::init()
 {
-    Log("engine absolute start time (hours and fraction): " << gameTime.getTimeAbs() << endl);
+    Log("engine absolute start time (hours and fraction): " << gameTime.getTimeSystemClock() << endl);
     ThemedTimer::getInstance()->create(TIMER_DRAW_FRAME, 1000);
     ThemedTimer::getInstance()->create(TIMER_PRESENT_FRAME, 1000);
     ThemedTimer::getInstance()->create(TIMER_INPUT_THREAD, 1000);
@@ -272,6 +272,7 @@ void ShadedPathEngine::advanceFrameCountersAfterPresentation()
 {
     frameNum++;
     currentFrameIndex = frameNum % framesInFlight;
+    gameTime.advanceTime();
 }
 
 void ShadedPathEngine::shutdown()

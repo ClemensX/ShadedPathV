@@ -47,9 +47,11 @@ public:
 	// draw UI
 	VkCommandBuffer commandBufferUI;
 
-	// triangle shader 
+	// triangle shader / SimpleShader
 	FrameBufferAttachment colorAttachment, depthAttachment;
 	VkCommandBuffer commandBufferTriangle;
+	VkBuffer uniformBufferTriangle;
+	VkDeviceMemory uniformBufferMemoryTriangle;
 
 	// frame management
 	long frameNum = -1;

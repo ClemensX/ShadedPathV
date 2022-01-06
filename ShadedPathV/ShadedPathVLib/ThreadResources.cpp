@@ -264,6 +264,8 @@ ThreadResources::~ThreadResources()
     vkFreeMemory(device, colorAttachment.memory, nullptr);
     vkDestroyPipeline(device, graphicsPipelineTriangle, nullptr);
     vkDestroyPipelineLayout(device, pipelineLayoutTriangle, nullptr);
+    vkDestroyBuffer(device, uniformBufferTriangle, nullptr);
+    vkFreeMemory(device, uniformBufferMemoryTriangle, nullptr);
     // destroy swap chain image views
     //for (auto imageView : swapChainImageViews) {
     //    vkDestroyImageView(device, imageView, nullptr);

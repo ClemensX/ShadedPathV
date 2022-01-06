@@ -1,8 +1,10 @@
 #include "pch.h"
 
-void SimpleShader::init(VkDevice device)
+void SimpleShader::init(ShadedPathEngine &engine)
 {
-    this->device = device;
+    this->device = engine.global.device;
+    this->global = &engine.global;
+    this->engine = &engine;
 }
 
 void SimpleShader::createDescriptorSetLayout()
@@ -22,6 +24,21 @@ void SimpleShader::createDescriptorSetLayout()
     if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
         Error("failed to create descriptor set layout!");
     }
+}
+
+void SimpleShader::createUniformBuffer(ThreadResources& res)
+{
+    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+    global->createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        res.uniformBufferTriangle, res.uniformBufferMemoryTriangle);
+}
+
+void SimpleShader::updatePerFrame(ThreadResources& tr)
+{
+    //Log("time: " << engine->gameTime.getTimeSystemClock() << endl);
+    //Log("game time: " << engine->gameTime.getTimeGameClock() << endl);
+    //Log("game time rel: " << setprecision(27) << engine->gameTime.getTime() << endl);
+    Log("time delta: " << setprecision(27) << engine->gameTime.getTimeDelta() << endl);
 }
 
 SimpleShader::~SimpleShader()

@@ -9,22 +9,40 @@ public:
 	// set how much faster a game day passes, 1 == real time, 24*60 is a one minute day
 	// init needs be called before any other time method
 	void init(LONGLONG gamedayFactor);
+
+	// advances time, should be called once for every frame
+	// not thread save - be sure to call from synchronized method (usually after presenting)
+	void advanceTime();
+
+	// get number of hours (and fractions) since game start (in gametime)
+	// NEVER use time values as float instead of double: precision is not enough and you will get same time value for actually different times
+	double getTime();
+
+	// get seconds (and fractions) since last call to advanceTime() (in gametime)
+	// NEVER use time values as float instead of double: precision is not enough and you will get same time value for actually different times
+	double getTimeDelta();
+
+	// get absolute number of hours (and fractions) of system clock (no gameday)
+	// NEVER use time values as float instead of double: precision is not enough and you will get same time value for actually different times
+	double getTimeSystemClock();
+
+	// get absolute number of hours (and fractions) of game clock
+	// NEVER use time values as float instead of double: precision is not enough and you will get same time value for actually different times
+	double getTimeGameClock();
+
 private:
 	// measurements:
 	chrono::steady_clock::time_point now;
 	chrono::steady_clock::time_point startTimePoint = chrono::steady_clock::now();
 	double gamedayFactor = 0.0f;
 
-	// real system time:
-	chrono::system_clock::time_point nowAbs = chrono::system_clock::now();
+	double timeSystemClock;
+	double timeGameClock;
+	double gametime;
+	double realtime;
+	double timeDelta;
+	double gameTimeDelta;
 public:
-	// advances time, should be called once for every frame
-	// not thread save - be sure to call from synchronized method (usually after presenting)
-	void advanceTime();
-
-	// get absolute number of hours (and fractions)
-	// NEVER use time values as float instead of double: precision is not enough and you will get same time value for actually different times
-	double getTimeAbs();
 
 };
 
@@ -74,7 +92,7 @@ public:
 		chrono::steady_clock::time_point current = chrono::steady_clock::now();
 		auto microsSinceLast = chrono::duration_cast<chrono::microseconds>(current - td.now).count();
 		td.now = current;
-		Log(" micro since last " << microsSinceLast << endl);
+		//Log(" micro since last " << microsSinceLast << endl);
 		//Log(" total since last " << td.totalTimeMicros << endl);
 		if (td.firstCall) {
 			td.firstCall = false;

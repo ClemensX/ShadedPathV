@@ -18,7 +18,7 @@ VkShaderModule Shaders::createShaderModule(const vector<byte>& code)
 void Shaders::initiateShader_Triangle()
 {
 	enabledTriangle = true;
-	simpleShader.init(engine.global.device);
+	simpleShader.init(engine);
 	// initialization of globals like shader code
 	//  
 	// load shader binary code
@@ -53,6 +53,8 @@ void Shaders::initiateShader_Triangle()
 
 void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
 {
+	// uniform buffer
+	simpleShader.createUniformBuffer(res);
 	// create shader stage
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -253,8 +255,7 @@ void Shaders::drawFrame_Triangle(ThreadResources& tr)
 	if (!enabledTriangle) return;
 	//Log("draw index " << engine.currentFrameIndex << endl);
 
-	//uint32_t imageIndex;
-	//vkAcquireNextImageKHR(engine.device, engine.swapChain, UINT64_MAX, tr.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+	simpleShader.updatePerFrame(tr);
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 

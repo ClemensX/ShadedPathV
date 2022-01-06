@@ -11,19 +11,48 @@ GameTime::GameTime()
 void GameTime::init(LONGLONG gamedayFactor)
 {
 	this->gamedayFactor = (double)gamedayFactor;
+	now = chrono::steady_clock::now();
 }
 
 void GameTime::advanceTime()
 {
+	// get time
+	auto old = now;
 	now = chrono::steady_clock::now();
-}
+	chrono::system_clock::time_point nowAbs = chrono::system_clock::now();
 
-double GameTime::getTimeAbs()
-{
 	// hours of day:
 	auto dp = floor<chrono::days>(nowAbs);
 	chrono::duration<double, std::ratio<60 * 60>> myHourTick2(nowAbs - dp);
-	double hh = myHourTick2.count();
+	timeSystemClock = myHourTick2.count();
 	//Log("fraction " << hh << endl);
-	return hh;
+	timeGameClock = fmod(timeSystemClock * gamedayFactor, 24.0);
+
+	chrono::duration<double, std::ratio<60 * 60>> myHourTick3(now - this->startTimePoint);
+	realtime = myHourTick3.count();
+
+	gametime = fmod(realtime * gamedayFactor, 24.0);
+
+	timeDelta = chrono::duration_cast<chrono::duration<double>>(now - old).count();
+	gameTimeDelta = timeDelta * gamedayFactor;
+}
+
+double GameTime::getTimeSystemClock()
+{
+	return timeSystemClock;
+}
+
+double GameTime::getTimeGameClock()
+{
+	return timeGameClock;
+}
+
+double GameTime::getTime()
+{
+	return gametime;
+}
+
+double GameTime::getTimeDelta()
+{
+	return gameTimeDelta;
 }
