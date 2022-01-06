@@ -18,6 +18,12 @@ public:
     0, 1, 2, 2, 3, 0
     };
 
+    struct UniformBufferObject {
+        glm::mat4 model;
+        glm::mat4 view;
+        glm::mat4 proj;
+    };
+
     static VkVertexInputBindingDescription getBindingDescription() {
         VkVertexInputBindingDescription bindingDescription{};
         bindingDescription.binding = 0;
@@ -50,6 +56,16 @@ public:
         attributeDescriptions[1].offset = offsetof(Vertex, color);
         return attributeDescriptions;
     }
-    
+
+    // one time effect initialization
+    void init(VkDevice device);
+    ~SimpleShader();
+
+    // create descriptor set layout (one per effect)
+    void createDescriptorSetLayout();
+    VkDescriptorSetLayout descriptorSetLayout;
+
+private:
+    VkDevice device = nullptr;
 };
 

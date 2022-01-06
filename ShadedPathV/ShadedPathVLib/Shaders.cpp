@@ -18,6 +18,7 @@ VkShaderModule Shaders::createShaderModule(const vector<byte>& code)
 void Shaders::initiateShader_Triangle()
 {
 	enabledTriangle = true;
+	simpleShader.init(engine.global.device);
 	// initialization of globals like shader code
 	//  
 	// load shader binary code
@@ -40,6 +41,9 @@ void Shaders::initiateShader_Triangle()
 	// create index buffer
 	bufferSize = sizeof(simpleShader.indices[0]) * simpleShader.indices.size();
 	engine.global.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, bufferSize, simpleShader.indices.data(), indexBufferTriangle, indexBufferMemoryTriangle);
+
+	// descriptor
+	simpleShader.createDescriptorSetLayout();
 
 	// pipelines must be created for every rendering thread
 	for (auto &res : engine.threadResources) {
@@ -155,8 +159,8 @@ void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
 	// pipeline layout
 	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
 	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 0; // Optional
-	pipelineLayoutInfo.pSetLayouts = nullptr; // Optional
+	pipelineLayoutInfo.setLayoutCount = 1;
+	pipelineLayoutInfo.pSetLayouts = &simpleShader.descriptorSetLayout;
 	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
 	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
@@ -241,7 +245,7 @@ void Shaders::recordDrawCommand_Triangle(VkCommandBuffer& commandBuffer, ThreadR
 	vkCmdBindIndexBuffer(commandBuffer, indexBufferTriangle, 0, VK_INDEX_TYPE_UINT16);
 
 	//vkCmdDraw(commandBuffer, static_cast<uint32_t>(simpleShader.vertices.size()), 1, 0, 0);
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint16_t>(simpleShader.indices.size()), 1, 0, 0, 0);
+	//vkCmdDrawIndexed(commandBuffer, static_cast<uint16_t>(simpleShader.indices.size()), 1, 0, 0, 0);
 }
 
 void Shaders::drawFrame_Triangle(ThreadResources& tr)
@@ -266,30 +270,6 @@ void Shaders::drawFrame_Triangle(ThreadResources& tr)
 	submitInfo.pSignalSemaphores = nullptr; // signalSemaphores;
 	tr.submitinfos.clear();
 	tr.submitinfos.push_back(submitInfo);
-	//VkPresentInfoKHR presentInfo{};
-	//presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-	//presentInfo.waitSemaphoreCount = 1;
-	//presentInfo.pWaitSemaphores = signalSemaphores;
-
-	//VkSwapchainKHR swapChains[] = { engine.swapChain };
-	//presentInfo.swapchainCount = 1;
-	//presentInfo.pSwapchains = swapChains;
-	//presentInfo.pImageIndices = &imageIndex;
-	//presentInfo.pResults = nullptr; // Optional
-	//vkQueuePresentKHR(engine.presentQueue, &presentInfo);
-
-	//const uint64_t waitValue = 1;
-	//VkSemaphore signalWaitSemaphores[] = { tr.renderFinishedSemaphore };
-	//VkSemaphoreWaitInfo waitInfo;
-	//waitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
-	//waitInfo.pNext = NULL;
-	//waitInfo.flags = 0;
-	//waitInfo.semaphoreCount = 0;
-	//waitInfo.pSemaphores = nullptr;//signalWaitSemaphores;
-	//waitInfo.pValues = &waitValue;
-	//vkWaitSemaphores(engine.global.device, &waitInfo, UINT64_MAX);
-	//ThemedTimer::getInstance()->add("DrawFrame");
 }
 
 void Shaders::initiateShader_BackBufferImageDump()
