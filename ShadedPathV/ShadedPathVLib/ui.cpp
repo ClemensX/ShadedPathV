@@ -7,6 +7,7 @@ void UI::init(ShadedPathEngine* engine)
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
+    //io.DisplayFramebufferScale = ImVec2(2.0f, 2.0f);
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
@@ -130,7 +131,7 @@ void UI::render(ThreadResources& tr)
 void UI::beginFrame()
 {
     ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
+    ImGui_ImplGlfw_NewFrame(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height);
     ImGui::NewFrame();
 }
 
