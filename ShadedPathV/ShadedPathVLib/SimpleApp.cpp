@@ -9,8 +9,8 @@ void SimpleApp::run()
         ShadedPathEngine engine;
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         //engine.setFrameCountLimit(1000);
-        engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
-        int win_width = 1600;
+        engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK);
+        int win_width = 960;
         engine.enablePresentation(win_width, (int)(win_width /1.77f), "Vulkan Simple App");
         engine.setFramesInFlight(2);
         //engine.setThreadModeSingle();
