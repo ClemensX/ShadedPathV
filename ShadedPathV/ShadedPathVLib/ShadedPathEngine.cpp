@@ -26,6 +26,7 @@ void ShadedPathEngine::enablePresentation(int w, int h, const char* name) {
     win_height = h;
     win_name = name;
     presentation.enabled = true;
+    checkAspect();
 };
 
 void ShadedPathEngine::setFramesInFlight(int n) {
@@ -119,6 +120,7 @@ void ShadedPathEngine::setBackBufferResolution(VkExtent2D e)
 {
     if (initialized) Error("Configuration after intialization not allowed");
     backBufferExtent = e;
+    backBufferAspect = (float)e.width / (float)e.height;
 }
 
 VkExtent2D ShadedPathEngine::getExtentForResolution(ShadedPathEngine::Resolution res)
@@ -142,6 +144,18 @@ void ShadedPathEngine::setBackBufferResolution(ShadedPathEngine::Resolution res)
 {
     if (initialized) Error("Configuration after intialization not allowed");
     setBackBufferResolution(getExtentForResolution(res));
+    checkAspect();
+}
+
+void ShadedPathEngine::checkAspect()
+{
+    // nothing to check if presentation in not enabled
+    if (!presentation.enabled) return;
+    float winaspect = (float)win_width / (float)win_height;
+    bool aspectsMatch = glm::epsilonEqual(winaspect, getAspect(), 0.1f);
+    if (!aspectsMatch) {
+        Log("WARNING: aspect of window does not match backbuffer - you risk distorted views");
+    }
 }
 
 bool ShadedPathEngine::shouldClose()

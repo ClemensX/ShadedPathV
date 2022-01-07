@@ -5,7 +5,7 @@ class GameTime
 {
 public:
 	GameTime();
-	enum GametimePredefs { GAMEDAY_1_MINUTE = 24 * 60, GAMEDAY_20_SECONDS = 24 * 60 * 3, GAMEDAY_10_SECONDS = 24 * 60 * 6 };
+	enum GametimePredefs { GAMEDAY_REALTIME = 1, GAMEDAY_1_MINUTE = 24 * 60, GAMEDAY_20_SECONDS = 24 * 60 * 3, GAMEDAY_10_SECONDS = 24 * 60 * 6 };
 	// set how much faster a game day passes, 1 == real time, 24*60 is a one minute day
 	// init needs be called before any other time method
 	void init(LONGLONG gamedayFactor);
@@ -15,18 +15,26 @@ public:
 	void advanceTime();
 
 	// get number of hours (and fractions) since game start (in gametime)
+	// will always increase until game stops
 	// NEVER use time values as float instead of double: precision is not enough and you will get same time value for actually different times
 	double getTime();
+
+	// get seconds (and fractions) since game start (in gametime)
+	// will always increase until game stops
+	// NEVER use time values as float instead of double: precision is not enough and you will get same time value for actually different times
+	double getTimeSeconds();
 
 	// get seconds (and fractions) since last call to advanceTime() (in gametime)
 	// NEVER use time values as float instead of double: precision is not enough and you will get same time value for actually different times
 	double getTimeDelta();
 
 	// get absolute number of hours (and fractions) of system clock (no gameday)
+	// resets every 24h real time
 	// NEVER use time values as float instead of double: precision is not enough and you will get same time value for actually different times
 	double getTimeSystemClock();
 
 	// get absolute number of hours (and fractions) of game clock
+	// resets every 24h game time
 	// NEVER use time values as float instead of double: precision is not enough and you will get same time value for actually different times
 	double getTimeGameClock();
 
@@ -39,6 +47,7 @@ private:
 	double timeSystemClock;
 	double timeGameClock;
 	double gametime;
+	double gametimeSeconds;
 	double realtime;
 	double timeDelta;
 	double gameTimeDelta;

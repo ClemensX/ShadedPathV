@@ -89,7 +89,12 @@ public:
     const char* win_name = nullptr;
     bool threadModeSingle = false;
     UI ui;
+    // get aspect ratio of backbuffer - window should be same, but that is not enforced
+    float getAspect() {
+        return backBufferAspect;
+    }
 private:
+    float backBufferAspect = 1.0f;
     long limitFrameCount = 0;
     int framesInFlight = 2;
     bool limitFrameCountEnabled = false;
@@ -97,6 +102,8 @@ private:
     bool threadsAreFinished();
     // backbuffer size:
     VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);
+    // check if backbuffer and window have same aspect - warning if not
+    void checkAspect();
 
     // thread support:
     ThreadGroup threads;

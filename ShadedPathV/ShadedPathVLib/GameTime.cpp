@@ -23,6 +23,7 @@ void GameTime::advanceTime()
 
 	// hours of day:
 	auto dp = floor<chrono::days>(nowAbs);
+	// chrono::hours == ratio<60 *60>
 	chrono::duration<double, std::ratio<60 * 60>> myHourTick2(nowAbs - dp);
 	timeSystemClock = myHourTick2.count();
 	//Log("fraction " << hh << endl);
@@ -31,7 +32,10 @@ void GameTime::advanceTime()
 	chrono::duration<double, std::ratio<60 * 60>> myHourTick3(now - this->startTimePoint);
 	realtime = myHourTick3.count();
 
-	gametime = fmod(realtime * gamedayFactor, 24.0);
+	gametime = realtime * gamedayFactor;
+	// seconds is standard - we don't need ratio
+	chrono::duration<double> mySecondsTick(now - this->startTimePoint);
+	gametimeSeconds = mySecondsTick.count() * gamedayFactor;
 
 	timeDelta = chrono::duration_cast<chrono::duration<double>>(now - old).count();
 	gameTimeDelta = timeDelta * gamedayFactor;
@@ -50,6 +54,11 @@ double GameTime::getTimeGameClock()
 double GameTime::getTime()
 {
 	return gametime;
+}
+
+double GameTime::getTimeSeconds()
+{
+	return gametimeSeconds;
 }
 
 double GameTime::getTimeDelta()
