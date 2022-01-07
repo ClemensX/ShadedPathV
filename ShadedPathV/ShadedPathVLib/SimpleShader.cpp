@@ -33,6 +33,37 @@ void SimpleShader::createUniformBuffer(ThreadResources& res)
         res.uniformBufferTriangle, res.uniformBufferMemoryTriangle);
 }
 
+void SimpleShader::createDescriptorSets(ThreadResources& res)
+{
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = res.descriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &descriptorSetLayout;
+    if (vkAllocateDescriptorSets(device, &allocInfo, &res.descriptorSetTriangle) != VK_SUCCESS) {
+        Error("failed to allocate descriptor sets!");
+    }
+
+    // populate descriptor set:
+    VkDescriptorBufferInfo bufferInfo{};
+    bufferInfo.buffer = res.uniformBufferTriangle;
+    bufferInfo.offset = 0;
+    bufferInfo.range = sizeof(UniformBufferObject);
+
+    VkWriteDescriptorSet descriptorWrite{};
+    descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descriptorWrite.dstSet = res.descriptorSetTriangle;
+    descriptorWrite.dstBinding = 0; // bound to 0 in shader
+    descriptorWrite.dstArrayElement = 0; // no array
+    descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    descriptorWrite.descriptorCount = 1;
+    descriptorWrite.pBufferInfo = &bufferInfo;
+    descriptorWrite.pImageInfo = nullptr; // Optional
+    descriptorWrite.pTexelBufferView = nullptr; // Optional
+
+    vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+}
+
 void SimpleShader::updatePerFrame(ThreadResources& tr)
 {
     //Log("time: " << engine->gameTime.getTimeSystemClock() << endl);
@@ -42,7 +73,7 @@ void SimpleShader::updatePerFrame(ThreadResources& tr)
     //Log("time rel in s: " << setprecision(27) << engine->gameTime.getTimeSeconds() << endl);
     double seconds = engine->gameTime.getTimeSeconds();
     UniformBufferObject ubo{};
-    ubo.model = glm::rotate(glm::mat4(), (float)(seconds * glm::radians(90.0f)), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.model = glm::rotate(glm::mat4(1.0f), (float)(seconds * glm::radians(90.0f)), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(glm::radians(45.0f), engine->getAspect(), 0.1f, 10.0f);
     // flip y:
@@ -53,6 +84,21 @@ void SimpleShader::updatePerFrame(ThreadResources& tr)
     vkMapMemory(device, tr.uniformBufferMemoryTriangle, 0, sizeof(ubo), 0, &data);
     memcpy(data, &ubo, sizeof(ubo));
     vkUnmapMemory(device, tr.uniformBufferMemoryTriangle);
+}
+
+void SimpleShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, VkBuffer indexBuffer)
+{
+vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.graphicsPipelineTriangle);
+    VkBuffer vertexBuffers[] = { vertexBuffer };
+    VkDeviceSize offsets[] = { 0 };
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+    vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
+
+    // bind descriptor sets:
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutTriangle, 0, 1, &tr.descriptorSetTriangle, 0, nullptr);
+
+    //vkCmdDraw(commandBuffer, static_cast<uint32_t>(simpleShader.vertices.size()), 1, 0, 0);
+    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 }
 
 SimpleShader::~SimpleShader()

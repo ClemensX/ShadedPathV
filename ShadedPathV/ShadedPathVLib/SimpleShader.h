@@ -61,6 +61,9 @@ public:
     void init(ShadedPathEngine& engine);
     ~SimpleShader();
 
+    // pre-record draw commands (one time call)
+    void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, VkBuffer indexBuffer);
+    
     // updates that need to be done once per frame
     void updatePerFrame(ThreadResources& tr);
 
@@ -68,6 +71,8 @@ public:
     void createDescriptorSetLayout();
     // create uniform buffers (one per render thread)
     void createUniformBuffer(ThreadResources& res);
+    // create descritor sets (one or more per render thread)
+    void createDescriptorSets(ThreadResources& res);
     VkDescriptorSetLayout descriptorSetLayout;
 
 private:

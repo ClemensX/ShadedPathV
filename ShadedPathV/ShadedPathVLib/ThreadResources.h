@@ -33,6 +33,7 @@ public:
 	VkCommandPool commandPool = nullptr;
 	VkFramebuffer framebuffer = nullptr;
 	VkFramebuffer framebufferDraw = nullptr;
+	VkDescriptorPool descriptorPool = nullptr;
 
 	// backbuffer image dump:
 	const char* imagedata = nullptr;
@@ -52,6 +53,7 @@ public:
 	VkCommandBuffer commandBufferTriangle;
 	VkBuffer uniformBufferTriangle;
 	VkDeviceMemory uniformBufferMemoryTriangle;
+	VkDescriptorSet descriptorSetTriangle = nullptr;
 
 	// frame management
 	long frameNum = -1;
@@ -69,4 +71,5 @@ private:
 	void createFrameBuffer();
 	void createBackBufferImage();
 	void createCommandPool();
+	void createDescriptorPool();
 };

@@ -23,6 +23,7 @@ void ThreadResources::init()
     createBackBufferImage();
     createFrameBuffer();
     createCommandPool();
+    createDescriptorPool();
 }
 
 void ThreadResources::createFencesAndSemaphores()
@@ -240,11 +241,32 @@ void ThreadResources::createCommandPool()
     engine->global.createCommandPool(commandPool);
 }
 
+void ThreadResources::createDescriptorPool()
+{
+    auto& device = engine->global.device;
+
+    VkDescriptorPoolSize poolSize{};
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize.descriptorCount = 1;
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.maxSets = 5; // arbitrary number for now TODO: see if this can be calculated
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+
+    if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+        Error("failed to create descriptor pool!");
+    }
+}
+
 ThreadResources::~ThreadResources()
 {
     auto& device = engine->global.device;
     auto& global = engine->global;
     auto& shaders = engine->shaders;
+    vkDestroyDescriptorPool(device, descriptorPool, nullptr);
     vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
 	vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
     vkDestroyFence(device, imageDumpFence, nullptr);

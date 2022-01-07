@@ -55,6 +55,7 @@ void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
 {
 	// uniform buffer
 	simpleShader.createUniformBuffer(res);
+	simpleShader.createDescriptorSets(res);
 	// create shader stage
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -114,7 +115,8 @@ void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
 	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterizer.lineWidth = 1.0f;
 	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	//rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizer.depthBiasEnable = VK_FALSE;
 	rasterizer.depthBiasConstantFactor = 0.0f; // Optional
 	rasterizer.depthBiasClamp = 0.0f; // Optional
@@ -196,6 +198,7 @@ void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
 
 void Shaders::createCommandBufferTriangle(ThreadResources& tr)
 {
+	if (!enabledTriangle) return;
 	auto& device = engine.global.device;
 	auto& global = engine.global;
 	auto& shaders = engine.shaders;
@@ -226,7 +229,7 @@ void Shaders::createCommandBufferTriangle(ThreadResources& tr)
 	renderPassInfo.clearValueCount = 1;
 	renderPassInfo.pClearValues = &clearColor;
 	vkCmdBeginRenderPass(tr.commandBufferTriangle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	recordDrawCommand_Triangle(tr.commandBufferTriangle, tr);
+	simpleShader.recordDrawCommand(tr.commandBufferTriangle, tr, vertexBufferTriangle, indexBufferTriangle);
 	vkCmdEndRenderPass(tr.commandBufferTriangle);
 	if (vkEndCommandBuffer(tr.commandBufferTriangle) != VK_SUCCESS) {
 		Error("failed to record triangle command buffer!");
@@ -235,19 +238,6 @@ void Shaders::createCommandBufferTriangle(ThreadResources& tr)
 
 void Shaders::createCommandBufferUI(ThreadResources& tr)
 {
-}
-
-void Shaders::recordDrawCommand_Triangle(VkCommandBuffer& commandBuffer, ThreadResources& tr)
-{
-	if (!enabledTriangle) return;
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.graphicsPipelineTriangle);
-	VkBuffer vertexBuffers[] = { vertexBufferTriangle };
-	VkDeviceSize offsets[] = { 0 };
-	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-	vkCmdBindIndexBuffer(commandBuffer, indexBufferTriangle, 0, VK_INDEX_TYPE_UINT16);
-
-	//vkCmdDraw(commandBuffer, static_cast<uint32_t>(simpleShader.vertices.size()), 1, 0, 0);
-	//vkCmdDrawIndexed(commandBuffer, static_cast<uint16_t>(simpleShader.indices.size()), 1, 0, 0, 0);
 }
 
 void Shaders::drawFrame_Triangle(ThreadResources& tr)
