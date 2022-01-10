@@ -23,6 +23,18 @@ Course of action should be like this
 - [ ] Demos
 - [ ] Games
 
+## Dependencies
+
+copy to ../libraries:
+
+* glf
+* glm
+* ktx
+* vulkan
+
+copy ktx.dll to executable path:
+* vulkan\ShadedPathV\ShadedPathV\x64\Debug\ktx.dll
+
 ## Formats
 
 To decide formats to use we can run the engine in presentation mode and get a list of all supported swap chain formats and presentation modes. On my Laptop and PC I get list below. We decided for the formats in **bold**

@@ -49,6 +49,19 @@ void Shaders::initiateShader_Triangle()
 	for (auto &res : engine.threadResources) {
 		initiateShader_TriangleSingle(res);
 	}
+
+	// load ktx texture: TODO generalize
+
+	ktxTexture* kTexture;
+	KTX_error_code result;
+	ktx_size_t offset;
+	ktx_uint8_t* image;
+	ktx_uint32_t level, layer, faceSlice;
+	ktxVulkanDeviceInfo vdi;
+	ktxVulkanTexture texture;
+	auto ktxresult = ktxTexture_CreateFromNamedFile("mytex3d.ktx",
+		KTX_TEXTURE_CREATE_NO_FLAGS,
+		&kTexture);
 }
 
 void Shaders::initiateShader_TriangleSingle(ThreadResources& res)

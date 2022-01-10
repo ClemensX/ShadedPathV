@@ -60,6 +60,8 @@ using namespace std;
 // headers for used libraries
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include "ktxvulkan.h"
+//#include "../../ktx/include/ktxvulkan.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE

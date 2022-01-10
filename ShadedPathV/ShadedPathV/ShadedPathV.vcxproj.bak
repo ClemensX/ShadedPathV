@@ -90,7 +90,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\..\..\libraries\glm;..\..\..\libraries\glfw\include;..\..\..\libraries\ktx\include;..\..\..\libraries\vulkan\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\libraries\glm;..\..\..\libraries\glfw\include;..\..\..\libraries\vulkan\Include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
@@ -109,7 +109,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\..\..\libraries\glm;..\..\..\libraries\glfw\include;..\..\..\libraries\ktx\include;..\..\..\libraries\vulkan\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\libraries\glm;..\..\..\libraries\glfw\include;..\..\..\libraries\vulkan\Include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
@@ -128,7 +128,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\..\..\libraries\glm;..\..\..\libraries\glfw\include;..\..\..\libraries\ktx\include;..\..\..\libraries\vulkan\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\libraries\glm;..\..\..\libraries\glfw\include;..\..\..\libraries\vulkan\Include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
@@ -147,7 +147,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>..\..\..\libraries\glm;..\..\..\libraries\glfw\include;..\..\..\libraries\ktx\include;..\..\..\libraries\vulkan\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\libraries\glm;..\..\..\libraries\glfw\include;..\..\..\libraries\vulkan\Include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
