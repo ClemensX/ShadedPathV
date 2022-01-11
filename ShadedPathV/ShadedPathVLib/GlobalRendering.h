@@ -69,6 +69,8 @@ public:
 	VkDevice device = nullptr;
 	VkInstance vkInstance = nullptr;
 	VkQueue graphicsQueue = nullptr;
+	VkSampler textureSampler = nullptr;
+	VkPhysicalDeviceProperties2 physicalDeviceProperties;
 
 	// create command pool for use outside rendering threads
 	void createCommandPool();
@@ -76,6 +78,7 @@ public:
 	void createCommandPool(VkCommandPool& pool);
 	VkCommandBuffer beginSingleTimeCommands();
 	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+	void createTextureSampler();
 
 private:
 	vector<const char*> deviceExtensions = {

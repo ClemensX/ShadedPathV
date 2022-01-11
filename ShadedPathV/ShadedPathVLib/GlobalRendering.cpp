@@ -29,6 +29,7 @@ void GlobalRendering::initAfterPresentation()
     findQueueFamilies(physicalDevice, true);
     createLogicalDevice();
     createCommandPool();
+    createTextureSampler();
 }
 
 void GlobalRendering::shutdown()
@@ -48,6 +49,7 @@ void GlobalRendering::shutdown()
     if (enableValidationLayers) {
         DestroyDebugUtilsMessengerEXT(vkInstance, debugMessenger, nullptr);
     }
+    vkDestroySampler(device, textureSampler, nullptr);
     vkDestroyCommandPool(device, commandPool, nullptr);
     vkDestroyDevice(device, nullptr);
     device = nullptr;
@@ -246,6 +248,7 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
     deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
     deviceProperties2.pNext = &meshProperties;
     vkGetPhysicalDeviceProperties2(device, &deviceProperties2);
+    physicalDeviceProperties = deviceProperties2;
 
     if (listmode) {
         Log("Physical Device properties: " << deviceProperties.deviceName << " Vulkan API Version: " << Util::decodeVulkanVersion(deviceProperties.apiVersion).c_str() << " type: " << Util::decodeDeviceType(deviceProperties.deviceType) << endl);
@@ -270,7 +273,7 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
     else {
         swapChainAdequate = true;
     }
-    return familyIndices.isComplete(engine.presentation.enabled) && extensionsSupported && swapChainAdequate;
+    return familyIndices.isComplete(engine.presentation.enabled) && extensionsSupported && swapChainAdequate && deviceFeatures.samplerAnisotropy;
 }
 
 QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, bool listmode)
@@ -341,6 +344,7 @@ void GlobalRendering::createLogicalDevice()
     }
 
     VkPhysicalDeviceFeatures deviceFeatures{};
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -513,4 +517,28 @@ void GlobalRendering::uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize buf
 
     vkDestroyBuffer(engine.global.device, stagingBuffer, nullptr);
     vkFreeMemory(engine.global.device, stagingBufferMemory, nullptr);
+}
+
+void GlobalRendering::createTextureSampler()
+{
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.anisotropyEnable = VK_TRUE;
+    samplerInfo.maxAnisotropy = physicalDeviceProperties.properties.limits.maxSamplerAnisotropy;
+    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = 0.0f;
+    if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
+        Error("failed to create texture sampler!");
+    }
 }

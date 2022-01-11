@@ -70,12 +70,30 @@ void TextureStore::loadTexture(string filename, string id)
 
 	ktxTexture_Destroy(kTexture);
 	ktxVulkanDeviceInfo_Destruct(&vdi);
+
+	// create image view and sampler:
+	VkImageViewCreateInfo viewInfo{};
+	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	viewInfo.image = texture->vulkanTexture.image;
+	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+	viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	viewInfo.subresourceRange.baseMipLevel = 0;
+	viewInfo.subresourceRange.levelCount = 1;
+	viewInfo.subresourceRange.baseArrayLayer = 0;
+	viewInfo.subresourceRange.layerCount = 1;
+
+	if (vkCreateImageView(engine->global.device, &viewInfo, nullptr, &texture->imageView) != VK_SUCCESS) {
+		Error("failed to create texture image view!");
+	}
+
 }
 
 TextureStore::~TextureStore()
 {
 	for (auto& tex : textures) {
 		if (tex.second.available) {
+			vkDestroyImageView(engine->global.device, tex.second.imageView, nullptr);
 			ktxVulkanTexture_Destruct(&tex.second.vulkanTexture, engine->global.device, nullptr);
 		}
 	}
