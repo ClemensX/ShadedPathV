@@ -50,7 +50,6 @@ public:
 	// destroy global resources, should only be called from engine dtor
 	void shutdown();
 
-	Files files;
 	void createLogicalDevice();
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, bool listmode = false);
 	QueueFamilyIndices familyIndices;

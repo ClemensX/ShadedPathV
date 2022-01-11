@@ -91,6 +91,38 @@ void Files::readFile(string filename, vector<byte>& buffer, FileCategory cat) {
 
 }
 
+void Files::readFile(PakEntry* pakEntry, vector<byte>& buffer, FileCategory cat)
+{
+	Log("read file from pak: " << pakEntry->name.c_str() << endl);
+	ifstream bfile(pakEntry->pakname.c_str(), ios::in | ios::binary);
+	if (!bfile) {
+		stringstream s;
+		s << "failed re-opening pak file: " << pakEntry->pakname << endl;
+		Error(s.str());
+	}
+	else {
+		// position to start of file in pak:
+		bfile.seekg(pakEntry->offset);
+		buffer.resize(pakEntry->len);
+		bfile.read((char*)&(buffer[0]), pakEntry->len);
+		bfile.close();
+	}
+}
+
+PakEntry* Files::findFileInPak(string filename)
+{
+	auto gotit = pak_content.find(filename);
+	if (gotit == pak_content.end()) {
+		return nullptr;
+	}
+	return &gotit->second;
+	//if (pak_content.count(name) == 0) {
+	//	return nullptr;
+	//}
+	//PakEntry *pe = &pak_content[name];
+	//return pe;
+}
+
 string Files::absoluteFilePath(string filename)
 {
 	string absfile(filesystem::absolute(filename).string());

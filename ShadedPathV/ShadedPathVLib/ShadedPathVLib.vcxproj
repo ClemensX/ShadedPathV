@@ -200,6 +200,7 @@
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="SimpleApp.h" />
     <ClInclude Include="SimpleShader.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="ThreadResources.h" />
     <ClInclude Include="Threads.h" />
     <ClInclude Include="ui.h" />
@@ -227,6 +228,7 @@
     <ClCompile Include="Shaders.cpp" />
     <ClCompile Include="SimpleApp.cpp" />
     <ClCompile Include="SimpleShader.cpp" />
+    <ClCompile Include="Texture.cpp" />
     <ClCompile Include="ThreadResources.cpp" />
     <ClCompile Include="Threads.cpp" />
     <ClCompile Include="ui.cpp" />

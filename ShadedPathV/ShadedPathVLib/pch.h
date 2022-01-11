@@ -60,8 +60,7 @@ using namespace std;
 // headers for used libraries
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include "ktxvulkan.h"
-//#include "../../ktx/include/ktxvulkan.h"
+#include <ktxvulkan.h>
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -142,6 +141,7 @@ inline void ErrorExt(string msg, const char* file, DWORD line)
 #include "ThreadResources.h"
 #include "SimpleShader.h"
 #include "Shaders.h"
+#include "Texture.h"
 #include "ui.h"
 #include "ShadedPathEngine.h"
 #include "SimpleApp.h"

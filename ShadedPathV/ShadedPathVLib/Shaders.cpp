@@ -51,6 +51,10 @@ void Shaders::initiateShader_Triangle()
 	}
 
 	// load ktx texture: TODO generalize
+	engine.textureStore.loadTexture("debug.ktx", "debugTexture");
+	auto* tex = engine.textureStore.getTexture("debugTexture");
+
+
 
 	ktxTexture* kTexture;
 	KTX_error_code result;
@@ -59,7 +63,7 @@ void Shaders::initiateShader_Triangle()
 	ktx_uint32_t level, layer, faceSlice;
 	ktxVulkanDeviceInfo vdi;
 	ktxVulkanTexture texture;
-	auto ktxresult = ktxTexture_CreateFromNamedFile("mytex3d.ktx",
+	auto ktxresult = ktxTexture_CreateFromNamedFile("C:\\dev\\vulkan\\data\\texture\\debug.ktx",
 		KTX_TEXTURE_CREATE_NO_FLAGS,
 		&kTexture);
 }

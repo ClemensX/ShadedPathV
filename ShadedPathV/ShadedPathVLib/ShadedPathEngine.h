@@ -79,6 +79,7 @@ public:
     Presentation presentation;
     Shaders shaders;
     vector<ThreadResources> threadResources;
+    TextureStore textureStore;
 
     // non-Vulkan members
     Files files;
