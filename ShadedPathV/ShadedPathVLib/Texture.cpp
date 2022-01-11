@@ -41,4 +41,44 @@ void TextureStore::loadTexture(string filename, string id)
 		engine->files.readFile(pakFileEntry, file_buffer, FileCategory::TEXTURE);
 	}
 
+	ktxTexture* kTexture;
+	//KTX_error_code result;
+	ktx_size_t offset;
+	ktx_uint8_t* image;
+	ktx_uint32_t level, layer, faceSlice;
+	ktxVulkanDeviceInfo vdi;
+	auto ktxresult = ktxTexture_CreateFromMemory((const ktx_uint8_t*)file_buffer.data(), file_buffer.size(), KTX_TEXTURE_CREATE_NO_FLAGS, &kTexture);
+	if (ktxresult != KTX_SUCCESS) {
+		Log("ERROR: in ktxTexture_CreateFromMemory " << ktxresult);
+		Error("Could not create texture from memory");
+	}
+
+	// Set up Vulkan physical device (gpu), logical device (device), queue
+    // and command pool. Save the handles to these in a struct called vkctx.
+    // ktx VulkanDeviceInfo is used to pass these with the expectation that
+    // apps are likely to upload a large number of textures.
+	ktxresult = ktxVulkanDeviceInfo_Construct(&vdi, engine->global.physicalDevice, engine->global.device, engine->global.graphicsQueue, engine->global.commandPool, nullptr);
+	if (ktxresult != KTX_SUCCESS) {
+		Log("ERROR: in ktxVulkanDeviceInfo_Construct " << ktxresult);
+		Error("Could not init ktxVulkanDeviceInfo_Construct");
+	}
+	ktxresult = ktxTexture_VkUploadEx(kTexture, &vdi, &texture->vulkanTexture, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	if (ktxresult != KTX_SUCCESS) {
+		Log("ERROR: in ktxTexture_VkUploadEx " << ktxresult);
+		Error("Could not upload texture to GPU ktxTexture_VkUploadEx");
+	}
+
+	ktxTexture_Destroy(kTexture);
+	ktxVulkanDeviceInfo_Destruct(&vdi);
 }
+
+TextureStore::~TextureStore()
+{
+	for (auto& tex : textures) {
+		if (tex.second.available) {
+			ktxVulkanTexture_Destruct(&tex.second.vulkanTexture, engine->global.device, nullptr);
+		}
+	}
+
+}
+

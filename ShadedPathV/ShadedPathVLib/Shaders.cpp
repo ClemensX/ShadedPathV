@@ -53,19 +53,6 @@ void Shaders::initiateShader_Triangle()
 	// load ktx texture: TODO generalize
 	engine.textureStore.loadTexture("debug.ktx", "debugTexture");
 	auto* tex = engine.textureStore.getTexture("debugTexture");
-
-
-
-	ktxTexture* kTexture;
-	KTX_error_code result;
-	ktx_size_t offset;
-	ktx_uint8_t* image;
-	ktx_uint32_t level, layer, faceSlice;
-	ktxVulkanDeviceInfo vdi;
-	ktxVulkanTexture texture;
-	auto ktxresult = ktxTexture_CreateFromNamedFile("C:\\dev\\vulkan\\data\\texture\\debug.ktx",
-		KTX_TEXTURE_CREATE_NO_FLAGS,
-		&kTexture);
 }
 
 void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
