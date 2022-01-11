@@ -74,6 +74,7 @@ public:
     // create descritor sets (one or more per render thread)
     void createDescriptorSets(ThreadResources& res);
     VkDescriptorSetLayout descriptorSetLayout;
+    TextureInfo* texture = nullptr;
 
 private:
     VkDevice device = nullptr;

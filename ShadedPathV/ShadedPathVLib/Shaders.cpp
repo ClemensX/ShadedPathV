@@ -45,14 +45,15 @@ void Shaders::initiateShader_Triangle()
 	// descriptor
 	simpleShader.createDescriptorSetLayout();
 
+	// load texture
+	engine.textureStore.loadTexture("debug.ktx", "debugTexture");
+	simpleShader.texture = engine.textureStore.getTexture("debugTexture");
+
 	// pipelines must be created for every rendering thread
 	for (auto &res : engine.threadResources) {
 		initiateShader_TriangleSingle(res);
 	}
 
-	// load ktx texture: TODO generalize
-	engine.textureStore.loadTexture("debug.ktx", "debugTexture");
-	auto* tex = engine.textureStore.getTexture("debugTexture");
 }
 
 void Shaders::initiateShader_TriangleSingle(ThreadResources& res)

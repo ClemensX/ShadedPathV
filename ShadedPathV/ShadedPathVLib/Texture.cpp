@@ -86,7 +86,7 @@ void TextureStore::loadTexture(string filename, string id)
 	if (vkCreateImageView(engine->global.device, &viewInfo, nullptr, &texture->imageView) != VK_SUCCESS) {
 		Error("failed to create texture image view!");
 	}
-
+	texture->available = true;
 }
 
 TextureStore::~TextureStore()
