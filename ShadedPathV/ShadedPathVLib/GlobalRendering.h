@@ -37,8 +37,12 @@ public:
 	// list device and instance extensions
 	static const bool LIST_EXTENSIONS = false;
 
+	// Vulkan formats we want to set centrally:
+
 	static const VkFormat ImageFormat = VK_FORMAT_B8G8R8A8_SRGB;
 	//static const VkFormat ImageFormat = VK_FORMAT_B8G8R8A8_UNORM;
+	static const VkFormat depthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
+
 	static const VkColorSpaceKHR ImageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 
 	// initialize all global Vulkan stuff - engine configuration settings
@@ -63,6 +67,10 @@ public:
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	// copy buffer
 	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+	// images
+	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
+	void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format,
+		VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
 	// Vulkan entities
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;

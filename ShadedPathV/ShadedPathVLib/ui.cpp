@@ -3,6 +3,8 @@
 void UI::init(ShadedPathEngine* engine)
 {
     this->engine = engine;
+    if (!engine->presentation.enabled)
+        return;
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -112,6 +114,8 @@ void UI::init(ShadedPathEngine* engine)
 
 void UI::update()
 {
+    if (!engine->presentation.enabled)
+        return;
     unique_lock<mutex> lock(monitorMutex);
     beginFrame();
     buildUI();
@@ -121,6 +125,8 @@ void UI::update()
 
 void UI::render(ThreadResources& tr)
 {
+    if (!engine->presentation.enabled)
+        return;
     unique_lock<mutex> lock(monitorMutex);
     if (!uiRenderAvailable) {
         return;
@@ -130,6 +136,8 @@ void UI::render(ThreadResources& tr)
 
 void UI::beginFrame()
 {
+    if (!engine->presentation.enabled)
+        return;
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height);
     ImGui::NewFrame();
@@ -137,17 +145,23 @@ void UI::beginFrame()
 
 void UI::endFrame()
 {
+    if (!engine->presentation.enabled)
+        return;
     ImGuiIO& io = ImGui::GetIO();
     ImGui::Render();
 }
 
 void UI::buildUI()
 {
+    if (!engine->presentation.enabled)
+        return;
     ImGui::ShowDemoWindow();
 }
 
 UI::~UI()
 {
+    if (!engine->presentation.enabled)
+        return;
     vkDestroyRenderPass(engine->global.device, imGuiRenderPass, nullptr);
     vkDestroyDescriptorPool(engine->global.device, g_DescriptorPool, nullptr);
     ImGui_ImplVulkan_Shutdown();

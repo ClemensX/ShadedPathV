@@ -62,6 +62,10 @@ public:
 	VkFence presentFence = nullptr;
 	ThreadsafeWaitingQueue<unsigned long> renderThreadContinueQueue;
 
+	// depth buffer
+	VkImage depthImage;
+	VkDeviceMemory depthImageMemory;
+	VkImageView depthImageView;
 
 	bool threadFinished = false;
 private:
@@ -71,5 +75,6 @@ private:
 	void createFrameBuffer();
 	void createBackBufferImage();
 	void createCommandPool();
+	void createDepthResources();
 	void createDescriptorPool();
 };

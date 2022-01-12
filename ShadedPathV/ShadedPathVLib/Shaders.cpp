@@ -283,36 +283,9 @@ void Shaders::initiateShader_BackBufferImageDumpSingle(ThreadResources& res)
 	enabledImageDump = true;
 	auto& device = engine.global.device;
 	auto& global = engine.global;
-	VkImageCreateInfo image{};
-	image.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-	image.imageType = VK_IMAGE_TYPE_2D;
-	image.format = engine.global.ImageFormat;
-	image.extent.width = engine.getBackBufferExtent().width;
-	image.extent.height = engine.getBackBufferExtent().height;
-	image.extent.depth = 1;
-	image.mipLevels = 1;
-	image.arrayLayers = 1;
-
-	image.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	image.samples = VK_SAMPLE_COUNT_1_BIT;
-	image.tiling = VK_IMAGE_TILING_LINEAR;
-	image.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-	VkMemoryAllocateInfo memAlloc{};
-	memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	VkMemoryRequirements memReqs;
-
-	if (vkCreateImage(device, &image, nullptr, &res.imageDumpAttachment.image) != VK_SUCCESS) {
-		Error("failed to create image dump image!");
-	}
-	vkGetImageMemoryRequirements(device, res.imageDumpAttachment.image, &memReqs);
-	memAlloc.allocationSize = memReqs.size;
-	memAlloc.memoryTypeIndex = global.findMemoryTypeIndex(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	if (vkAllocateMemory(device, &memAlloc, nullptr, &res.imageDumpAttachment.memory) != VK_SUCCESS) {
-		Error("failed to allocate image dump memory");
-	}
-	if (vkBindImageMemory(device, res.imageDumpAttachment.image, res.imageDumpAttachment.memory, 0) != VK_SUCCESS) {
-		Error("failed to bind image memory");
-	}
+	global.createImage(engine.getBackBufferExtent().width, engine.getBackBufferExtent().height, 1, VK_SAMPLE_COUNT_1_BIT, global.ImageFormat, VK_IMAGE_TILING_LINEAR,
+		VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		res.imageDumpAttachment.image, res.imageDumpAttachment.memory);
 	// Get layout of the image (including row pitch)
 	VkImageSubresource subResource{};
 	subResource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
