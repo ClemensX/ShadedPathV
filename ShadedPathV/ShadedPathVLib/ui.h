@@ -16,10 +16,17 @@ public:
 	// update() and render() are mutually exclusive (mutex protection inside)
 	void render(ThreadResources& tr);
 	VkRenderPass imGuiRenderPass = nullptr;
+	void enable() {
+		enabled = true;
+	}
+	bool isEnabled() {
+		return enabled;
+	}
 private:
 	void beginFrame();
 	void buildUI();
 	void endFrame();
+	atomic<bool> enabled = false;
 	ShadedPathEngine* engine = nullptr;
 	VkDescriptorPool g_DescriptorPool = VK_NULL_HANDLE;
 	mutable mutex monitorMutex;

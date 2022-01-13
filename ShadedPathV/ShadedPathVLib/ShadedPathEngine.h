@@ -32,6 +32,9 @@ public:
     // enable output window, withour calling this only background processing is possible
     void enablePresentation(int w, int h, const char* name);
 
+    // enable UI overlay. currently only possible if presentation is enabled
+    void enableUI();
+
     // set number of frames that can be worked on in parallel
     void setFramesInFlight(int n);
 

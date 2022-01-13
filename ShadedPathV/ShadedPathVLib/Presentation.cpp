@@ -271,7 +271,7 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     }
 
     // UI code
-    if (true)
+    if (engine.ui.isEnabled())
     {
         if (vkBeginCommandBuffer(tr.commandBufferUI, &beginInfo) != VK_SUCCESS) {
             Error("failed to begin recording back buffer copy command buffer!");

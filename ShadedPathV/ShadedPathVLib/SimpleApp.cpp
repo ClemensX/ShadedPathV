@@ -12,6 +12,7 @@ void SimpleApp::run()
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK);
         int win_width = 800;
         engine.enablePresentation(win_width, (int)(win_width /1.77f), "Vulkan Simple App");
+        engine.enableUI();
         engine.setFramesInFlight(2);
         //engine.setThreadModeSingle();
 

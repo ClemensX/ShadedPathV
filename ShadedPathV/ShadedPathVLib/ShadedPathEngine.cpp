@@ -30,6 +30,12 @@ void ShadedPathEngine::enablePresentation(int w, int h, const char* name) {
     checkAspect();
 };
 
+void ShadedPathEngine::enableUI() {
+    if (initialized) Error("Configuration after intialization not allowed");
+    if (!presentation.enabled) Error("UI overlay needs presentation enabled");
+    ui.enable();
+};
+
 void ShadedPathEngine::setFramesInFlight(int n) {
     if (initialized) Error("Configuration after intialization not allowed");
     framesInFlight = n;
