@@ -28,7 +28,7 @@ public:
 
 	VkPipelineLayout pipelineLayoutTriangle = nullptr;
 	VkPipeline graphicsPipelineTriangle = nullptr;
-	VkRenderPass renderPassInit = nullptr;
+	VkRenderPass renderPassSimpleShader = nullptr;
 	VkCommandPool commandPool = nullptr;
 	VkFramebuffer framebuffer = nullptr;
 	VkDescriptorPool descriptorPool = nullptr;

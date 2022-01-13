@@ -21,9 +21,9 @@ void ThreadResources::init()
     createRenderPassInit();
     createRenderPassDraw();
     createBackBufferImage();
+    createDepthResources();
     createFrameBuffer();
     createCommandPool();
-    createDepthResources();
     createDescriptorPool();
 }
 
@@ -104,7 +104,7 @@ void ThreadResources::createRenderPassInit()
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
 
-    if (vkCreateRenderPass(engine->global.device, &renderPassInfo, nullptr, &renderPassInit) != VK_SUCCESS) {
+    if (vkCreateRenderPass(engine->global.device, &renderPassInfo, nullptr, &renderPassSimpleShader) != VK_SUCCESS) {
         Error("failed to create render pass!");
     }
 }
@@ -159,7 +159,7 @@ void ThreadResources::createFrameBuffer()
 
     VkFramebufferCreateInfo framebufferInfo{};
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass = renderPassInit;
+    framebufferInfo.renderPass = renderPassSimpleShader;
     framebufferInfo.attachmentCount = 1;
     framebufferInfo.pAttachments = attachments;
     framebufferInfo.width = engine->getBackBufferExtent().width;
@@ -191,9 +191,9 @@ void ThreadResources::createDepthResources()
 {
     VkFormat depthFormat = engine->global.depthFormat;
 
-    //engine->global.createImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
-    //depthImageView = engine->global.createImageView(depthImage, depthFormat);
-
+    engine->global.createImage(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height, 1, VK_SAMPLE_COUNT_1_BIT, depthFormat, VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+    depthImageView = engine->global.createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
 }
 
 void ThreadResources::createDescriptorPool()
@@ -233,7 +233,10 @@ ThreadResources::~ThreadResources()
     vkDestroyCommandPool(device, commandPool, nullptr);
     vkDestroyFramebuffer(device, framebuffer, nullptr);
     vkDestroyFramebuffer(device, framebufferUI, nullptr);
-    vkDestroyRenderPass(device, renderPassInit, nullptr);
+    vkDestroyRenderPass(device, renderPassSimpleShader, nullptr);
+    vkDestroyImageView(device, depthImageView, nullptr);
+    vkDestroyImage(device, depthImage, nullptr);
+    vkFreeMemory(device, depthImageMemory, nullptr);
     vkDestroyImageView(device, imageDumpAttachment.view, nullptr);
     vkDestroyImage(device, imageDumpAttachment.image, nullptr);
     vkFreeMemory(device, imageDumpAttachment.memory, nullptr);

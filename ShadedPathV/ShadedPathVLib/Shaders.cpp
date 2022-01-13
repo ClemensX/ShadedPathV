@@ -191,7 +191,7 @@ void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = nullptr; // Optional
 	pipelineInfo.layout = res.pipelineLayoutTriangle;
-	pipelineInfo.renderPass = res.renderPassInit;
+	pipelineInfo.renderPass = res.renderPassSimpleShader;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional
@@ -226,7 +226,7 @@ void Shaders::createCommandBufferTriangle(ThreadResources& tr)
 	}
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = tr.renderPassInit;
+	renderPassInfo.renderPass = tr.renderPassSimpleShader;
 	renderPassInfo.framebuffer = tr.framebuffer;
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = engine.getBackBufferExtent();
