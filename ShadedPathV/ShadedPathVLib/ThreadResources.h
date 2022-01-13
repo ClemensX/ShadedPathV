@@ -70,8 +70,7 @@ public:
 	bool threadFinished = false;
 private:
 	void createFencesAndSemaphores();
-	void createRenderPassInit();
-	void createRenderPassDraw();
+	void createRenderPassSimpleShader();
 	void createFrameBuffer();
 	void createBackBufferImage();
 	void createCommandPool();
