@@ -31,8 +31,9 @@ public:
 	VkRenderPass renderPassInit = nullptr;
 	VkCommandPool commandPool = nullptr;
 	VkFramebuffer framebuffer = nullptr;
-	VkFramebuffer framebufferUI = nullptr;
 	VkDescriptorPool descriptorPool = nullptr;
+	// ImGui framebuffers
+	VkFramebuffer framebufferUI = nullptr;
 
 	// backbuffer image dump:
 	const char* imagedata = nullptr;

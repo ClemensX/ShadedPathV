@@ -1,8 +1,10 @@
 #pragma once
 
 // UI class abtraction for Dear ImGui
-// Dear ImGui is strictly single threaded and all the methoods here have to be used from main thread
-// because ImGui needs access to the glfw window and input cycle
+// Dear ImGui is strictly single threaded and all the methods here have to be used from queue submit thread
+// because ImGui needs access to the glfw window and input cycle,
+// because of that we can do with one single render pass, but still need framebuffers for every image
+
 class UI
 {
 public:
