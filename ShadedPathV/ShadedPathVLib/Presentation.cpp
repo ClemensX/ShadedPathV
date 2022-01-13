@@ -291,7 +291,7 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = engine.ui.imGuiRenderPass;//tr.renderPassDraw;
-        renderPassInfo.framebuffer = tr.framebufferDraw;
+        renderPassInfo.framebuffer = tr.framebufferUI;
         renderPassInfo.renderArea.offset = { 0, 0 };
         renderPassInfo.renderArea.extent = engine.getBackBufferExtent();
         VkClearValue clearColor = { {{0.0f, 0.0f, 1.0f, 1.0f}} };

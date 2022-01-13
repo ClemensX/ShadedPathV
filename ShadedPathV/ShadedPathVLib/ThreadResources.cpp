@@ -104,7 +104,7 @@ void ThreadResources::createRenderPassInit()
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
 
-    if (vkCreateRenderPass(engine->global.device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(engine->global.device, &renderPassInfo, nullptr, &renderPassInit) != VK_SUCCESS) {
         Error("failed to create render pass!");
     }
 }
@@ -139,20 +139,6 @@ void ThreadResources::createRenderPassDraw()
     dependency.srcAccessMask = 0;
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-    // render pass
-    VkRenderPassCreateInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments = &colorAttachment;
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subpass;
-    renderPassInfo.dependencyCount = 1;
-    renderPassInfo.pDependencies = &dependency;
-
-    if (vkCreateRenderPass(engine->global.device, &renderPassInfo, nullptr, &renderPassDraw) != VK_SUCCESS) {
-        Error("failed to create render pass!");
-    }
 }
 
 void ThreadResources::createBackBufferImage()
@@ -173,7 +159,7 @@ void ThreadResources::createFrameBuffer()
 
     VkFramebufferCreateInfo framebufferInfo{};
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass = renderPass;
+    framebufferInfo.renderPass = renderPassInit;
     framebufferInfo.attachmentCount = 1;
     framebufferInfo.pAttachments = attachments;
     framebufferInfo.width = engine->getBackBufferExtent().width;
@@ -184,14 +170,14 @@ void ThreadResources::createFrameBuffer()
         Error("failed to create framebuffer!");
     }
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass = renderPassDraw;
+    framebufferInfo.renderPass = engine->ui.imGuiRenderPass;// renderPassDraw;
     framebufferInfo.attachmentCount = 1;
     framebufferInfo.pAttachments = attachments;
     framebufferInfo.width = engine->getBackBufferExtent().width;
     framebufferInfo.height = engine->getBackBufferExtent().height;
     framebufferInfo.layers = 1;
 
-    if (vkCreateFramebuffer(engine->global.device, &framebufferInfo, nullptr, &framebufferDraw) != VK_SUCCESS) {
+    if (vkCreateFramebuffer(engine->global.device, &framebufferInfo, nullptr, &framebufferUI) != VK_SUCCESS) {
         Error("failed to create framebuffer!");
     }
 }
@@ -246,9 +232,8 @@ ThreadResources::~ThreadResources()
     vkDestroyEvent(device, uiRenderFinished, nullptr);
     vkDestroyCommandPool(device, commandPool, nullptr);
     vkDestroyFramebuffer(device, framebuffer, nullptr);
-    vkDestroyFramebuffer(device, framebufferDraw, nullptr);
-    vkDestroyRenderPass(device, renderPass, nullptr);
-    vkDestroyRenderPass(device, renderPassDraw, nullptr);
+    vkDestroyFramebuffer(device, framebufferUI, nullptr);
+    vkDestroyRenderPass(device, renderPassInit, nullptr);
     vkDestroyImageView(device, imageDumpAttachment.view, nullptr);
     vkDestroyImage(device, imageDumpAttachment.image, nullptr);
     vkFreeMemory(device, imageDumpAttachment.memory, nullptr);
@@ -259,10 +244,6 @@ ThreadResources::~ThreadResources()
     vkDestroyPipelineLayout(device, pipelineLayoutTriangle, nullptr);
     vkDestroyBuffer(device, uniformBufferTriangle, nullptr);
     vkFreeMemory(device, uniformBufferMemoryTriangle, nullptr);
-    // destroy swap chain image views
-    //for (auto imageView : swapChainImageViews) {
-    //    vkDestroyImageView(device, imageView, nullptr);
-    //}
     Log("ThreadResource destructed: " << this << endl);
 };
 
