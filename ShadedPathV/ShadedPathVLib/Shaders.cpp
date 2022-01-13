@@ -177,6 +177,19 @@ void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
 		Error("failed to create pipeline layout!");
 	}
 
+	// depth stencil
+	VkPipelineDepthStencilStateCreateInfo depthStencil{};
+	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	depthStencil.depthTestEnable = VK_TRUE;
+	depthStencil.depthWriteEnable = VK_TRUE;
+	depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+	depthStencil.depthBoundsTestEnable = VK_FALSE;
+	depthStencil.minDepthBounds = 0.0f; // Optional
+	depthStencil.maxDepthBounds = 1.0f; // Optional
+	depthStencil.stencilTestEnable = VK_FALSE;
+	depthStencil.front = {}; // Optional
+	depthStencil.back = {}; // Optional
+
 	// create pipeline
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -187,7 +200,7 @@ void Shaders::initiateShader_TriangleSingle(ThreadResources& res)
 	pipelineInfo.pViewportState = &viewportState;
 	pipelineInfo.pRasterizationState = &rasterizer;
 	pipelineInfo.pMultisampleState = &multisampling;
-	pipelineInfo.pDepthStencilState = nullptr; // Optional
+	pipelineInfo.pDepthStencilState = &depthStencil;
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = nullptr; // Optional
 	pipelineInfo.layout = res.pipelineLayoutTriangle;
@@ -230,9 +243,14 @@ void Shaders::createCommandBufferTriangle(ThreadResources& tr)
 	renderPassInfo.framebuffer = tr.framebuffer;
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = engine.getBackBufferExtent();
-	VkClearValue clearColor = { {{0.1f, 0.1f, 0.1f, 0.5f}} };
-	renderPassInfo.clearValueCount = 1;
-	renderPassInfo.pClearValues = &clearColor;
+
+	std::array<VkClearValue, 2> clearValues{};
+	clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
+	clearValues[1].depthStencil = { 1.0f, 0 };
+
+	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+	renderPassInfo.pClearValues = clearValues.data();
+
 	vkCmdBeginRenderPass(tr.commandBufferTriangle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	simpleShader.recordDrawCommand(tr.commandBufferTriangle, tr, vertexBufferTriangle, indexBufferTriangle);
 	vkCmdEndRenderPass(tr.commandBufferTriangle);

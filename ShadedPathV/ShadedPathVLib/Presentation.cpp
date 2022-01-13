@@ -294,9 +294,7 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
         renderPassInfo.framebuffer = tr.framebufferUI;
         renderPassInfo.renderArea.offset = { 0, 0 };
         renderPassInfo.renderArea.extent = engine.getBackBufferExtent();
-        VkClearValue clearColor = { {{0.0f, 0.0f, 1.0f, 1.0f}} };
         renderPassInfo.clearValueCount = 0;
-        renderPassInfo.pClearValues = &clearColor;
         vkCmdBeginRenderPass(tr.commandBufferUI, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
         //recordDrawCommand_Triangle(tr.commandBufferTriangle, tr);
         engine.ui.render(tr);
