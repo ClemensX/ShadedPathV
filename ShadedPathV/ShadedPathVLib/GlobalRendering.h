@@ -42,6 +42,7 @@ public:
 	static const VkFormat ImageFormat = VK_FORMAT_B8G8R8A8_SRGB;
 	//static const VkFormat ImageFormat = VK_FORMAT_B8G8R8A8_UNORM;
 	static const VkFormat depthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
+	//static const VkFormat depthFormat = VK_FORMAT_D24_UNORM_S8_UINT;
 
 	static const VkColorSpaceKHR ImageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 

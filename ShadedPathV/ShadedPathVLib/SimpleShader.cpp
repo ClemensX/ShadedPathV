@@ -87,14 +87,22 @@ void SimpleShader::createDescriptorSets(ThreadResources& res)
 
 void SimpleShader::updatePerFrame(ThreadResources& tr)
 {
+    static double old_seconds = 0.0f;
     //Log("time: " << engine->gameTime.getTimeSystemClock() << endl);
     //Log("game time: " << engine->gameTime.getTimeGameClock() << endl);
     //Log("game time rel: " << setprecision(27) << engine->gameTime.getTime() << endl);
     //Log("time delta: " << setprecision(27) << engine->gameTime.getTimeDelta() << endl);
     //Log("time rel in s: " << setprecision(27) << engine->gameTime.getTimeSeconds() << endl);
     double seconds = engine->gameTime.getTimeSeconds();
+    if (old_seconds > 0.0f && old_seconds == seconds) {
+        Log("DOUBLE TIME" << endl);
+    }
+    if (old_seconds > seconds) {
+        Log("INVERTED TIME" << endl);
+    }
+    old_seconds = seconds;
     UniformBufferObject ubo{};
-    ubo.model = glm::rotate(glm::mat4(1.0f), (float)(seconds * glm::radians(90.0f)), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.model = glm::rotate(glm::mat4(1.0f), (float)((seconds*1.0f) * glm::radians(90.0f)), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(glm::radians(45.0f), engine->getAspect(), 0.1f, 10.0f);
     // flip y:
