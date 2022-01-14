@@ -71,7 +71,7 @@ void TextureStore::loadTexture(string filename, string id)
 	ktxTexture_Destroy(kTexture);
 	ktxVulkanDeviceInfo_Destruct(&vdi);
 	// create image view and sampler:
-	texture->imageView = engine->global.createImageView(texture->vulkanTexture.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+	texture->imageView = engine->global.createImageView(texture->vulkanTexture.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
 	texture->available = true;
 }
 

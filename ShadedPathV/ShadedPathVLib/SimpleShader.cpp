@@ -102,9 +102,20 @@ void SimpleShader::updatePerFrame(ThreadResources& tr)
     }
     old_seconds = seconds;
     UniformBufferObject ubo{};
+    static bool downmode;
+    //float a = 0.3f; float b = 140.0f; float z = 15.0f;
+    float a = 0.3f; float b = 14.0f; float z = 15.0f;
+    // move camera between a, a, a and b, b, b in z seconds
+    float rel_time = fmod(seconds, z);
+    downmode = fmod(seconds, 2 * z) > z ? true : false;
+    float cam = (b - a) * rel_time / z;
+    if (downmode) cam = b - cam;
+    else cam = a + cam;
+    //Log(" " << cam << " " << downmode <<  " " << rel_time << endl);
+
     ubo.model = glm::rotate(glm::mat4(1.0f), (float)((seconds*1.0f) * glm::radians(90.0f)), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), engine->getAspect(), 0.1f, 10.0f);
+    ubo.view = glm::lookAt(glm::vec3(cam, cam, cam), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.proj = glm::perspective(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);
     // flip y:
     ubo.proj[1][1] *= -1;
 
