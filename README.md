@@ -37,6 +37,8 @@ copy to ../libraries:
 copy ktx.dll to executable path:
 * vulkan\ShadedPathV\ShadedPathV\x64\Debug\ktx.dll
 
+* OpenXR: install NuGet package OpenXR.Loader
+
 ## Formats
 
 To decide formats to use we can run the engine in presentation mode and get a list of all supported swap chain formats and presentation modes. On my Laptop and PC I get list below. We decided for the formats in **bold**
