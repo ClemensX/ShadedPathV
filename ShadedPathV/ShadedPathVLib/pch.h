@@ -69,6 +69,13 @@ using namespace std;
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/epsilon.hpp>
 
+//
+// OpenXR Headers
+//
+#include <openxr/openxr.h>
+#include <openxr/openxr_platform.h>
+#include <openxr/openxr_reflection.h>
+
 // global definitions and macros
 
 inline void LogFile(const char* s) {
