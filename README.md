@@ -92,10 +92,15 @@ To decide formats to use we can run the engine in presentation mode and get a li
 |                                                 |                  | renderThreadContinue->pop() |
 |                                                 | vkQueueSubmit(inFlightFence) | |
 
-## Vulcan Device Coordinates
+## Coordinate Systems
+### Vulcan Device Coordinates (X,Y)
 
 ![Device Coordinates](DeviceCoordinates.drawio.svg)
 
+### OpenXR
+
+From the spec:
+The OpenXR runtime must interpret the swapchain images in a clip space of positive Y pointing down, near Z plane at 0, and far Z plane at 1.
 
 ## Issues
 
