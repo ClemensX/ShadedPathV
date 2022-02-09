@@ -12,6 +12,7 @@ void ShadedPathEngine::init()
     presentation.initGLFW();
     global.initBeforePresentation();
     presentation.init();
+    vr.init();
     global.initAfterPresentation();
     presentation.initAfterDeviceCreation();
     ui.init(this);

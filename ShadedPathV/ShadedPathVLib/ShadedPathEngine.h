@@ -9,6 +9,7 @@ public:
     ShadedPathEngine() :
         global(*this),
         presentation(*this),
+        vr(*this),
         shaders(*this),
         limiter(60.0f)
     {
@@ -81,6 +82,7 @@ public:
     GlobalRendering global;
     Presentation presentation;
     Shaders shaders;
+    VR vr;
     vector<ThreadResources> threadResources;
     TextureStore textureStore;
 

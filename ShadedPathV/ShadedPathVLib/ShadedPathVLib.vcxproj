@@ -207,6 +207,7 @@
     <ClInclude Include="Threads.h" />
     <ClInclude Include="ui.h" />
     <ClInclude Include="Util.h" />
+    <ClInclude Include="VR.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Files.cpp" />
@@ -235,6 +236,7 @@
     <ClCompile Include="Threads.cpp" />
     <ClCompile Include="ui.cpp" />
     <ClCompile Include="Util.cpp" />
+    <ClCompile Include="VR.cpp" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\ShadedPathVLib\shader\triangle.vert">
