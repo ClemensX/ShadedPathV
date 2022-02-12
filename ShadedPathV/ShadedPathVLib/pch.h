@@ -121,6 +121,9 @@ inline void LogFile(const char* s) {
 
 #define LogCondF(y,x) if(y){LogF(x)}
 
+// Help with OpenXR sample code logging:
+#define LogX(x) Log((x).c_str()<<endl)
+
 inline void ErrorExt(string msg, const char* file, DWORD line)
 {
 	stringstream s;

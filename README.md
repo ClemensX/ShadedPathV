@@ -37,7 +37,7 @@ copy to ../libraries:
 copy ktx.dll to executable path:
 * vulkan\ShadedPathV\ShadedPathV\x64\Debug\ktx.dll
 
-* OpenXR: install NuGet package OpenXR.Loader
+* **OpenXR**: install NuGet package OpenXR.Loader for all three projects in solution. If not found during compile or not displayed correctly: uninstall via NuGet Package Manager, then re-install
 
 ## Formats
 
