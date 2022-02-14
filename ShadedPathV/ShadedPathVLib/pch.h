@@ -68,6 +68,7 @@ using namespace std;
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/epsilon.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 //
 // OpenXR Headers
@@ -214,6 +215,7 @@ inline XrResult CheckXrResult(XrResult res, const char* originator = nullptr, co
 #include "Util.h"
 #include "Threads.h"
 #include "Presentation.h"
+#include "Camera.h"
 #include "VR.h"
 #include "GlobalRendering.h"
 #include "ThreadResources.h"

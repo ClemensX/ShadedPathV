@@ -185,6 +185,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="Files.h" />
     <ClInclude Include="GameTime.h" />
     <ClInclude Include="GlobalRendering.h" />

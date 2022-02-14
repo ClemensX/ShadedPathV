@@ -1,6 +1,5 @@
 #include "pch.h"
 
-
 void ShadedPathEngine::init()
 {
     Log("engine absolute start time (hours and fraction): " << gameTime.getTimeSystemClock() << endl);

@@ -90,6 +90,9 @@
     <ClInclude Include="VR.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -169,5 +172,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="$(OpenXRLoaderBinaryRoot)\bin\openxr_loader.dll" />
   </ItemGroup>
 </Project>

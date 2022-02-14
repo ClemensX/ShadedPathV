@@ -1,5 +1,10 @@
 #pragma once
 
+struct MouseState {
+    glm::vec2 pos = glm::vec2(0.0f);
+    bool pressedLeft = false;
+};
+
 // Engine contains options and aggregates GlobalRendering, Presentation, Shaders, ThreadResources
 // who do the vulkan work
 class ShadedPathEngine
@@ -89,6 +94,7 @@ public:
     // non-Vulkan members
     Files files;
     GameTime gameTime;
+    MouseState mouseState;
     // presentation
     int win_width = 0;
     int win_height = 0;
