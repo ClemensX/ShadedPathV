@@ -61,16 +61,23 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
     static bool downmode;
     //float a = 0.3f; float b = 140.0f; float z = 15.0f;
     float a = 0.3f; float b = 14.0f; float z = 15.0f;
-    // move camera between a, a, a and b, b, b in z seconds
+    // move object between a, a, a and b, b, b in z seconds
     float rel_time = fmod(seconds, z);
     downmode = fmod(seconds, 2 * z) > z ? true : false;
-    float cam = (b - a) * rel_time / z;
-    if (downmode) cam = b - cam;
-    else cam = a + cam;
+    float objectPos = (b - a) * rel_time / z;
+    if (downmode) objectPos = b - objectPos;
+    else objectPos = a + objectPos;
     //Log(" " << cam << " " << downmode <<  " " << rel_time << endl);
+    float cpos = 14.3f;
+    glm::vec3 camPos(cpos, cpos, cpos);
+    glm::vec3 objectPosV(objectPos, objectPos, objectPos);
 
-    ubo.model = glm::rotate(glm::mat4(1.0f), (float)((seconds * 1.0f) * glm::radians(90.0f)), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(cam, cam, cam), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::mat4 rot = glm::rotate(glm::mat4(1.0f), (float)((seconds * 1.0f) * glm::radians(90.0f)), glm::vec3(0.0f, 0.0f, 1.0f));
+    glm::mat4 trans = glm::translate(glm::mat4(1.0f), objectPosV);
+    glm::mat4 final = trans * rot; // rot * trans will circle the object around y axis
+
+    ubo.model = final;
+    ubo.view = glm::lookAt(camPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f);
     // flip y:
     ubo.proj[1][1] *= -1;
