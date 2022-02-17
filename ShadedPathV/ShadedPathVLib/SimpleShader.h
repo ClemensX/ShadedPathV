@@ -70,7 +70,8 @@ public:
 
         return attributeDescriptions;
     }
-
+    // update per frame data
+    void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo);
     // one time effect initialization
     void init(ShadedPathEngine& engine);
     ~SimpleShader();
@@ -78,9 +79,6 @@ public:
     // pre-record draw commands (one time call)
     void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, VkBuffer indexBuffer);
     
-    // updates that need to be done once per frame
-    void updatePerFrame(ThreadResources& tr);
-
     // create descriptor set layout (one per effect)
     void createDescriptorSetLayout();
     // create uniform buffers (one per render thread)

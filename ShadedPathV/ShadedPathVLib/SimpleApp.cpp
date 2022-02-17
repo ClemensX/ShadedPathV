@@ -6,7 +6,6 @@ void SimpleApp::run()
     Log("SimpleApp started" << endl);
     {
         // engine configuration
-        ShadedPathEngine engine;
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK);
@@ -14,6 +13,7 @@ void SimpleApp::run()
         engine.enablePresentation(win_width, (int)(win_width /1.77f), "Vulkan Simple App");
         engine.enableUI();
         engine.setFramesInFlight(2);
+        engine.registerApp(this);
         //engine.setThreadModeSingle();
 
         // engine initialization
@@ -34,4 +34,47 @@ void SimpleApp::run()
         engine.waitUntilShutdown();
     }
     Log("SimpleApp ended" << endl);
+}
+
+void SimpleApp::drawFrame(ThreadResources& tr) {
+    updatePerFrame(tr);
+    engine.shaders.drawFrame_Triangle(tr);
+}
+
+void SimpleApp::updatePerFrame(ThreadResources& tr)
+{
+    static double old_seconds = 0.0f;
+    //Log("time: " << engine->gameTime.getTimeSystemClock() << endl);
+    //Log("game time: " << engine->gameTime.getTimeGameClock() << endl);
+    //Log("game time rel: " << setprecision(27) << engine->gameTime.getTime() << endl);
+    //Log("time delta: " << setprecision(27) << engine->gameTime.getTimeDelta() << endl);
+    //Log("time rel in s: " << setprecision(27) << engine->gameTime.getTimeSeconds() << endl);
+    double seconds = engine.gameTime.getTimeSeconds();
+    if (old_seconds > 0.0f && old_seconds == seconds) {
+        Log("DOUBLE TIME" << endl);
+    }
+    if (old_seconds > seconds) {
+        Log("INVERTED TIME" << endl);
+    }
+    old_seconds = seconds;
+    SimpleShader::UniformBufferObject ubo{};
+    static bool downmode;
+    //float a = 0.3f; float b = 140.0f; float z = 15.0f;
+    float a = 0.3f; float b = 14.0f; float z = 15.0f;
+    // move camera between a, a, a and b, b, b in z seconds
+    float rel_time = fmod(seconds, z);
+    downmode = fmod(seconds, 2 * z) > z ? true : false;
+    float cam = (b - a) * rel_time / z;
+    if (downmode) cam = b - cam;
+    else cam = a + cam;
+    //Log(" " << cam << " " << downmode <<  " " << rel_time << endl);
+
+    ubo.model = glm::rotate(glm::mat4(1.0f), (float)((seconds * 1.0f) * glm::radians(90.0f)), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(cam, cam, cam), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.proj = glm::perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f);
+    // flip y:
+    ubo.proj[1][1] *= -1;
+
+    // copy ubo to GPU:
+    engine.shaders.simpleShader.uploadToGPU(tr, ubo);
 }

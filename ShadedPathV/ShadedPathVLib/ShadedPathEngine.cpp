@@ -105,7 +105,8 @@ void ShadedPathEngine::drawFrame(ThreadResources& tr)
     vkResetFences(global.device, 1, &tr.presentFence);
     LogCondF(LOG_QUEUE, "fence drawFrame() present fence signalled image index " << tr.frameIndex << endl);
 
-    shaders.drawFrame_Triangle(tr);
+    //shaders.drawFrame_Triangle(tr);
+    app->drawFrame(tr);
     shaders.executeBufferImageDump(tr);
 }
 

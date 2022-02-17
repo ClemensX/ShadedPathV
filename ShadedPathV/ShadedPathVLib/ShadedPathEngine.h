@@ -5,6 +5,15 @@ struct MouseState {
     bool pressedLeft = false;
 };
 
+// all applications must implement this class and register with engine.
+// All callback methods are defined here
+class ShadedPathApplication
+{
+public:
+    // called from multiple threads, only local resources should be changed
+    virtual void drawFrame(ThreadResources& tr) = 0;
+};
+
 // Engine contains options and aggregates GlobalRendering, Presentation, Shaders, ThreadResources
 // who do the vulkan work
 class ShadedPathEngine
@@ -24,6 +33,10 @@ public:
     virtual ~ShadedPathEngine();
 
     enum class Resolution { FourK, TwoK, OneK, DeviceDefault, Small };
+
+    void registerApp(ShadedPathApplication* app) {
+        this->app = app;
+    }
 
     // backbuffer sizing
     void setBackBufferResolution(VkExtent2D e);
@@ -112,6 +125,7 @@ private:
     bool limitFrameCountEnabled = false;
     bool initialized = false;
     bool threadsAreFinished();
+    ShadedPathApplication *app = nullptr;
     // backbuffer size:
     VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);
     // check if backbuffer and window have same aspect - warning if not

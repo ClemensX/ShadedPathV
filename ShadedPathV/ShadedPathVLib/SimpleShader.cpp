@@ -85,40 +85,7 @@ void SimpleShader::createDescriptorSets(ThreadResources& res)
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
-void SimpleShader::updatePerFrame(ThreadResources& tr)
-{
-    static double old_seconds = 0.0f;
-    //Log("time: " << engine->gameTime.getTimeSystemClock() << endl);
-    //Log("game time: " << engine->gameTime.getTimeGameClock() << endl);
-    //Log("game time rel: " << setprecision(27) << engine->gameTime.getTime() << endl);
-    //Log("time delta: " << setprecision(27) << engine->gameTime.getTimeDelta() << endl);
-    //Log("time rel in s: " << setprecision(27) << engine->gameTime.getTimeSeconds() << endl);
-    double seconds = engine->gameTime.getTimeSeconds();
-    if (old_seconds > 0.0f && old_seconds == seconds) {
-        Log("DOUBLE TIME" << endl);
-    }
-    if (old_seconds > seconds) {
-        Log("INVERTED TIME" << endl);
-    }
-    old_seconds = seconds;
-    UniformBufferObject ubo{};
-    static bool downmode;
-    //float a = 0.3f; float b = 140.0f; float z = 15.0f;
-    float a = 0.3f; float b = 14.0f; float z = 15.0f;
-    // move camera between a, a, a and b, b, b in z seconds
-    float rel_time = fmod(seconds, z);
-    downmode = fmod(seconds, 2 * z) > z ? true : false;
-    float cam = (b - a) * rel_time / z;
-    if (downmode) cam = b - cam;
-    else cam = a + cam;
-    //Log(" " << cam << " " << downmode <<  " " << rel_time << endl);
-
-    ubo.model = glm::rotate(glm::mat4(1.0f), (float)((seconds*1.0f) * glm::radians(90.0f)), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(cam, cam, cam), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);
-    // flip y:
-    ubo.proj[1][1] *= -1;
-
+void SimpleShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo) {
     // copy ubo to GPU:
     void* data;
     vkMapMemory(device, tr.uniformBufferMemoryTriangle, 0, sizeof(ubo), 0, &data);
