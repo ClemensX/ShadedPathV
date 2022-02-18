@@ -5,6 +5,11 @@ void SimpleApp::run()
 {
     Log("SimpleApp started" << endl);
     {
+        // camera initialization
+        CameraPositioner_FirstPerson positioner(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        Camera camera(positioner);
+        this->camera = &camera;
+        engine.enableKeyEvents();
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         //engine.setFrameCountLimit(1000);
@@ -84,4 +89,9 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
 
     // copy ubo to GPU:
     engine.shaders.simpleShader.uploadToGPU(tr, ubo);
+}
+
+void SimpleApp::handleInput(InputState& inputState)
+{
+    Log("key pressed." << endl);
 }

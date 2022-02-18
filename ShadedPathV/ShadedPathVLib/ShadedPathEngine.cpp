@@ -8,7 +8,7 @@ void ShadedPathEngine::init()
     ThemedTimer::getInstance()->create(TIMER_INPUT_THREAD, 1000);
     ThemedTimer::getInstance()->create(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT, 1000);
     ThemedTimer::getInstance()->create(TIMER_PART_BUFFER_COPY, 10);
-    presentation.initGLFW();
+    presentation.initGLFW(enabledKeyEvents, enabledMouseMoveEvents, enabledMousButtonEvents);
     global.initBeforePresentation();
     presentation.init();
     vr.init();

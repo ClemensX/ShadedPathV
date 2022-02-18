@@ -55,6 +55,7 @@
 #include <mutex>
 #include <queue>
 #include <array>
+#include <functional>
 using namespace std;
 
 // headers for used libraries
