@@ -1,5 +1,15 @@
 #pragma once
 
+// all applications must implement this class and register with engine.
+// All callback methods are defined here
+class ShadedPathApplication
+{
+public:
+    // called from multiple threads, only local resources should be changed
+    virtual void drawFrame(ThreadResources& tr) = 0;
+    virtual void handleInput(InputState& inputState) = 0;
+};
+
 // Engine contains options and aggregates GlobalRendering, Presentation, Shaders, ThreadResources
 // who do the vulkan work
 class ShadedPathEngine
@@ -19,6 +29,10 @@ public:
     virtual ~ShadedPathEngine();
 
     enum class Resolution { FourK, TwoK, OneK, DeviceDefault, Small };
+
+    void registerApp(ShadedPathApplication* app) {
+        this->app = app;
+    }
 
     // backbuffer sizing
     void setBackBufferResolution(VkExtent2D e);
@@ -41,6 +55,18 @@ public:
 
     int getFramesInFlight() {
         return framesInFlight;
+    }
+
+    void enableKeyEvents() {
+        enabledKeyEvents = true;
+    }
+
+    void enableMouseMoveEvents() {
+        enabledMouseMoveEvents = true;
+    }
+
+    void enableMousButtonEvents() {
+        enabledMousButtonEvents = true;
     }
 
     // limit number of rendered frames - cannot be used together with presentation enabled
@@ -99,6 +125,7 @@ public:
     float getAspect() {
         return backBufferAspect;
     }
+    ShadedPathApplication* app = nullptr;
 private:
     float backBufferAspect = 1.0f;
     long limitFrameCount = 0;
@@ -106,6 +133,9 @@ private:
     bool limitFrameCountEnabled = false;
     bool initialized = false;
     bool threadsAreFinished();
+    bool enabledKeyEvents = false;
+    bool enabledMouseMoveEvents = false;
+    bool enabledMousButtonEvents = false;
     // backbuffer size:
     VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);
     // check if backbuffer and window have same aspect - warning if not

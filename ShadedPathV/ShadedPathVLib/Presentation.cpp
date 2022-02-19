@@ -13,7 +13,7 @@ void Presentation::initAfterDeviceCreation()
     createImageViews();
 }
 
-void Presentation::initGLFW()
+void Presentation::initGLFW(bool handleKeyEvents, bool handleMouseMoveEevents, bool handleMouseButtonEvents)
 {
     if (!enabled) return;
     glfwInit();
@@ -27,7 +27,41 @@ void Presentation::initGLFW()
         if (width != engine.win_width || height != engine.win_height) {
             Error("Could not create window with requested size");
         }
+        // init callbacks: we assume that no other callback was installed (yet)
+        if (handleKeyEvents) {
+            callbackKeyMember = bind(&Presentation::key_callbackMember, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5);
+
+            auto old = glfwSetKeyCallback(window, Presentation::key_callback);
+            assert(old == nullptr);
+        }
     }
+}
+
+function<void(GLFWwindow* window, int key, int scancode, int action, int mods)> Presentation::callbackKeyMember;
+
+
+void Presentation::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    callbackKeyMember(window, key, scancode, action, mods);
+}
+
+void Presentation::key_callbackMember(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    inputState.mouseButtonEvent = inputState.mouseMoveEvent = false;
+    inputState.keyEvent = true;
+    inputState.key = key;
+    inputState.scancode = scancode;
+    inputState.action = action;
+    inputState.mods = mods;
+    engine.app->handleInput(inputState);
+}
+
+void Presentation::cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
+{
+}
+
+void Presentation::mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
 }
 
 void Presentation::pollEvents()
@@ -450,3 +484,4 @@ Presentation::~Presentation() {
     vkDestroySurfaceKHR(engine.global.vkInstance, surface, nullptr);
     Log("Presentation destructor\n");
 };
+

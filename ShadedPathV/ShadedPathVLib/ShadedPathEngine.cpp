@@ -1,6 +1,5 @@
 #include "pch.h"
 
-
 void ShadedPathEngine::init()
 {
     Log("engine absolute start time (hours and fraction): " << gameTime.getTimeSystemClock() << endl);
@@ -9,7 +8,7 @@ void ShadedPathEngine::init()
     ThemedTimer::getInstance()->create(TIMER_INPUT_THREAD, 1000);
     ThemedTimer::getInstance()->create(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT, 1000);
     ThemedTimer::getInstance()->create(TIMER_PART_BUFFER_COPY, 10);
-    presentation.initGLFW();
+    presentation.initGLFW(enabledKeyEvents, enabledMouseMoveEvents, enabledMousButtonEvents);
     global.initBeforePresentation();
     presentation.init();
     vr.init();
@@ -106,7 +105,8 @@ void ShadedPathEngine::drawFrame(ThreadResources& tr)
     vkResetFences(global.device, 1, &tr.presentFence);
     LogCondF(LOG_QUEUE, "fence drawFrame() present fence signalled image index " << tr.frameIndex << endl);
 
-    shaders.drawFrame_Triangle(tr);
+    //shaders.drawFrame_Triangle(tr);
+    app->drawFrame(tr);
     shaders.executeBufferImageDump(tr);
 }
 

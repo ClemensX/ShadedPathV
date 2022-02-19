@@ -268,7 +268,7 @@ void Shaders::drawFrame_Triangle(ThreadResources& tr)
 	if (!enabledTriangle) return;
 	//Log("draw index " << engine.currentFrameIndex << endl);
 
-	simpleShader.updatePerFrame(tr);
+	//simpleShader.updatePerFrame(tr);
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
