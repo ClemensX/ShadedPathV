@@ -13,6 +13,7 @@ void VR::init()
 	enabled = true;
 	//CHECK_XRCMD(xrEnumerateInstanceExtensionProperties(layerName, 0, &instanceExtensionCount, nullptr));
     LogLayersAndExtensions();
+    CreateInstanceInternal();
 }
 
 void VR::LogLayersAndExtensions() {
@@ -58,6 +59,27 @@ void VR::LogLayersAndExtensions() {
             logExtensions(layer.layerName, 4);
         }
     }
+}
+
+void VR::CreateInstanceInternal() {
+    CHECK(instance == XR_NULL_HANDLE);
+
+    // Create union of extensions required by platform and graphics plugins.
+    std::vector<const char*> extensions;
+
+    // Transform our needed extensions from std::strings to C strings.
+    std::transform(REQUIRED_XR_EXTENSIONS.begin(), REQUIRED_XR_EXTENSIONS.end(), std::back_inserter(extensions),
+        [](const std::string& ext) { return ext.c_str(); });
+
+    XrInstanceCreateInfo createInfo{ XR_TYPE_INSTANCE_CREATE_INFO };
+    createInfo.next = nullptr;
+    createInfo.enabledExtensionCount = (uint32_t)extensions.size();
+    createInfo.enabledExtensionNames = extensions.data();
+
+    strcpy_s(createInfo.applicationInfo.applicationName, "ShadedPathV");
+    createInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
+
+    CHECK_XRCMD(xrCreateInstance(&createInfo, &instance));
 }
 
 

@@ -18,8 +18,12 @@ public:
 
 	bool shouldClose();
 
+	// extensions: XR_KHR_vulkan_enable2, XR_EXT_hand_tracking
+	const vector<string> REQUIRED_XR_EXTENSIONS { "XR_KHR_vulkan_enable2", "XR_EXT_hand_tracking" };
+
 	// Transferred from Sample Code:
 	void LogLayersAndExtensions();
+	void CreateInstanceInternal();
 	inline std::string GetXrVersionString(XrVersion ver) {
 		return Fmt("%d.%d.%d", XR_VERSION_MAJOR(ver), XR_VERSION_MINOR(ver), XR_VERSION_PATCH(ver));
 	}
@@ -27,7 +31,7 @@ public:
 
 private:
 	ShadedPathEngine& engine;
-
+	XrInstance instance = nullptr;
 };
 
 
