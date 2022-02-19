@@ -29,30 +29,23 @@ void Presentation::initGLFW(bool handleKeyEvents, bool handleMouseMoveEevents, b
         }
         // init callbacks: we assume that no other callback was installed (yet)
         if (handleKeyEvents) {
-            //callbackKeyMember = bind(&Presentation::key_callbackMember, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5);
-            callbackKeyMember = [this](GLFWwindow* window, int key, int scancode, int action, int mods) {
+            // we need a static member function that can be registered with glfw:
+            // static auto callback = bind(&Presentation::key_callbackMember, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5);
+            // the above works, but can be done more elegantly with a lambda expression:
+            static auto callback_static = [this](GLFWwindow* window, int key, int scancode, int action, int mods) {
+                // because we have a this pointer we are now able to call a non-static member method:
                 key_callbackMember(window, key, scancode, action, mods);
             };
-            bool test = false;
-            //auto old = glfwSetKeyCallback(window, Presentation::key_callback);
-            //auto old = glfwSetKeyCallback(window, Presentation::key_callback);
             auto old = glfwSetKeyCallback(window,
                 [](GLFWwindow* window, int key, int scancode, int action, int mods)
                 {
-                    callbackKeyMember(window, key, scancode, action, mods);
+                    // only static methods can be called here as we cannot change glfw function parameter list to include instance pointer
+                    callback_static(window, key, scancode, action, mods);
                 }
             );
             assert(old == nullptr);
         }
     }
-}
-
-function<void(GLFWwindow* window, int key, int scancode, int action, int mods)> Presentation::callbackKeyMember;
-
-
-void Presentation::key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
-    callbackKeyMember(window, key, scancode, action, mods);
 }
 
 void Presentation::key_callbackMember(GLFWwindow* window, int key, int scancode, int action, int mods)

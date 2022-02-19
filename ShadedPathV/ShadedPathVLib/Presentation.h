@@ -78,6 +78,5 @@ private:
 	static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 	// Input will be handled via one instance - application code needs to copy if needed, not referenced
 	InputState inputState;
-	static function<void(GLFWwindow* window, int key, int scancode, int action, int mods)> callbackKeyMember;
 };
 
