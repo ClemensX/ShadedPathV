@@ -13,7 +13,9 @@ void VR::init()
 	enabled = true;
 	//CHECK_XRCMD(xrEnumerateInstanceExtensionProperties(layerName, 0, &instanceExtensionCount, nullptr));
     LogLayersAndExtensions();
-    CreateInstanceInternal();
+    if (enabled) {
+        CreateInstanceInternal();
+    }
 }
 
 void VR::LogLayersAndExtensions() {
@@ -78,8 +80,14 @@ void VR::CreateInstanceInternal() {
 
     strcpy_s(createInfo.applicationInfo.applicationName, "ShadedPathV");
     createInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
-
-    CHECK_XRCMD(xrCreateInstance(&createInfo, &instance));
+    try {
+        CHECK_XRCMD(xrCreateInstance(&createInfo, &instance));
+    }
+    catch (exception e) {
+        enabled = false;
+        Log("OpenXR instance creation failed - running without VR" << endl);
+        return;
+    }
 }
 
 
