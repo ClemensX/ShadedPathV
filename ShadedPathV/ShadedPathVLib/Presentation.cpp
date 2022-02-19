@@ -29,9 +29,19 @@ void Presentation::initGLFW(bool handleKeyEvents, bool handleMouseMoveEevents, b
         }
         // init callbacks: we assume that no other callback was installed (yet)
         if (handleKeyEvents) {
-            callbackKeyMember = bind(&Presentation::key_callbackMember, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5);
-
-            auto old = glfwSetKeyCallback(window, Presentation::key_callback);
+            //callbackKeyMember = bind(&Presentation::key_callbackMember, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5);
+            callbackKeyMember = [this](GLFWwindow* window, int key, int scancode, int action, int mods) {
+                key_callbackMember(window, key, scancode, action, mods);
+            };
+            bool test = false;
+            //auto old = glfwSetKeyCallback(window, Presentation::key_callback);
+            //auto old = glfwSetKeyCallback(window, Presentation::key_callback);
+            auto old = glfwSetKeyCallback(window,
+                [](GLFWwindow* window, int key, int scancode, int action, int mods)
+                {
+                    callbackKeyMember(window, key, scancode, action, mods);
+                }
+            );
             assert(old == nullptr);
         }
     }
