@@ -10,6 +10,8 @@ void SimpleApp::run()
         Camera camera(positioner);
         this->camera = &camera;
         engine.enableKeyEvents();
+        engine.enableMousButtonEvents();
+        engine.enableMouseMoveEvents();
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         //engine.setFrameCountLimit(1000);
@@ -93,5 +95,13 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
 
 void SimpleApp::handleInput(InputState& inputState)
 {
-    Log("key pressed." << endl);
+    if (inputState.keyEvent) {
+        Log("key pressed: " << inputState.key << endl);
+    }
+    if (inputState.mouseButtonEvent) {
+        Log("mouse button pressed (left/right): " << inputState.pressedLeft << " / " << inputState.pressedRight << endl);
+    }
+    if (inputState.mouseMoveEvent) {
+        Log("mouse pos (x/y): " << inputState.pos.x << " / " << inputState.pos.y << endl);
+    }
 }

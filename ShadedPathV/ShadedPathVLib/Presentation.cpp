@@ -34,7 +34,7 @@ void Presentation::initGLFW(bool handleKeyEvents, bool handleMouseMoveEevents, b
             // the above works, but can be done more elegantly with a lambda expression:
             static auto callback_static = [this](GLFWwindow* window, int key, int scancode, int action, int mods) {
                 // because we have a this pointer we are now able to call a non-static member method:
-                key_callbackMember(window, key, scancode, action, mods);
+                callbackKey(window, key, scancode, action, mods);
             };
             auto old = glfwSetKeyCallback(window,
                 [](GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -45,10 +45,34 @@ void Presentation::initGLFW(bool handleKeyEvents, bool handleMouseMoveEevents, b
             );
             assert(old == nullptr);
         }
+        if (handleMouseMoveEevents) {
+            static auto callback_static = [this](GLFWwindow* window, double xpos, double ypos) {
+                callbackCursorPos(window, xpos, ypos);
+            };
+            auto old = glfwSetCursorPosCallback(window,
+                [](GLFWwindow* window, double xpos, double ypos)
+                {
+                    callback_static(window, xpos, ypos);
+                }
+            );
+            assert(old == nullptr);
+        }
+        if (handleMouseButtonEvents) {
+            static auto callback_static = [this](GLFWwindow* window, int button, int action, int mods) {
+                callbackMouseButton(window, button, action, mods);
+            };
+            auto old = glfwSetMouseButtonCallback(window,
+                [](GLFWwindow* window, int button, int action, int mods)
+                {
+                    callback_static(window, button, action, mods);
+                }
+            );
+            assert(old == nullptr);
+        }
     }
 }
 
-void Presentation::key_callbackMember(GLFWwindow* window, int key, int scancode, int action, int mods)
+void Presentation::callbackKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     inputState.mouseButtonEvent = inputState.mouseMoveEvent = false;
     inputState.keyEvent = true;
@@ -59,12 +83,30 @@ void Presentation::key_callbackMember(GLFWwindow* window, int key, int scancode,
     engine.app->handleInput(inputState);
 }
 
-void Presentation::cursor_position_callback(GLFWwindow* window, double xpos, double ypos)
+void Presentation::callbackCursorPos(GLFWwindow* window, double xpos, double ypos)
 {
+    inputState.mouseButtonEvent = inputState.keyEvent = false;
+    inputState.mouseMoveEvent = true;
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    inputState.pos.x = static_cast<float>(xpos / width);
+    inputState.pos.y = static_cast<float>(ypos / height);
+    engine.app->handleInput(inputState);
 }
 
-void Presentation::mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+void Presentation::callbackMouseButton(GLFWwindow* window, int button, int action, int mods)
 {
+    inputState.mouseMoveEvent = inputState.keyEvent = false;
+    inputState.mouseButtonEvent = true;
+    if (button == GLFW_MOUSE_BUTTON_LEFT) {
+        inputState.pressedLeft = action == GLFW_PRESS;
+        inputState.pressedRight = false;
+    }
+    if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+        inputState.pressedRight = action == GLFW_PRESS;
+        inputState.pressedLeft = false;
+    }
+    engine.app->handleInput(inputState);
 }
 
 void Presentation::pollEvents()

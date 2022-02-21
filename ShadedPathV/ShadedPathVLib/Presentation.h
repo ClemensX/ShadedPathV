@@ -3,6 +3,7 @@
 struct InputState {
 	glm::vec2 pos = glm::vec2(0.0f);
 	bool pressedLeft = false;
+	bool pressedRight = false;
 	int key, scancode, action, mods;
 	bool keyEvent, mouseMoveEvent, mouseButtonEvent;
 };
@@ -72,8 +73,10 @@ private:
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
 	// event callbacks, will be called from main thread (via Presentation::pollEvents):
-	static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
-	void key_callbackMember(GLFWwindow* window, int key, int scancode, int action, int mods);
+
+	void callbackKey(GLFWwindow* window, int key, int scancode, int action, int mods);
+	void callbackMouseButton(GLFWwindow* window, int button, int action, int mods);
+	void callbackCursorPos(GLFWwindow* window, double x, double y);
 	static void cursor_position_callback(GLFWwindow* window, double xpos, double ypos);
 	static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 	// Input will be handled via one instance - application code needs to copy if needed, not referenced
