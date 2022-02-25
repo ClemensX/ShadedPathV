@@ -16,6 +16,7 @@ public:
 	// Triangle shader (most simple beginner shader - just one triangle, no MVP necessary)
 	// initiate before rendering first frame
 	SimpleShader simpleShader;
+	LineShader lineShader;
 	void initiateShader_Triangle();
 	void createCommandBufferTriangle(ThreadResources& tr);
 	void recordDrawCommand_Triangle(VkCommandBuffer& commandBuffer, ThreadResources& tr);

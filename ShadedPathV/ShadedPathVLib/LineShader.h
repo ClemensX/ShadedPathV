@@ -9,7 +9,7 @@ class LineShaderData {
 public:
 	vector<LineDef> lines;
 	vector<LineDef> oneTimeLines;
-	~LineShaderData() { };
+	~LineShaderData();
 	UINT numVericesToDraw = 0;
 };
 
@@ -28,10 +28,13 @@ public:
 	struct UniformBufferObject {
 		glm::mat4 wvp;
 	};
-
-	//void init(DXGlobal* a, FrameDataLine* fdl, FrameDataGeneral* fd_general_, Pipeline* pipeline);
+	~LineShader();
+	// one time effect initialization
+	void init(ShadedPathEngine& engine);
 	// add lines - they will never  be removed
-	void add(vector<LineDef>& linesToAdd, unsigned long& user);
+	void add(vector<LineDef>& linesToAdd);
+	// initial upload of all added lines - only valid before first render
+	void initialUpload();
 	// add lines just for next draw call
 	void addOneTime(vector<LineDef>& linesToAdd, unsigned long& user);
 	// update cbuffer and vertex buffer
@@ -42,7 +45,7 @@ public:
 	void destroy();
 
 private:
-	//vector<LineDef> lines;
+	vector<LineDef> lines;
 	//vector<LineDef> addLines;
 	bool dirty;
 	int drawAddLinesSize;
@@ -61,4 +64,9 @@ private:
 	bool disabled = false;
 	// Inherited via Effect
 	// set in init()
+	VkDevice device = nullptr;
+	GlobalRendering* global = nullptr;
+	ShadedPathEngine* engine = nullptr;
+	VkBuffer vertexBuffer = nullptr;
+	VkDeviceMemory vertexBufferMemory = nullptr;
 };

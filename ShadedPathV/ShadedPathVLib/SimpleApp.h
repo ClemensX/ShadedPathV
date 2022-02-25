@@ -2,6 +2,7 @@
 class SimpleApp : ShadedPathApplication
 {
 public:
+    void init();
     void run();
     void drawFrame(ThreadResources& tr);
     void handleInput(InputState& inputState);

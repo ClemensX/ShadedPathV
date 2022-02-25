@@ -34,6 +34,9 @@ void SimpleApp::run()
         // some shaders may need additional preparation
         engine.prepareDrawing();
 
+        // init other shader data:
+        init();
+
         // rendering
         while (!engine.shouldClose()) {
             engine.pollEvents();
@@ -44,6 +47,23 @@ void SimpleApp::run()
     Log("SimpleApp ended" << endl);
 }
 
+void SimpleApp::init() {
+    engine.shaders.lineShader.init(engine);
+    // add some lines:
+    float aspectRatio = engine.getAspect();
+    LineDef myLines[] = {
+        // start, end, color
+        { glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) },
+        { glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
+        { glm::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f) }
+    };
+    vector<LineDef> lines;
+    // add all intializer objects to vector:
+    for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
+    engine.shaders.lineShader.add(lines);
+    engine.shaders.lineShader.initialUpload();
+}
+
 void SimpleApp::drawFrame(ThreadResources& tr) {
     updatePerFrame(tr);
     engine.shaders.drawFrame_Triangle(tr);
@@ -52,11 +72,6 @@ void SimpleApp::drawFrame(ThreadResources& tr) {
 void SimpleApp::updatePerFrame(ThreadResources& tr)
 {
     static double old_seconds = 0.0f;
-    //Log("time: " << engine->gameTime.getTimeSystemClock() << endl);
-    //Log("game time: " << engine->gameTime.getTimeGameClock() << endl);
-    //Log("game time rel: " << setprecision(27) << engine->gameTime.getTime() << endl);
-    //Log("time delta: " << setprecision(27) << engine->gameTime.getTimeDelta() << endl);
-    //Log("time rel in s: " << setprecision(27) << engine->gameTime.getTimeSeconds() << endl);
     double seconds = engine.gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
@@ -99,6 +114,8 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
 
     // copy ubo to GPU:
     engine.shaders.simpleShader.uploadToGPU(tr, ubo);
+
+    // lines
 }
 
 void SimpleApp::handleInput(InputState& inputState)
