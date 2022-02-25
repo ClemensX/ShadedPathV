@@ -31,6 +31,8 @@ public:
 	~LineShader();
 	// one time effect initialization
 	void init(ShadedPathEngine& engine);
+	// thread resources initialization
+	void initSingle(ThreadResources& tr);
 	// add lines - they will never  be removed
 	void add(vector<LineDef>& linesToAdd);
 	// initial upload of all added lines - only valid before first render
@@ -69,4 +71,13 @@ private:
 	ShadedPathEngine* engine = nullptr;
 	VkBuffer vertexBuffer = nullptr;
 	VkDeviceMemory vertexBufferMemory = nullptr;
+	VkShaderModule vertShaderModule = nullptr;
+	VkShaderModule fragShaderModule = nullptr;
+	// create descriptor set layout (one per effect)
+	void createDescriptorSetLayout();
+	// create uniform buffers (one per render thread)
+	void createUniformBuffer(ThreadResources& res);
+	// create descritor sets (one or more per render thread)
+	void createDescriptorSets(ThreadResources& res);
+	VkDescriptorSetLayout descriptorSetLayout;
 };

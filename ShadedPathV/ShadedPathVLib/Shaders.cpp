@@ -363,7 +363,7 @@ void Shaders::executeBufferImageDump(ThreadResources& tr)
 
 	vkCmdCopyImage(
 		tr.commandBufferImageDump,
-		tr.colorAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		tr.colorAttachmentTriangle.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		tr.imageDumpAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		1,
 		&imageCopyRegion);

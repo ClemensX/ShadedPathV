@@ -26,9 +26,6 @@ public:
 	void init();
 	static void initAll(ShadedPathEngine* engine);
 
-	VkPipelineLayout pipelineLayoutTriangle = nullptr;
-	VkPipeline graphicsPipelineTriangle = nullptr;
-	VkRenderPass renderPassSimpleShader = nullptr;
 	VkCommandPool commandPool = nullptr;
 	VkFramebuffer framebuffer = nullptr;
 	VkDescriptorPool descriptorPool = nullptr;
@@ -49,11 +46,23 @@ public:
 	VkCommandBuffer commandBufferUI;
 
 	// triangle shader / SimpleShader
-	FrameBufferAttachment colorAttachment, depthAttachment;
+	VkPipelineLayout pipelineLayoutTriangle = nullptr;
+	VkPipeline graphicsPipelineTriangle = nullptr;
+	VkRenderPass renderPassSimpleShader = nullptr;
+	FrameBufferAttachment colorAttachmentTriangle, depthAttachmentTriangle;
 	VkCommandBuffer commandBufferTriangle;
 	VkBuffer uniformBufferTriangle;
 	VkDeviceMemory uniformBufferMemoryTriangle;
 	VkDescriptorSet descriptorSetTriangle = nullptr;
+
+	// Line shader
+	VkPipelineLayout pipelineLayoutLine = nullptr;
+	VkPipeline graphicsPipelineLine = nullptr;
+	VkRenderPass renderPassLine = nullptr;
+	VkCommandBuffer commandBufferLine;
+	VkBuffer uniformBufferLine;
+	VkDeviceMemory uniformBufferMemoryLine;
+	VkDescriptorSet descriptorSetLine = nullptr;
 
 	// frame management
 	long frameNum = -1;
