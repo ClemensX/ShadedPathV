@@ -45,11 +45,13 @@ public:
 	// draw UI
 	VkCommandBuffer commandBufferUI;
 
+	// global resources shared by all shaders
+	FrameBufferAttachment colorAttachment, depthAttachment;
+
 	// triangle shader / SimpleShader
 	VkPipelineLayout pipelineLayoutTriangle = nullptr;
 	VkPipeline graphicsPipelineTriangle = nullptr;
 	VkRenderPass renderPassSimpleShader = nullptr;
-	FrameBufferAttachment colorAttachmentTriangle, depthAttachmentTriangle;
 	VkCommandBuffer commandBufferTriangle;
 	VkBuffer uniformBufferTriangle;
 	VkDeviceMemory uniformBufferMemoryTriangle;

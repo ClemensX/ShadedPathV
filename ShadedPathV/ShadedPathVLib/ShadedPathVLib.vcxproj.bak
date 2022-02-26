@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\OpenXR.Loader.1.0.10.2\build\native\OpenXR.Loader.props" Condition="Exists('..\packages\OpenXR.Loader.1.0.10.2\build\native\OpenXR.Loader.props')" />
+  <Import Project="..\packages\OpenXR.Headers.1.0.10.2\build\native\OpenXR.Headers.props" Condition="Exists('..\packages\OpenXR.Headers.1.0.10.2\build\native\OpenXR.Headers.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -130,8 +132,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>glfw3.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\libraries\glfw\lib-vc2019;..\..\..\libraries\vulkan\Lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3.lib;ktx.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\libraries\glfw\lib-vc2019;..\..\..\libraries\ktx\lib;..\..\..\libraries\vulkan\Lib</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -152,8 +154,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>glfw3.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\libraries\glfw\lib-vc2019;..\..\..\libraries\vulkan\Lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3.lib;ktx.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\libraries\glfw\lib-vc2019;..\..\..\libraries\ktx\lib;..\..\..\libraries\vulkan\Lib</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -178,11 +180,12 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>glfw3.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\libraries\glfw\lib-vc2019;..\..\..\libraries\vulkan\Lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3.lib;ktx.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\libraries\glfw\lib-vc2019;..\..\..\libraries\ktx\lib;..\..\..\libraries\vulkan\Lib</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="Files.h" />
     <ClInclude Include="GameTime.h" />
     <ClInclude Include="GlobalRendering.h" />
@@ -194,16 +197,19 @@
     <ClInclude Include="imgui\imstb_rectpack.h" />
     <ClInclude Include="imgui\imstb_textedit.h" />
     <ClInclude Include="imgui\imstb_truetype.h" />
+    <ClInclude Include="LineShader.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Presentation.h" />
     <ClInclude Include="ShadedPathEngine.h" />
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="SimpleApp.h" />
     <ClInclude Include="SimpleShader.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="ThreadResources.h" />
     <ClInclude Include="Threads.h" />
     <ClInclude Include="ui.h" />
     <ClInclude Include="Util.h" />
+    <ClInclude Include="VR.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Files.cpp" />
@@ -216,6 +222,7 @@
     <ClCompile Include="imgui\imgui_impl_vulkan.cpp" />
     <ClCompile Include="imgui\imgui_tables.cpp" />
     <ClCompile Include="imgui\imgui_widgets.cpp" />
+    <ClCompile Include="LineShader.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -227,10 +234,12 @@
     <ClCompile Include="Shaders.cpp" />
     <ClCompile Include="SimpleApp.cpp" />
     <ClCompile Include="SimpleShader.cpp" />
+    <ClCompile Include="Texture.cpp" />
     <ClCompile Include="ThreadResources.cpp" />
     <ClCompile Include="Threads.cpp" />
     <ClCompile Include="ui.cpp" />
     <ClCompile Include="Util.cpp" />
+    <ClCompile Include="VR.cpp" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\ShadedPathVLib\shader\triangle.vert">
@@ -268,7 +277,33 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../x64/$(Configuration)/%(Filename)_frag.spv</Outputs>
     </CustomBuild>
   </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\ShadedPathVLib\shader\line.vert">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\libraries\vulkan\Bin\glslc.exe %(FullPath) -o ../x64/$(Configuration)/%(Filename)_vert.spv</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GLSL %(FullPath) -o ../x64/$(Configuration)/%(Filename)_vert.spv</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../x64/$(Configuration)/%(Filename)_vert.spv</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\libraries\vulkan\Bin\glslc.exe %(FullPath) -o ../x64/$(Configuration)/%(Filename)_vert.spv</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GLSL %(FullPath) -o ../x64/$(Configuration)/%(Filename)_vert.spv</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../x64/$(Configuration)/%(Filename)_vert.spv</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\packages\OpenXR.Headers.1.0.10.2\build\native\OpenXR.Headers.targets" Condition="Exists('..\packages\OpenXR.Headers.1.0.10.2\build\native\OpenXR.Headers.targets')" />
+    <Import Project="..\packages\OpenXR.Loader.1.0.10.2\build\native\OpenXR.Loader.targets" Condition="Exists('..\packages\OpenXR.Loader.1.0.10.2\build\native\OpenXR.Loader.targets')" />
   </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\OpenXR.Headers.1.0.10.2\build\native\OpenXR.Headers.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\OpenXR.Headers.1.0.10.2\build\native\OpenXR.Headers.props'))" />
+    <Error Condition="!Exists('..\packages\OpenXR.Headers.1.0.10.2\build\native\OpenXR.Headers.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\OpenXR.Headers.1.0.10.2\build\native\OpenXR.Headers.targets'))" />
+    <Error Condition="!Exists('..\packages\OpenXR.Loader.1.0.10.2\build\native\OpenXR.Loader.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\OpenXR.Loader.1.0.10.2\build\native\OpenXR.Loader.props'))" />
+    <Error Condition="!Exists('..\packages\OpenXR.Loader.1.0.10.2\build\native\OpenXR.Loader.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\OpenXR.Loader.1.0.10.2\build\native\OpenXR.Loader.targets'))" />
+  </Target>
 </Project>
