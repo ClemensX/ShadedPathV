@@ -233,6 +233,10 @@ ThreadResources::~ThreadResources()
     vkDestroyPipelineLayout(device, pipelineLayoutTriangle, nullptr);
     vkDestroyBuffer(device, uniformBufferTriangle, nullptr);
     vkFreeMemory(device, uniformBufferMemoryTriangle, nullptr);
+    vkDestroyPipeline(device, graphicsPipelineLine, nullptr);
+    vkDestroyPipelineLayout(device, pipelineLayoutLine, nullptr);
+    vkDestroyBuffer(device, uniformBufferLine, nullptr);
+    vkFreeMemory(device, uniformBufferMemoryLine, nullptr);
     Log("ThreadResource destructed: " << this << endl);
 };
 

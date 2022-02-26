@@ -28,14 +28,15 @@ void SimpleApp::run()
         engine.init();
 
         // shader initialization
+        // eg. one-time uploads before rendering cycle starts go here
         engine.shaders.initiateShader_Triangle();
         //engine.shaders.initiateShader_BackBufferImageDump();
+        // init other shader data:
+        init();
 
         // some shaders may need additional preparation
         engine.prepareDrawing();
 
-        // init other shader data:
-        init();
 
         // rendering
         while (!engine.shouldClose()) {
