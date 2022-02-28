@@ -30,6 +30,7 @@ void LineShader::initSingle(ThreadResources& tr)
 {
 	// uniform buffer
 	createUniformBuffer(tr);
+	createDescriptorPool(tr);
 	createDescriptorSets(tr);
 	// create shader stage
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
@@ -220,14 +221,14 @@ void LineShader::createDescriptorSetLayout()
     uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
-    VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-    samplerLayoutBinding.binding = 1;
-    samplerLayoutBinding.descriptorCount = 1;
-    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    samplerLayoutBinding.pImmutableSamplers = nullptr;
+    VkDescriptorSetLayoutBinding samplerLayoutBinding2{};
+	samplerLayoutBinding2.binding = 1;
+	samplerLayoutBinding2.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	samplerLayoutBinding2.descriptorCount = 1;
+	samplerLayoutBinding2.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	samplerLayoutBinding2.pImmutableSamplers = nullptr; // Optional
 
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding2 };
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -238,6 +239,29 @@ void LineShader::createDescriptorSetLayout()
         Error("failed to create descriptor set layout!");
     }
 }
+
+// 2 buffers: MVP matrix and line data
+// line data is global buffer
+void LineShader::createDescriptorPool(ThreadResources &res)
+{
+	std::array<VkDescriptorPoolSize, 2> poolSizes{};
+	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSizes[0].descriptorCount = 1;
+	poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSizes[1].descriptorCount = 1;
+
+	VkDescriptorPoolCreateInfo poolInfo{};
+	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+	poolInfo.pPoolSizes = poolSizes.data();
+	poolInfo.maxSets = 5; // arbitrary number for now TODO: see if this can be calculated
+	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+
+	if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &res.descriptorPoolLine) != VK_SUCCESS) {
+		Error("failed to create descriptor pool!");
+	}
+}
+
 
 void LineShader::createUniformBuffer(ThreadResources& res)
 {
@@ -250,7 +274,7 @@ void LineShader::createDescriptorSets(ThreadResources& res)
 {
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = res.descriptorPool;
+    allocInfo.descriptorPool = res.descriptorPoolLine;
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &descriptorSetLayout;
     if (vkAllocateDescriptorSets(device, &allocInfo, &res.descriptorSetLine) != VK_SUCCESS) {

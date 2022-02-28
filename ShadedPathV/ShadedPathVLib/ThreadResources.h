@@ -28,7 +28,6 @@ public:
 
 	VkCommandPool commandPool = nullptr;
 	VkFramebuffer framebuffer = nullptr;
-	VkDescriptorPool descriptorPool = nullptr;
 	// ImGui framebuffers
 	VkFramebuffer framebufferUI = nullptr;
 
@@ -49,6 +48,7 @@ public:
 	FrameBufferAttachment colorAttachment, depthAttachment;
 
 	// triangle shader / SimpleShader
+	VkDescriptorPool descriptorPool = nullptr;
 	VkPipelineLayout pipelineLayoutTriangle = nullptr;
 	VkPipeline graphicsPipelineTriangle = nullptr;
 	VkRenderPass renderPassSimpleShader = nullptr;
@@ -58,6 +58,7 @@ public:
 	VkDescriptorSet descriptorSetTriangle = nullptr;
 
 	// Line shader
+	VkDescriptorPool descriptorPoolLine = nullptr;
 	VkPipelineLayout pipelineLayoutLine = nullptr;
 	VkPipeline graphicsPipelineLine = nullptr;
 	VkRenderPass renderPassLine = nullptr;

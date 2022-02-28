@@ -210,6 +210,7 @@ ThreadResources::~ThreadResources()
     auto& global = engine->global;
     auto& shaders = engine->shaders;
     vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+    vkDestroyDescriptorPool(device, descriptorPoolLine, nullptr);
     vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
 	vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
     vkDestroyFence(device, imageDumpFence, nullptr);
