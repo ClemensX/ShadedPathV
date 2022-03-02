@@ -58,6 +58,7 @@ public:
 	VkDescriptorSet descriptorSetTriangle = nullptr;
 
 	// Line shader
+	VkFramebuffer framebufferLine = nullptr;
 	VkDescriptorPool descriptorPoolLine = nullptr;
 	VkPipelineLayout pipelineLayoutLine = nullptr;
 	VkPipeline graphicsPipelineLine = nullptr;

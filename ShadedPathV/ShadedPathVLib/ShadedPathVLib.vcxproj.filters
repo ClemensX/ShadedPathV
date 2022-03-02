@@ -175,6 +175,12 @@
     <CustomBuild Include="..\ShadedPathVLib\shader\triangle.frag">
       <Filter>Shader</Filter>
     </CustomBuild>
+    <CustomBuild Include="..\ShadedPathVLib\shader\line.frag">
+      <Filter>Shader</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\ShadedPathVLib\shader\line.vert">
+      <Filter>Shader</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

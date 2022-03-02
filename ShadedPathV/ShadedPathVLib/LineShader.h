@@ -59,6 +59,11 @@ public:
 	void add(vector<LineDef>& linesToAdd);
 	// initial upload of all added lines - only valid before first render
 	void initialUpload();
+
+	void createRenderPass(ThreadResources& tr);
+	void createCommandBufferLine(ThreadResources& tr);
+
+	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer);
 	// add lines just for next draw call
 	void addOneTime(vector<LineDef>& linesToAdd, unsigned long& user);
 	// update cbuffer and vertex buffer

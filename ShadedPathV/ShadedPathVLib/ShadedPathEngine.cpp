@@ -63,6 +63,7 @@ void ShadedPathEngine::prepareDrawing()
         auto& tr = threadResources[i];
         tr.frameIndex = i;
         shaders.createCommandBufferTriangle(tr);
+        shaders.lineShader.createCommandBufferLine(tr);
         string name = "renderContinueQueue_" + to_string(i);
         tr.renderThreadContinueQueue.setLoggingInfo(LOG_RENDER_CONTINUATION, name);
         tr.renderThreadContinueQueue.push(0);
