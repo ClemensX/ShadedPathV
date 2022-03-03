@@ -432,7 +432,7 @@ void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResourc
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
 	// bind descriptor sets:
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutTriangle, 0, 1, &tr.descriptorSetTriangle, 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutLine, 0, 1, &tr.descriptorSetLine, 0, nullptr);
 
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(lines.size() * 2), 1, 0, 0);
 }

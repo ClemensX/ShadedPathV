@@ -220,7 +220,9 @@ ThreadResources::~ThreadResources()
     vkDestroyCommandPool(device, commandPool, nullptr);
     vkDestroyFramebuffer(device, framebuffer, nullptr);
     vkDestroyFramebuffer(device, framebufferUI, nullptr);
+    vkDestroyFramebuffer(device, framebufferLine, nullptr);
     vkDestroyRenderPass(device, renderPassSimpleShader, nullptr);
+    vkDestroyRenderPass(device, renderPassLine, nullptr);
     vkDestroyImageView(device, depthImageView, nullptr);
     vkDestroyImage(device, depthImage, nullptr);
     vkFreeMemory(device, depthImageMemory, nullptr);
