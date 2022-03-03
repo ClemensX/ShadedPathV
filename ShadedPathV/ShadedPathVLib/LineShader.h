@@ -26,7 +26,9 @@ public:
 		glm::vec4 color;
 	};
 	struct UniformBufferObject {
-		glm::mat4 wvp;
+		glm::mat4 model;
+		glm::mat4 view;
+		glm::mat4 proj;
 	};
 	static VkVertexInputBindingDescription getBindingDescription() {
 		VkVertexInputBindingDescription bindingDescription{};

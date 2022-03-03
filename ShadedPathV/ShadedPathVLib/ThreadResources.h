@@ -52,7 +52,7 @@ public:
 	VkPipelineLayout pipelineLayoutTriangle = nullptr;
 	VkPipeline graphicsPipelineTriangle = nullptr;
 	VkRenderPass renderPassSimpleShader = nullptr;
-	VkCommandBuffer commandBufferTriangle;
+	VkCommandBuffer commandBufferTriangle = nullptr;
 	VkBuffer uniformBufferTriangle;
 	VkDeviceMemory uniformBufferMemoryTriangle;
 	VkDescriptorSet descriptorSetTriangle = nullptr;
@@ -63,7 +63,7 @@ public:
 	VkPipelineLayout pipelineLayoutLine = nullptr;
 	VkPipeline graphicsPipelineLine = nullptr;
 	VkRenderPass renderPassLine = nullptr;
-	VkCommandBuffer commandBufferLine;
+	VkCommandBuffer commandBufferLine = nullptr;
 	VkBuffer uniformBufferLine;
 	VkDeviceMemory uniformBufferMemoryLine;
 	VkDescriptorSet descriptorSetLine = nullptr;
@@ -74,6 +74,8 @@ public:
 	vector<VkSubmitInfo> submitinfos;
 	VkFence presentFence = nullptr;
 	ThreadsafeWaitingQueue<unsigned long> renderThreadContinueQueue;
+	VkPipelineStageFlags waitStages[2];
+	VkCommandBuffer commandBuffers[5];
 
 	// depth buffer
 	VkImage depthImage;

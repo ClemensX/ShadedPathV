@@ -263,6 +263,8 @@ void Shaders::createCommandBufferUI(ThreadResources& tr)
 {
 }
 
+// Be aware of local arrays - they will be overwritten after leaving this method!!
+// TODO remove clear / push_back cycle
 void Shaders::drawFrame_Triangle(ThreadResources& tr)
 {
 	if (!enabledTriangle) return;
@@ -273,12 +275,15 @@ void Shaders::drawFrame_Triangle(ThreadResources& tr)
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
 	//VkSemaphore waitSemaphores[] = { tr.imageAvailableSemaphore };
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	//VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	//tr.waitStages[0] = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	submitInfo.waitSemaphoreCount = 0;
 	submitInfo.pWaitSemaphores = nullptr;//waitSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &tr.commandBufferTriangle;
+	//submitInfo.pWaitDstStageMask = &tr.waitStages[0];
+	tr.commandBuffers[0] = tr.commandBufferTriangle;
+	tr.commandBuffers[1] = tr.commandBufferLine;
+	submitInfo.commandBufferCount = 2;
+	submitInfo.pCommandBuffers = &tr.commandBuffers[0];
 	//VkSemaphore signalSemaphores[] = { tr.renderFinishedSemaphore };
 	submitInfo.signalSemaphoreCount = 0;
 	submitInfo.pSignalSemaphores = nullptr; // signalSemaphores;
