@@ -66,6 +66,9 @@ public:
 	void createCommandBufferLine(ThreadResources& tr);
 
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer);
+
+	// per frame update of UBO / MVP
+	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo);
 	// add lines just for next draw call
 	void addOneTime(vector<LineDef>& linesToAdd, unsigned long& user);
 	// update cbuffer and vertex buffer

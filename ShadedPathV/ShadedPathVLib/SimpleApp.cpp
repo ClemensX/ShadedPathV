@@ -16,8 +16,8 @@ void SimpleApp::run()
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         //engine.setFrameCountLimit(1000);
-        engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK);
-        int win_width = 800;//3700;
+        engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
+        int win_width = 3700;// 800;//3700;
         engine.enablePresentation(win_width, (int)(win_width /1.77f), "Vulkan Simple App");
         engine.enableUI();
         engine.setFramesInFlight(2);
@@ -52,11 +52,17 @@ void SimpleApp::init() {
     engine.shaders.lineShader.init(engine);
     // add some lines:
     float aspectRatio = engine.getAspect();
+    //LineDef myLines[] = {
+    //    // start, end, color
+    //    { glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) },
+    //    { glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
+    //    { glm::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f) }
+    //};
     LineDef myLines[] = {
         // start, end, color
-        { glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) },
-        { glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { glm::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f) }
+        { glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) },
+        { glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) },
+        { glm::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) }
     };
     vector<LineDef> lines;
     // add all intializer objects to vector:
@@ -117,6 +123,16 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
     engine.shaders.simpleShader.uploadToGPU(tr, ubo);
 
     // lines
+    LineShader::UniformBufferObject lubo{};
+    lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    lubo.view = camera->getViewMatrix();
+    lubo.proj = ubo.proj;
+
+    //lubo.model = glm::mat4(1.0f); // identity matrix
+    //lubo.view = glm::mat4();
+    //lubo.proj = glm::mat4();
+
+    engine.shaders.lineShader.uploadToGPU(tr, lubo);
 }
 
 void SimpleApp::handleInput(InputState& inputState)

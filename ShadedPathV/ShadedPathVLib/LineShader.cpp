@@ -32,6 +32,8 @@ void LineShader::initSingle(ThreadResources& tr)
 	createUniformBuffer(tr);
 	createDescriptorPool(tr);
 	createDescriptorSets(tr);
+	createRenderPass(tr);
+
 	// create shader stage
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -88,8 +90,8 @@ void LineShader::initSingle(ThreadResources& tr)
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	rasterizer.depthClampEnable = VK_FALSE;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
-	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-	rasterizer.lineWidth = 1.0f;
+	rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
+	rasterizer.lineWidth = 10.0f;
 	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
 	//rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
@@ -175,14 +177,13 @@ void LineShader::initSingle(ThreadResources& tr)
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = nullptr; // Optional
 	pipelineInfo.layout = tr.pipelineLayoutLine;
-	pipelineInfo.renderPass = tr.renderPassSimpleShader;
+	pipelineInfo.renderPass = tr.renderPassLine;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &tr.graphicsPipelineLine) != VK_SUCCESS) {
 		Error("failed to create graphics pipeline!");
 	}
-	createRenderPass(tr);
 }
 
 
@@ -435,6 +436,14 @@ void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResourc
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutLine, 0, 1, &tr.descriptorSetLine, 0, nullptr);
 
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(lines.size() * 2), 1, 0, 0);
+}
+
+void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo) {
+	// copy ubo to GPU:
+	void* data;
+	vkMapMemory(device, tr.uniformBufferMemoryLine, 0, sizeof(ubo), 0, &data);
+	memcpy(data, &ubo, sizeof(ubo));
+	vkUnmapMemory(device, tr.uniformBufferMemoryLine);
 }
 
 LineShader::~LineShader()
