@@ -21,7 +21,7 @@ void main() {
     debugPrintfEXT("ubo.view 0 0 is %f\n", ubo.view[0][0]);
     debugPrintfEXT("ubo.proj 0 0 is %f\n", ubo.proj[0][0]);
 
-    //fragColor = inColor;
-    fragColor = vec3(1, 1, 1);
+    fragColor = inColor;
+    //fragColor = vec3(1, 1, 1);
     debugPrintfEXT("final device coord: %f %f %f\n", gl_Position.x, gl_Position.y, gl_Position.z);
 }
