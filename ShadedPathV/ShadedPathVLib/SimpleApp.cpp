@@ -67,6 +67,7 @@ void SimpleApp::init() {
     vector<LineDef> lines;
     // add all intializer objects to vector:
     for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
+    LineShader::addZeroCross(lines);
     engine.shaders.lineShader.add(lines);
     engine.shaders.lineShader.initialUpload();
 }

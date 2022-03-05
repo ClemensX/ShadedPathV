@@ -113,4 +113,17 @@ private:
 	void createDescriptorSets(ThreadResources& res);
 	void createDescriptorPool(ThreadResources& res);
 	VkDescriptorSetLayout descriptorSetLayout;
+
+	// util methods
+public:
+	static void addZeroCross(vector<LineDef>& lines) {
+		static float oDistance = 5.0f;
+		LineDef crossLines[] = {
+			// start, end, color
+			{ glm::vec3(-oDistance, 0.0f, 0.0f), glm::vec3(oDistance, 0.0f, 0.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) },
+			{ glm::vec3(0.0f, -oDistance, 0.0f), glm::vec3(0.0f, oDistance, 0.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) },
+			{ glm::vec3(0.0f, 0.0f, -oDistance), glm::vec3(0.0f, 0.0f, oDistance), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) }
+		};
+		lines.insert(lines.end(), crossLines, crossLines + size(crossLines));
+	}
 };
