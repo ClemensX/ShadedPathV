@@ -70,7 +70,7 @@ using namespace std;
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/epsilon.hpp>
 #include <glm/gtc/quaternion.hpp>
-
+using namespace glm;
 //
 // OpenXR Headers
 //
@@ -226,6 +226,7 @@ inline XrResult CheckXrResult(XrResult res, const char* originator = nullptr, co
 #include "Shaders.h"
 #include "ui.h"
 #include "ShadedPathEngine.h"
+#include "World.h"
 #include "SimpleApp.h"
 
 
