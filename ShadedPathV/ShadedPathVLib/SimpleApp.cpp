@@ -113,7 +113,9 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
     //Log(" " << cam << " " << downmode <<  " " << rel_time << endl);
     float cpos = 14.3f;
     glm::vec3 camPos(cpos, cpos, cpos);
+    // either moving:
     //glm::vec3 objectPosV(objectPos, objectPos, objectPos);
+    // or stationary:
     glm::vec3 objectPosV(0.0f, 0.0f, 0.0f);
 
     glm::mat4 rot = glm::rotate(glm::mat4(1.0f), (float)((seconds * 1.0f) * glm::radians(90.0f)), glm::vec3(0.0f, 0.0f, 1.0f));
