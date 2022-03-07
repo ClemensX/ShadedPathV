@@ -5,8 +5,21 @@ public:
 		shaderList.push_back(&shader);
 		return *this;
 	}
+
+	Config& init() {
+		for (ShaderBase *shader : shaderList) {
+			shader->init(*engine);
+		}
+		return *this;
+	}
+
+	void setEngine(ShadedPathEngine* s) {
+		engine = s;
+	}
+
 private:
 	vector<ShaderBase*> shaderList;
+	ShadedPathEngine* engine;
 };
 
 class Shaders
@@ -14,6 +27,7 @@ class Shaders
 public:
 	Shaders(ShadedPathEngine& s) : engine(s) {
 		Log("Shaders c'tor\n");
+		config.setEngine(&s);
 	};
 	~Shaders();
 

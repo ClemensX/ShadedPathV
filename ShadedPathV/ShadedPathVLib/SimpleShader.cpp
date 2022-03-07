@@ -5,6 +5,7 @@ void SimpleShader::init(ShadedPathEngine &engine)
     this->device = engine.global.device;
     this->global = &engine.global;
     this->engine = &engine;
+    engine.shaders.initiateShader_Triangle();
 }
 
 void SimpleShader::createDescriptorSetLayout()

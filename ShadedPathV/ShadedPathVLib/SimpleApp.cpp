@@ -30,7 +30,8 @@ void SimpleApp::run()
         // shader initialization
         shaders.config.add(shaders.simpleShader).add(shaders.lineShader);
         // eg. one-time uploads before rendering cycle starts go here
-        engine.shaders.initiateShader_Triangle();
+        //engine.shaders.initiateShader_Triangle();
+        engine.shaders.config.init();
         //engine.shaders.initiateShader_BackBufferImageDump();
         // init other shader data:
         init();
@@ -50,7 +51,7 @@ void SimpleApp::run()
 }
 
 void SimpleApp::init() {
-    engine.shaders.lineShader.init(engine);
+    //engine.shaders.lineShader.init(engine);
     // add some lines:
     float aspectRatio = engine.getAspect();
     LineDef myLines[] = {

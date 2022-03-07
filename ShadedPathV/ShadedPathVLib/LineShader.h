@@ -55,20 +55,22 @@ public:
 	~LineShader();
 	// one time effect initialization
 	void init(ShadedPathEngine& engine);
-	// thread resources initialization
-	void initSingle(ThreadResources& tr);
 	// add lines - they will never  be removed
 	void add(vector<LineDef>& linesToAdd);
 	// initial upload of all added lines - only valid before first render
 	void initialUpload();
 
-	void createRenderPass(ThreadResources& tr);
 	void createCommandBufferLine(ThreadResources& tr);
+	// per frame update of UBO / MVP
+	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo);
+private:
+	// thread resources initialization
+	void initSingle(ThreadResources& tr);
+
+	void createRenderPass(ThreadResources& tr);
 
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer);
 
-	// per frame update of UBO / MVP
-	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo);
 	// add lines just for next draw call
 	void addOneTime(vector<LineDef>& linesToAdd, unsigned long& user);
 	// update cbuffer and vertex buffer
@@ -78,22 +80,13 @@ public:
 	void draw();
 	void destroy();
 
-private:
+
 	vector<LineDef> lines;
 	//vector<LineDef> addLines;
 	bool dirty;
 	int drawAddLinesSize;
 
-	//ComPtr<ID3D12PipelineState> pipelineState;
-	//ComPtr<ID3D12RootSignature> rootSignature;
-	//void preDraw(int eyeNum);
-	//void postDraw();
 	UniformBufferObject ubo, updatedUBO;
-	//bool signalUpdateCBV = false;
-	//mutex mutex_lines;
-	//void drawInternal(int eyeNum = 0);
-	//void updateTask();
-	//UINT numVericesToDraw = 0;
 	LineFrameData appDataSets[2];
 	bool disabled = false;
 	// Inherited via Effect

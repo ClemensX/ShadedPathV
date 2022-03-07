@@ -18,7 +18,6 @@ VkShaderModule Shaders::createShaderModule(const vector<byte>& code)
 void Shaders::initiateShader_Triangle()
 {
 	enabledTriangle = true;
-	simpleShader.init(engine);
 	// initialization of globals like shader code
 	//  
 	// load shader binary code
