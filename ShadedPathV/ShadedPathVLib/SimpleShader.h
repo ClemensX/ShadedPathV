@@ -1,5 +1,5 @@
 #pragma once
-class SimpleShader
+class SimpleShader : public ShaderBase
 {
 public:
     struct Vertex {

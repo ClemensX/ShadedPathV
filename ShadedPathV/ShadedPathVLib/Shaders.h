@@ -1,4 +1,14 @@
 #pragma once
+class Config {
+public:
+	Config& add(ShaderBase &shader) {
+		shaderList.push_back(&shader);
+		return *this;
+	}
+private:
+	vector<ShaderBase*> shaderList;
+};
+
 class Shaders
 {
 public:
@@ -6,6 +16,8 @@ public:
 		Log("Shaders c'tor\n");
 	};
 	~Shaders();
+
+	Config config;
 
 	// general methods
 	void queueSubmit(ThreadResources& tr);

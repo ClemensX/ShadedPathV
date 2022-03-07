@@ -17,7 +17,7 @@ void SimpleApp::run()
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
-        int win_width = 3700;// 800;//3700;
+        int win_width = 800;// 800;//3700;
         engine.enablePresentation(win_width, (int)(win_width /1.77f), "Vulkan Simple App");
         engine.enableUI();
         engine.setFramesInFlight(2);
@@ -28,6 +28,7 @@ void SimpleApp::run()
         engine.init();
 
         // shader initialization
+        shaders.config.add(shaders.simpleShader).add(shaders.lineShader);
         // eg. one-time uploads before rendering cycle starts go here
         engine.shaders.initiateShader_Triangle();
         //engine.shaders.initiateShader_BackBufferImageDump();

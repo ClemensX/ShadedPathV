@@ -19,7 +19,7 @@ public:
 	//friend class DXGlobal;
 };
 
-class LineShader {
+class LineShader : public ShaderBase {
 public:
 	struct Vertex {
 		glm::vec3 pos;

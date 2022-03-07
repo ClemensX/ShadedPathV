@@ -201,6 +201,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="Presentation.h" />
     <ClInclude Include="ShadedPathEngine.h" />
+    <ClInclude Include="ShaderBase.h" />
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="SimpleApp.h" />
     <ClInclude Include="SimpleShader.h" />
@@ -232,6 +233,7 @@
     </ClCompile>
     <ClCompile Include="Presentation.cpp" />
     <ClCompile Include="ShadedPathEngine.cpp" />
+    <ClCompile Include="ShaderBase.cpp" />
     <ClCompile Include="Shaders.cpp" />
     <ClCompile Include="SimpleApp.cpp" />
     <ClCompile Include="SimpleShader.cpp" />
