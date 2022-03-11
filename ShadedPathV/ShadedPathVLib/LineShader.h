@@ -53,7 +53,7 @@ public:
 		return attributeDescriptions;
 	}
 	~LineShader();
-	// one time effect initialization
+	// shader initialization, end result is a graphics pipeline for each ThreadResources instance
 	void init(ShadedPathEngine& engine);
 	// add lines - they will never  be removed
 	void add(vector<LineDef>& linesToAdd);
