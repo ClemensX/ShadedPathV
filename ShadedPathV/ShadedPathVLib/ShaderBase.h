@@ -1,4 +1,12 @@
 #pragma once
+
+// Info needed to connect shaders.
+// Like DepthBuffer, sizes, image formats and states
+class ShaderState
+{
+
+};
+
 class ShaderBase
 {
 public:
@@ -73,6 +81,6 @@ public:
 	// 	 --> vkCreateGraphicsPipelines
 	// 	 --> vkDestroyShaderModule
 	//
-	virtual void init(ShadedPathEngine& engine) = 0;
+	virtual void init(ShadedPathEngine& engine, ShaderState &shaderSate) = 0;
 };
 

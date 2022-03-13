@@ -1,6 +1,6 @@
 #include "pch.h"
 
-void LineShader::init(ShadedPathEngine& engine)
+void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 {
 	this->device = engine.global.device;
 	this->global = &engine.global;

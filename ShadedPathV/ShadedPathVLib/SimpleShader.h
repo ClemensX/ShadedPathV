@@ -78,8 +78,8 @@ public:
     }
     // update per frame data
     void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo);
-    // one time effect initialization
-    void init(ShadedPathEngine& engine);
+    // set up shader
+    void init(ShadedPathEngine& engine, ShaderState &shaderState);
     ~SimpleShader();
 
     // pre-record draw commands (one time call)

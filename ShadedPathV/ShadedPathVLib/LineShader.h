@@ -54,7 +54,7 @@ public:
 	}
 	~LineShader();
 	// shader initialization, end result is a graphics pipeline for each ThreadResources instance
-	void init(ShadedPathEngine& engine);
+	void init(ShadedPathEngine& engine, ShaderState &shaderState);
 	// add lines - they will never  be removed
 	void add(vector<LineDef>& linesToAdd);
 	// initial upload of all added lines - only valid before first render

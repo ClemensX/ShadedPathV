@@ -8,7 +8,7 @@ public:
 
 	Config& init() {
 		for (ShaderBase *shader : shaderList) {
-			shader->init(*engine);
+			shader->init(*engine, shaderState);
 		}
 		return *this;
 	}
@@ -20,6 +20,7 @@ public:
 private:
 	vector<ShaderBase*> shaderList;
 	ShadedPathEngine* engine;
+	ShaderState shaderState;
 };
 
 class Shaders

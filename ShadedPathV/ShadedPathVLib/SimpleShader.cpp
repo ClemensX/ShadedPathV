@@ -1,6 +1,6 @@
 #include "pch.h"
 
-void SimpleShader::init(ShadedPathEngine &engine)
+void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 {
     this->device = engine.global.device;
     this->global = &engine.global;
