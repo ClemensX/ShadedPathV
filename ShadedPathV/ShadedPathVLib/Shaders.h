@@ -44,11 +44,8 @@ public:
 	// initiate before rendering first frame
 	SimpleShader simpleShader;
 	LineShader lineShader;
-	void initiateShader_Triangle();
-	void createCommandBufferTriangle(ThreadResources& tr);
-	void recordDrawCommand_Triangle(VkCommandBuffer& commandBuffer, ThreadResources& tr);
-	// draw triangle during frame creation
-	void drawFrame_Triangle(ThreadResources& tr);
+	// submit command buffers for current frame
+	void submitFrame(ThreadResources& tr);
 
 	// BackBufferImageDump shader: copy backbuffer to image file
 	// initiate before rendering first frame
@@ -63,15 +60,8 @@ private:
 	void initiateShader_TriangleSingle(ThreadResources &res);
 	void initiateShader_BackBufferImageDumpSingle(ThreadResources& res);
 	ShadedPathEngine& engine;
-	VkShaderModule vertShaderModuleTriangle = nullptr;
-	VkShaderModule fragShaderModuleTriangle = nullptr;
-	VkBuffer vertexBufferTriangle = nullptr;
-	VkDeviceMemory vertexBufferMemoryTriangle = nullptr;
-	VkBuffer indexBufferTriangle = nullptr;
-	VkDeviceMemory indexBufferMemoryTriangle = nullptr;
 
 	unsigned int imageCouter = 0;
-	bool enabledTriangle = false;
 	bool enabledImageDump = false;
 };
 

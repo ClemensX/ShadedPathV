@@ -84,7 +84,7 @@ void SimpleApp::init() {
 
 void SimpleApp::drawFrame(ThreadResources& tr) {
     updatePerFrame(tr);
-    engine.shaders.drawFrame_Triangle(tr);
+    engine.shaders.submitFrame(tr);
 }
 
 void SimpleApp::updatePerFrame(ThreadResources& tr)

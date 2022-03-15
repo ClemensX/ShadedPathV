@@ -87,13 +87,14 @@ TEST(Engine, Initialization) {
 TEST(Engine, Headless) {
     {
         ShadedPathEngine engine;
+        ShaderState shaderState;
         engine.setFrameCountLimit(10);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::Small);
         engine.setFramesInFlight(2);
         engine.setThreadModeSingle();
         engine.init();
 
-        engine.shaders.initiateShader_Triangle();
+        engine.shaders.simpleShader.init(engine, shaderState);
         engine.prepareDrawing();
         engine.drawFrame();
     }

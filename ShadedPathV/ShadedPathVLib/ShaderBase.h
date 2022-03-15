@@ -82,5 +82,13 @@ public:
 	// 	 --> vkDestroyShaderModule
 	//
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderSate) = 0;
+protected:
+	// signal if this shader is in use, set during init()
+	bool enabled = false;
+	// initialized in init()
+	ShadedPathEngine* engine = nullptr;
+
+	VkShaderModule createShaderModule(const vector<byte>& code);
+
 };
 

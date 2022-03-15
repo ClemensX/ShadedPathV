@@ -91,12 +91,19 @@ public:
     void createUniformBuffer(ThreadResources& res);
     // create descritor sets (one or more per render thread)
     void createDescriptorSets(ThreadResources& res);
+    void createCommandBufferTriangle(ThreadResources& tr);
     VkDescriptorSetLayout descriptorSetLayout;
     TextureInfo* texture = nullptr;
 
 private:
     VkDevice device = nullptr;
     GlobalRendering *global = nullptr;
-    ShadedPathEngine* engine = nullptr;
+    VkShaderModule vertShaderModuleTriangle = nullptr;
+    VkShaderModule fragShaderModuleTriangle = nullptr;
+    VkBuffer vertexBufferTriangle = nullptr;
+    VkDeviceMemory vertexBufferMemoryTriangle = nullptr;
+    VkBuffer indexBufferTriangle = nullptr;
+    VkDeviceMemory indexBufferMemoryTriangle = nullptr;
+    void initSingle(ThreadResources& res);
 };
 
