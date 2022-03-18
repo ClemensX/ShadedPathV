@@ -1,7 +1,11 @@
 #include "pch.h"
 
-ShaderBase::~ShaderBase() {
-
+void ShaderBase::init(ShadedPathEngine& engine)
+{
+	this->device = engine.global.device;
+	this->global = &engine.global;
+	this->engine = &engine;
+	enabled = true;
 }
 
 VkShaderModule ShaderBase::createShaderModule(const vector<byte>& code)
@@ -17,3 +21,6 @@ VkShaderModule ShaderBase::createShaderModule(const vector<byte>& code)
 	return shaderModule;
 }
 
+ShaderBase::~ShaderBase() {
+
+}

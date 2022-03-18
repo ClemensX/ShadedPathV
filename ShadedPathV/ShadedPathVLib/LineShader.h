@@ -91,9 +91,6 @@ private:
 	bool disabled = false;
 	// Inherited via Effect
 	// set in init()
-	VkDevice device = nullptr;
-	GlobalRendering* global = nullptr;
-	ShadedPathEngine* engine = nullptr;
 	VkBuffer vertexBuffer = nullptr;
 	VkDeviceMemory vertexBufferMemory = nullptr;
 	VkShaderModule vertShaderModule = nullptr;
@@ -105,7 +102,6 @@ private:
 	// create descritor sets (one or more per render thread)
 	void createDescriptorSets(ThreadResources& res);
 	void createDescriptorPool(ThreadResources& res);
-	VkDescriptorSetLayout descriptorSetLayout;
 
 	// util methods
 public:

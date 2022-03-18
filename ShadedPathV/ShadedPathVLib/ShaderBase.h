@@ -82,13 +82,19 @@ public:
 	// 	 --> vkDestroyShaderModule
 	//
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderSate) = 0;
+
+	// common initializations, usually called as first step in subclass init()
+	void init(ShadedPathEngine& engine);
 protected:
 	// signal if this shader is in use, set during init()
 	bool enabled = false;
 	// initialized in init()
 	ShadedPathEngine* engine = nullptr;
+	VkDevice device = nullptr;
+	GlobalRendering* global = nullptr;
 
 	VkShaderModule createShaderModule(const vector<byte>& code);
+	VkDescriptorSetLayout descriptorSetLayout = nullptr;
 
 };
 

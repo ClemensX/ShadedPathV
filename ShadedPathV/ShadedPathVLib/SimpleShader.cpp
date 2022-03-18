@@ -2,11 +2,8 @@
 
 void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 {
-    this->device = engine.global.device;
-    this->global = &engine.global;
-    this->engine = &engine;
-    enabled = true;
- 
+	ShaderBase::init(engine);
+
     // load shader binary code
     vector<byte> file_buffer_vert;
     vector<byte> file_buffer_frag;
