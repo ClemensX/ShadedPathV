@@ -83,8 +83,16 @@ public:
 	//
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderSate) = 0;
 
+	// create descriptor set layout and assign to BaseShader variable
+	virtual void createDescriptorSetLayout() = 0;
+
 	// common initializations, usually called as first step in subclass init()
 	void init(ShadedPathEngine& engine);
+
+	// Thread dependent intializations:
+
+	// create UniformBuffer. Size has to be provided by subclasses (no clean way to do it via inheritance or CRTP)
+	void createUniformBuffer(ThreadResources& res, VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory);
 protected:
 	// signal if this shader is in use, set during init()
 	bool enabled = false;

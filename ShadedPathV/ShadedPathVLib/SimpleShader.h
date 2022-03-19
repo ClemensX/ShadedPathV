@@ -87,8 +87,6 @@ public:
     
     // create descriptor set layout (one per effect)
     void createDescriptorSetLayout();
-    // create uniform buffers (one per render thread)
-    void createUniformBuffer(ThreadResources& res);
     // create descritor sets (one or more per render thread)
     void createDescriptorSets(ThreadResources& res);
     void createCommandBufferTriangle(ThreadResources& tr);

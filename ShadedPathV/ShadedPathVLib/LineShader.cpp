@@ -26,7 +26,7 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 void LineShader::initSingle(ThreadResources& tr)
 {
 	// uniform buffer
-	createUniformBuffer(tr);
+	createUniformBuffer(tr, tr.uniformBufferLine, sizeof(UniformBufferObject), tr.uniformBufferMemoryLine);
 	createDescriptorPool(tr);
 	createDescriptorSets(tr);
 	createRenderPass(tr);
@@ -262,13 +262,6 @@ void LineShader::createDescriptorPool(ThreadResources &res)
 	}
 }
 
-
-void LineShader::createUniformBuffer(ThreadResources& res)
-{
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-    global->createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        res.uniformBufferLine, res.uniformBufferMemoryLine);
-}
 
 void LineShader::createDescriptorSets(ThreadResources& res)
 {

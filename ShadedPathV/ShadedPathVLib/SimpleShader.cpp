@@ -42,7 +42,7 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 void SimpleShader::initSingle(ThreadResources& res)
 {
 	// uniform buffer
-	createUniformBuffer(res);
+	createUniformBuffer(res, res.uniformBufferTriangle, sizeof(UniformBufferObject), res.uniformBufferMemoryTriangle);
 	createDescriptorSets(res);
 	// create shader stage
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
@@ -223,13 +223,6 @@ void SimpleShader::createDescriptorSetLayout()
     if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
         Error("failed to create descriptor set layout!");
     }
-}
-
-void SimpleShader::createUniformBuffer(ThreadResources& res)
-{
-    VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-    global->createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        res.uniformBufferTriangle, res.uniformBufferMemoryTriangle);
 }
 
 void SimpleShader::createDescriptorSets(ThreadResources& res)
