@@ -17,6 +17,17 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	// descriptor
 	createDescriptorSetLayout(); // simpleshader.
 
+	// descriptor pool
+	// 2 buffers: MVP matrix and line data
+	// line data is global buffer
+	vector<VkDescriptorPoolSize> poolSizes;
+	poolSizes.resize(2);
+	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSizes[0].descriptorCount = 1;
+	poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSizes[1].descriptorCount = 1;
+	createDescriptorPool(poolSizes);
+
 	// pipelines must be created for every rendering thread
 	for (auto& res : engine.threadResources) {
 		initSingle(res);
@@ -27,7 +38,6 @@ void LineShader::initSingle(ThreadResources& tr)
 {
 	// uniform buffer
 	createUniformBuffer(tr, tr.uniformBufferLine, sizeof(UniformBufferObject), tr.uniformBufferMemoryLine);
-	createDescriptorPool(tr);
 	createDescriptorSets(tr);
 	createRenderPass(tr);
 
@@ -240,34 +250,11 @@ void LineShader::createDescriptorSetLayout()
     }
 }
 
-// 2 buffers: MVP matrix and line data
-// line data is global buffer
-void LineShader::createDescriptorPool(ThreadResources &res)
-{
-	std::array<VkDescriptorPoolSize, 2> poolSizes{};
-	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[0].descriptorCount = 1;
-	poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[1].descriptorCount = 1;
-
-	VkDescriptorPoolCreateInfo poolInfo{};
-	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-	poolInfo.pPoolSizes = poolSizes.data();
-	poolInfo.maxSets = 5; // arbitrary number for now TODO: see if this can be calculated
-	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-
-	if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &res.descriptorPoolLine) != VK_SUCCESS) {
-		Error("failed to create descriptor pool!");
-	}
-}
-
-
 void LineShader::createDescriptorSets(ThreadResources& res)
 {
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = res.descriptorPoolLine;
+    allocInfo.descriptorPool = descriptorPool;
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &descriptorSetLayout;
     if (vkAllocateDescriptorSets(device, &allocInfo, &res.descriptorSetLine) != VK_SUCCESS) {
@@ -444,4 +431,5 @@ LineShader::~LineShader()
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);
 	vkDestroyShaderModule(device, vertShaderModule, nullptr);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 }

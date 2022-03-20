@@ -23,7 +23,6 @@ void ThreadResources::init()
     createDepthResources();
     createFrameBuffer();
     createCommandPool();
-    createDescriptorPool();
 }
 
 void ThreadResources::createFencesAndSemaphores()
@@ -182,35 +181,11 @@ void ThreadResources::createDepthResources()
     depthImageView = engine->global.createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
 }
 
-void ThreadResources::createDescriptorPool()
-{
-    auto& device = engine->global.device;
-
-    std::array<VkDescriptorPoolSize, 2> poolSizes{};
-    poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    poolSizes[0].descriptorCount = 1;
-    poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSizes[1].descriptorCount = 1;
-
-    VkDescriptorPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-    poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = 5; // arbitrary number for now TODO: see if this can be calculated
-    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-
-    if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
-        Error("failed to create descriptor pool!");
-    }
-}
-
 ThreadResources::~ThreadResources()
 {
     auto& device = engine->global.device;
     auto& global = engine->global;
     auto& shaders = engine->shaders;
-    vkDestroyDescriptorPool(device, descriptorPool, nullptr);
-    vkDestroyDescriptorPool(device, descriptorPoolLine, nullptr);
     vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
 	vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
     vkDestroyFence(device, imageDumpFence, nullptr);

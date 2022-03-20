@@ -99,7 +99,6 @@ private:
 	void createDescriptorSetLayout();
 	// create descritor sets (one or more per render thread)
 	void createDescriptorSets(ThreadResources& res);
-	void createDescriptorPool(ThreadResources& res);
 
 	// util methods
 public:

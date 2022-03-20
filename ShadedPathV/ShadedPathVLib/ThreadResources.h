@@ -48,7 +48,6 @@ public:
 	FrameBufferAttachment colorAttachment, depthAttachment;
 
 	// triangle shader / SimpleShader
-	VkDescriptorPool descriptorPool = nullptr;
 	VkPipelineLayout pipelineLayoutTriangle = nullptr;
 	VkPipeline graphicsPipelineTriangle = nullptr;
 	VkRenderPass renderPassSimpleShader = nullptr;
@@ -59,7 +58,6 @@ public:
 
 	// Line shader
 	VkFramebuffer framebufferLine = nullptr;
-	VkDescriptorPool descriptorPoolLine = nullptr;
 	VkPipelineLayout pipelineLayoutLine = nullptr;
 	VkPipeline graphicsPipelineLine = nullptr;
 	VkRenderPass renderPassLine = nullptr;
@@ -90,5 +88,4 @@ private:
 	void createBackBufferImage();
 	void createCommandPool();
 	void createDepthResources();
-	void createDescriptorPool();
 };

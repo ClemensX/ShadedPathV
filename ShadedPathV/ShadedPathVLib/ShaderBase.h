@@ -89,10 +89,14 @@ public:
 	// common initializations, usually called as first step in subclass init()
 	void init(ShadedPathEngine& engine);
 
+	// each shader has its own descriptor pool
+	void createDescriptorPool(vector<VkDescriptorPoolSize>& poolSizes);
+
 	// Thread dependent intializations:
 
 	// create UniformBuffer. Size has to be provided by subclasses (no clean way to do it via inheritance or CRTP)
 	void createUniformBuffer(ThreadResources& res, VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory);
+
 protected:
 	// signal if this shader is in use, set during init()
 	bool enabled = false;
@@ -103,6 +107,7 @@ protected:
 
 	VkShaderModule createShaderModule(const vector<byte>& code);
 	VkDescriptorSetLayout descriptorSetLayout = nullptr;
+	VkDescriptorPool descriptorPool = nullptr;
 
 };
 

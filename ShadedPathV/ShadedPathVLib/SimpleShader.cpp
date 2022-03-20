@@ -32,7 +32,16 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
     engine.textureStore.loadTexture("debug.ktx", "debugTexture");
     texture = engine.textureStore.getTexture("debugTexture");
 
-    // pipelines must be created for every rendering thread
+	// descriptor pool
+	vector<VkDescriptorPoolSize> poolSizes;
+	poolSizes.resize(2);
+	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSizes[0].descriptorCount = 1;
+	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSizes[1].descriptorCount = 1;
+	createDescriptorPool(poolSizes);
+
+	// pipelines must be created for every rendering thread
     for (auto& res : engine.threadResources) {
         initSingle(res);
     }
@@ -43,7 +52,9 @@ void SimpleShader::initSingle(ThreadResources& res)
 {
 	// uniform buffer
 	createUniformBuffer(res, res.uniformBufferTriangle, sizeof(UniformBufferObject), res.uniformBufferMemoryTriangle);
+
 	createDescriptorSets(res);
+
 	// create shader stage
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -229,8 +240,8 @@ void SimpleShader::createDescriptorSets(ThreadResources& res)
 {
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = res.descriptorPool;
-    allocInfo.descriptorSetCount = 1;
+	allocInfo.descriptorPool = descriptorPool;
+	allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &descriptorSetLayout;
     if (vkAllocateDescriptorSets(device, &allocInfo, &res.descriptorSetTriangle) != VK_SUCCESS) {
         Error("failed to allocate descriptor sets!");
@@ -345,4 +356,5 @@ SimpleShader::~SimpleShader()
 	vkFreeMemory(device, indexBufferMemoryTriangle, nullptr);
 	vkDestroyShaderModule(device, fragShaderModuleTriangle, nullptr);
 	vkDestroyShaderModule(device, vertShaderModuleTriangle, nullptr);
+	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 }

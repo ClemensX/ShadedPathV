@@ -34,6 +34,19 @@ void ShaderBase::createUniformBuffer(ThreadResources& res, VkBuffer &uniformBuff
 		uniformBuffer, uniformBufferMemory);
 }
 
+void ShaderBase::createDescriptorPool(vector<VkDescriptorPoolSize> &poolSizes)
+{
+	VkDescriptorPoolCreateInfo poolInfo{};
+	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+	poolInfo.pPoolSizes = poolSizes.data();
+	poolInfo.maxSets = 5; // arbitrary number for now TODO: see if this can be calculated
+	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+
+	if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+		Error("failed to create descriptor pool!");
+	}
+}
 
 ShaderBase::~ShaderBase() {
 
