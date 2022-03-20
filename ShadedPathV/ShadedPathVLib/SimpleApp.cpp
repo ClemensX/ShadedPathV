@@ -107,7 +107,7 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
     //float a = 0.3f; float b = 140.0f; float z = 15.0f;
     float a = 0.3f; float b = 14.0f; float z = 15.0f;
     // move object between a, a, a and b, b, b in z seconds
-    float rel_time = fmod(seconds, z);
+    float rel_time = static_cast<float>(fmod(seconds, z));
     downmode = fmod(seconds, 2 * z) > z ? true : false;
     float objectPos = (b - a) * rel_time / z;
     if (downmode) objectPos = b - objectPos;

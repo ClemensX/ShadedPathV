@@ -25,7 +25,7 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
     bufferSize = sizeof(indices[0]) * indices.size();
     engine.global.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, bufferSize, indices.data(), indexBufferTriangle, indexBufferMemoryTriangle);
 
-    // descriptor
+    // descriptor set layout
     createDescriptorSetLayout();
 
     // load texture

@@ -52,9 +52,9 @@ public:
 
 		return attributeDescriptions;
 	}
-	~LineShader();
+	virtual ~LineShader() override;
 	// shader initialization, end result is a graphics pipeline for each ThreadResources instance
-	void init(ShadedPathEngine& engine, ShaderState &shaderState);
+	virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
 	// add lines - they will never  be removed
 	void add(vector<LineDef>& linesToAdd);
 	// initial upload of all added lines - only valid before first render
@@ -96,9 +96,9 @@ private:
 	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;
 	// create descriptor set layout (one per effect)
-	void createDescriptorSetLayout();
+	virtual void createDescriptorSetLayout() override;
 	// create descritor sets (one or more per render thread)
-	void createDescriptorSets(ThreadResources& res);
+	virtual void createDescriptorSets(ThreadResources& res) override;
 
 	// util methods
 public:

@@ -79,16 +79,17 @@ public:
     // update per frame data
     void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo);
     // set up shader
-    void init(ShadedPathEngine& engine, ShaderState &shaderState);
-    ~SimpleShader();
+    virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
+    virtual ~SimpleShader() override;
 
     // pre-record draw commands (one time call)
     void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, VkBuffer indexBuffer);
     
     // create descriptor set layout (one per effect)
-    void createDescriptorSetLayout();
+    virtual void createDescriptorSetLayout() override;
     // create descritor sets (one or more per render thread)
-    void createDescriptorSets(ThreadResources& res);
+    virtual void createDescriptorSets(ThreadResources& res) override;
+
     void createCommandBufferTriangle(ThreadResources& tr);
     TextureInfo* texture = nullptr;
 

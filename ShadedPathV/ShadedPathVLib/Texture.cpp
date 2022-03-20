@@ -42,10 +42,6 @@ void TextureStore::loadTexture(string filename, string id)
 	}
 
 	ktxTexture* kTexture;
-	//KTX_error_code result;
-	ktx_size_t offset;
-	ktx_uint8_t* image;
-	ktx_uint32_t level, layer, faceSlice;
 	ktxVulkanDeviceInfo vdi;
 	auto ktxresult = ktxTexture_CreateFromMemory((const ktx_uint8_t*)file_buffer.data(), file_buffer.size(), KTX_TEXTURE_CREATE_NO_FLAGS, &kTexture);
 	if (ktxresult != KTX_SUCCESS) {
