@@ -99,6 +99,8 @@ public:
 	void init(ShadedPathEngine& engine);
 
 	// each shader has its own descriptor pool
+	// poolSizes will be auto-multiplied by number of render threads
+	// to have enough descriptors for all threads
 	void createDescriptorPool(vector<VkDescriptorPoolSize>& poolSizes);
 
 	// Thread dependent intializations:
@@ -135,6 +137,16 @@ protected:
 		fragShaderStageInfo.module = shaderModule;
 		fragShaderStageInfo.pName = "main";
 		return fragShaderStageInfo;
+	}
+
+	VkPipelineVertexInputStateCreateInfo createVertexInputCreateInfo(VkVertexInputBindingDescription* vertexInputBinding, VkVertexInputAttributeDescription* vertexInputAttributes, size_t attributes_size) {
+		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
+		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		vertexInputInfo.vertexBindingDescriptionCount = 1;
+		vertexInputInfo.pVertexBindingDescriptions = vertexInputBinding;
+		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t> (attributes_size);
+		vertexInputInfo.pVertexAttributeDescriptions = vertexInputAttributes;
+		return vertexInputInfo;
 	}
 
 };

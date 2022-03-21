@@ -62,14 +62,8 @@ void SimpleShader::initSingle(ThreadResources& res)
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
 	// vertex input
-	auto bindingDescription = SimpleShader::getBindingDescription();
-	auto attributeDescriptions = SimpleShader::getAttributeDescriptions();
-	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputInfo.vertexBindingDescriptionCount = 1;
-	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t> (attributeDescriptions.size());
-	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+	auto binding_desc = getBindingDescription();
+	auto vertexInputInfo = createVertexInputCreateInfo(&binding_desc, getAttributeDescriptions().data(), getAttributeDescriptions().size());
 
 	// input assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};

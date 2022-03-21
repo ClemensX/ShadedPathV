@@ -36,10 +36,15 @@ void ShaderBase::createUniformBuffer(ThreadResources& res, VkBuffer &uniformBuff
 
 void ShaderBase::createDescriptorPool(vector<VkDescriptorPoolSize> &poolSizes)
 {
+	// duplicate the poolSize for every render thread we have:
+	vector<VkDescriptorPoolSize> allThreadsPoolSizes;
+	for (int i = 0; i < engine->getFramesInFlight(); i++) {
+		copy(poolSizes.begin(), poolSizes.end(), back_inserter(allThreadsPoolSizes));
+	}
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-	poolInfo.pPoolSizes = poolSizes.data();
+	poolInfo.poolSizeCount = static_cast<uint32_t>(allThreadsPoolSizes.size());
+	poolInfo.pPoolSizes = allThreadsPoolSizes.data();
 	poolInfo.maxSets = 5; // arbitrary number for now TODO: see if this can be calculated
 	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
