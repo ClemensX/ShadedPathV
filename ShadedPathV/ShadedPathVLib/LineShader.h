@@ -65,7 +65,7 @@ public:
 	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo);
 private:
 	// thread resources initialization
-	void initSingle(ThreadResources& tr);
+	void initSingle(ThreadResources& tr, ShaderState& shaderState);
 
 	void createRenderPass(ThreadResources& tr);
 

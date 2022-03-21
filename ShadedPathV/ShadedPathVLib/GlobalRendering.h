@@ -1,5 +1,8 @@
 #pragma once
 
+// forward
+struct ShaderState;
+
 struct QueueFamilyIndices {
 	optional<uint32_t> graphicsFamily;
 	optional<uint32_t> presentFamily;
@@ -73,6 +76,8 @@ public:
 	void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format,
 		VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
+	// fill in viewport and scissor and create VkPipelineViewportStateCreateInfo with them
+	void createViewportState(ShaderState &shaderState);
 	// Vulkan entities
 	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 	VkDevice device = nullptr;

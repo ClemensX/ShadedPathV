@@ -30,11 +30,11 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 
 	// pipelines must be created for every rendering thread
 	for (auto& res : engine.threadResources) {
-		initSingle(res);
+		initSingle(res, shaderState);
 	}
 }
 
-void LineShader::initSingle(ThreadResources& tr)
+void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
 	// uniform buffer
 	createUniformBuffer(tr, tr.uniformBufferLine, sizeof(UniformBufferObject), tr.uniformBufferMemoryLine);
@@ -57,24 +57,7 @@ void LineShader::initSingle(ThreadResources& tr)
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 
 	// viewport and scissors
-	VkViewport viewport{};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = (float)engine->getBackBufferExtent().width;
-	viewport.height = (float)engine->getBackBufferExtent().height;
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-
-	VkRect2D scissor{};
-	scissor.offset = { 0, 0 };
-	scissor.extent = engine->getBackBufferExtent();
-
-	VkPipelineViewportStateCreateInfo viewportState{};
-	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	viewportState.viewportCount = 1;
-	viewportState.pViewports = &viewport;
-	viewportState.scissorCount = 1;
-	viewportState.pScissors = &scissor;
+	VkPipelineViewportStateCreateInfo viewportState = shaderState.viewportState;
 
 	// rasterizer
 	VkPipelineRasterizationStateCreateInfo rasterizer{};

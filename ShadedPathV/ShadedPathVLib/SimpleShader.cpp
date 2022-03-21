@@ -43,12 +43,12 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 
 	// pipelines must be created for every rendering thread
     for (auto& res : engine.threadResources) {
-        initSingle(res);
+        initSingle(res, shaderState);
     }
 
 }
 
-void SimpleShader::initSingle(ThreadResources& res)
+void SimpleShader::initSingle(ThreadResources& res, ShaderState& shaderState)
 {
 	// uniform buffer
 	createUniformBuffer(res, res.uniformBufferTriangle, sizeof(UniformBufferObject), res.uniformBufferMemoryTriangle);
@@ -72,24 +72,7 @@ void SimpleShader::initSingle(ThreadResources& res)
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 
 	// viewport and scissors
-	VkViewport viewport{};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = (float)this->engine->getBackBufferExtent().width;
-	viewport.height = (float)this->engine->getBackBufferExtent().height;
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-
-	VkRect2D scissor{};
-	scissor.offset = { 0, 0 };
-	scissor.extent = this->engine->getBackBufferExtent();
-
-	VkPipelineViewportStateCreateInfo viewportState{};
-	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	viewportState.viewportCount = 1;
-	viewportState.pViewports = &viewport;
-	viewportState.scissorCount = 1;
-	viewportState.pScissors = &scissor;
+	VkPipelineViewportStateCreateInfo viewportState = shaderState.viewportState;
 
 	// rasterizer
 	VkPipelineRasterizationStateCreateInfo rasterizer{};

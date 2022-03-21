@@ -100,6 +100,6 @@ private:
     VkDeviceMemory vertexBufferMemoryTriangle = nullptr;
     VkBuffer indexBufferTriangle = nullptr;
     VkDeviceMemory indexBufferMemoryTriangle = nullptr;
-    void initSingle(ThreadResources& res);
+    void initSingle(ThreadResources& res, ShaderState& shaderState);
 };
 

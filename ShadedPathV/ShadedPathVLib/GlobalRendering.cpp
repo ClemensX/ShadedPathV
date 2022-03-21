@@ -600,3 +600,28 @@ void GlobalRendering::createImage(uint32_t width, uint32_t height, uint32_t mipL
 
     vkBindImageMemory(device, image, imageMemory, 0);
 }
+
+void GlobalRendering::createViewportState(ShaderState& shaderState) {
+    VkViewport viewport{};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = (float)engine.getBackBufferExtent().width;
+    viewport.height = (float)engine.getBackBufferExtent().height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    VkRect2D scissor{};
+    scissor.offset = { 0, 0 };
+    scissor.extent = engine.getBackBufferExtent();
+
+    VkPipelineViewportStateCreateInfo viewportState{};
+    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportState.viewportCount = 1;
+    viewportState.pViewports = &shaderState.viewport;
+    viewportState.scissorCount = 1;
+    viewportState.pScissors = &shaderState.scissor;
+
+    shaderState.viewport = viewport;
+    shaderState.scissor = scissor;
+    shaderState.viewportState = viewportState;
+}

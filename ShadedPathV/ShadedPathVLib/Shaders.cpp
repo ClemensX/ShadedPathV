@@ -1,5 +1,15 @@
 #include "pch.h"
 
+Config& Config::init()
+{
+	engine->global.createViewportState(shaderState);
+	for (ShaderBase* shader : shaderList) {
+		shader->init(*engine, shaderState);
+	}
+	return *this;
+}
+
+
 VkShaderModule Shaders::createShaderModule(const vector<byte>& code)
 {
 	VkShaderModuleCreateInfo createInfo{};

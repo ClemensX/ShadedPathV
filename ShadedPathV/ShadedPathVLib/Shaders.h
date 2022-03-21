@@ -1,17 +1,16 @@
 #pragma once
+
 class Config {
 public:
+	// add next shader to list of shaders
+	// shaders will be called in the order they were added here.
 	Config& add(ShaderBase &shader) {
 		shaderList.push_back(&shader);
 		return *this;
 	}
 
-	Config& init() {
-		for (ShaderBase *shader : shaderList) {
-			shader->init(*engine, shaderState);
-		}
-		return *this;
-	}
+	// Initialize ShaderState and all shaders
+	Config& init();
 
 	void setEngine(ShadedPathEngine* s) {
 		engine = s;

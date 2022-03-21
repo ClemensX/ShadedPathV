@@ -2,8 +2,11 @@
 
 // Info needed to connect shaders.
 // Like DepthBuffer, sizes, image formats and states
-class ShaderState
+struct ShaderState
 {
+	VkViewport viewport{};
+	VkRect2D scissor{};
+	VkPipelineViewportStateCreateInfo viewportState{};
 
 };
 
