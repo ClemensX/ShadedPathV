@@ -84,7 +84,7 @@ public:
 private:
 	void createFencesAndSemaphores();
 	void createRenderPassSimpleShader();
-	void createFrameBuffer();
+	void createFrameBufferUI();
 	void createBackBufferImage();
 	void createCommandPool();
 	void createDepthResources();

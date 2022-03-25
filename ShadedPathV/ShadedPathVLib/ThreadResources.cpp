@@ -18,10 +18,9 @@ void ThreadResources::initAll(ShadedPathEngine* engine)
 void ThreadResources::init()
 {
     createFencesAndSemaphores();
-    createRenderPassSimpleShader();
     createBackBufferImage();
     createDepthResources();
-    createFrameBuffer();
+    createFrameBufferUI();
     createCommandPool();
 }
 
@@ -133,24 +132,9 @@ void ThreadResources::createBackBufferImage()
     colorAttachment.view = global.createImageView(colorAttachment.image, global.ImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 }
 
-void ThreadResources::createFrameBuffer()
+void ThreadResources::createFrameBufferUI()
 {
-
-    array<VkImageView, 2> attachments = { colorAttachment.view, depthImageView };
-
     VkFramebufferCreateInfo framebufferInfo{};
-    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass = renderPassSimpleShader;
-    framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-    framebufferInfo.pAttachments = attachments.data();
-    framebufferInfo.width = engine->getBackBufferExtent().width;
-    framebufferInfo.height = engine->getBackBufferExtent().height;
-    framebufferInfo.layers = 1;
-
-    if (vkCreateFramebuffer(engine->global.device, &framebufferInfo, nullptr, &framebuffer) != VK_SUCCESS) {
-        Error("failed to create framebuffer!");
-    }
-
     VkImageView attachmentsUI[] = {
         colorAttachment.view
     };

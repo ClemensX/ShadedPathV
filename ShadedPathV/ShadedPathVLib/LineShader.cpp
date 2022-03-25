@@ -1,6 +1,6 @@
 #include "pch.h"
 
-void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
+void LineShader::init(ShadedPathEngine& engine, const ShaderState &shaderState)
 {
 	ShaderBase::init(engine);
 	// load shader binary code
@@ -29,12 +29,13 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	createDescriptorPool(poolSizes);
 }
 
-void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
+void LineShader::initSingle(ThreadResources& tr, const ShaderState& shaderState)
 {
 	// uniform buffer
 	createUniformBuffer(tr, tr.uniformBufferLine, sizeof(UniformBufferObject), tr.uniformBufferMemoryLine);
+
 	createDescriptorSets(tr);
-	createRenderPass(tr);
+	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassLine, tr.framebufferLine);
 
 	// create shader stage
 	auto vertShaderStageInfo = createVertexShaderCreateInfo(vertShaderModule);

@@ -1,13 +1,22 @@
 #pragma once
 
-// Info needed to connect shaders.
+// forward
+class ShaderBase;
+
+// Info needed to connect shaders during intialization.
 // Like DepthBuffer, sizes, image formats and states
 struct ShaderState
 {
+	enum class StateEnum { CLEAR, CONNECT };
 	VkViewport viewport{};
 	VkRect2D scissor{};
 	VkPipelineViewportStateCreateInfo viewportState{};
-
+	void advance(ShadedPathEngine* engine, ShaderBase* shader);
+	StateEnum getState() {
+		return state;
+	}
+private:
+	StateEnum state = StateEnum::CLEAR;
 };
 
 class ShaderBase
@@ -86,10 +95,10 @@ public:
 	// 	 --> vkCreateGraphicsPipelines
 	// 	 --> vkDestroyShaderModule
 	//
-	virtual void init(ShadedPathEngine& engine, ShaderState &shaderSate) = 0;
+	virtual void init(ShadedPathEngine& engine, const ShaderState &shaderSate) = 0;
 
 	// create graphics pipeline with all support structures and other thread resources
-	virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) = 0;
+	virtual void initSingle(ThreadResources& tr, const ShaderState& shaderState) = 0;
 
 	// create descriptor set layout and assign to BaseShader variable
 	// (one per shader)
@@ -124,6 +133,9 @@ protected:
 	VkShaderModule createShaderModule(const vector<byte>& code);
 	VkDescriptorSetLayout descriptorSetLayout = nullptr;
 	VkDescriptorPool descriptorPool = nullptr;
+
+	// create render pass and frambuffer with respect to shader state
+	void createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState shaderState, VkRenderPass &renderPass, VkFramebuffer &frameBuffer);
 
 	// util methods to simplify shader creation
 	VkPipelineShaderStageCreateInfo createVertexShaderCreateInfo(VkShaderModule& shaderModule) {

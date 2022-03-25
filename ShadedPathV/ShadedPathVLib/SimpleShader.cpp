@@ -1,6 +1,6 @@
 #include "pch.h"
 
-void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
+void SimpleShader::init(ShadedPathEngine &engine, const ShaderState& shaderState)
 {
 	ShaderBase::init(engine);
 
@@ -42,12 +42,13 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 	createDescriptorPool(poolSizes);
 }
 
-void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
+void SimpleShader::initSingle(ThreadResources& tr, const ShaderState& shaderState)
 {
 	// uniform buffer
 	createUniformBuffer(tr, tr.uniformBufferTriangle, sizeof(UniformBufferObject), tr.uniformBufferMemoryTriangle);
 
 	createDescriptorSets(tr);
+	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassSimpleShader, tr.framebuffer);
 
 	// create shader stage
 	auto vertShaderStageInfo = createVertexShaderCreateInfo(vertShaderModuleTriangle);

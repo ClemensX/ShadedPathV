@@ -9,7 +9,7 @@ Config& Config::init()
 		for (auto& res : engine->threadResources) {
 			shader->initSingle(res, shaderState);
 		}
-
+		shaderState.advance(engine, shader);
 	}
 	return *this;
 }
