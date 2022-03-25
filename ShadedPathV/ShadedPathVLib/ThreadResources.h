@@ -83,7 +83,6 @@ public:
 	bool threadFinished = false;
 private:
 	void createFencesAndSemaphores();
-	void createRenderPassSimpleShader();
 	void createFrameBufferUI();
 	void createBackBufferImage();
 	void createCommandPool();

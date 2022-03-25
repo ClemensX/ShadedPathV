@@ -68,8 +68,6 @@ public:
 	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo);
 private:
 
-	void createRenderPass(ThreadResources& tr);
-
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer);
 
 	// add lines just for next draw call

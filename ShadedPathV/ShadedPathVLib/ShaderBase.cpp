@@ -146,8 +146,8 @@ void ShaderBase::createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState
 	framebufferInfo.renderPass = renderPass;
 	framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 	framebufferInfo.pAttachments = attachmentsView.data();
-	framebufferInfo.width = engine->getBackBufferExtent().width;
-	framebufferInfo.height = engine->getBackBufferExtent().height;
+	framebufferInfo.width = shaderState.viewport.width;//engine->getBackBufferExtent().width;
+	framebufferInfo.height = shaderState.viewport.height;//engine->getBackBufferExtent().height;
 	framebufferInfo.layers = 1;
 
 	if (vkCreateFramebuffer(engine->global.device, &framebufferInfo, nullptr, &frameBuffer) != VK_SUCCESS) {
