@@ -55,6 +55,9 @@ public:
 	virtual ~LineShader() override;
 	// shader initialization, end result is a graphics pipeline for each ThreadResources instance
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
+	// thread resources initialization
+	virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) override;
+
 	// add lines - they will never  be removed
 	void add(vector<LineDef>& linesToAdd);
 	// initial upload of all added lines - only valid before first render
@@ -64,8 +67,6 @@ public:
 	// per frame update of UBO / MVP
 	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo);
 private:
-	// thread resources initialization
-	void initSingle(ThreadResources& tr, ShaderState& shaderState);
 
 	void createRenderPass(ThreadResources& tr);
 

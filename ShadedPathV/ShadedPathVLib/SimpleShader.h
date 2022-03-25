@@ -80,6 +80,7 @@ public:
     void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo);
     // set up shader
     virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
+    virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) override;
     virtual ~SimpleShader() override;
 
     // pre-record draw commands (one time call)
@@ -100,6 +101,5 @@ private:
     VkDeviceMemory vertexBufferMemoryTriangle = nullptr;
     VkBuffer indexBufferTriangle = nullptr;
     VkDeviceMemory indexBufferMemoryTriangle = nullptr;
-    void initSingle(ThreadResources& res, ShaderState& shaderState);
 };
 

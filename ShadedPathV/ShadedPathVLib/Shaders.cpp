@@ -5,6 +5,11 @@ Config& Config::init()
 	engine->global.createViewportState(shaderState);
 	for (ShaderBase* shader : shaderList) {
 		shader->init(*engine, shaderState);
+		// pipelines must be created for every rendering thread
+		for (auto& res : engine->threadResources) {
+			shader->initSingle(res, shaderState);
+		}
+
 	}
 	return *this;
 }
