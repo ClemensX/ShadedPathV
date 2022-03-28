@@ -15,7 +15,7 @@ Config& Config::init()
 }
 
 
-VkShaderModule Shaders::createShaderModule(const vector<byte>& code)
+VkShaderModule Shaders::createShaderModule(const vector<std::byte>& code)
 {
 	VkShaderModuleCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

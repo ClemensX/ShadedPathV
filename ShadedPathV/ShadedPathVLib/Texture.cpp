@@ -21,7 +21,7 @@ TextureInfo* TextureStore::getTexture(string id)
 void TextureStore::loadTexture(string filename, string id)
 {
 	TextureInfo initialTexture;  // only used to initialize struct in texture store - do not access this after assignment to store
-	vector<byte> file_buffer;
+	vector<std::byte> file_buffer;
 
 	initialTexture.id = id;
 	textures[id] = initialTexture;

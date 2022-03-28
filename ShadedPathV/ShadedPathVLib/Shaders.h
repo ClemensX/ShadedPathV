@@ -35,7 +35,7 @@ public:
 
 	// general methods
 	void queueSubmit(ThreadResources& tr);
-	VkShaderModule createShaderModule(const vector<byte>& code);
+	VkShaderModule createShaderModule(const vector<std::byte>& code);
 
 	// SHADERS
 

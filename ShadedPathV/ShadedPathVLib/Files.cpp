@@ -71,7 +71,7 @@ bool Files::checkFileForWrite(string filename)
 	return true;
 }
 
-void Files::readFile(string filename, vector<byte>& buffer, FileCategory cat) {
+void Files::readFile(string filename, vector<std::byte>& buffer, FileCategory cat) {
 	filename = findFile(filename, cat);
 	ifstream bfile(filename.c_str(), ios::in | ios::binary);
 	if (!bfile) {
@@ -91,7 +91,7 @@ void Files::readFile(string filename, vector<byte>& buffer, FileCategory cat) {
 
 }
 
-void Files::readFile(PakEntry* pakEntry, vector<byte>& buffer, FileCategory cat)
+void Files::readFile(PakEntry* pakEntry, vector<std::byte>& buffer, FileCategory cat)
 {
 	Log("read file from pak: " << pakEntry->name.c_str() << endl);
 	ifstream bfile(pakEntry->pakname.c_str(), ios::in | ios::binary);

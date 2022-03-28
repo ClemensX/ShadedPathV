@@ -13,7 +13,30 @@ void Presentation::initAfterDeviceCreation()
     createImageViews();
 }
 
-void Presentation::initGLFW(bool handleKeyEvents, bool handleMouseMoveEevents, bool handleMouseButtonEvents)
+#if defined(_WINDOWS_)
+HWND handle;
+WNDPROC currentWndProc;
+LRESULT CALLBACK winProc(HWND hwnd, UINT Msg, WPARAM wParam, LPARAM lParam) {
+
+    switch (Msg)
+    {
+    case WM_INPUT:
+        //application->OnRawInput(GET_RAWINPUT_CODE_WPARAM(wParam) == RIM_INPUT, (HRAWINPUT)lParam);
+        break;
+
+    //case WM_CLOSE:
+    //    return DefWindowProc(hwnd, Msg, wParam, lParam);
+    //    break;
+
+    default:
+        return CallWindowProc(currentWndProc, handle, Msg, wParam, lParam);
+        break;
+    }
+    return 0;
+}
+#endif
+
+void Presentation::initGLFW(bool handleKeyEvents, bool handleMouseMoveEvents, bool handleMouseButtonEvents, bool nativeMouseMovement)
 {
     if (!enabled) return;
     glfwInit();
@@ -21,6 +44,10 @@ void Presentation::initGLFW(bool handleKeyEvents, bool handleMouseMoveEevents, b
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         window = glfwCreateWindow(engine.win_width, engine.win_height, engine.win_name, nullptr, nullptr);
+        // below does not help with crap mouse movement from Glfw
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        if (true && glfwRawMouseMotionSupported())
+            glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
         // validate requested window size:
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
@@ -45,17 +72,32 @@ void Presentation::initGLFW(bool handleKeyEvents, bool handleMouseMoveEevents, b
             );
             assert(old == nullptr);
         }
-        if (handleMouseMoveEevents) {
-            static auto callback_static = [this](GLFWwindow* window, double xpos, double ypos) {
-                callbackCursorPos(window, xpos, ypos);
-            };
-            auto old = glfwSetCursorPosCallback(window,
-                [](GLFWwindow* window, double xpos, double ypos)
-                {
-                    callback_static(window, xpos, ypos);
-                }
-            );
-            assert(old == nullptr);
+        if (handleMouseMoveEvents) {
+            if (!nativeMouseMovement) {
+                static auto callback_static = [this](GLFWwindow* window, double xpos, double ypos) {
+                    double raw_x, raw_y;
+                    //glfwGetCursorPos(window, &raw_x, &raw_y);
+                    //Log("y " << raw_y << endl);
+                    //Log("y " << ypos << endl);
+                    callbackCursorPos(window, xpos, ypos);
+                };
+                auto old = glfwSetCursorPosCallback(window,
+                    [](GLFWwindow* window, double xpos, double ypos)
+                    {
+                        callback_static(window, xpos, ypos);
+                    }
+                );
+                assert(old == nullptr);
+            }
+            else {
+                // native mouse handling, only for Windows
+#if defined(_WINDOWS_)
+                HWND handle = glfwGetWin32Window(window);
+                currentWndProc = (WNDPROC)GetWindowLongPtr(handle, GWLP_WNDPROC);
+                LONG_PTR p = SetWindowLongPtr(handle, GWLP_WNDPROC, (long)winProc);
+                Log("p " << p << endl);
+#endif
+            }
         }
         if (handleMouseButtonEvents) {
             static auto callback_static = [this](GLFWwindow* window, int button, int action, int mods) {

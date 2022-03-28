@@ -22,12 +22,12 @@ public:
 	// returns full file path if generateFilenameMode == true (use to create files)
 	string findFile(string filename, FileCategory cat, bool errorIfNotFound = true, bool generateFilenameMode = false);
 	string findFileForCreation(string filename, FileCategory cat) { return findFile(filename, cat, false, true); };
-	void readFile(string filename, vector<byte>& buffer, FileCategory cat);
+	void readFile(string filename, vector<std::byte>& buffer, FileCategory cat);
 	// check file can be opened for write operation. Logs error if not.
 	bool checkFileForWrite(string filename);
 	// get abslolute file path
 	string absoluteFilePath(string filename);
-	void readFile(PakEntry* pakEntry, vector<byte>& buffer, FileCategory cat);
+	void readFile(PakEntry* pakEntry, vector<std::byte>& buffer, FileCategory cat);
 	PakEntry* findFileInPak(string filename);
 	void initPakFiles();
 	static void logThreadInfo(string info);

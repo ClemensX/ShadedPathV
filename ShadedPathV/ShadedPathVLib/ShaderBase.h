@@ -130,7 +130,7 @@ protected:
 	VkDevice device = nullptr;
 	GlobalRendering* global = nullptr;
 
-	VkShaderModule createShaderModule(const vector<byte>& code);
+	VkShaderModule createShaderModule(const vector<std::byte>& code);
 	VkDescriptorSetLayout descriptorSetLayout = nullptr;
 	VkDescriptorPool descriptorPool = nullptr;
 

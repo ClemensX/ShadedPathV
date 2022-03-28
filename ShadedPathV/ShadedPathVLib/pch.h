@@ -27,16 +27,28 @@
 
 // add headers that you want to pre-compile here
 
+
 // Dear ImGui headers:
+//#define IMGUI_DISABLE_WIN32_FUNCTIONS
+//#define IMGUI_DISABLE_WIN32_DEFAULT_IME_FUNCTIONS
+#define IMGUI_IMPL_WIN32_DISABLE_GAMEPAD
 #include "imgui/imgui.h"
-#include "imgui/imgui_impl_glfw.h"
+//#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_vulkan.h"
 
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <windowsx.h> // GET_X_LPARAM(), GET_Y_LPARAM()
+#include <tchar.h>
+#include <dwmapi.h>
 
 // Windows headers
 
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
-#include <windows.h>
+//#include <windows.h>
 
 // c++ standard lib headers
 #include <iostream>
@@ -60,7 +72,9 @@ using namespace std;
 
 // headers for used libraries
 #define GLFW_INCLUDE_VULKAN
+#define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 #include <ktxvulkan.h>
 
 #define GLM_FORCE_RADIANS

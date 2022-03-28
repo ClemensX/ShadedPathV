@@ -21,7 +21,7 @@ void ShaderBase::init(ShadedPathEngine& engine)
 	enabled = true;
 }
 
-VkShaderModule ShaderBase::createShaderModule(const vector<byte>& code)
+VkShaderModule ShaderBase::createShaderModule(const vector<std::byte>& code)
 {
 	VkShaderModuleCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

@@ -28,7 +28,7 @@ public:
 	
 	void init();
 	void initAfterDeviceCreation();
-	void initGLFW(bool handleKeyEvents, bool handleMouseMoveEevents, bool handleMouseButtonEvents);
+	void initGLFW(bool handleKeyEvents, bool handleMouseMoveEevents, bool handleMouseButtonEvents, bool nativeMouseMovement);
 	void createPresentQueue(unsigned int value);
 
 

@@ -38,7 +38,9 @@ public:
 		bool down_ = false;
 		bool fastSpeed_ = false;
 	} movement;
-	float mouseSpeed_ = 4.0f;
+	// set how fast camera position follows mouse movement
+	float mouseSpeed_ = 1.0f;
+
 	float acceleration_ = 150.0f;
 	float damping_ = 0.2f;
 	float maxSpeed_ = 10.0f;
@@ -59,6 +61,10 @@ public:
 		const glm::vec2& mousePos, bool mousePressed) {
 		if (mousePressed) {
 			const glm::vec2 delta = mousePos - this->mousePos;
+			if (delta.x != 0.0f || delta.y != 0.0f) {
+				float factor_y = delta.y / deltaSeconds;
+				Log("mouse: " << factor_y << " " << deltaSeconds << " (" << delta.x << " | " << delta.y << ")" << endl);
+			}
 			const glm::quat deltaQuat = glm::quat(glm::vec3(mouseSpeed_ * delta.y, mouseSpeed_ * delta.x, 0.0f));
 			cameraOrientation = glm::normalize(deltaQuat * cameraOrientation);
 		}

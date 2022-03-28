@@ -90,7 +90,8 @@ void UI::init(ShadedPathEngine* engine)
     }
 
     // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForVulkan(engine->presentation.window, true);
+    //ImGui_ImplGlfw_InitForVulkan(engine->presentation.window, true);
+    ImGui_ImplWin32_Init(engine->presentation.window);
     ImGui_ImplVulkan_InitInfo init_info = {};
     init_info.Instance = engine->global.vkInstance;
     init_info.PhysicalDevice = engine->global.physicalDevice;
@@ -139,7 +140,9 @@ void UI::beginFrame()
     if (!enabled)
         return;
     ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height);
+    //ImGui_ImplGlfw_NewFrame(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height);
+    //ImGui_ImplGlfw_NewFrame();
+    ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 }
 
@@ -165,6 +168,7 @@ UI::~UI()
     vkDestroyRenderPass(engine->global.device, imGuiRenderPass, nullptr);
     vkDestroyDescriptorPool(engine->global.device, g_DescriptorPool, nullptr);
     ImGui_ImplVulkan_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
+    //ImGui_ImplGlfw_Shutdown();
+    ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
 }

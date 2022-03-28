@@ -65,6 +65,12 @@ public:
         enabledMouseMoveEvents = true;
     }
 
+    // replace Glfw non-smooth mouse handling with native mouse handling
+    // only available for Windows
+    void forceWindowsNativeMouseMovement() {
+        enabledNativeMouseMovement = true;
+    }
+
     void enableMousButtonEvents() {
         enabledMousButtonEvents = true;
     }
@@ -135,6 +141,7 @@ private:
     bool threadsAreFinished();
     bool enabledKeyEvents = false;
     bool enabledMouseMoveEvents = false;
+    bool enabledNativeMouseMovement = false;
     bool enabledMousButtonEvents = false;
     // backbuffer size:
     VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);
