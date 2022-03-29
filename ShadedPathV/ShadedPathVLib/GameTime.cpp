@@ -65,3 +65,8 @@ double GameTime::getTimeDelta()
 {
 	return gameTimeDelta;
 }
+
+double GameTime::getRealTimeDelta()
+{
+	return timeDelta;
+}

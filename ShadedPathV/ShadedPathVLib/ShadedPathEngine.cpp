@@ -236,6 +236,8 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
             //Error("Frames out of sync");
         }
         engine_instance->advanceFrameCountersAfterPresentation();
+        //this_thread::sleep_for(chrono::milliseconds(5000));
+        //Log("rel time: " << engine_instance->gameTime.getRealTimeDelta() << endl);
         ThemedTimer::getInstance()->stop(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
         ThemedTimer::getInstance()->add(TIMER_PRESENT_FRAME);
         // tell render thread to continue:
@@ -296,6 +298,7 @@ void ShadedPathEngine::advanceFrameCountersAfterPresentation()
     frameNum++;
     currentFrameIndex = frameNum % framesInFlight;
     gameTime.advanceTime();
+    fpsCounter.tick(gameTime.getRealTimeDelta(), true);
 }
 
 void ShadedPathEngine::shutdown()

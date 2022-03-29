@@ -115,6 +115,7 @@ public:
     // non-Vulkan members
     Files files;
     GameTime gameTime;
+    FPSCounter fpsCounter;
     // presentation
     int win_width = 0;
     int win_height = 0;

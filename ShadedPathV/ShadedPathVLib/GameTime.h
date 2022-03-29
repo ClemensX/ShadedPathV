@@ -28,6 +28,10 @@ public:
 	// NEVER use time values as float instead of double: precision is not enough and you will get same time value for actually different times
 	double getTimeDelta();
 
+	// get seconds (and fractions) since last call to advanceTime() (in real time)
+	// NEVER use time values as float instead of double: precision is not enough and you will get same time value for actually different times
+	double getRealTimeDelta();
+
 	// get absolute number of hours (and fractions) of system clock (no gameday)
 	// resets every 24h real time
 	// NEVER use time values as float instead of double: precision is not enough and you will get same time value for actually different times
@@ -49,8 +53,8 @@ private:
 	double gametime;
 	double gametimeSeconds;
 	double realtime;
-	double timeDelta;
-	double gameTimeDelta;
+	double timeDelta; // [s]
+	double gameTimeDelta; // [s]
 public:
 
 };
@@ -197,6 +201,7 @@ private:
 		}
 		else {
 			td.averageTimeBetweenMicroS = (td.averageTimeBetweenMicroS * (static_cast<long long>(td.calls) - 1) + value) / (td.calls);
+			//printf("avTime: %lld\n", td.averageTimeBetweenMicroS);
 			td.totalTimeMicros += value;
 		}
 		TimerEntry& t = td.entries[td.pos];
@@ -222,4 +227,23 @@ private:
 	ThemedTimer& operator = (const ThemedTimer&);	// prevent instance copies
 };
 
-
+class FPSCounter
+{
+private:
+	const double avgIntervalSec = 2.0f;
+	unsigned int numFrames = 0;
+	double accumulatedTime = 0;
+	double currentFPS = 0.0f;
+public:
+	bool tick(double deltaSeconds, bool frameRendered = true) {
+		if (frameRendered) numFrames++;
+		accumulatedTime += deltaSeconds;
+		if (accumulatedTime < avgIntervalSec)
+			return false;
+		currentFPS = static_cast<double>(numFrames / accumulatedTime);
+		//printf("FPS: %.1f\n", currentFPS);
+		numFrames = 0;
+		accumulatedTime = 0;
+		return true;
+	}
+};
