@@ -20,7 +20,7 @@ void SimpleApp::run()
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         //engine.setFrameCountLimit(1000);
-        engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
+        engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK);
         int win_width = 800;// 800;//3700;
         engine.enablePresentation(win_width, (int)(win_width /1.77f), "Vulkan Simple App");
         engine.enableUI();

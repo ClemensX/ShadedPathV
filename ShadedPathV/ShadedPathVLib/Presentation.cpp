@@ -45,9 +45,9 @@ void Presentation::initGLFW(bool handleKeyEvents, bool handleMouseMoveEvents, bo
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         window = glfwCreateWindow(engine.win_width, engine.win_height, engine.win_name, nullptr, nullptr);
         // below does not help with crap mouse movement from Glfw
-        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-        if (true && glfwRawMouseMotionSupported())
-            glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        //glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        //if (true && glfwRawMouseMotionSupported())
+        //    glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
         // validate requested window size:
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
