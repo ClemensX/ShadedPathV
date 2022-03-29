@@ -329,7 +329,7 @@ static void ImGui_ImplWin32_UpdateGamepads()
 #endif // #ifndef IMGUI_IMPL_WIN32_DISABLE_GAMEPAD
 }
 
-void    ImGui_ImplWin32_NewFrame()
+void ImGui_ImplWin32_NewFrame(int render_width, int render_height)
 {
     ImGuiIO& io = ImGui::GetIO();
     ImGui_ImplWin32_Data* bd = ImGui_ImplWin32_GetBackendData();
@@ -339,6 +339,11 @@ void    ImGui_ImplWin32_NewFrame()
     RECT rect = { 0, 0, 0, 0 };
     ::GetClientRect(bd->hWnd, &rect);
     io.DisplaySize = ImVec2((float)(rect.right - rect.left), (float)(rect.bottom - rect.top));
+    // ShadedPath engine: we need to set backbuffer render size:
+    if (render_width > 0 && render_height > 0) {
+        io.DisplaySize.x = render_width;
+        io.DisplaySize.y = render_height;
+    }
 
     // Setup time step
     INT64 current_time = 0;

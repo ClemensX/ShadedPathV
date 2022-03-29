@@ -142,7 +142,7 @@ void UI::beginFrame()
     ImGui_ImplVulkan_NewFrame();
     //ImGui_ImplGlfw_NewFrame(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height);
     //ImGui_ImplGlfw_NewFrame();
-    ImGui_ImplWin32_NewFrame();
+    ImGui_ImplWin32_NewFrame(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height);
     ImGui::NewFrame();
 }
 
