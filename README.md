@@ -3,7 +3,7 @@
 ## TODO
 Course of action should be like this
 
-- [x] \(done via themed timer) re-use old fps counter
+- [x] \(done via themed timer) re-use old fps counter (still needs fixing - values too high?)
 - [x] Decouple Swap chain and backbuffer image rendering
 - [x] backbuffer image saving
 - [x] adapt backbuffer image size during rendering to window size
@@ -12,7 +12,7 @@ Course of action should be like this
 - [x] add *Release* version to the current *Debug* config in VS
 - [x] TextureStore to read and organize KTX textures
 - [x] Include *Dear ImGui* with standard Demo UI
-- [ ] UI: FPS Counter
+- [x] UI: FPS Counter
 - [ ] finalize thread architecture
 - [ ] image based tests
 - [x] Thread pool for backbuffer rendering
