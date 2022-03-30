@@ -25,7 +25,7 @@ void SimpleApp::run()
         //engine.setThreadModeSingle();
 
         // engine initialization
-        engine.init();
+        engine.init("SimpleApp");
 
         // shader initialization
         shaders.config.add(shaders.simpleShader).add(shaders.lineShader);

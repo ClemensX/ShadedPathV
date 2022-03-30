@@ -74,7 +74,7 @@ TEST(Engine, Initialization) {
         engine.setThreadModeSingle();
 
         // engine initialization
-        engine.init();
+        engine.init("Test");
     }
     Log("Test end. (Should appear after destructor log)\n");
     LogfileScanner log;
@@ -92,7 +92,7 @@ TEST(Engine, Headless) {
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::Small);
         engine.setFramesInFlight(2);
         engine.setThreadModeSingle();
-        engine.init();
+        engine.init("Test");
 
         engine.shaders.simpleShader.init(engine, shaderState);
         engine.prepareDrawing();

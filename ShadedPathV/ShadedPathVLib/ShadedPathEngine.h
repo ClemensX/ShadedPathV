@@ -79,7 +79,7 @@ public:
 
     // initialize Vulkan and other libraries, also internal lists and instances
     // no config methods after calling init
-    void init();
+    void init(string appname);
 
     // called once to setup commandbuffers for the shaders
     // has to be called after all shaders have been initialized
@@ -127,6 +127,7 @@ public:
         return backBufferAspect;
     }
     ShadedPathApplication* app = nullptr;
+    string appname;
 private:
     float backBufferAspect = 1.0f;
     long limitFrameCount = 0;

@@ -1,7 +1,8 @@
 #include "pch.h"
 
-void ShadedPathEngine::init()
+void ShadedPathEngine::init(string appname)
 {
+    this->appname = appname;
     Log("engine absolute start time (hours and fraction): " << gameTime.getTimeSystemClock() << endl);
     ThemedTimer::getInstance()->create(TIMER_DRAW_FRAME, 1000);
     ThemedTimer::getInstance()->create(TIMER_PRESENT_FRAME, 1000);

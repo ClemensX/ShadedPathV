@@ -246,4 +246,15 @@ public:
 		accumulatedTime = 0;
 		return true;
 	}
+	string getFPSAsString() {
+		stringstream stream;
+		if (currentFPS < 1.0f) {
+			stream << std::fixed << std::setprecision(2) << currentFPS;
+		}
+		else {
+			stream << std::fixed << std::setprecision(0) << currentFPS;
+		}
+		string s = stream.str();
+		return s;
+	}
 };

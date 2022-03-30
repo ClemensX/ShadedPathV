@@ -1,0 +1,20 @@
+[Window][Dear ImGui Demo2]
+Pos=-1,19
+Size=674,737
+Collapsed=1
+
+[Window][Debug##Default]
+Pos=60,60
+Size=400,400
+Collapsed=0
+
+[Window][Dear ImGui Demo]
+Pos=23,0
+Size=534,222
+Collapsed=1
+
+[Window][ShadedPathV]
+Pos=123,126
+Size=428,193
+Collapsed=1
+
