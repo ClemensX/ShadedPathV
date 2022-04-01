@@ -102,8 +102,16 @@ void LineShader::add(vector<LineDef>& linesToAdd)
 {
 	if (linesToAdd.size() == 0 && lines.size() == 0)
 		return;
+	
 	lines.insert(lines.end(), linesToAdd.begin(), linesToAdd.end());
-	dirty = true;
+}
+
+void LineShader::addOneTime(vector<LineDef>& linesToAdd, ThreadResources& tr) {
+	//auto& lines = getInactiveAppDataSet(user)->oneTimeLines;
+	if (linesToAdd.size() == 0)
+		return;
+	auto& vec = tr.lineFrameData.addLines;
+	vec.insert(vec.end(), linesToAdd.begin(), linesToAdd.end());
 }
 
 void LineShader::initialUpload()
@@ -213,12 +221,7 @@ void LineShader::createCommandBufferLine(ThreadResources& tr)
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = engine->getBackBufferExtent();
 
-	std::array<VkClearValue, 2> clearValues{};
-	clearValues[0].color = { {0.0f, 0.0f, 0.0f, 1.0f} };
-	clearValues[1].depthStencil = { 1.0f, 0 };
-
-	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-	renderPassInfo.pClearValues = clearValues.data();
+	renderPassInfo.clearValueCount = 0;
 
 	vkCmdBeginRenderPass(tr.commandBufferLine, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	recordDrawCommand(tr.commandBufferLine, tr, vertexBuffer);
@@ -239,6 +242,63 @@ void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResourc
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutLine, 0, 1, &tr.descriptorSetLine, 0, nullptr);
 
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(lines.size() * 2), 1, 0, 0);
+}
+
+void LineShader::createCommandBufferLineAdd(ThreadResources& tr)
+{
+	auto& device = engine->global.device;
+	auto& global = engine->global;
+	auto& shaders = engine->shaders;
+	VkCommandBufferAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.commandPool = tr.commandPool;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandBufferCount = (uint32_t)1;
+
+	if (vkAllocateCommandBuffers(device, &allocInfo, &tr.commandBufferLineAdd) != VK_SUCCESS) {
+		Error("failed to allocate command buffers!");
+	}
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = 0; // Optional
+	beginInfo.pInheritanceInfo = nullptr; // Optional
+
+	if (vkBeginCommandBuffer(tr.commandBufferLineAdd, &beginInfo) != VK_SUCCESS) {
+		Error("failed to begin recording triangle command buffer!");
+	}
+	VkRenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = tr.renderPassLine;
+	renderPassInfo.framebuffer = tr.framebufferLine;
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = engine->getBackBufferExtent();
+
+	renderPassInfo.clearValueCount = 0;
+
+	vkCmdBeginRenderPass(tr.commandBufferLine, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	recordDrawCommandAdd(tr.commandBufferLine, tr, tr.vertexBufferAdd);
+	vkCmdEndRenderPass(tr.commandBufferLine);
+	if (vkEndCommandBuffer(tr.commandBufferLine) != VK_SUCCESS) {
+		Error("failed to record triangle command buffer!");
+	}
+}
+
+void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer)
+{
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.graphicsPipelineLine);
+	VkBuffer vertexBuffers[] = { vertexBuffer };
+	VkDeviceSize offsets[] = { 0 };
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+	// bind descriptor sets:
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutLine, 0, 1, &tr.descriptorSetLine, 0, nullptr);
+
+	vkCmdDraw(commandBuffer, static_cast<uint32_t>(tr.lineFrameData.addLines.size() * 2), 1, 0, 0);
+}
+
+void LineShader::prepareAddLines(ThreadResources& tr)
+{
+	createCommandBufferLineAdd(tr);
 }
 
 void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo) {

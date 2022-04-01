@@ -62,9 +62,12 @@ public:
 	VkPipeline graphicsPipelineLine = nullptr;
 	VkRenderPass renderPassLine = nullptr;
 	VkCommandBuffer commandBufferLine = nullptr;
+	VkCommandBuffer commandBufferLineAdd = nullptr;
+	VkBuffer vertexBufferAdd;
 	VkBuffer uniformBufferLine;
 	VkDeviceMemory uniformBufferMemoryLine;
 	VkDescriptorSet descriptorSetLine = nullptr;
+	LineFrameData lineFrameData;
 
 	// frame management
 	long frameNum = -1;

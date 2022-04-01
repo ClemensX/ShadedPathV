@@ -145,6 +145,22 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
     //lubo.view = glm::mat4();
     //lubo.proj = glm::mat4();
 
+    // dynamic lines:
+    float aspectRatio = engine.getAspect();
+    static float plus = 0.0f;
+    LineDef myLines[] = {
+        // start, end, color
+        { glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
+        { glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
+        { glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) }
+    };
+    plus += 0.001f;
+    vector<LineDef> lines;
+    // add all intializer objects to vector:
+    for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
+    engine.shaders.lineShader.addOneTime(lines, tr);
+
+    engine.shaders.lineShader.prepareAddLines(tr);
     engine.shaders.lineShader.uploadToGPU(tr, lubo);
 }
 

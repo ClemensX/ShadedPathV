@@ -5,18 +5,18 @@ struct LineDef {
 	glm::vec4 color;
 };
 
-class LineShaderData {
-public:
-	vector<LineDef> lines;
-	vector<LineDef> oneTimeLines;
-	~LineShaderData();
-	UINT numVericesToDraw = 0;
-};
+//class LineShaderData {
+//public:
+//	vector<LineDef> lines;
+//	vector<LineDef> oneTimeLines;
+//	~LineShaderData();
+//	UINT numVericesToDraw = 0;
+//};
 
 // per frame resources for this effect
 struct LineFrameData {
 public:
-	//friend class DXGlobal;
+	vector<LineDef> addLines;
 };
 
 class LineShader : public ShaderBase {
@@ -63,26 +63,28 @@ public:
 	// initial upload of all added lines - only valid before first render
 	void initialUpload();
 
+	// add lines for just one frame
+	void addOneTime(vector<LineDef>& linesToAdd, ThreadResources& tr);
+
 	void createCommandBufferLine(ThreadResources& tr);
+	void createCommandBufferLineAdd(ThreadResources& tr);
+
+	void prepareAddLines(ThreadResources& tr);
 	// per frame update of UBO / MVP
 	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo);
 private:
 
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer);
-
-	// add lines just for next draw call
-	void addOneTime(vector<LineDef>& linesToAdd, unsigned long& user);
-	// update cbuffer and vertex buffer
-	void update();
-	void updateUBO(UniformBufferObject newCBV);
-	// draw all lines in single call to GPU
-	void draw();
-	void destroy();
+	void recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer);
+	//// update cbuffer and vertex buffer
+	//void update();
+	//void updateUBO(UniformBufferObject newCBV);
+	//// draw all lines in single call to GPU
+	//void draw();
+	//void destroy();
 
 
 	vector<LineDef> lines;
-	//vector<LineDef> addLines;
-	bool dirty;
 	int drawAddLinesSize;
 
 	UniformBufferObject ubo, updatedUBO;

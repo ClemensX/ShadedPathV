@@ -13,9 +13,11 @@ Course of action should be like this
 - [x] TextureStore to read and organize KTX textures
 - [x] Include *Dear ImGui* with standard Demo UI
 - [x] UI: FPS Counter
-- [ ] finalize thread architecture
 - [ ] image based tests
 - [x] Thread pool for backbuffer rendering
+- [ ] dynamic lines for LineShader (only for one frame)
+- [ ] LineText Shader with coordinate system display and dynamic text
+- [ ] finalize thread architecture
 - [ ] optimze thread performance
 - [ ] vr view
 - [ ] asset loading (library)
