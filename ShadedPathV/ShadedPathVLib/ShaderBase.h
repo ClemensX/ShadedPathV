@@ -7,10 +7,19 @@ class ShaderBase;
 // Like DepthBuffer, sizes, image formats and states
 struct ShaderState
 {
-	enum class StateEnum { CLEAR, CONNECT };
+	enum class StateEnum {
+		// first stage - needs clearing depth, stencil and frame
+		CLEAR,
+		// transition from one shader to next in chain of rnder calls
+		CONNECT,
+		// prepare for final image copy
+		PRESENT
+	};
 	VkViewport viewport{};
 	VkRect2D scissor{};
 	VkPipelineViewportStateCreateInfo viewportState{};
+	// advance state, see impl for details
+	// null ShaderBase sets last state PRESENT
 	void advance(ShadedPathEngine* engine, ShaderBase* shader);
 	StateEnum getState() {
 		return state;
@@ -95,10 +104,10 @@ public:
 	// 	 --> vkCreateGraphicsPipelines
 	// 	 --> vkDestroyShaderModule
 	//
-	virtual void init(ShadedPathEngine& engine, const ShaderState &shaderSate) = 0;
+	virtual void init(ShadedPathEngine& engine, ShaderState &shaderSate) = 0;
 
 	// create graphics pipeline with all support structures and other thread resources
-	virtual void initSingle(ThreadResources& tr, const ShaderState& shaderState) = 0;
+	virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) = 0;
 
 	// create descriptor set layout and assign to BaseShader variable
 	// (one per shader)

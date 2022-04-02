@@ -5,20 +5,14 @@ struct LineDef {
 	glm::vec4 color;
 };
 
-//class LineShaderData {
-//public:
-//	vector<LineDef> lines;
-//	vector<LineDef> oneTimeLines;
-//	~LineShaderData();
-//	UINT numVericesToDraw = 0;
-//};
-
 // per frame resources for this effect
 struct LineFrameData {
 public:
 	vector<LineDef> addLines;
 };
 
+// line shader draws lines, it creates 2 pipelines, one for fixed lines (uploaded at start)
+// and one for dynamic lines that change every frame
 class LineShader : public ShaderBase {
 public:
 	struct Vertex {
@@ -54,9 +48,9 @@ public:
 	}
 	virtual ~LineShader() override;
 	// shader initialization, end result is a graphics pipeline for each ThreadResources instance
-	virtual void init(ShadedPathEngine& engine, const ShaderState &shaderState) override;
+	virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
 	// thread resources initialization
-	virtual void initSingle(ThreadResources& tr, const ShaderState& shaderState) override;
+	virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) override;
 
 	// add lines - they will never  be removed
 	void add(vector<LineDef>& linesToAdd);

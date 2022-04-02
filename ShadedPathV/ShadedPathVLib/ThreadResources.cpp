@@ -118,8 +118,10 @@ ThreadResources::~ThreadResources()
     vkDestroyFramebuffer(device, framebuffer, nullptr);
     vkDestroyFramebuffer(device, framebufferUI, nullptr);
     vkDestroyFramebuffer(device, framebufferLine, nullptr);
+    vkDestroyFramebuffer(device, framebufferLineAdd, nullptr);
     vkDestroyRenderPass(device, renderPassSimpleShader, nullptr);
     vkDestroyRenderPass(device, renderPassLine, nullptr);
+    vkDestroyRenderPass(device, renderPassLineAdd, nullptr);
     vkDestroyImageView(device, depthImageView, nullptr);
     vkDestroyImage(device, depthImage, nullptr);
     vkFreeMemory(device, depthImageMemory, nullptr);
@@ -134,6 +136,7 @@ ThreadResources::~ThreadResources()
     vkDestroyBuffer(device, uniformBufferTriangle, nullptr);
     vkFreeMemory(device, uniformBufferMemoryTriangle, nullptr);
     vkDestroyPipeline(device, graphicsPipelineLine, nullptr);
+    vkDestroyPipeline(device, graphicsPipelineLineAdd, nullptr);
     vkDestroyPipelineLayout(device, pipelineLayoutLine, nullptr);
     vkDestroyBuffer(device, uniformBufferLine, nullptr);
     vkFreeMemory(device, uniformBufferMemoryLine, nullptr);

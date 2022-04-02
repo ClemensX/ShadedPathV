@@ -9,6 +9,9 @@ void ShaderState::advance(ShadedPathEngine* engine, ShaderBase* shader)
 		break;
 	case StateEnum::CONNECT:
 		// we stay in CONNECT state, make sure to leave the render targets as we found them
+		if (shader == nullptr) {
+			state = StateEnum::PRESENT;
+		}
 		break;
 	}
 }
@@ -98,10 +101,13 @@ void ShaderBase::createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState
 	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL; // last shader
 	if (shaderState.getState() == ShaderState::StateEnum::CLEAR) {
 		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	}
+	if (shaderState.getState() == ShaderState::StateEnum::CONNECT) {
 		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
 

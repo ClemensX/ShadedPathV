@@ -15,7 +15,8 @@ Course of action should be like this
 - [x] UI: FPS Counter
 - [ ] image based tests
 - [x] Thread pool for backbuffer rendering
-- [ ] dynamic lines for LineShader (only for one frame)
+- [ ] dynamic lines for LineShader (added lines live only for one frame) in V 1.2 API
+- [ ] Switch to V 1.3 API and get rid of framebuffer and renderpasses
 - [ ] LineText Shader with coordinate system display and dynamic text
 - [ ] finalize thread architecture
 - [ ] optimze thread performance

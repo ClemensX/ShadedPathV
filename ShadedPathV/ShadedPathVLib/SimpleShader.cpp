@@ -1,6 +1,6 @@
 #include "pch.h"
 
-void SimpleShader::init(ShadedPathEngine &engine, const ShaderState& shaderState)
+void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 {
 	ShaderBase::init(engine);
 
@@ -42,7 +42,7 @@ void SimpleShader::init(ShadedPathEngine &engine, const ShaderState& shaderState
 	createDescriptorPool(poolSizes);
 }
 
-void SimpleShader::initSingle(ThreadResources& tr, const ShaderState& shaderState)
+void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
 	// uniform buffer
 	createUniformBuffer(tr, tr.uniformBufferTriangle, sizeof(UniformBufferObject), tr.uniformBufferMemoryTriangle);

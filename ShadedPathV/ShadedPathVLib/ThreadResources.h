@@ -58,14 +58,17 @@ public:
 
 	// Line shader
 	VkFramebuffer framebufferLine = nullptr;
+	VkRenderPass renderPassLine = nullptr;
+	VkFramebuffer framebufferLineAdd = nullptr;
+	VkRenderPass renderPassLineAdd = nullptr;
 	VkPipelineLayout pipelineLayoutLine = nullptr;
 	VkPipeline graphicsPipelineLine = nullptr;
-	VkRenderPass renderPassLine = nullptr;
+	VkPipeline graphicsPipelineLineAdd = nullptr;
 	VkCommandBuffer commandBufferLine = nullptr;
 	VkCommandBuffer commandBufferLineAdd = nullptr;
-	VkBuffer vertexBufferAdd;
-	VkBuffer uniformBufferLine;
-	VkDeviceMemory uniformBufferMemoryLine;
+	VkBuffer vertexBufferAdd = nullptr;
+	VkBuffer uniformBufferLine = nullptr;
+	VkDeviceMemory uniformBufferMemoryLine = nullptr;
 	VkDescriptorSet descriptorSetLine = nullptr;
 	LineFrameData lineFrameData;
 

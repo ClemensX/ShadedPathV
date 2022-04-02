@@ -1,6 +1,6 @@
 #include "pch.h"
 
-void LineShader::init(ShadedPathEngine& engine, const ShaderState &shaderState)
+void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 {
 	ShaderBase::init(engine);
 	// load shader binary code
@@ -15,7 +15,7 @@ void LineShader::init(ShadedPathEngine& engine, const ShaderState &shaderState)
 	fragShaderModule = engine.shaders.createShaderModule(file_buffer_frag);
 
 	// descriptor
-	createDescriptorSetLayout(); // simpleshader.
+	createDescriptorSetLayout();
 
 	// descriptor pool
 	// 2 buffers: MVP matrix and line data
@@ -29,13 +29,15 @@ void LineShader::init(ShadedPathEngine& engine, const ShaderState &shaderState)
 	createDescriptorPool(poolSizes);
 }
 
-void LineShader::initSingle(ThreadResources& tr, const ShaderState& shaderState)
+void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
 	// uniform buffer
 	createUniformBuffer(tr, tr.uniformBufferLine, sizeof(UniformBufferObject), tr.uniformBufferMemoryLine);
 
 	createDescriptorSets(tr);
 	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassLine, tr.framebufferLine);
+	shaderState.advance(engine, nullptr);
+	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassLineAdd, tr.framebufferLineAdd);
 
 	// create shader stage
 	auto vertShaderStageInfo = createVertexShaderCreateInfo(vertShaderModule);
@@ -93,6 +95,10 @@ void LineShader::initSingle(ThreadResources& tr, const ShaderState& shaderState)
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &tr.graphicsPipelineLine) != VK_SUCCESS) {
+		Error("failed to create graphics pipeline!");
+	}
+	pipelineInfo.renderPass = tr.renderPassLineAdd;
+	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &tr.graphicsPipelineLineAdd) != VK_SUCCESS) {
 		Error("failed to create graphics pipeline!");
 	}
 }
@@ -268,24 +274,24 @@ void LineShader::createCommandBufferLineAdd(ThreadResources& tr)
 	}
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = tr.renderPassLine;
-	renderPassInfo.framebuffer = tr.framebufferLine;
+	renderPassInfo.renderPass = tr.renderPassLineAdd;
+	renderPassInfo.framebuffer = tr.framebufferLineAdd;
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = engine->getBackBufferExtent();
 
 	renderPassInfo.clearValueCount = 0;
 
-	vkCmdBeginRenderPass(tr.commandBufferLine, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	recordDrawCommandAdd(tr.commandBufferLine, tr, tr.vertexBufferAdd);
-	vkCmdEndRenderPass(tr.commandBufferLine);
-	if (vkEndCommandBuffer(tr.commandBufferLine) != VK_SUCCESS) {
+	vkCmdBeginRenderPass(tr.commandBufferLineAdd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	recordDrawCommandAdd(tr.commandBufferLineAdd, tr, tr.vertexBufferAdd);
+	vkCmdEndRenderPass(tr.commandBufferLineAdd);
+	if (vkEndCommandBuffer(tr.commandBufferLineAdd) != VK_SUCCESS) {
 		Error("failed to record triangle command buffer!");
 	}
 }
 
 void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer)
 {
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.graphicsPipelineLine);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.graphicsPipelineLineAdd);
 	VkBuffer vertexBuffers[] = { vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
