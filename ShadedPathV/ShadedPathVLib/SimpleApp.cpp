@@ -17,7 +17,7 @@ void SimpleApp::run()
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
-        int win_width = 800;// 800;//3700;
+        int win_width = 3700;// 800;//3700;
         engine.enablePresentation(win_width, (int)(win_width /1.77f), "Vulkan Simple App");
         engine.enableUI();
         engine.setFramesInFlight(2);
@@ -54,6 +54,7 @@ void SimpleApp::init() {
     //engine.shaders.lineShader.init(engine);
     // add some lines:
     float aspectRatio = engine.getAspect();
+    float plus = 0.0f;
     LineDef myLines[] = {
         // start, end, color
         { glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) },
@@ -146,6 +147,7 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
     //lubo.proj = glm::mat4();
 
     // dynamic lines:
+    engine.shaders.lineShader.clearAddLines(tr);
     float aspectRatio = engine.getAspect();
     static float plus = 0.0f;
     LineDef myLines[] = {

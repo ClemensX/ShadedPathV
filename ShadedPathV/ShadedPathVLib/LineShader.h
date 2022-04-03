@@ -48,6 +48,11 @@ public:
 	}
 	virtual ~LineShader() override;
 	// shader initialization, end result is a graphics pipeline for each ThreadResources instance
+
+	// max # lines for dynamic adding for single frame
+	// we limit this to allow for pre-allocated vertex buffer in thread ressources
+	static const size_t MAX_DYNAMIC_LINES = 100000;
+
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
 	// thread resources initialization
 	virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) override;
@@ -63,6 +68,11 @@ public:
 	void createCommandBufferLine(ThreadResources& tr);
 	void createCommandBufferLineAdd(ThreadResources& tr);
 
+	// clear line buffer, has to be called at begin of each frame
+	// NOT after adding last group of lines
+	void clearAddLines(ThreadResources& tr);
+
+	// prepare command buffer for added lines
 	void prepareAddLines(ThreadResources& tr);
 	// per frame update of UBO / MVP
 	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo);
@@ -82,11 +92,13 @@ private:
 	int drawAddLinesSize;
 
 	UniformBufferObject ubo, updatedUBO;
-	LineFrameData appDataSets[2];
 	bool disabled = false;
 	// Inherited via Effect
 	// set in init()
+
+	// vertex buffer for fixed lines (one buffer for all threads) 
 	VkBuffer vertexBuffer = nullptr;
+	// vertex buffer device memory
 	VkDeviceMemory vertexBufferMemory = nullptr;
 	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;

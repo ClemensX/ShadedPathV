@@ -46,9 +46,11 @@ void Shaders::submitFrame(ThreadResources& tr)
 	submitInfo.waitSemaphoreCount = 0;
 	submitInfo.pWaitSemaphores = nullptr;//waitSemaphores;
 	//submitInfo.pWaitDstStageMask = &tr.waitStages[0];
+	// TODO auto get from shaders - no hardcoded here
 	tr.commandBuffers[0] = tr.commandBufferTriangle;
 	tr.commandBuffers[1] = tr.commandBufferLine;
-	submitInfo.commandBufferCount = 2;
+	tr.commandBuffers[2] = tr.commandBufferLineAdd;
+	submitInfo.commandBufferCount = 3;
 	submitInfo.pCommandBuffers = &tr.commandBuffers[0];
 	//VkSemaphore signalSemaphores[] = { tr.renderFinishedSemaphore };
 	submitInfo.signalSemaphoreCount = 0;

@@ -140,6 +140,8 @@ ThreadResources::~ThreadResources()
     vkDestroyPipelineLayout(device, pipelineLayoutLine, nullptr);
     vkDestroyBuffer(device, uniformBufferLine, nullptr);
     vkFreeMemory(device, uniformBufferMemoryLine, nullptr);
+    vkDestroyBuffer(device, vertexBufferAdd, nullptr);
+    vkFreeMemory(device, vertexBufferAddMemory, nullptr);
     Log("ThreadResource destructed: " << this << endl);
 };
 

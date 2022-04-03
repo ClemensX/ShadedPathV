@@ -129,7 +129,11 @@ public:
 	// Thread dependent intializations:
 
 	// create UniformBuffer. Size has to be provided by subclasses (no clean way to do it via inheritance or CRTP)
+	// buffer GPU memory is mapped to uniformBufferMemory for CPU access
 	void createUniformBuffer(ThreadResources& res, VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory);
+
+	// create VertexBuffer. buffer GPU memory is mapped to uniformBufferMemory for CPU access
+	void createVertexBuffer(ThreadResources& res, VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory);
 
 protected:
 	// signal if this shader is in use, set during init()

@@ -66,11 +66,16 @@ public:
 	VkPipeline graphicsPipelineLineAdd = nullptr;
 	VkCommandBuffer commandBufferLine = nullptr;
 	VkCommandBuffer commandBufferLineAdd = nullptr;
+	// vertex buffer for added lines
 	VkBuffer vertexBufferAdd = nullptr;
+	// vertex buffer device memory
+	VkDeviceMemory vertexBufferAddMemory = nullptr;
+	// MVP buffer
 	VkBuffer uniformBufferLine = nullptr;
+	// MVP buffer device memory
 	VkDeviceMemory uniformBufferMemoryLine = nullptr;
 	VkDescriptorSet descriptorSetLine = nullptr;
-	LineFrameData lineFrameData;
+	vector<LineShader::Vertex> verticesAddLines;
 
 	// frame management
 	long frameNum = -1;

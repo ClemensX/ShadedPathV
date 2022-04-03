@@ -37,7 +37,7 @@ VkShaderModule ShaderBase::createShaderModule(const vector<byte>& code)
 	return shaderModule;
 }
 
-void ShaderBase::createUniformBuffer(ThreadResources& res, VkBuffer &uniformBuffer, size_t size, VkDeviceMemory &uniformBufferMemory)
+void ShaderBase::createUniformBuffer(ThreadResources& res, VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory)
 {
 	VkDeviceSize bufferSize = size;
 	// we do not want to handle zero length buffers
@@ -47,6 +47,19 @@ void ShaderBase::createUniformBuffer(ThreadResources& res, VkBuffer &uniformBuff
 		Error(s.str());
 	}
 	global->createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		uniformBuffer, uniformBufferMemory);
+}
+
+void ShaderBase::createVertexBuffer(ThreadResources& res, VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory)
+{
+	VkDeviceSize bufferSize = size;
+	// we do not want to handle zero length buffers
+	if (bufferSize == 0) {
+		stringstream s;
+		s << "Cannot create Uniform buffer with size " << bufferSize << ". (Did you forget to subclass buffer definition ? )" << endl;
+		Error(s.str());
+	}
+	global->createBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		uniformBuffer, uniformBufferMemory);
 }
 
@@ -108,6 +121,7 @@ void ShaderBase::createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState
 		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
 	if (shaderState.getState() == ShaderState::StateEnum::CONNECT) {
+		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
 

@@ -101,6 +101,10 @@ void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &tr.graphicsPipelineLineAdd) != VK_SUCCESS) {
 		Error("failed to create graphics pipeline!");
 	}
+
+	// create and map vertex buffer in GPU (for lines added for a single frame)
+	VkDeviceSize bufferSize = sizeof(Vertex) * MAX_DYNAMIC_LINES;
+	createVertexBuffer(tr, tr.vertexBufferAdd, bufferSize, tr.vertexBufferAddMemory);
 }
 
 
@@ -116,8 +120,17 @@ void LineShader::addOneTime(vector<LineDef>& linesToAdd, ThreadResources& tr) {
 	//auto& lines = getInactiveAppDataSet(user)->oneTimeLines;
 	if (linesToAdd.size() == 0)
 		return;
-	auto& vec = tr.lineFrameData.addLines;
-	vec.insert(vec.end(), linesToAdd.begin(), linesToAdd.end());
+	auto& vec = tr.verticesAddLines;
+	// handle fixed lines:
+	for (LineDef& line : linesToAdd) {
+		Vertex v1, v2;
+		v1.color = line.color;
+		v1.pos = line.start;
+		v2.color = line.color;
+		v2.pos = line.end;
+		vec.push_back(v1);
+		vec.push_back(v2);
+	}
 }
 
 void LineShader::initialUpload()
@@ -250,6 +263,11 @@ void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResourc
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(lines.size() * 2), 1, 0, 0);
 }
 
+void LineShader::clearAddLines(ThreadResources& tr)
+{
+	tr.verticesAddLines.clear();
+}
+
 void LineShader::createCommandBufferLineAdd(ThreadResources& tr)
 {
 	auto& device = engine->global.device;
@@ -299,7 +317,7 @@ void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadReso
 	// bind descriptor sets:
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutLine, 0, 1, &tr.descriptorSetLine, 0, nullptr);
 
-	vkCmdDraw(commandBuffer, static_cast<uint32_t>(tr.lineFrameData.addLines.size() * 2), 1, 0, 0);
+	vkCmdDraw(commandBuffer, static_cast<uint32_t>(tr.verticesAddLines.size()), 1, 0, 0);
 }
 
 void LineShader::prepareAddLines(ThreadResources& tr)
@@ -313,6 +331,14 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo) {
 	vkMapMemory(device, tr.uniformBufferMemoryLine, 0, sizeof(ubo), 0, &data);
 	memcpy(data, &ubo, sizeof(ubo));
 	vkUnmapMemory(device, tr.uniformBufferMemoryLine);
+
+	// mak
+	// copy added lines to GPU:
+	VkDeviceSize bufferSize = sizeof(Vertex) * MAX_DYNAMIC_LINES;
+	size_t copy_size = tr.verticesAddLines.size() * sizeof(Vertex);
+	vkMapMemory(device, tr.vertexBufferAddMemory, 0, bufferSize, 0, &data);
+	memcpy(data, tr.verticesAddLines.data(), copy_size);
+	vkUnmapMemory(device, tr.vertexBufferAddMemory);
 }
 
 LineShader::~LineShader()
