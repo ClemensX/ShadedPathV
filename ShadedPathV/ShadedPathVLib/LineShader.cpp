@@ -114,6 +114,7 @@ void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// create and map vertex buffer in GPU (for lines added for a single frame)
 	VkDeviceSize bufferSize = sizeof(Vertex) * MAX_DYNAMIC_LINES;
 	createVertexBuffer(tr, tr.vertexBufferAdd, bufferSize, tr.vertexBufferAddMemory);
+	createCommandBufferLineAdd(tr);
 }
 
 
@@ -291,6 +292,10 @@ void LineShader::createCommandBufferLineAdd(ThreadResources& tr)
 	if (vkAllocateCommandBuffers(device, &allocInfo, &tr.commandBufferLineAdd) != VK_SUCCESS) {
 		Error("failed to allocate command buffers!");
 	}
+}
+
+void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer)
+{
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0; // Optional
@@ -309,15 +314,6 @@ void LineShader::createCommandBufferLineAdd(ThreadResources& tr)
 	renderPassInfo.clearValueCount = 0;
 
 	vkCmdBeginRenderPass(tr.commandBufferLineAdd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	recordDrawCommandAdd(tr.commandBufferLineAdd, tr, tr.vertexBufferAdd);
-	vkCmdEndRenderPass(tr.commandBufferLineAdd);
-	if (vkEndCommandBuffer(tr.commandBufferLineAdd) != VK_SUCCESS) {
-		Error("failed to record triangle command buffer!");
-	}
-}
-
-void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer)
-{
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.graphicsPipelineLineAdd);
 	VkBuffer vertexBuffers[] = { vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
@@ -327,11 +323,18 @@ void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadReso
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutLine, 0, 1, &tr.descriptorSetLine, 0, nullptr);
 
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(tr.verticesAddLines.size()), 1, 0, 0);
+	vkCmdEndRenderPass(tr.commandBufferLineAdd);
+	if (vkEndCommandBuffer(tr.commandBufferLineAdd) != VK_SUCCESS) {
+		Error("failed to record triangle command buffer!");
+	}
+
+
 }
 
 void LineShader::prepareAddLines(ThreadResources& tr)
 {
-	createCommandBufferLineAdd(tr);
+	//createCommandBufferLineAdd(tr);
+	recordDrawCommandAdd(tr.commandBufferLineAdd, tr, tr.vertexBufferAdd);
 }
 
 void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo) {
