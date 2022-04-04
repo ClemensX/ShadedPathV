@@ -35,8 +35,17 @@ void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	createUniformBuffer(tr, tr.uniformBufferLine, sizeof(UniformBufferObject), tr.uniformBufferMemoryLine);
 
 	createDescriptorSets(tr);
+	// TODO remove hack
+	bool undoLast = false;
+	if (isLastShader()) {
+		undoLast = true;
+		setLastShader(false);
+	}
 	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassLine, tr.framebufferLine);
 	shaderState.advance(engine, nullptr);
+	if (undoLast) {
+		setLastShader(true);
+	}
 	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassLineAdd, tr.framebufferLineAdd);
 
 	// create shader stage

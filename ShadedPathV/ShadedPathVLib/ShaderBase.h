@@ -135,9 +135,18 @@ public:
 	// create VertexBuffer. buffer GPU memory is mapped to uniformBufferMemory for CPU access
 	void createVertexBuffer(ThreadResources& res, VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory);
 
+	void setLastShader(bool last) {
+		lastShader = last;
+	}
+
+	bool isLastShader() {
+		return lastShader;
+	}
+
 protected:
 	// signal if this shader is in use, set during init()
 	bool enabled = false;
+	bool lastShader = false;
 	// initialized in init()
 	ShadedPathEngine* engine = nullptr;
 	VkDevice device = nullptr;

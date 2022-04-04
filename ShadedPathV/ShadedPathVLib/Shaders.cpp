@@ -3,6 +3,8 @@
 Config& Config::init()
 {
 	engine->global.createViewportState(shaderState);
+	// mark last shader
+	shaderList[shaderList.size() - 1]->setLastShader(true);
 	for (ShaderBase* shader : shaderList) {
 		shader->init(*engine, shaderState);
 		// pipelines must be created for every rendering thread
