@@ -359,7 +359,7 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
         VkImageMemoryBarrier dstBarrier{};
         dstBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         dstBarrier.srcAccessMask = 0;
-        dstBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dstBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT  | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
         dstBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         dstBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         dstBarrier.image = tr.colorAttachment.image;
