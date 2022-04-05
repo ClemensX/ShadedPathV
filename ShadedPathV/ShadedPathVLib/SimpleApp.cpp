@@ -22,7 +22,7 @@ void SimpleApp::run()
         engine.enableUI();
         engine.setFramesInFlight(2);
         engine.registerApp(this);
-        engine.setThreadModeSingle();
+        //engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("SimpleApp");

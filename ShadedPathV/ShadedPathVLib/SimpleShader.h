@@ -56,6 +56,19 @@ public:
     double: VK_FORMAT_R64_SFLOAT
     */
 
+    // alternate format, we prefer explicit assignments below
+    //// location, binding, format, offset
+    //const vector<VkVertexInputAttributeDescription> attributeDescriptions = {
+    //    {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos)},
+    //    {1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color)},
+    //    {2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, texCoord)}
+    //};
+
+    //const vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
+    //    return attributeDescriptions;
+    //}
+
+    // get static std::array of attribute desciptions, make sure to copy to local array, otherwise you get dangling pointers!
     static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
         std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
         // layout(location = 0) in vec3 inPosition;
@@ -76,6 +89,8 @@ public:
 
         return attributeDescriptions;
     }
+
+
     // update per frame data
     void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo);
     // set up shader

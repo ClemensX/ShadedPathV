@@ -58,8 +58,12 @@ void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 
 	// vertex input
 	auto binding_desc = getBindingDescription();
-	auto vertexInputInfo = createVertexInputCreateInfo(&binding_desc, getAttributeDescriptions().data(), getAttributeDescriptions().size());
-
+	auto attribute_desc = getAttributeDescriptions();
+	auto vertexInputInfo = createVertexInputCreateInfo(&binding_desc, attribute_desc.data(), attribute_desc.size());
+	//for (int i = 0; i < vertexInputInfo.vertexAttributeDescriptionCount; i++) {
+	//	LogF(" offset " << vertexInputInfo.pVertexAttributeDescriptions[i].offset << endl);
+	//	LogF(" format " << vertexInputInfo.pVertexAttributeDescriptions[i].format << endl);
+	//}
 	// input assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -109,7 +113,6 @@ void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &tr.graphicsPipelineTriangle) != VK_SUCCESS) {
 		Error("failed to create graphics pipeline!");
 	}
-
 }
 
 void SimpleShader::createDescriptorSetLayout()

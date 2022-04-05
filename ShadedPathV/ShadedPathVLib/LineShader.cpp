@@ -55,7 +55,8 @@ void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 
 	// vertex input
 	auto binding_desc = getBindingDescription();
-	auto vertexInputInfo = createVertexInputCreateInfo(&binding_desc, getAttributeDescriptions().data(), getAttributeDescriptions().size());
+	auto attribute_desc = getAttributeDescriptions();
+	auto vertexInputInfo = createVertexInputCreateInfo(&binding_desc, attribute_desc.data(), attribute_desc.size());
 
 	// input assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};

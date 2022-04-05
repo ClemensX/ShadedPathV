@@ -178,7 +178,7 @@ protected:
 		return fragShaderStageInfo;
 	}
 
-	VkPipelineVertexInputStateCreateInfo createVertexInputCreateInfo(VkVertexInputBindingDescription* vertexInputBinding, VkVertexInputAttributeDescription* vertexInputAttributes, size_t attributes_size) {
+	VkPipelineVertexInputStateCreateInfo createVertexInputCreateInfo(VkVertexInputBindingDescription* vertexInputBinding, const VkVertexInputAttributeDescription* vertexInputAttributes, size_t attributes_size) {
 		VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 		vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 		vertexInputInfo.vertexBindingDescriptionCount = 1;

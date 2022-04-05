@@ -31,6 +31,7 @@ public:
 		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 		return bindingDescription;
 	}
+	// get static std::array of attribute desciptions, make sure to copy to local array, otherwise you get dangling pointers!
 	static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
 		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
 		// layout(location = 0) in vec3 inPosition;
