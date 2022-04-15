@@ -142,6 +142,7 @@ private:
 			Log("Vulkan profile instance not supported: " << profile.profileName << " instance: " << profile.specVersion << endl);
 			return false;
 		}
+		Log("Vulkan profile checked ok: " << profile.profileName << " instance: " << profile.specVersion << endl)
 		return true;
 	}
 };

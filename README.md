@@ -39,7 +39,8 @@ Things finished and things to do. Both very small and very large things, just as
 - [x] UI: FPS Counter
 - [ ] image based tests
 - [x] Thread pool for backbuffer rendering
-- [ ] dynamic lines for LineShader (added lines live only for one frame) in V 1.2 API
+- [x] dynamic lines for LineShader (added lines live only for one frame) in V 1.2 API
+- [x] check for vulkan profile support: VP_KHR_roadmap_2022 level 1 (requires Feb 2022 drivers, only checked for nvdia)
 - [ ] Switch to V 1.3 API and get rid of framebuffer and renderpasses
 - [ ] LineText Shader with coordinate system display and dynamic text
 - [ ] finalize thread architecture
