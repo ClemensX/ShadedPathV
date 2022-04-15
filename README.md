@@ -1,7 +1,31 @@
 # ShadedPathV
 
+Game Engine in Development!
+
+ShadedPathV is a completely free C++ game engine built mainly on [Khronos standards](https://www.khronos.org/)
+
+Some features:
+
+- Rendering in multiple threads
+- Each thread renders to its own backbuffer image, using its own set of thread local resources.
+- Synchronization is done at presentation time, when the backbuffer image is copied to the app window
+- Support VR games. (Probably via OpenXR)
+
+## Current state
+
+I am somewhat ok with thread model for now. Seems stable and flexible: Application can switch between non-threaded rendering and aribtrary number of rendering threads. But real test will be when more complex rendering code is available with objects and animation.
+
+Still experimenting a lot with managing vulkan code in meaningful C++ classes. Especially for organizing shaders in an easy-to-use fashion and clear architecture.
+
+Simple app with lines and debug texture: 
+![Simple app with lines and debug texture](images/view001.PNG)
+Red lines show the world size of 2 square km. Lines are drawn every 1m. White cross marks center. The texture is a debug texture that uses a different color on each mip level. Only mip level 0 is a real image with letters to identify if texture orientation is ok. (TL means top left...) Same texture was used for both squares, but the one in background is displayed with a higher mip level. While the camera moves further back you can check the transition between all the mip levels. On upper right you see simple FPS counter rendered with Dear ImGui.
+
+![Same scene with camera moved back](images/view002.PNG)
+Same scene with camera moved back. You see lines resembling floor level and ceiling (380 m apart). The textures are so small that they should use highest or 2nd highest mip level with 1x1 or 2x2 image size.
+
 ## TODO
-Course of action should be like this
+Things finished and things to do. Both very small and very large things, just as they come to my mind. 
 
 - [x] \(done via themed timer) re-use old fps counter (still needs fixing - values too high?)
 - [x] Decouple Swap chain and backbuffer image rendering
