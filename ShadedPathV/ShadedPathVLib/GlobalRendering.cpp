@@ -68,6 +68,9 @@ void GlobalRendering::gatherDeviceExtensions()
 
 void GlobalRendering::initVulkanInstance()
 {
+    if (!checkProfileSupport()) {
+        Error("required vulkan profile not available!");
+    }
     if (enableValidationLayers && !checkValidationLayerSupport()) {
         Error("validation layers requested, but not available!");
     }

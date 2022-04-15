@@ -63,6 +63,9 @@ using namespace std;
 #include <GLFW/glfw3.h>
 #include <ktxvulkan.h>
 
+// vulkan profile support (SDK 1.3 needed)
+#include <vulkan/vulkan_profiles.hpp>
+
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/vec4.hpp>

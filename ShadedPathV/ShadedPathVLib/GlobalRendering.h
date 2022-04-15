@@ -37,6 +37,12 @@ public:
 		shutdown();
 	};
 
+	// select vulkan profile
+	VpProfileProperties profile{
+			VP_KHR_ROADMAP_2022_NAME,
+			VP_KHR_ROADMAP_2022_SPEC_VERSION
+	};
+
 	// list device and instance extensions
 	static const bool LIST_EXTENSIONS = false;
 
@@ -120,5 +126,23 @@ private:
 	// swap chain query
 	bool checkDeviceExtensionSupport(VkPhysicalDevice phys_device, bool listmode);
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+
+	// check if selected profile is supported, return false otherwise
+	bool checkProfileSupport() {
+		VkResult result = VK_SUCCESS;
+		VkBool32 supported = VK_FALSE;
+		result = vpGetInstanceProfileSupport(nullptr, &profile, &supported);
+		if (result != VK_SUCCESS) {
+			// something went wrong
+			Log("Vulkan profile not supported: " << profile.profileName << endl);
+			return false;
+		}
+		else if (supported != VK_TRUE) {
+			// profile is not supported at the instance level
+			Log("Vulkan profile instance not supported: " << profile.profileName << " instance: " << profile.specVersion << endl);
+			return false;
+		}
+		return true;
+	}
 };
 
