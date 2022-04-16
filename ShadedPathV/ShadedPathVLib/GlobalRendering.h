@@ -37,11 +37,12 @@ public:
 		shutdown();
 	};
 
-	// select vulkan profile
+	// select vulkan profile and API version
 	VpProfileProperties profile{
 			VP_KHR_ROADMAP_2022_NAME,
 			VP_KHR_ROADMAP_2022_SPEC_VERSION
 	};
+	uint32_t API_VERSION = VP_KHR_ROADMAP_2022_MIN_API_VERSION;
 
 	// list device and instance extensions
 	static const bool LIST_EXTENSIONS = false;

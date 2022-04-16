@@ -71,55 +71,41 @@ void GlobalRendering::initVulkanInstance()
     if (!checkProfileSupport()) {
         Error("required vulkan profile not available!");
     }
-    if (enableValidationLayers && !checkValidationLayerSupport()) {
-        Error("validation layers requested, but not available!");
-    }
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = "ShadedPathV";
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "ShadedPathV";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0;
+    appInfo.apiVersion = API_VERSION;
 
     VkInstanceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
-
     auto extensions = getRequiredExtensions();
     createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     createInfo.ppEnabledExtensionNames = extensions.data();
 
-    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
-    if (enableValidationLayers) {
-        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
+    VpInstanceCreateInfo vpCreateInfo{};
+    vpCreateInfo.pCreateInfo = &createInfo;
+    vpCreateInfo.pProfile = &profile;
 
-        populateDebugMessengerCreateInfo(debugCreateInfo);
-        createInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugCreateInfo;
-    }
-    else {
-        createInfo.enabledLayerCount = 0;
-
-        createInfo.pNext = nullptr;
+    vkInstance = VK_NULL_HANDLE;
+    if (vpCreateInstance(&vpCreateInfo, nullptr, &vkInstance) != VK_SUCCESS) {
+        Error("failed to create instance!");
     }
 
     // list available extensions:
-    uint32_t extensionCount = 0;
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-    std::vector<VkExtensionProperties> availExtensions(extensionCount);
-    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availExtensions.data());
-
     if (LIST_EXTENSIONS) {
+        uint32_t extensionCount = 0;
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+        std::vector<VkExtensionProperties> availExtensions(extensionCount);
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availExtensions.data());
+
         Log("available Vulkan instance extensions:\n");
         for (const auto& extension : availExtensions) {
             Log("  " << extension.extensionName << '\n');
         }
-    }
-    createInfo.enabledLayerCount = 0;
-
-    if (vkCreateInstance(&createInfo, nullptr, &vkInstance) != VK_SUCCESS) {
-        Error("failed to create instance!");
     }
 }
 
@@ -141,14 +127,14 @@ void GlobalRendering::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebug
 }
 
 void GlobalRendering::setupDebugMessenger() {
-    if (!enableValidationLayers) return;
+    //if (!enableValidationLayers) return;
 
-    VkDebugUtilsMessengerCreateInfoEXT createInfo;
-    populateDebugMessengerCreateInfo(createInfo);
+    //VkDebugUtilsMessengerCreateInfoEXT createInfo;
+    //populateDebugMessengerCreateInfo(createInfo);
 
-    if (CreateDebugUtilsMessengerEXT(vkInstance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
-        throw std::runtime_error("failed to set up debug messenger!");
-    }
+    //if (CreateDebugUtilsMessengerEXT(vkInstance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
+    //    throw std::runtime_error("failed to set up debug messenger!");
+    //}
 }
 
 void GlobalRendering::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
@@ -255,7 +241,6 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
 
     if (listmode) {
         Log("Physical Device properties: " << deviceProperties.deviceName << " Vulkan API Version: " << Util::decodeVulkanVersion(deviceProperties.apiVersion).c_str() << " type: " << Util::decodeDeviceType(deviceProperties.deviceType) << endl);
-        Log("    Mesh shader Supported with max output vertices: " << meshProperties.maxMeshOutputVertices << endl);
         checkDeviceExtensionSupport(device, listmode);
         return false;
     }
@@ -352,17 +337,22 @@ void GlobalRendering::createLogicalDevice()
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
+    createInfo.pEnabledFeatures = &deviceFeatures;
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
-
-    createInfo.pEnabledFeatures = &deviceFeatures;
+    createInfo.enabledExtensionCount = 0;
     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
     createInfo.enabledLayerCount = 0; // no longer used - validation layers handled in kvInstance
+    VpDeviceCreateInfo vpCreateInfo{};
+    vpCreateInfo.pCreateInfo = &createInfo;
+    vpCreateInfo.pProfile = &profile;
+    vpCreateInfo.flags = VP_DEVICE_CREATE_MERGE_EXTENSIONS_BIT;
 
-    if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
+    if (vpCreateDevice(physicalDevice, &vpCreateInfo, nullptr, &device) != VK_SUCCESS) {
         Error("failed to create logical device!");
     }
+
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     if (engine.presentation.enabled) {
         engine.presentation.createPresentQueue(indices.presentFamily.value());
@@ -383,14 +373,17 @@ bool GlobalRendering::checkDeviceExtensionSupport(VkPhysicalDevice phys_device, 
             Log("  " << extension.extensionName << '\n');
         }
     }
-
-    std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
-
-    for (const auto& extension : availableExtensions) {
-        requiredExtensions.erase(extension.extensionName);
+    VkBool32 supported = false;
+    auto result = vpGetPhysicalDeviceProfileSupport(vkInstance, phys_device, &profile, &supported);
+    if (result != VK_SUCCESS) {
+        Log("Cannot get physical device properties")
+        return false;
     }
-
-    return requiredExtensions.empty();
+    else if (supported != VK_TRUE) {
+        // profile is not supported at the device level
+        return false;
+    }
+    return true;
 }
 
 SwapChainSupportDetails GlobalRendering::querySwapChainSupport(VkPhysicalDevice device) {
