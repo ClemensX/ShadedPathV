@@ -5,18 +5,10 @@ const vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
 };
 
-#ifdef NDEBUG
-const bool enableValidationLayers = false;
-#else
-const bool enableValidationLayers = true;
-#endif
-
-
 void GlobalRendering::initBeforePresentation()
 {
     gatherDeviceExtensions();
     initVulkanInstance();
-    setupDebugMessenger();
 }
 
 void GlobalRendering::initAfterPresentation()
@@ -34,30 +26,12 @@ void GlobalRendering::initAfterPresentation()
 
 void GlobalRendering::shutdown()
 {
-    // TODO check for correct cleanup in non-presentation mode
-    //vkDestroyCommandPool(device, commandPool, nullptr);
-    //for (auto framebuffer : framebuffers) {
-    //    vkDestroyFramebuffer(device, framebuffer, nullptr);
-    //}
-    //vkDestroyRenderPass(device, renderPass, nullptr);
-    //// destroy swap chain image views
-    //for (auto imageView : swapChainImageViews) {
-    //    vkDestroyImageView(device, imageView, nullptr);
-    //}
-    //vkDestroySwapchainKHR(device, swapChain, nullptr);
-    //vkDestroySurfaceKHR(vkInstance, surface, nullptr);
-    if (enableValidationLayers) {
-        DestroyDebugUtilsMessengerEXT(vkInstance, debugMessenger, nullptr);
-    }
     vkDestroySampler(device, textureSampler, nullptr);
     vkDestroyCommandPool(device, commandPool, nullptr);
     vkDestroyDevice(device, nullptr);
     device = nullptr;
     vkDestroyInstance(vkInstance, nullptr);
     vkInstance = nullptr;
-    //if (presentationEnabled) {
-    //    glfwDestroyWindow(window);
-    //}
     glfwTerminate();
 }
 
@@ -109,42 +83,6 @@ void GlobalRendering::initVulkanInstance()
     }
 }
 
-VkResult GlobalRendering::CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-    }
-    else {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
-}
-
-void GlobalRendering::DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
-    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        func(instance, debugMessenger, pAllocator);
-    }
-}
-
-void GlobalRendering::setupDebugMessenger() {
-    //if (!enableValidationLayers) return;
-
-    //VkDebugUtilsMessengerCreateInfoEXT createInfo;
-    //populateDebugMessengerCreateInfo(createInfo);
-
-    //if (CreateDebugUtilsMessengerEXT(vkInstance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
-    //    throw std::runtime_error("failed to set up debug messenger!");
-    //}
-}
-
-void GlobalRendering::populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
-    createInfo = {};
-    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    createInfo.pfnUserCallback = debugCallback;
-}
-
 std::vector<const char*> GlobalRendering::getRequiredExtensions() {
     uint32_t glfwExtensionCount = 0;
     const char** glfwExtensions;
@@ -153,9 +91,6 @@ std::vector<const char*> GlobalRendering::getRequiredExtensions() {
     // vector will be moved on return
     std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-    if (enableValidationLayers) {
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    }
     extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     //extensions.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     //extensions.push_back(VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME);
@@ -165,40 +100,6 @@ std::vector<const char*> GlobalRendering::getRequiredExtensions() {
         Util::printCStringList(deviceExtensions);
 
     return extensions;
-}
-
-bool GlobalRendering::checkValidationLayerSupport() {
-    uint32_t layerCount;
-    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-    std::vector<VkLayerProperties> availableLayers(layerCount);
-    vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-
-    for (const char* layerName : validationLayers) {
-        bool layerFound = false;
-
-        for (const auto& layerProperties : availableLayers) {
-            if (strcmp(layerName, layerProperties.layerName) == 0) {
-                layerFound = true;
-                break;
-            }
-        }
-
-        if (!layerFound) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-
-// central debug messages callback
-// select to debug to std::cerr or log file
-VKAPI_ATTR VkBool32 VKAPI_CALL GlobalRendering::debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
-    //std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-    //Log(pCallbackData->pMessage << std::endl);
-    return VK_FALSE;
 }
 
 void GlobalRendering::pickPhysicalDevice(bool listmode)
@@ -333,7 +234,7 @@ void GlobalRendering::createLogicalDevice()
 
     VkPhysicalDeviceFeatures deviceFeatures{};
     // provoke validation layer warning by commenting out following line:
-    //deviceFeatures.samplerAnisotropy = VK_TRUE;
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

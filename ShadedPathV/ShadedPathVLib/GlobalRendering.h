@@ -108,16 +108,8 @@ private:
 
 	void gatherDeviceExtensions();
 	void initVulkanInstance();
-	void setupDebugMessenger();
 
-	// validation layer
-	VkDebugUtilsMessengerEXT debugMessenger = nullptr;
-	bool checkValidationLayerSupport();
-	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 	vector<const char*> getRequiredExtensions();
-	void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-	void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
-	VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
 
 	// devices
 	void pickPhysicalDevice(bool listmode = false);
