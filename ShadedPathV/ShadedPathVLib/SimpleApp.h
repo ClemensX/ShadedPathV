@@ -4,8 +4,8 @@ class SimpleApp : ShadedPathApplication
 public:
     void init();
     void run();
-    void drawFrame(ThreadResources& tr);
-    void handleInput(InputState& inputState);
+    void drawFrame(ThreadResources& tr) override;
+    void handleInput(InputState& inputState) override;
 private:
     ShadedPathEngine engine;
     Shaders& shaders = engine.shaders;
