@@ -18,6 +18,10 @@ public:
 class Files
 {
 public:
+	// set asset folder name - the folder will be looked for up the whole path, beginning with CD of executable. First match wins, Error if not found at all
+	void findAssetFolder(string folderName);
+	// find folder with compiled shaders
+	void findFxFolder();
 	// find absolute filename for a name and category, defaults to display error dialog, returns empty filename if not found and errorIfNotFound is set to false,
 	// returns full file path if generateFilenameMode == true (use to create files)
 	string findFile(string filename, FileCategory cat, bool errorIfNotFound = true, bool generateFilenameMode = false);
@@ -25,7 +29,7 @@ public:
 	void readFile(string filename, vector<byte>& buffer, FileCategory cat);
 	// check file can be opened for write operation. Logs error if not.
 	bool checkFileForWrite(string filename);
-	// get abslolute file path
+	// get absolute file path
 	string absoluteFilePath(string filename);
 	void readFile(PakEntry* pakEntry, vector<byte>& buffer, FileCategory cat);
 	PakEntry* findFileInPak(string filename);
@@ -34,5 +38,13 @@ public:
 private:
 	// pak files:
 	unordered_map<string, PakEntry> pak_content;
+
+	filesystem::path assetFolder;
+	filesystem::path fxFolder;
+
+	//define sub folder names, all directly below asset folder
+	const string TEXTURE_PATH = "texture";
+	const string MESH_PATH = "mesh";
+	const string SOUND_PATH = "sound";
 };
 

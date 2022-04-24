@@ -1,60 +1,106 @@
 #include "pch.h"
 
 #if defined(DEBUG) || defined(_DEBUG)
-#define FX_PATH "..\\x64\\Debug\\"
+#define FX_PATH "Debug"
 #else
-#define FX_PATH "..\\x64\\Release\\"
+#define FX_PATH "Release"
 #endif
 
-#define TEXTURE_PATH "..\\..\\..\\data\\texture\\"
-#define MESH_PATH "..\\..\\data\\mesh\\"
-#define SOUND_PATH "..\\..\\data\\sound\\"
+void Files::findFxFolder()
+{
+	filesystem::path current = filesystem::current_path();
+	string fx_test_filename = "line_vert.spv";
+
+	// first look at CD:
+	filesystem::path to_check = current / fx_test_filename;
+	Log("Looking for shader files: " << to_check << endl);
+	if (filesystem::exists(to_check)) {
+		fxFolder = current;
+		Log("Found shader files: " << fxFolder << endl);
+		return;
+	}
+
+	// then look at rel path (used from running inside VS)
+	current = current / ".." / "x64" / FX_PATH;
+	to_check =  current / fx_test_filename;
+	if (filesystem::exists(to_check)) {
+		fxFolder = current;
+		Log("Found shader files: " << fxFolder << endl);
+		return;
+	}
+	Error("shader files not found");
+}
+
+void Files::findAssetFolder(string folderName)
+{
+	filesystem::path current = filesystem::current_path();
+	for (;;) {
+		filesystem::path to_check = current / folderName;
+		//Log("Looking for asset folder: " << to_check << endl);
+		if (filesystem::exists(to_check)) {
+			assetFolder = to_check;
+			Log("Found asset folder: " << assetFolder << endl);
+			return;
+		}
+		// if parent is identical we are at root
+		if (current.compare(current.parent_path()) == 0) {
+			stringstream s;
+			s << "AssetFolder not found: " << folderName << endl;
+			Error(s.str().c_str());
+		}
+		current = current.parent_path();
+	}
+}
 
 string Files::findFile(string filename, FileCategory cat, bool errorIfNotFound, bool generateFilenameMode) {
-	// try without path:
-	ifstream bfile(filename.c_str(), ios::in | ios::binary);
-	if (!bfile) {
-		// try with Debug or release path:
-		switch (cat) {
-		case FileCategory::FX:
-			filename = FX_PATH + filename;
-			break;
-		case FileCategory::TEXTURE:
-		case FileCategory::TEXTUREPAK:
-			filename = TEXTURE_PATH + filename;
-			break;
-		case FileCategory::MESH:
-			filename = MESH_PATH + filename;
-			break;
-		case FileCategory::SOUND:
-			filename = SOUND_PATH + filename;
-			break;
-		}
-		if (generateFilenameMode) {
-			return filename.c_str();
-		}
-		bfile.open(filename.c_str(), ios::in | ios::binary);
-		if (!bfile && cat == FileCategory::TEXTURE) {
-			string oldname = filename;
-			// try loading default texture
-			filename = TEXTURE_PATH + string("default.dds");
-			bfile.open(filename.c_str(), ios::in | ios::binary);
-			if (bfile) {
-				filesystem::path p = filename.c_str();
-				Log("WARNING: texture " << filesystem::absolute(p) << " not found, replaced by default.dds texture" << endl);
-			}
-
-		}
-		if (!bfile && errorIfNotFound) {
+	if (assetFolder.empty()) {
+		Error("AssetFolder not set - cannot read any files!");
+	}
+	if (fxFolder.empty()) {
+		Error("FxFolder not set - cannot read shader files!");
+	}
+	filesystem::path asset_path;
+	switch (cat) {
+	case FileCategory::FX:
+		asset_path = fxFolder / filename;
+		break;
+	case FileCategory::TEXTURE:
+	case FileCategory::TEXTUREPAK:
+		asset_path = assetFolder / TEXTURE_PATH / filename;
+		break;
+	case FileCategory::MESH:
+		asset_path = assetFolder / MESH_PATH / filename;
+		break;
+	case FileCategory::SOUND:
+		asset_path = assetFolder / SOUND_PATH / filename;
+		break;
+	}
+	if (generateFilenameMode) {
+		return filename.c_str();
+	}
+	ifstream bfile(asset_path.c_str(), ios::in | ios::binary);
+	if (!bfile && cat == FileCategory::TEXTURE) {
+		string oldname = filename;
+		// try loading default texture
+		asset_path = assetFolder / TEXTURE_PATH / "debug.ktx";
+		bfile.open(asset_path.c_str(), ios::in | ios::binary);
+		if (bfile) {
 			filesystem::path p = filename.c_str();
-			stringstream s;
-			s << "failed reading file: " << filesystem::absolute(p) << endl;
-			Error(s.str());
+			Log("WARNING: texture " << filesystem::absolute(p) << " not found, replaced by default.dds texture" << endl);
 		}
+
+	}
+	if (!bfile && errorIfNotFound) {
+		filesystem::path p = filename.c_str();
+		stringstream s;
+		//s << "failed reading file: " << filesystem::absolute(p) << endl;
+		s << "failed reading file: " << filesystem::absolute(asset_path) << endl;
+		//s << "failed reading file: " << asset_path << endl;
+		Error(s.str());
 	}
 	if (bfile) {
 		bfile.close();
-		return filename;
+		return asset_path.generic_string();
 	}
 	return string();
 }

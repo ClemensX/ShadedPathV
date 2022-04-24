@@ -15,6 +15,7 @@ void SimpleApp::run()
         engine.enableMouseMoveEvents();
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
+        engine.files.findAssetFolder("data");
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         int win_width = 1800;// 800;//3700;

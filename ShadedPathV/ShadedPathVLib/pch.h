@@ -137,7 +137,7 @@ inline void ErrorExt(string msg, const char* file, DWORD line)
 	Log(s.str().c_str());
 	//exit(0);
 	s << "\n\nClick 'yes' to debug break and 'no' to hard exit.";
-	int nResult = MessageBox(GetForegroundWindow(), L"Click 'yes' to debug break or 'no' to hard exit.", L"Unexpected error encountered", MB_YESNO | MB_ICONERROR);
+	int nResult = MessageBoxA(GetForegroundWindow(), s.str().c_str(), "Unexpected error encountered", MB_YESNO | MB_ICONERROR);
 	if (nResult == IDYES)
 		DebugBreak();
 	else exit(0);

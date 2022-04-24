@@ -37,6 +37,7 @@ Things finished and things to do. Both very small and very large things, just as
 - [x] TextureStore to read and organize KTX textures
 - [x] Include *Dear ImGui* with standard Demo UI
 - [x] UI: FPS Counter
+- [x] Find assets by looking for 'data' folder up the whole path, starting at .exe location
 - [ ] image based tests
 - [x] Thread pool for backbuffer rendering
 - [x] dynamic lines for LineShader (added lines live only for one frame) in V 1.2 API

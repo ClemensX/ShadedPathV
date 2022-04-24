@@ -24,6 +24,7 @@ public:
         limiter(60.0f)
     {
         Log("Engine c'tor\n");
+        files.findFxFolder();
     }
 
     virtual ~ShadedPathEngine();
