@@ -1,6 +1,6 @@
 #include "pch.h"
 
-Config& Config::init()
+Shaders::Config& Shaders::Config::init()
 {
 	engine->global.createViewportState(shaderState);
 	// mark last shader

@@ -28,13 +28,12 @@ void SimpleApp::run()
         // engine initialization
         engine.init("SimpleApp");
 
-        // shader initialization
-        shaders.config.add(shaders.simpleShader).add(shaders.lineShader);
-        // eg. one-time uploads before rendering cycle starts go here
-        //engine.shaders.initiateShader_Triangle();
-        engine.shaders.config.init();
-        //engine.shaders.initiateShader_BackBufferImageDump();
-        // init other shader data:
+        // add shaders used in this app
+        shaders.addShader(shaders.simpleShader).addShader(shaders.lineShader);
+        // init shaders, e.g. one-time uploads before rendering cycle starts go here
+        shaders.initActiveShaders();
+
+        // init app rendering:
         init();
 
         // some shaders may need additional preparation

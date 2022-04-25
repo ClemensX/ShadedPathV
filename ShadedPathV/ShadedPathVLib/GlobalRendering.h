@@ -103,7 +103,7 @@ public:
 
 private:
 	vector<const char*> deviceExtensions = {
-		VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
+		//VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
 	};
 
 	void gatherDeviceExtensions();

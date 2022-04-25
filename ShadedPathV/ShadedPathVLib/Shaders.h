@@ -1,29 +1,51 @@
 #pragma once
 
-class Config {
-public:
-	// add next shader to list of shaders
-	// shaders will be called in the order they were added here.
-	Config& add(ShaderBase &shader) {
-		shaderList.push_back(&shader);
-		return *this;
+struct ShaderState
+{
+	enum class StateEnum {
+		// first stage - needs clearing depth, stencil and frame
+		CLEAR,
+		// transition from one shader to next in chain of render calls
+		CONNECT,
+		// prepare for final image copy
+		PRESENT
+	};
+	VkViewport viewport{};
+	VkRect2D scissor{};
+	VkPipelineViewportStateCreateInfo viewportState{};
+	// advance state, see impl for details
+	// null ShaderBase sets last state PRESENT
+	void advance(ShadedPathEngine* engine, ShaderBase* shader);
+	StateEnum getState() {
+		return state;
 	}
-
-	// Initialize ShaderState and all shaders
-	Config& init();
-
-	void setEngine(ShadedPathEngine* s) {
-		engine = s;
-	}
-
 private:
-	vector<ShaderBase*> shaderList;
-	ShadedPathEngine* engine;
-	ShaderState shaderState;
+	StateEnum state = StateEnum::CLEAR;
 };
 
 class Shaders
 {
+	class Config {
+	public:
+		// add next shader to list of shaders
+		// shaders will be called in the order they were added here.
+		Config& add(ShaderBase& shader) {
+			shaderList.push_back(&shader);
+			return *this;
+		}
+
+		// Initialize ShaderState and all shaders
+		Config& init();
+
+		void setEngine(ShadedPathEngine* s) {
+			engine = s;
+		}
+
+	private:
+		vector<ShaderBase*> shaderList;
+		ShadedPathEngine* engine;
+		ShaderState shaderState;
+	};
 public:
 	Shaders(ShadedPathEngine& s) : engine(s) {
 		Log("Shaders c'tor\n");
@@ -31,7 +53,18 @@ public:
 	};
 	~Shaders();
 
-	Config config;
+	// add next shader to list of shaders
+	// shaders will be called in the order they were added here.
+	Shaders& addShader(ShaderBase& shader) {
+		config.add(shader);
+		return *this;
+	}
+
+	// Initialize ShaderState and all added shaders
+	Shaders& initActiveShaders() {
+		config.init();
+		return *this;
+	}
 
 	// general methods
 	void queueSubmit(ThreadResources& tr);
@@ -52,11 +85,9 @@ public:
 	// write backbuffer image to file (during frame creation)
 	void executeBufferImageDump(ThreadResources& tr);
 
-	// UI shader
-	void createCommandBufferUI(ThreadResources& tr);
-
 private:
-	void initiateShader_TriangleSingle(ThreadResources &res);
+	Config config;
+
 	void initiateShader_BackBufferImageDumpSingle(ThreadResources& res);
 	ShadedPathEngine& engine;
 

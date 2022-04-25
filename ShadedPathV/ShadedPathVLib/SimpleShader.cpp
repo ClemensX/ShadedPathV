@@ -256,6 +256,9 @@ void SimpleShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResou
 
 SimpleShader::~SimpleShader()
 {
+	if (!enabled) {
+		return;
+	}
     vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vkDestroyBuffer(device, vertexBufferTriangle, nullptr);
 	vkFreeMemory(device, vertexBufferMemoryTriangle, nullptr);

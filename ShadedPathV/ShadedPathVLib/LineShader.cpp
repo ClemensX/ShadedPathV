@@ -357,6 +357,9 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo) {
 LineShader::~LineShader()
 {
 	Log("LineShader destructor\n");
+	if (!enabled) {
+		return;
+	}
 	vkDestroyBuffer(device, vertexBuffer, nullptr);
 	vkFreeMemory(device, vertexBufferMemory, nullptr);
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);

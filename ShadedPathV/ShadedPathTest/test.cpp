@@ -88,6 +88,7 @@ TEST(Engine, Headless) {
     {
         ShadedPathEngine engine;
         ShaderState shaderState;
+        engine.files.findAssetFolder("data");
         engine.setFrameCountLimit(10);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::Small);
         engine.setFramesInFlight(2);
