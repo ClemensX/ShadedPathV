@@ -70,3 +70,5 @@ double GameTime::getRealTimeDelta()
 {
 	return timeDelta;
 }
+
+ThemedTimer ThemedTimer::singleton;

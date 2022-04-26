@@ -239,6 +239,11 @@ void SimpleShader::createCommandBuffer(ThreadResources& tr)
 	}
 }
 
+void SimpleShader::addCurrentCommandBuffer(ThreadResources& tr) {
+	tr.activeCommandBuffers.push_back(tr.commandBufferTriangle);
+};
+
+
 void SimpleShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, VkBuffer indexBuffer)
 {
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.graphicsPipelineTriangle);

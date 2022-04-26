@@ -261,6 +261,11 @@ void LineShader::createCommandBuffer(ThreadResources& tr)
 	}
 }
 
+void LineShader::addCurrentCommandBuffer(ThreadResources& tr) {
+	tr.activeCommandBuffers.push_back(tr.commandBufferLine);
+	tr.activeCommandBuffers.push_back(tr.commandBufferLineAdd);
+};
+
 void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer)
 {
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.graphicsPipelineLine);

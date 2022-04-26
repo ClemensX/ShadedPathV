@@ -81,10 +81,12 @@ public:
 	long frameNum = -1;
 	long frameIndex = -1;
 	vector<VkSubmitInfo> submitinfos;
+	vector<VkCommandBuffer> activeCommandBuffers;
 	VkFence presentFence = nullptr;
 	ThreadsafeWaitingQueue<unsigned long> renderThreadContinueQueue;
 	VkPipelineStageFlags waitStages[2];
-	VkCommandBuffer commandBuffers[5];
+#define	THREAD_RESOURCES_MAX_COMMAND_BUFFERS 5
+	VkCommandBuffer commandBuffers[THREAD_RESOURCES_MAX_COMMAND_BUFFERS];
 
 	// depth buffer
 	VkImage depthImage;

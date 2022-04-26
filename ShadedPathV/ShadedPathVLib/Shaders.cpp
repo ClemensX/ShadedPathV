@@ -16,6 +16,13 @@ Shaders::Config& Shaders::Config::init()
 	return *this;
 }
 
+void Shaders::Config::gatherActiveCommandBuffers(ThreadResources& tr)
+{
+	tr.activeCommandBuffers.clear();
+	for (ShaderBase* shader : shaderList) {
+		shader->addCurrentCommandBuffer(tr);
+	}
+}
 
 VkShaderModule Shaders::createShaderModule(const vector<byte>& code)
 {
@@ -45,6 +52,10 @@ void Shaders::checkShaderState(ShadedPathEngine& engine) {
 	engine.shaders.config.checkShaderState();
 }
 
+void Shaders::gatherActiveCommandBuffers(ThreadResources& tr) {
+	engine.shaders.config.gatherActiveCommandBuffers(tr);
+}
+
 // SHADER Triangle
 
 // Be aware of local arrays - they will be overwritten after leaving this method!!
@@ -63,11 +74,12 @@ void Shaders::submitFrame(ThreadResources& tr)
 	submitInfo.waitSemaphoreCount = 0;
 	submitInfo.pWaitSemaphores = nullptr;//waitSemaphores;
 	//submitInfo.pWaitDstStageMask = &tr.waitStages[0];
-	// TODO auto get from shaders - no hardcoded here
-	tr.commandBuffers[0] = tr.commandBufferTriangle;
-	tr.commandBuffers[1] = tr.commandBufferLine;
-	tr.commandBuffers[2] = tr.commandBufferLineAdd;
-	submitInfo.commandBufferCount = 3;
+	gatherActiveCommandBuffers(tr);
+	assert(tr.activeCommandBuffers.size() > 0 && tr.activeCommandBuffers.size() < THREAD_RESOURCES_MAX_COMMAND_BUFFERS);
+	for (int i = 0; i < tr.activeCommandBuffers.size(); i++) {
+		tr.commandBuffers[i] = tr.activeCommandBuffers[i];
+	}
+	submitInfo.commandBufferCount = tr.activeCommandBuffers.size();
 	submitInfo.pCommandBuffers = &tr.commandBuffers[0];
 	//VkSemaphore signalSemaphores[] = { tr.renderFinishedSemaphore };
 	submitInfo.signalSemaphoreCount = 0;

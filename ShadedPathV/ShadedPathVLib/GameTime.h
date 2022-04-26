@@ -83,9 +83,12 @@ class ThemedTimer {
 public:
 	//singleton:
 	static ThemedTimer* getInstance() {
-		static ThemedTimer singleton;
 		return &singleton;
 	};
+
+	~ThemedTimer() {
+		Log("ThemedTimer d'tor");
+	}
 
 	// create topic with name and number of individual slots 
 	void create(string name, int slots) {
@@ -193,6 +196,8 @@ public:
 	}
 
 private:
+	static ThemedTimer singleton;
+	static bool singletonActive;
 	// add timer value, first call does not account for average timings
 	void add(TimerDesc &td, long long value) {
 		td.calls++;

@@ -38,6 +38,7 @@ class Shaders
 		Config& init();
 
 		void createCommandBuffers(ThreadResources& tr);
+		void gatherActiveCommandBuffers(ThreadResources& tr);
 
 		void setEngine(ShadedPathEngine* s) {
 			engine = s;
@@ -76,6 +77,7 @@ public:
 	// go through added shaders and initilaize thread local command buffers
 	void createCommandBuffers(ThreadResources& tr);
 
+	void gatherActiveCommandBuffers(ThreadResources& tr);
 	void checkShaderState(ShadedPathEngine& engine);
 
 	// general methods

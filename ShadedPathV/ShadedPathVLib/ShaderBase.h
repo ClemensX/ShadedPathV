@@ -88,8 +88,11 @@ public:
 	// create graphics pipeline with all support structures and other thread resources
 	virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) = 0;
 
-	// create graphics pipeline with all support structures and other thread resources
+	// create command buffers
 	virtual void createCommandBuffer(ThreadResources& tr) = 0;
+
+	// add current command buffers
+	virtual void addCurrentCommandBuffer(ThreadResources& tr) = 0;
 
 	// create descriptor set layout and assign to BaseShader variable
 	// (one per shader)
