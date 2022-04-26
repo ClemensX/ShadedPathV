@@ -18,6 +18,10 @@ void ShaderState::advance(ShadedPathEngine* engine, ShaderBase* shader)
 
 void ShaderBase::init(ShadedPathEngine& engine)
 {
+	if (enabled) {
+		Error("Shader already initialized!");
+	}
+	engine.shaders.checkShaderState(engine);
 	this->device = engine.global.device;
 	this->global = &engine.global;
 	this->engine = &engine;

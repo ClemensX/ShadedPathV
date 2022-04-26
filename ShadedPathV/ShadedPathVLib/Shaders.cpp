@@ -30,6 +30,21 @@ VkShaderModule Shaders::createShaderModule(const vector<byte>& code)
 	return shaderModule;
 }
 
+void Shaders::Config::createCommandBuffers(ThreadResources& tr) {
+	for (ShaderBase* shader : shaderList) {
+		shader->createCommandBuffer(tr);
+	}
+}
+
+void Shaders::createCommandBuffers(ThreadResources& tr)
+{
+	config.createCommandBuffers(tr);
+}
+
+void Shaders::checkShaderState(ShadedPathEngine& engine) {
+	engine.shaders.config.checkShaderState();
+}
+
 // SHADER Triangle
 
 // Be aware of local arrays - they will be overwritten after leaving this method!!
@@ -208,6 +223,9 @@ void Shaders::executeBufferImageDump(ThreadResources& tr)
 void Shaders::queueSubmit(ThreadResources& tr)
 {
 	LogCondF(LOG_QUEUE, "queue submit image index " << tr.frameIndex << endl);
+	if (tr.submitinfos.size() == 0) {
+		Error("Nothing to submit for frame. Did you forget to call Shaders::submitFrame(ThreadResources& tr)?");
+	}
 	if (vkQueueSubmit(engine.global.graphicsQueue, 1, &tr.submitinfos.at(0), tr.inFlightFence) != VK_SUCCESS) {
 		Error("failed to submit draw command buffer!");
 	}

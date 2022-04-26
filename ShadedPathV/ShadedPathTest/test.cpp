@@ -86,19 +86,32 @@ TEST(Engine, Initialization) {
 
 TEST(Engine, Headless) {
     {
-        ShadedPathEngine engine;
+        static ShadedPathEngine engine;
+        class TestApp : ShadedPathApplication
+        {
+        public:
+            void drawFrame(ThreadResources& tr) override {
+                engine.shaders.submitFrame(tr);
+            };
+            void handleInput(InputState& inputState) override {
+            };
+        };
+        TestApp testApp;
         ShaderState shaderState;
         engine.files.findAssetFolder("data");
         engine.setFrameCountLimit(10);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::Small);
         engine.setFramesInFlight(2);
         engine.setThreadModeSingle();
+        engine.registerApp((ShadedPathApplication*)& testApp);
         engine.init("Test");
+        engine.shaders.addShader(engine.shaders.simpleShader);
+        engine.shaders.initActiveShaders();
 
-        engine.shaders.simpleShader.init(engine, shaderState);
         engine.prepareDrawing();
         engine.drawFrame();
     }
+    Log("Test end. (Should appear after destructor log)\n");
 }
 
 TEST(Timer, Average) {
@@ -143,7 +156,7 @@ int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     // enable single tests
     //::testing::GTEST_FLAG(filter) = "Environment.GLFW";
-    //::testing::GTEST_FLAG(filter) = "Engine.Headless";
+    ::testing::GTEST_FLAG(filter) = "Engine.Headless";
     // all test but excluded one:
     //::testing::GTEST_FLAG(filter) = "-Engine.Headless";
     return RUN_ALL_TESTS();

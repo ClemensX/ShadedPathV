@@ -222,7 +222,7 @@ void LineShader::createDescriptorSets(ThreadResources& res)
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
-void LineShader::createCommandBufferLine(ThreadResources& tr)
+void LineShader::createCommandBuffer(ThreadResources& tr)
 {
 	auto& device = engine->global.device;
 	auto& global = engine->global;

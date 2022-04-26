@@ -63,8 +63,7 @@ void ShadedPathEngine::prepareDrawing()
     for (int i = 0; i < threadResources.size(); i++) {
         auto& tr = threadResources[i];
         tr.frameIndex = i;
-        shaders.simpleShader.createCommandBufferTriangle(tr);
-        shaders.lineShader.createCommandBufferLine(tr);
+        shaders.createCommandBuffers(tr);
         string name = "renderContinueQueue_" + to_string(i);
         tr.renderThreadContinueQueue.setLoggingInfo(LOG_RENDER_CONTINUATION, name);
         tr.renderThreadContinueQueue.push(0);
@@ -107,7 +106,9 @@ void ShadedPathEngine::drawFrame(ThreadResources& tr)
     vkResetFences(global.device, 1, &tr.presentFence);
     LogCondF(LOG_QUEUE, "fence drawFrame() present fence signalled image index " << tr.frameIndex << endl);
 
-    //shaders.drawFrame_Triangle(tr);
+    if (app == nullptr) {
+        Error("No app configured. Call ShadedPathEngine::registerApp(ShadedPathApplication* app)");
+    }
     app->drawFrame(tr);
     shaders.executeBufferImageDump(tr);
 }

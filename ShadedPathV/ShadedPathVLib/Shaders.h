@@ -37,10 +37,17 @@ class Shaders
 		// Initialize ShaderState and all shaders
 		Config& init();
 
+		void createCommandBuffers(ThreadResources& tr);
+
 		void setEngine(ShadedPathEngine* s) {
 			engine = s;
 		}
 
+		void checkShaderState() {
+			if (shaderState.viewport.height == 0) {
+				Error("ShaderState not initialized. Did you run Shaders::initActiveShaders()?");
+			}
+		}
 	private:
 		vector<ShaderBase*> shaderList;
 		ShadedPathEngine* engine;
@@ -65,6 +72,11 @@ public:
 		config.init();
 		return *this;
 	}
+
+	// go through added shaders and initilaize thread local command buffers
+	void createCommandBuffers(ThreadResources& tr);
+
+	void checkShaderState(ShadedPathEngine& engine);
 
 	// general methods
 	void queueSubmit(ThreadResources& tr);

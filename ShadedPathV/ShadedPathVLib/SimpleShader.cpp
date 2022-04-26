@@ -194,7 +194,7 @@ void SimpleShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo) {
     vkUnmapMemory(device, tr.uniformBufferMemoryTriangle);
 }
 
-void SimpleShader::createCommandBufferTriangle(ThreadResources& tr)
+void SimpleShader::createCommandBuffer(ThreadResources& tr)
 {
 	if (!enabled) return;
 	auto& device = this->engine->global.device;

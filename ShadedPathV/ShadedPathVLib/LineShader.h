@@ -57,6 +57,7 @@ public:
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
 	// thread resources initialization
 	virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) override;
+	virtual void createCommandBuffer(ThreadResources& tr) override;
 
 	// add lines - they will never  be removed
 	void add(vector<LineDef>& linesToAdd);
@@ -66,7 +67,6 @@ public:
 	// add lines for just one frame
 	void addOneTime(vector<LineDef>& linesToAdd, ThreadResources& tr);
 
-	void createCommandBufferLine(ThreadResources& tr);
 	void createCommandBufferLineAdd(ThreadResources& tr);
 
 	// clear line buffer, has to be called at begin of each frame
