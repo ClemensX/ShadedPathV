@@ -119,6 +119,7 @@ ThreadResources::~ThreadResources()
     vkDestroyFramebuffer(device, framebufferUI, nullptr);
     vkDestroyFramebuffer(device, framebufferLine, nullptr);
     vkDestroyFramebuffer(device, framebufferLineAdd, nullptr);
+    vkDestroyRenderPass(device, renderPassClear, nullptr);
     vkDestroyRenderPass(device, renderPassSimpleShader, nullptr);
     vkDestroyRenderPass(device, renderPassLine, nullptr);
     vkDestroyRenderPass(device, renderPassLineAdd, nullptr);
