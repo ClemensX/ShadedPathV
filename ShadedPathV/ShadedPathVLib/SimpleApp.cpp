@@ -23,13 +23,13 @@ void SimpleApp::run()
         engine.enableUI();
         engine.setFramesInFlight(2);
         engine.registerApp(this);
-        //engine.setThreadModeSingle();
+        engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("SimpleApp");
 
         // add shaders used in this app
-        shaders.addShader(shaders.clearShader).addShader(shaders.simpleShader).addShader(shaders.lineShader);
+        shaders.addShader(shaders.clearShader).addShader(shaders.lineShader);
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         shaders.initActiveShaders();
 
@@ -134,7 +134,7 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
     ubo.view = camera->getViewMatrix();
 
     // copy ubo to GPU:
-    engine.shaders.simpleShader.uploadToGPU(tr, ubo);
+    //engine.shaders.simpleShader.uploadToGPU(tr, ubo);
 
     // lines
     LineShader::UniformBufferObject lubo{};
