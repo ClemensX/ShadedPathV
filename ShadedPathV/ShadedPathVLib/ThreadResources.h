@@ -45,7 +45,16 @@ public:
 	VkCommandBuffer commandBufferUI;
 
 	// global resources shared by all shaders
-	FrameBufferAttachment colorAttachment, depthAttachment;
+	FrameBufferAttachment colorAttachment/*, depthAttachment*/;
+
+	// ClearShader
+	//VkPipelineLayout pipelineLayoutTriangle = nullptr;
+	//VkPipeline graphicsPipelineTriangle = nullptr;
+	VkRenderPass renderPassClear = nullptr;
+	VkCommandBuffer commandBufferClear = nullptr;
+	//VkBuffer uniformBufferTriangle;
+	//VkDeviceMemory uniformBufferMemoryTriangle;
+	//VkDescriptorSet descriptorSetTriangle = nullptr;
 
 	// triangle shader / SimpleShader
 	VkPipelineLayout pipelineLayoutTriangle = nullptr;

@@ -236,8 +236,13 @@ void GlobalRendering::createLogicalDevice()
     // provoke validation layer warning by commenting out following line:
     deviceFeatures.samplerAnisotropy = VK_TRUE;
 
+    constexpr VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_feature{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
+        .dynamicRendering = VK_TRUE,
+    };
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    //createInfo.pNext = &dynamic_rendering_feature;
 
     createInfo.pEnabledFeatures = &deviceFeatures;
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());

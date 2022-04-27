@@ -88,6 +88,7 @@ public:
 
 	// Triangle shader (most simple beginner shader - just one triangle, no MVP necessary)
 	// initiate before rendering first frame
+	ClearShader clearShader;
 	SimpleShader simpleShader;
 	LineShader lineShader;
 	// submit command buffers for current frame

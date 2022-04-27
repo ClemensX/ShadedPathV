@@ -29,7 +29,7 @@ void SimpleApp::run()
         engine.init("SimpleApp");
 
         // add shaders used in this app
-        shaders.addShader(shaders.simpleShader).addShader(shaders.lineShader);
+        shaders.addShader(shaders.clearShader).addShader(shaders.simpleShader).addShader(shaders.lineShader);
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         shaders.initActiveShaders();
 

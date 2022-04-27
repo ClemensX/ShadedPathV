@@ -224,6 +224,7 @@ inline XrResult CheckXrResult(XrResult res, const char* originator = nullptr, co
 #include "GlobalRendering.h"
 #include "Texture.h"
 #include "ShaderBase.h"
+#include "ClearShader.h"
 #include "SimpleShader.h"
 #include "LineShader.h"
 #include "Shaders.h"

@@ -186,6 +186,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="ClearShader.h" />
     <ClInclude Include="Files.h" />
     <ClInclude Include="GameTime.h" />
     <ClInclude Include="GlobalRendering.h" />
@@ -214,6 +215,7 @@
     <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="ClearShader.cpp" />
     <ClCompile Include="Files.cpp" />
     <ClCompile Include="GameTime.cpp" />
     <ClCompile Include="GlobalRendering.cpp" />

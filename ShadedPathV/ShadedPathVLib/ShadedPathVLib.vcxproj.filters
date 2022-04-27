@@ -19,6 +19,9 @@
     <Filter Include="Shader">
       <UniqueIdentifier>{b8cc1ef8-1c62-41c7-b454-08fdbf23a411}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ShaderClasses">
+      <UniqueIdentifier>{06290e73-55cb-4bc9-9354-4f0cc0e76196}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -81,9 +84,6 @@
     <ClInclude Include="ui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SimpleShader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -93,14 +93,20 @@
     <ClInclude Include="Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="LineShader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="World.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ShaderBase.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LineShader.h">
+      <Filter>ShaderClasses</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleShader.h">
+      <Filter>ShaderClasses</Filter>
+    </ClInclude>
+    <ClInclude Include="ClearShader.h">
+      <Filter>ShaderClasses</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -161,16 +167,10 @@
     <ClCompile Include="ui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SimpleShader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="VR.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="LineShader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="World.cpp">
@@ -178,6 +178,15 @@
     </ClCompile>
     <ClCompile Include="ShaderBase.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SimpleShader.cpp">
+      <Filter>ShaderClasses</Filter>
+    </ClCompile>
+    <ClCompile Include="LineShader.cpp">
+      <Filter>ShaderClasses</Filter>
+    </ClCompile>
+    <ClCompile Include="ClearShader.cpp">
+      <Filter>ShaderClasses</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
