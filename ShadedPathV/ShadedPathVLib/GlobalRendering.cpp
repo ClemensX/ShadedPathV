@@ -51,7 +51,7 @@ void GlobalRendering::initVulkanInstance()
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "ShadedPathV";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = API_VERSION;
+    appInfo.apiVersion = VP_KHR_ROADMAP_2022_MIN_API_VERSION;//API_VERSION;
 
     VkInstanceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -63,6 +63,7 @@ void GlobalRendering::initVulkanInstance()
     VpInstanceCreateInfo vpCreateInfo{};
     vpCreateInfo.pCreateInfo = &createInfo;
     vpCreateInfo.pProfile = &profile;
+    vpCreateInfo.flags = VP_INSTANCE_CREATE_MERGE_EXTENSIONS_BIT;
 
     vkInstance = VK_NULL_HANDLE;
     if (vpCreateInstance(&vpCreateInfo, nullptr, &vkInstance) != VK_SUCCESS) {
@@ -234,7 +235,8 @@ void GlobalRendering::createLogicalDevice()
 
     VkPhysicalDeviceFeatures deviceFeatures{};
     // provoke validation layer warning by commenting out following line:
-    deviceFeatures.samplerAnisotropy = VK_TRUE;
+    //deviceFeatures.samplerAnisotropy = VK_TRUE;
+    //deviceFeatures.dynamicRendering
 
     constexpr VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_feature{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
@@ -256,6 +258,7 @@ void GlobalRendering::createLogicalDevice()
     vpCreateInfo.pProfile = &profile;
     vpCreateInfo.flags = VP_DEVICE_CREATE_MERGE_EXTENSIONS_BIT;
 
+    checkDeviceProfileSupport(vkInstance, physicalDevice);
     if (vpCreateDevice(physicalDevice, &vpCreateInfo, nullptr, &device) != VK_SUCCESS) {
         Error("failed to create logical device!");
     }

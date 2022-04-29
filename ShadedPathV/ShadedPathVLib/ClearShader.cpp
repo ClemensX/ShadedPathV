@@ -55,8 +55,68 @@ void ClearShader::createCommandBuffer(ThreadResources& tr)
 	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 	renderPassInfo.pClearValues = clearValues.data();
 
-	vkCmdBeginRenderPass(tr.commandBufferClear, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	vkCmdEndRenderPass(tr.commandBufferClear);
+//	vkCmdBeginRenderPass(tr.commandBufferClear, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+//	vkCmdEndRenderPass(tr.commandBufferClear);
+
+	///////////
+	VkRenderingAttachmentInfoKHR color_attachment_info{};
+	color_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+	color_attachment_info.imageView = tr.colorAttachment.view;
+	color_attachment_info.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	color_attachment_info.resolveMode = VK_RESOLVE_MODE_NONE;
+	color_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	color_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	color_attachment_info.clearValue = clearValues[0];
+
+	VkRenderingAttachmentInfoKHR depth_attachment_info{};
+	depth_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+	depth_attachment_info.imageView = tr.depthImageView;
+	depth_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+	depth_attachment_info.resolveMode = VK_RESOLVE_MODE_NONE;
+	depth_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	depth_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	depth_attachment_info.clearValue = clearValues[1];
+
+	// Transition color attachment image to LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+	VkImageMemoryBarrier dstBarrier{};
+	dstBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	dstBarrier.srcAccessMask = 0;
+	dstBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+	dstBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	dstBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	dstBarrier.image = tr.colorAttachment.image;
+	dstBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+	vkCmdPipelineBarrier(tr.commandBufferClear, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+		0, 0, nullptr, 0, nullptr, 1, &dstBarrier);
+
+	// Transition depth attachment image to LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
+	dstBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	dstBarrier.srcAccessMask = 0;
+	dstBarrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+	dstBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	dstBarrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	dstBarrier.image = tr.depthImage;
+	dstBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+	vkCmdPipelineBarrier(tr.commandBufferClear, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+		0, 0, nullptr, 0, nullptr, 1, &dstBarrier);
+
+	//auto render_area = VkRect2D{ VkOffset2D{}, VkExtent2D{width, height} };
+	//auto render_info = vkb::initializers::rendering_info(render_area, 1, &color_attachment_info);
+	VkRenderingInfo render_info{};
+	render_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+	render_info.colorAttachmentCount = 1;
+	render_info.flags = 0;
+	render_info.layerCount = 1;
+	render_info.pColorAttachments = &color_attachment_info;
+	render_info.pDepthAttachment = &depth_attachment_info;
+	render_info.pStencilAttachment = &depth_attachment_info;
+	render_info.renderArea.offset = { 0, 0 };
+	render_info.renderArea.extent = this->engine->getBackBufferExtent();
+
+	vkCmdBeginRendering(tr.commandBufferClear, &render_info);
+
+	vkCmdEndRendering(tr.commandBufferClear);
+	////////////
 	if (vkEndCommandBuffer(tr.commandBufferClear) != VK_SUCCESS) {
 		Error("failed to record triangle command buffer!");
 	}

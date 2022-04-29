@@ -42,10 +42,10 @@ public:
 			VP_KHR_ROADMAP_2022_NAME,
 			VP_KHR_ROADMAP_2022_SPEC_VERSION
 	};
-	uint32_t API_VERSION = VP_KHR_ROADMAP_2022_MIN_API_VERSION;
+	//uint32_t API_VERSION = VP_KHR_ROADMAP_2022_MIN_API_VERSION;
 
 	// list device and instance extensions
-	static const bool LIST_EXTENSIONS = false;
+	static const bool LIST_EXTENSIONS = true;
 
 	// Vulkan formats we want to set centrally:
 
@@ -104,6 +104,7 @@ public:
 private:
 	vector<const char*> deviceExtensions = {
 		//VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
+		//VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
 	};
 
 	void gatherDeviceExtensions();
@@ -136,7 +137,24 @@ private:
 			return false;
 		}
 		Log("Vulkan profile checked ok: " << profile.profileName << " instance: " << profile.specVersion << endl)
-		return true;
+			return true;
+	}
+	bool checkDeviceProfileSupport(VkInstance instance, VkPhysicalDevice physDevice) {
+		VkResult result = VK_SUCCESS;
+		VkBool32 supported = VK_FALSE;
+		result = vpGetPhysicalDeviceProfileSupport(instance, physDevice, &profile, &supported);
+		if (result != VK_SUCCESS) {
+			// something went wrong
+			Log("Vulkan device profile not supported: " << profile.profileName << endl);
+			return false;
+		}
+		else if (supported != VK_TRUE) {
+			// profile is not supported at the instance level
+			Log("Vulkan device profile not supported: " << profile.profileName << " instance: " << profile.specVersion << endl);
+			return false;
+		}
+		Log("Vulkan device profile checked ok: " << profile.profileName << " instance: " << profile.specVersion << endl)
+			return true;
 	}
 };
 
