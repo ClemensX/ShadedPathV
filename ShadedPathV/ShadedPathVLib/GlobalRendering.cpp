@@ -60,14 +60,19 @@ void GlobalRendering::initVulkanInstance()
     createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     createInfo.ppEnabledExtensionNames = extensions.data();
 
-    VpInstanceCreateInfo vpCreateInfo{};
-    vpCreateInfo.pCreateInfo = &createInfo;
-    vpCreateInfo.pProfile = &profile;
-    vpCreateInfo.flags = VP_INSTANCE_CREATE_MERGE_EXTENSIONS_BIT;
+    if (USE_PROFILE_DYN_RENDERING) {
+        VpInstanceCreateInfo vpCreateInfo{};
+        vpCreateInfo.pCreateInfo = &createInfo;
+        vpCreateInfo.pProfile = &profile;
+        vpCreateInfo.flags = VP_INSTANCE_CREATE_MERGE_EXTENSIONS_BIT;
 
-    vkInstance = VK_NULL_HANDLE;
-    if (vpCreateInstance(&vpCreateInfo, nullptr, &vkInstance) != VK_SUCCESS) {
-        Error("failed to create instance!");
+        vkInstance = VK_NULL_HANDLE;
+        if (vpCreateInstance(&vpCreateInfo, nullptr, &vkInstance) != VK_SUCCESS) {
+            Error("failed to create instance!");
+        }
+    }
+    else {
+        vkCreateInstance(&createInfo, nullptr, &vkInstance);
     }
 
     // list available extensions:
@@ -235,7 +240,7 @@ void GlobalRendering::createLogicalDevice()
 
     VkPhysicalDeviceFeatures deviceFeatures{};
     // provoke validation layer warning by commenting out following line:
-    //deviceFeatures.samplerAnisotropy = VK_TRUE;
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
     //deviceFeatures.dynamicRendering
 
     constexpr VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_feature{
@@ -244,23 +249,28 @@ void GlobalRendering::createLogicalDevice()
     };
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    //createInfo.pNext = &dynamic_rendering_feature;
-
-    createInfo.pEnabledFeatures = &deviceFeatures;
+    if (!USE_PROFILE_DYN_RENDERING) {
+        createInfo.pNext = &dynamic_rendering_feature;
+        createInfo.pEnabledFeatures = &deviceFeatures;
+    }
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.enabledExtensionCount = 0;
     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
     createInfo.enabledLayerCount = 0; // no longer used - validation layers handled in kvInstance
-    VpDeviceCreateInfo vpCreateInfo{};
-    vpCreateInfo.pCreateInfo = &createInfo;
-    vpCreateInfo.pProfile = &profile;
-    vpCreateInfo.flags = VP_DEVICE_CREATE_MERGE_EXTENSIONS_BIT;
+    if (USE_PROFILE_DYN_RENDERING) {
+        VpDeviceCreateInfo vpCreateInfo{};
+        vpCreateInfo.pCreateInfo = &createInfo;
+        vpCreateInfo.pProfile = &profile;
+        vpCreateInfo.flags = VP_DEVICE_CREATE_MERGE_EXTENSIONS_BIT;
 
-    checkDeviceProfileSupport(vkInstance, physicalDevice);
-    if (vpCreateDevice(physicalDevice, &vpCreateInfo, nullptr, &device) != VK_SUCCESS) {
-        Error("failed to create logical device!");
+        checkDeviceProfileSupport(vkInstance, physicalDevice);
+        if (vpCreateDevice(physicalDevice, &vpCreateInfo, nullptr, &device) != VK_SUCCESS) {
+            Error("failed to create logical device!");
+        }
+    } else {
+        vkCreateDevice(physicalDevice, &createInfo, nullptr, &device);
     }
 
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
