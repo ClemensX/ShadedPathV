@@ -34,7 +34,7 @@ public:
 	// backbuffer image dump:
 	const char* imagedata = nullptr;
 	FrameBufferAttachment imageDumpAttachment{};
-	VkCommandBuffer commandBufferImageDump;
+	VkCommandBuffer commandBufferImageDump = nullptr;
 	VkFence imageDumpFence = nullptr;
 	VkSubresourceLayout subResourceLayout;
 
@@ -61,8 +61,8 @@ public:
 	VkPipeline graphicsPipelineTriangle = nullptr;
 	VkRenderPass renderPassSimpleShader = nullptr;
 	VkCommandBuffer commandBufferTriangle = nullptr;
-	VkBuffer uniformBufferTriangle;
-	VkDeviceMemory uniformBufferMemoryTriangle;
+	VkBuffer uniformBufferTriangle = nullptr;
+	VkDeviceMemory uniformBufferMemoryTriangle = nullptr;
 	VkDescriptorSet descriptorSetTriangle = nullptr;
 
 	// Line shader
