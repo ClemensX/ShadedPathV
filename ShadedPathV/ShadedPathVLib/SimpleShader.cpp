@@ -48,7 +48,7 @@ void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	createUniformBuffer(tr, tr.uniformBufferTriangle, sizeof(UniformBufferObject), tr.uniformBufferMemoryTriangle);
 
 	createDescriptorSets(tr);
-	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassSimpleShader, tr.framebuffer);
+	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassSimpleShader, tr.framebufferSimple);
 
 	// create shader stage
 	auto vertShaderStageInfo = createVertexShaderCreateInfo(vertShaderModuleTriangle);
@@ -220,7 +220,7 @@ void SimpleShader::createCommandBuffer(ThreadResources& tr)
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = tr.renderPassSimpleShader;
-	renderPassInfo.framebuffer = tr.framebuffer;
+	renderPassInfo.framebuffer = tr.framebufferSimple;
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = this->engine->getBackBufferExtent();
 

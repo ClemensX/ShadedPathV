@@ -15,7 +15,7 @@ void ClearShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 
 void ClearShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
-	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassClear, tr.framebuffer);
+	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassClear, tr.framebufferClear);
 }
 
 void ClearShader::createCommandBuffer(ThreadResources& tr)
@@ -44,7 +44,7 @@ void ClearShader::createCommandBuffer(ThreadResources& tr)
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = tr.renderPassClear;
-	renderPassInfo.framebuffer = tr.framebuffer;
+	renderPassInfo.framebuffer = tr.framebufferClear;
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = this->engine->getBackBufferExtent();
 

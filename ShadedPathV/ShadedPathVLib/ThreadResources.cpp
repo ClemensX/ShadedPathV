@@ -115,7 +115,8 @@ ThreadResources::~ThreadResources()
     vkDestroyFence(device, presentFence, nullptr);
     vkDestroyEvent(device, uiRenderFinished, nullptr);
     vkDestroyCommandPool(device, commandPool, nullptr);
-    vkDestroyFramebuffer(device, framebuffer, nullptr);
+    vkDestroyFramebuffer(device, framebufferClear, nullptr);
+    vkDestroyFramebuffer(device, framebufferSimple, nullptr);
     vkDestroyFramebuffer(device, framebufferUI, nullptr);
     vkDestroyFramebuffer(device, framebufferLine, nullptr);
     vkDestroyFramebuffer(device, framebufferLineAdd, nullptr);
