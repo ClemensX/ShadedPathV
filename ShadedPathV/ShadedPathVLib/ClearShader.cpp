@@ -10,12 +10,18 @@ void ClearShader::createDescriptorSets(ThreadResources& res)
 
 void ClearShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 {
+	shaderState.isClear = true;
 	ShaderBase::init(engine);
 }
 
 void ClearShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
 	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassClear, tr.framebufferClear);
+}
+
+void ClearShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
+{
+	shaderState.isClear = false;
 }
 
 void ClearShader::createCommandBuffer(ThreadResources& tr)

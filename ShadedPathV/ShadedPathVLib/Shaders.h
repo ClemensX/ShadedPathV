@@ -1,26 +1,17 @@
 #pragma once
 
+// ShaderState will be used during initial shader setup only (not for regular frame rendering)
 struct ShaderState
 {
-	enum class StateEnum {
-		// first stage - needs clearing depth, stencil and frame
-		CLEAR,
-		// transition from one shader to next in chain of render calls
-		CONNECT,
-		// prepare for final image copy
-		PRESENT
-	};
 	VkViewport viewport{};
 	VkRect2D scissor{};
 	VkPipelineViewportStateCreateInfo viewportState{};
-	// advance state, see impl for details
-	// null ShaderBase sets last state PRESENT
-	void advance(ShadedPathEngine* engine, ShaderBase* shader);
-	StateEnum getState() {
-		return state;
-	}
-private:
-	StateEnum state = StateEnum::CLEAR;
+
+	// variuos flags, usually set ba the shaders init() or initSingle()
+
+	// signal first shader that should clear depth and framebuffers
+	bool isClear = false;
+	bool isPresent = false;
 };
 
 class Shaders

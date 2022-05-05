@@ -42,7 +42,6 @@ void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 		setLastShader(false);
 	}
 	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassLine, tr.framebufferLine);
-	shaderState.advance(engine, nullptr);
 	if (undoLast) {
 		setLastShader(true);
 	}
@@ -116,6 +115,10 @@ void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	VkDeviceSize bufferSize = sizeof(Vertex) * MAX_DYNAMIC_LINES;
 	createVertexBuffer(tr, tr.vertexBufferAdd, bufferSize, tr.vertexBufferAddMemory);
 	createCommandBufferLineAdd(tr);
+}
+
+void LineShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
+{
 }
 
 

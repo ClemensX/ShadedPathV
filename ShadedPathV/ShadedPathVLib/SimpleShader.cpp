@@ -115,6 +115,10 @@ void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	}
 }
 
+void SimpleShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
+{
+}
+
 void SimpleShader::createDescriptorSetLayout()
 {
     VkDescriptorSetLayoutBinding uboLayoutBinding{};

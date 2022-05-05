@@ -83,10 +83,15 @@ public:
 	// 	 --> vkCreateGraphicsPipelines
 	// 	 --> vkDestroyShaderModule
 	//
+
+	// initialize shader
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderSate) = 0;
 
 	// create graphics pipeline with all support structures and other thread resources
 	virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) = 0;
+
+	// finish shader initialization
+	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderSate) = 0;
 
 	// create command buffers
 	virtual void createCommandBuffer(ThreadResources& tr) = 0;

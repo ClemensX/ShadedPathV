@@ -11,7 +11,7 @@ Shaders::Config& Shaders::Config::init()
 		for (auto& res : engine->threadResources) {
 			shader->initSingle(res, shaderState);
 		}
-		shaderState.advance(engine, shader);
+		shader->finishInitialization(*engine, shaderState);
 	}
 	return *this;
 }
