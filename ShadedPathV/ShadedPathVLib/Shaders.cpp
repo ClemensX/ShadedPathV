@@ -2,9 +2,17 @@
 
 Shaders::Config& Shaders::Config::init()
 {
-	engine->global.createViewportState(shaderState);
+	// some plausibility checks
+	if (shaderList.size() < 1) {
+		Error("No Shaders added. Use shaders.addShader()");
+	}
 	// mark last shader
-	shaderList[shaderList.size() - 1]->setLastShader(true);
+	auto& lastShader = shaderList[shaderList.size() - 1];
+	if (lastShader == &engine->shaders.uiShader) {
+		Error("In this version UI shader cannot be the last shader added");
+	}
+	lastShader->setLastShader(true);
+	engine->global.createViewportState(shaderState);
 	for (ShaderBase* shader : shaderList) {
 		shader->init(*engine, shaderState);
 		// pipelines must be created for every rendering thread
