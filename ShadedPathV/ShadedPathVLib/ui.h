@@ -13,6 +13,7 @@ public:
 
 	// build new UI for this frame
 	// update() and render() are mutually exclusive (mutex protection inside)
+	// only called from ShadedPathEngine::pollEvents()
 	void update();
 	// render pre-build UI
 	// update() and render() are mutually exclusive (mutex protection inside)

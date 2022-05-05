@@ -20,10 +20,9 @@ void SimpleApp::run()
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         int win_width = 1800;// 800;//3700;
         engine.enablePresentation(win_width, (int)(win_width /1.77f), "Vulkan Simple App");
-        engine.enableUI();
         engine.setFramesInFlight(2);
         engine.registerApp(this);
-        engine.setThreadModeSingle();
+        //engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("SimpleApp");
@@ -31,6 +30,7 @@ void SimpleApp::run()
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
+            .addShader(shaders.uiShader)
             //.addShader(shaders.simpleShader)
             .addShader(shaders.lineShader);
         // init shaders, e.g. one-time uploads before rendering cycle starts go here

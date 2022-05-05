@@ -106,7 +106,6 @@ public:
 	bool threadFinished = false;
 private:
 	void createFencesAndSemaphores();
-	void createFrameBufferUI();
 	void createBackBufferImage();
 	void createCommandPool();
 	void createDepthResources();

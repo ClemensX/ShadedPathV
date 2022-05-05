@@ -108,6 +108,9 @@
     <ClInclude Include="ClearShader.h">
       <Filter>ShaderClasses</Filter>
     </ClInclude>
+    <ClInclude Include="UIShader.h">
+      <Filter>ShaderClasses</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -186,6 +189,9 @@
       <Filter>ShaderClasses</Filter>
     </ClCompile>
     <ClCompile Include="ClearShader.cpp">
+      <Filter>ShaderClasses</Filter>
+    </ClCompile>
+    <ClCompile Include="UIShader.cpp">
       <Filter>ShaderClasses</Filter>
     </ClCompile>
   </ItemGroup>

@@ -15,7 +15,6 @@ void ShadedPathEngine::init(string appname)
     vr.init();
     global.initAfterPresentation();
     presentation.initAfterDeviceCreation();
-    ui.init(this);
     ThreadResources::initAll(this);
     textureStore.init(this);
     initialized = true;

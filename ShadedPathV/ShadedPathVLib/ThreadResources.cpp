@@ -20,7 +20,6 @@ void ThreadResources::init()
     createFencesAndSemaphores();
     createBackBufferImage();
     createDepthResources();
-    createFrameBufferUI();
     createCommandPool();
 }
 
@@ -68,25 +67,6 @@ void ThreadResources::createBackBufferImage()
     global.createImage(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height, 1, VK_SAMPLE_COUNT_1_BIT, global.ImageFormat, VK_IMAGE_TILING_OPTIMAL, 
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorAttachment.image, colorAttachment.memory);
     colorAttachment.view = global.createImageView(colorAttachment.image, global.ImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
-}
-
-void ThreadResources::createFrameBufferUI()
-{
-    VkFramebufferCreateInfo framebufferInfo{};
-    VkImageView attachmentsUI[] = {
-        colorAttachment.view
-    };
-    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass = engine->ui.imGuiRenderPass;// renderPassDraw;
-    framebufferInfo.attachmentCount = 1;
-    framebufferInfo.pAttachments = attachmentsUI;
-    framebufferInfo.width = engine->getBackBufferExtent().width;
-    framebufferInfo.height = engine->getBackBufferExtent().height;
-    framebufferInfo.layers = 1;
-
-    if (vkCreateFramebuffer(engine->global.device, &framebufferInfo, nullptr, &framebufferUI) != VK_SUCCESS) {
-        Error("failed to create framebuffer!");
-    }
 }
 
 void ThreadResources::createCommandPool()

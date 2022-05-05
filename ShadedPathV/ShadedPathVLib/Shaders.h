@@ -1,13 +1,14 @@
 #pragma once
 
-// ShaderState will be used during initial shader setup only (not for regular frame rendering)
+// ShaderState will be used during initial shader setup only (not for regular frame rendering).
+// it tracks state that has to be accessed by more than one shader
 struct ShaderState
 {
 	VkViewport viewport{};
 	VkRect2D scissor{};
 	VkPipelineViewportStateCreateInfo viewportState{};
 
-	// variuos flags, usually set ba the shaders init() or initSingle()
+	// various flags, usually set by shaders init() or initSingle()
 
 	// signal first shader that should clear depth and framebuffers
 	bool isClear = false;
@@ -75,13 +76,13 @@ public:
 	void queueSubmit(ThreadResources& tr);
 	VkShaderModule createShaderModule(const vector<byte>& code);
 
-	// SHADERS
+	// SHADERS. All shaders instances are here, but each shader has to be activated in application code
 
-	// Triangle shader (most simple beginner shader - just one triangle, no MVP necessary)
-	// initiate before rendering first frame
 	ClearShader clearShader;
 	SimpleShader simpleShader;
 	LineShader lineShader;
+	UIShader uiShader;
+
 	// submit command buffers for current frame
 	void submitFrame(ThreadResources& tr);
 
