@@ -29,10 +29,10 @@ void SimpleApp::run()
 
         // add shaders used in this app
         shaders
-            .addShader(shaders.uiShader)
+            //.addShader(shaders.uiShader)
             .addShader(shaders.clearShader)
-            //.addShader(shaders.simpleShader)
             .addShader(shaders.lineShader)
+            .addShader(shaders.simpleShader)
             ;
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         shaders.initActiveShaders();
@@ -55,7 +55,6 @@ void SimpleApp::run()
 }
 
 void SimpleApp::init() {
-    //engine.shaders.lineShader.init(engine);
     // add some lines:
     float aspectRatio = engine.getAspect();
     float plus = 0.0f;
@@ -138,7 +137,7 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
     ubo.view = camera->getViewMatrix();
 
     // copy ubo to GPU:
-    //engine.shaders.simpleShader.uploadToGPU(tr, ubo);
+    engine.shaders.simpleShader.uploadToGPU(tr, ubo);
 
     // lines
     LineShader::UniformBufferObject lubo{};
