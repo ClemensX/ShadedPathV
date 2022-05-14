@@ -27,6 +27,10 @@ public:
         files.findFxFolder();
     }
 
+    const string engineName = "ShadedPathV";
+    const string engineVersion = "0.1";
+    const uint32 engineVersionInt = 1;
+
     virtual ~ShadedPathEngine();
 
     enum class Resolution { FourK, TwoK, OneK, DeviceDefault, Small };

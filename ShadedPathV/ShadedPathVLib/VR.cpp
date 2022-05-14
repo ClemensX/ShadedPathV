@@ -72,13 +72,17 @@ void VR::CreateInstanceInternal() {
     // Transform our needed extensions from std::strings to C strings.
     std::transform(REQUIRED_XR_EXTENSIONS.begin(), REQUIRED_XR_EXTENSIONS.end(), std::back_inserter(extensions),
         [](const std::string& ext) { return ext.c_str(); });
+    //XrApplicationInfo appInfo{};
+    //appInfo.applicationName = engine.appname.c_str();
 
     XrInstanceCreateInfo createInfo{ XR_TYPE_INSTANCE_CREATE_INFO };
     createInfo.next = nullptr;
     createInfo.enabledExtensionCount = (uint32_t)extensions.size();
     createInfo.enabledExtensionNames = extensions.data();
 
-    strcpy_s(createInfo.applicationInfo.applicationName, "ShadedPathV");
+    strcpy_s(createInfo.applicationInfo.applicationName, engine.appname.c_str());
+    strcpy_s(createInfo.applicationInfo.engineName, engine.engineName.c_str());
+    createInfo.applicationInfo.engineVersion = engine.engineVersionInt;
     createInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
     try {
         CHECK_XRCMD(xrCreateInstance(&createInfo, &instance));
@@ -88,9 +92,15 @@ void VR::CreateInstanceInternal() {
         Log("OpenXR instance creation failed - running without VR" << endl);
         return;
     }
+    Log("OpenXR instance created successfully!" << endl);
 }
 
 
 VR::~VR()
 {
+    if (instance != XR_NULL_HANDLE) {
+        xrDestroyInstance(instance);
+        Log("OpenXR instance destroyed" << endl);
+    }
+
 }
