@@ -29,7 +29,7 @@ void SimpleApp::run()
 
         // add shaders used in this app
         shaders
-            //.addShader(shaders.uiShader)
+            .addShader(shaders.uiShader)
             .addShader(shaders.clearShader)
             .addShader(shaders.lineShader)
             .addShader(shaders.simpleShader)
