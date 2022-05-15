@@ -32,6 +32,7 @@ private:
 	ShadedPathEngine& engine;
 	XrInstance instance = nullptr;
 	XrSystemId systemId;
+	XrSystemProperties xrProp;
 	void createSystem();
 };
 

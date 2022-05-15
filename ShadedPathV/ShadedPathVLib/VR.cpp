@@ -102,8 +102,12 @@ void VR::createSystem()
 {
     XrSystemGetInfo sysGetInfo{ .type = XR_TYPE_SYSTEM_GET_INFO };
     sysGetInfo.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
-    sysGetInfo.formFactor = XR_FORM_FACTOR_HANDHELD_DISPLAY;
+    //sysGetInfo.formFactor = XR_FORM_FACTOR_HANDHELD_DISPLAY; // force XR error to see if error system is working
     CHECK_XRCMD(xrGetSystem(instance, &sysGetInfo, &systemId));
+    CHECK_XRCMD(xrGetSystemProperties(instance, systemId, &xrProp));
+    Log("VR running on " << xrProp.systemName << " vendor id " << xrProp.vendorId << endl);
+    
+    // max swapchain image sizes: xrProp.graphicsProperties.maxSwapchainImageHeight and ...Width
 }
 
 VR::~VR()
