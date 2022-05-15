@@ -12,15 +12,18 @@ void VR::init()
 	}
 	enabled = true;
 	//CHECK_XRCMD(xrEnumerateInstanceExtensionProperties(layerName, 0, &instanceExtensionCount, nullptr));
-    LogLayersAndExtensions();
+    if (engine.global.LIST_EXTENSIONS) {
+        logLayersAndExtensions();
+    }
     if (enabled) {
-        CreateInstanceInternal();
+        createInstanceInternal();
+        createSystem();
     }
 }
 
-void VR::LogLayersAndExtensions() {
+void VR::logLayersAndExtensions() {
     // Write out extension properties for a given layer.
-    const auto logExtensions = [](const char* layerName, int indent = 0) {
+    const auto logExtensions = [this](const char* layerName, int indent = 0) {
         uint32_t instanceExtensionCount;
         CHECK_XRCMD(xrEnumerateInstanceExtensionProperties(layerName, 0, &instanceExtensionCount, nullptr));
 
@@ -33,7 +36,7 @@ void VR::LogLayersAndExtensions() {
             extensions.data()));
 
         const std::string indentStr(indent, ' ');
-        LogX(Fmt("%sAvailable Extensions: (%d)", indentStr.c_str(), instanceExtensionCount));
+        LogX(Fmt("%sAvailable OpenXR Extensions: (%d)", indentStr.c_str(), instanceExtensionCount));
         for (const XrExtensionProperties& extension : extensions) {
             LogX(Fmt("%s  Name=%s SpecVersion=%d", indentStr.c_str(), extension.extensionName, extension.extensionVersion));
         }
@@ -63,7 +66,7 @@ void VR::LogLayersAndExtensions() {
     }
 }
 
-void VR::CreateInstanceInternal() {
+void VR::createInstanceInternal() {
     CHECK(instance == XR_NULL_HANDLE);
 
     // Create union of extensions required by platform and graphics plugins.
@@ -95,6 +98,13 @@ void VR::CreateInstanceInternal() {
     Log("OpenXR instance created successfully!" << endl);
 }
 
+void VR::createSystem()
+{
+    XrSystemGetInfo sysGetInfo{ .type = XR_TYPE_SYSTEM_GET_INFO };
+    sysGetInfo.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
+    sysGetInfo.formFactor = XR_FORM_FACTOR_HANDHELD_DISPLAY;
+    CHECK_XRCMD(xrGetSystem(instance, &sysGetInfo, &systemId));
+}
 
 VR::~VR()
 {

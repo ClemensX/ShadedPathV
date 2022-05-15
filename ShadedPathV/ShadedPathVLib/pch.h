@@ -177,8 +177,8 @@ inline std::string Fmt(const char* fmt, ...) {
 	if (sourceLocation != nullptr) {
 		failureMessage += Fmt("\n    Source: %s", sourceLocation);
 	}
-
-	throw std::logic_error(failureMessage);
+	Error(failureMessage.c_str());
+	//throw std::logic_error(failureMessage);
 }
 
 #define THROW(msg) Throw(msg, nullptr, FILE_AND_LINE);
@@ -195,20 +195,42 @@ inline std::string Fmt(const char* fmt, ...) {
         }                                    \
     }
 
-[[noreturn]] inline void ThrowXrResult(XrResult res, const char* originator = nullptr, const char* sourceLocation = nullptr) {
-	Throw(Fmt("XrResult failure [%s]", to_string(res)), originator, sourceLocation);
+// convert error code to string:
+inline optional<string> xr_to_string(XrInstance instance, XrResult res) {
+	if (instance == nullptr) {
+		return nullopt;
+	}
+	else {
+		char buffer[XR_MAX_RESULT_STRING_SIZE];
+		auto r = xrResultToString(instance, res, buffer);
+		if (XR_SUCCESS == r) {
+			return string(buffer);
+		}
+		else {
+			return nullopt;
+		}
+	}
 }
 
-inline XrResult CheckXrResult(XrResult res, const char* originator = nullptr, const char* sourceLocation = nullptr) {
+[[noreturn]] inline void ThrowXrResult(XrInstance instance, XrResult res, const char* originator = nullptr, const char* sourceLocation = nullptr) {
+	optional<string> resString = xr_to_string(instance, res);
+	if (resString == nullopt) {
+		Throw(Fmt("XrResult failure [%s]", to_string(res)), originator, sourceLocation);
+	} else {
+		Throw(Fmt("XrResult failure [%s]", resString.value().c_str()), originator, sourceLocation);
+	}
+}
+
+inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* originator = nullptr, const char* sourceLocation = nullptr) {
 	if (XR_FAILED(res)) {
-		ThrowXrResult(res, originator, sourceLocation);
+		ThrowXrResult(instance, res, originator, sourceLocation);
 	}
 
 	return res;
 }
 
 #define THROW_XR(xr, cmd) ThrowXrResult(xr, #cmd, FILE_AND_LINE);
-#define CHECK_XRCMD(cmd) CheckXrResult(cmd, #cmd, FILE_AND_LINE);
+#define CHECK_XRCMD(cmd) CheckXrResult(instance, cmd, #cmd, FILE_AND_LINE);
 #define CHECK_XRRESULT(res, cmdStr) CheckXrResult(res, cmdStr, FILE_AND_LINE);
 
 

@@ -48,7 +48,7 @@ public:
 	static const bool USE_PROFILE_DYN_RENDERING = false;
 
 	// list device and instance extensions
-	static const bool LIST_EXTENSIONS = true;
+	static const bool LIST_EXTENSIONS = false;
 
 	// Vulkan formats we want to set centrally:
 
