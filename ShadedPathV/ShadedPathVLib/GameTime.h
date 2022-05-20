@@ -42,6 +42,11 @@ public:
 	// NEVER use time values as float instead of double: precision is not enough and you will get same time value for actually different times
 	double getTimeGameClock();
 
+	// derived from chrono::steady_clock this will be nanoseconds since epoch.
+	// should never be nagative or wrap.
+	// long long same as int64_t. Used e.g. in OpenXR.
+	long long getNanoTime();
+
 private:
 	// measurements:
 	chrono::steady_clock::time_point now;
@@ -55,6 +60,7 @@ private:
 	double realtime;
 	double timeDelta; // [s]
 	double gameTimeDelta; // [s]
+	long long nanoTime; // [nanoseconds since epoch], same as int64_t. Used e.g. in OpenXR
 public:
 
 };

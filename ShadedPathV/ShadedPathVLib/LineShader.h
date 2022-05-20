@@ -111,7 +111,20 @@ private:
 
 	// util methods
 public:
+
+	static void addCross(vector<LineDef>& lines, vec3 pos, vec4 color) {
+		static float oDistance = 5.0f;
+		LineDef crossLines[] = {
+			// start, end, color
+			{ glm::vec3(pos.x-oDistance, pos.y, pos.z), glm::vec3(pos.x+oDistance, pos.y, pos.z), color },
+			{ glm::vec3(pos.x, pos.y-oDistance, pos.z), glm::vec3(pos.x, pos.y+oDistance, pos.z), color },
+			{ glm::vec3(pos.x, pos.y, pos.z-oDistance), glm::vec3(pos.x, pos.y, pos.z+oDistance), color }
+		};
+		lines.insert(lines.end(), crossLines, crossLines + size(crossLines));
+	}
+
 	static void addZeroCross(vector<LineDef>& lines) {
+		addCross(lines, vec3(), vec4(1.0f, 1.0f, 1.0f, 1.0f));
 		static float oDistance = 5.0f;
 		LineDef crossLines[] = {
 			// start, end, color

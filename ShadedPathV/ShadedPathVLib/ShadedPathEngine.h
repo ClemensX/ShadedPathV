@@ -55,6 +55,28 @@ public:
     // enable UI overlay. currently only possible if presentation is enabled
     void enableUI();
 
+    // enable VR mode. Needs needs active HMD device to work.
+    // If no device available will revert back to Stereo mode
+    void enableVR(bool enable = true) {
+        vrMode = enable;
+        if (enable) stereoMode = true;
+    }
+
+    bool isVR() {
+        return vrMode;
+    }
+
+    // enable stereo mode: 2 render buffers for each shader, 
+    // 2 images for left and right eye will be displayed in main window.
+    // auto-enabled in VR mode
+    void enableStereo() {
+        stereoMode = true;
+    }
+
+    bool isStereo() {
+        return stereoMode;
+    }
+
     // set number of frames that can be worked on in parallel
     void setFramesInFlight(int n);
 
@@ -143,6 +165,8 @@ private:
     bool enabledKeyEvents = false;
     bool enabledMouseMoveEvents = false;
     bool enabledMousButtonEvents = false;
+    bool vrMode = false;
+    bool stereoMode = false;
     // backbuffer size:
     VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);
     // check if backbuffer and window have same aspect - warning if not

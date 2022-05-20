@@ -191,6 +191,7 @@ void SimpleShader::createDescriptorSets(ThreadResources& res)
 }
 
 void SimpleShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo) {
+	if (!enabled) Error("Shader disabled. Calling methods on it is not allowed.");
     // copy ubo to GPU:
     void* data;
     vkMapMemory(device, tr.uniformBufferMemoryTriangle, 0, sizeof(ubo), 0, &data);

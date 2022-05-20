@@ -22,6 +22,9 @@
     <Filter Include="ShaderClasses">
       <UniqueIdentifier>{06290e73-55cb-4bc9-9354-4f0cc0e76196}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Apps">
+      <UniqueIdentifier>{856f33d7-4cca-4447-8b4a-0185072a1f79}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -31,9 +34,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Util.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="SimpleApp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GlobalRendering.h">
@@ -111,6 +111,12 @@
     <ClInclude Include="UIShader.h">
       <Filter>ShaderClasses</Filter>
     </ClInclude>
+    <ClInclude Include="SimpleApp.h">
+      <Filter>Apps</Filter>
+    </ClInclude>
+    <ClInclude Include="DeviceCoordApp.h">
+      <Filter>Apps</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -120,9 +126,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Util.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SimpleApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GlobalRendering.cpp">
@@ -193,6 +196,12 @@
     </ClCompile>
     <ClCompile Include="UIShader.cpp">
       <Filter>ShaderClasses</Filter>
+    </ClCompile>
+    <ClCompile Include="SimpleApp.cpp">
+      <Filter>Apps</Filter>
+    </ClCompile>
+    <ClCompile Include="DeviceCoordApp.cpp">
+      <Filter>Apps</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

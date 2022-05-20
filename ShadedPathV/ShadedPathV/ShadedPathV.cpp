@@ -6,6 +6,7 @@
 int main()
 {
     SimpleApp app;
+    //DeviceCoordApp app;
     app.run();
 }
 

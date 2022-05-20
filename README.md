@@ -122,14 +122,22 @@ To decide formats to use we can run the engine in presentation mode and get a li
 |                                                 | vkQueueSubmit(inFlightFence) | |
 
 ## Coordinate Systems
+### Right Handed Coordinate System
+
+![right handed](images/right_handed_small.png)
+
+Right-handed coordinate system (positive z towards camera) used for **ShadedPath Engine, OpenXR,** and **glTF**. (picture taken from [here](https://www.khronos.org/assets/uploads/developers/library/2018-siggraph/04-OpenXR-SIGGRAPH_Aug2018.pdf))
+
+### OpenXR
+
+From the spec (Chapter 2.16):
+The OpenXR runtime must interpret the swapchain images in a clip space of positive Y pointing down, near Z plane at 0, and far Z plane at 1.
+
 ### Vulcan Device Coordinates (X,Y)
 
 ![Device Coordinates](DeviceCoordinates.drawio.svg)
 
-### OpenXR
-
-From the spec:
-The OpenXR runtime must interpret the swapchain images in a clip space of positive Y pointing down, near Z plane at 0, and far Z plane at 1.
+This means right handed with x (-1 to 1) to the right, y (-1 to 1) top to bottom and z (0 to 1) into the screen. See app **DeviceCoordApp** for details.
 
 ## Issues
 
@@ -154,3 +162,5 @@ All timings in [microseconds]
 ## Copyrights of used Components
 
 * Dear ImGui: https://github.com/ocornut/imgui/blob/master/LICENSE.txt Copyright (c) 2014-2021 Omar Cornut
+* Coordinate system image: By Watchduck - Own work, CC BY-SA 4.0, https://commons.wikimedia.org/w/index.php?curid=58162563
+* Coordinate system image: https://www.khronos.org/assets/uploads/developers/library/2018-siggraph/04-OpenXR-SIGGRAPH_Aug2018.pdf

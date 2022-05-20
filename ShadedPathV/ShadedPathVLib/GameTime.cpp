@@ -19,6 +19,7 @@ void GameTime::advanceTime()
 	// get time
 	auto old = now;
 	now = chrono::steady_clock::now();
+	nanoTime = now.time_since_epoch().count();
 	chrono::system_clock::time_point nowAbs = chrono::system_clock::now();
 
 	// hours of day:
@@ -69,6 +70,11 @@ double GameTime::getTimeDelta()
 double GameTime::getRealTimeDelta()
 {
 	return timeDelta;
+}
+
+long long GameTime::getNanoTime()
+{
+	return nanoTime;
 }
 
 ThemedTimer ThemedTimer::singleton;

@@ -187,6 +187,7 @@
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="ClearShader.h" />
+    <ClInclude Include="DeviceCoordApp.h" />
     <ClInclude Include="Files.h" />
     <ClInclude Include="GameTime.h" />
     <ClInclude Include="GlobalRendering.h" />
@@ -217,6 +218,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ClearShader.cpp" />
+    <ClCompile Include="DeviceCoordApp.cpp" />
     <ClCompile Include="Files.cpp" />
     <ClCompile Include="GameTime.cpp" />
     <ClCompile Include="GlobalRendering.cpp" />

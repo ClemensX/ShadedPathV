@@ -2,12 +2,14 @@
 
 void VR::init()
 {
+    if (!engine.isVR()) return;
 	uint32_t instanceExtensionCount;
 	const char* layerName = nullptr;
 	auto xrResult = xrEnumerateInstanceExtensionProperties(layerName, 0, &instanceExtensionCount, nullptr);
 	if (XR_FAILED(xrResult)) {
 		enabled = false;
-		Log("OpenXR intialization failed - running without VR" << endl);
+		Log("OpenXR intialization failed - running without VR, reverting to Stereo mode" << endl);
+        engine.enableVR(false);
 		return;
 	}
 	enabled = true;
@@ -22,6 +24,7 @@ void VR::init()
 }
 
 void VR::logLayersAndExtensions() {
+    if (!engine.isVR()) return;
     // Write out extension properties for a given layer.
     const auto logExtensions = [this](const char* layerName, int indent = 0) {
         uint32_t instanceExtensionCount;
@@ -67,6 +70,7 @@ void VR::logLayersAndExtensions() {
 }
 
 void VR::createInstanceInternal() {
+    if (!engine.isVR()) return;
     CHECK(instance == XR_NULL_HANDLE);
 
     // Create union of extensions required by platform and graphics plugins.
@@ -110,8 +114,108 @@ void VR::createSystem()
     // max swapchain image sizes: xrProp.graphicsProperties.maxSwapchainImageHeight and ...Width
 }
 
+void VR::createSession()
+{
+    // Enumerate the view configurations paths.
+    uint32_t configurationCount;
+    CHECK_XRCMD(xrEnumerateViewConfigurations(instance, systemId, 0, &configurationCount, nullptr));
+
+    std::vector<XrViewConfigurationType> configurationTypes(configurationCount);
+    CHECK_XRCMD(xrEnumerateViewConfigurations(instance, systemId, configurationCount, &configurationCount, configurationTypes.data()));
+
+    bool configFound = false;
+    for (uint32_t i = 0; i < configurationCount; ++i)
+    {
+        if (configurationTypes[i] == XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO)
+        {
+            configFound = true;
+            break;  // Pick the first supported, i.e. preferred, view configuration.
+        }
+    }
+
+    if (!configFound)
+        return;   // Cannot support any view configuration of this system.
+
+    // Get detailed information of each view element.
+    uint32_t viewCount;
+    CHECK_XRCMD(xrEnumerateViewConfigurationViews(instance, systemId,
+        XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
+        0,
+        &viewCount,
+        nullptr));
+
+    std::vector<XrViewConfigurationView> configViews(viewCount, { XR_TYPE_VIEW_CONFIGURATION_VIEW });
+    CHECK_XRCMD(xrEnumerateViewConfigurationViews(instance, systemId,
+        XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
+        viewCount,
+        &viewCount,
+        configViews.data()));
+    xrConfigViews = configViews;
+    // Set the primary view configuration for the session.
+    XrSessionBeginInfo beginInfo = { XR_TYPE_SESSION_BEGIN_INFO };
+    beginInfo.primaryViewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+    CHECK_XRCMD(xrBeginSession(session, &beginInfo));
+
+    // Allocate a buffer according to viewCount.
+    std::vector<XrView> views(viewCount, { XR_TYPE_VIEW });
+}
+
+void VR::frameBegin(ThreadResources& tr)
+{
+    // Wait for a new frame.
+    XrFrameWaitInfo frameWaitInfo{ XR_TYPE_FRAME_WAIT_INFO };
+    CHECK_XRCMD(xrWaitFrame(session, &frameWaitInfo, &tr.frameState));
+
+    // Begin frame immediately before GPU work
+    XrFrameBeginInfo frameBeginInfo{ XR_TYPE_FRAME_BEGIN_INFO };
+    CHECK_XRCMD(xrBeginFrame(session, &frameBeginInfo));
+
+    XrCompositionLayerProjectionView projViews[2] = { /*...*/ };
+    XrCompositionLayerProjection layerProj{ XR_TYPE_COMPOSITION_LAYER_PROJECTION };
+
+    if (tr.frameState.shouldRender) {
+        XrViewLocateInfo viewLocateInfo{ XR_TYPE_VIEW_LOCATE_INFO };
+        viewLocateInfo.displayTime = tr.frameState.predictedDisplayTime;
+        viewLocateInfo.space = sceneSpace;
+
+        XrViewState viewState{ XR_TYPE_VIEW_STATE };
+        XrView views[2] = { {XR_TYPE_VIEW}, {XR_TYPE_VIEW} };
+        uint32_t viewCountOutput;
+        CHECK_XRCMD(xrLocateViews(session, &viewLocateInfo, &viewState, xrConfigViews.size(), &viewCountOutput, views));
+
+        // ...
+        // Use viewState and frameState for scene render, and fill in projViews[2]
+        // ...
+
+        // Assemble composition layers structure
+        layerProj.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
+        layerProj.space = sceneSpace;
+        layerProj.viewCount = 2;
+        layerProj.views = projViews;
+        tr.layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&layerProj));
+    }
+}
+
+void VR::frameEnd(ThreadResources& tr)
+{
+    // End frame and submit layers, even if layers is empty due to shouldRender = false
+    XrFrameEndInfo frameEndInfo{ XR_TYPE_FRAME_END_INFO };
+    frameEndInfo.displayTime = tr.frameState.predictedDisplayTime;
+    frameEndInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+    frameEndInfo.layerCount = (uint32_t)tr.layers.size();
+    frameEndInfo.layers = tr.layers.data();
+    CHECK_XRCMD(xrEndFrame(session, &frameEndInfo));
+    tr.layers.clear();
+}
+
+void VR::endSession()
+{
+    CHECK_XRCMD(xrDestroySession(session));
+}
+
 VR::~VR()
 {
+    if (!engine.isVR()) return;
     if (instance != XR_NULL_HANDLE) {
         xrDestroyInstance(instance);
         Log("OpenXR instance destroyed" << endl);

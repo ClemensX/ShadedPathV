@@ -162,6 +162,9 @@ void LineShader::initialUpload()
 		all.push_back(v2);
 	}
 
+	// if there are no fixed lines we have nothing to do here
+	if (all.size() == 0) return;
+
 	// create and copy vertex buffer in GPU
 	VkDeviceSize bufferSize = sizeof(Vertex) * all.size();
 	global->uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, all.data(), vertexBuffer, vertexBufferMemory);
@@ -271,6 +274,7 @@ void LineShader::addCurrentCommandBuffer(ThreadResources& tr) {
 
 void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer)
 {
+	if (vertexBuffer == nullptr) return; // no fixed lines to draw
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.graphicsPipelineLine);
 	VkBuffer vertexBuffers[] = { vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };

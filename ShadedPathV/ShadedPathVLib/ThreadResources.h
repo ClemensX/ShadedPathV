@@ -104,6 +104,11 @@ public:
 	VkImageView depthImageView;
 
 	bool threadFinished = false;
+
+	// VR
+	XrFrameState frameState{ XR_TYPE_FRAME_STATE };
+	vector<XrCompositionLayerBaseHeader*> layers;
+
 private:
 	void createFencesAndSemaphores();
 	void createBackBufferImage();

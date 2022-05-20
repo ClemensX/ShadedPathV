@@ -256,6 +256,7 @@ inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* ori
 #include "ShadedPathEngine.h"
 #include "World.h"
 #include "SimpleApp.h"
+#include "DeviceCoordApp.h"
 
 
 #endif //PCH_H

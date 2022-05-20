@@ -32,8 +32,19 @@ private:
 	ShadedPathEngine& engine;
 	XrInstance instance = nullptr;
 	XrSystemId systemId;
-	XrSystemProperties xrProp;
+	XrSystemProperties xrProp{};
+	XrSession session = nullptr;
+	XrSpace sceneSpace = nullptr;
+	vector<XrViewConfigurationView> xrConfigViews;
+
+	// init calls
 	void createSystem();
+	void createSession();
+	void endSession();
+
+	// threaded frame generation
+	void frameBegin(ThreadResources &tr);
+	void frameEnd(ThreadResources& tr);
 };
 
 

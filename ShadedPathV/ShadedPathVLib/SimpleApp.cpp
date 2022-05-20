@@ -13,12 +13,14 @@ void SimpleApp::run()
         engine.enableKeyEvents();
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
+        engine.enableVR();
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
         //engine.setFrameCountLimit(1000);
-        engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
-        int win_width = 1800;// 800;//3700;
+        //engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
+        engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
+        int win_width = 960;//1800;// 800;//3700;
         engine.enablePresentation(win_width, (int)(win_width /1.77f), "Vulkan Simple App");
         engine.setFramesInFlight(2);
         engine.registerApp(this);
@@ -74,6 +76,7 @@ void SimpleApp::init() {
     // add all intializer objects to vector:
     for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
     LineShader::addZeroCross(lines);
+    LineShader::addCross(lines, vec3(1.0f, 1.0f, 1.0f), vec4(1.0f, 1.0f, 0.0f, 1.0f));
 
     engine.shaders.lineShader.add(lines);
 
