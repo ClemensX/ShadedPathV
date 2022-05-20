@@ -135,7 +135,7 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
     ubo.view = glm::lookAt(camPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f);
     // flip y:
-    ubo.proj[1][1] *= -1;
+    //ubo.proj[1][1] *= -1;
 
     ubo.view = camera->getViewMatrix();
 
