@@ -77,6 +77,8 @@ using namespace glm;
 //
 // OpenXR Headers
 //
+
+#define XR_USE_GRAPHICS_API_VULKAN
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
 #include <openxr/openxr_reflection.h>

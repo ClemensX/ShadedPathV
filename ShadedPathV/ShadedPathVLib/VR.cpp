@@ -20,6 +20,7 @@ void VR::init()
     if (enabled) {
         createInstanceInternal();
         createSystem();
+        createSession();
     }
 }
 
@@ -116,6 +117,15 @@ void VR::createSystem()
 
 void VR::createSession()
 {
+    // basic saeeion creation:
+    XrGraphicsBindingVulkanKHR binding = { XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR };
+    binding.device = engine.global.device;
+    XrSessionCreateInfo sessionInfo = { XR_TYPE_SESSION_CREATE_INFO };
+    sessionInfo.next = &binding;
+    sessionInfo.systemId = systemId;
+    CHECK_XRCMD(xrCreateSession(instance, &sessionInfo, &session));
+
+
     // Enumerate the view configurations paths.
     uint32_t configurationCount;
     CHECK_XRCMD(xrEnumerateViewConfigurations(instance, systemId, 0, &configurationCount, nullptr));
@@ -216,6 +226,7 @@ void VR::endSession()
 VR::~VR()
 {
     if (!engine.isVR()) return;
+    endSession();
     if (instance != XR_NULL_HANDLE) {
         xrDestroyInstance(instance);
         Log("OpenXR instance destroyed" << endl);

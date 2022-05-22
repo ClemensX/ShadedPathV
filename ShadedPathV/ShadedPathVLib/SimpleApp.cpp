@@ -13,7 +13,7 @@ void SimpleApp::run()
         engine.enableKeyEvents();
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
-        //engine.enableVR();
+        engine.enableVR();
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
