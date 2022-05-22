@@ -21,10 +21,25 @@ public:
 		return positioner.getPosition();
 	}
 
+	// save projection matrix in normal screen space (y up)
+	void saveProjection(mat4 p) {
+		p[1][1] *= -1.0f;
+		projection = p;
+	}
+
+	// get adjusted projection matrix for Vulkan Normalized Device Coordinates (flip y)
+	// use this for projection matrix in shaders
+	mat4 getProjectionNDC() {
+		return projection;
+	}
+
 private:
 	CameraPositionerInterface& positioner;
+	mat4 projection = mat4(1.0f);
 };
 
+// standard first person camera, should be used for most rendering.
+// auto adjust view matrix for Vulkan NDCs by flipping y
 class CameraPositioner_FirstPerson final :
 	public CameraPositionerInterface
 {
@@ -93,7 +108,8 @@ public:
 	virtual glm::mat4 getViewMatrix() const override {
 		const glm::mat4 t = glm::translate(glm::mat4(1.0f), -cameraPosition);
 		const glm::mat4 r =	glm::mat4_cast(cameraOrientation);
-		return r * t;
+		auto v = r * t;
+		return v;
 	}
 
 	virtual glm::vec3 getPosition() const override {

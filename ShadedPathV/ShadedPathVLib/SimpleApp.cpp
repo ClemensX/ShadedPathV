@@ -13,7 +13,7 @@ void SimpleApp::run()
         engine.enableKeyEvents();
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
-        engine.enableVR();
+        //engine.enableVR();
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
@@ -22,6 +22,8 @@ void SimpleApp::run()
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
         int win_width = 960;//1800;// 800;//3700;
         engine.enablePresentation(win_width, (int)(win_width /1.77f), "Vulkan Simple App");
+        camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
+
         engine.setFramesInFlight(2);
         engine.registerApp(this);
         //engine.setThreadModeSingle();
@@ -132,12 +134,8 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
     glm::mat4 final = trans * rot; // rot * trans will circle the object around y axis
 
     ubo.model = final;
-    ubo.view = glm::lookAt(camPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f);
-    // flip y:
-    //ubo.proj[1][1] *= -1;
-
     ubo.view = camera->getViewMatrix();
+    ubo.proj = camera->getProjectionNDC();
 
     // copy ubo to GPU:
     engine.shaders.simpleShader.uploadToGPU(tr, ubo);
@@ -146,11 +144,7 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
     LineShader::UniformBufferObject lubo{};
     lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     lubo.view = camera->getViewMatrix();
-    lubo.proj = ubo.proj;
-
-    //lubo.model = glm::mat4(1.0f); // identity matrix
-    //lubo.view = glm::mat4();
-    //lubo.proj = glm::mat4();
+    lubo.proj = camera->getProjectionNDC();
 
     // dynamic lines:
     engine.shaders.lineShader.clearAddLines(tr);
