@@ -117,6 +117,9 @@
     <ClInclude Include="DeviceCoordApp.h">
       <Filter>Apps</Filter>
     </ClInclude>
+    <ClInclude Include="LineApp.h">
+      <Filter>Apps</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -201,6 +204,9 @@
       <Filter>Apps</Filter>
     </ClCompile>
     <ClCompile Include="DeviceCoordApp.cpp">
+      <Filter>Apps</Filter>
+    </ClCompile>
+    <ClCompile Include="LineApp.cpp">
       <Filter>Apps</Filter>
     </ClCompile>
   </ItemGroup>

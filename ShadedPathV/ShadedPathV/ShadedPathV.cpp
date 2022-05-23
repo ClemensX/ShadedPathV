@@ -5,7 +5,8 @@
 
 int main()
 {
-    SimpleApp app;
+    //SimpleApp app;
+    LineApp app;
     //DeviceCoordApp app;
     app.run();
 }

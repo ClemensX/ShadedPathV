@@ -259,6 +259,7 @@ inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* ori
 #include "World.h"
 #include "SimpleApp.h"
 #include "DeviceCoordApp.h"
+#include "LineApp.h"
 
 
 #endif //PCH_H
