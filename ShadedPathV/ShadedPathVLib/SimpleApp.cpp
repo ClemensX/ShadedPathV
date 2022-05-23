@@ -163,7 +163,7 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
     engine.shaders.lineShader.addOneTime(lines, tr);
 
     engine.shaders.lineShader.prepareAddLines(tr);
-    engine.shaders.lineShader.uploadToGPU(tr, lubo);
+    engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo);
 }
 
 void SimpleApp::handleInput(InputState& inputState)

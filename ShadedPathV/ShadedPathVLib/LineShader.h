@@ -77,7 +77,7 @@ public:
 	// prepare command buffer for added lines
 	void prepareAddLines(ThreadResources& tr);
 	// per frame update of UBO / MVP
-	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo);
+	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
 private:
 
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer);

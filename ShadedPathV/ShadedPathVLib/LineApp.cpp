@@ -108,6 +108,11 @@ void LineApp::updatePerFrame(ThreadResources& tr)
     lubo.view = camera->getViewMatrix();
     lubo.proj = camera->getProjectionNDC();
 
+    // TODO hack 2nd view
+    mat4 v2 = translate(lubo.view, vec3(0.3f, 0.0f, 0.0f));
+    auto lubo2 = lubo;
+    lubo2.view = v2;
+
     // dynamic lines:
     engine.shaders.lineShader.clearAddLines(tr);
     float aspectRatio = engine.getAspect();
@@ -125,7 +130,7 @@ void LineApp::updatePerFrame(ThreadResources& tr)
     engine.shaders.lineShader.addOneTime(lines, tr);
 
     engine.shaders.lineShader.prepareAddLines(tr);
-    engine.shaders.lineShader.uploadToGPU(tr, lubo);
+    engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
 }
 
 void LineApp::handleInput(InputState& inputState)

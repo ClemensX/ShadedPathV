@@ -45,6 +45,7 @@ public:
 
 	// global resources shared by all shaders
 	FrameBufferAttachment colorAttachment/*, depthAttachment*/;
+	FrameBufferAttachment colorAttachment2; // right side view
 
 	// ClearShader
 	//VkPipelineLayout pipelineLayoutTriangle = nullptr;
@@ -82,8 +83,10 @@ public:
 	VkDeviceMemory vertexBufferAddMemory = nullptr;
 	// MVP buffer
 	VkBuffer uniformBufferLine = nullptr;
+	VkBuffer uniformBufferLine2 = nullptr;
 	// MVP buffer device memory
 	VkDeviceMemory uniformBufferMemoryLine = nullptr;
+	VkDeviceMemory uniformBufferMemoryLine2 = nullptr;
 	VkDescriptorSet descriptorSetLine = nullptr;
 	vector<LineShader::Vertex> verticesAddLines;
 
@@ -102,6 +105,10 @@ public:
 	VkImage depthImage;
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
+	// right side views:
+	VkImage depthImage2;
+	VkDeviceMemory depthImageMemory2;
+	VkImageView depthImageView2;
 
 	bool threadFinished = false;
 

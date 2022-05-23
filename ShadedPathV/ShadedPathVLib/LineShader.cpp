@@ -33,6 +33,7 @@ void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
 	// uniform buffer
 	createUniformBuffer(tr, tr.uniformBufferLine, sizeof(UniformBufferObject), tr.uniformBufferMemoryLine);
+	createUniformBuffer(tr, tr.uniformBufferLine2, sizeof(UniformBufferObject), tr.uniformBufferMemoryLine2);
 
 	createDescriptorSets(tr);
 	// TODO remove hack
@@ -350,12 +351,17 @@ void LineShader::prepareAddLines(ThreadResources& tr)
 	recordDrawCommandAdd(tr.commandBufferLineAdd, tr, tr.vertexBufferAdd);
 }
 
-void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo) {
+void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
 	// copy ubo to GPU:
 	void* data;
 	vkMapMemory(device, tr.uniformBufferMemoryLine, 0, sizeof(ubo), 0, &data);
 	memcpy(data, &ubo, sizeof(ubo));
 	vkUnmapMemory(device, tr.uniformBufferMemoryLine);
+	if (engine->isStereo()) {
+		vkMapMemory(device, tr.uniformBufferMemoryLine2, 0, sizeof(ubo2), 0, &data);
+		memcpy(data, &ubo2, sizeof(ubo2));
+		vkUnmapMemory(device, tr.uniformBufferMemoryLine2);
+	}
 
 	// mak
 	// copy added lines to GPU:

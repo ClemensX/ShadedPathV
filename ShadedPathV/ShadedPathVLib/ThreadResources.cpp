@@ -67,6 +67,11 @@ void ThreadResources::createBackBufferImage()
     global.createImage(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height, 1, VK_SAMPLE_COUNT_1_BIT, global.ImageFormat, VK_IMAGE_TILING_OPTIMAL, 
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorAttachment.image, colorAttachment.memory);
     colorAttachment.view = global.createImageView(colorAttachment.image, global.ImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    if (engine->isStereo()) {
+        global.createImage(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height, 1, VK_SAMPLE_COUNT_1_BIT, global.ImageFormat, VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorAttachment2.image, colorAttachment2.memory);
+        colorAttachment2.view = global.createImageView(colorAttachment2.image, global.ImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    }
 }
 
 void ThreadResources::createCommandPool()
@@ -81,7 +86,12 @@ void ThreadResources::createDepthResources()
     engine->global.createImage(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height, 1, VK_SAMPLE_COUNT_1_BIT, depthFormat, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
     depthImageView = engine->global.createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
-}
+    if (engine->isStereo()) {
+        engine->global.createImage(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height, 1, VK_SAMPLE_COUNT_1_BIT, depthFormat, VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage2, depthImageMemory2);
+        depthImageView2 = engine->global.createImageView(depthImage2, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+    }
+ }
 
 ThreadResources::~ThreadResources()
 {
@@ -124,6 +134,16 @@ ThreadResources::~ThreadResources()
     vkFreeMemory(device, uniformBufferMemoryLine, nullptr);
     vkDestroyBuffer(device, vertexBufferAdd, nullptr);
     vkFreeMemory(device, vertexBufferAddMemory, nullptr);
+    if (engine->isStereo()) {
+        vkDestroyImageView(device, depthImageView2, nullptr);
+        vkDestroyImage(device, depthImage2, nullptr);
+        vkFreeMemory(device, depthImageMemory2, nullptr);
+        vkDestroyImageView(device, colorAttachment2.view, nullptr);
+        vkDestroyImage(device, colorAttachment2.image, nullptr);
+        vkFreeMemory(device, colorAttachment2.memory, nullptr);
+        vkDestroyBuffer(device, uniformBufferLine2, nullptr);
+        vkFreeMemory(device, uniformBufferMemoryLine2, nullptr);
+    }
     Log("ThreadResource destructed: " << this << endl);
 };
 
