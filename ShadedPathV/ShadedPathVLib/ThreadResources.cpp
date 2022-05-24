@@ -135,6 +135,10 @@ ThreadResources::~ThreadResources()
     vkDestroyBuffer(device, vertexBufferAdd, nullptr);
     vkFreeMemory(device, vertexBufferAddMemory, nullptr);
     if (engine->isStereo()) {
+        vkDestroyFramebuffer(device, framebufferClear2, nullptr);
+        vkDestroyFramebuffer(device, framebufferSimple2, nullptr);
+        vkDestroyFramebuffer(device, framebufferLine2, nullptr);
+        vkDestroyFramebuffer(device, framebufferLineAdd2, nullptr);
         vkDestroyImageView(device, depthImageView2, nullptr);
         vkDestroyImage(device, depthImage2, nullptr);
         vkFreeMemory(device, depthImageMemory2, nullptr);

@@ -16,7 +16,7 @@ void ClearShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 
 void ClearShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
-	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassClear, tr.framebufferClear);
+	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassClear, tr.framebufferClear, tr.framebufferClear2);
 }
 
 void ClearShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
@@ -62,8 +62,13 @@ void ClearShader::createCommandBuffer(ThreadResources& tr)
 	renderPassInfo.pClearValues = clearValues.data();
 
 	if (!GlobalRendering::USE_PROFILE_DYN_RENDERING) {
+		vkCmdBeginRenderPass(tr.commandBufferClear, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdEndRenderPass(tr.commandBufferClear);
+		if (engine->isStereo()) {
+			renderPassInfo.framebuffer = tr.framebufferClear2;
 			vkCmdBeginRenderPass(tr.commandBufferClear, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 			vkCmdEndRenderPass(tr.commandBufferClear);
+		}
 	} else {
 		VkRenderingAttachmentInfoKHR color_attachment_info{};
 		color_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
@@ -122,6 +127,33 @@ void ClearShader::createCommandBuffer(ThreadResources& tr)
 		vkCmdBeginRendering(tr.commandBufferClear, &render_info);
 
 		vkCmdEndRendering(tr.commandBufferClear);
+		//if (engine->isStereo()) {
+		//	VkRenderingAttachmentInfoKHR color_attachment_info2{};
+		//	color_attachment_info2.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+		//	color_attachment_info2.imageView = tr.colorAttachment2.view;
+		//	color_attachment_info2.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		//	color_attachment_info2.resolveMode = VK_RESOLVE_MODE_NONE;
+		//	color_attachment_info2.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		//	color_attachment_info2.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		//	color_attachment_info2.clearValue = clearValues[0];
+
+		//	VkRenderingAttachmentInfoKHR depth_attachment_info{};
+		//	depth_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+		//	depth_attachment_info.imageView = tr.depthImageView2;
+		//	depth_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+		//	depth_attachment_info.resolveMode = VK_RESOLVE_MODE_NONE;
+		//	depth_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		//	depth_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		//	depth_attachment_info.clearValue = clearValues[1];
+
+		//	render_info.pColorAttachments = &color_attachment_info;
+		//	render_info.pDepthAttachment = &depth_attachment_info;
+		//	render_info.pStencilAttachment = &depth_attachment_info;
+
+		//	vkCmdBeginRendering(tr.commandBufferClear, &render_info);
+
+		//	vkCmdEndRendering(tr.commandBufferClear);
+		//}
 	}
 	if (vkEndCommandBuffer(tr.commandBufferClear) != VK_SUCCESS) {
 		Error("failed to record triangle command buffer!");

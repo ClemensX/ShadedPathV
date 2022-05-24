@@ -70,7 +70,7 @@ void ShaderBase::createDescriptorPool(vector<VkDescriptorPoolSize> &poolSizes)
 	}
 }
 
-void ShaderBase::createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState shaderState, VkRenderPass& renderPass, VkFramebuffer& frameBuffer)
+void ShaderBase::createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState shaderState, VkRenderPass& renderPass, VkFramebuffer& frameBuffer, VkFramebuffer& frameBuffer2)
 {
 	// depth buffer attachement
 	VkAttachmentDescription depthAttachment{};
@@ -159,6 +159,22 @@ void ShaderBase::createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState
 
 	if (vkCreateFramebuffer(engine->global.device, &framebufferInfo, nullptr, &frameBuffer) != VK_SUCCESS) {
 		Error("failed to create framebuffer!");
+	}
+	if (engine->isStereo()) {
+		array<VkImageView, 2> attachmentsView2 = { tr.colorAttachment2.view, tr.depthImageView2 };
+
+		VkFramebufferCreateInfo framebufferInfo{};
+		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferInfo.renderPass = renderPass;
+		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+		framebufferInfo.pAttachments = attachmentsView2.data();
+		framebufferInfo.width = static_cast<uint32_t>(shaderState.viewport.width);
+		framebufferInfo.height = static_cast<uint32_t>(shaderState.viewport.height);
+		framebufferInfo.layers = 1;
+
+		if (vkCreateFramebuffer(engine->global.device, &framebufferInfo, nullptr, &frameBuffer2) != VK_SUCCESS) {
+			Error("failed to create framebuffer!");
+		}
 	}
 }
 

@@ -400,6 +400,7 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
 
     vkCmdBlitImage(
         tr.commandBufferPresentBack,
+        //tr.colorAttachment2.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, TODO
         tr.colorAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         this->swapChainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1, &imageBlitRegion,

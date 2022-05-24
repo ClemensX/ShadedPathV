@@ -146,8 +146,8 @@ protected:
 	VkDescriptorSetLayout descriptorSetLayout = nullptr;
 	VkDescriptorPool descriptorPool = nullptr;
 
-	// create render pass and frambuffer with respect to shader state
-	void createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState shaderState, VkRenderPass &renderPass, VkFramebuffer &frameBuffer);
+	// create render pass and framebuffer with respect to shader state
+	void createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState shaderState, VkRenderPass& renderPass, VkFramebuffer& frameBuffer, VkFramebuffer& frameBuffer2);
 
 	// util methods to simplify shader creation
 	VkPipelineShaderStageCreateInfo createVertexShaderCreateInfo(VkShaderModule& shaderModule) {

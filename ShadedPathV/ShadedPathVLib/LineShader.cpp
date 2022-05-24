@@ -42,11 +42,11 @@ void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 		undoLast = true;
 		setLastShader(false);
 	}
-	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassLine, tr.framebufferLine);
+	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassLine, tr.framebufferLine, tr.framebufferLine2);
 	if (undoLast) {
 		setLastShader(true);
 	}
-	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassLineAdd, tr.framebufferLineAdd);
+	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassLineAdd, tr.framebufferLineAdd, tr.framebufferLineAdd2);
 
 	// create shader stage
 	auto vertShaderStageInfo = createVertexShaderCreateInfo(vertShaderModule);
@@ -263,6 +263,12 @@ void LineShader::createCommandBuffer(ThreadResources& tr)
 	vkCmdBeginRenderPass(tr.commandBufferLine, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	recordDrawCommand(tr.commandBufferLine, tr, vertexBuffer);
 	vkCmdEndRenderPass(tr.commandBufferLine);
+	if (engine->isStereo()) {
+		renderPassInfo.framebuffer = tr.framebufferLine2;
+		vkCmdBeginRenderPass(tr.commandBufferLine, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		recordDrawCommand(tr.commandBufferLine, tr, vertexBuffer);
+		vkCmdEndRenderPass(tr.commandBufferLine);
+	}
 	if (vkEndCommandBuffer(tr.commandBufferLine) != VK_SUCCESS) {
 		Error("failed to record triangle command buffer!");
 	}
@@ -327,7 +333,6 @@ void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadReso
 
 	renderPassInfo.clearValueCount = 0;
 
-	vkCmdBeginRenderPass(tr.commandBufferLineAdd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.graphicsPipelineLineAdd);
 	VkBuffer vertexBuffers[] = { vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
@@ -336,8 +341,15 @@ void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadReso
 	// bind descriptor sets:
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutLine, 0, 1, &tr.descriptorSetLine, 0, nullptr);
 
+	vkCmdBeginRenderPass(tr.commandBufferLineAdd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(tr.verticesAddLines.size()), 1, 0, 0);
 	vkCmdEndRenderPass(tr.commandBufferLineAdd);
+	if (engine->isStereo()) {
+		renderPassInfo.framebuffer = tr.framebufferLineAdd2;
+		vkCmdBeginRenderPass(tr.commandBufferLineAdd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdDraw(commandBuffer, static_cast<uint32_t>(tr.verticesAddLines.size()), 1, 0, 0);
+		vkCmdEndRenderPass(tr.commandBufferLineAdd);
+	}
 	if (vkEndCommandBuffer(tr.commandBufferLineAdd) != VK_SUCCESS) {
 		Error("failed to record triangle command buffer!");
 	}

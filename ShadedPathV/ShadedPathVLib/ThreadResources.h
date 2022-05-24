@@ -53,6 +53,7 @@ public:
 	VkRenderPass renderPassClear = nullptr;
 	VkCommandBuffer commandBufferClear = nullptr;
 	VkFramebuffer framebufferClear = nullptr;
+	VkFramebuffer framebufferClear2 = nullptr;
 	//VkBuffer uniformBufferTriangle;
 	//VkDeviceMemory uniformBufferMemoryTriangle;
 	//VkDescriptorSet descriptorSetTriangle = nullptr;
@@ -66,11 +67,14 @@ public:
 	VkDeviceMemory uniformBufferMemoryTriangle = nullptr;
 	VkDescriptorSet descriptorSetTriangle = nullptr;
 	VkFramebuffer framebufferSimple = nullptr;
+	VkFramebuffer framebufferSimple2 = nullptr;
 
 	// Line shader
 	VkFramebuffer framebufferLine = nullptr;
-	VkRenderPass renderPassLine = nullptr;
 	VkFramebuffer framebufferLineAdd = nullptr;
+	VkFramebuffer framebufferLine2 = nullptr;
+	VkFramebuffer framebufferLineAdd2 = nullptr;
+	VkRenderPass renderPassLine = nullptr;
 	VkRenderPass renderPassLineAdd = nullptr;
 	VkPipelineLayout pipelineLayoutLine = nullptr;
 	VkPipeline graphicsPipelineLine = nullptr;

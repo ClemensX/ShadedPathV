@@ -48,7 +48,7 @@ void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	createUniformBuffer(tr, tr.uniformBufferTriangle, sizeof(UniformBufferObject), tr.uniformBufferMemoryTriangle);
 
 	createDescriptorSets(tr);
-	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassSimpleShader, tr.framebufferSimple);
+	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassSimpleShader, tr.framebufferSimple, tr.framebufferSimple2);
 
 	// create shader stage
 	auto vertShaderStageInfo = createVertexShaderCreateInfo(vertShaderModuleTriangle);
