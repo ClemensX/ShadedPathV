@@ -387,6 +387,9 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     blitSizeSrc.z = 1;
     VkOffset3D blitSizeDst;
     blitSizeDst.x = engine.win_width;
+    if (engine.isStereoPresentation()) {
+        blitSizeDst.x = engine.win_width / 2;
+    }
     blitSizeDst.y = engine.win_height;
     blitSizeDst.z = 1;
 
@@ -406,6 +409,23 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
         1, &imageBlitRegion,
         VK_FILTER_LINEAR
         );
+
+    if (engine.isStereoPresentation()) {
+        VkOffset3D blitPosDst;
+        blitPosDst.x = engine.win_width / 2;
+        blitPosDst.y = 0;
+        blitPosDst.z = 0;
+        imageBlitRegion.dstOffsets[0] = blitPosDst;
+        blitSizeDst.x = engine.win_width;
+        imageBlitRegion.dstOffsets[1] = blitSizeDst;
+        vkCmdBlitImage(
+            tr.commandBufferPresentBack,
+            tr.colorAttachment2.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            this->swapChainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1, &imageBlitRegion,
+            VK_FILTER_LINEAR
+        );
+    }
 
     VkImageMemoryBarrier dstBarrier2{};
     dstBarrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;

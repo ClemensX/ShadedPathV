@@ -77,6 +77,15 @@ public:
         return stereoMode;
     }
 
+    // enable stereo presentation mode that shows left and right eye output in main window
+    void enableStereoPresentation() {
+        stereoPresentation = true;
+    }
+
+    bool isStereoPresentation() {
+        return stereoPresentation;
+    }
+
     // set number of frames that can be worked on in parallel
     void setFramesInFlight(int n);
 
@@ -167,6 +176,7 @@ private:
     bool enabledMousButtonEvents = false;
     bool vrMode = false;
     bool stereoMode = false;
+    bool stereoPresentation = false;
     // backbuffer size:
     VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);
     // check if backbuffer and window have same aspect - warning if not

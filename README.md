@@ -69,6 +69,19 @@ copy ktx.dll to executable path:
 
 * **OpenXR**: install NuGet package OpenXR.Loader for all three projects in solution. If not found during compile or not displayed correctly: uninstall via NuGet Package Manager, then re-install
 
+## Stereo Mode
+
+Activate stereo mode from client with one of these:
+* engine.enableVR()
+* engine.enableStereo()
+
+Stereo mode will enable all shaders to draw twice, for left and right eye. All internale instances are named without qualifier for single view mode / left eye. And with **2** added to the name for right eye. E.g. for line shader framebuffer:
+
+* VkFramebuffer ThreadResources.framebufferLine (for left eye or single view)
+* VkFramebuffer ThreadResources.framebufferLine2 (for right eye)
+
+Only left eye will be shown in presentation window unless double view is activated with **engine.enableStereoPresentation()**
+
 ## Formats
 
 To decide formats to use we can run the engine in presentation mode and get a list of all supported swap chain formats and presentation modes. On my Laptop and PC I get list below. We decided for the formats in **bold**
