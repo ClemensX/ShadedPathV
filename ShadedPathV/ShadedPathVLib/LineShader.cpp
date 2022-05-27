@@ -180,14 +180,14 @@ void LineShader::createDescriptorSetLayout()
     uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
-    VkDescriptorSetLayoutBinding samplerLayoutBinding2{};
-	samplerLayoutBinding2.binding = 1;
-	samplerLayoutBinding2.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	samplerLayoutBinding2.descriptorCount = 1;
-	samplerLayoutBinding2.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	samplerLayoutBinding2.pImmutableSamplers = nullptr; // Optional
+    VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+	samplerLayoutBinding.binding = 1;
+	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	samplerLayoutBinding.descriptorCount = 1;
+	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	samplerLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding2 };
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -227,6 +227,14 @@ void LineShader::createDescriptorSets(ThreadResources& res)
     descriptorWrites[0].pBufferInfo = &bufferInfo;
 
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	if (engine->isStereo()) {
+		if (vkAllocateDescriptorSets(device, &allocInfo, &res.descriptorSetLine2) != VK_SUCCESS) {
+			Error("failed to allocate descriptor sets!");
+		}
+		bufferInfo.buffer = res.uniformBufferLine2;
+		descriptorWrites[0].dstSet = res.descriptorSetLine2;
+		vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	}
 }
 
 void LineShader::createCommandBuffer(ThreadResources& tr)
@@ -266,7 +274,7 @@ void LineShader::createCommandBuffer(ThreadResources& tr)
 	if (engine->isStereo()) {
 		renderPassInfo.framebuffer = tr.framebufferLine2;
 		vkCmdBeginRenderPass(tr.commandBufferLine, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		recordDrawCommand(tr.commandBufferLine, tr, vertexBuffer);
+		recordDrawCommand(tr.commandBufferLine, tr, vertexBuffer, true);
 		vkCmdEndRenderPass(tr.commandBufferLine);
 	}
 	if (vkEndCommandBuffer(tr.commandBufferLine) != VK_SUCCESS) {
@@ -279,7 +287,7 @@ void LineShader::addCurrentCommandBuffer(ThreadResources& tr) {
 	tr.activeCommandBuffers.push_back(tr.commandBufferLineAdd);
 };
 
-void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer)
+void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
 {
 	if (vertexBuffer == nullptr) return; // no fixed lines to draw
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.graphicsPipelineLine);
@@ -288,7 +296,11 @@ void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResourc
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
 	// bind descriptor sets:
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutLine, 0, 1, &tr.descriptorSetLine, 0, nullptr);
+	if (!isRightEye) {
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutLine, 0, 1, &tr.descriptorSetLine, 0, nullptr);
+	} else {
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutLine, 0, 1, &tr.descriptorSetLine2, 0, nullptr);
+	}
 
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(lines.size() * 2), 1, 0, 0);
 }
@@ -314,14 +326,14 @@ void LineShader::createCommandBufferLineAdd(ThreadResources& tr)
 	}
 }
 
-void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer)
+void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
 {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0; // Optional
 	beginInfo.pInheritanceInfo = nullptr; // Optional
 
-	if (vkBeginCommandBuffer(tr.commandBufferLineAdd, &beginInfo) != VK_SUCCESS) {
+	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
 		Error("failed to begin recording triangle command buffer!");
 	}
 	VkRenderPassBeginInfo renderPassInfo{};
@@ -341,25 +353,23 @@ void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadReso
 	// bind descriptor sets:
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutLine, 0, 1, &tr.descriptorSetLine, 0, nullptr);
 
-	vkCmdBeginRenderPass(tr.commandBufferLineAdd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(tr.verticesAddLines.size()), 1, 0, 0);
-	vkCmdEndRenderPass(tr.commandBufferLineAdd);
+	vkCmdEndRenderPass(commandBuffer);
 	if (engine->isStereo()) {
 		renderPassInfo.framebuffer = tr.framebufferLineAdd2;
-		vkCmdBeginRenderPass(tr.commandBufferLineAdd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutLine, 0, 1, &tr.descriptorSetLine2, 0, nullptr);
+		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 		vkCmdDraw(commandBuffer, static_cast<uint32_t>(tr.verticesAddLines.size()), 1, 0, 0);
-		vkCmdEndRenderPass(tr.commandBufferLineAdd);
+		vkCmdEndRenderPass(commandBuffer);
 	}
-	if (vkEndCommandBuffer(tr.commandBufferLineAdd) != VK_SUCCESS) {
+	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
 		Error("failed to record triangle command buffer!");
 	}
-
-
 }
 
 void LineShader::prepareAddLines(ThreadResources& tr)
 {
-	//createCommandBufferLineAdd(tr);
 	recordDrawCommandAdd(tr.commandBufferLineAdd, tr, tr.vertexBufferAdd);
 }
 

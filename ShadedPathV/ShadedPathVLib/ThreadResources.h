@@ -92,6 +92,7 @@ public:
 	VkDeviceMemory uniformBufferMemoryLine = nullptr;
 	VkDeviceMemory uniformBufferMemoryLine2 = nullptr;
 	VkDescriptorSet descriptorSetLine = nullptr;
+	VkDescriptorSet descriptorSetLine2 = nullptr;
 	vector<LineShader::Vertex> verticesAddLines;
 
 	// frame management
