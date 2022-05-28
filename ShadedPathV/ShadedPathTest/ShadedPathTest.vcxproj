@@ -1,7 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\OpenXR.Loader.1.0.10.2\build\native\OpenXR.Loader.props" Condition="Exists('..\packages\OpenXR.Loader.1.0.10.2\build\native\OpenXR.Loader.props')" />
-  <Import Project="..\packages\OpenXR.Headers.1.0.10.2\build\native\OpenXR.Headers.props" Condition="Exists('..\packages\OpenXR.Headers.1.0.10.2\build\native\OpenXR.Headers.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -40,6 +38,10 @@
   <ImportGroup Label="Shared" />
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>C:\dev\vulkan\openxr\OpenXR-SDK\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\dev\vulkan\openxr\OpenXR-SDK\build\win64\src\loader\Debug;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+  </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="test.h" />
@@ -65,8 +67,6 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-dyn.1.8.1.5\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-dyn.targets" Condition="Exists('..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-dyn.1.8.1.5\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-dyn.targets')" />
-    <Import Project="..\packages\OpenXR.Headers.1.0.10.2\build\native\OpenXR.Headers.targets" Condition="Exists('..\packages\OpenXR.Headers.1.0.10.2\build\native\OpenXR.Headers.targets')" />
-    <Import Project="..\packages\OpenXR.Loader.1.0.10.2\build\native\OpenXR.Loader.targets" Condition="Exists('..\packages\OpenXR.Loader.1.0.10.2\build\native\OpenXR.Loader.targets')" />
   </ImportGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -151,9 +151,5 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-dyn.1.8.1.5\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-dyn.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-dyn.1.8.1.5\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-dyn.targets'))" />
-    <Error Condition="!Exists('..\packages\OpenXR.Headers.1.0.10.2\build\native\OpenXR.Headers.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\OpenXR.Headers.1.0.10.2\build\native\OpenXR.Headers.props'))" />
-    <Error Condition="!Exists('..\packages\OpenXR.Headers.1.0.10.2\build\native\OpenXR.Headers.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\OpenXR.Headers.1.0.10.2\build\native\OpenXR.Headers.targets'))" />
-    <Error Condition="!Exists('..\packages\OpenXR.Loader.1.0.10.2\build\native\OpenXR.Loader.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\OpenXR.Loader.1.0.10.2\build\native\OpenXR.Loader.props'))" />
-    <Error Condition="!Exists('..\packages\OpenXR.Loader.1.0.10.2\build\native\OpenXR.Loader.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\OpenXR.Loader.1.0.10.2\build\native\OpenXR.Loader.targets'))" />
   </Target>
 </Project>

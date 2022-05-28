@@ -1,5 +1,10 @@
 #include "pch.h"
 
+
+#ifdef _MSC_VER
+#pragma comment(lib, "openxr_loaderd")
+#endif
+
 void VR::init()
 {
     if (!engine.isVR()) return;
@@ -117,7 +122,15 @@ void VR::createSystem()
 
 void VR::createSession()
 {
-    // basic saeeion creation:
+    // xrCreateSession: failed to call xr*GetGraphicsRequirements before xrCreateSession
+    XrGraphicsRequirementsVulkan2KHR graphicsRequirements{XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN2_KHR};
+    PFN_xrGetVulkanGraphicsRequirements2KHR pfnGetVulkanGraphicsRequirements2KHR = nullptr;
+    CHECK_XRCMD(xrGetInstanceProcAddr(instance, "xrGetVulkanGraphicsRequirements2KHR",
+        reinterpret_cast<PFN_xrVoidFunction*>(&pfnGetVulkanGraphicsRequirements2KHR)));
+    CHECK_XRCMD(pfnGetVulkanGraphicsRequirements2KHR(instance, systemId, &graphicsRequirements));
+
+    // xrCreateSession: failed to call xrGetVulkanGraphicsDevice before xrCreateSession
+    // basic session creation:
     XrGraphicsBindingVulkanKHR binding = { XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR };
     binding.device = engine.global.device;
     XrSessionCreateInfo sessionInfo = { XR_TYPE_SESSION_CREATE_INFO };
