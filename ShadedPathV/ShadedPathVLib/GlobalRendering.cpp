@@ -106,6 +106,8 @@ std::vector<const char*> GlobalRendering::getRequiredExtensions() {
     //extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     //extensions.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     //extensions.push_back(VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME);
+    extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+
     Log("requested Vulkan instance extensions:" << endl)
         Util::printCStringList(extensions);
     Log("requested Vulkan device extensions:" << endl)
@@ -288,7 +290,9 @@ void GlobalRendering::createLogicalDevice()
         if (engine.isVR()) {
             engine.vr.initVulkanCreateDevice(createInfo);
         } else {
-            vkCreateDevice(physicalDevice, &createInfo, nullptr, &device);
+            if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
+                Error("Device Creation failed.");
+            }
         }
     }
 
