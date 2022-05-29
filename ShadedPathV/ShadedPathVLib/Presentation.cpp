@@ -284,6 +284,8 @@ void Presentation::createPresentQueue(unsigned int value)
 {
     if (!enabled) return;
     vkGetDeviceQueue(engine.global.device, value, 0, &presentQueue);
+    engine.global.presentQueueFamiliyIndex = value;
+    engine.global.presentQueueIndex = 0;
 }
 
 void Presentation::initBackBufferPresentationSingle(ThreadResources &res)

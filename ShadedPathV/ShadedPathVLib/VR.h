@@ -14,6 +14,10 @@ public:
 
 	// initialize Vulkan instance via XR_KHR_vulkan_enable2 extension
 	void initVulkanEnable2(VkInstanceCreateInfo &instInfo);
+	// create logical devive via XR_KHR_vulkan_enable2 extension
+	void initVulkanCreateDevice(VkDeviceCreateInfo& createInfo);
+	// create XR Session
+	void createSession();
 
 	// if false we run without VR
 	bool enabled = false;
@@ -39,7 +43,6 @@ private:
 
 	// init calls
 	void createSystem();
-	void createSession();
 	void endSession();
 
 	// threaded frame generation

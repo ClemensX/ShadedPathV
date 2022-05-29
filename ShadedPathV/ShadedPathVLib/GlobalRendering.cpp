@@ -125,6 +125,15 @@ void GlobalRendering::pickPhysicalDevice(bool listmode)
     vkEnumeratePhysicalDevices(vkInstance, &deviceCount, devices.data());
     for (const auto& device : devices) {
         if (isDeviceSuitable(device, listmode)) {
+            // check for same device (phys device may have been initialized by OpenXR
+            if (physicalDevice != nullptr) {
+                if (physicalDevice != device) {
+                    Error("Physical Device selected does not match pre-selected device from OpenXR");
+                } else {
+                    // all is fine - er already have our phys device
+                    return;
+                }
+            }
             physicalDevice = device;
             break;
         }
@@ -276,12 +285,19 @@ void GlobalRendering::createLogicalDevice()
             Error("failed to create logical device!");
         }
     } else {
-        vkCreateDevice(physicalDevice, &createInfo, nullptr, &device);
+        if (engine.isVR()) {
+            engine.vr.initVulkanCreateDevice(createInfo);
+        } else {
+            vkCreateDevice(physicalDevice, &createInfo, nullptr, &device);
+        }
     }
 
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     if (engine.presentation.enabled) {
         engine.presentation.createPresentQueue(indices.presentFamily.value());
+    }
+    if (engine.isVR()) {
+        engine.vr.createSession();
     }
 }
 

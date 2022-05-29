@@ -43,7 +43,6 @@ void VR::initVulkanEnable2(VkInstanceCreateInfo &instInfo)
     PFN_xrCreateVulkanInstanceKHR pfnCreateVulkanInstanceKHR = nullptr;
     CHECK_XRCMD(xrGetInstanceProcAddr(instance, "xrCreateVulkanInstanceKHR",
         reinterpret_cast<PFN_xrVoidFunction*>(&pfnCreateVulkanInstanceKHR)));
-
     XrVulkanInstanceCreateInfoKHR createInfo{ XR_TYPE_VULKAN_INSTANCE_CREATE_INFO_KHR };
     createInfo.systemId = systemId;
     createInfo.pfnGetInstanceProcAddr = &vkGetInstanceProcAddr;
@@ -54,14 +53,33 @@ void VR::initVulkanEnable2(VkInstanceCreateInfo &instInfo)
         Error("Could not initialize vulkan instance via OpenXR");
     }
 
-    // xrCreateSession: failed to call xrGetVulkanGraphicsDevice before xrCreateSession
-    // basic session creation:
-    XrGraphicsBindingVulkanKHR binding = { XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR };
-    binding.device = engine.global.device;
-    XrSessionCreateInfo sessionInfo = { XR_TYPE_SESSION_CREATE_INFO };
-    sessionInfo.next = &binding;
-    sessionInfo.systemId = systemId;
-    CHECK_XRCMD(xrCreateSession(instance, &sessionInfo, &session));
+    // pick physical device
+    XrVulkanGraphicsDeviceGetInfoKHR deviceInfo{ XR_TYPE_VULKAN_GRAPHICS_DEVICE_GET_INFO_KHR };
+    deviceInfo.systemId = systemId;
+    deviceInfo.vulkanInstance = engine.global.vkInstance;
+    PFN_xrGetVulkanGraphicsDevice2KHR pfnGetVulkanGraphicsDevice2KHR = nullptr;
+    CHECK_XRCMD(xrGetInstanceProcAddr(instance, "xrGetVulkanGraphicsDevice2KHR",
+        reinterpret_cast<PFN_xrVoidFunction*>(&pfnGetVulkanGraphicsDevice2KHR)));
+    pfnGetVulkanGraphicsDevice2KHR(instance, &deviceInfo, &engine.global.physicalDevice);
+
+}
+
+void VR::initVulkanCreateDevice(VkDeviceCreateInfo& vkCreateInfo)
+{
+    VkResult err;
+    PFN_xrCreateVulkanDeviceKHR pfnCreateVulkanDeviceKHR = nullptr;
+    CHECK_XRCMD(xrGetInstanceProcAddr(instance, "xrCreateVulkanDeviceKHR",
+        reinterpret_cast<PFN_xrVoidFunction*>(&pfnCreateVulkanDeviceKHR)));
+    XrVulkanDeviceCreateInfoKHR createInfo{ XR_TYPE_VULKAN_DEVICE_CREATE_INFO_KHR };
+    createInfo.systemId = systemId;
+    createInfo.pfnGetInstanceProcAddr = &vkGetInstanceProcAddr;
+    createInfo.vulkanPhysicalDevice = engine.global.physicalDevice;
+    createInfo.vulkanCreateInfo = &vkCreateInfo;
+    createInfo.vulkanAllocator = nullptr;
+    CHECK_XRCMD(pfnCreateVulkanDeviceKHR(instance, &createInfo, &engine.global.device, &err));
+    if (err != VK_SUCCESS) {
+        Error("Could not initialize vulkan device via OpenXR");
+    }
 }
 
 void VR::logLayersAndExtensions() {
@@ -157,6 +175,19 @@ void VR::createSystem()
 
 void VR::createSession()
 {
+
+    // xrCreateSession: failed to call xrGetVulkanGraphicsDevice before xrCreateSession
+    // basic session creation:
+    XrGraphicsBindingVulkanKHR binding = { XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR };
+    binding.instance = engine.global.vkInstance;
+    binding.physicalDevice = engine.global.physicalDevice;
+    binding.device = engine.global.device;
+    binding.queueFamilyIndex = engine.global.presentQueueFamiliyIndex;
+    binding.queueIndex = engine.global.presentQueueIndex;
+    XrSessionCreateInfo sessionInfo = { XR_TYPE_SESSION_CREATE_INFO };
+    sessionInfo.next = &binding;
+    sessionInfo.systemId = systemId;
+    CHECK_XRCMD(xrCreateSession(instance, &sessionInfo, &session));
 
 
     // Enumerate the view configurations paths.

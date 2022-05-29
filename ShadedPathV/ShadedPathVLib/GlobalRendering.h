@@ -72,6 +72,8 @@ public:
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, bool listmode = false);
 	QueueFamilyIndices familyIndices;
 	uint32_t findMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags properties);
+	uint32_t presentQueueFamiliyIndex = -1;
+	uint32_t presentQueueIndex = -1;
 
 	// Vulkan helper
 
