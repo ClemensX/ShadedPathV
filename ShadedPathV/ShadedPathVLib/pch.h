@@ -236,6 +236,7 @@ inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* ori
 #define CHECK_XRRESULT(res, cmdStr) CheckXrResult(res, cmdStr, FILE_AND_LINE);
 
 
+
 // engine headers
 
 #include "Files.h"

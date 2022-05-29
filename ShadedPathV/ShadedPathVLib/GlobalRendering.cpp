@@ -66,13 +66,19 @@ void GlobalRendering::initVulkanInstance()
         vpCreateInfo.pProfile = &profile;
         vpCreateInfo.flags = VP_INSTANCE_CREATE_MERGE_EXTENSIONS_BIT;
 
-        vkInstance = VK_NULL_HANDLE;
         if (vpCreateInstance(&vpCreateInfo, nullptr, &vkInstance) != VK_SUCCESS) {
             Error("failed to create instance!");
         }
     }
     else {
-        vkCreateInstance(&createInfo, nullptr, &vkInstance);
+        vkInstance = VK_NULL_HANDLE;
+        if (engine.isVR()) {
+            engine.vr.initVulkanEnable2(createInfo);
+        } else {
+            if (vkCreateInstance(&createInfo, nullptr, &vkInstance) != VK_SUCCESS) {
+                Error("failed to create instance!");
+            }
+        }
     }
 
     // list available extensions:

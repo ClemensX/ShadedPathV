@@ -25,8 +25,43 @@ void VR::init()
     if (enabled) {
         createInstanceInternal();
         createSystem();
-        createSession();
+        //createSession();
     }
+}
+
+void VR::initVulkanEnable2(VkInstanceCreateInfo &instInfo)
+{
+    // xrCreateSession: failed to call xr*GetGraphicsRequirements before xrCreateSession
+    XrGraphicsRequirementsVulkan2KHR graphicsRequirements{ XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN2_KHR };
+    PFN_xrGetVulkanGraphicsRequirements2KHR pfnGetVulkanGraphicsRequirements2KHR = nullptr;
+    CHECK_XRCMD(xrGetInstanceProcAddr(instance, "xrGetVulkanGraphicsRequirements2KHR",
+        reinterpret_cast<PFN_xrVoidFunction*>(&pfnGetVulkanGraphicsRequirements2KHR)));
+    CHECK_XRCMD(pfnGetVulkanGraphicsRequirements2KHR(instance, systemId, &graphicsRequirements));
+
+    // init vulkan instance
+    VkResult err;
+    PFN_xrCreateVulkanInstanceKHR pfnCreateVulkanInstanceKHR = nullptr;
+    CHECK_XRCMD(xrGetInstanceProcAddr(instance, "xrCreateVulkanInstanceKHR",
+        reinterpret_cast<PFN_xrVoidFunction*>(&pfnCreateVulkanInstanceKHR)));
+
+    XrVulkanInstanceCreateInfoKHR createInfo{ XR_TYPE_VULKAN_INSTANCE_CREATE_INFO_KHR };
+    createInfo.systemId = systemId;
+    createInfo.pfnGetInstanceProcAddr = &vkGetInstanceProcAddr;
+    createInfo.vulkanCreateInfo = &instInfo;
+    createInfo.vulkanAllocator = nullptr;
+    CHECK_XRCMD(pfnCreateVulkanInstanceKHR(instance, &createInfo, &engine.global.vkInstance, &err));
+    if (err != VK_SUCCESS) {
+        Error("Could not initialize vulkan instance via OpenXR");
+    }
+
+    // xrCreateSession: failed to call xrGetVulkanGraphicsDevice before xrCreateSession
+    // basic session creation:
+    XrGraphicsBindingVulkanKHR binding = { XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR };
+    binding.device = engine.global.device;
+    XrSessionCreateInfo sessionInfo = { XR_TYPE_SESSION_CREATE_INFO };
+    sessionInfo.next = &binding;
+    sessionInfo.systemId = systemId;
+    CHECK_XRCMD(xrCreateSession(instance, &sessionInfo, &session));
 }
 
 void VR::logLayersAndExtensions() {
@@ -122,21 +157,6 @@ void VR::createSystem()
 
 void VR::createSession()
 {
-    // xrCreateSession: failed to call xr*GetGraphicsRequirements before xrCreateSession
-    XrGraphicsRequirementsVulkan2KHR graphicsRequirements{XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN2_KHR};
-    PFN_xrGetVulkanGraphicsRequirements2KHR pfnGetVulkanGraphicsRequirements2KHR = nullptr;
-    CHECK_XRCMD(xrGetInstanceProcAddr(instance, "xrGetVulkanGraphicsRequirements2KHR",
-        reinterpret_cast<PFN_xrVoidFunction*>(&pfnGetVulkanGraphicsRequirements2KHR)));
-    CHECK_XRCMD(pfnGetVulkanGraphicsRequirements2KHR(instance, systemId, &graphicsRequirements));
-
-    // xrCreateSession: failed to call xrGetVulkanGraphicsDevice before xrCreateSession
-    // basic session creation:
-    XrGraphicsBindingVulkanKHR binding = { XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR };
-    binding.device = engine.global.device;
-    XrSessionCreateInfo sessionInfo = { XR_TYPE_SESSION_CREATE_INFO };
-    sessionInfo.next = &binding;
-    sessionInfo.systemId = systemId;
-    CHECK_XRCMD(xrCreateSession(instance, &sessionInfo, &session));
 
 
     // Enumerate the view configurations paths.

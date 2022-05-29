@@ -9,14 +9,14 @@ public:
 	};
 	~VR();
 
+	// VR has to be initialized before Vulkan instance creation
 	void init();
+
+	// initialize Vulkan instance via XR_KHR_vulkan_enable2 extension
+	void initVulkanEnable2(VkInstanceCreateInfo &instInfo);
+
 	// if false we run without VR
 	bool enabled = false;
-	void initAfterDeviceCreation();
-	void initGLFW();
-	void createPresentQueue(unsigned int value);
-
-	bool shouldClose();
 
 	// extensions: XR_KHR_vulkan_enable2, XR_EXT_hand_tracking
 	const vector<string> REQUIRED_XR_EXTENSIONS { "XR_KHR_vulkan_enable2", "XR_EXT_hand_tracking" };
