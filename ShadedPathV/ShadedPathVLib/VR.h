@@ -32,6 +32,9 @@ public:
 		return Fmt("%d.%d.%d", XR_VERSION_MAJOR(ver), XR_VERSION_MINOR(ver), XR_VERSION_PATCH(ver));
 	}
 
+	// threaded frame generation
+	void frameBegin(ThreadResources& tr);
+	void frameEnd(ThreadResources& tr);
 private:
 	ShadedPathEngine& engine;
 	XrInstance instance = nullptr;
@@ -44,10 +47,8 @@ private:
 	// init calls
 	void createSystem();
 	void endSession();
+	void createSpace();
 
-	// threaded frame generation
-	void frameBegin(ThreadResources &tr);
-	void frameEnd(ThreadResources& tr);
 };
 
 

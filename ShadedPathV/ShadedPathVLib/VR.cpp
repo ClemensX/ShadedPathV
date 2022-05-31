@@ -231,7 +231,20 @@ void VR::createSession()
     CHECK_XRCMD(xrBeginSession(session, &beginInfo));
 
     // Allocate a buffer according to viewCount.
-    std::vector<XrView> views(viewCount, { XR_TYPE_VIEW });
+    //std::vector<XrView> views(viewCount, { XR_TYPE_VIEW });
+    createSpace();
+}
+
+void VR::createSpace()
+{
+    // check if ground based bounds are available
+    // Valve Index: At least one base must be connected and visible in SteamVR, HMD may be inactive
+    XrExtent2Df bounds;
+    auto res = xrGetReferenceSpaceBoundsRect(session, XR_REFERENCE_SPACE_TYPE_STAGE, &bounds);
+    if (res != XR_SUCCESS) {
+        THROW_XR(instance, res);
+    }
+    Log("XR ground bounds: " << bounds.width << " " << bounds.height << endl);
 }
 
 void VR::frameBegin(ThreadResources& tr)

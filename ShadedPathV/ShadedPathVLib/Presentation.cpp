@@ -429,6 +429,11 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
         );
     }
 
+    if (engine.isVR()) {
+        engine.vr.frameBegin(tr);
+        engine.vr.frameEnd(tr);
+    }
+
     VkImageMemoryBarrier dstBarrier2{};
     dstBarrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     dstBarrier2.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;

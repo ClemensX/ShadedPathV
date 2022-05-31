@@ -224,7 +224,4 @@
       <Filter>Shader</Filter>
     </CustomBuild>
   </ItemGroup>
-  <ItemGroup>
-    <None Include="$(OpenXRLoaderBinaryRoot)\bin\openxr_loader.dll" />
-  </ItemGroup>
 </Project>

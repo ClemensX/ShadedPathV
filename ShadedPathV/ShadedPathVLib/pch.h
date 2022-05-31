@@ -231,7 +231,7 @@ inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* ori
 	return res;
 }
 
-#define THROW_XR(xr, cmd) ThrowXrResult(xr, #cmd, FILE_AND_LINE);
+#define THROW_XR(xr, cmd) ThrowXrResult(xr, cmd, FILE_AND_LINE);
 #define CHECK_XRCMD(cmd) CheckXrResult(instance, cmd, #cmd, FILE_AND_LINE);
 #define CHECK_XRRESULT(res, cmdStr) CheckXrResult(res, cmdStr, FILE_AND_LINE);
 
