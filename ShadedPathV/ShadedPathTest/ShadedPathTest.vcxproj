@@ -42,6 +42,10 @@
     <IncludePath>C:\dev\vulkan\openxr\OpenXR-SDK\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\dev\vulkan\openxr\OpenXR-SDK\build\win64\src\loader\Debug;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>C:\dev\vulkan\openxr\OpenXR-SDK\include;$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <LibraryPath>C:\dev\vulkan\openxr\OpenXR-SDK\build\win64\src\loader\Release;$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
+  </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="test.h" />

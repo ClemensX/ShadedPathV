@@ -84,7 +84,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>C:\dev\vulkan\openxr\OpenXR-SDK\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\dev\vulkan\openxr\OpenXR-SDK\build\win64\src\loader\Debug;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\dev\vulkan\openxr\OpenXR-SDK\build\win64\src\loader\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

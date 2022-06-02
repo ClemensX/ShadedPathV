@@ -74,6 +74,7 @@ Use Khronos OpenXR sdk directly for VS 2022:
  * in cmd: 
  ```
  mkdir build\win64
+ cd build\win64
  cmake -G "Visual Studio 17" ..\..
  ```
  * open solution in VS 2022 at OpenXR-SDK\build\win64\OPENXR.sln and build

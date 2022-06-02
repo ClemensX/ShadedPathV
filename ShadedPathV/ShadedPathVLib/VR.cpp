@@ -2,7 +2,11 @@
 
 
 #ifdef _MSC_VER
+#ifdef _DEBUG
 #pragma comment(lib, "openxr_loaderd")
+#else
+#pragma comment(lib, "openxr_loader")
+#endif
 #endif
 
 void VR::init()
