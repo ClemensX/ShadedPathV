@@ -25,6 +25,9 @@
     <Filter Include="Apps">
       <UniqueIdentifier>{856f33d7-4cca-4447-8b4a-0185072a1f79}</UniqueIdentifier>
     </Filter>
+    <Filter Include="tinygltf">
+      <UniqueIdentifier>{c797f406-10eb-4507-b41d-13b34f94fe3e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -123,6 +126,21 @@
     <ClInclude Include="Object.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="gltf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tinygltf\json.hpp">
+      <Filter>tinygltf</Filter>
+    </ClInclude>
+    <ClInclude Include="tinygltf\stb_image.h">
+      <Filter>tinygltf</Filter>
+    </ClInclude>
+    <ClInclude Include="tinygltf\stb_image_write.h">
+      <Filter>tinygltf</Filter>
+    </ClInclude>
+    <ClInclude Include="tinygltf\tiny_gltf.h">
+      <Filter>tinygltf</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -213,6 +231,9 @@
       <Filter>Apps</Filter>
     </ClCompile>
     <ClCompile Include="Object.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gltf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

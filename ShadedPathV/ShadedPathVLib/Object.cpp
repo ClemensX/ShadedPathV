@@ -20,18 +20,18 @@ ObjectInfo* ObjectStore::getObject(string id)
 
 void ObjectStore::loadObject(string filename, string id)
 {
-	ObjectInfo initialTexture;  // only used to initialize struct in texture store - do not access this after assignment to store
+	ObjectInfo initialObject;  // only used to initialize struct in texture store - do not access this after assignment to store
 	vector<byte> file_buffer;
 
-	initialTexture.id = id;
-	objects[id] = initialTexture;
+	initialObject.id = id;
+	objects[id] = initialObject;
 	ObjectInfo*texture = &objects[id];
 
 	// find texture file, look in pak file first:
 	PakEntry *pakFileEntry = nullptr;
 	pakFileEntry = engine->files.findFileInPak(filename.c_str());
 	// try file system if not found in pak:
-	initialTexture.filename = filename; // TODO check: field not needed? only in this method? --> remove
+	initialObject.filename = filename; // TODO check: field not needed? only in this method? --> remove
 	if (pakFileEntry == nullptr) {
 		string binFile = engine->files.findFile(filename.c_str(), FileCategory::MESH);
 		texture->filename = binFile;
@@ -40,7 +40,7 @@ void ObjectStore::loadObject(string filename, string id)
 	} else {
 		engine->files.readFile(pakFileEntry, file_buffer, FileCategory::MESH);
 	}
-
+	glTF::load((const unsigned char*)file_buffer.data(), file_buffer.size());
 	texture->available = true;
 }
 

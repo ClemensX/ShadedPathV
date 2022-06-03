@@ -79,7 +79,9 @@ public:
 
     // enable stereo presentation mode that shows left and right eye output in main window
     void enableStereoPresentation() {
-        stereoPresentation = true;
+        if (isStereo()) {
+            stereoPresentation = true;
+        }
     }
 
     bool isStereoPresentation() {

@@ -63,6 +63,7 @@ copy to ../libraries:
 * glm
 * ktx
 * vulkan
+* tinygltf
 
 copy ktx.dll to executable path:
 * vulkan\ShadedPathV\ShadedPathV\x64\Debug\ktx.dll
@@ -192,3 +193,9 @@ All timings in [microseconds]
 * Dear ImGui: https://github.com/ocornut/imgui/blob/master/LICENSE.txt Copyright (c) 2014-2021 Omar Cornut
 * Coordinate system image: By Watchduck - Own work, CC BY-SA 4.0, https://commons.wikimedia.org/w/index.php?curid=58162563
 * Coordinate system image: https://www.khronos.org/assets/uploads/developers/library/2018-siggraph/04-OpenXR-SIGGRAPH_Aug2018.pdf
+* tinygltf
+  * json.hpp : Licensed under the MIT License http://opensource.org/licenses/MIT. Copyright (c) 2013-2017 Niels Lohmann http://nlohmann.me.
+  * stb_image : Public domain.
+  * catch : Copyright (c) 2012 Two Blue Cubes Ltd. All rights reserved. Distributed under the Boost Software License, Version 1.0.
+  * RapidJSON : Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip. All rights reserved. http://rapidjson.org/
+  * dlib(uridecode, uriencode) : Copyright (C) 2003 Davis E. King Boost Software License 1.0. http://dlib.net/dlib/server/server_http.cpp.html

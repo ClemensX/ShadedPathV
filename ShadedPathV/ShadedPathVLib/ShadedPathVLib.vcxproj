@@ -190,6 +190,7 @@
     <ClInclude Include="Files.h" />
     <ClInclude Include="GameTime.h" />
     <ClInclude Include="GlobalRendering.h" />
+    <ClInclude Include="gltf.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
     <ClInclude Include="imgui\imgui_impl_glfw.h" />
@@ -211,6 +212,10 @@
     <ClInclude Include="Texture.h" />
     <ClInclude Include="ThreadResources.h" />
     <ClInclude Include="Threads.h" />
+    <ClInclude Include="tinygltf\json.hpp" />
+    <ClInclude Include="tinygltf\stb_image.h" />
+    <ClInclude Include="tinygltf\stb_image_write.h" />
+    <ClInclude Include="tinygltf\tiny_gltf.h" />
     <ClInclude Include="ui.h" />
     <ClInclude Include="UIShader.h" />
     <ClInclude Include="Util.h" />
@@ -223,6 +228,7 @@
     <ClCompile Include="Files.cpp" />
     <ClCompile Include="GameTime.cpp" />
     <ClCompile Include="GlobalRendering.cpp" />
+    <ClCompile Include="gltf.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
