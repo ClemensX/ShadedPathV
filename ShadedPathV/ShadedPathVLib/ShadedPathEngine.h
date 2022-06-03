@@ -147,6 +147,7 @@ public:
     VR vr;
     vector<ThreadResources> threadResources;
     TextureStore textureStore;
+    ObjectStore objectStore;
 
     // non-Vulkan members
     Files files;

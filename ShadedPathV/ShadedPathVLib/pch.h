@@ -248,6 +248,7 @@ inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* ori
 #include "VR.h"
 #include "GlobalRendering.h"
 #include "Texture.h"
+#include "Object.h"
 #include "ShaderBase.h"
 #include "ClearShader.h"
 #include "SimpleShader.h"

@@ -200,6 +200,7 @@
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="LineApp.h" />
     <ClInclude Include="LineShader.h" />
+    <ClInclude Include="Object.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Presentation.h" />
     <ClInclude Include="ShadedPathEngine.h" />
@@ -231,6 +232,7 @@
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="LineApp.cpp" />
     <ClCompile Include="LineShader.cpp" />
+    <ClCompile Include="Object.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

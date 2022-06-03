@@ -41,6 +41,11 @@ void LineApp::run()
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         shaders.initActiveShaders();
 
+        // loading objects
+        engine.objectStore.loadObject("WaterBottle.glb", "WaterBottle");
+        auto o = engine.objectStore.getObject("WaterBottle");
+        Log("Object loaded: " << o->id.c_str() << endl);
+
         // init app rendering:
         init();
 
