@@ -14,7 +14,7 @@ public:
 	void init(ShadedPathEngine* engine);
 	~ObjectStore();
 	// load object, objects are referenced via id string
-	void loadObject(string filename, string id);
+	void loadObject(string filename, string id, vector<LineDef>& lines);
 	ObjectInfo* getObject(string id);
 private:
 	unordered_map<string, ObjectInfo> objects;

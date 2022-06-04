@@ -41,11 +41,6 @@ void LineApp::run()
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         shaders.initActiveShaders();
 
-        // loading objects
-        engine.objectStore.loadObject("WaterBottle.glb", "WaterBottle");
-        auto o = engine.objectStore.getObject("WaterBottle");
-        Log("Object loaded: " << o->id.c_str() << endl);
-
         // init app rendering:
         init();
 
@@ -74,6 +69,13 @@ void LineApp::init() {
         { glm::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f) }
     };
     vector<LineDef> lines;
+
+    // loading objects
+    engine.objectStore.loadObject("WaterBottle.glb", "WaterBottle", lines);
+    auto o = engine.objectStore.getObject("WaterBottle");
+    Log("Object loaded: " << o->id.c_str() << endl);
+
+
     // add all intializer objects to vector:
     for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
     LineShader::addZeroCross(lines);
