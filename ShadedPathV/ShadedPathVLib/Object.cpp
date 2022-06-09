@@ -41,15 +41,34 @@ void ObjectStore::loadObject(string filename, string id, vector<LineDef> &lines)
 		engine->files.readFile(pakFileEntry, file_buffer, FileCategory::MESH);
 	}
 	vector<vec3> vertices;
-	glTF::loadVertices((const unsigned char*)file_buffer.data(), file_buffer.size(), vertices);
+	vector<uint32_t> indexBuffer;
+	glTF::loadVertices((const unsigned char*)file_buffer.data(), file_buffer.size(), vertices, indexBuffer);
 	if (vertices.size() > 0) {
-		for (size_t i = 0; i < vertices.size()-1; i++) {
+		for (uint32_t i = 0; i < indexBuffer.size(); i += 3) {
+			// triangle i --> i+1 --> i+2
 			LineDef l;
 			l.color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-			l.start = vertices[i];
-			l.end = vertices[i + 1];
+			auto& p0 = vertices[indexBuffer[i]];
+			auto& p1 = vertices[indexBuffer[i+1]];
+			auto& p2 = vertices[indexBuffer[i+2]];
+			l.start = p0;
+			l.end = p1;
+			lines.push_back(l);
+			l.start = p1;
+			l.end = p2;
+			lines.push_back(l);
+			l.start = p2;
+			l.end = p0;
 			lines.push_back(l);
 		}
+
+		//for (size_t i = 0; i < vertices.size()-1; i++) {
+		//	LineDef l;
+		//	l.color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		//	l.start = vertices[i];
+		//	l.end = vertices[i + 1];
+		//	lines.push_back(l);
+		//}
 	}
 	texture->available = true;
 }

@@ -10,7 +10,7 @@
 
 using namespace tinygltf;
 
-void glTF::loadVertices(const unsigned char* data, int size, vector<vec3>& vertices)
+void glTF::loadVertices(const unsigned char* data, int size, vector<vec3>& verts, vector<uint32_t> &indexBuffer)
 {
 	Model model;
 	TinyGLTF loader;
@@ -31,8 +31,6 @@ void glTF::loadVertices(const unsigned char* data, int size, vector<vec3>& verti
 		return;
 	}
 
-	vector<vec3> verts;
-	vector<uint32_t> indexBuffer;
 	// should be sized of passed in vectors:
 	uint32_t indexStart = static_cast<uint32_t>(indexBuffer.size());
 	uint32_t vertexStart = static_cast<uint32_t>(verts.size());
@@ -108,6 +106,7 @@ void glTF::loadVertices(const unsigned char* data, int size, vector<vec3>& verti
 			}
 			Log("Verts loaded: " << verts.size() << endl);
 			Log("Indices loaded: " << indexBuffer.size() << endl);
+			assert(indexBuffer.size() % 3 == 0); // triangles?
 		}
 		//if (primitive.indices > -1) {
 		//}
