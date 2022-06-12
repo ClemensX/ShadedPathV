@@ -33,7 +33,9 @@ void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
 	// uniform buffer
 	createUniformBuffer(tr, tr.uniformBufferLine, sizeof(UniformBufferObject), tr.uniformBufferMemoryLine);
-	createUniformBuffer(tr, tr.uniformBufferLine2, sizeof(UniformBufferObject), tr.uniformBufferMemoryLine2);
+	if (engine->isStereo()) {
+		createUniformBuffer(tr, tr.uniformBufferLine2, sizeof(UniformBufferObject), tr.uniformBufferMemoryLine2);
+	}
 
 	createDescriptorSets(tr);
 	// TODO remove hack
