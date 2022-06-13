@@ -10,14 +10,30 @@
 
 using namespace tinygltf;
 
-void glTF::loadVertices(const unsigned char* data, int size, vector<vec3>& verts, vector<uint32_t> &indexBuffer)
+void glTF::loadVertices(const unsigned char* data, int size, vector<vec3>& verts, vector<uint32_t> &indexBuffer, string filename)
 {
 	Model model;
 	TinyGLTF loader;
 	string err;
 	string warn;
 
-	bool ret = loader.LoadBinaryFromMemory(&model, &err, &warn, data, size);
+	if (size < 4) {
+		Error("invalid glTF file");
+	}
+	bool isBinary = false;
+	if (data[0] == 'g' && data[1] == 'l' && data[2] == 'T' &&
+		data[3] == 'F') {
+		isBinary = true;
+	}
+
+	bool ret;
+	if (isBinary) {
+		ret = loader.LoadBinaryFromMemory(&model, &err, &warn, data, size);
+	} else {
+		filesystem::path p = filename.c_str();
+		string dir = p.parent_path().string();
+		ret = loader.LoadASCIIFromString(&model, &err, &warn, (const char*)data, (unsigned int)size, dir);
+	}
 	if (!warn.empty()) {
 		printf("Warn: %s\n", warn.c_str());
 	}

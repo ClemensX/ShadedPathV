@@ -2,6 +2,6 @@
 // thread sync has to be done outside this class
 class glTF {
 public:
-	static void loadVertices(const unsigned char* data, int size, vector<vec3> &verts, vector<uint32_t> &indexBuffer);
+	static void loadVertices(const unsigned char* data, int size, vector<vec3> &verts, vector<uint32_t> &indexBuffer, string filename);
 private:
 };

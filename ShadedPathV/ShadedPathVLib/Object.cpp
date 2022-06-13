@@ -32,8 +32,9 @@ void ObjectStore::loadObject(string filename, string id, vector<LineDef> &lines)
 	pakFileEntry = engine->files.findFileInPak(filename.c_str());
 	// try file system if not found in pak:
 	initialObject.filename = filename; // TODO check: field not needed? only in this method? --> remove
+	string binFile;
 	if (pakFileEntry == nullptr) {
-		string binFile = engine->files.findFile(filename.c_str(), FileCategory::MESH);
+		binFile = engine->files.findFile(filename.c_str(), FileCategory::MESH);
 		texture->filename = binFile;
 		//initialTexture.filename = binFile;
 		engine->files.readFile(texture->filename.c_str(), file_buffer, FileCategory::MESH);
@@ -42,7 +43,7 @@ void ObjectStore::loadObject(string filename, string id, vector<LineDef> &lines)
 	}
 	vector<vec3> vertices;
 	vector<uint32_t> indexBuffer;
-	glTF::loadVertices((const unsigned char*)file_buffer.data(), file_buffer.size(), vertices, indexBuffer);
+	glTF::loadVertices((const unsigned char*)file_buffer.data(), file_buffer.size(), vertices, indexBuffer, binFile);
 	if (vertices.size() > 0) {
 		for (uint32_t i = 0; i < indexBuffer.size(); i += 3) {
 			// triangle i --> i+1 --> i+2

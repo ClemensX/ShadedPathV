@@ -141,6 +141,9 @@
     <ClInclude Include="tinygltf\tiny_gltf.h">
       <Filter>tinygltf</Filter>
     </ClInclude>
+    <ClInclude Include="gltfObjects.h">
+      <Filter>Apps</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -235,6 +238,9 @@
     </ClCompile>
     <ClCompile Include="gltf.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="gltfObjects.cpp">
+      <Filter>Apps</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

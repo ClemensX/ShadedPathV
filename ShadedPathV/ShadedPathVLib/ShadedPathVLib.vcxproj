@@ -191,6 +191,7 @@
     <ClInclude Include="GameTime.h" />
     <ClInclude Include="GlobalRendering.h" />
     <ClInclude Include="gltf.h" />
+    <ClInclude Include="gltfObjects.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
     <ClInclude Include="imgui\imgui_impl_glfw.h" />
@@ -229,6 +230,7 @@
     <ClCompile Include="GameTime.cpp" />
     <ClCompile Include="GlobalRendering.cpp" />
     <ClCompile Include="gltf.cpp" />
+    <ClCompile Include="gltfObjects.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
