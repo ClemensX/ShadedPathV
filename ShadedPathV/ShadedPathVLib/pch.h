@@ -253,6 +253,7 @@ inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* ori
 #include "ClearShader.h"
 #include "SimpleShader.h"
 #include "LineShader.h"
+#include "pbrShader.h"
 #include "Object.h"
 #include "ui.h"
 #include "UIShader.h"

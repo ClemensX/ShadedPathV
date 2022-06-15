@@ -10,9 +10,8 @@
 
 using namespace tinygltf;
 
-void glTF::loadVertices(const unsigned char* data, int size, vector<vec3>& verts, vector<uint32_t> &indexBuffer, string filename)
+void glTF::loadModel(Model &model, const unsigned char* data, int size, string filename)
 {
-	Model model;
 	TinyGLTF loader;
 	string err;
 	string warn;
@@ -29,7 +28,8 @@ void glTF::loadVertices(const unsigned char* data, int size, vector<vec3>& verts
 	bool ret;
 	if (isBinary) {
 		ret = loader.LoadBinaryFromMemory(&model, &err, &warn, data, size);
-	} else {
+	}
+	else {
 		filesystem::path p = filename.c_str();
 		string dir = p.parent_path().string();
 		ret = loader.LoadASCIIFromString(&model, &err, &warn, (const char*)data, (unsigned int)size, dir);
@@ -46,7 +46,11 @@ void glTF::loadVertices(const unsigned char* data, int size, vector<vec3>& verts
 		printf("Failed to parse glTF\n");
 		return;
 	}
+	return;
+}
 
+void glTF::loadVertices(tinygltf::Model& model, vector<vec3>& verts, vector<uint32_t>& indexBuffer)
+{
 	// should be sized of passed in vectors:
 	uint32_t indexStart = static_cast<uint32_t>(indexBuffer.size());
 	uint32_t vertexStart = static_cast<uint32_t>(verts.size());
@@ -128,4 +132,11 @@ void glTF::loadVertices(const unsigned char* data, int size, vector<vec3>& verts
 		//}
 		//}
 	}
+}
+
+void glTF::loadVertices(const unsigned char* data, int size, vector<vec3>& verts, vector<uint32_t> &indexBuffer, string filename)
+{
+	Model model;
+	loadModel(model, data, size, filename);
+	loadVertices(model, verts, indexBuffer);
 }

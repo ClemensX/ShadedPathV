@@ -1,6 +1,6 @@
 #pragma once
 
-// siple app only rendering lines with LineShader
+// example for loading and rendering gltf models
 class gltfObjects : ShadedPathApplication
 {
 public:
