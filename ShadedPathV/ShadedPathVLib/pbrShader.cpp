@@ -1,6 +1,6 @@
 #include "pch.h"
 
-void pbrShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
+void PBRShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 {
 	ShaderBase::init(engine);
 	// load shader binary code
@@ -29,7 +29,7 @@ void pbrShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	createDescriptorPool(poolSizes);
 }
 
-void pbrShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
+void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
 	// uniform buffer
 	createUniformBuffer(tr, tr.uniformBufferLine, sizeof(UniformBufferObject), tr.uniformBufferMemoryLine);
@@ -120,12 +120,12 @@ void pbrShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	createCommandBufferLineAdd(tr);
 }
 
-void pbrShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
+void PBRShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
 {
 }
 
 
-void pbrShader::add(vector<LineDef>& linesToAdd)
+void PBRShader::add(vector<LineDef>& linesToAdd)
 {
 	if (linesToAdd.size() == 0 && lines.size() == 0)
 		return;
@@ -133,7 +133,7 @@ void pbrShader::add(vector<LineDef>& linesToAdd)
 	lines.insert(lines.end(), linesToAdd.begin(), linesToAdd.end());
 }
 
-void pbrShader::addOneTime(vector<LineDef>& linesToAdd, ThreadResources& tr) {
+void PBRShader::addOneTime(vector<LineDef>& linesToAdd, ThreadResources& tr) {
 	//auto& lines = getInactiveAppDataSet(user)->oneTimeLines;
 	if (linesToAdd.size() == 0)
 		return;
@@ -150,7 +150,7 @@ void pbrShader::addOneTime(vector<LineDef>& linesToAdd, ThreadResources& tr) {
 	}
 }
 
-void pbrShader::initialUpload()
+void PBRShader::initialUpload()
 {
 	// create vertex buffer in CPU mem
 	vector<Vertex> all;
@@ -173,7 +173,7 @@ void pbrShader::initialUpload()
 	global->uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, all.data(), vertexBuffer, vertexBufferMemory);
 }
 
-void pbrShader::createDescriptorSetLayout()
+void PBRShader::createDescriptorSetLayout()
 {
     VkDescriptorSetLayoutBinding uboLayoutBinding{};
     uboLayoutBinding.binding = 0;
@@ -201,7 +201,7 @@ void pbrShader::createDescriptorSetLayout()
     }
 }
 
-void pbrShader::createDescriptorSets(ThreadResources& res)
+void PBRShader::createDescriptorSets(ThreadResources& res)
 {
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -239,7 +239,7 @@ void pbrShader::createDescriptorSets(ThreadResources& res)
 	}
 }
 
-void pbrShader::createCommandBuffer(ThreadResources& tr)
+void PBRShader::createCommandBuffer(ThreadResources& tr)
 {
 	auto& device = engine->global.device;
 	auto& global = engine->global;
@@ -284,12 +284,12 @@ void pbrShader::createCommandBuffer(ThreadResources& tr)
 	}
 }
 
-void pbrShader::addCurrentCommandBuffer(ThreadResources& tr) {
+void PBRShader::addCurrentCommandBuffer(ThreadResources& tr) {
 	tr.activeCommandBuffers.push_back(tr.commandBufferLine);
 	tr.activeCommandBuffers.push_back(tr.commandBufferLineAdd);
 };
 
-void pbrShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
+void PBRShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
 {
 	if (vertexBuffer == nullptr) return; // no fixed lines to draw
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.graphicsPipelineLine);
@@ -307,12 +307,12 @@ void pbrShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResource
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(lines.size() * 2), 1, 0, 0);
 }
 
-void pbrShader::clearAddLines(ThreadResources& tr)
+void PBRShader::clearAddLines(ThreadResources& tr)
 {
 	tr.verticesAddLines.clear();
 }
 
-void pbrShader::createCommandBufferLineAdd(ThreadResources& tr)
+void PBRShader::createCommandBufferLineAdd(ThreadResources& tr)
 {
 	auto& device = engine->global.device;
 	auto& global = engine->global;
@@ -328,7 +328,7 @@ void pbrShader::createCommandBufferLineAdd(ThreadResources& tr)
 	}
 }
 
-void pbrShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
+void PBRShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
 {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -370,12 +370,12 @@ void pbrShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadResou
 	}
 }
 
-void pbrShader::prepareAddLines(ThreadResources& tr)
+void PBRShader::prepareAddLines(ThreadResources& tr)
 {
 	recordDrawCommandAdd(tr.commandBufferLineAdd, tr, tr.vertexBufferAdd);
 }
 
-void pbrShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
+void PBRShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
 	// copy ubo to GPU:
 	void* data;
 	vkMapMemory(device, tr.uniformBufferMemoryLine, 0, sizeof(ubo), 0, &data);
@@ -396,7 +396,7 @@ void pbrShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unifo
 	vkUnmapMemory(device, tr.vertexBufferAddMemory);
 }
 
-pbrShader::~pbrShader()
+PBRShader::~PBRShader()
 {
 	Log("pbrShader destructor\n");
 	if (!enabled) {

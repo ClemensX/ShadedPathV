@@ -13,7 +13,7 @@ public:
 
 // line shader draws lines, it creates 2 pipelines, one for fixed lines (uploaded at start)
 // and one for dynamic lines that change every frame
-class pbrShader : public ShaderBase {
+class PBRShader : public ShaderBase {
 public:
 	struct Vertex {
 		glm::vec3 pos;
@@ -51,7 +51,7 @@ public:
 
 		return attributeDescriptions;
 	}
-	virtual ~pbrShader() override;
+	virtual ~PBRShader() override;
 	// shader initialization, end result is a graphics pipeline for each ThreadResources instance
 
 	// max # lines for dynamic adding for single frame

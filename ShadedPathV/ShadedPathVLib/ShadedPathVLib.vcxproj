@@ -203,7 +203,7 @@
     <ClInclude Include="LineApp.h" />
     <ClInclude Include="LineShader.h" />
     <ClInclude Include="Object.h" />
-    <ClInclude Include="pbrShader.h" />
+    <ClInclude Include="PBRShader.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Presentation.h" />
     <ClInclude Include="ShadedPathEngine.h" />
@@ -242,7 +242,7 @@
     <ClCompile Include="LineApp.cpp" />
     <ClCompile Include="LineShader.cpp" />
     <ClCompile Include="Object.cpp" />
-    <ClCompile Include="pbrShader.cpp" />
+    <ClCompile Include="PBRShader.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
