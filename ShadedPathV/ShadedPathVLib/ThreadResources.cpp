@@ -107,15 +107,9 @@ ThreadResources::~ThreadResources()
     vkDestroyFence(device, presentFence, nullptr);
     vkDestroyEvent(device, uiRenderFinished, nullptr);
     vkDestroyCommandPool(device, commandPool, nullptr);
-    //vkDestroyFramebuffer(device, framebufferClear, nullptr);
     vkDestroyFramebuffer(device, framebufferSimple, nullptr);
     vkDestroyFramebuffer(device, framebufferUI, nullptr);
-    vkDestroyFramebuffer(device, framebufferLine, nullptr);
-    vkDestroyFramebuffer(device, framebufferLineAdd, nullptr);
-    vkDestroyRenderPass(device, renderPassClear, nullptr);
     vkDestroyRenderPass(device, renderPassSimpleShader, nullptr);
-    vkDestroyRenderPass(device, renderPassLine, nullptr);
-    vkDestroyRenderPass(device, renderPassLineAdd, nullptr);
     vkDestroyImageView(device, depthImageView, nullptr);
     vkDestroyImage(device, depthImage, nullptr);
     vkFreeMemory(device, depthImageMemory, nullptr);
@@ -129,26 +123,15 @@ ThreadResources::~ThreadResources()
     vkDestroyPipelineLayout(device, pipelineLayoutTriangle, nullptr);
     vkDestroyBuffer(device, uniformBufferTriangle, nullptr);
     vkFreeMemory(device, uniformBufferMemoryTriangle, nullptr);
-    vkDestroyPipeline(device, graphicsPipelineLine, nullptr);
-    vkDestroyPipeline(device, graphicsPipelineLineAdd, nullptr);
-    vkDestroyPipelineLayout(device, pipelineLayoutLine, nullptr);
-    vkDestroyBuffer(device, uniformBufferLine, nullptr);
-    vkFreeMemory(device, uniformBufferMemoryLine, nullptr);
-    vkDestroyBuffer(device, vertexBufferAdd, nullptr);
-    vkFreeMemory(device, vertexBufferAddMemory, nullptr);
     if (engine->isStereo()) {
-        vkDestroyFramebuffer(device, framebufferClear2, nullptr);
+        //vkDestroyFramebuffer(device, framebufferClear2, nullptr);
         vkDestroyFramebuffer(device, framebufferSimple2, nullptr);
-        vkDestroyFramebuffer(device, framebufferLine2, nullptr);
-        vkDestroyFramebuffer(device, framebufferLineAdd2, nullptr);
         vkDestroyImageView(device, depthImageView2, nullptr);
         vkDestroyImage(device, depthImage2, nullptr);
         vkFreeMemory(device, depthImageMemory2, nullptr);
         vkDestroyImageView(device, colorAttachment2.view, nullptr);
         vkDestroyImage(device, colorAttachment2.image, nullptr);
         vkFreeMemory(device, colorAttachment2.memory, nullptr);
-        vkDestroyBuffer(device, uniformBufferLine2, nullptr);
-        vkFreeMemory(device, uniformBufferMemoryLine2, nullptr);
     }
     Log("ThreadResource destructed: " << this << endl);
 };

@@ -31,10 +31,11 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 
 void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
+	auto& trl = tr.lineResources;
 	// uniform buffer
-	createUniformBuffer(tr, tr.uniformBufferLine, sizeof(UniformBufferObject), tr.uniformBufferMemoryLine);
+	createUniformBuffer(tr, trl.uniformBuffer, sizeof(UniformBufferObject), trl.uniformBufferMemory);
 	if (engine->isStereo()) {
-		createUniformBuffer(tr, tr.uniformBufferLine2, sizeof(UniformBufferObject), tr.uniformBufferMemoryLine2);
+		createUniformBuffer(tr, trl.uniformBuffer2, sizeof(UniformBufferObject), trl.uniformBufferMemory2);
 	}
 
 	createDescriptorSets(tr);
@@ -44,11 +45,11 @@ void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 		undoLast = true;
 		setLastShader(false);
 	}
-	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassLine, tr.framebufferLine, tr.framebufferLine2);
+	createRenderPassAndFramebuffer(tr, shaderState, trl.renderPass, trl.framebuffer, trl.framebuffer2);
 	if (undoLast) {
 		setLastShader(true);
 	}
-	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassLineAdd, tr.framebufferLineAdd, tr.framebufferLineAdd2);
+	createRenderPassAndFramebuffer(tr, shaderState, trl.renderPassAdd, trl.framebufferAdd, trl.framebufferAdd2);
 
 	// create shader stage
 	auto vertShaderStageInfo = createVertexShaderCreateInfo(vertShaderModule);
@@ -83,7 +84,7 @@ void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// empty for now...
 
 	// pipeline layout
-	createPipelineLayout(&tr.pipelineLayoutLine);
+	createPipelineLayout(&trl.pipelineLayout);
 
 	// depth stencil
 	auto depthStencil = createStandardDepthStencil();
@@ -101,22 +102,22 @@ void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	pipelineInfo.pDepthStencilState = &depthStencil;
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = nullptr; // Optional
-	pipelineInfo.layout = tr.pipelineLayoutLine;
-	pipelineInfo.renderPass = tr.renderPassLine;
+	pipelineInfo.layout = trl.pipelineLayout;
+	pipelineInfo.renderPass = trl.renderPass;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional
-	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &tr.graphicsPipelineLine) != VK_SUCCESS) {
+	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &trl.graphicsPipeline) != VK_SUCCESS) {
 		Error("failed to create graphics pipeline!");
 	}
-	pipelineInfo.renderPass = tr.renderPassLineAdd;
-	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &tr.graphicsPipelineLineAdd) != VK_SUCCESS) {
+	pipelineInfo.renderPass = trl.renderPassAdd;
+	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &trl.graphicsPipelineAdd) != VK_SUCCESS) {
 		Error("failed to create graphics pipeline!");
 	}
 
 	// create and map vertex buffer in GPU (for lines added for a single frame)
 	VkDeviceSize bufferSize = sizeof(Vertex) * MAX_DYNAMIC_LINES;
-	createVertexBuffer(tr, tr.vertexBufferAdd, bufferSize, tr.vertexBufferAddMemory);
+	createVertexBuffer(tr, trl.vertexBufferAdd, bufferSize, trl.vertexBufferAddMemory);
 	createCommandBufferLineAdd(tr);
 }
 
@@ -137,7 +138,7 @@ void LineShader::addOneTime(vector<LineDef>& linesToAdd, ThreadResources& tr) {
 	//auto& lines = getInactiveAppDataSet(user)->oneTimeLines;
 	if (linesToAdd.size() == 0)
 		return;
-	auto& vec = tr.verticesAddLines;
+	auto& vec = tr.lineResources.verticesAddLines;
 	// handle fixed lines:
 	for (LineDef& line : linesToAdd) {
 		Vertex v1, v2;
@@ -201,27 +202,28 @@ void LineShader::createDescriptorSetLayout()
     }
 }
 
-void LineShader::createDescriptorSets(ThreadResources& res)
+void LineShader::createDescriptorSets(ThreadResources& tr)
 {
-    VkDescriptorSetAllocateInfo allocInfo{};
+	auto& trl = tr.lineResources;
+	VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     allocInfo.descriptorPool = descriptorPool;
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &descriptorSetLayout;
-    if (vkAllocateDescriptorSets(device, &allocInfo, &res.descriptorSetLine) != VK_SUCCESS) {
+    if (vkAllocateDescriptorSets(device, &allocInfo, &trl.descriptorSet) != VK_SUCCESS) {
         Error("failed to allocate descriptor sets!");
     }
 
     // populate descriptor set:
     VkDescriptorBufferInfo bufferInfo{};
-    bufferInfo.buffer = res.uniformBufferLine;
+    bufferInfo.buffer = trl.uniformBuffer;
     bufferInfo.offset = 0;
     bufferInfo.range = sizeof(UniformBufferObject);
 
     array<VkWriteDescriptorSet, 1> descriptorWrites{};
 
     descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[0].dstSet = res.descriptorSetLine;
+    descriptorWrites[0].dstSet = trl.descriptorSet;
     descriptorWrites[0].dstBinding = 0;
     descriptorWrites[0].dstArrayElement = 0;
     descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -230,17 +232,18 @@ void LineShader::createDescriptorSets(ThreadResources& res)
 
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	if (engine->isStereo()) {
-		if (vkAllocateDescriptorSets(device, &allocInfo, &res.descriptorSetLine2) != VK_SUCCESS) {
+		if (vkAllocateDescriptorSets(device, &allocInfo, &trl.descriptorSet2) != VK_SUCCESS) {
 			Error("failed to allocate descriptor sets!");
 		}
-		bufferInfo.buffer = res.uniformBufferLine2;
-		descriptorWrites[0].dstSet = res.descriptorSetLine2;
+		bufferInfo.buffer = trl.uniformBuffer2;
+		descriptorWrites[0].dstSet = trl.descriptorSet2;
 		vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}
 }
 
 void LineShader::createCommandBuffer(ThreadResources& tr)
 {
+	auto& trl = tr.lineResources;
 	auto& device = engine->global.device;
 	auto& global = engine->global;
 	auto& shaders = engine->shaders;
@@ -250,7 +253,7 @@ void LineShader::createCommandBuffer(ThreadResources& tr)
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = (uint32_t)1;
 
-	if (vkAllocateCommandBuffers(device, &allocInfo, &tr.commandBufferLine) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(device, &allocInfo, &trl.commandBuffer) != VK_SUCCESS) {
 		Error("failed to allocate command buffers!");
 	}
 	VkCommandBufferBeginInfo beginInfo{};
@@ -258,50 +261,51 @@ void LineShader::createCommandBuffer(ThreadResources& tr)
 	beginInfo.flags = 0; // Optional
 	beginInfo.pInheritanceInfo = nullptr; // Optional
 
-	if (vkBeginCommandBuffer(tr.commandBufferLine, &beginInfo) != VK_SUCCESS) {
+	if (vkBeginCommandBuffer(trl.commandBuffer, &beginInfo) != VK_SUCCESS) {
 		Error("failed to begin recording triangle command buffer!");
 	}
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = tr.renderPassLine;
-	renderPassInfo.framebuffer = tr.framebufferLine;
+	renderPassInfo.renderPass = trl.renderPass;
+	renderPassInfo.framebuffer = trl.framebuffer;
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = engine->getBackBufferExtent();
 
 	renderPassInfo.clearValueCount = 0;
 
-	vkCmdBeginRenderPass(tr.commandBufferLine, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	recordDrawCommand(tr.commandBufferLine, tr, vertexBuffer);
-	vkCmdEndRenderPass(tr.commandBufferLine);
+	vkCmdBeginRenderPass(trl.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	recordDrawCommand(trl.commandBuffer, tr, vertexBuffer);
+	vkCmdEndRenderPass(trl.commandBuffer);
 	if (engine->isStereo()) {
-		renderPassInfo.framebuffer = tr.framebufferLine2;
-		vkCmdBeginRenderPass(tr.commandBufferLine, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		recordDrawCommand(tr.commandBufferLine, tr, vertexBuffer, true);
-		vkCmdEndRenderPass(tr.commandBufferLine);
+		renderPassInfo.framebuffer = trl.framebuffer2;
+		vkCmdBeginRenderPass(trl.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		recordDrawCommand(trl.commandBuffer, tr, vertexBuffer, true);
+		vkCmdEndRenderPass(trl.commandBuffer);
 	}
-	if (vkEndCommandBuffer(tr.commandBufferLine) != VK_SUCCESS) {
+	if (vkEndCommandBuffer(trl.commandBuffer) != VK_SUCCESS) {
 		Error("failed to record triangle command buffer!");
 	}
 }
 
 void LineShader::addCurrentCommandBuffer(ThreadResources& tr) {
-	tr.activeCommandBuffers.push_back(tr.commandBufferLine);
-	tr.activeCommandBuffers.push_back(tr.commandBufferLineAdd);
+	tr.activeCommandBuffers.push_back(tr.lineResources.commandBuffer);
+	tr.activeCommandBuffers.push_back(tr.lineResources.commandBufferAdd);
 };
 
 void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
 {
+	auto& trl = tr.lineResources;
 	if (vertexBuffer == nullptr) return; // no fixed lines to draw
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.graphicsPipelineLine);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.graphicsPipeline);
 	VkBuffer vertexBuffers[] = { vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
 	// bind descriptor sets:
 	if (!isRightEye) {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutLine, 0, 1, &tr.descriptorSetLine, 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet, 0, nullptr);
 	} else {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutLine, 0, 1, &tr.descriptorSetLine2, 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet2, 0, nullptr);
 	}
 
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(lines.size() * 2), 1, 0, 0);
@@ -309,7 +313,7 @@ void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResourc
 
 void LineShader::clearAddLines(ThreadResources& tr)
 {
-	tr.verticesAddLines.clear();
+	tr.lineResources.verticesAddLines.clear();
 }
 
 void LineShader::createCommandBufferLineAdd(ThreadResources& tr)
@@ -323,13 +327,14 @@ void LineShader::createCommandBufferLineAdd(ThreadResources& tr)
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = (uint32_t)1;
 
-	if (vkAllocateCommandBuffers(device, &allocInfo, &tr.commandBufferLineAdd) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(device, &allocInfo, &tr.lineResources.commandBufferAdd) != VK_SUCCESS) {
 		Error("failed to allocate command buffers!");
 	}
 }
 
 void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
 {
+	auto& trl = tr.lineResources;
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0; // Optional
@@ -340,29 +345,29 @@ void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadReso
 	}
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = tr.renderPassLineAdd;
-	renderPassInfo.framebuffer = tr.framebufferLineAdd;
+	renderPassInfo.renderPass = trl.renderPassAdd;
+	renderPassInfo.framebuffer = trl.framebufferAdd;
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = engine->getBackBufferExtent();
 
 	renderPassInfo.clearValueCount = 0;
 
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.graphicsPipelineLineAdd);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.graphicsPipelineAdd);
 	VkBuffer vertexBuffers[] = { vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
 	// bind descriptor sets:
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutLine, 0, 1, &tr.descriptorSetLine, 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet, 0, nullptr);
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	vkCmdDraw(commandBuffer, static_cast<uint32_t>(tr.verticesAddLines.size()), 1, 0, 0);
+	vkCmdDraw(commandBuffer, static_cast<uint32_t>(trl.verticesAddLines.size()), 1, 0, 0);
 	vkCmdEndRenderPass(commandBuffer);
 	if (engine->isStereo()) {
-		renderPassInfo.framebuffer = tr.framebufferLineAdd2;
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutLine, 0, 1, &tr.descriptorSetLine2, 0, nullptr);
+		renderPassInfo.framebuffer = trl.framebufferAdd2;
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet2, 0, nullptr);
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		vkCmdDraw(commandBuffer, static_cast<uint32_t>(tr.verticesAddLines.size()), 1, 0, 0);
+		vkCmdDraw(commandBuffer, static_cast<uint32_t>(trl.verticesAddLines.size()), 1, 0, 0);
 		vkCmdEndRenderPass(commandBuffer);
 	}
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
@@ -372,28 +377,29 @@ void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadReso
 
 void LineShader::prepareAddLines(ThreadResources& tr)
 {
-	recordDrawCommandAdd(tr.commandBufferLineAdd, tr, tr.vertexBufferAdd);
+	recordDrawCommandAdd(tr.lineResources.commandBufferAdd, tr, tr.lineResources.vertexBufferAdd);
 }
 
 void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
+	auto& trl = tr.lineResources;
 	// copy ubo to GPU:
 	void* data;
-	vkMapMemory(device, tr.uniformBufferMemoryLine, 0, sizeof(ubo), 0, &data);
+	vkMapMemory(device, trl.uniformBufferMemory, 0, sizeof(ubo), 0, &data);
 	memcpy(data, &ubo, sizeof(ubo));
-	vkUnmapMemory(device, tr.uniformBufferMemoryLine);
+	vkUnmapMemory(device, trl.uniformBufferMemory);
 	if (engine->isStereo()) {
-		vkMapMemory(device, tr.uniformBufferMemoryLine2, 0, sizeof(ubo2), 0, &data);
+		vkMapMemory(device, trl.uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
 		memcpy(data, &ubo2, sizeof(ubo2));
-		vkUnmapMemory(device, tr.uniformBufferMemoryLine2);
+		vkUnmapMemory(device, trl.uniformBufferMemory2);
 	}
 
 	// mak
 	// copy added lines to GPU:
 	VkDeviceSize bufferSize = sizeof(Vertex) * MAX_DYNAMIC_LINES;
-	size_t copy_size = tr.verticesAddLines.size() * sizeof(Vertex);
-	vkMapMemory(device, tr.vertexBufferAddMemory, 0, bufferSize, 0, &data);
-	memcpy(data, tr.verticesAddLines.data(), copy_size);
-	vkUnmapMemory(device, tr.vertexBufferAddMemory);
+	size_t copy_size = trl.verticesAddLines.size() * sizeof(Vertex);
+	vkMapMemory(device, trl.vertexBufferAddMemory, 0, bufferSize, 0, &data);
+	memcpy(data, trl.verticesAddLines.data(), copy_size);
+	vkUnmapMemory(device, trl.vertexBufferAddMemory);
 }
 
 LineShader::~LineShader()
@@ -412,4 +418,22 @@ LineShader::~LineShader()
 
 void LineShader::destroyThreadResources(ThreadResources& tr)
 {
+	auto& trl = tr.lineResources;
+	vkDestroyFramebuffer(device, trl.framebuffer, nullptr);
+	vkDestroyFramebuffer(device, trl.framebufferAdd, nullptr);
+	vkDestroyRenderPass(device, trl.renderPass, nullptr);
+	vkDestroyRenderPass(device, trl.renderPassAdd, nullptr);
+	vkDestroyPipeline(device, trl.graphicsPipeline, nullptr);
+	vkDestroyPipeline(device, trl.graphicsPipelineAdd, nullptr);
+	vkDestroyPipelineLayout(device, trl.pipelineLayout, nullptr);
+	vkDestroyBuffer(device, trl.uniformBuffer, nullptr);
+	vkFreeMemory(device, trl.uniformBufferMemory, nullptr);
+	vkDestroyBuffer(device, trl.vertexBufferAdd, nullptr);
+	vkFreeMemory(device, trl.vertexBufferAddMemory, nullptr);
+	if (engine->isStereo()) {
+		vkDestroyFramebuffer(device, trl.framebuffer2, nullptr);
+		vkDestroyFramebuffer(device, trl.framebufferAdd2, nullptr);
+		vkDestroyBuffer(device, trl.uniformBuffer2, nullptr);
+		vkFreeMemory(device, trl.uniformBufferMemory2, nullptr);
+	}
 }

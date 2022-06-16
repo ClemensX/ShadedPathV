@@ -48,16 +48,7 @@ public:
 	FrameBufferAttachment colorAttachment2; // right side view
 
 	ClearThreadResources clearResources;
-	// ClearShader
-	//VkPipelineLayout pipelineLayoutTriangle = nullptr;
-	//VkPipeline graphicsPipelineTriangle = nullptr;
-	VkRenderPass renderPassClear = nullptr;
-	VkCommandBuffer commandBufferClear = nullptr;
-	//VkFramebuffer framebufferClear = nullptr;
-	VkFramebuffer framebufferClear2 = nullptr;
-	//VkBuffer uniformBufferTriangle;
-	//VkDeviceMemory uniformBufferMemoryTriangle;
-	//VkDescriptorSet descriptorSetTriangle = nullptr;
+	LineThreadResources lineResources;
 
 	// triangle shader / SimpleShader
 	VkPipelineLayout pipelineLayoutTriangle = nullptr;
@@ -70,31 +61,6 @@ public:
 	VkFramebuffer framebufferSimple = nullptr;
 	VkFramebuffer framebufferSimple2 = nullptr;
 
-	// Line shader
-	VkFramebuffer framebufferLine = nullptr;
-	VkFramebuffer framebufferLineAdd = nullptr;
-	VkFramebuffer framebufferLine2 = nullptr;
-	VkFramebuffer framebufferLineAdd2 = nullptr;
-	VkRenderPass renderPassLine = nullptr;
-	VkRenderPass renderPassLineAdd = nullptr;
-	VkPipelineLayout pipelineLayoutLine = nullptr;
-	VkPipeline graphicsPipelineLine = nullptr;
-	VkPipeline graphicsPipelineLineAdd = nullptr;
-	VkCommandBuffer commandBufferLine = nullptr;
-	VkCommandBuffer commandBufferLineAdd = nullptr;
-	// vertex buffer for added lines
-	VkBuffer vertexBufferAdd = nullptr;
-	// vertex buffer device memory
-	VkDeviceMemory vertexBufferAddMemory = nullptr;
-	// MVP buffer
-	VkBuffer uniformBufferLine = nullptr;
-	VkBuffer uniformBufferLine2 = nullptr;
-	// MVP buffer device memory
-	VkDeviceMemory uniformBufferMemoryLine = nullptr;
-	VkDeviceMemory uniformBufferMemoryLine2 = nullptr;
-	VkDescriptorSet descriptorSetLine = nullptr;
-	VkDescriptorSet descriptorSetLine2 = nullptr;
-	vector<LineShader::Vertex> verticesAddLines;
 
 	// frame management
 	long frameNum = -1;

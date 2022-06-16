@@ -1,7 +1,11 @@
 #pragma once
 struct ClearThreadResources : ShaderThreadResources {
     VkFramebuffer framebuffer = nullptr;
+    VkFramebuffer framebuffer2 = nullptr;
+    VkRenderPass renderPass = nullptr;
+    VkCommandBuffer commandBuffer = nullptr;
 };
+
 // ClearShader is used as first shader to clear framebuffer and depth buffers.
 // Creates a static command buffer during initialization that can simply be applied later in Frame drawing
 // as first step.
