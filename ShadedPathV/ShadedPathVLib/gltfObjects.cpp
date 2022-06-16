@@ -36,6 +36,7 @@ void gltfObjects::run()
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
+            //.addShader(shaders.pbrShader)
             .addShader(shaders.lineShader)
             ;
         // init shaders, e.g. one-time uploads before rendering cycle starts go here

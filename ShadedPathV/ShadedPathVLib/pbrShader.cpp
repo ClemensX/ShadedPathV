@@ -31,6 +31,7 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 
 void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
+	if (true) return;
 	// uniform buffer
 	createUniformBuffer(tr, tr.uniformBufferLine, sizeof(UniformBufferObject), tr.uniformBufferMemoryLine);
 	if (engine->isStereo()) {

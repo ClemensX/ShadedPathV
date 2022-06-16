@@ -103,7 +103,7 @@ public:
 	VkFence presentFence = nullptr;
 	ThreadsafeWaitingQueue<unsigned long> renderThreadContinueQueue;
 	VkPipelineStageFlags waitStages[2];
-#define	THREAD_RESOURCES_MAX_COMMAND_BUFFERS 5
+#define	THREAD_RESOURCES_MAX_COMMAND_BUFFERS 10
 	VkCommandBuffer commandBuffers[THREAD_RESOURCES_MAX_COMMAND_BUFFERS];
 
 	// depth buffer
