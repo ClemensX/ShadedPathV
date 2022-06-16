@@ -107,9 +107,6 @@ ThreadResources::~ThreadResources()
     vkDestroyFence(device, presentFence, nullptr);
     vkDestroyEvent(device, uiRenderFinished, nullptr);
     vkDestroyCommandPool(device, commandPool, nullptr);
-    vkDestroyFramebuffer(device, framebufferSimple, nullptr);
-    vkDestroyFramebuffer(device, framebufferUI, nullptr);
-    vkDestroyRenderPass(device, renderPassSimpleShader, nullptr);
     vkDestroyImageView(device, depthImageView, nullptr);
     vkDestroyImage(device, depthImage, nullptr);
     vkFreeMemory(device, depthImageMemory, nullptr);
@@ -119,13 +116,7 @@ ThreadResources::~ThreadResources()
     vkDestroyImageView(device, colorAttachment.view, nullptr);
     vkDestroyImage(device, colorAttachment.image, nullptr);
     vkFreeMemory(device, colorAttachment.memory, nullptr);
-    vkDestroyPipeline(device, graphicsPipelineTriangle, nullptr);
-    vkDestroyPipelineLayout(device, pipelineLayoutTriangle, nullptr);
-    vkDestroyBuffer(device, uniformBufferTriangle, nullptr);
-    vkFreeMemory(device, uniformBufferMemoryTriangle, nullptr);
     if (engine->isStereo()) {
-        //vkDestroyFramebuffer(device, framebufferClear2, nullptr);
-        vkDestroyFramebuffer(device, framebufferSimple2, nullptr);
         vkDestroyImageView(device, depthImageView2, nullptr);
         vkDestroyImage(device, depthImage2, nullptr);
         vkFreeMemory(device, depthImageMemory2, nullptr);

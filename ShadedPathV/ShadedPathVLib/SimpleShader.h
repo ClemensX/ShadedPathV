@@ -1,4 +1,16 @@
 #pragma once
+struct SimpleThreadResources : ShaderThreadResources {
+    VkPipelineLayout pipelineLayout = nullptr;
+    VkPipeline graphicsPipeline = nullptr;
+    VkRenderPass renderPass = nullptr;
+    VkCommandBuffer commandBuffer = nullptr;
+    VkBuffer uniformBuffer = nullptr;
+    VkDeviceMemory uniformBufferMemory = nullptr;
+    VkDescriptorSet descriptorSet = nullptr;
+    VkFramebuffer framebuffer = nullptr;
+    VkFramebuffer framebuffer2 = nullptr;
+};
+
 class SimpleShader : public ShaderBase
 {
 public:

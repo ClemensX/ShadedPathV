@@ -44,11 +44,12 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 
 void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
+	auto& str = tr.simpleResources; //shortcut to shader thread resources
 	// uniform buffer
-	createUniformBuffer(tr, tr.uniformBufferTriangle, sizeof(UniformBufferObject), tr.uniformBufferMemoryTriangle);
+	createUniformBuffer(tr, str.uniformBuffer, sizeof(UniformBufferObject), str.uniformBufferMemory);
 
 	createDescriptorSets(tr);
-	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassSimpleShader, tr.framebufferSimple, tr.framebufferSimple2);
+	createRenderPassAndFramebuffer(tr, shaderState, str.renderPass, str.framebuffer, str.framebuffer2);
 
 	// create shader stage
 	auto vertShaderStageInfo = createVertexShaderCreateInfo(vertShaderModuleTriangle);
@@ -87,7 +88,7 @@ void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// empty for now...
 
 	// pipeline layout
-	createPipelineLayout(&tr.pipelineLayoutTriangle);
+	createPipelineLayout(&str.pipelineLayout);
 
 	// depth stencil
 	auto depthStencil = createStandardDepthStencil();
@@ -105,12 +106,12 @@ void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	pipelineInfo.pDepthStencilState = &depthStencil;
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = nullptr; // Optional
-	pipelineInfo.layout = tr.pipelineLayoutTriangle;
-	pipelineInfo.renderPass = tr.renderPassSimpleShader;
+	pipelineInfo.layout = str.pipelineLayout;
+	pipelineInfo.renderPass = str.renderPass;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional
-	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &tr.graphicsPipelineTriangle) != VK_SUCCESS) {
+	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &str.graphicsPipeline) != VK_SUCCESS) {
 		Error("failed to create graphics pipeline!");
 	}
 }
@@ -147,20 +148,21 @@ void SimpleShader::createDescriptorSetLayout()
     }
 }
 
-void SimpleShader::createDescriptorSets(ThreadResources& res)
+void SimpleShader::createDescriptorSets(ThreadResources& tr)
 {
-    VkDescriptorSetAllocateInfo allocInfo{};
+	auto& str = tr.simpleResources; //shortcut to shader thread resources
+	VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocInfo.descriptorPool = descriptorPool;
 	allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &descriptorSetLayout;
-    if (vkAllocateDescriptorSets(device, &allocInfo, &res.descriptorSetTriangle) != VK_SUCCESS) {
+    if (vkAllocateDescriptorSets(device, &allocInfo, &str.descriptorSet) != VK_SUCCESS) {
         Error("failed to allocate descriptor sets!");
     }
 
     // populate descriptor set:
     VkDescriptorBufferInfo bufferInfo{};
-    bufferInfo.buffer = res.uniformBufferTriangle;
+    bufferInfo.buffer = str.uniformBuffer;
     bufferInfo.offset = 0;
     bufferInfo.range = sizeof(UniformBufferObject);
 
@@ -172,7 +174,7 @@ void SimpleShader::createDescriptorSets(ThreadResources& res)
     array<VkWriteDescriptorSet, 2> descriptorWrites{};
 
     descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[0].dstSet = res.descriptorSetTriangle;
+    descriptorWrites[0].dstSet = str.descriptorSet;
     descriptorWrites[0].dstBinding = 0;
     descriptorWrites[0].dstArrayElement = 0;
     descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -180,7 +182,7 @@ void SimpleShader::createDescriptorSets(ThreadResources& res)
     descriptorWrites[0].pBufferInfo = &bufferInfo;
 
     descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[1].dstSet = res.descriptorSetTriangle;
+    descriptorWrites[1].dstSet = str.descriptorSet;
     descriptorWrites[1].dstBinding = 1;
     descriptorWrites[1].dstArrayElement = 0;
     descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -194,14 +196,15 @@ void SimpleShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo) {
 	if (!enabled) Error("Shader disabled. Calling methods on it is not allowed.");
     // copy ubo to GPU:
     void* data;
-    vkMapMemory(device, tr.uniformBufferMemoryTriangle, 0, sizeof(ubo), 0, &data);
+    vkMapMemory(device, tr.simpleResources.uniformBufferMemory, 0, sizeof(ubo), 0, &data);
     memcpy(data, &ubo, sizeof(ubo));
-    vkUnmapMemory(device, tr.uniformBufferMemoryTriangle);
+    vkUnmapMemory(device, tr.simpleResources.uniformBufferMemory);
 }
 
 void SimpleShader::createCommandBuffer(ThreadResources& tr)
 {
 	if (!enabled) return;
+	auto& str = tr.simpleResources; //shortcut to shader thread resources
 	auto& device = this->engine->global.device;
 	auto& global = this->engine->global;
 	auto& shaders = this->engine->shaders;
@@ -211,7 +214,7 @@ void SimpleShader::createCommandBuffer(ThreadResources& tr)
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = (uint32_t)1;
 
-	if (vkAllocateCommandBuffers(device, &allocInfo, &tr.commandBufferTriangle) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(device, &allocInfo, &str.commandBuffer) != VK_SUCCESS) {
 		Error("failed to allocate command buffers!");
 	}
 	VkCommandBufferBeginInfo beginInfo{};
@@ -219,42 +222,43 @@ void SimpleShader::createCommandBuffer(ThreadResources& tr)
 	beginInfo.flags = 0; // Optional
 	beginInfo.pInheritanceInfo = nullptr; // Optional
 
-	if (vkBeginCommandBuffer(tr.commandBufferTriangle, &beginInfo) != VK_SUCCESS) {
+	if (vkBeginCommandBuffer(str.commandBuffer, &beginInfo) != VK_SUCCESS) {
 		Error("failed to begin recording triangle command buffer!");
 	}
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = tr.renderPassSimpleShader;
-	renderPassInfo.framebuffer = tr.framebufferSimple;
+	renderPassInfo.renderPass = str.renderPass;
+	renderPassInfo.framebuffer = str.framebuffer;
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = this->engine->getBackBufferExtent();
 
 	//renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 	//renderPassInfo.pClearValues = clearValues.data();
 
-	vkCmdBeginRenderPass(tr.commandBufferTriangle, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	recordDrawCommand(tr.commandBufferTriangle, tr, vertexBufferTriangle, indexBufferTriangle);
-	vkCmdEndRenderPass(tr.commandBufferTriangle);
-	if (vkEndCommandBuffer(tr.commandBufferTriangle) != VK_SUCCESS) {
+	vkCmdBeginRenderPass(str.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	recordDrawCommand(str.commandBuffer, tr, vertexBufferTriangle, indexBufferTriangle);
+	vkCmdEndRenderPass(str.commandBuffer);
+	if (vkEndCommandBuffer(str.commandBuffer) != VK_SUCCESS) {
 		Error("failed to record triangle command buffer!");
 	}
 }
 
 void SimpleShader::addCurrentCommandBuffer(ThreadResources& tr) {
-	tr.activeCommandBuffers.push_back(tr.commandBufferTriangle);
+	tr.activeCommandBuffers.push_back(tr.simpleResources.commandBuffer);
 };
 
 
 void SimpleShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, VkBuffer indexBuffer)
 {
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.graphicsPipelineTriangle);
+	auto& str = tr.simpleResources; //shortcut to shader thread resources
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.graphicsPipeline);
 	VkBuffer vertexBuffers[] = { vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 	vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
 	// bind descriptor sets:
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, tr.pipelineLayoutTriangle, 0, 1, &tr.descriptorSetTriangle, 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet, 0, nullptr);
 
 	//vkCmdDraw(commandBuffer, static_cast<uint32_t>(simpleShader.vertices.size()), 1, 0, 0);
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
@@ -277,4 +281,14 @@ SimpleShader::~SimpleShader()
 
 void SimpleShader::destroyThreadResources(ThreadResources& tr)
 {
+	auto& trl = tr.simpleResources;
+	vkDestroyFramebuffer(device, trl.framebuffer, nullptr);
+	vkDestroyRenderPass(device, trl.renderPass, nullptr);
+	vkDestroyPipeline(device, trl.graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(device, trl.pipelineLayout, nullptr);
+	vkDestroyBuffer(device, trl.uniformBuffer, nullptr);
+	vkFreeMemory(device, trl.uniformBufferMemory, nullptr);
+	if (engine->isStereo()) {
+		vkDestroyFramebuffer(device, trl.framebuffer2, nullptr);
+	}
 }

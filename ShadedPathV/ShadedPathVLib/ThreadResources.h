@@ -27,8 +27,6 @@ public:
 	static void initAll(ShadedPathEngine* engine);
 
 	VkCommandPool commandPool = nullptr;
-	// ImGui framebuffers
-	VkFramebuffer framebufferUI = nullptr;
 
 	// backbuffer image dump:
 	const char* imagedata = nullptr;
@@ -47,19 +45,12 @@ public:
 	FrameBufferAttachment colorAttachment/*, depthAttachment*/;
 	FrameBufferAttachment colorAttachment2; // right side view
 
+	// ShaderThreadResources
 	ClearThreadResources clearResources;
 	LineThreadResources lineResources;
-
-	// triangle shader / SimpleShader
-	VkPipelineLayout pipelineLayoutTriangle = nullptr;
-	VkPipeline graphicsPipelineTriangle = nullptr;
-	VkRenderPass renderPassSimpleShader = nullptr;
-	VkCommandBuffer commandBufferTriangle = nullptr;
-	VkBuffer uniformBufferTriangle = nullptr;
-	VkDeviceMemory uniformBufferMemoryTriangle = nullptr;
-	VkDescriptorSet descriptorSetTriangle = nullptr;
-	VkFramebuffer framebufferSimple = nullptr;
-	VkFramebuffer framebufferSimple2 = nullptr;
+	SimpleThreadResources simpleResources;
+	// for ImGui:
+	UIThreadResources uiResources;
 
 
 	// frame management

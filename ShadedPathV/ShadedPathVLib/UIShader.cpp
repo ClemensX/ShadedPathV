@@ -30,7 +30,7 @@ void UIShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
     framebufferInfo.height = engine->getBackBufferExtent().height;
     framebufferInfo.layers = 1;
 
-    if (vkCreateFramebuffer(engine->global.device, &framebufferInfo, nullptr, &tr.framebufferUI) != VK_SUCCESS) {
+    if (vkCreateFramebuffer(engine->global.device, &framebufferInfo, nullptr, &tr.uiResources.framebuffer) != VK_SUCCESS) {
         Error("failed to create framebuffer!");
     }
 }
@@ -56,6 +56,7 @@ UIShader::~UIShader()
 
 void UIShader::destroyThreadResources(ThreadResources& tr)
 {
+    vkDestroyFramebuffer(device, tr.uiResources.framebuffer, nullptr);
 }
 
 
@@ -86,7 +87,7 @@ void UIShader::draw(ThreadResources& tr)
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassInfo.renderPass = engine->ui.imGuiRenderPass;//tr.renderPassDraw;
-        renderPassInfo.framebuffer = tr.framebufferUI;
+        renderPassInfo.framebuffer = tr.uiResources.framebuffer;
         renderPassInfo.renderArea.offset = { 0, 0 };
         renderPassInfo.renderArea.extent = engine->getBackBufferExtent();
         renderPassInfo.clearValueCount = 0;

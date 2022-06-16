@@ -1,5 +1,9 @@
 #pragma once
 
+#pragma once
+struct UIThreadResources : ShaderThreadResources {
+    VkFramebuffer framebuffer = nullptr;
+};
 // UIShader is used to render Dear ImGui UI.
 class UIShader : public ShaderBase
 {
