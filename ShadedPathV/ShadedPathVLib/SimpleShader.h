@@ -99,6 +99,8 @@ public:
     virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState) override;
     virtual void createCommandBuffer(ThreadResources& tr) override;
     virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
+    virtual void destroyThreadResources(ThreadResources& tr) override;
+
 
     virtual ~SimpleShader() override;
 

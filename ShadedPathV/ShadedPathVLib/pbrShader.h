@@ -64,6 +64,8 @@ public:
 	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState) override;
 	virtual void createCommandBuffer(ThreadResources& tr) override;
 	virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
+	virtual void destroyThreadResources(ThreadResources& tr) override;
+
 	// add lines - they will never  be removed
 	void add(vector<LineDef>& linesToAdd);
 	// initial upload of all added lines - only valid before first render

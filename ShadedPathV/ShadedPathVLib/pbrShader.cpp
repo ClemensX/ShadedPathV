@@ -410,3 +410,7 @@ PBRShader::~PBRShader()
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 }
+
+void PBRShader::destroyThreadResources(ThreadResources& tr)
+{
+}

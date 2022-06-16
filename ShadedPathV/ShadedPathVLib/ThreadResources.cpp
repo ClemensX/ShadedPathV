@@ -98,6 +98,8 @@ ThreadResources::~ThreadResources()
     auto& device = engine->global.device;
     auto& global = engine->global;
     auto& shaders = engine->shaders;
+    //shaders.clearShader.destroyThreadResources(*this);
+    shaders.destroyThreadResources(*this);
     vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
 	vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
     vkDestroyFence(device, imageDumpFence, nullptr);
@@ -105,7 +107,7 @@ ThreadResources::~ThreadResources()
     vkDestroyFence(device, presentFence, nullptr);
     vkDestroyEvent(device, uiRenderFinished, nullptr);
     vkDestroyCommandPool(device, commandPool, nullptr);
-    vkDestroyFramebuffer(device, framebufferClear, nullptr);
+    //vkDestroyFramebuffer(device, framebufferClear, nullptr);
     vkDestroyFramebuffer(device, framebufferSimple, nullptr);
     vkDestroyFramebuffer(device, framebufferUI, nullptr);
     vkDestroyFramebuffer(device, framebufferLine, nullptr);

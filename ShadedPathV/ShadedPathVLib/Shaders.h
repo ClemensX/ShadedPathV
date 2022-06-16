@@ -32,6 +32,9 @@ class Shaders
 		void createCommandBuffers(ThreadResources& tr);
 		void gatherActiveCommandBuffers(ThreadResources& tr);
 
+		// destroy shader thread resources
+		void destroyThreadResources(ThreadResources& tr);
+
 		void setEngine(ShadedPathEngine* s) {
 			engine = s;
 		}
@@ -71,6 +74,9 @@ public:
 
 	void gatherActiveCommandBuffers(ThreadResources& tr);
 	void checkShaderState(ShadedPathEngine& engine);
+
+	// destroy all shader thread local resources
+	void destroyThreadResources(ThreadResources& tr);
 
 	// general methods
 	void queueSubmit(ThreadResources& tr);

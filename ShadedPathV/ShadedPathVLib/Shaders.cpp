@@ -51,17 +51,29 @@ void Shaders::Config::createCommandBuffers(ThreadResources& tr) {
 	}
 }
 
+void Shaders::Config::destroyThreadResources(ThreadResources& tr)
+{
+	for (ShaderBase* shader : shaderList) {
+		shader->destroyThreadResources(tr);
+	}
+}
+
 void Shaders::createCommandBuffers(ThreadResources& tr)
 {
 	config.createCommandBuffers(tr);
 }
 
 void Shaders::checkShaderState(ShadedPathEngine& engine) {
-	engine.shaders.config.checkShaderState();
+	config.checkShaderState();
 }
 
 void Shaders::gatherActiveCommandBuffers(ThreadResources& tr) {
-	engine.shaders.config.gatherActiveCommandBuffers(tr);
+	config.gatherActiveCommandBuffers(tr);
+}
+
+void Shaders::destroyThreadResources(ThreadResources& tr)
+{
+	config.destroyThreadResources(tr);
 }
 
 // SHADER Triangle

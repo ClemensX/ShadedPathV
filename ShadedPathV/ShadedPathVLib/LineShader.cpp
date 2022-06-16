@@ -409,3 +409,7 @@ LineShader::~LineShader()
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 }
+
+void LineShader::destroyThreadResources(ThreadResources& tr)
+{
+}

@@ -274,3 +274,7 @@ SimpleShader::~SimpleShader()
 	vkDestroyShaderModule(device, vertShaderModuleTriangle, nullptr);
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 }
+
+void SimpleShader::destroyThreadResources(ThreadResources& tr)
+{
+}

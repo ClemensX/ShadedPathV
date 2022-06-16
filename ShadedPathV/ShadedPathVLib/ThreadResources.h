@@ -47,12 +47,13 @@ public:
 	FrameBufferAttachment colorAttachment/*, depthAttachment*/;
 	FrameBufferAttachment colorAttachment2; // right side view
 
+	ClearThreadResources clearResources;
 	// ClearShader
 	//VkPipelineLayout pipelineLayoutTriangle = nullptr;
 	//VkPipeline graphicsPipelineTriangle = nullptr;
 	VkRenderPass renderPassClear = nullptr;
 	VkCommandBuffer commandBufferClear = nullptr;
-	VkFramebuffer framebufferClear = nullptr;
+	//VkFramebuffer framebufferClear = nullptr;
 	VkFramebuffer framebufferClear2 = nullptr;
 	//VkBuffer uniformBufferTriangle;
 	//VkDeviceMemory uniformBufferMemoryTriangle;

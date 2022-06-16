@@ -10,6 +10,8 @@ public:
     virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState) override;
     virtual void createCommandBuffer(ThreadResources& tr) override;
     virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
+    virtual void destroyThreadResources(ThreadResources& tr) override;
+
 
     // render UI, only to be called from Presentation::presentBackBufferImage() because ImGUI is not thread save
     void draw(ThreadResources& tr);

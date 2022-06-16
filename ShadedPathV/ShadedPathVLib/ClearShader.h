@@ -1,7 +1,9 @@
 #pragma once
-
+struct ClearThreadResources : ShaderThreadResources {
+    VkFramebuffer framebuffer = nullptr;
+};
 // ClearShader is used as first shader to clear framebuffer and depth buffers.
-// Creates a static command buffer during initialization that can simply be apllied later in Frame drawing
+// Creates a static command buffer during initialization that can simply be applied later in Frame drawing
 // as first step.
 class ClearShader : public ShaderBase
 {
@@ -12,6 +14,8 @@ public:
     virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState) override;
     virtual void createCommandBuffer(ThreadResources& tr) override;
     virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
+    virtual void destroyThreadResources(ThreadResources& tr) override;
+
 
     virtual ~ClearShader() override;
 

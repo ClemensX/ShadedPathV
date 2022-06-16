@@ -16,7 +16,7 @@ void ClearShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 
 void ClearShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
-	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassClear, tr.framebufferClear, tr.framebufferClear2);
+	createRenderPassAndFramebuffer(tr, shaderState, tr.renderPassClear, tr.clearResources.framebuffer, tr.framebufferClear2);
 }
 
 void ClearShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
@@ -50,7 +50,7 @@ void ClearShader::createCommandBuffer(ThreadResources& tr)
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = tr.renderPassClear;
-	renderPassInfo.framebuffer = tr.framebufferClear;
+	renderPassInfo.framebuffer = tr.clearResources.framebuffer;
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = this->engine->getBackBufferExtent();
 
@@ -170,4 +170,9 @@ ClearShader::~ClearShader()
 		return;
 	}
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+}
+
+void ClearShader::destroyThreadResources(ThreadResources& tr)
+{
+	vkDestroyFramebuffer(device, tr.clearResources.framebuffer, nullptr);
 }

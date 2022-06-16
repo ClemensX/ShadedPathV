@@ -54,6 +54,11 @@ UIShader::~UIShader()
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 }
 
+void UIShader::destroyThreadResources(ThreadResources& tr)
+{
+}
+
+
 void UIShader::draw(ThreadResources& tr)
 {
     if (enabled)

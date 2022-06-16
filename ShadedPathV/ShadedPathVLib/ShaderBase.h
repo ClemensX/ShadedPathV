@@ -5,6 +5,10 @@ class ShaderBase;
 class Config;
 struct ShaderState;
 
+// Thread local resources
+struct ShaderThreadResources {
+};
+
 // Info needed to connect shaders during intialization.
 // Like DepthBuffer, sizes, image formats and states
 class ShaderBase
@@ -92,6 +96,9 @@ public:
 
 	// finish shader initialization
 	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderSate) = 0;
+
+	// destry thread local shader resources
+	virtual void destroyThreadResources(ThreadResources& tr) = 0;
 
 	// create command buffers
 	virtual void createCommandBuffer(ThreadResources& tr) = 0;
