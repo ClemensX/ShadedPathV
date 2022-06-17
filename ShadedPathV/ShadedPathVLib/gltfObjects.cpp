@@ -36,7 +36,7 @@ void gltfObjects::run()
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
-            //.addShader(shaders.pbrShader)
+            .addShader(shaders.pbrShader)
             .addShader(shaders.lineShader)
             ;
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
@@ -73,7 +73,7 @@ void gltfObjects::init() {
 
     // loading objects
     //engine.objectStore.loadObject("WaterBottle.glb", "WaterBottle", lines);
-    engine.objectStore.loadObject("small_knife_dagger/scene.gltf", "Knife", lines);
+    engine.objectStore.loadObjectWireframe("small_knife_dagger/scene.gltf", "Knife", lines);
     auto o = engine.objectStore.getObject("WaterBottle");
     Log("Object loaded: " << o->id.c_str() << endl);
 

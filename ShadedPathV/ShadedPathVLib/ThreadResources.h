@@ -48,6 +48,7 @@ public:
 	// ShaderThreadResources
 	ClearThreadResources clearResources;
 	LineThreadResources lineResources;
+	PBRThreadResources pbrResources;
 	SimpleThreadResources simpleResources;
 	// for ImGui:
 	UIThreadResources uiResources;

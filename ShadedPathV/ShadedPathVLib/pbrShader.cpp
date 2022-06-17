@@ -31,11 +31,11 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 
 void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
-	auto& trl = tr.lineResources;
+	auto& str = tr.pbrResources; // shortcut to pbr resources
 	// uniform buffer
-	createUniformBuffer(tr, trl.uniformBuffer, sizeof(UniformBufferObject), trl.uniformBufferMemory);
+	createUniformBuffer(tr, str.uniformBuffer, sizeof(UniformBufferObject), str.uniformBufferMemory);
 	if (engine->isStereo()) {
-		createUniformBuffer(tr, trl.uniformBuffer2, sizeof(UniformBufferObject), trl.uniformBufferMemory2);
+		createUniformBuffer(tr, str.uniformBuffer2, sizeof(UniformBufferObject), str.uniformBufferMemory2);
 	}
 
 	createDescriptorSets(tr);
@@ -45,11 +45,11 @@ void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 		undoLast = true;
 		setLastShader(false);
 	}
-	createRenderPassAndFramebuffer(tr, shaderState, trl.renderPass, trl.framebuffer, trl.framebuffer2);
+	createRenderPassAndFramebuffer(tr, shaderState, str.renderPass, str.framebuffer, str.framebuffer2);
 	if (undoLast) {
 		setLastShader(true);
 	}
-	createRenderPassAndFramebuffer(tr, shaderState, trl.renderPassAdd, trl.framebufferAdd, trl.framebufferAdd2);
+	createRenderPassAndFramebuffer(tr, shaderState, str.renderPassAdd, str.framebufferAdd, str.framebufferAdd2);
 
 	// create shader stage
 	auto vertShaderStageInfo = createVertexShaderCreateInfo(vertShaderModule);
@@ -84,7 +84,7 @@ void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// empty for now...
 
 	// pipeline layout
-	createPipelineLayout(&trl.pipelineLayout);
+	createPipelineLayout(&str.pipelineLayout);
 
 	// depth stencil
 	auto depthStencil = createStandardDepthStencil();
@@ -102,22 +102,22 @@ void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	pipelineInfo.pDepthStencilState = &depthStencil;
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = nullptr; // Optional
-	pipelineInfo.layout = trl.pipelineLayout;
-	pipelineInfo.renderPass = trl.renderPass;
+	pipelineInfo.layout = str.pipelineLayout;
+	pipelineInfo.renderPass = str.renderPass;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional
-	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &trl.graphicsPipeline) != VK_SUCCESS) {
+	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &str.graphicsPipeline) != VK_SUCCESS) {
 		Error("failed to create graphics pipeline!");
 	}
-	pipelineInfo.renderPass = trl.renderPassAdd;
-	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &trl.graphicsPipelineAdd) != VK_SUCCESS) {
+	pipelineInfo.renderPass = str.renderPassAdd;
+	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &str.graphicsPipelineAdd) != VK_SUCCESS) {
 		Error("failed to create graphics pipeline!");
 	}
 
 	// create and map vertex buffer in GPU (for lines added for a single frame)
 	VkDeviceSize bufferSize = sizeof(Vertex) * MAX_DYNAMIC_LINES;
-	createVertexBuffer(tr, trl.vertexBufferAdd, bufferSize, trl.vertexBufferAddMemory);
+	createVertexBuffer(tr, str.vertexBufferAdd, bufferSize, str.vertexBufferAddMemory);
 	createCommandBufferLineAdd(tr);
 }
 
@@ -138,7 +138,7 @@ void PBRShader::addOneTime(vector<LineDef>& linesToAdd, ThreadResources& tr) {
 	//auto& lines = getInactiveAppDataSet(user)->oneTimeLines;
 	if (linesToAdd.size() == 0)
 		return;
-	auto& vec = tr.lineResources.verticesAddLines;
+	auto& vec = tr.pbrResources.verticesAddLines;
 	// handle fixed lines:
 	for (LineDef& line : linesToAdd) {
 		Vertex v1, v2;
@@ -204,26 +204,26 @@ void PBRShader::createDescriptorSetLayout()
 
 void PBRShader::createDescriptorSets(ThreadResources& tr)
 {
-	auto& trl = tr.lineResources;
+	auto& str = tr.pbrResources; // shortcut to pbr resources
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocInfo.descriptorPool = descriptorPool;
 	allocInfo.descriptorSetCount = 1;
 	allocInfo.pSetLayouts = &descriptorSetLayout;
-	if (vkAllocateDescriptorSets(device, &allocInfo, &trl.descriptorSet) != VK_SUCCESS) {
+	if (vkAllocateDescriptorSets(device, &allocInfo, &str.descriptorSet) != VK_SUCCESS) {
 		Error("failed to allocate descriptor sets!");
 	}
 
 	// populate descriptor set:
 	VkDescriptorBufferInfo bufferInfo{};
-	bufferInfo.buffer = trl.uniformBuffer;
+	bufferInfo.buffer = str.uniformBuffer;
 	bufferInfo.offset = 0;
 	bufferInfo.range = sizeof(UniformBufferObject);
 
 	array<VkWriteDescriptorSet, 1> descriptorWrites{};
 
 	descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorWrites[0].dstSet = trl.descriptorSet;
+	descriptorWrites[0].dstSet = str.descriptorSet;
 	descriptorWrites[0].dstBinding = 0;
 	descriptorWrites[0].dstArrayElement = 0;
 	descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -232,18 +232,18 @@ void PBRShader::createDescriptorSets(ThreadResources& tr)
 
 	vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	if (engine->isStereo()) {
-		if (vkAllocateDescriptorSets(device, &allocInfo, &trl.descriptorSet2) != VK_SUCCESS) {
+		if (vkAllocateDescriptorSets(device, &allocInfo, &str.descriptorSet2) != VK_SUCCESS) {
 			Error("failed to allocate descriptor sets!");
 		}
-		bufferInfo.buffer = trl.uniformBuffer2;
-		descriptorWrites[0].dstSet = trl.descriptorSet2;
+		bufferInfo.buffer = str.uniformBuffer2;
+		descriptorWrites[0].dstSet = str.descriptorSet2;
 		vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}
 }
 
 void PBRShader::createCommandBuffer(ThreadResources& tr)
 {
-	auto& trl = tr.lineResources;
+	auto& str = tr.pbrResources; // shortcut to pbr resources
 	auto& device = engine->global.device;
 	auto& global = engine->global;
 	auto& shaders = engine->shaders;
@@ -253,7 +253,7 @@ void PBRShader::createCommandBuffer(ThreadResources& tr)
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = (uint32_t)1;
 
-	if (vkAllocateCommandBuffers(device, &allocInfo, &trl.commandBuffer) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(device, &allocInfo, &str.commandBuffer) != VK_SUCCESS) {
 		Error("failed to allocate command buffers!");
 	}
 	VkCommandBufferBeginInfo beginInfo{};
@@ -261,52 +261,52 @@ void PBRShader::createCommandBuffer(ThreadResources& tr)
 	beginInfo.flags = 0; // Optional
 	beginInfo.pInheritanceInfo = nullptr; // Optional
 
-	if (vkBeginCommandBuffer(trl.commandBuffer, &beginInfo) != VK_SUCCESS) {
+	if (vkBeginCommandBuffer(str.commandBuffer, &beginInfo) != VK_SUCCESS) {
 		Error("failed to begin recording triangle command buffer!");
 	}
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = trl.renderPass;
-	renderPassInfo.framebuffer = trl.framebuffer;
+	renderPassInfo.renderPass = str.renderPass;
+	renderPassInfo.framebuffer = str.framebuffer;
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = engine->getBackBufferExtent();
 
 	renderPassInfo.clearValueCount = 0;
 
-	vkCmdBeginRenderPass(trl.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	recordDrawCommand(trl.commandBuffer, tr, vertexBuffer);
-	vkCmdEndRenderPass(trl.commandBuffer);
+	vkCmdBeginRenderPass(str.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	recordDrawCommand(str.commandBuffer, tr, vertexBuffer);
+	vkCmdEndRenderPass(str.commandBuffer);
 	if (engine->isStereo()) {
-		renderPassInfo.framebuffer = trl.framebuffer2;
-		vkCmdBeginRenderPass(trl.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		recordDrawCommand(trl.commandBuffer, tr, vertexBuffer, true);
-		vkCmdEndRenderPass(trl.commandBuffer);
+		renderPassInfo.framebuffer = str.framebuffer2;
+		vkCmdBeginRenderPass(str.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		recordDrawCommand(str.commandBuffer, tr, vertexBuffer, true);
+		vkCmdEndRenderPass(str.commandBuffer);
 	}
-	if (vkEndCommandBuffer(trl.commandBuffer) != VK_SUCCESS) {
+	if (vkEndCommandBuffer(str.commandBuffer) != VK_SUCCESS) {
 		Error("failed to record triangle command buffer!");
 	}
 }
 
 void PBRShader::addCurrentCommandBuffer(ThreadResources& tr) {
-	tr.activeCommandBuffers.push_back(tr.lineResources.commandBuffer);
-	tr.activeCommandBuffers.push_back(tr.lineResources.commandBufferAdd);
+	tr.activeCommandBuffers.push_back(tr.pbrResources.commandBuffer);
+	tr.activeCommandBuffers.push_back(tr.pbrResources.commandBufferAdd);
 };
 
 void PBRShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
 {
-	auto& trl = tr.lineResources;
+	auto& str = tr.pbrResources; // shortcut to pbr resources
 	if (vertexBuffer == nullptr) return; // no fixed lines to draw
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.graphicsPipeline);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.graphicsPipeline);
 	VkBuffer vertexBuffers[] = { vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
 	// bind descriptor sets:
 	if (!isRightEye) {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet, 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet, 0, nullptr);
 	}
 	else {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet2, 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet2, 0, nullptr);
 	}
 
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(lines.size() * 2), 1, 0, 0);
@@ -314,7 +314,7 @@ void PBRShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResource
 
 void PBRShader::clearAddLines(ThreadResources& tr)
 {
-	tr.lineResources.verticesAddLines.clear();
+	tr.pbrResources.verticesAddLines.clear();
 }
 
 void PBRShader::createCommandBufferLineAdd(ThreadResources& tr)
@@ -328,14 +328,14 @@ void PBRShader::createCommandBufferLineAdd(ThreadResources& tr)
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = (uint32_t)1;
 
-	if (vkAllocateCommandBuffers(device, &allocInfo, &tr.lineResources.commandBufferAdd) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(device, &allocInfo, &tr.pbrResources.commandBufferAdd) != VK_SUCCESS) {
 		Error("failed to allocate command buffers!");
 	}
 }
 
 void PBRShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
 {
-	auto& trl = tr.lineResources;
+	auto& str = tr.pbrResources; // shortcut to pbr resources
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0; // Optional
@@ -346,29 +346,29 @@ void PBRShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadResou
 	}
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = trl.renderPassAdd;
-	renderPassInfo.framebuffer = trl.framebufferAdd;
+	renderPassInfo.renderPass = str.renderPassAdd;
+	renderPassInfo.framebuffer = str.framebufferAdd;
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = engine->getBackBufferExtent();
 
 	renderPassInfo.clearValueCount = 0;
 
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.graphicsPipelineAdd);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.graphicsPipelineAdd);
 	VkBuffer vertexBuffers[] = { vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
 	// bind descriptor sets:
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet, 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet, 0, nullptr);
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	vkCmdDraw(commandBuffer, static_cast<uint32_t>(trl.verticesAddLines.size()), 1, 0, 0);
+	vkCmdDraw(commandBuffer, static_cast<uint32_t>(str.verticesAddLines.size()), 1, 0, 0);
 	vkCmdEndRenderPass(commandBuffer);
 	if (engine->isStereo()) {
-		renderPassInfo.framebuffer = trl.framebufferAdd2;
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet2, 0, nullptr);
+		renderPassInfo.framebuffer = str.framebufferAdd2;
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet2, 0, nullptr);
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		vkCmdDraw(commandBuffer, static_cast<uint32_t>(trl.verticesAddLines.size()), 1, 0, 0);
+		vkCmdDraw(commandBuffer, static_cast<uint32_t>(str.verticesAddLines.size()), 1, 0, 0);
 		vkCmdEndRenderPass(commandBuffer);
 	}
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
@@ -378,29 +378,29 @@ void PBRShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadResou
 
 void PBRShader::prepareAddLines(ThreadResources& tr)
 {
-	recordDrawCommandAdd(tr.lineResources.commandBuffer, tr, tr.lineResources.vertexBufferAdd);
+	recordDrawCommandAdd(tr.pbrResources.commandBuffer, tr, tr.pbrResources.vertexBufferAdd);
 }
 
 void PBRShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
-	auto& trl = tr.lineResources;
+	auto& str = tr.pbrResources; // shortcut to pbr resources
 	// copy ubo to GPU:
 	void* data;
-	vkMapMemory(device, trl.uniformBufferMemory, 0, sizeof(ubo), 0, &data);
+	vkMapMemory(device, str.uniformBufferMemory, 0, sizeof(ubo), 0, &data);
 	memcpy(data, &ubo, sizeof(ubo));
-	vkUnmapMemory(device, trl.uniformBufferMemory);
+	vkUnmapMemory(device, str.uniformBufferMemory);
 	if (engine->isStereo()) {
-		vkMapMemory(device, trl.uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
+		vkMapMemory(device, str.uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
 		memcpy(data, &ubo2, sizeof(ubo2));
-		vkUnmapMemory(device, trl.uniformBufferMemory2);
+		vkUnmapMemory(device, str.uniformBufferMemory2);
 	}
 
 	// mak
 	// copy added lines to GPU:
 	VkDeviceSize bufferSize = sizeof(Vertex) * MAX_DYNAMIC_LINES;
-	size_t copy_size = trl.verticesAddLines.size() * sizeof(Vertex);
-	vkMapMemory(device, trl.vertexBufferAddMemory, 0, bufferSize, 0, &data);
-	memcpy(data, trl.verticesAddLines.data(), copy_size);
-	vkUnmapMemory(device, trl.vertexBufferAddMemory);
+	size_t copy_size = str.verticesAddLines.size() * sizeof(Vertex);
+	vkMapMemory(device, str.vertexBufferAddMemory, 0, bufferSize, 0, &data);
+	memcpy(data, str.verticesAddLines.data(), copy_size);
+	vkUnmapMemory(device, str.vertexBufferAddMemory);
 }
 
 PBRShader::~PBRShader()
@@ -419,22 +419,22 @@ PBRShader::~PBRShader()
 
 void PBRShader::destroyThreadResources(ThreadResources& tr)
 {
-	auto& trl = tr.lineResources;
-	vkDestroyFramebuffer(device, trl.framebuffer, nullptr);
-	vkDestroyFramebuffer(device, trl.framebufferAdd, nullptr);
-	vkDestroyRenderPass(device, trl.renderPass, nullptr);
-	vkDestroyRenderPass(device, trl.renderPassAdd, nullptr);
-	vkDestroyPipeline(device, trl.graphicsPipeline, nullptr);
-	vkDestroyPipeline(device, trl.graphicsPipelineAdd, nullptr);
-	vkDestroyPipelineLayout(device, trl.pipelineLayout, nullptr);
-	vkDestroyBuffer(device, trl.uniformBuffer, nullptr);
-	vkFreeMemory(device, trl.uniformBufferMemory, nullptr);
-	vkDestroyBuffer(device, trl.vertexBufferAdd, nullptr);
-	vkFreeMemory(device, trl.vertexBufferAddMemory, nullptr);
+	auto& str = tr.pbrResources; // shortcut to pbr resources
+	vkDestroyFramebuffer(device, str.framebuffer, nullptr);
+	vkDestroyFramebuffer(device, str.framebufferAdd, nullptr);
+	vkDestroyRenderPass(device, str.renderPass, nullptr);
+	vkDestroyRenderPass(device, str.renderPassAdd, nullptr);
+	vkDestroyPipeline(device, str.graphicsPipeline, nullptr);
+	vkDestroyPipeline(device, str.graphicsPipelineAdd, nullptr);
+	vkDestroyPipelineLayout(device, str.pipelineLayout, nullptr);
+	vkDestroyBuffer(device, str.uniformBuffer, nullptr);
+	vkFreeMemory(device, str.uniformBufferMemory, nullptr);
+	vkDestroyBuffer(device, str.vertexBufferAdd, nullptr);
+	vkFreeMemory(device, str.vertexBufferAddMemory, nullptr);
 	if (engine->isStereo()) {
-		vkDestroyFramebuffer(device, trl.framebuffer2, nullptr);
-		vkDestroyFramebuffer(device, trl.framebufferAdd2, nullptr);
-		vkDestroyBuffer(device, trl.uniformBuffer2, nullptr);
-		vkFreeMemory(device, trl.uniformBufferMemory2, nullptr);
+		vkDestroyFramebuffer(device, str.framebuffer2, nullptr);
+		vkDestroyFramebuffer(device, str.framebufferAdd2, nullptr);
+		vkDestroyBuffer(device, str.uniformBuffer2, nullptr);
+		vkFreeMemory(device, str.uniformBufferMemory2, nullptr);
 	}
 }

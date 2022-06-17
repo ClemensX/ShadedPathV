@@ -17,33 +17,40 @@ ObjectInfo* ObjectStore::getObject(string id)
 	}
 	return ret;
 }
-
-void ObjectStore::loadObject(string filename, string id, vector<LineDef> &lines)
+ObjectInfo* ObjectStore::loadObjectFile(string filename, string id, vector<byte>& fileBuffer)
 {
 	ObjectInfo initialObject;  // only used to initialize struct in texture store - do not access this after assignment to store
-	vector<byte> file_buffer;
 
 	initialObject.id = id;
 	objects[id] = initialObject;
-	ObjectInfo*texture = &objects[id];
+	ObjectInfo* objInfo = &objects[id];
 
 	// find texture file, look in pak file first:
-	PakEntry *pakFileEntry = nullptr;
+	PakEntry* pakFileEntry = nullptr;
 	pakFileEntry = engine->files.findFileInPak(filename.c_str());
 	// try file system if not found in pak:
 	initialObject.filename = filename; // TODO check: field not needed? only in this method? --> remove
 	string binFile;
 	if (pakFileEntry == nullptr) {
 		binFile = engine->files.findFile(filename.c_str(), FileCategory::MESH);
-		texture->filename = binFile;
+		objInfo->filename = binFile;
 		//initialTexture.filename = binFile;
-		engine->files.readFile(texture->filename.c_str(), file_buffer, FileCategory::MESH);
-	} else {
-		engine->files.readFile(pakFileEntry, file_buffer, FileCategory::MESH);
+		engine->files.readFile(objInfo->filename.c_str(), fileBuffer, FileCategory::MESH);
 	}
+	else {
+		engine->files.readFile(pakFileEntry, fileBuffer, FileCategory::MESH);
+	}
+	return objInfo;
+}
+
+void ObjectStore::loadObjectWireframe(string filename, string id, vector<LineDef> &lines)
+{
+	vector<byte> file_buffer;
+	auto obj = loadObjectFile(filename, id, file_buffer);
+	string fileAndPath = obj->filename;
 	vector<vec3> vertices;
 	vector<uint32_t> indexBuffer;
-	glTF::loadVertices((const unsigned char*)file_buffer.data(), file_buffer.size(), vertices, indexBuffer, binFile);
+	glTF::loadVertices((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), vertices, indexBuffer, fileAndPath);
 	if (vertices.size() > 0) {
 		for (uint32_t i = 0; i < indexBuffer.size(); i += 3) {
 			// triangle i --> i+1 --> i+2
@@ -71,7 +78,7 @@ void ObjectStore::loadObject(string filename, string id, vector<LineDef> &lines)
 		//	lines.push_back(l);
 		//}
 	}
-	texture->available = true;
+	obj->available = true;
 }
 
 ObjectStore::~ObjectStore()

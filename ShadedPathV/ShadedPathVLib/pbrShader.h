@@ -141,3 +141,30 @@ public:
 		lines.insert(lines.end(), crossLines, crossLines + size(crossLines));
 	}
 };
+
+struct PBRThreadResources : ShaderThreadResources {
+	VkFramebuffer framebuffer = nullptr;
+	VkFramebuffer framebuffer2 = nullptr;
+	VkFramebuffer framebufferAdd = nullptr;
+	VkFramebuffer framebufferAdd2 = nullptr;
+	VkRenderPass renderPass = nullptr;
+	VkRenderPass renderPassAdd = nullptr;
+	VkPipelineLayout pipelineLayout = nullptr;
+	VkPipeline graphicsPipeline = nullptr;
+	VkPipeline graphicsPipelineAdd = nullptr;
+	VkCommandBuffer commandBuffer = nullptr;
+	VkCommandBuffer commandBufferAdd = nullptr;
+	// vertex buffer for added lines
+	VkBuffer vertexBufferAdd = nullptr;
+	// vertex buffer device memory
+	VkDeviceMemory vertexBufferAddMemory = nullptr;
+	// MVP buffer
+	VkBuffer uniformBuffer = nullptr;
+	VkBuffer uniformBuffer2 = nullptr;
+	// MVP buffer device memory
+	VkDeviceMemory uniformBufferMemory = nullptr;
+	VkDeviceMemory uniformBufferMemory2 = nullptr;
+	VkDescriptorSet descriptorSet = nullptr;
+	VkDescriptorSet descriptorSet2 = nullptr;
+	vector<LineShader::Vertex> verticesAddLines;
+};
