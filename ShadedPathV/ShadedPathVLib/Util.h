@@ -1,4 +1,6 @@
 #pragma once
+class ShadedPathEngine;
+
 namespace Colors {
     const vec4 xm{ 1.0f, 0.0f, 1.0f, 1.0f };
     const vec4 White = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -37,6 +39,27 @@ public:
         default: return "n/a";
         };
     }
+
+    Util(ShadedPathEngine& s) {
+        Log("Util c'tor\n");
+        engine = &s;
+    };
+
+    ~Util() {};
+
+    // name vulkan objects. used to identify them in debug message from validation layer
+    // general purpost method that can be used foe all object types
+    void debugNameObject(uint64_t object, VkDebugReportObjectTypeEXT objectType, const char* name);
+
+    // debug name command buffers
+    void debugNameObjectCommandBuffer(VkCommandBuffer cbuf, const char* name) {
+        debugNameObject((uint64_t) cbuf, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, name);
+    }
+
+private:
+    void initializeDebugFunctionPointers();
+    PFN_vkDebugMarkerSetObjectNameEXT pfnDebugMarkerSetObjectNameEXT = nullptr;
+    ShadedPathEngine* engine = nullptr;
 };
 
 class LogfileScanner

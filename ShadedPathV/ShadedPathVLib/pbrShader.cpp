@@ -256,6 +256,7 @@ void PBRShader::createCommandBuffer(ThreadResources& tr)
 	if (vkAllocateCommandBuffers(device, &allocInfo, &str.commandBuffer) != VK_SUCCESS) {
 		Error("failed to allocate command buffers!");
 	}
+	engine->util.debugNameObjectCommandBuffer(str.commandBuffer, "PBR COMMAND BUFFER");
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0; // Optional
@@ -331,6 +332,7 @@ void PBRShader::createCommandBufferLineAdd(ThreadResources& tr)
 	if (vkAllocateCommandBuffers(device, &allocInfo, &tr.pbrResources.commandBufferAdd) != VK_SUCCESS) {
 		Error("failed to allocate command buffers!");
 	}
+	engine->util.debugNameObjectCommandBuffer(tr.pbrResources.commandBufferAdd, "PBR ADD COMMAND BUFFER");
 }
 
 void PBRShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)

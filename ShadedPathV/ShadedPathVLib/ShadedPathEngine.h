@@ -21,6 +21,7 @@ public:
         presentation(*this),
         vr(*this),
         shaders(*this),
+        util(*this),
         limiter(60.0f)
     {
         Log("Engine c'tor\n");
@@ -146,6 +147,7 @@ public:
     GlobalRendering global;
     Presentation presentation;
     Shaders shaders;
+    Util util;
     VR vr;
     vector<ThreadResources> threadResources;
     TextureStore textureStore;

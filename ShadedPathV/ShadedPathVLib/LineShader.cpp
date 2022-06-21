@@ -256,6 +256,7 @@ void LineShader::createCommandBuffer(ThreadResources& tr)
 	if (vkAllocateCommandBuffers(device, &allocInfo, &trl.commandBuffer) != VK_SUCCESS) {
 		Error("failed to allocate command buffers!");
 	}
+	engine->util.debugNameObjectCommandBuffer(trl.commandBuffer, "LINE COMMAND BUFFER");
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0; // Optional
@@ -330,6 +331,7 @@ void LineShader::createCommandBufferLineAdd(ThreadResources& tr)
 	if (vkAllocateCommandBuffers(device, &allocInfo, &tr.lineResources.commandBufferAdd) != VK_SUCCESS) {
 		Error("failed to allocate command buffers!");
 	}
+	engine->util.debugNameObjectCommandBuffer(tr.lineResources.commandBufferAdd, "LINE ADD COMMAND BUFFER");
 }
 
 void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
