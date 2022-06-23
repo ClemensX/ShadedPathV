@@ -22,7 +22,7 @@ void gltfObjects::run()
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 1800;// 960;//1800;// 800;//3700;
+        int win_width = 400;// 960;//1800;// 800;//3700;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF objects");
         camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
 
@@ -74,7 +74,8 @@ void gltfObjects::init() {
     // loading objects
     //engine.objectStore.loadObject("WaterBottle.glb", "WaterBottle", lines);
     engine.objectStore.loadObjectWireframe("small_knife_dagger/scene.gltf", "Knife", lines);
-    auto o = engine.objectStore.getObject("WaterBottle");
+    engine.objectStore.loadObject("small_knife_dagger/scene.gltf", "Knife");
+    auto o = engine.objectStore.getObject("Knife");
     Log("Object loaded: " << o->id.c_str() << endl);
 
 
@@ -90,6 +91,7 @@ void gltfObjects::init() {
     // Grid with 1m squares, floor on -10m, ceiling on 372m
 
     engine.shaders.lineShader.initialUpload();
+    engine.shaders.pbrShader.initialUpload();
 }
 
 void gltfObjects::drawFrame(ThreadResources& tr) {

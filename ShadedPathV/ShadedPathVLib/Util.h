@@ -53,7 +53,15 @@ public:
 
     // debug name command buffers
     void debugNameObjectCommandBuffer(VkCommandBuffer cbuf, const char* name) {
-        debugNameObject((uint64_t) cbuf, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, name);
+        debugNameObject((uint64_t)cbuf, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, name);
+    }
+    // debug name command buffers
+    void debugNameObjectBuffer(VkBuffer buf, const char* name) {
+        debugNameObject((uint64_t)buf, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, name);
+    }
+    // debug name command buffers
+    void debugNameObjectDeviceMmeory(VkDeviceMemory m, const char* name) {
+        debugNameObject((uint64_t)m, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT, name);
     }
 
 private:

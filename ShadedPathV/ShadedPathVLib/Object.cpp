@@ -69,23 +69,58 @@ void ObjectStore::loadObjectWireframe(string filename, string id, vector<LineDef
 			l.end = p0;
 			lines.push_back(l);
 		}
-
-		//for (size_t i = 0; i < vertices.size()-1; i++) {
-		//	LineDef l;
-		//	l.color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		//	l.start = vertices[i];
-		//	l.end = vertices[i + 1];
-		//	lines.push_back(l);
-		//}
 	}
 	obj->available = true;
 }
 
+void ObjectStore::loadObject(string filename, string id)
+{
+	vector<byte> file_buffer;
+	auto obj = loadObjectFile(filename, id, file_buffer);
+	string fileAndPath = obj->filename;
+	glTF::loadVertices((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), obj->vertices, obj->indices, fileAndPath);
+	obj->available = true;
+}
+
+void ObjectStore::uploadObject(ObjectInfo* obj)
+{
+	assert(obj->vertices.size() > 0);
+	assert(obj->indices.size() > 0);
+
+	// upload vec3 vertex buffer:
+	size_t vertexBufferSize = obj->vertices.size() * sizeof(PBRShader::Vertex);
+	size_t indexBufferSize = obj->indices.size() * sizeof(obj->indices[0]);
+	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBufferSize, obj->vertices.data(), obj->vertexBuffer, obj->vertexBufferMemory);
+	engine->global.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexBufferSize, obj->vertices.data(), obj->indexBuffer, obj->indexBufferMemory);
+	engine->util.debugNameObjectBuffer(obj->vertexBuffer, "GLTF object vertex buffer");
+	engine->util.debugNameObjectDeviceMmeory(obj->vertexBufferMemory, "GLTF object vertex buffer device mem");
+	engine->util.debugNameObjectBuffer(obj->indexBuffer, "GLTF object index buffer");
+	engine->util.debugNameObjectDeviceMmeory(obj->indexBufferMemory, "GLTF object index buffer device mem");
+}
+
+const vector<ObjectInfo*> &ObjectStore::getSortedList()
+{
+	if (sortedList.size() == objects.size()) {
+		return sortedList;
+	}
+	// create list, TODO sorting
+	sortedList.clear();
+	sortedList.reserve(objects.size());
+	for (auto& kv : objects) {
+		sortedList.push_back(&kv.second);
+	}
+	return sortedList;
+}
+
 ObjectStore::~ObjectStore()
 {
-	for (auto& tex : objects) {
-		if (tex.second.available) {
-			// nothing to do (yet)
+	for (auto& mapobj : objects) {
+		if (mapobj.second.available) {
+			auto& obj = mapobj.second;
+			vkDestroyBuffer(engine->global.device, obj.vertexBuffer, nullptr);
+			vkFreeMemory(engine->global.device, obj.vertexBufferMemory, nullptr);
+			vkDestroyBuffer(engine->global.device, obj.indexBuffer, nullptr);
+			vkFreeMemory(engine->global.device, obj.indexBufferMemory, nullptr);
 		}
 	}
 

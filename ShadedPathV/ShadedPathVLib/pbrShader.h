@@ -68,32 +68,15 @@ public:
 
 	// add lines - they will never  be removed
 	void add(vector<LineDef>& linesToAdd);
-	// initial upload of all added lines - only valid before first render
+	
+	// upload of all objects to GPU - only valid before first render
 	void initialUpload();
 
-	// add lines for just one frame
-	void addOneTime(vector<LineDef>& linesToAdd, ThreadResources& tr);
-
-	void createCommandBufferLineAdd(ThreadResources& tr);
-
-	// clear line buffer, has to be called at begin of each frame
-	// NOT after adding last group of lines
-	void clearAddLines(ThreadResources& tr);
-
-	// prepare command buffer for added lines
-	void prepareAddLines(ThreadResources& tr);
 	// per frame update of UBO / MVP
 	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
 private:
 
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
-	void recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
-	//// update cbuffer and vertex buffer
-	//void update();
-	//void updateUBO(UniformBufferObject newCBV);
-	//// draw all lines in single call to GPU
-	//void draw();
-	//void destroy();
 
 
 	vector<LineDef> lines;
@@ -145,19 +128,10 @@ public:
 struct PBRThreadResources : ShaderThreadResources {
 	VkFramebuffer framebuffer = nullptr;
 	VkFramebuffer framebuffer2 = nullptr;
-	VkFramebuffer framebufferAdd = nullptr;
-	VkFramebuffer framebufferAdd2 = nullptr;
 	VkRenderPass renderPass = nullptr;
-	VkRenderPass renderPassAdd = nullptr;
 	VkPipelineLayout pipelineLayout = nullptr;
 	VkPipeline graphicsPipeline = nullptr;
-	VkPipeline graphicsPipelineAdd = nullptr;
 	VkCommandBuffer commandBuffer = nullptr;
-	VkCommandBuffer commandBufferAdd = nullptr;
-	// vertex buffer for added lines
-	VkBuffer vertexBufferAdd = nullptr;
-	// vertex buffer device memory
-	VkDeviceMemory vertexBufferAddMemory = nullptr;
 	// MVP buffer
 	VkBuffer uniformBuffer = nullptr;
 	VkBuffer uniformBuffer2 = nullptr;
@@ -166,5 +140,4 @@ struct PBRThreadResources : ShaderThreadResources {
 	VkDeviceMemory uniformBufferMemory2 = nullptr;
 	VkDescriptorSet descriptorSet = nullptr;
 	VkDescriptorSet descriptorSet2 = nullptr;
-	vector<LineShader::Vertex> verticesAddLines;
 };
