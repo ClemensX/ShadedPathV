@@ -1,4 +1,6 @@
 #pragma once
+
+struct ObjectInfo;
 // line effect - draw simple lines in world coordinates
 struct pbrDef {
 	glm::vec3 start, end;
@@ -62,6 +64,7 @@ public:
 	// thread resources initialization
 	virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) override;
 	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState) override;
+	// create command buffers. One time auto called before rendering starts
 	virtual void createCommandBuffer(ThreadResources& tr) override;
 	virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
 	virtual void destroyThreadResources(ThreadResources& tr) override;
@@ -76,7 +79,7 @@ public:
 	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
 private:
 
-	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
+	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, ObjectInfo *obj, bool isRightEye = false);
 
 
 	vector<LineDef> lines;
@@ -87,10 +90,6 @@ private:
 	// Inherited via Effect
 	// set in init()
 
-	// vertex buffer for fixed lines (one buffer for all threads) 
-	VkBuffer vertexBuffer = nullptr;
-	// vertex buffer device memory
-	VkDeviceMemory vertexBufferMemory = nullptr;
 	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;
 	// create descriptor set layout (one per effect)

@@ -6,7 +6,7 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	// load shader binary code
 	vector<byte> file_buffer_vert;
 	vector<byte> file_buffer_frag;
-	engine.files.readFile("line_vert.spv", file_buffer_vert, FileCategory::FX);
+	engine.files.readFile("pbr_vert.spv", file_buffer_vert, FileCategory::FX);
 	engine.files.readFile("line_frag.spv", file_buffer_frag, FileCategory::FX);
 	Log("read vertex shader: " << file_buffer_vert.size() << endl);
 	Log("read fragment shader: " << file_buffer_frag.size() << endl);
@@ -63,7 +63,7 @@ void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// input assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 
 	// viewport and scissors
@@ -234,12 +234,18 @@ void PBRShader::createCommandBuffer(ThreadResources& tr)
 	renderPassInfo.clearValueCount = 0;
 
 	vkCmdBeginRenderPass(str.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	recordDrawCommand(str.commandBuffer, tr, vertexBuffer);
+	// add draw commands for all valid objects:
+	auto &objs = engine->objectStore.getSortedList();
+	for (auto obj : objs) {
+		recordDrawCommand(str.commandBuffer, tr, obj);
+	}
 	vkCmdEndRenderPass(str.commandBuffer);
 	if (engine->isStereo()) {
 		renderPassInfo.framebuffer = str.framebuffer2;
 		vkCmdBeginRenderPass(str.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		recordDrawCommand(str.commandBuffer, tr, vertexBuffer, true);
+		for (auto obj : objs) {
+			recordDrawCommand(str.commandBuffer, tr, obj, true);
+		}
 		vkCmdEndRenderPass(str.commandBuffer);
 	}
 	if (vkEndCommandBuffer(str.commandBuffer) != VK_SUCCESS) {
@@ -251,14 +257,14 @@ void PBRShader::addCurrentCommandBuffer(ThreadResources& tr) {
 	tr.activeCommandBuffers.push_back(tr.pbrResources.commandBuffer);
 };
 
-void PBRShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
+void PBRShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, ObjectInfo* obj, bool isRightEye)
 {
 	auto& str = tr.pbrResources; // shortcut to pbr resources
-	if (vertexBuffer == nullptr) return; // no fixed lines to draw
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.graphicsPipeline);
-	VkBuffer vertexBuffers[] = { vertexBuffer };
+	VkBuffer vertexBuffers[] = { obj->vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+	vkCmdBindIndexBuffer(commandBuffer, obj->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 	// bind descriptor sets:
 	if (!isRightEye) {
@@ -268,7 +274,8 @@ void PBRShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResource
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet2, 0, nullptr);
 	}
 
-	vkCmdDraw(commandBuffer, static_cast<uint32_t>(lines.size() * 2), 1, 0, 0);
+	//vkCmdDraw(commandBuffer, static_cast<uint32_t>(lines.size() * 2), 1, 0, 0);
+	vkCmdDrawIndexed(commandBuffer, obj->indices.size(), 1, 0, 0, 0);
 }
 
 void PBRShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
@@ -291,8 +298,6 @@ PBRShader::~PBRShader()
 	if (!enabled) {
 		return;
 	}
-	vkDestroyBuffer(device, vertexBuffer, nullptr);
-	vkFreeMemory(device, vertexBufferMemory, nullptr);
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);
 	vkDestroyShaderModule(device, vertShaderModule, nullptr);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);

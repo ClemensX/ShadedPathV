@@ -100,7 +100,7 @@ public:
 	// destry thread local shader resources
 	virtual void destroyThreadResources(ThreadResources& tr) = 0;
 
-	// create command buffers
+	// create command buffers. One time auto called before rendering starts
 	virtual void createCommandBuffer(ThreadResources& tr) = 0;
 
 	// add current command buffers

@@ -11,5 +11,6 @@ public:
 private:
 	static void loadModel(tinygltf::Model& model, const unsigned char* data, int size, string filename);
 	// copy model vertices and indices into vectors
+	// index buffer will be 32 bit wide in all cases (VK_INDEX_TYPE_UINT32)
 	static void loadVertices(tinygltf::Model& model, vector<vec3>& verts, vector<uint32_t>& indexBuffer);
 };
