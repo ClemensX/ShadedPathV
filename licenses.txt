@@ -1,0 +1,14 @@
+Model Information:
+* title:	smal knife, dagger
+* source:	https://sketchfab.com/3d-models/smal-knife-dagger-ab75f71291e541d8903c3e0aaae1722d
+* author:	stasbelyk13 (https://sketchfab.com/stasbelyk13)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "smal knife, dagger" (https://sketchfab.com/3d-models/smal-knife-dagger-ab75f71291e541d8903c3e0aaae1722d) by stasbelyk13 (https://sketchfab.com/stasbelyk13) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+
+WaterBottle:
+https://github.com/KhronosGroup/glTF-Sample-Models/tree/master/2.0
