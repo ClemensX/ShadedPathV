@@ -91,7 +91,7 @@ void ObjectStore::uploadObject(ObjectInfo* obj)
 	size_t vertexBufferSize = obj->vertices.size() * sizeof(PBRShader::Vertex);
 	size_t indexBufferSize = obj->indices.size() * sizeof(obj->indices[0]);
 	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBufferSize, obj->vertices.data(), obj->vertexBuffer, obj->vertexBufferMemory);
-	engine->global.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexBufferSize, obj->vertices.data(), obj->indexBuffer, obj->indexBufferMemory);
+	engine->global.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexBufferSize, obj->indices.data(), obj->indexBuffer, obj->indexBufferMemory);
 	engine->util.debugNameObjectBuffer(obj->vertexBuffer, "GLTF object vertex buffer");
 	engine->util.debugNameObjectDeviceMmeory(obj->vertexBufferMemory, "GLTF object vertex buffer device mem");
 	engine->util.debugNameObjectBuffer(obj->indexBuffer, "GLTF object index buffer");

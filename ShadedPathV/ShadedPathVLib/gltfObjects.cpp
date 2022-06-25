@@ -22,7 +22,7 @@ void gltfObjects::run()
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 400;// 960;//1800;// 800;//3700;
+        int win_width = 1800;// 960;//1800;// 800;//3700;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF objects");
         camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
 
@@ -73,7 +73,7 @@ void gltfObjects::init() {
 
     // loading objects
     //engine.objectStore.loadObject("WaterBottle.glb", "WaterBottle", lines);
-    engine.objectStore.loadObjectWireframe("small_knife_dagger/scene.gltf", "Knife", lines);
+    //engine.objectStore.loadObjectWireframe("small_knife_dagger/scene.gltf", "Knife", lines);
     engine.objectStore.loadObject("small_knife_dagger/scene.gltf", "Knife");
     auto o = engine.objectStore.getObject("Knife");
     Log("Object loaded: " << o->id.c_str() << endl);
@@ -144,6 +144,15 @@ void gltfObjects::updatePerFrame(ThreadResources& tr)
 
     engine.shaders.lineShader.prepareAddLines(tr);
     engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
+
+    // pbr
+    PBRShader::UniformBufferObject pubo{};
+    pubo.model = lubo.model;
+    pubo.view = lubo.view;
+    pubo.proj = lubo.proj;
+    auto pubo2 = pubo;
+    pubo2.view = lubo2.view;
+    engine.shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
 }
 
 void gltfObjects::handleInput(InputState& inputState)

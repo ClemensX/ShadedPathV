@@ -19,11 +19,11 @@ class PBRShader : public ShaderBase {
 public:
 	struct Vertex {
 		glm::vec3 pos;
-		glm::vec3 normal;
-		glm::vec2 uv0;
-		glm::vec2 uv1;
-		glm::vec4 joint0;
-		glm::vec4 weight0;
+		//glm::vec3 normal;
+		//glm::vec2 uv0;
+		//glm::vec2 uv1;
+		//glm::vec4 joint0;
+		//glm::vec4 weight0;
 	};
 	struct UniformBufferObject {
 		glm::mat4 model;
