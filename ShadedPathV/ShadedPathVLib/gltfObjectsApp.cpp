@@ -1,7 +1,7 @@
 #include "pch.h"
 
 
-void gltfObjects::run()
+void gltfObjectsApp::run()
 {
     Log("App started" << endl);
     {
@@ -22,13 +22,13 @@ void gltfObjects::run()
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 1800;// 960;//1800;// 800;//3700;
+        int win_width = 480;// 960;//1800;// 800;//3700;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF objects");
         camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
 
         engine.setFramesInFlight(2);
         engine.registerApp(this);
-        engine.setThreadModeSingle();
+        //engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("gltfObjects");
@@ -59,7 +59,7 @@ void gltfObjects::run()
     Log("LineApp ended" << endl);
 }
 
-void gltfObjects::init() {
+void gltfObjectsApp::init() {
     // add some lines:
     float aspectRatio = engine.getAspect();
     float plus = 0.0f;
@@ -73,10 +73,12 @@ void gltfObjects::init() {
 
     // loading objects
     //engine.objectStore.loadObject("WaterBottle.glb", "WaterBottle", lines);
-    //engine.objectStore.loadObjectWireframe("small_knife_dagger/scene.gltf", "Knife", lines);
-    engine.objectStore.loadObject("small_knife_dagger/scene.gltf", "Knife");
-    auto o = engine.objectStore.getObject("Knife");
-    Log("Object loaded: " << o->id.c_str() << endl);
+    //engine.objectStore.loadMeshWireframe("small_knife_dagger/scene.gltf", "Knife", lines);
+    engine.meshStore.loadMesh("small_knife_dagger/scene.gltf", "Knife");
+    auto o = engine.meshStore.getMesh("Knife");
+    engine.objectStore.createGroup("knife_group");
+    engine.objectStore.addObject("knife_group", "Knife", vec3(0.0f, 0.0f, 0.0f));
+    //Log("Object loaded: " << o->id.c_str() << endl);
 
 
     // add all intializer objects to vector:
@@ -94,12 +96,12 @@ void gltfObjects::init() {
     engine.shaders.pbrShader.initialUpload();
 }
 
-void gltfObjects::drawFrame(ThreadResources& tr) {
+void gltfObjectsApp::drawFrame(ThreadResources& tr) {
     updatePerFrame(tr);
     engine.shaders.submitFrame(tr);
 }
 
-void gltfObjects::updatePerFrame(ThreadResources& tr)
+void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
 {
     static double old_seconds = 0.0f;
     double seconds = engine.gameTime.getTimeSeconds();
@@ -147,7 +149,8 @@ void gltfObjects::updatePerFrame(ThreadResources& tr)
 
     // pbr
     PBRShader::UniformBufferObject pubo{};
-    pubo.model = lubo.model;
+    mat4 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    pubo.model = modeltransform;
     pubo.view = lubo.view;
     pubo.proj = lubo.proj;
     auto pubo2 = pubo;
@@ -155,7 +158,7 @@ void gltfObjects::updatePerFrame(ThreadResources& tr)
     engine.shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
 }
 
-void gltfObjects::handleInput(InputState& inputState)
+void gltfObjectsApp::handleInput(InputState& inputState)
 {
     if (inputState.mouseButtonEvent) {
         //Log("mouse button pressed (left/right): " << inputState.pressedLeft << " / " << inputState.pressedRight << endl);

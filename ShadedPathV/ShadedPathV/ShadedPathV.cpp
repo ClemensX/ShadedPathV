@@ -8,7 +8,7 @@ int main()
     //SimpleApp app;
     //LineApp app;
     //DeviceCoordApp app;
-    gltfObjects app;
+    gltfObjectsApp app;
     app.run();
 }
 

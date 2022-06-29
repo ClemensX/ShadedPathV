@@ -1,6 +1,6 @@
 #pragma once
 
-struct ObjectInfo;
+struct MeshInfo;
 // line effect - draw simple lines in world coordinates
 struct pbrDef {
 	glm::vec3 start, end;
@@ -79,7 +79,7 @@ public:
 	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
 private:
 
-	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, ObjectInfo *obj, bool isRightEye = false);
+	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, MeshInfo *obj, bool isRightEye = false);
 
 
 	vector<LineDef> lines;

@@ -71,8 +71,8 @@ void LineApp::init() {
     vector<LineDef> lines;
 
     // loading objects
-    engine.objectStore.loadObjectWireframe("WaterBottle.glb", "WaterBottle", lines);
-    auto o = engine.objectStore.getObject("WaterBottle");
+    engine.meshStore.loadMeshWireframe("WaterBottle.glb", "WaterBottle", lines);
+    auto o = engine.meshStore.getMesh("WaterBottle");
     Log("Object loaded: " << o->id.c_str() << endl);
 
 

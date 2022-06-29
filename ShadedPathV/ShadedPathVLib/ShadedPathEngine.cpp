@@ -17,7 +17,7 @@ void ShadedPathEngine::init(string appname)
     presentation.initAfterDeviceCreation();
     ThreadResources::initAll(this);
     textureStore.init(this);
-    objectStore.init(this);
+    meshStore.init(this);
     initialized = true;
 }
 

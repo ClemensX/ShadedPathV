@@ -22,12 +22,12 @@ public:
         vr(*this),
         shaders(*this),
         util(*this),
+        objectStore(&meshStore),
         limiter(60.0f)
     {
         Log("Engine c'tor\n");
         files.findFxFolder();
     }
-
     const string engineName = "ShadedPathV";
     const string engineVersion = "0.1";
     const uint32 engineVersionInt = 1;
@@ -151,7 +151,8 @@ public:
     VR vr;
     vector<ThreadResources> threadResources;
     TextureStore textureStore;
-    ObjectStore objectStore;
+    MeshStore meshStore;
+    WorldObjectStore objectStore;
 
     // non-Vulkan members
     Files files;

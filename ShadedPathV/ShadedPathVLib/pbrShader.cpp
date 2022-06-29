@@ -127,9 +127,9 @@ void PBRShader::add(vector<LineDef>& linesToAdd)
 void PBRShader::initialUpload()
 {
 	// upload all objects in store:
-	auto& list = engine->objectStore.getSortedList();
+	auto& list = engine->meshStore.getSortedList();
 	for (auto objptr : list) {
-		engine->objectStore.uploadObject(objptr);
+		engine->meshStore.uploadObject(objptr);
 	}
 }
 
@@ -235,7 +235,7 @@ void PBRShader::createCommandBuffer(ThreadResources& tr)
 
 	vkCmdBeginRenderPass(str.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	// add draw commands for all valid objects:
-	auto &objs = engine->objectStore.getSortedList();
+	auto &objs = engine->meshStore.getSortedList();
 	for (auto obj : objs) {
 		recordDrawCommand(str.commandBuffer, tr, obj);
 	}
@@ -257,7 +257,7 @@ void PBRShader::addCurrentCommandBuffer(ThreadResources& tr) {
 	tr.activeCommandBuffers.push_back(tr.pbrResources.commandBuffer);
 };
 
-void PBRShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, ObjectInfo* obj, bool isRightEye)
+void PBRShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, MeshInfo* obj, bool isRightEye)
 {
 	auto& str = tr.pbrResources; // shortcut to pbr resources
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.graphicsPipeline);

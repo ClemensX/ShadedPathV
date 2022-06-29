@@ -1,7 +1,7 @@
 #pragma once
 
 // example for loading and rendering gltf models
-class gltfObjects : ShadedPathApplication
+class gltfObjectsApp : ShadedPathApplication
 {
 public:
     void init();

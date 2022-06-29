@@ -141,7 +141,7 @@
     <ClInclude Include="tinygltf\tiny_gltf.h">
       <Filter>tinygltf</Filter>
     </ClInclude>
-    <ClInclude Include="gltfObjects.h">
+    <ClInclude Include="gltfObjectsApp.h">
       <Filter>Apps</Filter>
     </ClInclude>
     <ClInclude Include="PBRShader.h">
@@ -242,7 +242,7 @@
     <ClCompile Include="gltf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="gltfObjects.cpp">
+    <ClCompile Include="gltfObjectsApp.cpp">
       <Filter>Apps</Filter>
     </ClCompile>
     <ClCompile Include="PBRShader.cpp">
@@ -262,10 +262,6 @@
     <CustomBuild Include="..\ShadedPathVLib\shader\line.vert">
       <Filter>Shader</Filter>
     </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shader\pbr.vert">
-      <Filter>Shader</Filter>
-    </None>
+    <CustomBuild Include="..\ShadedPathVLib\shader\pbr.vert" />
   </ItemGroup>
 </Project>
