@@ -22,7 +22,7 @@ void gltfObjectsApp::run()
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 480;// 960;//1800;// 800;//3700;
+        int win_width = 1800;//480;// 960;//1800;// 800;//3700;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF objects");
         camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
 
@@ -74,10 +74,14 @@ void gltfObjectsApp::init() {
     // loading objects
     //engine.objectStore.loadObject("WaterBottle.glb", "WaterBottle", lines);
     //engine.objectStore.loadMeshWireframe("small_knife_dagger/scene.gltf", "Knife", lines);
+    engine.meshStore.loadMesh("WaterBottle.glb", "WaterBottle");
     engine.meshStore.loadMesh("small_knife_dagger/scene.gltf", "Knife");
     auto o = engine.meshStore.getMesh("Knife");
+    // add bottle and knife to the scene:
+    engine.objectStore.createGroup("bottle_group");
+    engine.objectStore.addObject("bottle_group", "WaterBottle", vec3(0.0f, 0.0f, 0.0f));
     engine.objectStore.createGroup("knife_group");
-    engine.objectStore.addObject("knife_group", "Knife", vec3(0.0f, 0.0f, 0.0f));
+    engine.objectStore.addObject("knife_group", "Knife", vec3(0.3f, 0.0f, 0.0f));
     //Log("Object loaded: " << o->id.c_str() << endl);
 
 
@@ -156,6 +160,22 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
     auto pubo2 = pubo;
     pubo2.view = lubo2.view;
     engine.shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
+    // change individual objects position:
+    //auto grp = engine.objectStore.getGroup("knife_group");
+    for (auto& wo : engine.objectStore.getSortedList()) {
+        //Log(" adapt object " << obj.get()->objectNum << endl);
+        //WorldObject *wo = obj.get();
+        PBRShader::DynamicUniformBufferObject* buf = engine.shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
+        mat4 modeltransform;
+        if (wo->objectNum == 0) {
+            modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f + (plus/10.0f), 0.0f, 0.0f));
+        } else {
+            modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f + plus, 0.0f, 0.0f));
+        }
+        buf->model = modeltransform;
+        void* data = buf;
+        //Log("APP per frame dynamic buffer to address: " << hex << data << endl);
+    }
 }
 
 void gltfObjectsApp::handleInput(InputState& inputState)

@@ -567,3 +567,10 @@ void GlobalRendering::createViewportState(ShaderState& shaderState) {
     shaderState.scissor = scissor;
     shaderState.viewportState = viewportState;
 }
+
+void GlobalRendering::logDeviceLimits()
+{
+    Log("maxUniformBufferRange (width of one buffer) " << physicalDeviceProperties.properties.limits.maxUniformBufferRange << endl);
+    Log("minMemoryMapAlignment " << physicalDeviceProperties.properties.limits.minMemoryMapAlignment << endl);
+    Log("minUniformBufferOffsetAlignment " << physicalDeviceProperties.properties.limits.minUniformBufferOffsetAlignment << endl);
+}

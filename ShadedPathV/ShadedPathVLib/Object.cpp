@@ -182,6 +182,24 @@ void WorldObjectStore::addObjectPrivate(WorldObject* w, string id, vec3 pos) {
 	w->objectStartPos = pos;
 	w->mesh = mesh;
 	w->alpha = 1.0f;
+	numObjects++;
 }
 
-UINT WorldObject::count = 0;
+const vector<WorldObject*>& WorldObjectStore::getSortedList()
+{
+	if (sortedList.size() == numObjects) {
+		return sortedList;
+	}
+	// create list, todo: sorting
+	sortedList.clear();
+	sortedList.reserve(numObjects);
+	for (auto& gm : groups) {
+		auto &grp = gm.second;
+		for (auto &o : grp) {
+			sortedList.push_back(o.get());
+		}
+	}
+	return sortedList;
+}
+
+atomic<UINT> WorldObject::count;

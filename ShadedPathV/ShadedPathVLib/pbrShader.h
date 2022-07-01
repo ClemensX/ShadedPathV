@@ -1,6 +1,7 @@
 #pragma once
 
 struct MeshInfo;
+class WorldObject;
 // line effect - draw simple lines in world coordinates
 struct pbrDef {
 	glm::vec3 start, end;
@@ -17,6 +18,8 @@ public:
 // and one for dynamic lines that change every frame
 class PBRShader : public ShaderBase {
 public:
+	// We have to set max number of objects, as dynamic uniform buffers have to be allocated (one entry for each object in a large buffer)
+	uint64_t MaxObjects = 1000;
 	struct Vertex {
 		glm::vec3 pos;
 		//glm::vec3 normal;
@@ -30,6 +33,12 @@ public:
 		glm::mat4 view;
 		glm::mat4 proj;
 	};
+	struct DynamicUniformBufferObject {
+		glm::mat4 model;
+	};
+	// Array entries of DynamicUniformBufferObject have to respect hardware alignment rules
+	uint64_t alignedDynamicUniformBufferSize = 0;
+
 	static VkVertexInputBindingDescription getBindingDescription() {
 		VkVertexInputBindingDescription bindingDescription{};
 		bindingDescription.binding = 0;
@@ -65,21 +74,26 @@ public:
 	virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) override;
 	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState) override;
 	// create command buffers. One time auto called before rendering starts
+	// we create one command buffer for every mesh loaded
 	virtual void createCommandBuffer(ThreadResources& tr) override;
+	// add the pre-computed command buffer for the current object
 	virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
 	virtual void destroyThreadResources(ThreadResources& tr) override;
 
 	// add lines - they will never  be removed
 	void add(vector<LineDef>& linesToAdd);
+
+	// get access to dynamic uniform buffer for an object
+	DynamicUniformBufferObject* getAccessToModel(ThreadResources& tr, UINT num);
 	
 	// upload of all objects to GPU - only valid before first render
 	void initialUpload();
 
-	// per frame update of UBO / MVP
+	// per frame update of UBOs / MVPs
 	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
 private:
 
-	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, MeshInfo *obj, bool isRightEye = false);
+	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, WorldObject* obj, bool isRightEye = false);
 
 
 	vector<LineDef> lines;
@@ -131,12 +145,17 @@ struct PBRThreadResources : ShaderThreadResources {
 	VkPipelineLayout pipelineLayout = nullptr;
 	VkPipeline graphicsPipeline = nullptr;
 	VkCommandBuffer commandBuffer = nullptr;
-	// MVP buffer
+	// VP buffer
 	VkBuffer uniformBuffer = nullptr;
 	VkBuffer uniformBuffer2 = nullptr;
-	// MVP buffer device memory
+	// Model buffers
+	VkBuffer dynamicUniformBuffer = nullptr;
+	// VP buffer device memory
 	VkDeviceMemory uniformBufferMemory = nullptr;
 	VkDeviceMemory uniformBufferMemory2 = nullptr;
 	VkDescriptorSet descriptorSet = nullptr;
 	VkDescriptorSet descriptorSet2 = nullptr;
+	// M buffer device memory
+	VkDeviceMemory dynamicUniformBufferMemory = nullptr;
+	void* dynamicUniformBufferCPUMemory = nullptr;
 };

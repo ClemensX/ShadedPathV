@@ -55,7 +55,7 @@ public:
 // 
 class WorldObject {
 public:
-	static UINT count; // count all objects
+	static atomic<UINT> count; // count all objects
 	WorldObject();
 	virtual ~WorldObject();
 	vec3& pos();
@@ -108,10 +108,13 @@ public:
 	// obbject groups: give fast access to specific objects (e.g. all worm NPCs)
 	void createGroup(string groupname);
 	const vector<unique_ptr<WorldObject>>* getGroup(string groupname);
-	// draw all objects within a group (all have same mesh), set threadNum > 1 to draw with multiple threads
-	void drawGroup(string groupname, size_t threadNum = 0);
+	// get sorted object list (sorted by type)
+	// meshes are only resorted if one was added in the meantime
+	const vector<WorldObject*>& getSortedList();
 private:
 	unordered_map<string, vector<unique_ptr<WorldObject>>> groups;
 	void addObjectPrivate(WorldObject* w, string id, vec3 pos);
 	MeshStore *meshStore;
+	vector<WorldObject*> sortedList;
+	UINT numObjects = 0;
 };

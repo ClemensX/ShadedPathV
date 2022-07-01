@@ -16,5 +16,6 @@ private:
     CameraPositioner_FirstPerson* positioner;
     InputState input;
     World world;
+    WorldObject *knife1, *knife2;
 };
 

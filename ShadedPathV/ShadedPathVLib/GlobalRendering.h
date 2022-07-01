@@ -68,6 +68,9 @@ public:
 	// destroy global resources, should only be called from engine dtor
 	void shutdown();
 
+	// log some important device limits e.g. for buffer size and alignemnt 
+	void logDeviceLimits();
+
 	void createLogicalDevice();
 	QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, bool listmode = false);
 	QueueFamilyIndices familyIndices;
@@ -105,6 +108,10 @@ public:
 	VkCommandBuffer beginSingleTimeCommands();
 	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
 	void createTextureSampler();
+	inline uint64_t calcConstantBufferSize(uint64_t originalSize) {
+		VkDeviceSize align = physicalDeviceProperties.properties.limits.minUniformBufferOffsetAlignment;
+		return (originalSize + (align - 1)) & ~(align - 1); // must be a multiple of align bytes
+	};
 
 private:
 	vector<const char*> deviceExtensions = {

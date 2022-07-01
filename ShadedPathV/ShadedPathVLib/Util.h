@@ -63,6 +63,14 @@ public:
     void debugNameObjectDeviceMmeory(VkDeviceMemory m, const char* name) {
         debugNameObject((uint64_t)m, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT, name);
     }
+    // debug name descriptor set layout
+    void debugNameObjectDescriptorSetLayout(VkDescriptorSetLayout m, const char* name) {
+        debugNameObject((uint64_t)m, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT, name);
+    }
+    // debug name descriptor set layout
+    void debugNameObjectDescriptorSet(VkDescriptorSet m, const char* name) {
+        debugNameObject((uint64_t)m, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT, name);
+    }
 
 private:
     void initializeDebugFunctionPointers();

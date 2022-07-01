@@ -59,6 +59,7 @@ VkExtent2D ShadedPathEngine::getBackBufferExtent()
 
 void ShadedPathEngine::prepareDrawing()
 {
+    global.logDeviceLimits();
     if (!initialized) Error("Engine was not initialized");
     for (int i = 0; i < threadResources.size(); i++) {
         auto& tr = threadResources[i];

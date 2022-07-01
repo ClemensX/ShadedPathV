@@ -114,6 +114,35 @@ TEST(Engine, Headless) {
     Log("Test end. (Should appear after destructor log)\n");
 }
 
+TEST(Engine, Alignment) {
+    {
+        ShadedPathEngine engine;
+        engine.setFrameCountLimit(10);
+        engine.setBackBufferResolution(ShadedPathEngine::Resolution::Small);
+        //engine.enablePresentation(800, (int)(800 / 1.77f), "Vulkan Simple App");
+        engine.setFramesInFlight(2);
+        engine.setThreadModeSingle();
+
+        // engine initialization
+        engine.init("Test");
+
+        // test alignment method:
+        EXPECT_EQ(256, engine.global.calcConstantBufferSize(1));
+        EXPECT_EQ(256, engine.global.calcConstantBufferSize(2));
+        EXPECT_EQ(256, engine.global.calcConstantBufferSize(255));
+        EXPECT_EQ(256, engine.global.calcConstantBufferSize(256));
+        EXPECT_EQ(512, engine.global.calcConstantBufferSize(257));
+        // 30*256 == 7680
+        EXPECT_EQ(7424, engine.global.calcConstantBufferSize(7423));
+        EXPECT_EQ(7680, engine.global.calcConstantBufferSize(7679));
+        EXPECT_EQ(7680, engine.global.calcConstantBufferSize(7680));
+        EXPECT_EQ(7936, engine.global.calcConstantBufferSize(7681));
+        EXPECT_EQ(7936, engine.global.calcConstantBufferSize(7781));
+        EXPECT_EQ(7936, engine.global.calcConstantBufferSize(7881));
+    }
+    Log("Test end. (Should appear after destructor log)\n");
+}
+
 TEST(Timer, Average) {
     ThemedTimer::getInstance()->create("AVG", 10);
     auto td = ThemedTimer::getInstance()->test_add("AVG", 3);

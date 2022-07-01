@@ -18,14 +18,17 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	createDescriptorSetLayout();
 
 	// descriptor pool
-	// 2 buffers: MVP matrix and line data
+	// 3 buffers: V,P matrices, line data and dynamic uniform buffer for model matrix
 	// line data is global buffer
 	vector<VkDescriptorPoolSize> poolSizes;
-	poolSizes.resize(2);
+	poolSizes.resize(3);
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[0].descriptorCount = 1;
-	poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 	poolSizes[1].descriptorCount = 1;
+	poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSizes[2].descriptorCount = 1;
+
 	createDescriptorPool(poolSizes);
 }
 
@@ -34,9 +37,31 @@ void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	auto& str = tr.pbrResources; // shortcut to pbr resources
 	// uniform buffer
 	createUniformBuffer(tr, str.uniformBuffer, sizeof(UniformBufferObject), str.uniformBufferMemory);
+	engine->util.debugNameObjectBuffer(str.uniformBuffer, "PBR UBO 1");
+	engine->util.debugNameObjectDeviceMmeory(str.uniformBufferMemory, "PBR Memory 1");
 	if (engine->isStereo()) {
 		createUniformBuffer(tr, str.uniformBuffer2, sizeof(UniformBufferObject), str.uniformBufferMemory2);
+		engine->util.debugNameObjectBuffer(str.uniformBuffer2, "PBR UBO 2");
+		engine->util.debugNameObjectDeviceMmeory(str.uniformBufferMemory2, "PBR Memory 2");
 	}
+	// dynamic uniform buffer
+	auto bufSize = alignedDynamicUniformBufferSize * MaxObjects;
+	createUniformBuffer(tr, str.dynamicUniformBuffer, bufSize, str.dynamicUniformBufferMemory);
+	engine->util.debugNameObjectBuffer(str.dynamicUniformBuffer, "PBR dynamic UBO");
+	engine->util.debugNameObjectDeviceMmeory(str.dynamicUniformBufferMemory, "PBR dynamic UBO Memory");
+	// permanently map the dynamic buffer to CPU memory:
+	vkMapMemory(device, str.dynamicUniformBufferMemory, 0, bufSize, 0, &str.dynamicUniformBufferCPUMemory);
+	void* data = str.dynamicUniformBufferCPUMemory;
+	//Log("PBR mapped dynamic buffer to address: " << hex << data << endl);
+	// test:
+	//DynamicUniformBufferObject *d = (DynamicUniformBufferObject*)data;
+	//mat4 ident = mat4(1.0f);
+	//d->model = ident;
+	//data = static_cast<char*>(data) + alignedDynamicUniformBufferSize;
+	//Log("PBR mapped dynamic buffer to address: " << hex << data << endl);
+	//d = (DynamicUniformBufferObject*)data;
+	//ident = mat4(2.0f);
+	//d->model = ident;
 
 	createDescriptorSets(tr);
 	// TODO remove hack
@@ -126,7 +151,7 @@ void PBRShader::add(vector<LineDef>& linesToAdd)
 
 void PBRShader::initialUpload()
 {
-	// upload all objects in store:
+	// upload all meshes from store:
 	auto& list = engine->meshStore.getSortedList();
 	for (auto objptr : list) {
 		engine->meshStore.uploadObject(objptr);
@@ -135,6 +160,7 @@ void PBRShader::initialUpload()
 
 void PBRShader::createDescriptorSetLayout()
 {
+	alignedDynamicUniformBufferSize = global->calcConstantBufferSize(sizeof(DynamicUniformBufferObject));
 	VkDescriptorSetLayoutBinding uboLayoutBinding{};
 	uboLayoutBinding.binding = 0;
 	uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -142,14 +168,21 @@ void PBRShader::createDescriptorSetLayout()
 	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
+	VkDescriptorSetLayoutBinding uboDynamicLayoutBinding{};
+	uboDynamicLayoutBinding.binding = 1;
+	uboDynamicLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	uboDynamicLayoutBinding.descriptorCount = 1;
+	uboDynamicLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	uboDynamicLayoutBinding.pImmutableSamplers = nullptr; // Optional
+
 	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-	samplerLayoutBinding.binding = 1;
+	samplerLayoutBinding.binding = 2;
 	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	samplerLayoutBinding.descriptorCount = 1;
 	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	samplerLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
-	std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
+	std::array<VkDescriptorSetLayoutBinding, 3> bindings = { uboLayoutBinding, uboDynamicLayoutBinding, samplerLayoutBinding };
 
 	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -159,6 +192,7 @@ void PBRShader::createDescriptorSetLayout()
 	if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
 		Error("failed to create descriptor set layout!");
 	}
+	engine->util.debugNameObjectDescriptorSetLayout(descriptorSetLayout, "PBR Descriptor Set Layout");
 }
 
 void PBRShader::createDescriptorSets(ThreadResources& tr)
@@ -172,14 +206,14 @@ void PBRShader::createDescriptorSets(ThreadResources& tr)
 	if (vkAllocateDescriptorSets(device, &allocInfo, &str.descriptorSet) != VK_SUCCESS) {
 		Error("failed to allocate descriptor sets!");
 	}
+	engine->util.debugNameObjectDescriptorSet(str.descriptorSet, "PBR Descriptor Set 1");
 
+	array<VkWriteDescriptorSet, 2> descriptorWrites{};
 	// populate descriptor set:
-	VkDescriptorBufferInfo bufferInfo{};
-	bufferInfo.buffer = str.uniformBuffer;
-	bufferInfo.offset = 0;
-	bufferInfo.range = sizeof(UniformBufferObject);
-
-	array<VkWriteDescriptorSet, 1> descriptorWrites{};
+	VkDescriptorBufferInfo bufferInfo0{};
+	bufferInfo0.buffer = str.uniformBuffer;
+	bufferInfo0.offset = 0;
+	bufferInfo0.range = sizeof(UniformBufferObject);
 
 	descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	descriptorWrites[0].dstSet = str.descriptorSet;
@@ -187,15 +221,31 @@ void PBRShader::createDescriptorSets(ThreadResources& tr)
 	descriptorWrites[0].dstArrayElement = 0;
 	descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptorWrites[0].descriptorCount = 1;
-	descriptorWrites[0].pBufferInfo = &bufferInfo;
+	descriptorWrites[0].pBufferInfo = &bufferInfo0;
+
+	VkDescriptorBufferInfo bufferInfo1{};
+	bufferInfo1.buffer = str.dynamicUniformBuffer;
+	bufferInfo1.offset = 0;
+	bufferInfo1.range = sizeof(DynamicUniformBufferObject);
+
+	descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrites[1].dstSet = str.descriptorSet;
+	descriptorWrites[1].dstBinding = 1;
+	descriptorWrites[1].dstArrayElement = 0;
+	descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	descriptorWrites[1].descriptorCount = 1;
+	descriptorWrites[1].pBufferInfo = &bufferInfo1;
 
 	vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	if (engine->isStereo()) {
 		if (vkAllocateDescriptorSets(device, &allocInfo, &str.descriptorSet2) != VK_SUCCESS) {
 			Error("failed to allocate descriptor sets!");
 		}
-		bufferInfo.buffer = str.uniformBuffer2;
+		engine->util.debugNameObjectDescriptorSet(str.descriptorSet, "PBR Descriptor Set 2");
+		bufferInfo0.buffer = str.uniformBuffer2;
+		bufferInfo1.buffer = str.dynamicUniformBuffer; // same as for left eye
 		descriptorWrites[0].dstSet = str.descriptorSet2;
+		descriptorWrites[1].dstSet = str.descriptorSet2;
 		vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}
 }
@@ -235,7 +285,8 @@ void PBRShader::createCommandBuffer(ThreadResources& tr)
 
 	vkCmdBeginRenderPass(str.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	// add draw commands for all valid objects:
-	auto &objs = engine->meshStore.getSortedList();
+	//auto &objs = engine->meshStore.getSortedList();
+	auto& objs = engine->objectStore.getSortedList();
 	for (auto obj : objs) {
 		recordDrawCommand(str.commandBuffer, tr, obj);
 	}
@@ -257,25 +308,28 @@ void PBRShader::addCurrentCommandBuffer(ThreadResources& tr) {
 	tr.activeCommandBuffers.push_back(tr.pbrResources.commandBuffer);
 };
 
-void PBRShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, MeshInfo* obj, bool isRightEye)
+void PBRShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, WorldObject* obj, bool isRightEye)
 {
 	auto& str = tr.pbrResources; // shortcut to pbr resources
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.graphicsPipeline);
-	VkBuffer vertexBuffers[] = { obj->vertexBuffer };
+	VkBuffer vertexBuffers[] = { obj->mesh->vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-	vkCmdBindIndexBuffer(commandBuffer, obj->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(commandBuffer, obj->mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 	// bind descriptor sets:
+	// One dynamic offset per dynamic descriptor to offset into the ubo containing all model matrices
+	uint32_t objId = obj->objectNum;
+	uint32_t dynamicOffset = objId * alignedDynamicUniformBufferSize;
 	if (!isRightEye) {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet, 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet, 1, &dynamicOffset);
 	}
 	else {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet2, 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet2, 1, &dynamicOffset);
 	}
 
 	//vkCmdDraw(commandBuffer, static_cast<uint32_t>(lines.size() * 2), 1, 0, 0);
-	vkCmdDrawIndexed(commandBuffer, obj->indices.size(), 1, 0, 0, 0);
+	vkCmdDrawIndexed(commandBuffer, obj->mesh->indices.size(), 1, 0, 0, 0);
 }
 
 void PBRShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
@@ -290,6 +344,13 @@ void PBRShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unifo
 		memcpy(data, &ubo2, sizeof(ubo2));
 		vkUnmapMemory(device, str.uniformBufferMemory2);
 	}
+}
+
+PBRShader::DynamicUniformBufferObject* PBRShader::getAccessToModel(ThreadResources& tr, UINT num)
+{
+	char* c_ptr = static_cast<char*>(tr.pbrResources.dynamicUniformBufferCPUMemory);
+	c_ptr += num * alignedDynamicUniformBufferSize;
+	return (DynamicUniformBufferObject*)c_ptr;
 }
 
 PBRShader::~PBRShader()
@@ -313,6 +374,8 @@ void PBRShader::destroyThreadResources(ThreadResources& tr)
 	vkDestroyPipelineLayout(device, str.pipelineLayout, nullptr);
 	vkDestroyBuffer(device, str.uniformBuffer, nullptr);
 	vkFreeMemory(device, str.uniformBufferMemory, nullptr);
+	vkDestroyBuffer(device, str.dynamicUniformBuffer, nullptr);
+	vkFreeMemory(device, str.dynamicUniformBufferMemory, nullptr);
 	if (engine->isStereo()) {
 		vkDestroyFramebuffer(device, str.framebuffer2, nullptr);
 		vkDestroyBuffer(device, str.uniformBuffer2, nullptr);
