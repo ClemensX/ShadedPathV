@@ -27,6 +27,8 @@ public:
 	string findFile(string filename, FileCategory cat, bool errorIfNotFound = true, bool generateFilenameMode = false);
 	string findFileForCreation(string filename, FileCategory cat) { return findFile(filename, cat, false, true); };
 	void readFile(string filename, vector<byte>& buffer, FileCategory cat);
+	// dump memory to file
+	void writeFile(string filename, const char* buf, int size);
 	// check file can be opened for write operation. Logs error if not.
 	bool checkFileForWrite(string filename);
 	// get absolute file path

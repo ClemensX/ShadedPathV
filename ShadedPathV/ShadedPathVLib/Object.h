@@ -10,6 +10,7 @@ struct MeshInfo
 	// gltf data: valid after object load, should be cleared after upload
 	vector<vec3> vertices;
 	vector<uint32_t> indices;
+	vector<ktxTexture*> textureParseInfo;
 
 	// GPU data:
 	VkBuffer vertexBuffer = nullptr;
@@ -42,6 +43,7 @@ private:
 	ShadedPathEngine* engine = nullptr;
 	Util* util;
 	vector<MeshInfo*> sortedList;
+	glTF gltf;
 };
 
 

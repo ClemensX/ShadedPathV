@@ -10,12 +10,41 @@
 
 using namespace tinygltf;
 
-void glTF::loadModel(Model &model, const unsigned char* data, int size, string filename)
+void glTF::init(ShadedPathEngine* e) {
+	engine = e;
+}
+
+bool LoadImageDataKTX(Image* image, const int image_idx, std::string* err,
+	std::string* warn, int req_width, int req_height,
+	const unsigned char* bytes, int size, void* user_data) {
+	auto* userData = (glTF::gltfUserData*) user_data;
+	Log("my image loader" << endl);
+	// ab 4b 54 58 20 32 30 bb
+	string ktkMagic = "\xabKTX 20\xbb";
+	if (size < 10 || strncmp((const char*)bytes, ktkMagic.c_str(), 8) != 0) {
+		Log("unexpected texture format, cannot parse");
+		return true;
+	}
+	//if ()
+	ktxTexture* kTexture;
+	userData->engine->textureStore.createKTXFromMemory(bytes, size, &kTexture);
+	// resize vector of texture pointers, if necessary:
+	auto& tvec = userData->mesh->textureParseInfo;
+	if (tvec.size() <= image_idx) {
+		tvec.resize(image_idx + 1);
+	}
+	tvec[image_idx] = kTexture;
+	//userData->engine->textureStore.destroyKTXIntermediate(kTexture);
+	return true;
+}
+
+void glTF::loadModel(Model &model, const unsigned char* data, int size, MeshInfo* mesh, string filename)
 {
 	TinyGLTF loader;
 	string err;
 	string warn;
-
+	gltfUserData userData {engine, mesh};
+	loader.SetImageLoader(&LoadImageDataKTX, (void*)&userData);
 	if (size < 4) {
 		Error("invalid glTF file");
 	}
@@ -137,6 +166,13 @@ void glTF::loadVertices(tinygltf::Model& model, vector<vec3>& verts, vector<uint
 void glTF::loadVertices(const unsigned char* data, int size, vector<vec3>& verts, vector<uint32_t> &indexBuffer, string filename)
 {
 	Model model;
-	loadModel(model, data, size, filename);
+	//loadModel(model, data, size, filename);
 	loadVertices(model, verts, indexBuffer);
+}
+
+void glTF::load(const unsigned char* data, int size, MeshInfo* mesh, string filename)
+{
+	Model model;
+	loadModel(model, data, size, mesh, filename);
+	loadVertices(model, mesh->vertices, mesh->indices);
 }

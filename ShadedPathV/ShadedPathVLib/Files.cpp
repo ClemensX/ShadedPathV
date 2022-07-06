@@ -137,6 +137,20 @@ void Files::readFile(string filename, vector<byte>& buffer, FileCategory cat) {
 
 }
 
+void Files::writeFile(string filename, const char* buf, int size) {
+	ofstream bfile(filename.c_str(), ios::out | ios::binary);
+	if (!bfile) {
+		stringstream s;
+		s << "failed writing file: " << filename << endl;
+		Error(s.str());
+	}
+	else {
+		bfile.write((char*)(buf), size);
+		bfile.close();
+	}
+
+}
+
 void Files::readFile(PakEntry* pakEntry, vector<byte>& buffer, FileCategory cat)
 {
 	Log("read file from pak: " << pakEntry->name.c_str() << endl);

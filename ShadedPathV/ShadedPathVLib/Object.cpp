@@ -2,6 +2,7 @@
 
 void MeshStore::init(ShadedPathEngine* engine) {
 	this->engine = engine;
+	gltf.init(engine);
 }
 
 MeshInfo* MeshStore::getMesh(string id)
@@ -56,7 +57,7 @@ void MeshStore::loadMeshWireframe(string filename, string id, vector<LineDef> &l
 	string fileAndPath = obj->filename;
 	vector<vec3> vertices;
 	vector<uint32_t> indexBuffer;
-	glTF::loadVertices((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), vertices, indexBuffer, fileAndPath);
+	gltf.loadVertices((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), vertices, indexBuffer, fileAndPath);
 	if (vertices.size() > 0) {
 		for (uint32_t i = 0; i < indexBuffer.size(); i += 3) {
 			// triangle i --> i+1 --> i+2
@@ -84,7 +85,8 @@ void MeshStore::loadMesh(string filename, string id)
 	vector<byte> file_buffer;
 	auto obj = loadMeshFile(filename, id, file_buffer);
 	string fileAndPath = obj->filename;
-	glTF::loadVertices((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), obj->vertices, obj->indices, fileAndPath);
+	gltf.load((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), obj, fileAndPath);
+	engine->textureStore.loadMeshTextures(obj);
 	obj->available = true;
 }
 

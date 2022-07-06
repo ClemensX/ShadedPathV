@@ -182,6 +182,17 @@ This means right handed with x (-1 to 1) to the right, y (-1 to 1) top to bottom
 * Add this extension https://github.com/baldurk/renderdoc-contrib/tree/main/baldurk/whereismydraw
 * See what it tells you
 
+### glTF Model Handling
+
+Online Model Viewer (drag-and-drop):
+
+```https://gltf-viewer.donmccurdy.com/```
+
+
+Enable compression and create mipmaps:
+
+```gltf-transform uastc WaterBottle.glb bottle2.glb --level 4 --zstd 18 --verbose```
+
 ### Some arbitrary timings (we be moved elsewhere eventually)
 
 All timings in [microseconds]

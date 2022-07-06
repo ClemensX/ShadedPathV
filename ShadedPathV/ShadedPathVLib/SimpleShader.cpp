@@ -29,8 +29,9 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
     createDescriptorSetLayout();
 
     // load texture
-    engine.textureStore.loadTexture("debug.ktx", "debugTexture");
-    texture = engine.textureStore.getTexture("debugTexture");
+	//engine.textureStore.loadTexture("debug.ktx", "debugTexture");
+	engine.textureStore.loadTexture("dump.ktx", "debugTexture");
+	texture = engine.textureStore.getTexture("debugTexture");
 
 	// descriptor pool
 	vector<VkDescriptorPoolSize> poolSizes;
