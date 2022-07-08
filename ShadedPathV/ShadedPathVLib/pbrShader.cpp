@@ -21,13 +21,15 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	// 3 buffers: V,P matrices, line data and dynamic uniform buffer for model matrix
 	// line data is global buffer
 	vector<VkDescriptorPoolSize> poolSizes;
-	poolSizes.resize(3);
+	poolSizes.resize(4);
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[0].descriptorCount = 1;
 	poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 	poolSizes[1].descriptorCount = 1;
 	poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[2].descriptorCount = 1;
+	poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSizes[3].descriptorCount = 1;
 
 	createDescriptorPool(poolSizes);
 }

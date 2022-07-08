@@ -262,6 +262,8 @@
     <CustomBuild Include="..\ShadedPathVLib\shader\line.vert">
       <Filter>Shader</Filter>
     </CustomBuild>
-    <CustomBuild Include="..\ShadedPathVLib\shader\pbr.vert" />
+    <CustomBuild Include="..\ShadedPathVLib\shader\pbr.vert">
+      <Filter>Shader</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

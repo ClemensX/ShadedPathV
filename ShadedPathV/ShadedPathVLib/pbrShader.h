@@ -2,17 +2,6 @@
 
 struct MeshInfo;
 class WorldObject;
-// line effect - draw simple lines in world coordinates
-struct pbrDef {
-	glm::vec3 start, end;
-	glm::vec4 color;
-};
-
-// per frame resources for this effect
-struct pbrFrameData {
-public:
-	vector<LineDef> addLines;
-};
 
 // line shader draws lines, it creates 2 pipelines, one for fixed lines (uploaded at start)
 // and one for dynamic lines that change every frame
@@ -57,8 +46,8 @@ public:
 		// layout(location = 1) in vec3 inColor;
 		attributeDescriptions[1].binding = 0;
 		attributeDescriptions[1].location = 1;
-		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		// todo attributeDescriptions[1].offset = offsetof(Vertex, color);
+		attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
+		//attributeDescriptions[1].offset = offsetof(Vertex, uv0);
 
 		return attributeDescriptions;
 	}
