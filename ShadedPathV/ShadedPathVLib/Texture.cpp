@@ -53,62 +53,7 @@ void TextureStore::loadTexture(string filename, string id)
 	ktxTexture* kTexture;
 	createKTXFromMemory((const ktx_uint8_t*)file_buffer.data(), file_buffer.size(), &kTexture);
 	createVulkanTextureFromKTKTexture(kTexture, texture);
-
-	/*	ktxTexture* kTexture;
-	auto ktxresult = ktxTexture_CreateFromMemory((const ktx_uint8_t*)file_buffer.data(), file_buffer.size(), KTX_TEXTURE_CREATE_NO_FLAGS, &kTexture);
-	if (ktxresult != KTX_SUCCESS) {
-		Log("ERROR: in ktxTexture_CreateFromMemory " << ktxresult);
-		Error("Could not create texture from memory");
-	}
-
-	if (kTexture->classId  == class_id::ktxTexture2_c) {
-		// for KTX 2 handling
-		ktxTexture2* t2 = (ktxTexture2*)(kTexture);
-		bool needTranscoding = ktxTexture2_NeedsTranscoding(t2);
-		if (needTranscoding) {
-			// VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK
-			// VK_FORMAT_BC7_SRGB_BLOCK
-			// check phys device support for image format:
-			VkFormatProperties fp{}; // output goes here
-			fp.linearTilingFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
-			//fp.optimalTilingFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
-			//fp.bufferFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
-			vkGetPhysicalDeviceFormatProperties(engine->global.physicalDevice, VK_FORMAT_BC7_SRGB_BLOCK, &fp);
-			ktxresult = ktxTexture2_TranscodeBasis(t2, KTX_TTF_BC7_RGBA, 0);
-			if (ktxresult != KTX_SUCCESS) {
-				Log("ERROR: in ktxTexture2_TranscodeBasis " << ktxresult);
-				Error("Could not uncompress texture");
-			}
-			needTranscoding = ktxTexture2_NeedsTranscoding(t2);
-			assert(needTranscoding == false);
-			//auto format = ktxTexture_GetVkFormat(kTexture);
-			//Log("format: " << format << endl);
-			ktxresult = ktxTexture2_VkUploadEx(t2, &vdi, &texture->vulkanTexture, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-			if (ktxresult != KTX_SUCCESS) {
-				Log("ERROR: in ktxTexture2_VkUploadEx " << ktxresult);
-				Error("Could not upload texture to GPU ktxTexture2_VkUploadEx");
-			}
-			//ktxTexture2_Destroy(t2);
-			// create image view and sampler:
-			texture->imageView = engine->global.createImageView(texture->vulkanTexture.image, VK_FORMAT_BC7_SRGB_BLOCK, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
-			texture->available = true;
-			return;
-		}
-	}
-	// KTX 1 handling
-	//auto format = ktxTexture_GetVkFormat(kTexture);
-	//Log("format: " << format << endl);
-	ktxresult = ktxTexture_VkUploadEx(kTexture, &vdi, &texture->vulkanTexture, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	if (ktxresult != KTX_SUCCESS) {
-		Log("ERROR: in ktxTexture_VkUploadEx " << ktxresult);
-		Error("Could not upload texture to GPU ktxTexture_VkUploadEx");
-	}
-
-	ktxTexture_Destroy(kTexture);
-	// create image view and sampler:
-	texture->imageView = engine->global.createImageView(texture->vulkanTexture.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
-	texture->available = true;
-*/}
+}
 
 void TextureStore::createKTXFromMemory(const unsigned char* data, int size, ktxTexture** ktxTexAdr)
 {
@@ -127,14 +72,6 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 		ktxTexture2* t2 = (ktxTexture2*)(kTexture);
 		bool needTranscoding = ktxTexture2_NeedsTranscoding(t2);
 		if (needTranscoding) {
-			// VK_FORMAT_ETC2_R8G8B8_SRGB_BLOCK
-			// VK_FORMAT_BC7_SRGB_BLOCK
-			// check phys device support for image format:
-			VkFormatProperties fp{}; // output goes here
-			fp.linearTilingFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
-			//fp.optimalTilingFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
-			//fp.bufferFeatures = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT;
-			vkGetPhysicalDeviceFormatProperties(engine->global.physicalDevice, VK_FORMAT_BC7_SRGB_BLOCK, &fp);
 			auto ktxresult = ktxTexture2_TranscodeBasis(t2, KTX_TTF_BC7_RGBA, 0);
 			if (ktxresult != KTX_SUCCESS) {
 				Log("ERROR: in ktxTexture2_TranscodeBasis " << ktxresult);
@@ -143,15 +80,16 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 			needTranscoding = ktxTexture2_NeedsTranscoding(t2);
 			assert(needTranscoding == false);
 		}
-		//auto format = ktxTexture_GetVkFormat(kTexture);
-		//Log("format: " << format << endl);
+		auto format = ktxTexture_GetVkFormat(kTexture);
+		// we should have VK_FORMAT_BC7_UNORM_BLOCK = 145 or VK_FORMAT_BC7_SRGB_BLOCK = 146,
+		Log("format: " << format << endl);
 		auto ktxresult = ktxTexture2_VkUploadEx(t2, &vdi, &texture->vulkanTexture, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		if (ktxresult != KTX_SUCCESS) {
 			Log("ERROR: in ktxTexture2_VkUploadEx " << ktxresult);
 			Error("Could not upload texture to GPU ktxTexture2_VkUploadEx");
 		}
 		// create image view and sampler:
-		texture->imageView = engine->global.createImageView(texture->vulkanTexture.image, VK_FORMAT_BC7_SRGB_BLOCK, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
+		texture->imageView = engine->global.createImageView(texture->vulkanTexture.image, format, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
 		texture->available = true;
 		return;
 	} else {

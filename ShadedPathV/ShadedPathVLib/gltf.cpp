@@ -19,7 +19,7 @@ bool LoadImageDataKTX(Image* image, const int image_idx, std::string* err,
 	std::string* warn, int req_width, int req_height,
 	const unsigned char* bytes, int size, void* user_data) {
 	auto* userData = (glTF::gltfUserData*) user_data;
-	Log("my image loader" << endl);
+	//Log("my image loader" << endl);
 	// ab 4b 54 58 20 32 30 bb
 	string ktkMagic = "\xabKTX 20\xbb";
 	if (size < 10 || strncmp((const char*)bytes, ktkMagic.c_str(), 8) != 0) {
