@@ -9,9 +9,32 @@ Some features:
 - Rendering in multiple threads
 - Each thread renders to its own backbuffer image, using its own set of thread local resources.
 - Synchronization is done at presentation time, when the backbuffer image is copied to the app window
-- Support VR games. (Probably via OpenXR)
+- Support VR games via OpenXR
 
-## Current state
+## Current State (Q2 / 2022)
+
+Implemented texture workflow for reading glTF files:
+1. Downloaded texture in glTF format (e.g. from Sketchfab) usually have simple .pga or .jpg textures with no mipmaps.
+1. We decided to go for KTX 2 texture containers with supercompressed format VK_FORMAT_BC7_SRGB_BLOCK. It seems to be the only texture compression format that has wide adoption.
+1. This solves two issues: texture size on GPU is greatly reduced and we can include mipmaps offline when preparing the glTF files.
+1. We use gltf-tranform like this to prepare glTF files for engine use:
+
+   ```gltf-transform uastc WaterBottle.glb bottle2.glb --level 4 --zstd 18 --verbose```
+   
+   * KTX + Basis UASTC texture compression
+   * level 4 is highest quality  - maybe use lower for development
+   * zstd 18 is default level for Zstandard supercompression
+   * gltf-transform creates mipmaps by default. use --filter to change default filter **lanczos4**
+
+1. Decoding details are in **texture.cpp**. Workflow is like this (all methods from KTX library):
+   * the engine checks format support at startup like this: ```vkGetPhysicalDeviceFormatProperties(engine->global.physicalDevice, VK_FORMAT_BC7_SRGB_BLOCK, &fp);```
+   * after loading binary texture data into CPU memory: **ktxTexture_CreateFromMemory()**
+   * check that we have the right texture type: ```kTexture->classId == class_id::ktxTexture2_c``` If this fails we have read a KTX 1 type texture which we cannot handle.
+   * check supercompression with ```ktxTexture2_NeedsTranscoding();```
+   * inflate UASTC and transcode to GPU block-compressed format: ```ktxTexture2_TranscodeBasis(texture, KTX_TTF_BC7_RGBA, 0);```
+   * last step is to upload to GPU: ```ktxTexture2_VkUploadEx()```
+
+## Q1 / 2022
 
 I am somewhat ok with thread model for now. Seems stable and flexible: Application can switch between non-threaded rendering and aribtrary number of rendering threads. But real test will be when more complex rendering code is available with objects and animation.
 
@@ -27,6 +50,9 @@ Same scene with camera moved back. You see lines resembling floor level and ceil
 ## TODO
 Things finished and things to do. Both very small and very large things, just as they come to my mind. 
 
+- [ ] PBR Shader
+- [ ] PBR object loading from glTF files
+- [x] Include KTX texture loading in PBR shader
 - [x] \(done via themed timer) re-use old fps counter (still needs fixing - values too high?)
 - [x] Decouple Swap chain and backbuffer image rendering
 - [x] backbuffer image saving

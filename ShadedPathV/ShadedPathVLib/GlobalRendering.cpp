@@ -185,7 +185,21 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
     else {
         swapChainAdequate = true;
     }
-    return familyIndices.isComplete(engine.presentation.enabled) && extensionsSupported && swapChainAdequate && deviceFeatures.samplerAnisotropy;
+    // check compressed texture support:
+    VkFormatProperties fp{};
+    vkGetPhysicalDeviceFormatProperties(device, VK_FORMAT_BC7_SRGB_BLOCK, &fp);
+    // 0x01d401
+    VkFormatFeatureFlags flagsToCheck = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT | VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+    if ((fp.linearTilingFeatures & flagsToCheck) == 0) {
+        Log("device does not support needed linearTilingFeatures");
+        return false;
+    }
+    if ((fp.optimalTilingFeatures & flagsToCheck) == 0) {
+        Log("device does not support needed optimalTilingFeatures");
+        return false;
+    }
+
+    return familyIndices.isComplete(engine.presentation.enabled) && extensionsSupported && swapChainAdequate && deviceFeatures.samplerAnisotropy && deviceFeatures.textureCompressionBC;
 }
 
 QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, bool listmode)
