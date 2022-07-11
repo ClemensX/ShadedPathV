@@ -191,7 +191,7 @@
     <ClInclude Include="GameTime.h" />
     <ClInclude Include="GlobalRendering.h" />
     <ClInclude Include="gltf.h" />
-    <ClInclude Include="gltfObjects.h" />
+    <ClInclude Include="gltfObjectsApp.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
     <ClInclude Include="imgui\imgui_impl_glfw.h" />
@@ -231,7 +231,7 @@
     <ClCompile Include="GameTime.cpp" />
     <ClCompile Include="GlobalRendering.cpp" />
     <ClCompile Include="gltf.cpp" />
-    <ClCompile Include="gltfObjects.cpp" />
+    <ClCompile Include="gltfObjectsApp.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
@@ -313,7 +313,31 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shader\pbr.vert" />
+    <CustomBuild Include="..\ShadedPathVLib\shader\pbr.vert">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\libraries\vulkan\Bin\glslc.exe %(FullPath) -g -o ../x64/$(Configuration)/%(Filename)_vert.spv</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GLSL %(FullPath) -o ../x64/$(Configuration)/%(Filename)_vert.spv</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../x64/$(Configuration)/%(Filename)_vert.spv</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\libraries\vulkan\Bin\glslc.exe %(FullPath) -o ../x64/$(Configuration)/%(Filename)_vert.spv</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GLSL %(FullPath) -o ../x64/$(Configuration)/%(Filename)_vert.spv</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../x64/$(Configuration)/%(Filename)_vert.spv</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\ShadedPathVLib\shader\pbr.frag">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\libraries\vulkan\Bin\glslc.exe %(FullPath)  -g -o ../x64/$(Configuration)/%(Filename)_frag.spv</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GLSL %(FullPath) -o ../x64/$(Configuration)/%(Filename)_frag.spv</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../x64/$(Configuration)/%(Filename)_frag.spv</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\libraries\vulkan\Bin\glslc.exe %(FullPath) -o ../x64/$(Configuration)/%(Filename)_frag.spv</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GLSL %(FullPath) -o ../x64/$(Configuration)/%(Filename)_frag.spv</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../x64/$(Configuration)/%(Filename)_frag.spv</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shader\pbr.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />

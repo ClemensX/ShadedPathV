@@ -17,6 +17,7 @@ layout (binding = 1) uniform UboInstance {
 
 
 layout(location = 0) out vec3 fragColor;
+layout(location = 1) out vec2 fragTexCoord;
 
 void main() {
     //debugPrintfEXT("PBR:[0,0] [3,0] %f %f %f\n", uboInstance.model[0][0], uboInstance.model[3][0], uboInstance.model[0][2]);
@@ -31,4 +32,5 @@ void main() {
     //fragColor = inColor;
     fragColor = vec3(1, 1, 1);
     //debugPrintfEXT("final device coord: %f %f %f\n", gl_Position.x, gl_Position.y, gl_Position.z);
+    fragTexCoord = inTexCoord0;
 }

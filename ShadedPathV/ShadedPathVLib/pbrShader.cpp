@@ -7,7 +7,7 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	vector<byte> file_buffer_vert;
 	vector<byte> file_buffer_frag;
 	engine.files.readFile("pbr_vert.spv", file_buffer_vert, FileCategory::FX);
-	engine.files.readFile("line_frag.spv", file_buffer_frag, FileCategory::FX);
+	engine.files.readFile("pbr_frag.spv", file_buffer_frag, FileCategory::FX);
 	Log("read vertex shader: " << file_buffer_vert.size() << endl);
 	Log("read fragment shader: " << file_buffer_frag.size() << endl);
 	// create shader modules
@@ -179,9 +179,9 @@ void PBRShader::createDescriptorSetLayout()
 
 	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
 	samplerLayoutBinding.binding = 2;
-	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	samplerLayoutBinding.descriptorCount = 1;
-	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	samplerLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
 	std::array<VkDescriptorSetLayoutBinding, 3> bindings = { uboLayoutBinding, uboDynamicLayoutBinding, samplerLayoutBinding };
@@ -237,6 +237,15 @@ void PBRShader::createDescriptorSets(ThreadResources& tr)
 	descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
 	descriptorWrites[1].descriptorCount = 1;
 	descriptorWrites[1].pBufferInfo = &bufferInfo1;
+
+	//descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	//descriptorWrites[2].dstSet = str.descriptorSet;
+	//descriptorWrites[2].dstBinding = 2;
+	//descriptorWrites[2].dstArrayElement = 0;
+	//descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	//descriptorWrites[2].descriptorCount = 1;
+	//descriptorWrites[2].pBufferInfo = &bufferInfo1;
+
 
 	vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	if (engine->isStereo()) {

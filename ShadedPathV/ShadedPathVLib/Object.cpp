@@ -55,7 +55,7 @@ void MeshStore::loadMeshWireframe(string filename, string id, vector<LineDef> &l
 	vector<byte> file_buffer;
 	auto obj = loadMeshFile(filename, id, file_buffer);
 	string fileAndPath = obj->filename;
-	vector<vec3> vertices;
+	vector<PBRShader::Vertex> vertices;
 	vector<uint32_t> indexBuffer;
 	gltf.loadVertices((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), vertices, indexBuffer, fileAndPath);
 	if (vertices.size() > 0) {
@@ -66,14 +66,14 @@ void MeshStore::loadMeshWireframe(string filename, string id, vector<LineDef> &l
 			auto& p0 = vertices[indexBuffer[i]];
 			auto& p1 = vertices[indexBuffer[i+1]];
 			auto& p2 = vertices[indexBuffer[i+2]];
-			l.start = p0;
-			l.end = p1;
+			l.start = p0.pos;
+			l.end = p1.pos;
 			lines.push_back(l);
-			l.start = p1;
-			l.end = p2;
+			l.start = p1.pos;
+			l.end = p2.pos;
 			lines.push_back(l);
-			l.start = p2;
-			l.end = p0;
+			l.start = p2.pos;
+			l.end = p0.pos;
 			lines.push_back(l);
 		}
 	}

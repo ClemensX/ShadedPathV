@@ -1,4 +1,8 @@
 class Util;
+
+// forward declarations
+struct MeshInfo;
+
 struct TextureInfo
 {
 	string id;

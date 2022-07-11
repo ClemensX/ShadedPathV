@@ -12,7 +12,7 @@ public:
 	struct Vertex {
 		glm::vec3 pos;
 		//glm::vec3 normal;
-		//glm::vec2 uv0;
+		glm::vec2 uv0;
 		//glm::vec2 uv1;
 		//glm::vec4 joint0;
 		//glm::vec4 weight0;
@@ -47,7 +47,7 @@ public:
 		attributeDescriptions[1].binding = 0;
 		attributeDescriptions[1].location = 1;
 		attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-		//attributeDescriptions[1].offset = offsetof(Vertex, uv0);
+		attributeDescriptions[1].offset = offsetof(Vertex, uv0);
 
 		return attributeDescriptions;
 	}

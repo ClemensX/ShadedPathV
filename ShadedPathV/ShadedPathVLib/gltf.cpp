@@ -81,7 +81,7 @@ void glTF::loadModel(Model &model, const unsigned char* data, int size, MeshInfo
 	return;
 }
 
-void glTF::loadVertices(tinygltf::Model& model, vector<vec3>& verts, vector<uint32_t>& indexBuffer)
+void glTF::loadVertices(tinygltf::Model& model, vector<PBRShader::Vertex>& verts, vector<uint32_t>& indexBuffer)
 {
 	// should be sized of passed in vectors:
 	uint32_t indexStart = static_cast<uint32_t>(indexBuffer.size());
@@ -116,7 +116,8 @@ void glTF::loadVertices(tinygltf::Model& model, vector<vec3>& verts, vector<uint
 			Log("posByteStride " << posByteStride << endl);
 			for (size_t v = 0; v < posAccessor.count; v++) {
 				size_t pos = v * posByteStride;
-				vec3 vert = vec3(bufferPos[pos], bufferPos[pos + 1], bufferPos[pos + 2]);
+				PBRShader::Vertex vert;
+				vert.pos = vec3(bufferPos[pos], bufferPos[pos + 1], bufferPos[pos + 2]);
 				//vec3 vert2 = vec3(bufferPos[pos + 3], bufferPos[pos + 4], bufferPos[pos + 5]);
 				verts.push_back(vert);
 				//verts.push_back(vert2);
@@ -166,7 +167,7 @@ void glTF::loadVertices(tinygltf::Model& model, vector<vec3>& verts, vector<uint
 	}
 }
 
-void glTF::loadVertices(const unsigned char* data, int size, vector<vec3>& verts, vector<uint32_t> &indexBuffer, string filename)
+void glTF::loadVertices(const unsigned char* data, int size, vector<PBRShader::Vertex>& verts, vector<uint32_t> &indexBuffer, string filename)
 {
 	Model model;
 	//loadModel(model, data, size, filename);

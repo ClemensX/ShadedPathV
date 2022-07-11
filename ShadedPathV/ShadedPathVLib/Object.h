@@ -8,7 +8,7 @@ struct MeshInfo
 	bool available = false; // true if this object is ready for use in shader code
 
 	// gltf data: valid after object load, should be cleared after upload
-	vector<vec3> vertices;
+	vector<PBRShader::Vertex> vertices;
 	vector<uint32_t> indices;
 	vector<ktxTexture*> textureParseInfo;
 
