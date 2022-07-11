@@ -69,6 +69,10 @@ public:
 	virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
 	virtual void destroyThreadResources(ThreadResources& tr) override;
 
+	// create all dscriptors we need separate for each mesh (for all the textures)
+	void createPerMeshDescriptors(MeshInfo* mesh);
+	VkDescriptorSetLayout descriptorSetLayoutForEachMesh = nullptr;
+
 	// add lines - they will never  be removed
 	void add(vector<LineDef>& linesToAdd);
 

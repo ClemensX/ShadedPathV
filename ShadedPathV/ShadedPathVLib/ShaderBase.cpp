@@ -51,18 +51,30 @@ void ShaderBase::createVertexBuffer(ThreadResources& res, VkBuffer& uniformBuffe
 		uniformBuffer, uniformBufferMemory);
 }
 
-void ShaderBase::createDescriptorPool(vector<VkDescriptorPoolSize> &poolSizes)
+void ShaderBase::createDescriptorPool(vector<VkDescriptorPoolSize> &poolSizes, uint32_t overrideMaxSet)
+{
+	vector<VkDescriptorPoolSize> independent;
+	createDescriptorPool(poolSizes, independent, overrideMaxSet);
+}
+
+void ShaderBase::createDescriptorPool(vector<VkDescriptorPoolSize>& poolSizes, vector<VkDescriptorPoolSize>& threadIndependentPoolSizes, uint32_t overrideMaxSet)
 {
 	// duplicate the poolSize for every render thread we have:
 	vector<VkDescriptorPoolSize> allThreadsPoolSizes;
 	for (int i = 0; i < engine->getFramesInFlight(); i++) {
 		copy(poolSizes.begin(), poolSizes.end(), back_inserter(allThreadsPoolSizes));
 	}
+	copy(threadIndependentPoolSizes.begin(), threadIndependentPoolSizes.end(), back_inserter(allThreadsPoolSizes));
 	VkDescriptorPoolCreateInfo poolInfo{};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolInfo.poolSizeCount = static_cast<uint32_t>(allThreadsPoolSizes.size());
 	poolInfo.pPoolSizes = allThreadsPoolSizes.data();
-	poolInfo.maxSets = 5; // arbitrary number for now TODO: see if this can be calculated
+	if (overrideMaxSet > 0) {
+		poolInfo.maxSets = overrideMaxSet;
+	}
+	else {
+		poolInfo.maxSets = 5; // arbitrary number for now TODO: see if this can be calculated
+	}
 	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
 	if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {

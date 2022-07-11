@@ -1,6 +1,6 @@
 class Util;
 
-// Describe a loaded mesh. mesh IDs are unique, several Objects may be instatiated backed by the same mesh
+// Describe a loaded mesh. mesh IDs are unique, several Objects may be instantiated backed by the same mesh
 struct MeshInfo
 {
 	string id;
@@ -11,12 +11,14 @@ struct MeshInfo
 	vector<PBRShader::Vertex> vertices;
 	vector<uint32_t> indices;
 	vector<ktxTexture*> textureParseInfo;
+	vector<TextureInfo*> textureInfos; // we check for max size in 
 
 	// GPU data:
 	VkBuffer vertexBuffer = nullptr;
 	VkDeviceMemory vertexBufferMemory = nullptr;
 	VkBuffer indexBuffer = nullptr;
 	VkDeviceMemory indexBufferMemory = nullptr;
+	VkDescriptorSet descriptorSet = nullptr;
 };
 typedef MeshInfo* ObjectID;
 

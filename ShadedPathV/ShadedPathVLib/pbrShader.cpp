@@ -31,7 +31,12 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	poolSizes[3].descriptorCount = 1;
 
-	createDescriptorPool(poolSizes);
+	vector<VkDescriptorPoolSize> poolSizesIndep;
+	poolSizesIndep.resize(1);
+	poolSizesIndep[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSizesIndep[0].descriptorCount = MaxObjects;
+
+	createDescriptorPool(poolSizes, poolSizesIndep, 5 + MaxObjects);
 }
 
 void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
@@ -195,6 +200,25 @@ void PBRShader::createDescriptorSetLayout()
 		Error("failed to create descriptor set layout!");
 	}
 	engine->util.debugNameObjectDescriptorSetLayout(descriptorSetLayout, "PBR Descriptor Set Layout");
+
+	// create descriptorset layout used for each mesh individually:
+	VkDescriptorSetLayoutBinding samplerLayoutBinding0{};
+	samplerLayoutBinding0.binding = 0;
+	samplerLayoutBinding0.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	samplerLayoutBinding0.descriptorCount = 1;
+	samplerLayoutBinding0.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	samplerLayoutBinding0.pImmutableSamplers = nullptr; // Optional
+
+	std::array<VkDescriptorSetLayoutBinding, 1> bindingsMesh = { samplerLayoutBinding0 };
+
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = static_cast<uint32_t>(bindingsMesh.size());
+	layoutInfo.pBindings = bindingsMesh.data();
+
+	if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayoutForEachMesh) != VK_SUCCESS) {
+		Error("failed to create descriptor set layout!");
+	}
+	engine->util.debugNameObjectDescriptorSetLayout(descriptorSetLayoutForEachMesh, "PBR MESH Descriptor Set Layout");
 }
 
 void PBRShader::createDescriptorSets(ThreadResources& tr)
@@ -238,15 +262,6 @@ void PBRShader::createDescriptorSets(ThreadResources& tr)
 	descriptorWrites[1].descriptorCount = 1;
 	descriptorWrites[1].pBufferInfo = &bufferInfo1;
 
-	//descriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	//descriptorWrites[2].dstSet = str.descriptorSet;
-	//descriptorWrites[2].dstBinding = 2;
-	//descriptorWrites[2].dstArrayElement = 0;
-	//descriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	//descriptorWrites[2].descriptorCount = 1;
-	//descriptorWrites[2].pBufferInfo = &bufferInfo1;
-
-
 	vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	if (engine->isStereo()) {
 		if (vkAllocateDescriptorSets(device, &allocInfo, &str.descriptorSet2) != VK_SUCCESS) {
@@ -259,6 +274,37 @@ void PBRShader::createDescriptorSets(ThreadResources& tr)
 		descriptorWrites[1].dstSet = str.descriptorSet2;
 		vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}
+
+}
+
+void PBRShader::createPerMeshDescriptors(MeshInfo* mesh)
+{
+	VkDescriptorSetAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocInfo.descriptorPool = descriptorPool;
+	allocInfo.descriptorSetCount = 1;
+	allocInfo.pSetLayouts = &descriptorSetLayoutForEachMesh;
+	VkResult res = vkAllocateDescriptorSets(device, &allocInfo, &mesh->descriptorSet);
+	if ( res != VK_SUCCESS) {
+		Error("failed to allocate descriptor sets!");
+	}
+	engine->util.debugNameObjectDescriptorSet(mesh->descriptorSet, "Mesh Texture Descriptor Set");
+	// Descriptor
+	array<VkWriteDescriptorSet, 1> descriptorWrites{};
+	// populate descriptor set:
+	VkDescriptorImageInfo imageInfo0{};
+	imageInfo0.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo0.imageView = mesh->textureInfos[0]->imageView;
+	imageInfo0.sampler = global->textureSampler;
+
+	descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrites[0].dstSet = mesh->descriptorSet;
+	descriptorWrites[0].dstBinding = 0;
+	descriptorWrites[0].dstArrayElement = 0;
+	descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorWrites[0].descriptorCount = 1;
+	descriptorWrites[0].pImageInfo = &imageInfo0;
+	vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 }
 
 void PBRShader::createCommandBuffer(ThreadResources& tr)
@@ -372,6 +418,7 @@ PBRShader::~PBRShader()
 	}
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);
 	vkDestroyShaderModule(device, vertShaderModule, nullptr);
+	vkDestroyDescriptorSetLayout(device, descriptorSetLayoutForEachMesh, nullptr);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 }

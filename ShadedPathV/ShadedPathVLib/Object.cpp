@@ -86,6 +86,7 @@ void MeshStore::loadMesh(string filename, string id)
 	auto obj = loadMeshFile(filename, id, file_buffer);
 	string fileAndPath = obj->filename;
 	gltf.load((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), obj, fileAndPath);
+	engine->shaders.pbrShader.createPerMeshDescriptors(obj);
 	obj->available = true;
 }
 
