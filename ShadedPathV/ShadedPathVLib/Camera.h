@@ -120,6 +120,10 @@ public:
 		cameraPosition = pos;
 	}
 
+	void setMaxSpeed(float max) {
+		maxSpeed_ = max;
+	}
+
 	void setUpVector(const glm::vec3& up)
 	{
 		const glm::mat4 view = getViewMatrix();

@@ -7,6 +7,7 @@ void gltfObjectsApp::run()
     {
         // camera initialization
         CameraPositioner_FirstPerson positioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        positioner.setMaxSpeed(0.1f);
         Camera camera(positioner);
         this->camera = &camera;
         this->positioner = &positioner;
@@ -14,7 +15,7 @@ void gltfObjectsApp::run()
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
         //engine.enableVR();
-        engine.enableStereo();
+        //engine.enableStereo();
         engine.enableStereoPresentation();
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
@@ -22,7 +23,7 @@ void gltfObjectsApp::run()
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 480;//480;// 960;//1800;// 800;//3700;
+        int win_width = 960;//480;// 960;//1800;// 800;//3700;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF objects");
         camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
 
@@ -171,10 +172,21 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
         //WorldObject *wo = obj.get();
         PBRShader::DynamicUniformBufferObject* buf = engine.shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
         mat4 modeltransform;
-        if (wo->objectNum == 0) {
-            modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f + (plus/10.0f), 0.0f, 0.0f));
+        bool moveObjects = false;
+        if (moveObjects) {
+            if (wo->objectNum == 0) {
+                modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f + (plus / 10.0f), 0.0f, 0.0f));
+            }
+            else {
+                modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f + (plus / 100.0f), 0.0f, 0.0f));
+            }
         } else {
-            modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f + (plus/100.0f), 0.0f, 0.0f));
+            if (wo->objectNum == 0) {
+                modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.1f, 0.0f, 0.0f));
+            }
+            else {
+                modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.2f, 0.0f, 0.0f));
+            }
         }
         buf->model = modeltransform;
         void* data = buf;
