@@ -153,6 +153,7 @@ void LineShader::addOneTime(vector<LineDef>& linesToAdd, ThreadResources& tr) {
 
 void LineShader::initialUpload()
 {
+	if (!enabled) return;
 	// create vertex buffer in CPU mem
 	vector<Vertex> all;
 	// handle fixed lines:
@@ -379,10 +380,12 @@ void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadReso
 
 void LineShader::prepareAddLines(ThreadResources& tr)
 {
+	if (!enabled) return;
 	recordDrawCommandAdd(tr.lineResources.commandBufferAdd, tr, tr.lineResources.vertexBufferAdd);
 }
 
 void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
+	if (!enabled) return;
 	auto& trl = tr.lineResources;
 	// copy ubo to GPU:
 	void* data;

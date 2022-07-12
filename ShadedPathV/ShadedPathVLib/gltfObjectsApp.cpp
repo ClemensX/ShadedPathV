@@ -38,8 +38,8 @@ void gltfObjectsApp::run()
         shaders
             .addShader(shaders.clearShader)
             .addShader(shaders.pbrShader)
-            .addShader(shaders.lineShader)
             ;
+        if (enableLines) shaders.addShader(shaders.lineShader);
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         shaders.initActiveShaders();
 

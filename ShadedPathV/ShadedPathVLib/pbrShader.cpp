@@ -71,16 +71,16 @@ void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	//d->model = ident;
 
 	createDescriptorSets(tr);
-	// TODO remove hack
-	bool undoLast = false;
-	if (isLastShader()) {
-		undoLast = true;
-		setLastShader(false);
-	}
+	//// TODO remove hack
+	//bool undoLast = false;
+	//if (isLastShader()) {
+	//	undoLast = true;
+	//	setLastShader(false);
+	//}
 	createRenderPassAndFramebuffer(tr, shaderState, str.renderPass, str.framebuffer, str.framebuffer2);
-	if (undoLast) {
-		setLastShader(true);
-	}
+	//if (undoLast) {
+	//	setLastShader(true);
+	//}
 
 	// create shader stage
 	auto vertShaderStageInfo = createVertexShaderCreateInfo(vertShaderModule);
