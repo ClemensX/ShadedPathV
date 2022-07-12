@@ -98,6 +98,18 @@ void glTF::loadVertices(tinygltf::Model& model, vector<PBRShader::Vertex>& verts
 			if (!hasIndices) {
 				Error("Cannot parse mesh without indices");
 			}
+			// assert all the content we rely on:
+			assert(primitive.attributes.find("POSITION") != primitive.attributes.end());
+			assert(primitive.attributes.find("TEXCOORD_0") != primitive.attributes.end());
+
+			// base texture 
+			const float* bufferTexCoordSet0 = nullptr;
+			const tinygltf::Accessor& uvAccessor = model.accessors[primitive.attributes.find("TEXCOORD_0")->second];
+			const tinygltf::BufferView& uvView = model.bufferViews[uvAccessor.bufferView];
+			bufferTexCoordSet0 = reinterpret_cast<const float*>(&(model.buffers[uvView.buffer].data[uvAccessor.byteOffset + uvView.byteOffset]));
+			int uv0ByteStride = uvAccessor.ByteStride(uvView) ? (uvAccessor.ByteStride(uvView) / sizeof(float)) : tinygltf::GetNumComponentsInType(TINYGLTF_TYPE_VEC2);
+
+
 			// parse vertices
 			const float* bufferPos = nullptr;
 			uint32_t vertexCount = 0;
@@ -120,7 +132,7 @@ void glTF::loadVertices(tinygltf::Model& model, vector<PBRShader::Vertex>& verts
 				size_t pos = v * posByteStride;
 				PBRShader::Vertex vert;
 				vert.pos = vec3(bufferPos[pos], bufferPos[pos + 1], bufferPos[pos + 2]);
-				//vec3 vert2 = vec3(bufferPos[pos + 3], bufferPos[pos + 4], bufferPos[pos + 5]);
+				vert.uv0 = vec2(bufferTexCoordSet0[v * uv0ByteStride], bufferTexCoordSet0[v * uv0ByteStride + 1]);
 				verts.push_back(vert);
 				//verts.push_back(vert2);
 				//Log("vert " << vert.x << endl);

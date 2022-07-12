@@ -174,7 +174,7 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
         if (wo->objectNum == 0) {
             modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f + (plus/10.0f), 0.0f, 0.0f));
         } else {
-            modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f + plus, 0.0f, 0.0f));
+            modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f + (plus/100.0f), 0.0f, 0.0f));
         }
         buf->model = modeltransform;
         void* data = buf;
