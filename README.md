@@ -13,6 +13,14 @@ Some features:
 
 ## Current State (Q2 / 2022)
 
+### PBR Shader
+
+As a first step we can now parse glTF files and render objects with just the base texture. No Lighting.
+
+![pbr with only base texture](images/pbr01.png)
+![pbr with only base texture](images/pbr02.png)
+
+### Texture Loading from glTF Files
 Implemented texture workflow for reading glTF files:
 1. Downloaded texture in glTF format (e.g. from Sketchfab) usually have simple .pga or .jpg textures with no mipmaps.
 1. We decided to go for KTX 2 texture containers with supercompressed format VK_FORMAT_BC7_SRGB_BLOCK. It seems to be the only texture compression format that has wide adoption.
