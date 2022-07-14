@@ -88,8 +88,15 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 			Log("ERROR: in ktxTexture2_VkUploadEx " << ktxresult);
 			Error("Could not upload texture to GPU ktxTexture2_VkUploadEx");
 		}
+		if (texture->vulkanTexture.levelCount < 2) {
+			Error("Cannot load texture without mipmaps");
+		}
 		// create image view and sampler:
-		texture->imageView = engine->global.createImageView(texture->vulkanTexture.image, format, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
+		if (kTexture->isCubemap) {
+			texture->imageView = engine->global.createImageViewCube(texture->vulkanTexture.image, format, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
+		} else {
+			texture->imageView = engine->global.createImageView(texture->vulkanTexture.image, format, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
+		}
 		texture->available = true;
 		return;
 	} else {

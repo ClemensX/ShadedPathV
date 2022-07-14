@@ -31,6 +31,7 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
     // load texture
 	//engine.textureStore.loadTexture("debug.ktx", "debugTexture");
 	engine.textureStore.loadTexture("dump.ktx", "debugTexture");
+	//engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "debugTexture");
 	texture = engine.textureStore.getTexture("debugTexture");
 
 	// descriptor pool

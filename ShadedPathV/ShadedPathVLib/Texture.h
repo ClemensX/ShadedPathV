@@ -26,6 +26,8 @@ public:
 	TextureInfo* createTextureSlot(MeshInfo* mesh, int index);
 	// parse texture data during gltf parsing. create a KTX texture from memory and store into mesh
 	void createKTXFromMemory(const unsigned char* data, int size, ktxTexture** ktxTex);
+	// create textures ready to be used in shader code. Either normal textures (VK_IMAGE_TYPE_2D) of cube maps (VK_IMAGE_VIEW_TYPE_CUBE).
+	// only ktx files are allowed with mipmaps already created.
 	void createVulkanTextureFromKTKTexture(ktxTexture* ktxTexture, TextureInfo* textureInfo);
 	void destroyKTXIntermediate(ktxTexture* ktxTex);
 

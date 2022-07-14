@@ -11,6 +11,11 @@ Some features:
 - Synchronization is done at presentation time, when the backbuffer image is copied to the app window
 - Support VR games via OpenXR
 
+## Cube Maps
+
+1. https://jaxry.github.io/panorama-to-cubemap/
+1. ```toktx --genmipmap --uastc 3 --zcmp 18 --assign_oetf linear --assign_primaries none --verbose --t2 --cubemap cube.ktx2 px.png nx.png py.png ny.png pz.png nz.png```
+
 ## Current State (Q2 / 2022)
 
 ### PBR Shader
@@ -58,8 +63,11 @@ Same scene with camera moved back. You see lines resembling floor level and ceil
 ## TODO
 Things finished and things to do. Both very small and very large things, just as they come to my mind. 
 
-- [ ] PBR Shader
-- [ ] PBR object loading from glTF files
+- [ ] Cube maps (needed for PBR environment maps)
+- [ ] Environment maps
+- [ ] Rest of PBR stages
+- [x] PBR Shader (simple: only base texture display, no lighting)
+- [x] PBR object loading from glTF files (vertices with pos and text coord, textures)
 - [x] Include KTX texture loading in PBR shader
 - [x] \(done via themed timer) re-use old fps counter (still needs fixing - values too high?)
 - [x] Decouple Swap chain and backbuffer image rendering

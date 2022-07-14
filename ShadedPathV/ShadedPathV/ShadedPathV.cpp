@@ -5,10 +5,10 @@
 
 int main()
 {
-    //SimpleApp app;
+    SimpleApp app;
     //LineApp app;
     //DeviceCoordApp app;
-    gltfObjectsApp app;
+    //gltfObjectsApp app;
     app.run();
 }
 

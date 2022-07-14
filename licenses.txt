@@ -12,3 +12,7 @@ This work is based on "smal knife, dagger" (https://sketchfab.com/3d-models/smal
 
 WaterBottle:
 https://github.com/KhronosGroup/glTF-Sample-Models/tree/master/2.0
+
+cube maps:
+http://www.hdrlabs.com/sibl/archive.html
+
