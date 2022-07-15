@@ -54,10 +54,6 @@ public:
 	virtual ~PBRShader() override;
 	// shader initialization, end result is a graphics pipeline for each ThreadResources instance
 
-	// max # lines for dynamic adding for single frame
-	// we limit this to allow for pre-allocated vertex buffer in thread ressources
-	static const size_t MAX_DYNAMIC_LINES = 100000;
-
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
 	// thread resources initialization
 	virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) override;
@@ -73,9 +69,6 @@ public:
 	void createPerMeshDescriptors(MeshInfo* mesh);
 	VkDescriptorSetLayout descriptorSetLayoutForEachMesh = nullptr;
 
-	// add lines - they will never  be removed
-	void add(vector<LineDef>& linesToAdd);
-
 	// get access to dynamic uniform buffer for an object
 	DynamicUniformBufferObject* getAccessToModel(ThreadResources& tr, UINT num);
 	
@@ -88,14 +81,8 @@ private:
 
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, WorldObject* obj, bool isRightEye = false);
 
-
-	vector<LineDef> lines;
-	int drawAddLinesSize;
-
 	UniformBufferObject ubo, updatedUBO;
 	bool disabled = false;
-	// Inherited via Effect
-	// set in init()
 
 	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;
@@ -106,29 +93,6 @@ private:
 
 	// util methods
 public:
-
-	static void addCross(vector<LineDef>& lines, vec3 pos, vec4 color) {
-		static float oDistance = 5.0f;
-		LineDef crossLines[] = {
-			// start, end, color
-			{ glm::vec3(pos.x-oDistance, pos.y, pos.z), glm::vec3(pos.x+oDistance, pos.y, pos.z), color },
-			{ glm::vec3(pos.x, pos.y-oDistance, pos.z), glm::vec3(pos.x, pos.y+oDistance, pos.z), color },
-			{ glm::vec3(pos.x, pos.y, pos.z-oDistance), glm::vec3(pos.x, pos.y, pos.z+oDistance), color }
-		};
-		lines.insert(lines.end(), crossLines, crossLines + size(crossLines));
-	}
-
-	static void addZeroCross(vector<LineDef>& lines) {
-		addCross(lines, vec3(), vec4(1.0f, 1.0f, 1.0f, 1.0f));
-		static float oDistance = 5.0f;
-		LineDef crossLines[] = {
-			// start, end, color
-			{ glm::vec3(-oDistance, 0.0f, 0.0f), glm::vec3(oDistance, 0.0f, 0.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) },
-			{ glm::vec3(0.0f, -oDistance, 0.0f), glm::vec3(0.0f, oDistance, 0.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) },
-			{ glm::vec3(0.0f, 0.0f, -oDistance), glm::vec3(0.0f, 0.0f, oDistance), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) }
-		};
-		lines.insert(lines.end(), crossLines, crossLines + size(crossLines));
-	}
 };
 
 struct PBRThreadResources : ShaderThreadResources {

@@ -34,9 +34,9 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	vector<VkDescriptorPoolSize> poolSizesIndep;
 	poolSizesIndep.resize(1);
 	poolSizesIndep[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizesIndep[0].descriptorCount = MaxObjects;
+	poolSizesIndep[0].descriptorCount = static_cast<uint32_t>(MaxObjects);
 
-	createDescriptorPool(poolSizes, poolSizesIndep, 5 + MaxObjects);
+	createDescriptorPool(poolSizes, poolSizesIndep, static_cast<uint32_t>(5 + MaxObjects));
 }
 
 void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
@@ -71,16 +71,7 @@ void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	//d->model = ident;
 
 	createDescriptorSets(tr);
-	//// TODO remove hack
-	//bool undoLast = false;
-	//if (isLastShader()) {
-	//	undoLast = true;
-	//	setLastShader(false);
-	//}
 	createRenderPassAndFramebuffer(tr, shaderState, str.renderPass, str.framebuffer, str.framebuffer2);
-	//if (undoLast) {
-	//	setLastShader(true);
-	//}
 
 	// create shader stage
 	auto vertShaderStageInfo = createVertexShaderCreateInfo(vertShaderModule);
@@ -159,15 +150,6 @@ void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 
 void PBRShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
 {
-}
-
-
-void PBRShader::add(vector<LineDef>& linesToAdd)
-{
-	if (linesToAdd.size() == 0 && lines.size() == 0)
-		return;
-
-	lines.insert(lines.end(), linesToAdd.begin(), linesToAdd.end());
 }
 
 void PBRShader::initialUpload()
@@ -393,15 +375,13 @@ void PBRShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResource
 	// bind descriptor sets:
 	// One dynamic offset per dynamic descriptor to offset into the ubo containing all model matrices
 	uint32_t objId = obj->objectNum;
-	uint32_t dynamicOffset = objId * alignedDynamicUniformBufferSize;
+	uint32_t dynamicOffset = static_cast<uint32_t>(objId * alignedDynamicUniformBufferSize);
 	if (!isRightEye) {
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet, 1, &dynamicOffset);
 	}
 	else {
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet2, 1, &dynamicOffset);
 	}
-
-	//vkCmdDraw(commandBuffer, static_cast<uint32_t>(lines.size() * 2), 1, 0, 0);
 	vkCmdDrawIndexed(commandBuffer, obj->mesh->indices.size(), 1, 0, 0, 0);
 }
 

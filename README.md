@@ -13,7 +13,9 @@ Some features:
 
 ## Cube Maps
 
-1. https://jaxry.github.io/panorama-to-cubemap/
+To be able to continue with PBR implementation we first need cube maps for a skybox.
+The maps need to be prepared offline like so:
+1. https://jaxry.github.io/panorama-to-cubemap/ load single file with distorted projection (and pixel width == 2* pixel height) into this url. Then click each tile to download all 6 .png files
 1. ```toktx --genmipmap --uastc 3 --zcmp 18 --assign_oetf linear --assign_primaries none --verbose --t2 --cubemap cube.ktx2 px.png nx.png py.png ny.png pz.png nz.png```
 
 ## Current State (Q2 / 2022)
