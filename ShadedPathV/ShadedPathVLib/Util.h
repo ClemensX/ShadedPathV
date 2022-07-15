@@ -19,6 +19,11 @@ namespace Colors {
 class Util
 {
 public:
+    // if you construct a skybox you need to be sure the edges of the view cube are still within far plane.
+    // this calculates the maximum (half) cube edge size you can use (see CubeShader)
+    static float getMaxCubeViewDistanceFromFarPlane(float f) {
+        return sqrt((f * f) / 3.0f);
+    }
     static void printCStringList(vector<const char *> &exts) {
         for (uint32_t i = 0; i < exts.size(); i++) {
             Log("  " << exts[i] << endl);

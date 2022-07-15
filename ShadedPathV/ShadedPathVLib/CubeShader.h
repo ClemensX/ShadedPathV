@@ -13,6 +13,7 @@ public:
 		glm::mat4 model;
 		glm::mat4 view;
 		glm::mat4 proj;
+		float farFactor; // bloat factor for skybox cube
 	};
 
 	static VkVertexInputBindingDescription getBindingDescription() {
@@ -55,8 +56,13 @@ public:
 
 	// set skybox cube texture id. The coresponding cube texture has do be loaded before calling this.
 	void setSkybox(string texID);
-private:
 
+	// set far plane, user to calculate size of skybox
+	void setFarPlane(float farPlane) {
+		bloatFactor = Util::getMaxCubeViewDistanceFromFarPlane(farPlane) - 1.0f;
+	}
+private:
+	float bloatFactor = 1.0f;
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, bool isRightEye = false);
 	void createSkyboxTextureDescriptors();
 	UniformBufferObject ubo, updatedUBO;

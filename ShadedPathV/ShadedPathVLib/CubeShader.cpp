@@ -40,7 +40,7 @@ void CubeShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 		engine->util.debugNameObjectBuffer(str.uniformBuffer2, "Cube UBO 2");
 		engine->util.debugNameObjectDeviceMmeory(str.uniformBufferMemory2, "Cube Memory 2");
 	}
-	createDescriptorSets(tr);
+	//createDescriptorSets(tr);
 	createRenderPassAndFramebuffer(tr, shaderState, str.renderPass, str.framebuffer, str.framebuffer2);
 
 	// create shader stage
@@ -173,7 +173,7 @@ void CubeShader::createDescriptorSets(ThreadResources& tr)
 	}
 	engine->util.debugNameObjectDescriptorSet(str.descriptorSet, "Cube Descriptor Set");
 
-	array<VkWriteDescriptorSet, 1> descriptorWrites{};
+	array<VkWriteDescriptorSet, 2> descriptorWrites{};
 	// populate descriptor set:
 	VkDescriptorBufferInfo bufferInfo0{};
 	bufferInfo0.buffer = str.uniformBuffer;
@@ -188,7 +188,6 @@ void CubeShader::createDescriptorSets(ThreadResources& tr)
 	descriptorWrites[0].descriptorCount = 1;
 	descriptorWrites[0].pBufferInfo = &bufferInfo0;
 
-	/*
 	VkDescriptorImageInfo imageInfo{};
 	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	imageInfo.imageView = skybox->imageView;
@@ -201,7 +200,7 @@ void CubeShader::createDescriptorSets(ThreadResources& tr)
 	descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	descriptorWrites[1].descriptorCount = 1;
 	descriptorWrites[1].pImageInfo = &imageInfo;
-	*/
+
 	vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	if (engine->isStereo()) {
 		if (vkAllocateDescriptorSets(device, &allocInfo, &str.descriptorSet2) != VK_SUCCESS) {
@@ -210,6 +209,7 @@ void CubeShader::createDescriptorSets(ThreadResources& tr)
 		engine->util.debugNameObjectDescriptorSet(str.descriptorSet, "Cube Descriptor Set 2");
 		bufferInfo0.buffer = str.uniformBuffer2;
 		descriptorWrites[0].dstSet = str.descriptorSet2;
+		descriptorWrites[1].dstSet = str.descriptorSet2;
 		vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 	}
 
@@ -221,6 +221,7 @@ void CubeShader::createCommandBuffer(ThreadResources& tr)
 	auto& device = engine->global.device;
 	auto& global = engine->global;
 	auto& shaders = engine->shaders;
+	createDescriptorSets(tr);
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = tr.commandPool;
@@ -286,6 +287,7 @@ void CubeShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResourc
 
 void CubeShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
 	auto& str = tr.cubeResources; // shortcut to cube resources
+	ubo.farFactor = bloatFactor;
 	// copy ubo to GPU:
 	void* data;
 	vkMapMemory(device, str.uniformBufferMemory, 0, sizeof(ubo), 0, &data);

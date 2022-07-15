@@ -31,6 +31,6 @@ void main() {
 
     //fragColor = inColor;
     fragColor = vec3(1, 1, 1);
-    //debugPrintfEXT("final device coord: %f %f %f\n", gl_Position.x, gl_Position.y, gl_Position.z);
+    //debugPrintfEXT("final device coord PBR: %f %f %f\n", gl_Position.x, gl_Position.y, gl_Position.z);
     fragTexCoord = inTexCoord0;
 }

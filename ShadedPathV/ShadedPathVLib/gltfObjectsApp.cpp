@@ -15,7 +15,7 @@ void gltfObjectsApp::run()
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
         //engine.enableVR();
-        engine.enableStereo();
+        //engine.enableStereo();
         engine.enableStereoPresentation();
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
@@ -23,13 +23,13 @@ void gltfObjectsApp::run()
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 960;//480;// 960;//1800;// 800;//3700;
+        int win_width = 1800;//480;// 960;//1800;// 800;//3700;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF objects");
         camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
 
         engine.setFramesInFlight(2);
         engine.registerApp(this);
-        //engine.setThreadModeSingle();
+        engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("gltfObjects");
@@ -103,8 +103,9 @@ void gltfObjectsApp::init() {
     // Grid with 1m squares, floor on -10m, ceiling on 372m
 
     // load skybox cube texture
-    engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
+    engine.textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
     engine.shaders.cubeShader.setSkybox("skyboxTexture");
+    engine.shaders.cubeShader.setFarPlane(2000.0f);
 
 
     engine.shaders.lineShader.initialUpload();
@@ -163,6 +164,15 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
     engine.shaders.lineShader.prepareAddLines(tr);
     engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
 
+    // cube
+    CubeShader::UniformBufferObject cubo{};
+    cubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    cubo.view = camera->getViewMatrixAtCameraPos();
+    cubo.proj = lubo.proj;
+    auto cubo2 = cubo;
+    cubo2.view = cubo.view;
+    engine.shaders.cubeShader.uploadToGPU(tr, cubo, cubo2);
+ 
     // pbr
     PBRShader::UniformBufferObject pubo{};
     mat4 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));

@@ -3,8 +3,11 @@
 class CameraPositionerInterface {
 public:
 	virtual ~CameraPositionerInterface() = default;
-	virtual glm::mat4 getViewMatrix() const = 0;
-	virtual glm::vec3 getPosition() const = 0;
+	// get view matrix to transform world coords to camera space
+	virtual mat4 getViewMatrix() const = 0;
+	// get view matrix without camera movement. Think of skybox that needs to surround camera pos, but with lookAt
+	virtual mat4 getViewMatrixAtCameraPos() const = 0;
+	virtual vec3 getPosition() const = 0;
 };
 
 class  Camera final
@@ -15,6 +18,10 @@ public:
 
 	glm::mat4 getViewMatrix() const {
 		return positioner.getViewMatrix();
+	}
+
+	glm::mat4 getViewMatrixAtCameraPos() const {
+		return positioner.getViewMatrixAtCameraPos();
 	}
 
 	glm::vec3 getPosition() const {
@@ -107,9 +114,14 @@ public:
 
 	virtual glm::mat4 getViewMatrix() const override {
 		const glm::mat4 t = glm::translate(glm::mat4(1.0f), -cameraPosition);
-		const glm::mat4 r =	glm::mat4_cast(cameraOrientation);
+		const glm::mat4 r = glm::mat4_cast(cameraOrientation);
 		auto v = r * t;
 		return v;
+	}
+
+	virtual glm::mat4 getViewMatrixAtCameraPos() const override {
+		const glm::mat4 r = glm::mat4_cast(cameraOrientation);
+		return r;
 	}
 
 	virtual glm::vec3 getPosition() const override {

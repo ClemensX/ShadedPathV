@@ -6,8 +6,10 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
     mat4 proj;
+	float bloat;
 } ubo;
 
+layout(location = 0) in vec3 inPosition;
 layout (location=0) out vec3 dir;
 
 const vec3 pos[8] = vec3[8](
@@ -24,22 +26,29 @@ const vec3 pos[8] = vec3[8](
 
 const int indices[36] = int[36](
 	// front
-	0, 1, 2, 2, 3, 0,
+	0, 2, 1, 2, 0, 3,
 	// right
-	1, 5, 6, 6, 2, 1,
+	1, 6, 5, 6, 1, 2,
 	// back
-	7, 6, 5, 5, 4, 7,
+	7, 5, 6, 5, 7, 4,
 	// left
-	4, 0, 3, 3, 7, 4,
+	4, 3, 0, 3, 4, 7,
 	// bottom
-	4, 5, 1, 1, 0, 4,
+	4, 1, 5, 1, 4, 0,
 	// top
-	3, 2, 6, 6, 7, 3
+	3, 6, 2, 6, 3, 7
 );
 
 void main()
 {
+    //debugPrintfEXT("ubo.model 0 0 is %f\n", ubo.model[0][0]);
+    //debugPrintfEXT("ubo.view 0 0 is %f\n", ubo.view[0][0]);
+    //debugPrintfEXT("ubo.proj 0 0 is %f\n", ubo.proj[0][0]);
 	int idx = indices[gl_VertexIndex];
-	gl_Position = ubo.proj * ubo.view * vec4(500.0 * pos[idx], 1.0);
+    //debugPrintfEXT("Cube input vertex world %d idx: %d coord: %f %f %f\n", gl_VertexIndex, idx, pos[idx].x, pos[idx].y, pos[idx].z);
+	//gl_Position = ubo.proj * ubo.view * vec4(5.0 * pos[idx], 1.0);
+	gl_Position = ubo.proj * ubo.view * vec4(ubo.bloat * pos[idx], 1.0);
+	//if (gl_VertexIndex == 0) debugPrintfEXT("final device coord: %f %f %f\n", gl_Position.x, gl_Position.y, gl_Position.z);
+	//if (gl_VertexIndex == 0) debugPrintfEXT("bloat: %f\n", ubo.bloat);
 	dir = pos[idx].xyz;
 }
