@@ -147,6 +147,9 @@
     <ClInclude Include="PBRShader.h">
       <Filter>ShaderClasses</Filter>
     </ClInclude>
+    <ClInclude Include="CubeShader.h">
+      <Filter>ShaderClasses</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -248,6 +251,9 @@
     <ClCompile Include="PBRShader.cpp">
       <Filter>ShaderClasses</Filter>
     </ClCompile>
+    <ClCompile Include="CubeShader.cpp">
+      <Filter>ShaderClasses</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\ShadedPathVLib\shader\triangle.vert">
@@ -265,10 +271,14 @@
     <CustomBuild Include="..\ShadedPathVLib\shader\pbr.vert">
       <Filter>Shader</Filter>
     </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shader\pbr.frag">
+    <CustomBuild Include="..\ShadedPathVLib\shader\cube.frag">
       <Filter>Shader</Filter>
-    </None>
+    </CustomBuild>
+    <CustomBuild Include="..\ShadedPathVLib\shader\cube.vert">
+      <Filter>Shader</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\ShadedPathVLib\shader\pbr.frag">
+      <Filter>Shader</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

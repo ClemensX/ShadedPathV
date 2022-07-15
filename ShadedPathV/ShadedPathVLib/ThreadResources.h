@@ -50,6 +50,7 @@ public:
 	LineThreadResources lineResources;
 	PBRThreadResources pbrResources;
 	SimpleThreadResources simpleResources;
+	CubeThreadResources cubeResources;
 	// for ImGui:
 	UIThreadResources uiResources;
 

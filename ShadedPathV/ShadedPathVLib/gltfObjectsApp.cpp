@@ -37,6 +37,7 @@ void gltfObjectsApp::run()
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
+            .addShader(shaders.cubeShader)
             .addShader(shaders.pbrShader)
             ;
         if (enableLines) shaders.addShader(shaders.lineShader);
@@ -101,8 +102,14 @@ void gltfObjectsApp::init() {
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     // Grid with 1m squares, floor on -10m, ceiling on 372m
 
+    // load skybox cube texture
+    engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
+    engine.shaders.cubeShader.setSkybox("skyboxTexture");
+
+
     engine.shaders.lineShader.initialUpload();
     engine.shaders.pbrShader.initialUpload();
+    engine.shaders.cubeShader.initialUpload();
 }
 
 void gltfObjectsApp::drawFrame(ThreadResources& tr) {

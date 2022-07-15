@@ -89,6 +89,7 @@ public:
 	LineShader lineShader;
 	UIShader uiShader;
 	PBRShader pbrShader;
+	CubeShader cubeShader;
 
 	// submit command buffers for current frame
 	void submitFrame(ThreadResources& tr);
