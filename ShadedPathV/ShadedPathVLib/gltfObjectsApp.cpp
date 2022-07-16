@@ -104,6 +104,7 @@ void gltfObjectsApp::init() {
 
     // load skybox cube texture
     engine.textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
+    //engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
     engine.shaders.cubeShader.setSkybox("skyboxTexture");
     engine.shaders.cubeShader.setFarPlane(2000.0f);
 
@@ -168,6 +169,7 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
     CubeShader::UniformBufferObject cubo{};
     cubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     cubo.view = camera->getViewMatrixAtCameraPos();
+    //cubo.view = lubo.view; // uncomment to have stationary cube, not centered at camera
     cubo.proj = lubo.proj;
     auto cubo2 = cubo;
     cubo2.view = cubo.view;

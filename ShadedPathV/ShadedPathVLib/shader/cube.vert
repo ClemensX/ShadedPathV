@@ -39,6 +39,22 @@ const int indices[36] = int[36](
 	3, 6, 2, 6, 3, 7
 );
 
+//const int indices[36] = int[36]( // use for rendering outside of cube
+//	// front
+//	0, 1, 2, 2, 3, 0,
+//	// right
+//	1, 5, 6, 6, 2, 1,
+//	// back
+//	7, 6, 5, 5, 4, 7,
+//	// left
+//	4, 0, 3, 3, 7, 4,
+//	// bottom
+//	4, 5, 1, 1, 0, 4,
+//	// top
+//	3, 2, 6, 6, 7, 3
+//);
+//
+
 void main()
 {
     //debugPrintfEXT("ubo.model 0 0 is %f\n", ubo.model[0][0]);
@@ -46,7 +62,7 @@ void main()
     //debugPrintfEXT("ubo.proj 0 0 is %f\n", ubo.proj[0][0]);
 	int idx = indices[gl_VertexIndex];
     //debugPrintfEXT("Cube input vertex world %d idx: %d coord: %f %f %f\n", gl_VertexIndex, idx, pos[idx].x, pos[idx].y, pos[idx].z);
-	//gl_Position = ubo.proj * ubo.view * vec4(5.0 * pos[idx], 1.0);
+	//gl_Position = ubo.proj * ubo.view * vec4(1.0 * pos[idx], 1.0);  // use for stationary cube
 	gl_Position = ubo.proj * ubo.view * vec4(ubo.bloat * pos[idx], 1.0);
 	//if (gl_VertexIndex == 0) debugPrintfEXT("final device coord: %f %f %f\n", gl_Position.x, gl_Position.y, gl_Position.z);
 	//if (gl_VertexIndex == 0) debugPrintfEXT("bloat: %f\n", ubo.bloat);
