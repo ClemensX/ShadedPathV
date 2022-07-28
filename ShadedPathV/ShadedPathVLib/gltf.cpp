@@ -78,6 +78,7 @@ void glTF::loadModel(Model &model, const unsigned char* data, int size, MeshInfo
 
 	if (!ret) {
 		printf("Failed to parse glTF\n");
+		Error("Failed to parse glTF");
 		return;
 	}
 	return;
@@ -181,10 +182,65 @@ void glTF::loadVertices(tinygltf::Model& model, vector<PBRShader::Vertex>& verts
 	}
 }
 
+void setTextureData(tinygltf::Model& model, MeshInfo* mesh, string type) {
+	::TextureInfo** texAdr = nullptr;
+	if (glTF::BASE_COLOR_TEXTURE.compare(type) == 0) {
+		texAdr = &mesh->baseColorTexture;
+	} else {
+		//Error("unexpected texture type encountered");
+		Log("unexpected texture type encountered" << endl);
+	}
+	auto& mat = model.materials[0];
+	if (mat.values.find(type) != mat.values.end()) {
+		//*texAdr = mesh->textureInfos[mat.values["baseColorTexture"].TextureIndex()];
+		int coordsIndex = mat.values["baseColorTexture"].TextureTexCoord();
+		Log("coord index " << coordsIndex << endl);
+	}
+}
+
+void glTF::prepareTextures(tinygltf::Model& model, MeshInfo* mesh)
+{
+	// samplers
+	// make sure textures are already loded
+	assert(mesh->textureInfos.size() >= model.samplers.size());
+
+	auto& mat = model.materials[0]; // we only support one material per file
+	// iterate textures in material.values and material.additionalValues:
+	for (auto& texture : mat.values) {
+		Log("found texture: " << texture.first.c_str() << endl);
+	}
+	for (auto& texture : mat.additionalValues) {
+		Log("found texture: " << texture.first.c_str() << endl);
+	}
+
+	// we have already parsed all gltf images in mesh->textureInfos[]
+	// go through them and fill proper members
+	for (size_t i = 0; i < mesh->textureInfos.size(); i++) {
+		setTextureData(model, mesh, BASE_COLOR_TEXTURE);
+	}
+	for (tinygltf::Sampler smpl : model.samplers) {
+		Log("sampler: " << smpl.name.c_str() << endl);
+		//vkglTF::TextureSampler sampler{};
+		//sampler.minFilter = getVkFilterMode(smpl.minFilter);
+		//sampler.magFilter = getVkFilterMode(smpl.magFilter);
+		//sampler.addressModeU = getVkWrapMode(smpl.wrapS);
+		//sampler.addressModeV = getVkWrapMode(smpl.wrapT);
+		//sampler.addressModeW = sampler.addressModeV;
+		//textureSamplers.push_back(sampler);
+	}
+}
+
+void glTF::validateModel(tinygltf::Model& model)
+{
+	assert(model.materials.size() == 1);
+	assert(model.meshes.size() == 1);
+}
+
+// public methods
+
 void glTF::loadVertices(const unsigned char* data, int size, vector<PBRShader::Vertex>& verts, vector<uint32_t> &indexBuffer, string filename)
 {
 	Model model;
-	//loadModel(model, data, size, filename);
 	loadVertices(model, verts, indexBuffer);
 }
 
@@ -192,5 +248,7 @@ void glTF::load(const unsigned char* data, int size, MeshInfo* mesh, string file
 {
 	Model model;
 	loadModel(model, data, size, mesh, filename);
+	validateModel(model);
 	loadVertices(model, mesh->vertices, mesh->indices);
+	prepareTextures(model, mesh);
 }

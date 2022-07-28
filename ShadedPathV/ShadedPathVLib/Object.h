@@ -12,6 +12,8 @@ struct MeshInfo
 	vector<uint32_t> indices;
 	vector<ktxTexture*> textureParseInfo;
 	vector<TextureInfo*> textureInfos; // we check for max size in 
+	// named accessors for textures in above vector:
+	TextureInfo* baseColorTexture = nullptr;
 
 	// GPU data:
 	VkBuffer vertexBuffer = nullptr;
