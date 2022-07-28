@@ -182,42 +182,70 @@ void glTF::loadVertices(tinygltf::Model& model, vector<PBRShader::Vertex>& verts
 	}
 }
 
-void setTextureData(tinygltf::Model& model, MeshInfo* mesh, string type) {
-	::TextureInfo** texAdr = nullptr;
-	if (glTF::BASE_COLOR_TEXTURE.compare(type) == 0) {
-		texAdr = &mesh->baseColorTexture;
-	} else {
-		//Error("unexpected texture type encountered");
-		Log("unexpected texture type encountered" << endl);
-	}
-	auto& mat = model.materials[0];
-	if (mat.values.find(type) != mat.values.end()) {
-		//*texAdr = mesh->textureInfos[mat.values["baseColorTexture"].TextureIndex()];
-		int coordsIndex = mat.values["baseColorTexture"].TextureTexCoord();
-		Log("coord index " << coordsIndex << endl);
-	}
-}
-
+//void setTextureData(tinygltf::Model& model, MeshInfo* mesh, string type) {
+//	::TextureInfo** texAdr = nullptr;
+//	if (glTF::BASE_COLOR_TEXTURE.compare(type) == 0) {
+//		texAdr = &mesh->baseColorTexture;
+//	} else {
+//		//Error("unexpected texture type encountered");
+//		Log("unexpected texture type encountered" << endl);
+//	}
+//	auto& mat = model.materials[0];
+//	if (mat.values.find(type) != mat.values.end()) {
+//		//*texAdr = mesh->textureInfos[mat.values["baseColorTexture"].TextureIndex()];
+//		int coordsIndex = mat.values["baseColorTexture"].TextureTexCoord();
+//		Log("coord index " << coordsIndex << endl);
+//	}
+//}
+//
 void glTF::prepareTextures(tinygltf::Model& model, MeshInfo* mesh)
 {
-	// samplers
 	// make sure textures are already loded
 	assert(mesh->textureInfos.size() >= model.samplers.size());
 
 	auto& mat = model.materials[0]; // we only support one material per file
+	// assign textures to engine data:
+	auto baseColorTextureIndex = mat.pbrMetallicRoughness.baseColorTexture.index;
+	auto metallicRoughnessTextureIndex = mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
+	auto normalTextureIndex = mat.normalTexture.index;
+	auto occlusionTextureIndex = mat.occlusionTexture.index;
+	auto emissiveTextureIndex = mat.emissiveTexture.index;
+	if (baseColorTextureIndex >= 0) {
+		mesh->baseColorTexture = mesh->textureInfos[baseColorTextureIndex];
+	}
+	if (metallicRoughnessTextureIndex >= 0) {
+		mesh->metallicRoughnessTexture = mesh->textureInfos[metallicRoughnessTextureIndex];
+	}
+	if (normalTextureIndex >= 0) {
+		mesh->normalTexture = mesh->textureInfos[normalTextureIndex];
+	}
+	if (occlusionTextureIndex >= 0) {
+		mesh->occlusionTexture = mesh->textureInfos[occlusionTextureIndex];
+	}
+	if (emissiveTextureIndex >= 0) {
+		mesh->emissiveTexture = mesh->textureInfos[emissiveTextureIndex];
+	}
+
 	// iterate textures in material.values and material.additionalValues:
-	for (auto& texture : mat.values) {
-		Log("found texture: " << texture.first.c_str() << endl);
-	}
-	for (auto& texture : mat.additionalValues) {
-		Log("found texture: " << texture.first.c_str() << endl);
-	}
+	// material.values and material.additionalValues are deprecated
+	//for (auto& texture : mat.values) {
+	//	auto index = texture.second.TextureIndex();
+	//	auto coordIndex = texture.second.TextureTexCoord();
+	//	Log("found texture: " << texture.first.c_str() <<  " index " << index  << " coord index " << coordIndex << endl);
+	//}
+	//for (auto& texture : mat.additionalValues) {
+	//	auto index = texture.second.TextureIndex();
+	//	auto coordIndex = texture.second.TextureTexCoord();
+	//	Log("found texture: " << texture.first.c_str() << " index " << index << " coord index " << coordIndex << endl);
+	//}
 
 	// we have already parsed all gltf images in mesh->textureInfos[]
 	// go through them and fill proper members
-	for (size_t i = 0; i < mesh->textureInfos.size(); i++) {
-		setTextureData(model, mesh, BASE_COLOR_TEXTURE);
-	}
+	//for (size_t i = 0; i < mesh->textureInfos.size(); i++) {
+	//	setTextureData(model, mesh, BASE_COLOR_TEXTURE);
+	//}
+
+	// samplers
 	for (tinygltf::Sampler smpl : model.samplers) {
 		Log("sampler: " << smpl.name.c_str() << endl);
 		//vkglTF::TextureSampler sampler{};

@@ -11,9 +11,13 @@ struct MeshInfo
 	vector<PBRShader::Vertex> vertices;
 	vector<uint32_t> indices;
 	vector<ktxTexture*> textureParseInfo;
-	vector<TextureInfo*> textureInfos; // we check for max size in 
+	vector<::TextureInfo*> textureInfos; // we check for max size in 
 	// named accessors for textures in above vector:
-	TextureInfo* baseColorTexture = nullptr;
+	::TextureInfo* baseColorTexture = nullptr;
+	::TextureInfo* metallicRoughnessTexture = nullptr;
+	::TextureInfo* normalTexture = nullptr;
+	::TextureInfo* occlusionTexture = nullptr;
+	::TextureInfo* emissiveTexture = nullptr;
 
 	// GPU data:
 	VkBuffer vertexBuffer = nullptr;
