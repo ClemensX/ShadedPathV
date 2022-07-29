@@ -57,7 +57,7 @@ void MeshStore::loadMeshWireframe(string filename, string id, vector<LineDef> &l
 	string fileAndPath = obj->filename;
 	vector<PBRShader::Vertex> vertices;
 	vector<uint32_t> indexBuffer;
-	gltf.loadVertices((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), vertices, indexBuffer, fileAndPath);
+	gltf.loadVertices((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), obj, vertices, indexBuffer, fileAndPath);
 	if (vertices.size() > 0) {
 		for (uint32_t i = 0; i < indexBuffer.size(); i += 3) {
 			// triangle i --> i+1 --> i+2

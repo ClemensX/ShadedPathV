@@ -14,7 +14,7 @@ public:
 
 	void init(ShadedPathEngine* e);
 	// only load vertex and index info from model. Useful for wireframe rendering
-	void loadVertices(const unsigned char* data, int size, vector<PBRShader::Vertex>& verts, vector<uint32_t>& indexBuffer, string filename);
+	void loadVertices(const unsigned char* data, int size, MeshInfo* mesh, vector<PBRShader::Vertex>& verts, vector<uint32_t>& indexBuffer, string filename);
 	// load model and prepare for PBR rendering
 	void load(const unsigned char* data, int size, MeshInfo *mesh, string filename);
 	// used for hook into tinygltf image loading:
@@ -27,11 +27,11 @@ private:
 	void loadModel(tinygltf::Model& model, const unsigned char* data, int size, MeshInfo* mesh, string filename);
 	// copy model vertices and indices into vectors
 	// index buffer will be 32 bit wide in all cases (VK_INDEX_TYPE_UINT32)
-	void loadVertices(tinygltf::Model& model, vector<PBRShader::Vertex>& verts, vector<uint32_t>& indexBuffer);
+	void loadVertices(tinygltf::Model& model, MeshInfo* mesh, vector<PBRShader::Vertex>& verts, vector<uint32_t>& indexBuffer);
 	// assign textures to their proper PBR members in mesh and read or create texture samplers
 	void prepareTextures(tinygltf::Model& model, MeshInfo* mesh);
 	// validate that gltf is within our parsable features
-	void validateModel(tinygltf::Model& model);
+	void validateModel(tinygltf::Model& model, MeshInfo* mesh);
 	ShadedPathEngine* engine = nullptr;
 
 	VkSamplerAddressMode getVkWrapMode(int32_t wrapMode)

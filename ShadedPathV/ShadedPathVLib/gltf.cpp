@@ -84,17 +84,19 @@ void glTF::loadModel(Model &model, const unsigned char* data, int size, MeshInfo
 	return;
 }
 
-void glTF::loadVertices(tinygltf::Model& model, vector<PBRShader::Vertex>& verts, vector<uint32_t>& indexBuffer)
+void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, vector<PBRShader::Vertex>& verts, vector<uint32_t>& indexBuffer)
 {
+	assert(mesh->gltfMesh != nullptr);
 	// should be sized of passed in vectors:
 	uint32_t indexStart = static_cast<uint32_t>(indexBuffer.size());
 	uint32_t vertexStart = static_cast<uint32_t>(verts.size());
 
-	// parse vertices, indexes:
+	tinygltf::Material* mat = static_cast<tinygltf::Material*>(mesh->gltfMesh);
+		// parse vertices, indexes:
 	if (model.meshes.size() > 0) {
-		const tinygltf::Mesh mesh = model.meshes[0];
-		if (mesh.primitives.size() > 0) {
-			const tinygltf::Primitive& primitive = mesh.primitives[0];
+		const tinygltf::Mesh gltfMesh = model.meshes[0];
+		if (gltfMesh.primitives.size() > 0) {
+			const tinygltf::Primitive& primitive = gltfMesh.primitives[0];
 			bool hasIndices = primitive.indices > -1;
 			if (!hasIndices) {
 				Error("Cannot parse mesh without indices");
@@ -102,14 +104,6 @@ void glTF::loadVertices(tinygltf::Model& model, vector<PBRShader::Vertex>& verts
 			// assert all the content we rely on:
 			assert(primitive.attributes.find("POSITION") != primitive.attributes.end());
 			assert(primitive.attributes.find("TEXCOORD_0") != primitive.attributes.end());
-
-			// base texture 
-			const float* bufferTexCoordSet0 = nullptr;
-			const tinygltf::Accessor& uvAccessor = model.accessors[primitive.attributes.find("TEXCOORD_0")->second];
-			const tinygltf::BufferView& uvView = model.bufferViews[uvAccessor.bufferView];
-			bufferTexCoordSet0 = reinterpret_cast<const float*>(&(model.buffers[uvView.buffer].data[uvAccessor.byteOffset + uvView.byteOffset]));
-			int uv0ByteStride = uvAccessor.ByteStride(uvView) ? (uvAccessor.ByteStride(uvView) / sizeof(float)) : tinygltf::GetNumComponentsInType(TINYGLTF_TYPE_VEC2);
-
 
 			// parse vertices
 			const float* bufferPos = nullptr;
@@ -133,7 +127,11 @@ void glTF::loadVertices(tinygltf::Model& model, vector<PBRShader::Vertex>& verts
 				size_t pos = v * posByteStride;
 				PBRShader::Vertex vert;
 				vert.pos = vec3(bufferPos[pos], bufferPos[pos + 1], bufferPos[pos + 2]);
-				vert.uv0 = vec2(bufferTexCoordSet0[v * uv0ByteStride], bufferTexCoordSet0[v * uv0ByteStride + 1]);
+				if (mesh->baseColorTexture) {
+					const float* coordDataPtr = mesh->baseColorTexture->gltfTexCoordData;
+					int stride = mesh->baseColorTexture->gltfUVByteStride;
+					vert.uv0 = vec2(coordDataPtr[v * stride], coordDataPtr[v * stride + 1]);
+				}
 				verts.push_back(vert);
 				//verts.push_back(vert2);
 				//Log("vert " << vert.x << endl);
@@ -198,32 +196,56 @@ void glTF::loadVertices(tinygltf::Model& model, vector<PBRShader::Vertex>& verts
 //	}
 //}
 //
+
+// determine data pointer and stride for gltf texture and store in our TextureInfo
+void getUVCoordinates(tinygltf::Model& model, tinygltf::Primitive& primitive, ::TextureInfo* texInfo, string selector) {
+	const tinygltf::Accessor& uvAccessor = model.accessors[primitive.attributes.find(selector)->second];
+	const tinygltf::BufferView& uvView = model.bufferViews[uvAccessor.bufferView];
+	texInfo->gltfTexCoordData = reinterpret_cast<const float*>(&(model.buffers[uvView.buffer].data[uvAccessor.byteOffset + uvView.byteOffset]));
+	texInfo->gltfUVByteStride = uvAccessor.ByteStride(uvView) ? (uvAccessor.ByteStride(uvView) / sizeof(float)) : tinygltf::GetNumComponentsInType(TINYGLTF_TYPE_VEC2);
+}
+
+// determine data pointer and stride for gltf texture and store in our TextureInfo
+void getTextureUVCoordinates(tinygltf::Model& model, tinygltf::Primitive& primitive, ::TextureInfo* texInfo, int texCoord) {
+	assert(texCoord >= 0);
+	string texCoordSelector = string("TEXCOORD_") + to_string(texCoord);
+	getUVCoordinates(model, primitive, texInfo, texCoordSelector);
+}
+
 void glTF::prepareTextures(tinygltf::Model& model, MeshInfo* mesh)
 {
 	// make sure textures are already loded
 	assert(mesh->textureInfos.size() >= model.samplers.size());
 
 	auto& mat = model.materials[0]; // we only support one material per file
+	auto& primitive = model.meshes[0].primitives[0];
 	// assign textures to engine data:
 	auto baseColorTextureIndex = mat.pbrMetallicRoughness.baseColorTexture.index;
 	auto metallicRoughnessTextureIndex = mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
 	auto normalTextureIndex = mat.normalTexture.index;
 	auto occlusionTextureIndex = mat.occlusionTexture.index;
 	auto emissiveTextureIndex = mat.emissiveTexture.index;
+
+	// texture UV coords are likely the same, but we parse their mem location and stride for all textures anyway:
 	if (baseColorTextureIndex >= 0) {
 		mesh->baseColorTexture = mesh->textureInfos[baseColorTextureIndex];
+		getTextureUVCoordinates(model, primitive, mesh->baseColorTexture, mat.pbrMetallicRoughness.baseColorTexture.texCoord);
 	}
 	if (metallicRoughnessTextureIndex >= 0) {
 		mesh->metallicRoughnessTexture = mesh->textureInfos[metallicRoughnessTextureIndex];
+		getTextureUVCoordinates(model, primitive, mesh->metallicRoughnessTexture, mat.pbrMetallicRoughness.metallicRoughnessTexture.texCoord);
 	}
 	if (normalTextureIndex >= 0) {
 		mesh->normalTexture = mesh->textureInfos[normalTextureIndex];
+		getTextureUVCoordinates(model, primitive, mesh->normalTexture, mat.normalTexture.texCoord);
 	}
 	if (occlusionTextureIndex >= 0) {
 		mesh->occlusionTexture = mesh->textureInfos[occlusionTextureIndex];
+		getTextureUVCoordinates(model, primitive, mesh->occlusionTexture, mat.occlusionTexture.texCoord);
 	}
 	if (emissiveTextureIndex >= 0) {
 		mesh->emissiveTexture = mesh->textureInfos[emissiveTextureIndex];
+		getTextureUVCoordinates(model, primitive, mesh->occlusionTexture, mat.emissiveTexture.texCoord);
 	}
 
 	// iterate textures in material.values and material.additionalValues:
@@ -258,25 +280,27 @@ void glTF::prepareTextures(tinygltf::Model& model, MeshInfo* mesh)
 	}
 }
 
-void glTF::validateModel(tinygltf::Model& model)
+void glTF::validateModel(tinygltf::Model& model, MeshInfo* mesh)
 {
 	assert(model.materials.size() == 1);
 	assert(model.meshes.size() == 1);
+	// link back from our mesh to gltf mesh:
+	mesh->gltfMesh = &model.meshes[0];
 }
 
 // public methods
 
-void glTF::loadVertices(const unsigned char* data, int size, vector<PBRShader::Vertex>& verts, vector<uint32_t> &indexBuffer, string filename)
+void glTF::loadVertices(const unsigned char* data, int size, MeshInfo* mesh, vector<PBRShader::Vertex>& verts, vector<uint32_t> &indexBuffer, string filename)
 {
 	Model model;
-	loadVertices(model, verts, indexBuffer);
+	loadVertices(model, mesh, verts, indexBuffer);
 }
 
 void glTF::load(const unsigned char* data, int size, MeshInfo* mesh, string filename)
 {
 	Model model;
 	loadModel(model, data, size, mesh, filename);
-	validateModel(model);
-	loadVertices(model, mesh->vertices, mesh->indices);
+	validateModel(model, mesh);
 	prepareTextures(model, mesh);
+	loadVertices(model, mesh, mesh->vertices, mesh->indices);
 }
