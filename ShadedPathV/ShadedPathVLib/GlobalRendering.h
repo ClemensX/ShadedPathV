@@ -3,6 +3,9 @@
 // forward
 struct ShaderState;
 
+// #undefine for disabling the debug extension
+#define ENABLE_DEBUG_MARKER_EXTENSION
+
 struct QueueFamilyIndices {
 	optional<uint32_t> graphicsFamily;
 	optional<uint32_t> presentFamily;
@@ -47,6 +50,12 @@ public:
 	// list device and instance extensions
 	static const bool USE_PROFILE_DYN_RENDERING = false;
 
+	// flag for debug marker extension used
+#if defined(ENABLE_DEBUG_MARKER_EXTENSION)
+	static const bool DEBUG_MARKER_EXTENSION = true;
+#else
+	static const bool DEBUG_MARKER_EXTENSION = false;
+#endif
 	// list device and instance extensions
 	static const bool LIST_EXTENSIONS = false;
 
@@ -118,7 +127,9 @@ private:
 	vector<const char*> deviceExtensions = {
 		//VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
 		//VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
+#if defined(ENABLE_DEBUG_MARKER_EXTENSION)
 		VK_EXT_DEBUG_MARKER_EXTENSION_NAME
+#endif
 	};
 
 	void gatherDeviceExtensions();

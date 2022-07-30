@@ -106,7 +106,9 @@ std::vector<const char*> GlobalRendering::getRequiredExtensions() {
     //extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     //extensions.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     //extensions.push_back(VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME);
-    extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+    if (DEBUG_MARKER_EXTENSION) {
+        extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+    }
 
     Log("requested Vulkan instance extensions:" << endl)
         Util::printCStringList(extensions);
@@ -308,6 +310,9 @@ void GlobalRendering::createLogicalDevice()
             engine.vr.initVulkanCreateDevice(createInfo);
         } else {
             if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
+                if (DEBUG_MARKER_EXTENSION) {
+                    Error("Enabled VK_EXT_debug_marker needs Vulkan Configurator running. Did you start it ? ");
+                }
                 Error("Device Creation failed.");
             }
         }
