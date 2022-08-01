@@ -190,6 +190,7 @@
     <ClInclude Include="DeviceCoordApp.h" />
     <ClInclude Include="Files.h" />
     <ClInclude Include="GameTime.h" />
+    <ClInclude Include="GeneratedTexturesApp.h" />
     <ClInclude Include="GlobalRendering.h" />
     <ClInclude Include="gltf.h" />
     <ClInclude Include="gltfObjectsApp.h" />
@@ -231,6 +232,7 @@
     <ClCompile Include="DeviceCoordApp.cpp" />
     <ClCompile Include="Files.cpp" />
     <ClCompile Include="GameTime.cpp" />
+    <ClCompile Include="GeneratedTexturesApp.cpp" />
     <ClCompile Include="GlobalRendering.cpp" />
     <ClCompile Include="gltf.cpp" />
     <ClCompile Include="gltfObjectsApp.cpp" />

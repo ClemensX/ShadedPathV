@@ -14,6 +14,7 @@ public:
 		glm::mat4 view;
 		glm::mat4 proj;
 		float farFactor; // bloat factor for skybox cube
+		bool outside; // make upside down for outside view
 	};
 
 	static VkVertexInputBindingDescription getBindingDescription() {
@@ -52,7 +53,8 @@ public:
 	void initialUpload();
 
 	// per frame update of UBOs / MVPs
-	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2);
+	// outsideMode is for rendering a cube with cubemaps projected to its 6 sides
+	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2, bool outsideMode = false);
 
 	// set skybox cube texture id. The coresponding cube texture has do be loaded before calling this.
 	void setSkybox(string texID);

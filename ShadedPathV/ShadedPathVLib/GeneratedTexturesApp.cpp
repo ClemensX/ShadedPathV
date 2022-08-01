@@ -1,12 +1,12 @@
 #include "pch.h"
 
 
-void gltfObjectsApp::run()
+void GeneratedTexturesApp::run()
 {
     Log("App started" << endl);
     {
         // camera initialization
-        CameraPositioner_FirstPerson positioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        CameraPositioner_FirstPerson positioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         positioner.setMaxSpeed(0.1f);
         Camera camera(positioner);
         this->camera = &camera;
@@ -15,7 +15,7 @@ void gltfObjectsApp::run()
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
         //engine.enableVR();
-        engine.enableStereo();
+        //engine.enableStereo();
         engine.enableStereoPresentation();
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
@@ -24,7 +24,7 @@ void gltfObjectsApp::run()
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
         int win_width = 480;//480;// 960;//1800;// 800;//3700;
-        engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF objects");
+        engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Review generated Textures");
         camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
 
         engine.setFramesInFlight(2);
@@ -61,7 +61,7 @@ void gltfObjectsApp::run()
     Log("LineApp ended" << endl);
 }
 
-void gltfObjectsApp::init() {
+void GeneratedTexturesApp::init() {
     // add some lines:
     float aspectRatio = engine.getAspect();
     float plus = 0.0f;
@@ -106,7 +106,7 @@ void gltfObjectsApp::init() {
     //engine.textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
     engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
     engine.shaders.cubeShader.setSkybox("skyboxTexture");
-    engine.shaders.cubeShader.setFarPlane(2000.0f);
+    engine.shaders.cubeShader.setFarPlane(1.0f); // cube around center
 
 
     engine.shaders.lineShader.initialUpload();
@@ -114,12 +114,12 @@ void gltfObjectsApp::init() {
     engine.shaders.cubeShader.initialUpload();
 }
 
-void gltfObjectsApp::drawFrame(ThreadResources& tr) {
+void GeneratedTexturesApp::drawFrame(ThreadResources& tr) {
     updatePerFrame(tr);
     engine.shaders.submitFrame(tr);
 }
 
-void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
+void GeneratedTexturesApp::updatePerFrame(ThreadResources& tr)
 {
     static double old_seconds = 0.0f;
     double seconds = engine.gameTime.getTimeSeconds();
@@ -169,11 +169,11 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
     CubeShader::UniformBufferObject cubo{};
     cubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     cubo.view = camera->getViewMatrixAtCameraPos();
-    //cubo.view = lubo.view; // uncomment to have stationary cube, not centered at camera
+    cubo.view = lubo.view; // uncomment to have stationary cube, not centered at camera
     cubo.proj = lubo.proj;
     auto cubo2 = cubo;
     cubo2.view = cubo.view;
-    engine.shaders.cubeShader.uploadToGPU(tr, cubo, cubo2);
+    engine.shaders.cubeShader.uploadToGPU(tr, cubo, cubo2, true);
  
     // pbr
     PBRShader::UniformBufferObject pubo{};
@@ -213,7 +213,7 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
     }
 }
 
-void gltfObjectsApp::handleInput(InputState& inputState)
+void GeneratedTexturesApp::handleInput(InputState& inputState)
 {
     if (inputState.mouseButtonEvent) {
         //Log("mouse button pressed (left/right): " << inputState.pressedLeft << " / " << inputState.pressedRight << endl);

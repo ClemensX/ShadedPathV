@@ -285,9 +285,10 @@ void CubeShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResourc
 	vkCmdDraw(commandBuffer, 36, 1, 0, 0);
 }
 
-void CubeShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
+void CubeShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2, bool outsideMode) {
 	auto& str = tr.cubeResources; // shortcut to cube resources
 	ubo2.farFactor = ubo.farFactor = bloatFactor;
+	ubo2.outside = ubo.outside = outsideMode;
 	// copy ubo to GPU:
 	void* data;
 	vkMapMemory(device, str.uniformBufferMemory, 0, sizeof(ubo), 0, &data);

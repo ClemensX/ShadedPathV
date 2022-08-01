@@ -150,6 +150,9 @@
     <ClInclude Include="CubeShader.h">
       <Filter>ShaderClasses</Filter>
     </ClInclude>
+    <ClInclude Include="GeneratedTexturesApp.h">
+      <Filter>Apps</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -253,6 +256,9 @@
     </ClCompile>
     <ClCompile Include="CubeShader.cpp">
       <Filter>ShaderClasses</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedTexturesApp.cpp">
+      <Filter>Apps</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

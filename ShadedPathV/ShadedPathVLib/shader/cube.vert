@@ -7,6 +7,7 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 view;
     mat4 proj;
 	float bloat;
+	bool outside;
 } ubo;
 
 layout(location = 0) in vec3 inPosition;
@@ -39,22 +40,6 @@ const int indices[36] = int[36](
 	3, 6, 2, 6, 3, 7
 );
 
-//const int indices[36] = int[36]( // use for rendering outside of cube
-//	// front
-//	0, 1, 2, 2, 3, 0,
-//	// right
-//	1, 5, 6, 6, 2, 1,
-//	// back
-//	7, 6, 5, 5, 4, 7,
-//	// left
-//	4, 0, 3, 3, 7, 4,
-//	// bottom
-//	4, 5, 1, 1, 0, 4,
-//	// top
-//	3, 2, 6, 6, 7, 3
-//);
-//
-
 void main()
 {
     //debugPrintfEXT("ubo.model 0 0 is %f\n", ubo.model[0][0]);
@@ -66,5 +51,10 @@ void main()
 	gl_Position = ubo.proj * ubo.view * vec4(ubo.bloat * pos[idx], 1.0);
 	//if (gl_VertexIndex == 0) debugPrintfEXT("final device coord: %f %f %f\n", gl_Position.x, gl_Position.y, gl_Position.z);
 	//if (gl_VertexIndex == 0) debugPrintfEXT("bloat: %f\n", ubo.bloat);
-	dir = pos[idx].xyz;
+	vec3 updown = pos[idx].xyz;
+	if (ubo.outside) {
+		updown.y *= -1;
+	}
+	dir = updown.xyz;
+	//dir = pos[idx].xyz;
 }

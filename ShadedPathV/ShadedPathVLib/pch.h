@@ -266,6 +266,7 @@ inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* ori
 #include "DeviceCoordApp.h"
 #include "LineApp.h"
 #include "gltfObjectsApp.h"
+#include "GeneratedTexturesApp.h"
 
 
 #endif //PCH_H
