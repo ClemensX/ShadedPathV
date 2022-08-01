@@ -585,6 +585,20 @@ void GlobalRendering::createImage(uint32_t width, uint32_t height, uint32_t mipL
     vkBindImageMemory(device, image, imageMemory, 0);
 }
 
+void GlobalRendering::createCubeMapFrom2dTexture(string textureName2d, string textureNameCube)
+{
+    FrameBufferAttachment attachment{};
+    TextureInfo* twoD = engine.textureStore.getTexture(textureName2d);
+    //createImage(twoD->vulkanTexture.width, twoD->vulkanTexture.height, 2, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
+    //    VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, attachment.image, attachment.memory);
+    //createImage(twoD->vulkanTexture.width, twoD->vulkanTexture.height, 2, VK_SAMPLE_COUNT_1_BIT, twoD->vulkanTexture.imageFormat, VK_IMAGE_TILING_LINEAR,
+    //    VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, attachment.image, attachment.memory);
+
+    createImage(twoD->vulkanTexture.width, twoD->vulkanTexture.height, twoD->vulkanTexture.levelCount, VK_SAMPLE_COUNT_1_BIT, twoD->vulkanTexture.imageFormat, VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        attachment.image, attachment.memory);
+}
+
 void GlobalRendering::createViewportState(ShaderState& shaderState) {
     VkViewport viewport{};
     viewport.x = 0.0f;

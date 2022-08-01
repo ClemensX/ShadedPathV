@@ -304,6 +304,9 @@ void CubeShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 void CubeShader::setSkybox(string texID)
 {
 	skybox = engine->textureStore.getTexture(texID);
+	if (skybox->vulkanTexture.viewType != VK_IMAGE_VIEW_TYPE_CUBE) {
+		Error("Can only use textures with VK_IMAGE_VIEW_TYPE_CUBE for skybox / cube map");
+	}
 }
 
 void CubeShader::createSkyboxTextureDescriptors()

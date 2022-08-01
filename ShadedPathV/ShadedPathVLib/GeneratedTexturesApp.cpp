@@ -104,8 +104,10 @@ void GeneratedTexturesApp::init() {
 
     // load skybox cube texture
     //engine.textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
-    engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
-    engine.shaders.cubeShader.setSkybox("skyboxTexture");
+    //engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
+    engine.textureStore.loadTexture("debug.ktx", "2dTexture");
+    engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
+    engine.shaders.cubeShader.setSkybox("2dTextureCube");
     engine.shaders.cubeShader.setFarPlane(1.0f); // cube around center
 
 
