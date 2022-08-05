@@ -550,7 +550,8 @@ VkImageView GlobalRendering::createImageViewCube(VkImage image, VkFormat format,
     return imageView;
 }
 
-void GlobalRendering::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
+void GlobalRendering::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
+                                  VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, uint32_t layers) {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -558,13 +559,19 @@ void GlobalRendering::createImage(uint32_t width, uint32_t height, uint32_t mipL
     imageInfo.extent.height = height;
     imageInfo.extent.depth = 1;
     imageInfo.mipLevels = mipLevels;
-    imageInfo.arrayLayers = 1;
+    imageInfo.arrayLayers = layers;
     imageInfo.format = format;
     imageInfo.tiling = tiling;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageInfo.usage = usage;
     imageInfo.samples = numSamples;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    if (layers == 6) {
+        imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    }
+    else {
+        imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    }
 
     if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
         Error("failed to create image!");
@@ -589,14 +596,99 @@ void GlobalRendering::createCubeMapFrom2dTexture(string textureName2d, string te
 {
     FrameBufferAttachment attachment{};
     TextureInfo* twoD = engine.textureStore.getTexture(textureName2d);
-    //createImage(twoD->vulkanTexture.width, twoD->vulkanTexture.height, 2, VK_SAMPLE_COUNT_1_BIT, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL,
-    //    VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, attachment.image, attachment.memory);
-    //createImage(twoD->vulkanTexture.width, twoD->vulkanTexture.height, 2, VK_SAMPLE_COUNT_1_BIT, twoD->vulkanTexture.imageFormat, VK_IMAGE_TILING_LINEAR,
-    //    VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, attachment.image, attachment.memory);
 
-    createImage(twoD->vulkanTexture.width, twoD->vulkanTexture.height, twoD->vulkanTexture.levelCount, VK_SAMPLE_COUNT_1_BIT, twoD->vulkanTexture.imageFormat, VK_IMAGE_TILING_OPTIMAL,
+    createImageCube(twoD->vulkanTexture.width, twoD->vulkanTexture.height, twoD->vulkanTexture.levelCount, VK_SAMPLE_COUNT_1_BIT, twoD->vulkanTexture.imageFormat, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         attachment.image, attachment.memory);
+    auto cmd = beginSingleTimeCommands();
+
+    auto subresourceRangeSrc = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, twoD->vulkanTexture.levelCount, 0, 1 };
+    auto subresourceRangeDest = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, twoD->vulkanTexture.levelCount, 0, 6 };
+
+    // Transition destination image to transfer destination layout
+    VkImageMemoryBarrier dstBarrier{};
+    dstBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    dstBarrier.srcAccessMask = 0;
+    dstBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    dstBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    dstBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    dstBarrier.image = attachment.image;
+    dstBarrier.subresourceRange = subresourceRangeDest;
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0, 0, nullptr, 0, nullptr, 1, &dstBarrier);
+
+    // Transition source image from LAYOUT_SHADER_READ_ONLY_OPTIMAL to transfer destination layout
+    VkImageMemoryBarrier srcBarrier{};
+    srcBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    srcBarrier.srcAccessMask = 0;
+    srcBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    srcBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    srcBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    srcBarrier.image = twoD->vulkanTexture.image;
+    srcBarrier.subresourceRange = subresourceRangeSrc;
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0, 0, nullptr, 0, nullptr, 1, &srcBarrier);
+
+    VkImageCopy imageCopyRegion{};
+    imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageCopyRegion.srcSubresource.layerCount = 1;
+    imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageCopyRegion.dstSubresource.layerCount = 1;
+    imageCopyRegion.extent.depth = 1;
+
+    // copy all layers
+    for (uint32_t layer = 0; layer < 6; layer++) {
+        imageCopyRegion.dstSubresource.baseArrayLayer = layer;
+        // copy all mips:
+        for (uint32_t mip = 0; mip < twoD->vulkanTexture.levelCount; mip++) {
+            imageCopyRegion.srcSubresource.mipLevel = mip;
+            imageCopyRegion.dstSubresource.mipLevel = mip;
+            imageCopyRegion.extent.width = twoD->vulkanTexture.width >> mip;
+            imageCopyRegion.extent.height = twoD->vulkanTexture.height >> mip;
+            vkCmdCopyImage(
+                cmd,
+                twoD->vulkanTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                attachment.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1,
+                &imageCopyRegion);
+
+        }
+    }
+    // Transition destination image to LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    dstBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    dstBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    dstBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    dstBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    dstBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    dstBarrier.image = attachment.image;
+    dstBarrier.subresourceRange = subresourceRangeDest;
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0, 0, nullptr, 0, nullptr, 1, &dstBarrier);
+
+    // Transition source image back to LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    srcBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    srcBarrier.srcAccessMask = 0;
+    srcBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    srcBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    srcBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    srcBarrier.image = twoD->vulkanTexture.image;
+    srcBarrier.subresourceRange = subresourceRangeSrc;
+    vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0, 0, nullptr, 0, nullptr, 1, &srcBarrier);
+
+    endSingleTimeCommands(cmd);
+
+    ::TextureInfo *texture = engine.textureStore.createTextureSlot(textureNameCube);
+    // copy base ktx texture fields and the adapt for new cube map:
+    texture->vulkanTexture = twoD->vulkanTexture;
+    texture->vulkanTexture.deviceMemory = nullptr;
+    texture->vulkanTexture.layerCount = 6;
+    texture->vulkanTexture.image = attachment.image;
+    texture->vulkanTexture.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+    texture->vulkanTexture.deviceMemory = attachment.memory;
+    texture->isKtxCreated = false;
+    texture->imageView = createImageViewCube(texture->vulkanTexture.image, texture->vulkanTexture.imageFormat, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
+    texture->available = true;
 }
 
 void GlobalRendering::createViewportState(ShaderState& shaderState) {

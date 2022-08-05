@@ -22,6 +22,7 @@ TextureInfo* TextureStore::getTexture(string id)
 		ret->available = true;
 	}
 	else {
+		Error("Requested texture not available");
 		ret->available = false;
 	}
 	return ret;
@@ -83,7 +84,7 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 		auto format = ktxTexture_GetVkFormat(kTexture);
 		// we should have VK_FORMAT_BC7_UNORM_BLOCK = 145 or VK_FORMAT_BC7_SRGB_BLOCK = 146,
 		Log("format: " << format << endl);
-		auto ktxresult = ktxTexture2_VkUploadEx(t2, &vdi, &texture->vulkanTexture, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		auto ktxresult = ktxTexture2_VkUploadEx(t2, &vdi, &texture->vulkanTexture, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		if (ktxresult != KTX_SUCCESS) {
 			Log("ERROR: in ktxTexture2_VkUploadEx " << ktxresult);
 			Error("Could not upload texture to GPU ktxTexture2_VkUploadEx");
@@ -103,7 +104,7 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 		// KTX 1 handling
 		//auto format = ktxTexture_GetVkFormat(kTexture);
 		//Log("format: " << format << endl);
-		auto ktxresult = ktxTexture_VkUploadEx(kTexture, &vdi, &texture->vulkanTexture, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		auto ktxresult = ktxTexture_VkUploadEx(kTexture, &vdi, &texture->vulkanTexture, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		if (ktxresult != KTX_SUCCESS) {
 			Log("ERROR: in ktxTexture_VkUploadEx " << ktxresult);
 			Error("Could not upload texture to GPU ktxTexture_VkUploadEx");
@@ -115,7 +116,20 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 	ktxTexture_Destroy(kTexture);
 }
 
-TextureInfo* TextureStore::createTextureSlot(MeshInfo* mesh, int index)
+TextureInfo* TextureStore::createTextureSlot(string textureName)
+{
+	// make sure we do not already have this texture stored:
+	if (textures.find(textureName) != textures.end()) {
+		Error("texture already loded");
+	}
+	TextureInfo initialTexture;  // only used to initialize struct in texture store - do not access this after assignment to store
+	initialTexture.id = textureName;
+	textures[textureName] = initialTexture;
+	TextureInfo* texture = &textures[textureName];
+	return texture;
+}
+
+TextureInfo* TextureStore::createTextureSlotForMesh(MeshInfo* mesh, int index)
 {
 	stringstream idss;
 	assert(index < 10);
@@ -139,10 +153,17 @@ void TextureStore::destroyKTXIntermediate(ktxTexture* ktxTex)
 
 TextureStore::~TextureStore()
 {
+	auto& device = engine->global.device;
 	for (auto& tex : textures) {
-		if (tex.second.available) {
+		auto &ti = tex.second;
+		if (ti.available) {
 			vkDestroyImageView(engine->global.device, tex.second.imageView, nullptr);
-			ktxVulkanTexture_Destruct(&tex.second.vulkanTexture, engine->global.device, nullptr);
+			if (ti.isKtxCreated) {
+				ktxVulkanTexture_Destruct(&ti.vulkanTexture, engine->global.device, nullptr);
+			} else {
+				vkDestroyImage(device, ti.vulkanTexture.image, nullptr);
+				vkFreeMemory(device, ti.vulkanTexture.deviceMemory, nullptr);
+			}
 		}
 	}
 	ktxVulkanDeviceInfo_Destruct(&vdi);

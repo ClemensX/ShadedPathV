@@ -98,8 +98,14 @@ public:
 	// images
 	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 	VkImageView createImageViewCube(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
+	// create image and bound memory with default parameters - use layers == 6 for cube map
 	void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format,
-		VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
+		VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, uint32_t layers = 1);
+	// create cube image and bound memory with default parameters
+	void createImageCube(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format,
+		VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
+		createImage(width, height, mipLevels, numSamples, format, tiling, usage, properties, image, imageMemory, 6);
+	}
 	void createCubeMapFrom2dTexture(string textureName2d, string textureNameCube);
 
 	// fill in viewport and scissor and create VkPipelineViewportStateCreateInfo with them

@@ -36,7 +36,7 @@ bool LoadImageDataKTX(Image* image, const int image_idx, std::string* err,
 		userData->mesh->textureInfos.resize(image_idx + 1);
 	}
 	tvec[image_idx] = kTexture;
-	auto* texture = userData->engine->textureStore.createTextureSlot(userData->mesh, image_idx);
+	auto* texture = userData->engine->textureStore.createTextureSlotForMesh(userData->mesh, image_idx);
 	userData->engine->textureStore.createVulkanTextureFromKTKTexture(kTexture, texture);
 	userData->mesh->textureInfos[image_idx] = texture;
 	//userData->engine->textureStore.destroyKTXIntermediate(kTexture);
