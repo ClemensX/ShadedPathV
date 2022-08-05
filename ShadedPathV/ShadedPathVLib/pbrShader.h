@@ -6,6 +6,8 @@ class WorldObject;
 // pbr shader draws objects read from glTF files with PBR lighing
 class PBRShader : public ShaderBase {
 public:
+	// texture id for brdf lookup table:
+	string BRDFLUT_TEXTURE_ID = "brdflut";
 	// We have to set max number of objects, as dynamic uniform buffers have to be allocated (one entry for each object in a large buffer)
 	uint64_t MaxObjects = 1000;
 	struct Vertex {
@@ -74,6 +76,9 @@ public:
 	// upload of all objects to GPU - only valid before first render
 	void initialUpload();
 
+	// Generate a BRDF integration map storing roughness/NdotV as a look-up-table
+	void generateBRDFLUT();
+
 	// per frame update of UBOs / MVPs
 	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
 private:
@@ -89,6 +94,9 @@ private:
 	virtual void createDescriptorSetLayout() override;
 	// create descritor sets (one or more per render thread)
 	virtual void createDescriptorSets(ThreadResources& res) override;
+
+	// brdf lut data
+	VkSampler brdfSampler = nullptr;
 
 	// util methods
 public:

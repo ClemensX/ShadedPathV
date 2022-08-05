@@ -23,13 +23,13 @@ void GeneratedTexturesApp::run()
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 480;//480;// 960;//1800;// 800;//3700;
+        int win_width = 960;//480;// 960;//1800;// 800;//3700;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Review generated Textures");
         camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
 
         engine.setFramesInFlight(2);
         engine.registerApp(this);
-        engine.setThreadModeSingle();
+        //engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("gltfObjects");
@@ -106,14 +106,19 @@ void GeneratedTexturesApp::init() {
     //engine.textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
     //engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
     engine.textureStore.loadTexture("debug.ktx", "2dTexture");
-    engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
-    engine.shaders.cubeShader.setSkybox("2dTextureCube");
-    engine.shaders.cubeShader.setFarPlane(1.0f); // cube around center
 
+    // select texture by uncommenting:
+    //engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
+    //engine.global.createCubeMapFrom2dTexture("Knife1", "2dTextureCube");
+    engine.global.createCubeMapFrom2dTexture("WaterBottle2", "2dTextureCube");
+    engine.shaders.cubeShader.setFarPlane(1.0f); // cube around center
+    engine.shaders.cubeShader.setSkybox("2dTextureCube");
 
     engine.shaders.lineShader.initialUpload();
     engine.shaders.pbrShader.initialUpload();
     engine.shaders.cubeShader.initialUpload();
+
+    engine.shaders.pbrShader.generateBRDFLUT();
 }
 
 void GeneratedTexturesApp::drawFrame(ThreadResources& tr) {

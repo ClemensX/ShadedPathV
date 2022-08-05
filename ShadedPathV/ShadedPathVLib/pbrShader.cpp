@@ -406,6 +406,52 @@ PBRShader::DynamicUniformBufferObject* PBRShader::getAccessToModel(ThreadResourc
 	return (DynamicUniformBufferObject*)c_ptr;
 }
 
+void PBRShader::generateBRDFLUT()
+{
+	auto& global = engine->global;
+	auto& texStore = engine->textureStore;
+	const VkFormat format = VK_FORMAT_R16G16_SFLOAT;
+	const int32_t dim = 512;
+
+	// create entry in texture store:
+	FrameBufferAttachment attachment{};
+	auto ti = texStore.createTextureSlot(BRDFLUT_TEXTURE_ID);
+
+	//createImageCube(twoD->vulkanTexture.width, twoD->vulkanTexture.height, twoD->vulkanTexture.levelCount, VK_SAMPLE_COUNT_1_BIT, twoD->vulkanTexture.imageFormat, VK_IMAGE_TILING_OPTIMAL,
+	//	VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+	//	attachment.image, attachment.memory);
+	// create image and imageview:
+	global.createImage(dim, dim, 1, VK_SAMPLE_COUNT_1_BIT, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 0, attachment.image, attachment.memory);
+
+	ti->vulkanTexture.deviceMemory = nullptr;
+	ti->vulkanTexture.layerCount = 1;
+	ti->vulkanTexture.imageFormat = format;
+	ti->vulkanTexture.image = attachment.image;
+	ti->vulkanTexture.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+	ti->vulkanTexture.deviceMemory = attachment.memory;
+	ti->isKtxCreated = false;
+	ti->imageView = global.createImageView(ti->vulkanTexture.image, ti->vulkanTexture.imageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+
+	// Sampler
+	VkSamplerCreateInfo samplerCI{};
+	samplerCI.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerCI.magFilter = VK_FILTER_LINEAR;
+	samplerCI.minFilter = VK_FILTER_LINEAR;
+	samplerCI.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	samplerCI.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerCI.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerCI.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerCI.minLod = 0.0f;
+	samplerCI.maxLod = 1.0f;
+	samplerCI.maxAnisotropy = 1.0f;
+	samplerCI.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+	if (vkCreateSampler(device, &samplerCI, nullptr, &brdfSampler) != VK_SUCCESS) {
+		Error("failed to create brdflut sampler!");
+	}
+
+	ti->available = true;
+}
+
 PBRShader::~PBRShader()
 {
 	Log("PBRShader destructor\n");
@@ -417,6 +463,7 @@ PBRShader::~PBRShader()
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayoutForEachMesh, nullptr);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+	vkDestroySampler(device, brdfSampler, nullptr);
 }
 
 void PBRShader::destroyThreadResources(ThreadResources& tr)
