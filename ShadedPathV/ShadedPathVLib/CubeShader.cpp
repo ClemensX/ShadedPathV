@@ -44,8 +44,8 @@ void CubeShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	createRenderPassAndFramebuffer(tr, shaderState, str.renderPass, str.framebuffer, str.framebuffer2);
 
 	// create shader stage
-	auto vertShaderStageInfo = createVertexShaderCreateInfo(vertShaderModule);
-	auto fragShaderStageInfo = createFragmentShaderCreateInfo(fragShaderModule);
+	auto vertShaderStageInfo = engine->shaders.createVertexShaderCreateInfo(vertShaderModule);
+	auto fragShaderStageInfo = engine->shaders.createFragmentShaderCreateInfo(fragShaderModule);
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
 	// vertex input

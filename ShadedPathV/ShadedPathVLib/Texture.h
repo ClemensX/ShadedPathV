@@ -24,6 +24,8 @@ public:
 	// init texture store
 	void init(ShadedPathEngine* engine);
 	~TextureStore();
+	// texture id for brdf lookup table:
+	string BRDFLUT_TEXTURE_ID = "brdflut";
 	// load texture upload to GPU, textures are referenced via id string
 	void loadTexture(string filename, string id);
 	::TextureInfo* getTexture(string id);
@@ -37,6 +39,9 @@ public:
 	// only ktx files are allowed with mipmaps already created.
 	void createVulkanTextureFromKTKTexture(ktxTexture* ktxTexture, ::TextureInfo* textureInfo);
 	void destroyKTXIntermediate(ktxTexture* ktxTex);
+	// Generate a BRDF integration map storing roughness/NdotV as a look-up-table
+	// BRDF stands for Bidirectional Reflectance Distribution Function
+	void generateBRDFLUT();
 
 private:
 	unordered_map<string, ::TextureInfo> textures;

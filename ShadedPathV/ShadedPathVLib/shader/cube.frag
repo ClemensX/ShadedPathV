@@ -10,6 +10,10 @@ layout (binding=1) uniform samplerCube texture1;
 
 void main()
 {
+    vec3 dir2 = vec3(1.0, 1.0, 1.0);
+    //debugPrintfEXT("Cube dir: %f %f %f\n", dir.x, dir.y, dir.z);
+    //debugPrintfEXT("Cube col tex: %f %f %f\n", out_FragColor.x, out_FragColor.y, out_FragColor.z);
 	out_FragColor = texture(texture1, dir);
+    //out_FragColor = vec4( 1.0, 1.0, 1.0, 1.0);
     //debugPrintfEXT("Cube col: %f %f %f\n", out_FragColor.x, out_FragColor.y, out_FragColor.z);
 }

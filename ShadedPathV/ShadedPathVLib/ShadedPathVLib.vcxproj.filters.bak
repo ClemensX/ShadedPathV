@@ -286,11 +286,5 @@
     <CustomBuild Include="..\ShadedPathVLib\shader\pbr.frag">
       <Filter>Shader</Filter>
     </CustomBuild>
-    <CustomBuild Include="..\ShadedPathVLib\shader\genbrdflut.frag">
-      <Filter>Shader</Filter>
-    </CustomBuild>
-    <CustomBuild Include="..\ShadedPathVLib\shader\genbrdflut.vert">
-      <Filter>Shader</Filter>
-    </CustomBuild>
   </ItemGroup>
 </Project>

@@ -57,4 +57,6 @@ void main()
 	}
 	dir = updown.xyz;
 	//dir = pos[idx].xyz;
+	//debugPrintfEXT("  dir: %f %f %f\n", dir.x, dir.y, dir.z);
+
 }

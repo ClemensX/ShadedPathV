@@ -32,12 +32,16 @@ void SimpleApp::run()
         // engine initialization
         engine.init("SimpleApp");
 
+        ShaderState state;
+        //engine.shaders.pbrShader.init(engine, state);
+        engine.textureStore.generateBRDFLUT();
         // add shaders used in this app
         shaders
             .addShader(shaders.uiShader)
             .addShader(shaders.clearShader)
             .addShader(shaders.lineShader)
             .addShader(shaders.simpleShader)
+            //.addShader(shaders.pbrShader)
             ;
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         shaders.initActiveShaders();

@@ -12,8 +12,8 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
     Log("read vertex shader: " << file_buffer_vert.size() << endl);
     Log("read fragment shader: " << file_buffer_frag.size() << endl);
     // create shader modules
-    vertShaderModuleTriangle = createShaderModule(file_buffer_vert);
-    fragShaderModuleTriangle = createShaderModule(file_buffer_frag);
+    vertShaderModuleTriangle = engine.shaders.createShaderModule(file_buffer_vert);
+    fragShaderModuleTriangle = engine.shaders.createShaderModule(file_buffer_frag);
 
     ThemedTimer::getInstance()->start(TIMER_PART_BUFFER_COPY);
     // create vertex buffer
@@ -32,7 +32,8 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 	//engine.textureStore.loadTexture("debug.ktx", "debugTexture");
 	engine.textureStore.loadTexture("dump.ktx", "debugTexture");
 	//engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "debugTexture");
-	texture = engine.textureStore.getTexture("debugTexture");
+	//texture = engine.textureStore.getTexture("debugTexture");
+	texture = engine.textureStore.getTexture(engine.textureStore.BRDFLUT_TEXTURE_ID);
 
 	// descriptor pool
 	vector<VkDescriptorPoolSize> poolSizes;
@@ -54,8 +55,8 @@ void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	createRenderPassAndFramebuffer(tr, shaderState, str.renderPass, str.framebuffer, str.framebuffer2);
 
 	// create shader stage
-	auto vertShaderStageInfo = createVertexShaderCreateInfo(vertShaderModuleTriangle);
-	auto fragShaderStageInfo = createFragmentShaderCreateInfo(fragShaderModuleTriangle);
+	auto vertShaderStageInfo = engine->shaders.createVertexShaderCreateInfo(vertShaderModuleTriangle);
+	auto fragShaderStageInfo = engine->shaders.createFragmentShaderCreateInfo(fragShaderModuleTriangle);
 
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 

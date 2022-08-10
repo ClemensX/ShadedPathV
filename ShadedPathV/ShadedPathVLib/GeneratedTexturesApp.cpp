@@ -34,6 +34,8 @@ void GeneratedTexturesApp::run()
         // engine initialization
         engine.init("gltfObjects");
 
+        engine.textureStore.generateBRDFLUT();
+        //this_thread::sleep_for(chrono::milliseconds(3000));
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
@@ -107,10 +109,12 @@ void GeneratedTexturesApp::init() {
     //engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
     engine.textureStore.loadTexture("debug.ktx", "2dTexture");
 
+    //engine.textureStore.generateBRDFLUT();
     // select texture by uncommenting:
     //engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
     //engine.global.createCubeMapFrom2dTexture("Knife1", "2dTextureCube");
-    engine.global.createCubeMapFrom2dTexture("WaterBottle2", "2dTextureCube");
+    //engine.global.createCubeMapFrom2dTexture("WaterBottle2", "2dTextureCube");
+    engine.global.createCubeMapFrom2dTexture(engine.textureStore.BRDFLUT_TEXTURE_ID, "2dTextureCube");
     engine.shaders.cubeShader.setFarPlane(1.0f); // cube around center
     engine.shaders.cubeShader.setSkybox("2dTextureCube");
 
@@ -118,7 +122,6 @@ void GeneratedTexturesApp::init() {
     engine.shaders.pbrShader.initialUpload();
     engine.shaders.cubeShader.initialUpload();
 
-    engine.shaders.pbrShader.generateBRDFLUT();
 }
 
 void GeneratedTexturesApp::drawFrame(ThreadResources& tr) {
