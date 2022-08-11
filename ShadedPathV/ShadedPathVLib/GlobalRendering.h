@@ -4,7 +4,9 @@
 struct ShaderState;
 
 // #undefine for disabling the debug extension
+#if defined(DEBUG) | defined(_DEBUG)
 #define ENABLE_DEBUG_MARKER_EXTENSION
+#endif
 
 struct QueueFamilyIndices {
 	optional<uint32_t> graphicsFamily;
