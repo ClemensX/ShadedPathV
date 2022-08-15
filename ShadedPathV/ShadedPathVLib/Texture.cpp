@@ -162,7 +162,7 @@ void TextureStore::generateBRDFLUT()
 	//	VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 	//	attachment.image, attachment.memory);
 	// create image and imageview:
-	global.createImage(dim, dim, 1, VK_SAMPLE_COUNT_1_BIT, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 0, attachment.image, attachment.memory);
+	global.createImage(dim, dim, 1, VK_SAMPLE_COUNT_1_BIT, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | /*VK_IMAGE_USAGE_TRANSFER_DST_BIT | */ VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 0, attachment.image, attachment.memory);
 
 	ti->vulkanTexture.deviceMemory = nullptr;
 	ti->vulkanTexture.layerCount = 1;
@@ -400,7 +400,7 @@ void TextureStore::generateBRDFLUT()
 		vkCmdDraw(cmdBuf, 3, 1, 0, 0);
 	}
 	vkCmdEndRenderPass(cmdBuf);
-	global.endSingleTimeCommands(cmdBuf);
+	global.endSingleTimeCommands(cmdBuf, true);
 
 	vkDestroyPipeline(device, pipeline, nullptr);
 	vkDestroyPipelineLayout(device, pipelinelayout, nullptr);

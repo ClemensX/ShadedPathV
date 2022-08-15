@@ -90,6 +90,7 @@ public:
 	UIShader uiShader;
 	PBRShader pbrShader;
 	CubeShader cubeShader;
+	BillboardShader billboardShader;
 
 	// submit command buffers for current frame
 	void submitFrame(ThreadResources& tr);

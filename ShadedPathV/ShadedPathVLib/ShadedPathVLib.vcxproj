@@ -184,6 +184,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="BillboardShader.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="ClearShader.h" />
     <ClInclude Include="CubeShader.h" />
@@ -227,6 +228,7 @@
     <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BillboardShader.cpp" />
     <ClCompile Include="ClearShader.cpp" />
     <ClCompile Include="CubeShader.cpp" />
     <ClCompile Include="DeviceCoordApp.cpp" />
@@ -378,6 +380,30 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\ShadedPathVLib\shader\genbrdflut.frag">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\libraries\vulkan\Bin\glslc.exe %(FullPath)  -g -o ../x64/$(Configuration)/%(Filename)_frag.spv</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GLSL %(FullPath) -o ../x64/$(Configuration)/%(Filename)_frag.spv</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../x64/$(Configuration)/%(Filename)_frag.spv</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\libraries\vulkan\Bin\glslc.exe %(FullPath) -o ../x64/$(Configuration)/%(Filename)_frag.spv</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GLSL %(FullPath) -o ../x64/$(Configuration)/%(Filename)_frag.spv</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../x64/$(Configuration)/%(Filename)_frag.spv</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\ShadedPathVLib\shader\billboard.mesh">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\libraries\vulkan\Bin\glslc.exe %(FullPath) -g -o ../x64/$(Configuration)/%(Filename)_mesh.spv</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GLSL %(FullPath) -o ../x64/$(Configuration)/%(Filename)_mesh.spv</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../x64/$(Configuration)/%(Filename)_mesh.spv</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\libraries\vulkan\Bin\glslc.exe %(FullPath) -o ../x64/$(Configuration)/%(Filename)_mesh.spv</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GLSL %(FullPath) -o ../x64/$(Configuration)/%(Filename)_mesh.spv</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../x64/$(Configuration)/%(Filename)_mesh.spv</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\ShadedPathVLib\shader\billboard.frag">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\libraries\vulkan\Bin\glslc.exe %(FullPath)  -g -o ../x64/$(Configuration)/%(Filename)_frag.spv</Command>

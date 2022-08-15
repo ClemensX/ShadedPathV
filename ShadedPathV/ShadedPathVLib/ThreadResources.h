@@ -51,6 +51,7 @@ public:
 	PBRThreadResources pbrResources;
 	SimpleThreadResources simpleResources;
 	CubeThreadResources cubeResources;
+	BillboardThreadResources billboardResources;
 	// for ImGui:
 	UIThreadResources uiResources;
 

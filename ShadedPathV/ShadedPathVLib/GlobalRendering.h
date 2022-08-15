@@ -121,13 +121,17 @@ public:
 	VkQueue graphicsQueue = nullptr;
 	VkSampler textureSampler = nullptr;
 	VkPhysicalDeviceProperties2 physicalDeviceProperties;
-
+	VkSemaphore singleTimeCommandsSemaphore = nullptr;
 	// create command pool for use outside rendering threads
+
 	void createCommandPool();
 	VkCommandPool commandPool = nullptr;
+	bool syncedOperations = false;
+	VkCommandBuffer commandBufferSingle = nullptr;
 	void createCommandPool(VkCommandPool& pool);
-	VkCommandBuffer beginSingleTimeCommands();
-	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
+	// single time commands with optional syncing
+	VkCommandBuffer beginSingleTimeCommands(bool sync = false);
+	void endSingleTimeCommands(VkCommandBuffer commandBuffer, bool sync = false);
 	void createTextureSampler();
 	inline uint64_t calcConstantBufferSize(uint64_t originalSize) {
 		VkDeviceSize align = physicalDeviceProperties.properties.limits.minUniformBufferOffsetAlignment;

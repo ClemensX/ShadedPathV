@@ -254,6 +254,7 @@ inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* ori
 #include "LineShader.h"
 #include "PBRShader.h"
 #include "CubeShader.h"
+#include "BillboardShader.h"
 #include "gltf.h"
 #include "Object.h"
 #include "ui.h"

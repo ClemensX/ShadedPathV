@@ -153,6 +153,9 @@
     <ClInclude Include="GeneratedTexturesApp.h">
       <Filter>Apps</Filter>
     </ClInclude>
+    <ClInclude Include="BillboardShader.h">
+      <Filter>ShaderClasses</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -260,6 +263,9 @@
     <ClCompile Include="GeneratedTexturesApp.cpp">
       <Filter>Apps</Filter>
     </ClCompile>
+    <ClCompile Include="BillboardShader.cpp">
+      <Filter>ShaderClasses</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\ShadedPathVLib\shader\triangle.vert">
@@ -292,5 +298,13 @@
     <CustomBuild Include="..\ShadedPathVLib\shader\genbrdflut.vert">
       <Filter>Shader</Filter>
     </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shader\billboard.frag">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="shader\billboard.mesh">
+      <Filter>Shader</Filter>
+    </None>
   </ItemGroup>
 </Project>
