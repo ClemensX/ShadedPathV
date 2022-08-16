@@ -8,7 +8,7 @@ void BillboardShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	vector<byte> file_buffer_frag;
 	engine.files.readFile("billboard_mesh.spv", file_buffer_mesh, FileCategory::FX);
 	engine.files.readFile("line_frag.spv", file_buffer_frag, FileCategory::FX);
-	Log("read vertex shader: " << file_buffer_mesh.size() << endl);
+	Log("read mesh shader: " << file_buffer_mesh.size() << endl);
 	Log("read fragment shader: " << file_buffer_frag.size() << endl);
 	// create shader modules
 	meshShaderModule = engine.shaders.createShaderModule(file_buffer_mesh);
@@ -51,14 +51,14 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	}
 
 	// create shader stage
-//	auto meshShaderStageInfo = engine->shaders.createMeshShaderCreateInfo(meshShaderModule);
+	auto meshShaderStageInfo = engine->shaders.createMeshShaderCreateInfo(meshShaderModule);
 	auto fragShaderStageInfo = engine->shaders.createFragmentShaderCreateInfo(fragShaderModule);
-//	VkPipelineShaderStageCreateInfo shaderStages[] = { meshShaderStageInfo, fragShaderStageInfo };
+	VkPipelineShaderStageCreateInfo shaderStages[] = { meshShaderStageInfo, fragShaderStageInfo };
 
 	// vertex input
-	//auto binding_desc = getBindingDescription();
-	//auto attribute_desc = getAttributeDescriptions();
-//	auto vertexInputInfo = createVertexInputCreateInfo(&binding_desc, attribute_desc.data(), attribute_desc.size());
+	auto binding_desc = getBindingDescription();
+	auto attribute_desc = getAttributeDescriptions();
+	auto vertexInputInfo = createVertexInputCreateInfo(&binding_desc, attribute_desc.data(), attribute_desc.size());
 
 	// input assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -92,9 +92,10 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	pipelineInfo.stageCount = 2;
-//	pipelineInfo.pStages = shaderStages;
-//	pipelineInfo.pVertexInputState = &vertexInputInfo;
-	pipelineInfo.pInputAssemblyState = &inputAssembly;
+	pipelineInfo.pStages = shaderStages;
+	pipelineInfo.pNext = nullptr;
+	//pipelineInfo.pVertexInputState = &vertexInputInfo;
+	//pipelineInfo.pInputAssemblyState = &inputAssembly;
 	pipelineInfo.pViewportState = &viewportState;
 	pipelineInfo.pRasterizationState = &rasterizer;
 	pipelineInfo.pMultisampleState = &multisampling;
@@ -129,14 +130,14 @@ void BillboardShader::createDescriptorSetLayout()
     uboLayoutBinding.binding = 0;
     uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_MESH_BIT_NV;
     uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
     VkDescriptorSetLayoutBinding samplerLayoutBinding{};
 	samplerLayoutBinding.binding = 1;
 	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	samplerLayoutBinding.descriptorCount = 1;
-	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_MISS_BIT_NV;
 	samplerLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
     std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };

@@ -110,6 +110,15 @@ public:
 		return vertShaderStageInfo;
 	}
 
+	VkPipelineShaderStageCreateInfo createMeshShaderCreateInfo(VkShaderModule& shaderModule) {
+		VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		fragShaderStageInfo.stage = VK_SHADER_STAGE_MESH_BIT_NV;
+		fragShaderStageInfo.module = shaderModule;
+		fragShaderStageInfo.pName = "main";
+		return fragShaderStageInfo;
+	}
+
 	VkPipelineShaderStageCreateInfo createFragmentShaderCreateInfo(VkShaderModule& shaderModule) {
 		VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
 		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

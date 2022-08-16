@@ -11,6 +11,11 @@ Some features:
 - Synchronization is done at presentation time, when the backbuffer image is copied to the app window
 - Support VR games via OpenXR
 
+## Mesh Shader
+
+Started implementing a mesh shader for Billboard rendering, but realized that it is only supported with newer NVIDIA cards - not even my dev laptop does have this feature. So stopped for now.
+There is a user API to enable the feature for vulkan device creation. Probably not worth to invest more time now and try to implement a mesh shader. Maybe if support is extendend it makes sense some day.
+
 ## Cube Maps
 
 To be able to continue with PBR implementation we first need cube maps for a skybox.

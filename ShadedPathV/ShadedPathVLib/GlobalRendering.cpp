@@ -117,6 +117,9 @@ std::vector<const char*> GlobalRendering::getRequiredExtensions() {
     if (DEBUG_MARKER_EXTENSION) {
         extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
     }
+    if (engine.isMeshShading()) {
+        deviceExtensions.push_back(VK_NV_MESH_SHADER_EXTENSION_NAME);
+    }
 
     Log("requested Vulkan instance extensions:" << endl)
         Util::printCStringList(extensions);
@@ -195,17 +198,34 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
     else {
         swapChainAdequate = true;
     }
+    // check mesh support:
+    // set extension details for mesh shader
+    VkPhysicalDeviceMeshShaderFeaturesNV meshFeatures = {};
+    meshFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
+    meshFeatures.pNext = nullptr;
+    VkPhysicalDeviceFeatures2 feature2{};
+    feature2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    feature2.pNext = &meshFeatures;
+    vkGetPhysicalDeviceFeatures2(device, &feature2);
+    VkPhysicalDeviceMeshShaderFeaturesNV* meshSupport = (VkPhysicalDeviceMeshShaderFeaturesNV*)feature2.pNext;
+    if (engine.isMeshShading()) {
+        //Log(meshSupport << endl);
+        if (!meshSupport->meshShader || !meshSupport->taskShader) {
+            Log("device does not support needed Mesh Shader" << endl);
+            return false;
+        }
+    }
     // check compressed texture support:
     VkFormatProperties fp{};
     vkGetPhysicalDeviceFormatProperties(device, VK_FORMAT_BC7_SRGB_BLOCK, &fp);
     // 0x01d401
     VkFormatFeatureFlags flagsToCheck = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT | VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
     if ((fp.linearTilingFeatures & flagsToCheck) == 0) {
-        Log("device does not support needed linearTilingFeatures");
+        Log("device does not support needed linearTilingFeatures" << endl);
         return false;
     }
     if ((fp.optimalTilingFeatures & flagsToCheck) == 0) {
-        Log("device does not support needed optimalTilingFeatures");
+        Log("device does not support needed optimalTilingFeatures" << endl);
         return false;
     }
 
@@ -287,14 +307,28 @@ void GlobalRendering::createLogicalDevice()
     //deviceFeatures.textureCompressionASTC_LDR = VK_TRUE; not supported on Quadro P2000 with Max-Q Design 1.3.194
     //deviceFeatures.dynamicRendering
 
+    // set extension details for mesh shader
+    VkPhysicalDeviceMeshShaderFeaturesNV meshFeatures = {};
+    meshFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
+    meshFeatures.meshShader = VK_TRUE;
+    meshFeatures.taskShader = VK_FALSE;
+    meshFeatures.pNext = nullptr;
+
     constexpr VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_feature{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
         .dynamicRendering = VK_TRUE,
     };
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    if (engine.isMeshShading()) {
+        createInfo.pNext = &meshFeatures;
+    }
     if (!USE_PROFILE_DYN_RENDERING) {
-        createInfo.pNext = &dynamic_rendering_feature;
+        if (engine.isMeshShading()) {
+            meshFeatures.pNext = (void*)&dynamic_rendering_feature;
+        } else {
+            createInfo.pNext = &dynamic_rendering_feature;
+        }
         createInfo.pEnabledFeatures = &deviceFeatures;
     }
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());

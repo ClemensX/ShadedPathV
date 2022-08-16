@@ -23,7 +23,7 @@ public:
 	// we limit this to allow for pre-allocated vertex buffer in thread ressources
 	static const size_t MAX_BILLBOARDS = 100000;
 	// define billboard size and pos, --> to GPU as single UBO with all Billboards mem mapped
-	struct BBoard {
+	struct Vertex {
 		vec3 pos;
 		vec3 dir;
 		float w;
@@ -34,6 +34,39 @@ public:
 		glm::mat4 view;
 		glm::mat4 proj;
 	};
+	static VkVertexInputBindingDescription getBindingDescription() {
+		VkVertexInputBindingDescription bindingDescription{};
+		bindingDescription.binding = 0;
+		bindingDescription.stride = sizeof(Vertex);
+		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		return bindingDescription;
+	}
+	// get static std::array of attribute desciptions, make sure to copy to local array, otherwise you get dangling pointers!
+	static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
+		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+		// layout(location = 0) in vec3 inPosition;
+		attributeDescriptions[0].binding = 0;
+		attributeDescriptions[0].location = 0;
+		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+		attributeDescriptions[0].offset = offsetof(Vertex, pos);
+		// layout(location = 1) in vec3 direction;
+		attributeDescriptions[1].binding = 0;
+		attributeDescriptions[1].location = 1;
+		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+		attributeDescriptions[1].offset = offsetof(Vertex, dir);
+		// layout(location = 2) in float width;
+		attributeDescriptions[1].binding = 0;
+		attributeDescriptions[1].location = 2;
+		attributeDescriptions[1].format = VK_FORMAT_R32_SFLOAT;
+		attributeDescriptions[1].offset = offsetof(Vertex, w);
+		// layout(location = 3) in float height;
+		attributeDescriptions[1].binding = 0;
+		attributeDescriptions[1].location = 3;
+		attributeDescriptions[1].format = VK_FORMAT_R32_SFLOAT;
+		attributeDescriptions[1].offset = offsetof(Vertex, h);
+
+		return attributeDescriptions;
+	}
 	virtual ~BillboardShader() override;
 	// shader initialization, end result is a graphics pipeline for each ThreadResources instance
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;

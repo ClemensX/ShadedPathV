@@ -89,6 +89,15 @@ public:
         return stereoPresentation;
     }
 
+    // enable mesh shaders. Will fail to create vulkan device if no suitable GPU is found
+    void enableMeshShader() {
+        meshShaderEnabled = true;
+    }
+
+    bool isMeshShading() {
+        return meshShaderEnabled;
+    }
+
     // set number of frames that can be worked on in parallel
     void setFramesInFlight(int n);
 
@@ -183,6 +192,7 @@ private:
     bool vrMode = false;
     bool stereoMode = false;
     bool stereoPresentation = false;
+    bool meshShaderEnabled = false;
     // backbuffer size:
     VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);
     // check if backbuffer and window have same aspect - warning if not
