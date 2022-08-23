@@ -46,8 +46,10 @@ public:
 	VpProfileProperties profile{
 			//VP_KHR_ROADMAP_2022_NAME,
 			//VP_KHR_ROADMAP_2022_SPEC_VERSION
-		VP_LUNARG_DESKTOP_PORTABILITY_2021_NAME,
-		VP_LUNARG_DESKTOP_PORTABILITY_2021_SPEC_VERSION
+		//VP_LUNARG_DESKTOP_PORTABILITY_2021_NAME,
+		//VP_LUNARG_DESKTOP_PORTABILITY_2021_SPEC_VERSION
+		VP_LUNARG_DESKTOP_BASELINE_2022_NAME,
+		VP_LUNARG_DESKTOP_BASELINE_2022_SPEC_VERSION
 	};
 	//uint32_t API_VERSION = VP_KHR_ROADMAP_2022_MIN_API_VERSION;
 
@@ -163,6 +165,7 @@ private:
 
 	// check if selected profile is supported, return false otherwise
 	bool checkProfileSupport() {
+		return true;
 		VkResult result = VK_SUCCESS;
 		VkBool32 supported = VK_FALSE;
 		result = vpGetInstanceProfileSupport(nullptr, &profile, &supported);
