@@ -4,14 +4,14 @@ void BillboardShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 {
 	ShaderBase::init(engine);
 	// load shader binary code
-	vector<byte> file_buffer_mesh;
+	vector<byte> file_buffer_vert;
 	vector<byte> file_buffer_frag;
-	engine.files.readFile("billboard_mesh.spv", file_buffer_mesh, FileCategory::FX);
-	engine.files.readFile("line_frag.spv", file_buffer_frag, FileCategory::FX);
-	Log("read mesh shader: " << file_buffer_mesh.size() << endl);
+	engine.files.readFile("billboard_vert.spv", file_buffer_vert, FileCategory::FX);
+	engine.files.readFile("billboard_frag.spv", file_buffer_frag, FileCategory::FX);
+	Log("read vert shader: " << file_buffer_vert.size() << endl);
 	Log("read fragment shader: " << file_buffer_frag.size() << endl);
 	// create shader modules
-	meshShaderModule = engine.shaders.createShaderModule(file_buffer_mesh);
+	vertShaderModule = engine.shaders.createShaderModule(file_buffer_vert);
 	fragShaderModule = engine.shaders.createShaderModule(file_buffer_frag);
 
 	// descriptor
@@ -32,7 +32,7 @@ void BillboardShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
 	auto& trl = tr.billboardResources;
-	// uniform buffer
+	// uniform buffers for MVP
 	createUniformBuffer(tr, trl.uniformBuffer, sizeof(UniformBufferObject), trl.uniformBufferMemory);
 	if (engine->isStereo()) {
 		createUniformBuffer(tr, trl.uniformBuffer2, sizeof(UniformBufferObject), trl.uniformBufferMemory2);
@@ -51,9 +51,9 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	}
 
 	// create shader stage
-	auto meshShaderStageInfo = engine->shaders.createMeshShaderCreateInfo(meshShaderModule);
+	auto vertShaderStageInfo = engine->shaders.createVertexShaderCreateInfo(vertShaderModule);
 	auto fragShaderStageInfo = engine->shaders.createFragmentShaderCreateInfo(fragShaderModule);
-	VkPipelineShaderStageCreateInfo shaderStages[] = { meshShaderStageInfo, fragShaderStageInfo };
+	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
 	// vertex input
 	auto binding_desc = getBindingDescription();
@@ -63,7 +63,7 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// input assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 	inputAssembly.primitiveRestartEnable = VK_FALSE;
 
 	// viewport and scissors
@@ -94,8 +94,8 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	pipelineInfo.stageCount = 2;
 	pipelineInfo.pStages = shaderStages;
 	pipelineInfo.pNext = nullptr;
-	//pipelineInfo.pVertexInputState = &vertexInputInfo;
-	//pipelineInfo.pInputAssemblyState = &inputAssembly;
+	pipelineInfo.pVertexInputState = &vertexInputInfo;
+	pipelineInfo.pInputAssemblyState = &inputAssembly;
 	pipelineInfo.pViewportState = &viewportState;
 	pipelineInfo.pRasterizationState = &rasterizer;
 	pipelineInfo.pMultisampleState = &multisampling;
@@ -110,6 +110,10 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &trl.graphicsPipeline) != VK_SUCCESS) {
 		Error("failed to create graphics pipeline!");
 	}
+	// create and map vertex buffer in GPU for billboards
+	VkDeviceSize bufferSize = sizeof(Vertex) * MAX_BILLBOARDS;
+	createVertexBuffer(tr, trl.billboardVertexBuffer, bufferSize, trl.billboardVertexBufferMemory);
+	createCommandBuffer(tr);
 }
 
 void BillboardShader::initialUpload()
@@ -130,14 +134,14 @@ void BillboardShader::createDescriptorSetLayout()
     uboLayoutBinding.binding = 0;
     uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_MESH_BIT_NV;
+    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
     VkDescriptorSetLayoutBinding samplerLayoutBinding{};
 	samplerLayoutBinding.binding = 1;
 	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	samplerLayoutBinding.descriptorCount = 1;
-	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_MISS_BIT_NV;
+	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	samplerLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
     std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };

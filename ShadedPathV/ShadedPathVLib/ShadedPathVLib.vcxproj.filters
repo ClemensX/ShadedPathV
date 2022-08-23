@@ -298,13 +298,10 @@
     <CustomBuild Include="..\ShadedPathVLib\shader\genbrdflut.vert">
       <Filter>Shader</Filter>
     </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shader\billboard.frag">
+    <CustomBuild Include="..\ShadedPathVLib\shader\billboard.mesh" />
+    <CustomBuild Include="..\ShadedPathVLib\shader\billboard.frag" />
+    <CustomBuild Include="shader\billboard.vert">
       <Filter>Shader</Filter>
-    </None>
-    <None Include="shader\billboard.mesh">
-      <Filter>Shader</Filter>
-    </None>
+    </CustomBuild>
   </ItemGroup>
 </Project>

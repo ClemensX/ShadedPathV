@@ -91,7 +91,7 @@ private:
 
 	// vertex buffer device memory
 	VkDeviceMemory vertexBufferMemory = nullptr;
-	VkShaderModule meshShaderModule = nullptr;
+	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;
 	// create descriptor set layout (one per effect)
 	virtual void createDescriptorSetLayout() override;
@@ -109,8 +109,10 @@ struct BillboardThreadResources : ShaderThreadResources {
 	VkPipelineLayout pipelineLayout = nullptr;
 	VkPipeline graphicsPipeline = nullptr;
 	VkCommandBuffer commandBuffer = nullptr;
-	// billboard buffer device memory
-	VkDeviceMemory billboardBufferMemory = nullptr;
+	// vertex buffer for billboards
+	VkBuffer billboardVertexBuffer = nullptr;
+	// vertex buffer device memory
+	VkDeviceMemory billboardVertexBufferMemory = nullptr;
 	// MVP buffer
 	VkBuffer uniformBuffer = nullptr;
 	VkBuffer uniformBuffer2 = nullptr;
