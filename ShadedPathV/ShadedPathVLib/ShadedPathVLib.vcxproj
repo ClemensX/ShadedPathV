@@ -205,6 +205,7 @@
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="LineApp.h" />
     <ClInclude Include="LineShader.h" />
+    <ClInclude Include="miniaudio\miniaudio.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="PBRShader.h" />
     <ClInclude Include="pch.h" />
@@ -214,6 +215,7 @@
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="SimpleApp.h" />
     <ClInclude Include="SimpleShader.h" />
+    <ClInclude Include="Sound.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="ThreadResources.h" />
     <ClInclude Include="Threads.h" />
@@ -247,6 +249,9 @@
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="LineApp.cpp" />
     <ClCompile Include="LineShader.cpp" />
+    <ClCompile Include="miniaudio\extras\stb_vorbis.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="PBRShader.cpp" />
     <ClCompile Include="pch.cpp">
@@ -261,6 +266,7 @@
     <ClCompile Include="Shaders.cpp" />
     <ClCompile Include="SimpleApp.cpp" />
     <ClCompile Include="SimpleShader.cpp" />
+    <ClCompile Include="Sound.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="ThreadResources.cpp" />
     <ClCompile Include="Threads.cpp" />

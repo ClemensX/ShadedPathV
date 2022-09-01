@@ -56,7 +56,7 @@
 #include <queue>
 #include <array>
 #include <functional>
-using namespace std;
+//using namespace std;
 
 // headers for used libraries
 #define GLFW_INCLUDE_VULKAN
@@ -85,6 +85,11 @@ using namespace glm;
 
 // global definitions and macros
 
+//{
+//std::byte b;
+//}
+
+using namespace std;
 inline void LogFile(const char* s) {
 	static bool firstcall = true;
 	ios_base::openmode mode;
@@ -99,6 +104,7 @@ inline void LogFile(const char* s) {
 	out << s;
 	out.close();
 }
+
 
 #if defined(DEBUG) | defined(_DEBUG)
 #define LogCond(y,x) if(y){Log(x)}
@@ -257,6 +263,7 @@ inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* ori
 #include "BillboardShader.h"
 #include "gltf.h"
 #include "Object.h"
+#include "Sound.h"
 #include "ui.h"
 #include "UIShader.h"
 #include "Shaders.h"

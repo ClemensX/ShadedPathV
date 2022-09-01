@@ -20,6 +20,7 @@ public:
         global(*this),
         presentation(*this),
         vr(*this),
+        sound(*this),
         shaders(*this),
         util(*this),
         objectStore(&meshStore),
@@ -117,6 +118,10 @@ public:
         enabledMousButtonEvents = true;
     }
 
+    void enableSound() {
+        soundEnabled = true;
+    }
+
     // limit number of rendered frames - cannot be used together with presentation enabled
     void setFrameCountLimit(long max);
 
@@ -162,6 +167,7 @@ public:
     TextureStore textureStore;
     MeshStore meshStore;
     WorldObjectStore objectStore;
+    Sound sound;
 
     // non-Vulkan members
     Files files;
@@ -193,6 +199,7 @@ private:
     bool stereoMode = false;
     bool stereoPresentation = false;
     bool meshShaderEnabled = false;
+    bool soundEnabled = false;
     // backbuffer size:
     VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);
     // check if backbuffer and window have same aspect - warning if not

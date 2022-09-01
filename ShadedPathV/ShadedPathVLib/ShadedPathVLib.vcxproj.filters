@@ -28,6 +28,9 @@
     <Filter Include="tinygltf">
       <UniqueIdentifier>{c797f406-10eb-4507-b41d-13b34f94fe3e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="miniaudio">
+      <UniqueIdentifier>{91d78478-54ca-40ef-848b-f6aa479fdf99}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -156,6 +159,12 @@
     <ClInclude Include="BillboardShader.h">
       <Filter>ShaderClasses</Filter>
     </ClInclude>
+    <ClInclude Include="Sound.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="miniaudio\miniaudio.h">
+      <Filter>miniaudio</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -265,6 +274,12 @@
     </ClCompile>
     <ClCompile Include="BillboardShader.cpp">
       <Filter>ShaderClasses</Filter>
+    </ClCompile>
+    <ClCompile Include="Sound.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="miniaudio\extras\stb_vorbis.c">
+      <Filter>miniaudio</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

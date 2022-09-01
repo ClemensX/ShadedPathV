@@ -30,6 +30,7 @@ void GeneratedTexturesApp::run()
 
         engine.setFramesInFlight(2);
         engine.registerApp(this);
+        engine.enableSound();
         //engine.setThreadModeSingle();
 
         // engine initialization
