@@ -5,8 +5,8 @@ struct MeshInfo;
 
 struct TextureInfo
 {
-	string id;
-	string filename;
+	std::string id;
+	std::string filename;
 	bool available = false; // true if this texture is ready for use in shader code
 	ktxVulkanTexture vulkanTexture;
 	VkImageView imageView = nullptr;
@@ -25,12 +25,12 @@ public:
 	void init(ShadedPathEngine* engine);
 	~TextureStore();
 	// texture id for brdf lookup table:
-	string BRDFLUT_TEXTURE_ID = "brdflut";
+	std::string BRDFLUT_TEXTURE_ID = "brdflut";
 	// load texture upload to GPU, textures are referenced via id string
-	void loadTexture(string filename, string id);
-	::TextureInfo* getTexture(string id);
+	void loadTexture(std::string filename, std::string id);
+	::TextureInfo* getTexture(std::string id);
 	// create texture slot for named texture
-	::TextureInfo* createTextureSlot(string id);
+	::TextureInfo* createTextureSlot(std::string id);
 	// create texture id and slot for mesh texture with index
 	::TextureInfo* createTextureSlotForMesh(MeshInfo* mesh, int index);
 	// parse texture data during gltf parsing. create a KTX texture from memory and store into mesh
@@ -44,7 +44,7 @@ public:
 	void generateBRDFLUT();
 
 private:
-	unordered_map<string, ::TextureInfo> textures;
+	std::unordered_map<std::string, ::TextureInfo> textures;
 	ShadedPathEngine* engine = nullptr;
 	Util* util;
 	ktxVulkanDeviceInfo vdi;

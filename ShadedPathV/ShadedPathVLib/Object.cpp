@@ -1,5 +1,9 @@
 #include "pch.h"
 
+using namespace std;
+using namespace glm;
+
+
 void MeshStore::init(ShadedPathEngine* engine) {
 	this->engine = engine;
 	gltf.init(engine);

@@ -107,17 +107,17 @@ public:
 	ThreadLimiter(float limit) {
 		this->limit = limit;
 		this->limitMicro = 1000000L / (long long)limit;
-		Log("limit: " << limitMicro << endl);
-		lastCallTime = chrono::high_resolution_clock::now();
+		Log("limit: " << limitMicro << std::endl);
+		lastCallTime = std::chrono::high_resolution_clock::now();
 	}
 	void waitForLimit() {
-		auto now = chrono::high_resolution_clock::now();
-		long long length = chrono::duration_cast<chrono::microseconds>(now - lastCallTime).count();
+		auto now = std::chrono::high_resolution_clock::now();
+		long long length = std::chrono::duration_cast<std::chrono::microseconds>(now - lastCallTime).count();
 		if (length < limitMicro) {
 			// we are above threshold: sleep for the remaining milliseconds
 			unsigned long d = (unsigned long)(limitMicro - length) / 1000; // sleep time in millis
 			//Log(" limit length duration " << limitMicro << " " << length << " " << d << endl);
-			this_thread::sleep_for(chrono::milliseconds(d));
+			std::this_thread::sleep_for(std::chrono::milliseconds(d));
 		}
 		else {
 			// sleep at least 2ms to give other update threads a chance
@@ -128,24 +128,24 @@ public:
 private:
 	long long limitMicro;
 	float limit;
-	chrono::time_point<chrono::steady_clock> lastCallTime;
+	std::chrono::time_point<std::chrono::steady_clock> lastCallTime;
 };
 
 template<typename T>
 class ThreadsafeWaitingQueue {
-	queue<T> myqueue;
-	mutable mutex monitorMutex;
-	condition_variable cond;
+	std::queue<T> myqueue;
+	mutable std::mutex monitorMutex;
+	std::condition_variable cond;
 	bool in_shutdown = false;
 	bool logEnable = false;
-	string logName = "n/a";
+	std::string logName = "n/a";
 
 public:
 	ThreadsafeWaitingQueue(const ThreadsafeWaitingQueue<T>&) = delete;
 	ThreadsafeWaitingQueue& operator=(const ThreadsafeWaitingQueue<T>&) = delete;
 	// allow move() of a queue
 	ThreadsafeWaitingQueue(ThreadsafeWaitingQueue<T>&& other) {
-		unique_lock<mutex> lock(monitorMutex);
+		std::unique_lock<std::mutex> lock(monitorMutex);
 		myqueue = std::move(other.myqueue);
 	}
 	// Create queue with logging info, waiting threads will be suspended every 3 seconds
@@ -154,17 +154,17 @@ public:
 	virtual ~ThreadsafeWaitingQueue() {};
 
 	// set and enable logging info (to be called before any push/pop operation
-	void setLoggingInfo(bool enable, string name) {
-		unique_lock<mutex> lock(monitorMutex);
+	void setLoggingInfo(bool enable, std::string name) {
+		std::unique_lock<std::mutex> lock(monitorMutex);
 		logEnable = enable;
 		logName = name;
 	}
 
 	// wait until item available, if nothing is returned queue is in shutdown
-	optional<T> pop() {
-		unique_lock<mutex> lock(monitorMutex);
+	std::optional<T> pop() {
+		std::unique_lock<std::mutex> lock(monitorMutex);
 		while (myqueue.empty()) {
-			cond.wait_for(lock, chrono::milliseconds(3000));
+			cond.wait_for(lock, std::chrono::milliseconds(3000));
 			if (myqueue.empty()) {
 				LogCondF(logEnable, logName + " timeout wait suspended\n");
 			}
@@ -174,7 +174,7 @@ public:
 			if (in_shutdown) {
 				LogCondF(LOG_QUEUE, "RenderQueue shutdown in pop\n");
 				cond.notify_all();
-				return nullopt;
+				return std::nullopt;
 			}
 		}
 		assert(myqueue.empty() == false);
@@ -186,19 +186,19 @@ public:
 
 	// push item and notify one waiting thread
 	void push(const T &item) {
-		unique_lock<mutex> lock(monitorMutex);
+		std::unique_lock<std::mutex> lock(monitorMutex);
 		if (in_shutdown) {
 			//throw "RenderQueue shutdown in push";
 			LogCondF(logEnable, logName + " shutdown in push\n");
 			return;
 		}
 		myqueue.push(item);
-		LogCondF(logEnable, logName + " length " << myqueue.size() << endl);
+		LogCondF(logEnable, logName + " length " << myqueue.size() << std::endl);
 		cond.notify_one();
 	}
 
 	void shutdown() {
-		unique_lock<mutex> lock(monitorMutex);
+		std::unique_lock<std::mutex> lock(monitorMutex);
 		in_shutdown = true;
 		cond.notify_all();
 	}
@@ -211,9 +211,9 @@ class RenderQueue {
 public:
 	// wait until next frame has finished rendering
 	ThreadResources* pop() {
-		unique_lock<mutex> lock(monitorMutex);
+		std::unique_lock<std::mutex> lock(monitorMutex);
 		while (myqueue.empty()) {
-			cond.wait_for(lock, chrono::milliseconds(3000));
+			cond.wait_for(lock, std::chrono::milliseconds(3000));
 			LogCondF(LOG_QUEUE, "RenderQueue wait suspended\n");
 			if (in_shutdown) {
 				LogCondF(LOG_QUEUE, "RenderQueue shutdown in pop\n");
@@ -230,14 +230,14 @@ public:
 
 	// push finished frame
 	void push(ThreadResources* frame) {
-		unique_lock<mutex> lock(monitorMutex);
+		std::unique_lock<std::mutex> lock(monitorMutex);
 		if (in_shutdown) {
 			//throw "RenderQueue shutdown in push";
 			LogCondF(LOG_QUEUE, "RenderQueue shutdown in push\n");
 			return;
 		}
 		myqueue.push(frame);
-		LogCondF(LOG_QUEUE, "RenderQueue length " << myqueue.size() << endl);
+		LogCondF(LOG_QUEUE, "RenderQueue length " << myqueue.size() << std::endl);
 		cond.notify_one();
 	}
 
@@ -251,8 +251,8 @@ public:
 	}
 
 private:
-	queue<ThreadResources*> myqueue;
-	mutex monitorMutex;
-	condition_variable cond;
+	std::queue<ThreadResources*> myqueue;
+	std::mutex monitorMutex;
+	std::condition_variable cond;
 	bool in_shutdown{ false };
 };

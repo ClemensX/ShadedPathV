@@ -49,8 +49,8 @@ public:
 
 private:
 	// measurements:
-	chrono::steady_clock::time_point now;
-	chrono::steady_clock::time_point startTimePoint = chrono::steady_clock::now();
+	std::chrono::steady_clock::time_point now;
+	std::chrono::steady_clock::time_point startTimePoint = std::chrono::steady_clock::now();
 	double gamedayFactor = 0.0f;
 
 	double timeSystemClock;
@@ -76,13 +76,13 @@ class ThemedTimer {
 		bool used = false;
 	};
 	struct TimerDesc {
-		vector<TimerEntry> entries;
+		std::vector<TimerEntry> entries;
 		int numSlots; // number of allocated TimerEntry slots
 		int pos = 0;  // next input position
 		long calls = 0L; // count calls to add()
 		long long averageTimeBetweenMicroS = 0; // accumulate time between calls in [microseconds] (1/1000 000 s)
 		long long totalTimeMicros = 0; 
-		chrono::steady_clock::time_point now;
+		std::chrono::steady_clock::time_point now;
 		bool firstCall = true;
 	};
 
@@ -97,7 +97,7 @@ public:
 	}
 
 	// create topic with name and number of individual slots 
-	void create(string name, int slots) {
+	void create(std::string name, int slots) {
 		TimerDesc td;
 		for (int i = 0; i < slots; i++) {
 			TimerEntry e;
@@ -108,11 +108,11 @@ public:
 		timerMap[name] = td;
 	};
 
-	void add(string name) {
+	void add(std::string name) {
 		if (!check_name(name)) return;
 		auto& td = timerMap[name];
-		chrono::steady_clock::time_point current = chrono::steady_clock::now();
-		auto microsSinceLast = chrono::duration_cast<chrono::microseconds>(current - td.now).count();
+		std::chrono::steady_clock::time_point current = std::chrono::steady_clock::now();
+		auto microsSinceLast = std::chrono::duration_cast<std::chrono::microseconds>(current - td.now).count();
 		td.now = current;
 		//Log(" micro since last " << microsSinceLast << endl);
 		//Log(" total since last " << td.totalTimeMicros << endl);
@@ -123,22 +123,22 @@ public:
 		}
 	}
 
-	void start(string name) {
+	void start(std::string name) {
 		if (!check_name(name)) return;
 		auto& td = timerMap[name];
-		chrono::steady_clock::time_point current = chrono::steady_clock::now();
+		std::chrono::steady_clock::time_point current = std::chrono::steady_clock::now();
 		td.now = current;
 	}
 
-	void stop(string name) {
+	void stop(std::string name) {
 		if (!check_name(name)) return;
 		auto& td = timerMap[name];
-		chrono::steady_clock::time_point current = chrono::steady_clock::now();
-		auto microsSinceLast = chrono::duration_cast<chrono::microseconds>(current - td.now).count();
+		std::chrono::steady_clock::time_point current = std::chrono::steady_clock::now();
+		auto microsSinceLast = std::chrono::duration_cast<std::chrono::microseconds>(current - td.now).count();
 		add(td, microsSinceLast);
 	}
 
-	int usedSlots(string name) {
+	int usedSlots(std::string name) {
 		if (!check_name(name)) return -1;
 		auto& td = timerMap[name];
 		int count = 0;
@@ -149,7 +149,7 @@ public:
 	}
 
 	// log all slots 
-	void logEntries(string name) {
+	void logEntries(std::string name) {
 		if (!check_name(name)) return;
 		auto& td = timerMap[name];
 		// we start at next insert position, then log whole buffer from here to getnewest entry last
@@ -157,36 +157,36 @@ public:
 			int checkPos = i % td.numSlots;
 			auto& t = td.entries[checkPos];
 			if (t.used) {
-				Log("" << t.time << endl);
+				Log("" << t.time << std::endl);
 			}
 		}
 	}
 
 	// log accumulated info
-	void logInfo(string name) {
+	void logInfo(std::string name) {
 		if (!check_name(name)) return;
 		auto& td = timerMap[name];
-		Log("ThemedTimer: " << name.c_str() << endl);
-		Log("  #calls: " << td.calls << " average time: " << td.averageTimeBetweenMicroS << " [microseconds] / " << (td.averageTimeBetweenMicroS / 1000) << " [ms]" << endl);
+		Log("ThemedTimer: " << name.c_str() << std::endl);
+		Log("  #calls: " << td.calls << " average time: " << td.averageTimeBetweenMicroS << " [microseconds] / " << (td.averageTimeBetweenMicroS / 1000) << " [ms]" << std::endl);
 	}
 
-	double getFPS(string name) {
+	double getFPS(std::string name) {
 		if (!check_name(name)) return 0.0f;
 		auto& td = timerMap[name];
 		double fps = 1000000.0 / (double)td.averageTimeBetweenMicroS;
 		return fps;
 	}
 	// log ThemedTimer as FPS
-	void logFPS(string name) {
+	void logFPS(std::string name) {
 		if (!check_name(name)) return;
 		auto& td = timerMap[name];
 		double fps = getFPS(name);
 		double totalSeconds = ((double)td.totalTimeMicros) / 1000000;
-		Log("   FPS: " << fps << " over " << totalSeconds << " [s]" << endl);
+		Log("   FPS: " << fps << " over " << totalSeconds << " [s]" << std::endl);
 	}
 
 	// do not use - test helper method
-	TimerDesc* test_add(string name, long long value) {
+	TimerDesc* test_add(std::string name, long long value) {
 		if (!check_name(name)) return nullptr;
 		auto& td = timerMap[name];
 		add(td, value);
@@ -194,7 +194,7 @@ public:
 	}
 
 	// do not use - test helper method
-	TimerDesc* test_add(string name) {
+	TimerDesc* test_add(std::string name) {
 		if (!check_name(name)) return nullptr;
 		auto& td = timerMap[name];
 		add(name);
@@ -224,15 +224,15 @@ private:
 		}
 	};
 
-	bool check_name(string name) {
+	bool check_name(std::string name) {
 		if (timerMap.count(name) <= 0) {
 			// theme not found
-			Log("tried to access themed timer that does not exist: " << name.c_str() << endl);
+			Log("tried to access themed timer that does not exist: " << name.c_str() << std::endl);
 			return false;
 		}
 		return true;
 	}
-	unordered_map<string, TimerDesc> timerMap;
+	std::unordered_map<std::string, TimerDesc> timerMap;
 	ThemedTimer() {};								// prevent creation outside this class
 	ThemedTimer(const ThemedTimer&);				// prevent creation via copy-constructor
 	ThemedTimer& operator = (const ThemedTimer&);	// prevent instance copies
@@ -257,15 +257,15 @@ public:
 		accumulatedTime = 0;
 		return true;
 	}
-	string getFPSAsString() {
-		stringstream stream;
+	std::string getFPSAsString() {
+		std::stringstream stream;
 		if (currentFPS < 1.0f) {
 			stream << std::fixed << std::setprecision(2) << currentFPS;
 		}
 		else {
 			stream << std::fixed << std::setprecision(0) << currentFPS;
 		}
-		string s = stream.str();
+		std::string s = stream.str();
 		return s;
 	}
 };

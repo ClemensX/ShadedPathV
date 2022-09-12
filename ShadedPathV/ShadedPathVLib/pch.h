@@ -73,7 +73,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/epsilon.hpp>
 #include <glm/gtc/quaternion.hpp>
-using namespace glm;
+//using namespace glm;
 //
 // OpenXR Headers
 //
@@ -89,18 +89,18 @@ using namespace glm;
 //std::byte b;
 //}
 
-using namespace std;
+//using namespace std;
 inline void LogFile(const char* s) {
 	static bool firstcall = true;
-	ios_base::openmode mode;
+	std::ios_base::openmode mode;
 	if (firstcall) {
-		mode = ios::out;
+		mode = std::ios::out;
 		firstcall = false;
 	}
 	else {
-		mode = ios::out | ios::app;
+		mode = std::ios::out | std::ios::app;
 	}
-	ofstream out("spe_run.log", mode);
+	std::ofstream out("spe_run.log", mode);
 	out << s;
 	out.close();
 }
@@ -110,15 +110,15 @@ inline void LogFile(const char* s) {
 #define LogCond(y,x) if(y){Log(x)}
 #define Log(x)\
 {\
-    wstringstream s1764;  s1764 << x; \
+    std::wstringstream s1764;  s1764 << x; \
     OutputDebugString(s1764.str().c_str()); \
-    stringstream s1765; s1765 << x; \
+    std::stringstream s1765; s1765 << x; \
     LogFile(s1765.str().c_str()); \
 }
 #elif defined(LOGFILE)
 #define Log(x)\
 {\
-	wstringstream s1764;  s1764 << x; \
+	std::wstringstream s1764;  s1764 << x; \
 	LogFile(s1764.str().c_str()); \
 }
 #else
@@ -128,7 +128,7 @@ inline void LogFile(const char* s) {
 
 #define LogF(x)\
 {\
-	stringstream s1764;  s1764 << x; \
+	std::stringstream s1764;  s1764 << x; \
 	LogFile(s1764.str().c_str()); \
 }
 
@@ -137,9 +137,9 @@ inline void LogFile(const char* s) {
 // Help with OpenXR sample code logging:
 #define LogX(x) Log((x).c_str()<<endl)
 
-inline void ErrorExt(string msg, const char* file, DWORD line)
+inline void ErrorExt(std::string msg, const char* file, DWORD line)
 {
-	stringstream s;
+	std::stringstream s;
 	s << "ERROR " << msg << " ";
 	s << file << " " << line << '\n';
 	Log(s.str().c_str());
@@ -204,26 +204,26 @@ inline std::string Fmt(const char* fmt, ...) {
     }
 
 // convert error code to string:
-inline optional<string> xr_to_string(XrInstance instance, XrResult res) {
+inline std::optional<std::string> xr_to_string(XrInstance instance, XrResult res) {
 	if (instance == nullptr) {
-		return nullopt;
+		return std::nullopt;
 	}
 	else {
 		char buffer[XR_MAX_RESULT_STRING_SIZE];
 		auto r = xrResultToString(instance, res, buffer);
 		if (XR_SUCCESS == r) {
-			return string(buffer);
+			return std::string(buffer);
 		}
 		else {
-			return nullopt;
+			return std::nullopt;
 		}
 	}
 }
 
 [[noreturn]] inline void ThrowXrResult(XrInstance instance, XrResult res, const char* originator = nullptr, const char* sourceLocation = nullptr) {
-	optional<string> resString = xr_to_string(instance, res);
-	if (resString == nullopt) {
-		Throw(Fmt("XrResult failure [%s]", to_string(res)), originator, sourceLocation);
+	std::optional<std::string> resString = xr_to_string(instance, res);
+	if (resString == std::nullopt) {
+		Throw(Fmt("XrResult failure [%s]", std::to_string(res)), originator, sourceLocation);
 	} else {
 		Throw(Fmt("XrResult failure [%s]", resString.value().c_str()), originator, sourceLocation);
 	}

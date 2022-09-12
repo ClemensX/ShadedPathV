@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Util.h"
 
+using namespace std;
 
 LogfileScanner::LogfileScanner()
 {

@@ -1,5 +1,7 @@
 #include "pch.h"
 
+using namespace glm;
+
 void World::createGridXZ(Grid& grid, bool linesmode) {
 	int zLineCount = grid.depthCells + 1;
 	int xLineCount = grid.widthCells + 1;

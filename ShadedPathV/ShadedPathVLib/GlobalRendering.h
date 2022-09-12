@@ -9,8 +9,8 @@ struct ShaderState;
 #endif
 
 struct QueueFamilyIndices {
-	optional<uint32_t> graphicsFamily;
-	optional<uint32_t> presentFamily;
+	std::optional<uint32_t> graphicsFamily;
+	std::optional<uint32_t> presentFamily;
 	bool isComplete(bool presentationEnabled) {
 		if (presentationEnabled)
 			return graphicsFamily.has_value() && presentFamily.has_value();
@@ -112,7 +112,7 @@ public:
 		VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
 		createImage(width, height, mipLevels, numSamples, format, tiling, usage, properties, image, imageMemory, 6);
 	}
-	void createCubeMapFrom2dTexture(string textureName2d, string textureNameCube);
+	void createCubeMapFrom2dTexture(std::string textureName2d, std::string textureNameCube);
 
 	// fill in viewport and scissor and create VkPipelineViewportStateCreateInfo with them
 	void createViewportState(ShaderState &shaderState);
@@ -141,7 +141,7 @@ public:
 	};
 
 private:
-	vector<const char*> deviceExtensions = {
+	std::vector<const char*> deviceExtensions = {
 		//VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
 		//VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
 #if defined(ENABLE_DEBUG_MARKER_EXTENSION)
@@ -152,7 +152,7 @@ private:
 	void gatherDeviceExtensions();
 	void initVulkanInstance();
 
-	vector<const char*> getRequiredExtensions();
+	std::vector<const char*> getRequiredExtensions();
 
 	// devices
 	void pickPhysicalDevice(bool listmode = false);
@@ -171,15 +171,15 @@ private:
 		result = vpGetInstanceProfileSupport(nullptr, &profile, &supported);
 		if (result != VK_SUCCESS) {
 			// something went wrong
-			Log("Vulkan profile not supported: " << profile.profileName << endl);
+			Log("Vulkan profile not supported: " << profile.profileName << std::endl);
 			return false;
 		}
 		else if (supported != VK_TRUE) {
 			// profile is not supported at the instance level
-			Log("Vulkan profile instance not supported: " << profile.profileName << " instance: " << profile.specVersion << endl);
+			Log("Vulkan profile instance not supported: " << profile.profileName << " instance: " << profile.specVersion << std::endl);
 			return false;
 		}
-		Log("Vulkan profile checked ok: " << profile.profileName << " instance: " << profile.specVersion << endl)
+		Log("Vulkan profile checked ok: " << profile.profileName << " instance: " << profile.specVersion << std::endl)
 			return true;
 	}
 	bool checkDeviceProfileSupport(VkInstance instance, VkPhysicalDevice physDevice) {
@@ -188,15 +188,15 @@ private:
 		result = vpGetPhysicalDeviceProfileSupport(instance, physDevice, &profile, &supported);
 		if (result != VK_SUCCESS) {
 			// something went wrong
-			Log("Vulkan device profile not supported: " << profile.profileName << endl);
+			Log("Vulkan device profile not supported: " << profile.profileName << std::endl);
 			return false;
 		}
 		else if (supported != VK_TRUE) {
 			// profile is not supported at the instance level
-			Log("Vulkan device profile not supported: " << profile.profileName << " instance: " << profile.specVersion << endl);
+			Log("Vulkan device profile not supported: " << profile.profileName << " instance: " << profile.specVersion << std::endl);
 			return false;
 		}
-		Log("Vulkan device profile checked ok: " << profile.profileName << " instance: " << profile.specVersion << endl)
+		Log("Vulkan device profile checked ok: " << profile.profileName << " instance: " << profile.specVersion << std::endl)
 			return true;
 	}
 };

@@ -57,7 +57,7 @@ public:
 	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2, bool outsideMode = false);
 
 	// set skybox cube texture id. The coresponding cube texture has do be loaded before calling this.
-	void setSkybox(string texID);
+	void setSkybox(std::string texID);
 
 	// set far plane, user to calculate size of skybox
 	void setFarPlane(float farPlane) {

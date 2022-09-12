@@ -29,10 +29,10 @@ private:
 	void beginFrame();
 	void buildUI();
 	void endFrame();
-	atomic<bool> enabled = false;
+	std::atomic<bool> enabled = false;
 	ShadedPathEngine* engine = nullptr;
 	VkDescriptorPool g_DescriptorPool = VK_NULL_HANDLE;
-	mutable mutex monitorMutex;
-	atomic<bool> uiRenderAvailable = false;
+	mutable std::mutex monitorMutex;
+	std::atomic<bool> uiRenderAvailable = false;
 };
 

@@ -1,5 +1,7 @@
 #include "pch.h"
 
+using namespace std;
+
 void UI::init(ShadedPathEngine* engine)
 {
     this->engine = engine;

@@ -1,5 +1,7 @@
 #include "pch.h"
 
+using namespace std;
+
 void ShadedPathEngine::init(string appname)
 {
     this->appname = appname;

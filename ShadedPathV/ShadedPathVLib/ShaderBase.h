@@ -121,12 +121,12 @@ public:
 	// each shader has its own descriptor pool
 	// poolSizes will be auto-multiplied by number of render threads
 	// to have enough descriptors for all threads
-	void createDescriptorPool(vector<VkDescriptorPoolSize>& poolSizes, uint32_t overrideMaxSet = 0);
+	void createDescriptorPool(std::vector<VkDescriptorPoolSize>& poolSizes, uint32_t overrideMaxSet = 0);
 	// each shader has its own descriptor pool
 	// poolSizes will be auto-multiplied by number of render threads
 	// to have enough descriptors for all threads
 	// additionally a set of non-thread related pool sizes can be specified
-	void createDescriptorPool(vector<VkDescriptorPoolSize>& poolSizes, vector<VkDescriptorPoolSize>& threadIndependentPoolSizes, uint32_t overrideMaxSet = 0);
+	void createDescriptorPool(std::vector<VkDescriptorPoolSize>& poolSizes, std::vector<VkDescriptorPoolSize>& threadIndependentPoolSizes, uint32_t overrideMaxSet = 0);
 
 	// Thread dependent intializations:
 

@@ -6,6 +6,8 @@
 #define FX_PATH "Release"
 #endif
 
+using namespace std;
+
 void Files::findFxFolder()
 {
 	filesystem::path current = filesystem::current_path();

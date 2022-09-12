@@ -1,5 +1,7 @@
 #include "pch.h"
 
+using namespace std;
+
 Shaders::Config& Shaders::Config::init()
 {
 	// some plausibility checks

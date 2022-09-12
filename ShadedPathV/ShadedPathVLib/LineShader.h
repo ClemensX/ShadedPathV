@@ -8,7 +8,7 @@ struct LineDef {
 // per frame resources for this effect
 struct LineFrameData {
 public:
-	vector<LineDef> addLines;
+	std::vector<LineDef> addLines;
 };
 
 // line shader draws lines, it creates 2 pipelines, one for fixed lines (uploaded at start)
@@ -63,12 +63,12 @@ public:
 	virtual void destroyThreadResources(ThreadResources& tr) override;
 
 	// add lines - they will never  be removed
-	void add(vector<LineDef>& linesToAdd);
+	void add(std::vector<LineDef>& linesToAdd);
 	// initial upload of all added lines - only valid before first render
 	void initialUpload();
 
 	// add lines for just one frame
-	void addOneTime(vector<LineDef>& linesToAdd, ThreadResources& tr);
+	void addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& tr);
 
 	void createCommandBufferLineAdd(ThreadResources& tr);
 
@@ -92,7 +92,7 @@ private:
 	//void destroy();
 
 
-	vector<LineDef> lines;
+	std::vector<LineDef> lines;
 	int drawAddLinesSize;
 
 	UniformBufferObject ubo, updatedUBO;
@@ -114,7 +114,7 @@ private:
 	// util methods
 public:
 
-	static void addCross(vector<LineDef>& lines, vec3 pos, vec4 color) {
+	static void addCross(std::vector<LineDef>& lines, glm::vec3 pos, glm::vec4 color) {
 		static float oDistance = 5.0f;
 		LineDef crossLines[] = {
 			// start, end, color
@@ -122,11 +122,11 @@ public:
 			{ glm::vec3(pos.x, pos.y-oDistance, pos.z), glm::vec3(pos.x, pos.y+oDistance, pos.z), color },
 			{ glm::vec3(pos.x, pos.y, pos.z-oDistance), glm::vec3(pos.x, pos.y, pos.z+oDistance), color }
 		};
-		lines.insert(lines.end(), crossLines, crossLines + size(crossLines));
+		lines.insert(lines.end(), crossLines, crossLines + std::size(crossLines));
 	}
 
-	static void addZeroCross(vector<LineDef>& lines) {
-		addCross(lines, vec3(), vec4(1.0f, 1.0f, 1.0f, 1.0f));
+	static void addZeroCross(std::vector<LineDef>& lines) {
+		addCross(lines, glm::vec3(), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 		static float oDistance = 5.0f;
 		LineDef crossLines[] = {
 			// start, end, color
@@ -134,7 +134,7 @@ public:
 			{ glm::vec3(0.0f, -oDistance, 0.0f), glm::vec3(0.0f, oDistance, 0.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) },
 			{ glm::vec3(0.0f, 0.0f, -oDistance), glm::vec3(0.0f, 0.0f, oDistance), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) }
 		};
-		lines.insert(lines.end(), crossLines, crossLines + size(crossLines));
+		lines.insert(lines.end(), crossLines, crossLines + std::size(crossLines));
 	}
 };
 
@@ -162,5 +162,5 @@ struct LineThreadResources : ShaderThreadResources {
 	VkDeviceMemory uniformBufferMemory2 = nullptr;
 	VkDescriptorSet descriptorSet = nullptr;
 	VkDescriptorSet descriptorSet2 = nullptr;
-	vector<LineShader::Vertex> verticesAddLines;
+	std::vector<LineShader::Vertex> verticesAddLines;
 };

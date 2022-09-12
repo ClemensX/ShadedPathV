@@ -1,5 +1,7 @@
 #include "pch.h"
 
+using namespace std;
+
 void TextureStore::init(ShadedPathEngine* engine) {
 	this->engine = engine;
 	// Set up Vulkan physical device (gpu), logical device (device), queue

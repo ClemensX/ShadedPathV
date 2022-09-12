@@ -10,13 +10,13 @@ struct MeshInfo;
 
 class glTF {
 public:
-	inline static const string BASE_COLOR_TEXTURE = "baseColorTexture";
+	inline static const std::string BASE_COLOR_TEXTURE = "baseColorTexture";
 
 	void init(ShadedPathEngine* e);
 	// only load vertex and index info from model. Useful for wireframe rendering
-	void loadVertices(const unsigned char* data, int size, MeshInfo* mesh, vector<PBRShader::Vertex>& verts, vector<uint32_t>& indexBuffer, string filename);
+	void loadVertices(const unsigned char* data, int size, MeshInfo* mesh, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indexBuffer, std::string filename);
 	// load model and prepare for PBR rendering
-	void load(const unsigned char* data, int size, MeshInfo *mesh, string filename);
+	void load(const unsigned char* data, int size, MeshInfo *mesh, std::string filename);
 	// used for hook into tinygltf image loading:
 	struct gltfUserData {
 		ShadedPathEngine* engine = nullptr;
@@ -24,10 +24,10 @@ public:
 	};
 private:
 	// load model from data pointer. Image data will also be parsed with results in mesh->textureInfos[]
-	void loadModel(tinygltf::Model& model, const unsigned char* data, int size, MeshInfo* mesh, string filename);
+	void loadModel(tinygltf::Model& model, const unsigned char* data, int size, MeshInfo* mesh, std::string filename);
 	// copy model vertices and indices into vectors
 	// index buffer will be 32 bit wide in all cases (VK_INDEX_TYPE_UINT32)
-	void loadVertices(tinygltf::Model& model, MeshInfo* mesh, vector<PBRShader::Vertex>& verts, vector<uint32_t>& indexBuffer);
+	void loadVertices(tinygltf::Model& model, MeshInfo* mesh, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indexBuffer);
 	// assign textures to their proper PBR members in mesh and read or create texture samplers
 	void prepareTextures(tinygltf::Model& model, MeshInfo* mesh);
 	// validate that gltf is within our parsable features

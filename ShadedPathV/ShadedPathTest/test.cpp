@@ -2,6 +2,8 @@
 #include "pch.h"
 #include "test.h"
 
+using namespace std;
+using namespace glm;
 
 TEST(Environment, GLM) {
     glm::mat4 m1;

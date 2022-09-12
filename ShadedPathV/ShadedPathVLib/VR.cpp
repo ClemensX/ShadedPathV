@@ -9,6 +9,8 @@
 #endif
 #endif
 
+using namespace std;
+
 void VR::init()
 {
     if (!engine.isVR()) return;

@@ -45,7 +45,7 @@ class Shaders
 			}
 		}
 	private:
-		vector<ShaderBase*> shaderList;
+		std::vector<ShaderBase*> shaderList;
 		ShadedPathEngine* engine;
 		ShaderState shaderState;
 	};
@@ -80,7 +80,7 @@ public:
 
 	// general methods
 	void queueSubmit(ThreadResources& tr);
-	VkShaderModule createShaderModule(const vector<byte>& code);
+	VkShaderModule createShaderModule(const std::vector<std::byte>& code);
 
 	// SHADERS. All shaders instances are here, but each shader has to be activated in application code
 

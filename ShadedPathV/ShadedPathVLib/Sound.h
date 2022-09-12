@@ -18,10 +18,10 @@ public:
 	~Sound(void);
 	void init();
 	int addWorldObject(WorldObject* wo, char *cueName);
-	unordered_map<string, SoundDef> sounds;
+	std::unordered_map<std::string, SoundDef> sounds;
 private:
-	wstring project_filename;
-	vector<WorldObject*> audibleWorldObjects;  // index used instead of passing WorldObject down to sound class
+	std::wstring project_filename;
+	std::vector<WorldObject*> audibleWorldObjects;  // index used instead of passing WorldObject down to sound class
 
 	int numDoNothingFrames;
 	bool recalculateSound();
@@ -30,7 +30,7 @@ private:
 	bool initialized = false;
 public:
 	void Update();
-	void openSoundFile(wstring soundFileName, string id, bool loop = false);
-	void playSound(string id, SoundCategory category = EFFECT, float volume = 1.0f);
+	void openSoundFile(std::wstring soundFileName, std::string id, bool loop = false);
+	void playSound(std::string id, SoundCategory category = EFFECT, float volume = 1.0f);
 	void lowBackgroundMusicVolume(bool volumeDown = true);
 };

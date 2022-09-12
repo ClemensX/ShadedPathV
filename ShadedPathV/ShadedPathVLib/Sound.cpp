@@ -1,4 +1,5 @@
 #include "pch.h"
+
 //#define STB_VORBIS_HEADER_ONLY
 //#include "miniaudio/extras/stb_vorbis.c"    // Enables Vorbis decoding.
 //
@@ -111,11 +112,11 @@ void Sound::Update() {
 #define fourccDPDS 'sdpd'
 #endif
 
-VOID Sound::openSoundFile(wstring fileName, string id, bool loop)
+VOID Sound::openSoundFile(std::wstring fileName, std::string id, bool loop)
 {
 	HWND hWnd = nullptr;//DXUTGetHWND();
 	//HRESULT hr;
-	wstring binFile; // = xapp().findFile(fileName.c_str(), XApp::SOUND);
+	std::wstring binFile; // = xapp().findFile(fileName.c_str(), XApp::SOUND);
 	SoundDef sd;
 	if (sounds.count(id) == 0) {
 		ZeroMemory(&sd, sizeof(sd));
@@ -128,7 +129,7 @@ VOID Sound::openSoundFile(wstring fileName, string id, bool loop)
 	return;
 }
 
-void Sound::playSound(string id, SoundCategory category, float volume) {
+void Sound::playSound(std::string id, SoundCategory category, float volume) {
 	HRESULT hr;
 	assert(sounds.count(id) > 0);
 	SoundDef *sound = &sounds[id];

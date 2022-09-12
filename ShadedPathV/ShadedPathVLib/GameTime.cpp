@@ -1,5 +1,7 @@
 #include "pch.h"
 
+using namespace std;
+
 GameTime::GameTime()
 {
 	// get tick per second:

@@ -1,5 +1,7 @@
 #include "pch.h"
 
+using namespace std;
+
 void Presentation::init()
 {
     if (!enabled) return;

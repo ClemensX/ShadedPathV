@@ -1,5 +1,7 @@
 #include "pch.h"
 
+using namespace std;
+
 void CubeShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 {
 	ShaderBase::init(engine);

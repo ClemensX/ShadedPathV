@@ -37,7 +37,7 @@ public:
 
 	bool shouldClose();
 
-	void possiblyAddDeviceExtensions(vector<const char*> &ext);
+	void possiblyAddDeviceExtensions(std::vector<const char*> &ext);
 
 	// copy image from backbuffer to presentation window
 	// prepare command buffer for copy of back buffer to swap chain images
@@ -53,14 +53,14 @@ public:
 	GLFWwindow* window = nullptr;
 	VkQueue presentQueue = nullptr;
 	VkSwapchainKHR swapChain{};
-	vector<VkImage> swapChainImages;
+	std::vector<VkImage> swapChainImages;
 	VkFormat swapChainImageFormat{};
 	VkExtent2D swapChainExtent{};
-	vector<VkImageView> swapChainImageViews;
+	std::vector<VkImageView> swapChainImageViews;
 	uint32_t imageCount;
 private:
 	ShadedPathEngine& engine;
-	const vector<const char*> deviceExtensions = {
+	const std::vector<const char*> deviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};
 	void createSurface();

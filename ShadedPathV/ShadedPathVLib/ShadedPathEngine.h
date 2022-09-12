@@ -29,9 +29,9 @@ public:
         Log("Engine c'tor\n");
         files.findFxFolder();
     }
-    const string engineName = "ShadedPathV";
-    const string engineVersion = "0.1";
-    const uint32 engineVersionInt = 1;
+    const std::string engineName = "ShadedPathV";
+    const std::string engineVersion = "0.1";
+    const uint32_t engineVersionInt = 1;
 
     virtual ~ShadedPathEngine();
 
@@ -132,7 +132,7 @@ public:
 
     // initialize Vulkan and other libraries, also internal lists and instances
     // no config methods after calling init
-    void init(string appname);
+    void init(std::string appname);
 
     // called once to setup commandbuffers for the shaders
     // has to be called after all shaders have been initialized
@@ -163,7 +163,7 @@ public:
     Shaders shaders;
     Util util;
     VR vr;
-    vector<ThreadResources> threadResources;
+    std::vector<ThreadResources> threadResources;
     TextureStore textureStore;
     MeshStore meshStore;
     WorldObjectStore objectStore;
@@ -184,7 +184,7 @@ public:
         return backBufferAspect;
     }
     ShadedPathApplication* app = nullptr;
-    string appname;
+    std::string appname;
 private:
     float backBufferAspect = 1.0f;
     long limitFrameCount = 0;
@@ -214,7 +214,7 @@ private:
     // start the processing thread in the background and return immediately. May only be called once
     static void runDrawFrame(ShadedPathEngine* engine_instance, ThreadResources* tr);
     static void runQueueSubmit(ShadedPathEngine* engine_instance);
-    atomic<bool> shutdown_mode = false;
+    std::atomic<bool> shutdown_mode = false;
     ThreadLimiter limiter;
 
     // advance currentFrameIndex and frameNum
@@ -222,11 +222,11 @@ private:
     // get next frame number for drawing threads:
     long getNextFrameNumber();
     // current frame index - always within 0 .. threadResources.size() - 1
-    atomic<size_t> currentFrameIndex = 0;
+    std::atomic<size_t> currentFrameIndex = 0;
 
     // count all frames
-    atomic<long> frameNum = 0;
+    std::atomic<long> frameNum = 0;
     // for rendering threads
-    atomic<long> nextFreeFrameNum = 0;
+    std::atomic<long> nextFreeFrameNum = 0;
 };
 

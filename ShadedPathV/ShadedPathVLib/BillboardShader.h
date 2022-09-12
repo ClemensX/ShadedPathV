@@ -2,8 +2,8 @@
 // Billboards - draw simple billboards in world coordinates with direction and size
 // Mesh Shader implemenation
 struct BillboardDef {
-	vec3 pos;
-	vec3 dir;
+	glm::vec3 pos;
+	glm::vec3 dir;
 	float w;
 	float h;
 	TextureID tex;
@@ -12,7 +12,7 @@ struct BillboardDef {
 // per frame resources for this effect
 struct BillboardFrameData {
 public:
-	vector<BillboardDef> addBillboards;
+	std::vector<BillboardDef> addBillboards;
 };
 
 // Billboard shader draws billboards, it creates 2 pipelines, one for fixed (uploaded at start)
@@ -24,8 +24,8 @@ public:
 	static const size_t MAX_BILLBOARDS = 100000;
 	// define billboard size and pos, --> to GPU as single UBO with all Billboards mem mapped
 	struct Vertex {
-		vec3 pos;
-		vec3 dir;
+		glm::vec3 pos;
+		glm::vec3 dir;
 		float w;
 		float h;
 	};

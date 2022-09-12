@@ -4,10 +4,10 @@ class CameraPositionerInterface {
 public:
 	virtual ~CameraPositionerInterface() = default;
 	// get view matrix to transform world coords to camera space
-	virtual mat4 getViewMatrix() const = 0;
+	virtual glm::mat4 getViewMatrix() const = 0;
 	// get view matrix without camera movement. Think of skybox that needs to surround camera pos, but with lookAt
-	virtual mat4 getViewMatrixAtCameraPos() const = 0;
-	virtual vec3 getPosition() const = 0;
+	virtual glm::mat4 getViewMatrixAtCameraPos() const = 0;
+	virtual glm::vec3 getPosition() const = 0;
 };
 
 class  Camera final
@@ -29,20 +29,20 @@ public:
 	}
 
 	// save projection matrix in normal screen space (y up)
-	void saveProjection(mat4 p) {
+	void saveProjection(glm::mat4 p) {
 		p[1][1] *= -1.0f;
 		projection = p;
 	}
 
 	// get adjusted projection matrix for Vulkan Normalized Device Coordinates (flip y)
 	// use this for projection matrix in shaders
-	mat4 getProjectionNDC() {
+	glm::mat4 getProjectionNDC() {
 		return projection;
 	}
 
 private:
 	CameraPositionerInterface& positioner;
-	mat4 projection = mat4(1.0f);
+	glm::mat4 projection = glm::mat4(1.0f);
 };
 
 // standard first person camera, should be used for most rendering.

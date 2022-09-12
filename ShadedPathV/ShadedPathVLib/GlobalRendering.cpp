@@ -1,5 +1,7 @@
 #include "pch.h"
 
+using namespace std;
+
 // some const definitions for validation and extension levels
 const vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"

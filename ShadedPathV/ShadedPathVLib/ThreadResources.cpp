@@ -1,5 +1,7 @@
 #include "pch.h"
 
+using namespace std;
+
 ShadedPathEngine* ThreadResources::engine = nullptr;
 
 ThreadResources::ThreadResources()

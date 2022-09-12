@@ -1,6 +1,6 @@
 #pragma once
 struct Grid {
-	vec4 center;
+	glm::vec4 center;
 	float width; // total width (along x axis) of grid in units
 	float depth; // total depth (along z axis) in units
 	int widthCells; // number of cells to separate along x axis
@@ -9,11 +9,11 @@ struct Grid {
 	//vector<XMFLOAT4> zLineEndpoints; // parallel to z axis
 	//vector<XMFLOAT4> xLineEndpoints; // parallel to x axis
 	// lines mode:
-	vector<LineDef> lines;
+	std::vector<LineDef> lines;
 	// triangle mode with vertices and indexes:
-	vector<vec3> vertices;
-	vector<vec2> tex;  //texture coords, stretch texture over entire area
-	vector<UINT> indexes;
+	std::vector<glm::vec3> vertices;
+	std::vector<glm::vec2> tex;  //texture coords, stretch texture over entire area
+	std::vector<UINT> indexes;
 };
 
 class World

@@ -1,5 +1,7 @@
 #include "pch.h"
 
+using namespace std;
+
 // Define these only in *one* .cc file.
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
@@ -126,11 +128,11 @@ void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, vector<PBRShader
 			for (size_t v = 0; v < posAccessor.count; v++) {
 				size_t pos = v * posByteStride;
 				PBRShader::Vertex vert;
-				vert.pos = vec3(bufferPos[pos], bufferPos[pos + 1], bufferPos[pos + 2]);
+				vert.pos = glm::vec3(bufferPos[pos], bufferPos[pos + 1], bufferPos[pos + 2]);
 				if (mesh->baseColorTexture) {
 					const float* coordDataPtr = mesh->baseColorTexture->gltfTexCoordData;
 					int stride = mesh->baseColorTexture->gltfUVByteStride;
-					vert.uv0 = vec2(coordDataPtr[v * stride], coordDataPtr[v * stride + 1]);
+					vert.uv0 = glm::vec2(coordDataPtr[v * stride], coordDataPtr[v * stride + 1]);
 				}
 				verts.push_back(vert);
 				//verts.push_back(vert2);

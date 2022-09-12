@@ -23,7 +23,7 @@ public:
 	bool enabled = false;
 
 	// extensions: XR_KHR_vulkan_enable2, XR_EXT_hand_tracking
-	const vector<string> REQUIRED_XR_EXTENSIONS { "XR_KHR_vulkan_enable2", "XR_EXT_hand_tracking" };
+	const std::vector<std::string> REQUIRED_XR_EXTENSIONS { "XR_KHR_vulkan_enable2", "XR_EXT_hand_tracking" };
 
 	// Transferred from Sample Code:
 	void logLayersAndExtensions();
@@ -42,7 +42,7 @@ private:
 	XrSystemProperties xrProp{};
 	XrSession session = nullptr;
 	XrSpace sceneSpace = nullptr;
-	vector<XrViewConfigurationView> xrConfigViews;
+	std::vector<XrViewConfigurationView> xrConfigViews;
 
 	// init calls
 	void createSystem();

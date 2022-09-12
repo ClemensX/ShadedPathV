@@ -3,15 +3,15 @@ class Util;
 // Describe a loaded mesh. mesh IDs are unique, several Objects may be instantiated backed by the same mesh
 struct MeshInfo
 {
-	string id;
-	string filename;
+	std::string id;
+	std::string filename;
 	bool available = false; // true if this object is ready for use in shader code
 
 	// gltf data: valid after object load, should be cleared after upload
-	vector<PBRShader::Vertex> vertices;
-	vector<uint32_t> indices;
-	vector<ktxTexture*> textureParseInfo;
-	vector<::TextureInfo*> textureInfos; // we check for max size in 
+	std::vector<PBRShader::Vertex> vertices;
+	std::vector<uint32_t> indices;
+	std::vector<ktxTexture*> textureParseInfo;
+	std::vector<::TextureInfo*> textureInfos; // we check for max size in 
 	// named accessors for textures in above vector:
 	::TextureInfo* baseColorTexture = nullptr;
 	::TextureInfo* metallicRoughnessTexture = nullptr;
@@ -38,22 +38,22 @@ public:
 	void init(ShadedPathEngine* engine);
 	~MeshStore();
 	// load mesh wireframe and add to Line vector
-	void loadMeshWireframe(string filename, string id, vector<LineDef>& lines);
+	void loadMeshWireframe(std::string filename, std::string id, std::vector<LineDef>& lines);
 	// load mesh, objects are referenced via id string. Only one mesh for any ID allowed.
-	void loadMesh(string filename, string id);
+	void loadMesh(std::string filename, std::string id);
 	// get sorted object list (sorted by type)
 	// meshes are only resorted if one was added in the meantime
-	const vector<MeshInfo*> &getSortedList();
+	const std::vector<MeshInfo*> &getSortedList();
 	// upload single model to GPU
 	void uploadObject(MeshInfo* obj);
 
-	MeshInfo* getMesh(string id);
+	MeshInfo* getMesh(std::string id);
 private:
-	MeshInfo* loadMeshFile(string filename, string id, vector<byte> &fileBuffer);
-	unordered_map<string, MeshInfo> meshes;
+	MeshInfo* loadMeshFile(std::string filename, std::string id, std::vector<std::byte> &fileBuffer);
+	std::unordered_map<std::string, MeshInfo> meshes;
 	ShadedPathEngine* engine = nullptr;
 	Util* util;
-	vector<MeshInfo*> sortedList;
+	std::vector<MeshInfo*> sortedList;
 	glTF gltf;
 };
 
@@ -61,24 +61,24 @@ private:
 class BoundingBox {
 public:
 	// initialize min to larges value and vice-versa, simplifies calculations
-	vec3 min = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
-	vec3 max = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	glm::vec3 min = glm::vec3(FLT_MAX, FLT_MAX, FLT_MAX);
+	glm::vec3 max = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 };
 
 // 
 class WorldObject {
 public:
-	static atomic<UINT> count; // count all objects
+	static std::atomic<UINT> count; // count all objects
 	WorldObject();
 	virtual ~WorldObject();
-	vec3& pos();
-	vec3& rot();
+	glm::vec3& pos();
+	glm::vec3& rot();
 	MeshInfo* mesh = nullptr;
 	float alpha = 1.0f;
 	bool disableSkinning = false; // set to true for animated object to use as static meshes
 	bool isNonKeyframeAnimated = false; // signal that poses are not interpoalted by Path, but computed outside and set in update()
 	int visible; // visible in current view frustrum: 0 == no, 1 == intersection, 2 == completely visible
-	void setAction(string name);
+	void setAction(std::string name);
 	// return current bounding box by scanning all vertices, used for bone animated objects
 	// if maximise is true bounding box may increase with each call, depending on current animation
 	// (used to get max bounding box for animated objects)
@@ -87,7 +87,7 @@ public:
 	void forceBoundingBox(BoundingBox box);
 	// get bounding box either from mesh data, or the one overridden by forceBoundingBox()
 	void getBoundingBox(BoundingBox& box);
-	vec3 objectStartPos;
+	glm::vec3 objectStartPos;
 	// 3d sound 
 	//int soundListIndex;  // index into audibleWorldObjects, used to get the 3d sound settings for this object, see Sound.h
 	bool stopped; // a running cue may temporarily stopped
@@ -99,10 +99,10 @@ public:
 	bool drawNormals;
 	UINT objectNum; // must be unique for all objects
 private:
-	vec3 _pos;
-	vec3 _rot;
-	vec3 bboxVertexMin = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
-	vec3 bboxVertexMax = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	glm::vec3 _pos;
+	glm::vec3 _rot;
+	glm::vec3 bboxVertexMin = glm::vec3(FLT_MAX, FLT_MAX, FLT_MAX);
+	glm::vec3 bboxVertexMax = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 	bool boundingBoxAlreadySet = false;
 	BoundingBox boundingBox;
 };
@@ -116,18 +116,18 @@ public:
 	}
 	// objects
 	// add loaded object to scene
-	void addObject(string groupname, string id, vec3 pos);
-	void addObject(WorldObject& w, string id, vec3 pos);
+	void addObject(std::string groupname, std::string id, glm::vec3 pos);
+	void addObject(WorldObject& w, std::string id, glm::vec3 pos);
 	// obbject groups: give fast access to specific objects (e.g. all worm NPCs)
-	void createGroup(string groupname);
-	const vector<unique_ptr<WorldObject>>* getGroup(string groupname);
+	void createGroup(std::string groupname);
+	const std::vector<std::unique_ptr<WorldObject>>* getGroup(std::string groupname);
 	// get sorted object list (sorted by type)
 	// meshes are only resorted if one was added in the meantime
-	const vector<WorldObject*>& getSortedList();
+	const std::vector<WorldObject*>& getSortedList();
 private:
-	unordered_map<string, vector<unique_ptr<WorldObject>>> groups;
-	void addObjectPrivate(WorldObject* w, string id, vec3 pos);
+	std::unordered_map<std::string, std::vector<std::unique_ptr<WorldObject>>> groups;
+	void addObjectPrivate(WorldObject* w, std::string id, glm::vec3 pos);
 	MeshStore *meshStore;
-	vector<WorldObject*> sortedList;
+	std::vector<WorldObject*> sortedList;
 	UINT numObjects = 0;
 };

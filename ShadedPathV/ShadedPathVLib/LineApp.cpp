@@ -1,5 +1,7 @@
 #include "pch.h"
 
+using namespace std;
+using namespace glm;
 
 void LineApp::run()
 {

@@ -59,8 +59,8 @@ public:
 	// frame management
 	long frameNum = -1;
 	long frameIndex = -1;
-	vector<VkSubmitInfo> submitinfos;
-	vector<VkCommandBuffer> activeCommandBuffers;
+	std::vector<VkSubmitInfo> submitinfos;
+	std::vector<VkCommandBuffer> activeCommandBuffers;
 	VkFence presentFence = nullptr;
 	ThreadsafeWaitingQueue<unsigned long> renderThreadContinueQueue;
 	VkPipelineStageFlags waitStages[2];
@@ -80,7 +80,7 @@ public:
 
 	// VR
 	XrFrameState frameState{ XR_TYPE_FRAME_STATE };
-	vector<XrCompositionLayerBaseHeader*> layers;
+	std::vector<XrCompositionLayerBaseHeader*> layers;
 
 private:
 	void createFencesAndSemaphores();

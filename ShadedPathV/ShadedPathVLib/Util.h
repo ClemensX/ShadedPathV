@@ -2,18 +2,18 @@
 class ShadedPathEngine;
 
 namespace Colors {
-    const vec4 xm{ 1.0f, 0.0f, 1.0f, 1.0f };
-    const vec4 White = { 1.0f, 1.0f, 1.0f, 1.0f };
-    const vec4 Black = { 0.0f, 0.0f, 0.0f, 1.0f };
-    const vec4 Red = { 1.0f, 0.0f, 0.0f, 1.0f };
-    const vec4 Green = { 0.0f, 1.0f, 0.0f, 1.0f };
-    const vec4 Blue = { 0.0f, 0.0f, 1.0f, 1.0f };
-    const vec4 Yellow = { 1.0f, 1.0f, 0.0f, 1.0f };
-    const vec4 Cyan = { 0.0f, 1.0f, 1.0f, 1.0f };
-    const vec4 Magenta = { 1.0f, 0.0f, 1.0f, 1.0f };
+    const glm::vec4 xm{ 1.0f, 0.0f, 1.0f, 1.0f };
+    const glm::vec4 White = { 1.0f, 1.0f, 1.0f, 1.0f };
+    const glm::vec4 Black = { 0.0f, 0.0f, 0.0f, 1.0f };
+    const glm::vec4 Red = { 1.0f, 0.0f, 0.0f, 1.0f };
+    const glm::vec4 Green = { 0.0f, 1.0f, 0.0f, 1.0f };
+    const glm::vec4 Blue = { 0.0f, 0.0f, 1.0f, 1.0f };
+    const glm::vec4 Yellow = { 1.0f, 1.0f, 0.0f, 1.0f };
+    const glm::vec4 Cyan = { 0.0f, 1.0f, 1.0f, 1.0f };
+    const glm::vec4 Magenta = { 1.0f, 0.0f, 1.0f, 1.0f };
 
-    const vec4 Silver = { 0.75f, 0.75f, 0.75f, 1.0f };
-    const vec4 LightSteelBlue = { 0.69f, 0.77f, 0.87f, 1.0f };
+    const glm::vec4 Silver = { 0.75f, 0.75f, 0.75f, 1.0f };
+    const glm::vec4 LightSteelBlue = { 0.69f, 0.77f, 0.87f, 1.0f };
 };
 
 class Util
@@ -24,14 +24,14 @@ public:
     static float getMaxCubeViewDistanceFromFarPlane(float f) {
         return sqrt((f * f) / 3.0f);
     }
-    static void printCStringList(vector<const char *> &exts) {
+    static void printCStringList(std::vector<const char *> &exts) {
         for (uint32_t i = 0; i < exts.size(); i++) {
-            Log("  " << exts[i] << endl);
+            Log("  " << exts[i] << std::endl);
         }
     };
-    static string decodeVulkanVersion(uint32_t version) {
-        string s;
-        s = s + ("") + to_string(VK_API_VERSION_MAJOR(version)) + "." + to_string(VK_API_VERSION_MINOR(version)) + "." + to_string(VK_API_VERSION_PATCH(version));
+    static std::string decodeVulkanVersion(uint32_t version) {
+        std::string s;
+        s = s + ("") + std::to_string(VK_API_VERSION_MAJOR(version)) + "." + std::to_string(VK_API_VERSION_MINOR(version)) + "." + std::to_string(VK_API_VERSION_PATCH(version));
         return s;
     }
     static const char* decodeDeviceType(uint32_t type) {
@@ -87,12 +87,12 @@ class LogfileScanner
 {
 public:
     LogfileScanner();
-    bool assertLineBefore(string before, string after);
+    bool assertLineBefore(std::string before, std::string after);
     // search for line in logfile and return line number, -1 means not found
     // matching line beginnings is enough
-    int searchForLine(string line, int startline = 0);
+    int searchForLine(std::string line, int startline = 0);
 private:
-    vector<string> lines;
+    std::vector<std::string> lines;
 };
 
 struct FrameBufferAttachment {
