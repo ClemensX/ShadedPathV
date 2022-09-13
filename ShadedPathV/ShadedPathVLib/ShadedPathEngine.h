@@ -29,6 +29,11 @@ public:
         Log("Engine c'tor\n");
         files.findFxFolder();
     }
+    // engine state - may be read by apps
+    enum State {
+        INIT,        // before any rendering, all file loading should be done here
+        RENDERING    // in render loop - avoid any unnecessary secondary tasks
+    };
     const std::string engineName = "ShadedPathV";
     const std::string engineVersion = "0.1";
     const uint32_t engineVersionInt = 1;
@@ -68,6 +73,9 @@ public:
         return vrMode;
     }
 
+    bool isRendering() {
+        return state == RENDERING;
+    }
     // enable stereo mode: 2 render buffers for each shader, 
     // 2 images for left and right eye will be displayed in main window.
     // auto-enabled in VR mode
@@ -118,8 +126,12 @@ public:
         enabledMousButtonEvents = true;
     }
 
-    void enableSound() {
-        soundEnabled = true;
+    void enableSound(bool enable = true) {
+        soundEnabled = enable;
+    }
+
+    bool isSoundEnabled() {
+        return soundEnabled;
     }
 
     // limit number of rendered frames - cannot be used together with presentation enabled
@@ -186,6 +198,7 @@ public:
     ShadedPathApplication* app = nullptr;
     std::string appname;
 private:
+    State state = INIT;
     float backBufferAspect = 1.0f;
     long limitFrameCount = 0;
     int framesInFlight = 2;

@@ -1,17 +1,22 @@
 #include "pch.h"
 
-//#define STB_VORBIS_HEADER_ONLY
-//#include "miniaudio/extras/stb_vorbis.c"    // Enables Vorbis decoding.
-//
-//#define MINIAUDIO_IMPLEMENTATION
-//#include "miniaudio/miniaudio.h"
-//
-//// The stb_vorbis implementation must come after the implementation of miniaudio.
-//#undef STB_VORBIS_HEADER_ONLY
-//#include "miniaudio/extras/stb_vorbis.c"
+// remove our CHECK macro as stb_vorbis.c defines it's own
+#undef CHECK
+#define STB_VORBIS_HEADER_ONLY
+#include "miniaudio/extras/stb_vorbis.c"    // Enables Vorbis decoding.
+
+#define MINIAUDIO_IMPLEMENTATION
+#include "miniaudio/miniaudio.h"
+
+// The stb_vorbis implementation must come after the implementation of miniaudio.
+#undef STB_VORBIS_HEADER_ONLY
+#include "miniaudio/extras/stb_vorbis.c"
 
 // always assume 2 source channels, TODO ? check
-#define SRC_CHANNEL_COUNT 2
+//#define SRC_CHANNEL_COUNT 2
+
+ma_result result;
+ma_engine sound_engine;
 
 void Sound::init()
 {
@@ -21,27 +26,36 @@ void Sound::init()
 #if defined (_DEBUG)
 	//flags |= XAUDIO2_DEBUG_ENGINE;
 #endif
-	//UINT32 count;
-	//xaudio2->GetDeviceCount(&count);
-	//Log("xaudio2 device count == " << count << endl);
-	// use decice 0 (== global default sudio device)
-
-	// setup DSP
-
-	// setup emitter and listener
+	// init minaudio high level API engine
+	result = ma_engine_init(NULL, &sound_engine);
+	if (result != MA_SUCCESS) {
+		Log("Sound unavailable. Disabling.");
+		engine.enableSound(false);
+		return;  // Failed to initialize the engine.
+	}
+	Log("Sound initialized" << std::endl);
+	openSoundFile(Sound::SHADED_PATH_JINGLE_FILE, Sound::SHADED_PATH_JINGLE);
+	playSound(Sound::SHADED_PATH_JINGLE, SoundCategory::MUSIC);
 }
 
 Sound::~Sound(void)
 {
+	Log("Sound d'tor" << std::endl);
+	if (!engine.isSoundEnabled()) return;
 	for (auto s : sounds) {
+		ma_sound_uninit(s.second.masound);
+		delete s.second.masound;
+		s.second.masound = nullptr;
 		//if (s.second.voice) {
 		//	s.second.voice->DestroyVoice();
 		//}
 		//delete s.second.buffer.pAudioData;
 	}
+	ma_engine_uninit(&sound_engine);
 }
 
 void Sound::Update() {
+	if (!engine.isSoundEnabled()) return;
 	//Camera* cam = &xapp().camera;;
 	////HRESULT hr;
 	//if (cam && recalculateSound()) {
@@ -112,11 +126,13 @@ void Sound::Update() {
 #define fourccDPDS 'sdpd'
 #endif
 
-VOID Sound::openSoundFile(std::wstring fileName, std::string id, bool loop)
+VOID Sound::openSoundFile(std::string fileName, std::string id, bool loop)
 {
-	HWND hWnd = nullptr;//DXUTGetHWND();
-	//HRESULT hr;
-	std::wstring binFile; // = xapp().findFile(fileName.c_str(), XApp::SOUND);
+	if (engine.isRendering()) {
+		Log("WARNING: do not load sound files during rendering!");
+	}
+	std::string binFile;
+	binFile = engine.files.findFile(fileName.c_str(), FileCategory::SOUND);
 	SoundDef sd;
 	if (sounds.count(id) == 0) {
 		ZeroMemory(&sd, sizeof(sd));
@@ -124,16 +140,34 @@ VOID Sound::openSoundFile(std::wstring fileName, std::string id, bool loop)
 		sd = sounds[id];
 	}
 	sd.loop = loop;
-	//openSoundWithXAudio2(sd, binFile);
 	sounds[id] = sd;
+	if (!engine.isSoundEnabled()) return;
+	ma_sound *m = new ma_sound;
+	sounds[id].masound = m;
+	auto mas = sounds[id].masound; // mas is a ptr
+	result = ma_sound_init_from_file(&sound_engine, binFile.c_str(), NULL, NULL, NULL, mas);
+	if (result != MA_SUCCESS) {
+		Error("Could not load sound");
+	}
 	return;
 }
 
-void Sound::playSound(std::string id, SoundCategory category, float volume) {
+void Sound::playSound(std::string id, SoundCategory category, float volume, uint32_t delayMS) {
+	if (!engine.isSoundEnabled()) return;
+	//result = ma_engine_play_sound(&sound_engine, "C:\\\\dev\\vulkan\\data\\sound\\Free_Test_Data_100KB_OGG.ogg", NULL);
+	//if (result != MA_SUCCESS) {
+	//	Log("Cannot play sound " << result << std::endl);
+	//}
 	HRESULT hr;
 	assert(sounds.count(id) > 0);
 	SoundDef *sound = &sounds[id];
 	sound->category = category;
+	if (sound->loop) {
+		ma_sound_set_looping(sound->masound, true);
+	}
+	uint32_t delaySamples = ma_engine_get_sample_rate(&sound_engine) * delayMS / 1000;
+	ma_sound_set_start_time_in_pcm_frames(sound->masound, ma_engine_get_time(&sound_engine) + delaySamples);
+	ma_sound_start(sound->masound);
 	//XAUDIO2_VOICE_SENDS *sendsList = category == MUSIC ? sfxSendsListMusic : sfxSendsListEffect;
 	//hr = xaudio2->CreateSourceVoice(&sound->voice, (WAVEFORMATEX*)&sound->wfx, 0, XAUDIO2_DEFAULT_FREQ_RATIO, nullptr, sendsList, nullptr);
 	//ThrowIfFailed(hr);
