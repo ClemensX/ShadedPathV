@@ -65,8 +65,11 @@ void Sound::changeSound(WorldObject* wo, std::string soundId)
 	playSound(soundId, SoundCategory::EFFECT);
 }
 
-void Sound::Update(glm::vec3& pos, glm::vec3& lookAt) {
+void Sound::Update(Camera* camera) {
 	if (!engine.isSoundEnabled()) return;
+	glm::vec3 pos(camera->getPosition());
+	glm::vec3 lookAt(camera->getLookAt());
+	// TODO so wee need up vector?
 	// set listener pos
 	ma_engine_listener_set_position(&sound_engine, 0, pos.x, pos.y, pos.z);
 	ma_engine_listener_set_direction(&sound_engine, 0, lookAt.x, lookAt.y, lookAt.z);

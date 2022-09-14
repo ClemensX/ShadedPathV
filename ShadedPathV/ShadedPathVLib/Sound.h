@@ -38,7 +38,7 @@ private:
 	bool initialized = false;
 public:
 	// update sounds with respect to world position
-	void Update(glm::vec3& pos, glm::vec3& lookAt);
+	void Update(Camera* camera);
 	void openSoundFile(std::string soundFileName, std::string id, bool loop = false);
 	// play sound with possible delay (in ms) and volume
 	void playSound(std::string id, SoundCategory category = EFFECT, float volume = 1.0f, uint32_t delayMS = 0);

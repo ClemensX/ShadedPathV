@@ -152,7 +152,7 @@ public:
 	{
 		const glm::mat4 view = getViewMatrix();
 		const glm::vec3 dir = -glm::vec3(view[0][2], view[1][2], view[2][2]);
-		Log("LookAt x y z   " << dir.x << " " << dir.y << " " << dir.z << std::endl);
+		//Log("LookAt x y z   " << dir.x << " " << dir.y << " " << dir.z << std::endl);
 		cameraOrientation = glm::lookAt(cameraPosition, cameraPosition + dir, up);
 	}
 

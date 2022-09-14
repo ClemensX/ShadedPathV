@@ -220,9 +220,7 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
         void* data = buf;
         //Log("APP per frame dynamic buffer to address: " << hex << data << endl);
         if (engine.isGlobalUpdateThread(tr)) {
-            vec3 pos(camera->getPosition());
-            vec3 lookAt(camera->getLookAt());
-            engine.sound.Update(pos, lookAt);
+            engine.sound.Update(camera);
         }
     }
 }
