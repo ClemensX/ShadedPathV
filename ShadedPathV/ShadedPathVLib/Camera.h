@@ -8,6 +8,7 @@ public:
 	// get view matrix without camera movement. Think of skybox that needs to surround camera pos, but with lookAt
 	virtual glm::mat4 getViewMatrixAtCameraPos() const = 0;
 	virtual glm::vec3 getPosition() const = 0;
+	virtual glm::vec3 getLookAt() const = 0;
 };
 
 class  Camera final
@@ -26,6 +27,10 @@ public:
 
 	glm::vec3 getPosition() const {
 		return positioner.getPosition();
+	}
+
+	glm::vec3 getLookAt() const {
+		return positioner.getLookAt();
 	}
 
 	// save projection matrix in normal screen space (y up)
@@ -128,6 +133,13 @@ public:
 		return cameraPosition;
 	}
 
+	virtual glm::vec3 getLookAt() const override {
+		const glm::mat4 view = getViewMatrix();
+		const glm::vec3 dir = -glm::vec3(view[0][2], view[1][2], view[2][2]);
+		//Log("LookAt x y z   " << dir.x << " " << dir.y << " " << dir.z << std::endl);
+		return dir;
+	}
+
 	void setPosition(const glm::vec3& pos) {
 		cameraPosition = pos;
 	}
@@ -140,6 +152,7 @@ public:
 	{
 		const glm::mat4 view = getViewMatrix();
 		const glm::vec3 dir = -glm::vec3(view[0][2], view[1][2], view[2][2]);
+		Log("LookAt x y z   " << dir.x << " " << dir.y << " " << dir.z << std::endl);
 		cameraOrientation = glm::lookAt(cameraPosition, cameraPosition + dir, up);
 	}
 

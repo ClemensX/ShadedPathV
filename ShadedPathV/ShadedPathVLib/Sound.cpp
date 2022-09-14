@@ -54,8 +54,32 @@ Sound::~Sound(void)
 	ma_engine_uninit(&sound_engine);
 }
 
-void Sound::Update() {
+void Sound::changeSound(WorldObject* wo, std::string soundId)
+{
+	assert(sounds.count(soundId) > 0);
+	SoundDef* sound = &sounds[soundId];
+	if (wo->playing) {
+		// TODO stop sound
+	}
+	wo->soundDef = sound;
+	playSound(soundId, SoundCategory::EFFECT);
+}
+
+void Sound::Update(glm::vec3& pos, glm::vec3& lookAt) {
 	if (!engine.isSoundEnabled()) return;
+	// set listener pos
+	ma_engine_listener_set_position(&sound_engine, 0, pos.x, pos.y, pos.z);
+	ma_engine_listener_set_direction(&sound_engine, 0, lookAt.x, lookAt.y, lookAt.z);
+	// adjust sound positions
+	for (int i = 0; i < audibleWorldObjects.size(); i++) {
+		WorldObject* wo = audibleWorldObjects[i];
+		if (wo->soundDef == nullptr) {
+			continue;  // nothing to play right now
+		} else {
+			// adjust positioning
+			ma_sound_set_position(wo->soundDef->masound, wo->pos().x, wo->pos().y, wo->pos().z);
+		}
+	}
 	//Camera* cam = &xapp().camera;;
 	////HRESULT hr;
 	//if (cam && recalculateSound()) {
@@ -165,8 +189,13 @@ void Sound::playSound(std::string id, SoundCategory category, float volume, uint
 	if (sound->loop) {
 		ma_sound_set_looping(sound->masound, true);
 	}
-	uint32_t delaySamples = ma_engine_get_sample_rate(&sound_engine) * delayMS / 1000;
-	ma_sound_set_start_time_in_pcm_frames(sound->masound, ma_engine_get_time(&sound_engine) + delaySamples);
+	if (delayMS > 0) {
+		uint32_t delaySamples = ma_engine_get_sample_rate(&sound_engine) * delayMS / 1000;
+		ma_sound_set_start_time_in_pcm_frames(sound->masound, ma_engine_get_time(&sound_engine) + delaySamples);
+	}
+	if (category == MUSIC) {
+		ma_sound_set_spatialization_enabled(sound->masound, false);
+	}
 	ma_sound_start(sound->masound);
 	//XAUDIO2_VOICE_SENDS *sendsList = category == MUSIC ? sfxSendsListMusic : sfxSendsListEffect;
 	//hr = xaudio2->CreateSourceVoice(&sound->voice, (WAVEFORMATEX*)&sound->wfx, 0, XAUDIO2_DEFAULT_FREQ_RATIO, nullptr, sendsList, nullptr);
@@ -192,9 +221,8 @@ void Sound::lowBackgroundMusicVolume(bool volumeDown) {
 	}
 }
 
-int Sound::addWorldObject(WorldObject* wo, char *cueName) {
+void Sound::addWorldObject(WorldObject* wo) {
 	audibleWorldObjects.push_back(wo);
-	return -1;
 }
 
 #define DO_NOTHING_FRAME_COUNT 5

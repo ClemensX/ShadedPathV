@@ -294,6 +294,12 @@ void ShadedPathEngine::startQueueSubmitThread()
     SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
 }
 
+bool ShadedPathEngine::isGlobalUpdateThread(ThreadResources& tr)
+{
+    // checking for frame index == 0 should be ok for single and multi thread mode.
+    return tr.frameIndex == 0;
+}
+
 long ShadedPathEngine::getNextFrameNumber()
 {
     long n = nextFreeFrameNum++;

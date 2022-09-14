@@ -169,12 +169,13 @@ const vector<unique_ptr<WorldObject>>* WorldObjectStore::getGroup(string groupna
 	return &groups[groupname];
 }
 
-void WorldObjectStore::addObject(string groupname, string id, vec3 pos) {
+WorldObject* WorldObjectStore::addObject(string groupname, string id, vec3 pos) {
 	assert(groups.count(groupname) > 0);
 	auto& grp = groups[groupname];
 	grp.push_back(unique_ptr<WorldObject>(new WorldObject()));
 	WorldObject* w = grp[grp.size() - 1].get();
 	addObjectPrivate(w, id, pos);
+	return w;
 }
 
 void WorldObjectStore::addObject(WorldObject& w, string id, vec3 pos) {

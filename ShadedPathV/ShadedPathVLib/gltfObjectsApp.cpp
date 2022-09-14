@@ -87,7 +87,7 @@ void gltfObjectsApp::init() {
     //auto o = engine.meshStore.getMesh("Knife");
     // add bottle and knife to the scene:
     engine.objectStore.createGroup("bottle_group");
-    engine.objectStore.addObject("bottle_group", "WaterBottle", vec3(0.0f, 0.0f, 0.0f));
+    bottle = engine.objectStore.addObject("bottle_group", "WaterBottle", vec3(0.0f, 0.0f, 0.0f));
     engine.objectStore.createGroup("knife_group");
     engine.objectStore.addObject("knife_group", "Knife", vec3(0.3f, 0.0f, 0.0f));
     //engine.objectStore.addObject("knife_group", "WaterBottle", vec3(0.3f, 0.0f, 0.0f));
@@ -117,7 +117,10 @@ void gltfObjectsApp::init() {
     engine.shaders.cubeShader.initialUpload();
     // load and play music
     engine.sound.openSoundFile("Not Giving Up.ogg", "BACKGROUND_MUSIC", true);
-    engine.sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 1.0f, 6000);
+    //engine.sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 1.0f, 6000);
+    // add sound to object
+    engine.sound.addWorldObject(bottle);
+    engine.sound.changeSound(bottle, "BACKGROUND_MUSIC");
 }
 
 void gltfObjectsApp::drawFrame(ThreadResources& tr) {
@@ -216,6 +219,11 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
         buf->model = modeltransform;
         void* data = buf;
         //Log("APP per frame dynamic buffer to address: " << hex << data << endl);
+        if (engine.isGlobalUpdateThread(tr)) {
+            vec3 pos(camera->getPosition());
+            vec3 lookAt(camera->getLookAt());
+            engine.sound.Update(pos, lookAt);
+        }
     }
 }
 

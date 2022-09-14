@@ -1,4 +1,5 @@
 class Util;
+struct SoundDef;
 
 // Describe a loaded mesh. mesh IDs are unique, several Objects may be instantiated backed by the same mesh
 struct MeshInfo
@@ -89,11 +90,12 @@ public:
 	void getBoundingBox(BoundingBox& box);
 	glm::vec3 objectStartPos;
 	// 3d sound 
-	//int soundListIndex;  // index into audibleWorldObjects, used to get the 3d sound settings for this object, see Sound.h
 	bool stopped; // a running cue may temporarily stopped
 	bool playing; // true == current cue is actually running
-	//SoundDef* soundDef = nullptr;
+	SoundDef* soundDef = nullptr;
 	int maxListeningDistance; // disable sound if farther away than this
+	// no longer used - see Sound.h //int soundListIndex;  // index into audibleWorldObjects, used to get the 3d sound settings for this object, see Sound.h
+
 	float scale;
 	bool drawBoundingBox;
 	bool drawNormals;
@@ -116,7 +118,9 @@ public:
 	}
 	// objects
 	// add loaded object to scene
-	void addObject(std::string groupname, std::string id, glm::vec3 pos);
+	// remember returned ptr for single object access
+	WorldObject* addObject(std::string groupname, std::string id, glm::vec3 pos);
+	// TODO seems unused - remove
 	void addObject(WorldObject& w, std::string id, glm::vec3 pos);
 	// obbject groups: give fast access to specific objects (e.g. all worm NPCs)
 	void createGroup(std::string groupname);

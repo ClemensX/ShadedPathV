@@ -153,7 +153,10 @@ public:
     // call render code in shaders for one frame
     void drawFrame();
     // possibly multi-threaded draw command
-    void drawFrame(ThreadResources &tr);
+    void drawFrame(ThreadResources& tr);
+    // some things need to be done from only one thread (like sound updates).
+    // Apps should check with this method during updatePerFrame()
+    bool isGlobalUpdateThread(ThreadResources& tr);
 
     // poll events via presentation layer
     void pollEvents();
