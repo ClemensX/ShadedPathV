@@ -14,7 +14,9 @@ void BillboardShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	Log("read fragment shader: " << file_buffer_frag.size() << endl);
 	// create shader modules
 	vertShaderModule = engine.shaders.createShaderModule(file_buffer_vert);
+	engine.util.debugNameObjectShaderModule(vertShaderModule, "Billboard Vert Shader");
 	fragShaderModule = engine.shaders.createShaderModule(file_buffer_frag);
+	engine.util.debugNameObjectShaderModule(fragShaderModule, "Billboard Frag Shader");
 
 	// descriptor
 	createDescriptorSetLayout();
@@ -23,11 +25,13 @@ void BillboardShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	// 2 buffers: MVP matrix and billboard data
 	// billboard data is thread buffer
 	vector<VkDescriptorPoolSize> poolSizes;
-	poolSizes.resize(2);
+	poolSizes.resize(3);
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[0].descriptorCount = 1;
 	poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[1].descriptorCount = 1;
+	poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSizes[2].descriptorCount = 1;
 	createDescriptorPool(poolSizes);
 }
 
@@ -139,14 +143,21 @@ void BillboardShader::createDescriptorSetLayout()
     uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
-    VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-	samplerLayoutBinding.binding = 1;
-	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	VkDescriptorSetLayoutBinding uboDynamicLayoutBinding{};
+	uboDynamicLayoutBinding.binding = 1;
+	uboDynamicLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	uboDynamicLayoutBinding.descriptorCount = 1;
+	uboDynamicLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	uboDynamicLayoutBinding.pImmutableSamplers = nullptr; // Optional
+
+	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+	samplerLayoutBinding.binding = 2;
+	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	samplerLayoutBinding.descriptorCount = 1;
-	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	samplerLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
+	std::array<VkDescriptorSetLayoutBinding, 3> bindings = { uboLayoutBinding, uboDynamicLayoutBinding, samplerLayoutBinding };
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -212,7 +223,7 @@ void BillboardShader::createCommandBuffer(ThreadResources& tr)
 	if (vkAllocateCommandBuffers(device, &allocInfo, &trl.commandBuffer) != VK_SUCCESS) {
 		Error("failed to allocate command buffers!");
 	}
-	engine->util.debugNameObjectCommandBuffer(trl.commandBuffer, "LINE COMMAND BUFFER");
+	engine->util.debugNameObjectCommandBuffer(trl.commandBuffer, "BILLBOARD COMMAND BUFFER");
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0; // Optional

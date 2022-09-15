@@ -32,7 +32,7 @@ void GeneratedTexturesApp::run()
 
         engine.setFramesInFlight(2);
         engine.registerApp(this);
-        engine.enableSound();
+        //engine.enableSound();
         //engine.setThreadModeSingle();
 
         // engine initialization
@@ -45,7 +45,7 @@ void GeneratedTexturesApp::run()
             .addShader(shaders.clearShader)
             .addShader(shaders.cubeShader)
             .addShader(shaders.pbrShader)
-            //.addShader(shaders.billboardShader)
+            .addShader(shaders.billboardShader)
             ;
         if (enableLines) shaders.addShader(shaders.lineShader);
         // init shaders, e.g. one-time uploads before rendering cycle starts go here

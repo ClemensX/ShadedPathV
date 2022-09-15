@@ -20,7 +20,7 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	createDescriptorSetLayout();
 
 	// descriptor pool
-	// 3 buffers: V,P matrices, line data and dynamic uniform buffer for model matrix
+	// 4 buffers: V,P matrices, line data and dynamic uniform buffer for model matrix, texture
 	// line data is global buffer
 	vector<VkDescriptorPoolSize> poolSizes;
 	poolSizes.resize(4);

@@ -72,9 +72,13 @@ public:
     void debugNameObjectDescriptorSetLayout(VkDescriptorSetLayout m, const char* name) {
         debugNameObject((uint64_t)m, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT, name);
     }
-    // debug name descriptor set layout
+    // debug name descriptor set
     void debugNameObjectDescriptorSet(VkDescriptorSet m, const char* name) {
         debugNameObject((uint64_t)m, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT, name);
+    }
+    // debug name shader module
+    void debugNameObjectShaderModule(VkShaderModule m, const char* name) {
+        debugNameObject((uint64_t)m, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT, name);
     }
 
 private:

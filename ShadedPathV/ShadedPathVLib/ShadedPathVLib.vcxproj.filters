@@ -313,9 +313,13 @@
     <CustomBuild Include="..\ShadedPathVLib\shader\genbrdflut.vert">
       <Filter>Shader</Filter>
     </CustomBuild>
-    <CustomBuild Include="..\ShadedPathVLib\shader\billboard.mesh" />
-    <CustomBuild Include="..\ShadedPathVLib\shader\billboard.frag" />
     <CustomBuild Include="shader\billboard.vert">
+      <Filter>Shader</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\ShadedPathVLib\shader\billboard.frag">
+      <Filter>Shader</Filter>
+    </CustomBuild>
+    <CustomBuild Include="..\ShadedPathVLib\shader\billboard.mesh">
       <Filter>Shader</Filter>
     </CustomBuild>
   </ItemGroup>

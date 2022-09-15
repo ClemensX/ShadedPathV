@@ -1,6 +1,5 @@
 #pragma once
 // Billboards - draw simple billboards in world coordinates with direction and size
-// Mesh Shader implemenation
 struct BillboardDef {
 	glm::vec3 pos;
 	glm::vec3 dir;
@@ -42,8 +41,8 @@ public:
 		return bindingDescription;
 	}
 	// get static std::array of attribute desciptions, make sure to copy to local array, otherwise you get dangling pointers!
-	static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
-		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+	static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
+		std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
 		// layout(location = 0) in vec3 inPosition;
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
@@ -55,15 +54,15 @@ public:
 		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributeDescriptions[1].offset = offsetof(Vertex, dir);
 		// layout(location = 2) in float width;
-		attributeDescriptions[1].binding = 0;
-		attributeDescriptions[1].location = 2;
-		attributeDescriptions[1].format = VK_FORMAT_R32_SFLOAT;
-		attributeDescriptions[1].offset = offsetof(Vertex, w);
+		attributeDescriptions[2].binding = 0;
+		attributeDescriptions[2].location = 2;
+		attributeDescriptions[2].format = VK_FORMAT_R32_SFLOAT;
+		attributeDescriptions[2].offset = offsetof(Vertex, w);
 		// layout(location = 3) in float height;
-		attributeDescriptions[1].binding = 0;
-		attributeDescriptions[1].location = 3;
-		attributeDescriptions[1].format = VK_FORMAT_R32_SFLOAT;
-		attributeDescriptions[1].offset = offsetof(Vertex, h);
+		attributeDescriptions[3].binding = 0;
+		attributeDescriptions[3].location = 3;
+		attributeDescriptions[3].format = VK_FORMAT_R32_SFLOAT;
+		attributeDescriptions[3].offset = offsetof(Vertex, h);
 
 		return attributeDescriptions;
 	}

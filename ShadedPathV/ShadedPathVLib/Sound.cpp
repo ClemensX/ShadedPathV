@@ -69,7 +69,7 @@ void Sound::Update(Camera* camera) {
 	if (!engine.isSoundEnabled()) return;
 	glm::vec3 pos(camera->getPosition());
 	glm::vec3 lookAt(camera->getLookAt());
-	// TODO so wee need up vector?
+	// TODO do we need up vector?
 	// set listener pos
 	ma_engine_listener_set_position(&sound_engine, 0, pos.x, pos.y, pos.z);
 	ma_engine_listener_set_direction(&sound_engine, 0, lookAt.x, lookAt.y, lookAt.z);
