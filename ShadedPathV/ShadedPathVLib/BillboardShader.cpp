@@ -8,15 +8,20 @@ void BillboardShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	// load shader binary code
 	vector<byte> file_buffer_vert;
 	vector<byte> file_buffer_frag;
+	vector<byte> file_buffer_geom;
 	engine.files.readFile("billboard_vert.spv", file_buffer_vert, FileCategory::FX);
 	engine.files.readFile("billboard_frag.spv", file_buffer_frag, FileCategory::FX);
+	engine.files.readFile("billboard_geom.spv", file_buffer_geom, FileCategory::FX);
 	Log("read vert shader: " << file_buffer_vert.size() << endl);
 	Log("read fragment shader: " << file_buffer_frag.size() << endl);
+	Log("read geometry shader: " << file_buffer_geom.size() << endl);
 	// create shader modules
 	vertShaderModule = engine.shaders.createShaderModule(file_buffer_vert);
 	engine.util.debugNameObjectShaderModule(vertShaderModule, "Billboard Vert Shader");
 	fragShaderModule = engine.shaders.createShaderModule(file_buffer_frag);
 	engine.util.debugNameObjectShaderModule(fragShaderModule, "Billboard Frag Shader");
+	geomShaderModule = engine.shaders.createShaderModule(file_buffer_geom);
+	engine.util.debugNameObjectShaderModule(fragShaderModule, "Billboard Geom Shader");
 
 	// descriptor
 	createDescriptorSetLayout();
@@ -58,8 +63,9 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 
 	// create shader stage
 	auto vertShaderStageInfo = engine->shaders.createVertexShaderCreateInfo(vertShaderModule);
+	auto geomShaderStageInfo = engine->shaders.createGeometryShaderCreateInfo(geomShaderModule);
 	auto fragShaderStageInfo = engine->shaders.createFragmentShaderCreateInfo(fragShaderModule);
-	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, geomShaderStageInfo, fragShaderStageInfo };
 
 	// vertex input
 	auto binding_desc = getBindingDescription();

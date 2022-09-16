@@ -322,5 +322,8 @@
     <CustomBuild Include="..\ShadedPathVLib\shader\billboard.mesh">
       <Filter>Shader</Filter>
     </CustomBuild>
+    <CustomBuild Include="shader\billboard.geom">
+      <Filter>Shader</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

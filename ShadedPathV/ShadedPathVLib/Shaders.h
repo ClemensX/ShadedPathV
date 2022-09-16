@@ -128,6 +128,15 @@ public:
 		return fragShaderStageInfo;
 	}
 
+	VkPipelineShaderStageCreateInfo createGeometryShaderCreateInfo(VkShaderModule& shaderModule) {
+		VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		fragShaderStageInfo.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+		fragShaderStageInfo.module = shaderModule;
+		fragShaderStageInfo.pName = "main";
+		return fragShaderStageInfo;
+	}
+
 private:
 	Config config;
 

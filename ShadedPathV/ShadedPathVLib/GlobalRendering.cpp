@@ -305,6 +305,7 @@ void GlobalRendering::createLogicalDevice()
     // provoke validation layer warning by commenting out following line:
     deviceFeatures.samplerAnisotropy = VK_TRUE;
     deviceFeatures.textureCompressionBC = VK_TRUE;
+    deviceFeatures.geometryShader = VK_TRUE;
     //deviceFeatures.textureCompressionETC2 = VK_TRUE; not supported on Quadro P2000 with Max-Q Design 1.3.194
     //deviceFeatures.textureCompressionASTC_LDR = VK_TRUE; not supported on Quadro P2000 with Max-Q Design 1.3.194
     //deviceFeatures.dynamicRendering
