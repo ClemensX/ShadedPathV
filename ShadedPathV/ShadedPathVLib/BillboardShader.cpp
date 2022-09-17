@@ -45,8 +45,10 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	auto& trl = tr.billboardResources;
 	// uniform buffers for MVP
 	createUniformBuffer(tr, trl.uniformBuffer, sizeof(UniformBufferObject), trl.uniformBufferMemory);
+	engine->util.debugNameObjectBuffer(trl.uniformBuffer, "Billboard Uniform Buffer");
 	if (engine->isStereo()) {
 		createUniformBuffer(tr, trl.uniformBuffer2, sizeof(UniformBufferObject), trl.uniformBufferMemory2);
+		engine->util.debugNameObjectBuffer(trl.uniformBuffer, "Billboard Uniform Stereo Buffer");
 	}
 
 	createDescriptorSets(tr);
@@ -125,14 +127,18 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// create and map vertex buffer in GPU for billboards
 	VkDeviceSize bufferSize = sizeof(Vertex) * MAX_BILLBOARDS;
 	createVertexBuffer(tr, trl.billboardVertexBuffer, bufferSize, trl.billboardVertexBufferMemory);
+	engine->util.debugNameObjectBuffer(trl.billboardVertexBuffer, "Billboard Vertex Buffer");
+	engine->util.debugNameObjectDeviceMmeory(trl.billboardVertexBufferMemory, "Billboard Vertex Buffer Memory");
 	createCommandBuffer(tr);
+	engine->util.debugNameObjectCommandBuffer(trl.commandBuffer, "Billboard Command Buffer");
+
 }
 
 void BillboardShader::initialUpload()
 {
 	if (!enabled) return;
 
-	// if there are no fixed lines we have nothing to do here
+	// if there are no fixed billboards we have nothing to do here
 	//if (all.size() == 0) return;
 
 	//// create and copy vertex buffer in GPU
@@ -264,7 +270,7 @@ void BillboardShader::createCommandBuffer(ThreadResources& tr)
 void BillboardShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
 {
 	auto& trl = tr.billboardResources;
-	if (vertexBuffer == nullptr) return; // no fixed lines to draw
+	if (vertexBuffer == nullptr) return; // no fixed billboards to draw
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.graphicsPipeline);
 	VkBuffer vertexBuffers[] = { vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
@@ -307,14 +313,15 @@ void BillboardShader::finishInitialization(ShadedPathEngine& engine, ShaderState
 
 BillboardShader::~BillboardShader()
 {
-	Log("LineShader destructor\n");
+	Log("BillboardShader destructor\n");
 	if (!enabled) {
 		return;
 	}
 //	vkDestroyBuffer(device, vertexBuffer, nullptr);
 	vkFreeMemory(device, vertexBufferMemory, nullptr);
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);
-//	vkDestroyShaderModule(device, vertShaderModule, nullptr);
+	vkDestroyShaderModule(device, vertShaderModule, nullptr);
+	vkDestroyShaderModule(device, geomShaderModule, nullptr);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 }
@@ -328,6 +335,8 @@ void BillboardShader::destroyThreadResources(ThreadResources& tr)
 	vkDestroyPipelineLayout(device, trl.pipelineLayout, nullptr);
 	vkDestroyBuffer(device, trl.uniformBuffer, nullptr);
 	vkFreeMemory(device, trl.uniformBufferMemory, nullptr);
+	vkDestroyBuffer(device, trl.billboardVertexBuffer, nullptr);
+	vkFreeMemory(device, trl.billboardVertexBufferMemory, nullptr);
 	if (engine->isStereo()) {
 		vkDestroyFramebuffer(device, trl.framebuffer2, nullptr);
 		vkDestroyBuffer(device, trl.uniformBuffer2, nullptr);

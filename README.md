@@ -10,6 +10,7 @@ Some features:
 - Each thread renders to its own backbuffer image, using its own set of thread local resources.
 - Synchronization is done at presentation time, when the backbuffer image is copied to the app window
 - Support VR games via OpenXR
+- Sound support for ogg vorbis: Both background music and spatial sound attached to objects
 
 ## Mesh Shader
 
@@ -73,8 +74,9 @@ Same scene with camera moved back. You see lines resembling floor level and ceil
 ## TODO
 Things finished and things to do. Both very small and very large things, just as they come to my mind. 
 
-- [ ] Cube maps (needed for PBR environment maps)
+- [x] Cube maps (needed for PBR environment maps)
 - [ ] Environment maps
+- [ ] Bug: billboard and possibly line shader cannot be last shader in app added (Validation Warning)
 - [ ] Rest of PBR stages
 - [x] PBR Shader (simple: only base texture display, no lighting)
 - [x] PBR object loading from glTF files (vertices with pos and text coord, textures)

@@ -44,8 +44,8 @@ void GeneratedTexturesApp::run()
         shaders
             .addShader(shaders.clearShader)
             .addShader(shaders.cubeShader)
-            .addShader(shaders.pbrShader)
             .addShader(shaders.billboardShader)
+            .addShader(shaders.pbrShader)
             ;
         if (enableLines) shaders.addShader(shaders.lineShader);
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
