@@ -129,9 +129,8 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	createVertexBuffer(tr, trl.billboardVertexBuffer, bufferSize, trl.billboardVertexBufferMemory);
 	engine->util.debugNameObjectBuffer(trl.billboardVertexBuffer, "Billboard Vertex Buffer");
 	engine->util.debugNameObjectDeviceMmeory(trl.billboardVertexBufferMemory, "Billboard Vertex Buffer Memory");
-	createCommandBuffer(tr);
-	engine->util.debugNameObjectCommandBuffer(trl.commandBuffer, "Billboard Command Buffer");
-
+	//createCommandBuffer(tr);
+	//engine->util.debugNameObjectCommandBuffer(trl.commandBuffer, "Billboard Command Buffer");
 }
 
 void BillboardShader::initialUpload()
@@ -226,6 +225,7 @@ void BillboardShader::createCommandBuffer(ThreadResources& tr)
 	auto& device = engine->global.device;
 	auto& global = engine->global;
 	auto& shaders = engine->shaders;
+
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = tr.commandPool;
@@ -254,12 +254,12 @@ void BillboardShader::createCommandBuffer(ThreadResources& tr)
 	renderPassInfo.clearValueCount = 0;
 
 	vkCmdBeginRenderPass(trl.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	//recordDrawCommand(trl.commandBuffer, tr, vertexBuffer);
+	recordDrawCommand(trl.commandBuffer, tr, trl.billboardVertexBuffer);
 	vkCmdEndRenderPass(trl.commandBuffer);
 	if (engine->isStereo()) {
 		renderPassInfo.framebuffer = trl.framebuffer2;
 		vkCmdBeginRenderPass(trl.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		//recordDrawCommand(trl.commandBuffer, tr, vertexBuffer, true);
+		recordDrawCommand(trl.commandBuffer, tr, trl.billboardVertexBuffer, true);
 		vkCmdEndRenderPass(trl.commandBuffer);
 	}
 	if (vkEndCommandBuffer(trl.commandBuffer) != VK_SUCCESS) {
@@ -309,6 +309,14 @@ void BillboardShader::addCurrentCommandBuffer(ThreadResources& tr) {
 
 void BillboardShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
 {
+}
+
+void BillboardShader::add(std::vector<BillboardDef>& billboardsToAdd)
+{
+	if (billboardsToAdd.size() == 0 && billboardsToAdd.size() == 0)
+		return;
+
+	billboards.insert(billboards.end(), billboardsToAdd.begin(), billboardsToAdd.end());
 }
 
 BillboardShader::~BillboardShader()

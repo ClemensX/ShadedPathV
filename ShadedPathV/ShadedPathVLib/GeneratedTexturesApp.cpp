@@ -79,7 +79,13 @@ void GeneratedTexturesApp::init() {
         { glm::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f) }
     };
     vector<LineDef> lines;
+    BillboardDef myBillboards[] = {
+        { vec3(0.0f, 0.5f, 0.5f), }
+    };
+    vector<BillboardDef> billboards;
+    for_each(begin(myBillboards), end(myBillboards), [&billboards](BillboardDef l) {billboards.push_back(l); });
 
+    engine.shaders.billboardShader.add(billboards);
     // loading objects wireframe:
     //engine.objectStore.loadObject("WaterBottle.glb", "WaterBottle", lines);
     //engine.objectStore.loadMeshWireframe("small_knife_dagger/scene.gltf", "Knife", lines);
@@ -126,7 +132,7 @@ void GeneratedTexturesApp::init() {
     engine.shaders.lineShader.initialUpload();
     engine.shaders.pbrShader.initialUpload();
     engine.shaders.cubeShader.initialUpload();
-
+    engine.shaders.billboardShader.initialUpload();
 }
 
 void GeneratedTexturesApp::drawFrame(ThreadResources& tr) {

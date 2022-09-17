@@ -76,7 +76,9 @@ public:
 	virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
 	virtual void destroyThreadResources(ThreadResources& tr) override;
 
-	// initial upload of all added lines - only valid before first render
+	// add billboards - they will never  be removed
+	void add(std::vector<BillboardDef>& billboardsToAdd);
+	// initial upload of all added billboards - only valid before first render
 	void initialUpload();
 
 	// per frame update of UBO / MVP
@@ -87,6 +89,7 @@ private:
 
 	UniformBufferObject ubo, updatedUBO;
 	bool disabled = false;
+	std::vector<BillboardDef> billboards;
 
 	// vertex buffer device memory
 	VkDeviceMemory vertexBufferMemory = nullptr;
