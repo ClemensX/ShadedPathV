@@ -116,7 +116,7 @@ void gltfObjectsApp::init() {
     engine.shaders.pbrShader.initialUpload();
     engine.shaders.cubeShader.initialUpload();
     // load and play music
-    engine.sound.openSoundFile("Not Giving Up.ogg", "BACKGROUND_MUSIC", true);
+    engine.sound.openSoundFile("power.ogg", "BACKGROUND_MUSIC", true);
     //engine.sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 1.0f, 6000);
     // add sound to object
     engine.sound.addWorldObject(bottle);
