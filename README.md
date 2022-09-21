@@ -71,6 +71,37 @@ Red lines show the world size of 2 square km. Lines are drawn every 1m. White cr
 ![Same scene with camera moved back](images/view002.PNG)
 Same scene with camera moved back. You see lines resembling floor level and ceiling (380 m apart). The textures are so small that they should use highest or 2nd highest mip level with 1x1 or 2x2 image size.
 
+## Libraries
+
+install all needed libraries in folder ```libraries``` next to folder ```ShadedPath```
+
+* GLFW
+* GLM
+* ktx
+* OpenXR
+* Vulkan
+* tinygltf (no need to install - included with our source repo)
+* minaudio (no need to install - included with our source repo)
+
+copy ktx.dll to executable path:
+* vulkan\ShadedPathV\ShadedPathV\x64\Debug\ktx.dll
+
+* **OpenXR**: install NuGet package OpenXR.Loader for all three projects in solution. If not found during compile or not displayed correctly: uninstall via NuGet Package Manager, then re-install
+
+
+Use Khronos OpenXR sdk directly for VS 2022:
+ * clone https://github.com/KhronosGroup/OpenXR-SDK.git
+ * in cmd: 
+ ```
+ mkdir build\win64
+ cd build\win64
+ cmake -G "Visual Studio 17" ..\..
+ ```
+ * open solution in VS 2022 at OpenXR-SDK\build\win64\OPENXR.sln and build
+ * loader lib and pdb file will be here: \OpenXR-SDK\build\win64\src\loader\Debug
+ * include folder here: \OpenXR-SDK\include\openxr, copy to libraries\openxr\openxr
+ * for ShadedPathVTest and ShadedPathV add library path similar to include directory
+
 ## TODO
 Things finished and things to do. Both very small and very large things, just as they come to my mind. 
 
@@ -108,35 +139,6 @@ Things finished and things to do. Both very small and very large things, just as
 - [ ] animation
 - [ ] Demos
 - [ ] Games
-
-## Dependencies
-
-copy to ../libraries:
-
-* glf
-* glm
-* ktx
-* vulkan
-* tinygltf
-
-copy ktx.dll to executable path:
-* vulkan\ShadedPathV\ShadedPathV\x64\Debug\ktx.dll
-
-* **OpenXR**: install NuGet package OpenXR.Loader for all three projects in solution. If not found during compile or not displayed correctly: uninstall via NuGet Package Manager, then re-install
-
-Use Khronos OpenXR sdk directly for VS 2022:
- * clone https://github.com/KhronosGroup/OpenXR-SDK.git
- * in cmd: 
- ```
- mkdir build\win64
- cd build\win64
- cmake -G "Visual Studio 17" ..\..
- ```
- * open solution in VS 2022 at OpenXR-SDK\build\win64\OPENXR.sln and build
- * loader lib and pdb file will be here: \OpenXR-SDK\build\win64\src\loader\Debug
- * include folder here: \OpenXR-SDK\include\openxr
- * Add include directory for all ShadedPath Projects by right clicking, Properties, then in the VC++ Directories property page, add the path to the library header file(s) to Include Directories.
- * for ShadedPathVTest and ShadedPathV add library path similar to include directory
 
 ## Stereo Mode
 

@@ -72,20 +72,20 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../ktx/include;$(IncludePath)</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../ktx/include;$(IncludePath)</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>../../ktx/include;C:\dev\vulkan\openxr\OpenXR-SDK\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>../../ktx/include;C:\dev\vulkan\openxr\OpenXR-SDK\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -97,7 +97,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>..\..\..\libraries\glm;..\..\..\libraries\glfw\include;..\..\..\libraries\ktx\include;..\..\..\libraries\vulkan\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\libraries\openxr;..\..\..\libraries\glm;..\..\..\libraries\glfw\include;..\..\..\libraries\ktx\include;..\..\..\libraries\vulkan\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -106,7 +106,7 @@
     </Link>
     <Lib>
       <AdditionalDependencies>glfw3.lib;ktx.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\libraries\glfw\lib-vc2019;..\..\..\libraries\ktx\lib;..\..\..\libraries\vulkan\Lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\libraries\openxr;..\..\..\libraries\glfw\lib-vc2019;..\..\..\libraries\ktx\lib;..\..\..\libraries\vulkan\Lib</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -121,7 +121,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>..\..\..\libraries\glm;..\..\..\libraries\glfw\include;..\..\..\libraries\ktx\include;..\..\..\libraries\vulkan\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\libraries\openxr;..\..\..\libraries\glm;..\..\..\libraries\glfw\include;..\..\..\libraries\ktx\include;..\..\..\libraries\vulkan\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -132,7 +132,7 @@
     </Link>
     <Lib>
       <AdditionalDependencies>glfw3.lib;ktx.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\libraries\glfw\lib-vc2019;..\..\..\libraries\ktx\lib;..\..\..\libraries\vulkan\Lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\libraries\openxr;..\..\..\libraries\glfw\lib-vc2019;..\..\..\libraries\ktx\lib;..\..\..\libraries\vulkan\Lib</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -145,7 +145,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>..\..\..\libraries\glm;..\..\..\libraries\glfw\include;..\..\..\libraries\ktx\include;..\..\..\libraries\vulkan\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\libraries\openxr;..\..\..\libraries\glm;..\..\..\libraries\glfw\include;..\..\..\libraries\ktx\include;..\..\..\libraries\vulkan\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -154,7 +154,7 @@
     </Link>
     <Lib>
       <AdditionalDependencies>glfw3.lib;ktx.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\libraries\glfw\lib-vc2019;..\..\..\libraries\ktx\lib;..\..\..\libraries\vulkan\Lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\libraries\openxr;..\..\..\libraries\glfw\lib-vc2019;..\..\..\libraries\ktx\lib;..\..\..\libraries\vulkan\Lib</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -169,7 +169,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>..\..\..\libraries\glm;..\..\..\libraries\glfw\include;..\..\..\libraries\ktx\include;..\..\..\libraries\vulkan\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\libraries\openxr;..\..\..\libraries\glm;..\..\..\libraries\glfw\include;..\..\..\libraries\ktx\include;..\..\..\libraries\vulkan\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -180,7 +180,7 @@
     </Link>
     <Lib>
       <AdditionalDependencies>glfw3.lib;ktx.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\libraries\glfw\lib-vc2019;..\..\..\libraries\ktx\lib;..\..\..\libraries\vulkan\Lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\libraries\openxr;..\..\..\libraries\glfw\lib-vc2019;..\..\..\libraries\ktx\lib;..\..\..\libraries\vulkan\Lib</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -205,6 +205,7 @@
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="LineApp.h" />
     <ClInclude Include="LineShader.h" />
+    <ClInclude Include="miniaudio\miniaudio.h" />
     <ClInclude Include="Object.h" />
     <ClInclude Include="PBRShader.h" />
     <ClInclude Include="pch.h" />
@@ -214,6 +215,7 @@
     <ClInclude Include="Shaders.h" />
     <ClInclude Include="SimpleApp.h" />
     <ClInclude Include="SimpleShader.h" />
+    <ClInclude Include="Sound.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="ThreadResources.h" />
     <ClInclude Include="Threads.h" />
@@ -247,6 +249,9 @@
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="LineApp.cpp" />
     <ClCompile Include="LineShader.cpp" />
+    <ClCompile Include="miniaudio\extras\stb_vorbis.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Object.cpp" />
     <ClCompile Include="PBRShader.cpp" />
     <ClCompile Include="pch.cpp">
@@ -261,6 +266,7 @@
     <ClCompile Include="Shaders.cpp" />
     <ClCompile Include="SimpleApp.cpp" />
     <ClCompile Include="SimpleShader.cpp" />
+    <ClCompile Include="Sound.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="ThreadResources.cpp" />
     <ClCompile Include="Threads.cpp" />
@@ -394,12 +400,12 @@
     <CustomBuild Include="..\ShadedPathVLib\shader\billboard.mesh">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <FileType>Document</FileType>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\libraries\vulkan\Bin\glslc.exe %(FullPath) -g -o ../x64/$(Configuration)/%(Filename)_vert.spv</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GLSL %(FullPath) -o ../x64/$(Configuration)/%(Filename)_vert.spv</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../x64/$(Configuration)/%(Filename)_vert.spv</Outputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\libraries\vulkan\Bin\glslc.exe %(FullPath) -o ../x64/$(Configuration)/%(Filename)_vert.spv</Command>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GLSL %(FullPath) -o ../x64/$(Configuration)/%(Filename)_vert.spv</Message>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../x64/$(Configuration)/%(Filename)_vert.spv</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\libraries\vulkan\Bin\glslc.exe %(FullPath) -g -o ../x64/$(Configuration)/%(Filename)_mesh.spv</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GLSL %(FullPath) -o ../x64/$(Configuration)/%(Filename)_mesh.spv</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../x64/$(Configuration)/%(Filename)_mesh.spv</Outputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\..\..\libraries\vulkan\Bin\glslc.exe %(FullPath) -o ../x64/$(Configuration)/%(Filename)_mesh.spv</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">GLSL %(FullPath) -o ../x64/$(Configuration)/%(Filename)_mesh.spv</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../x64/$(Configuration)/%(Filename)_mesh.spv</Outputs>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
@@ -415,8 +421,22 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shader\billboard.frag" />
-    <None Include="shader\billboard.mesh" />
+    <CustomBuild Include="shader\billboard.vert">
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\libraries\vulkan\Bin\glslc.exe %(FullPath) -g -o ../x64/$(Configuration)/%(Filename)_vert.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../x64/$(Configuration)/%(Filename)_vert.spv</Outputs>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GLSL %(FullPath) -o ../x64/$(Configuration)/%(Filename)_vert.spv</Message>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="shader\billboard.geom">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <FileType>Document</FileType>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\..\..\libraries\vulkan\Bin\glslc.exe %(FullPath) -g -o ../x64/$(Configuration)/%(Filename)_geom.spv</Command>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">GLSL %(FullPath) -o ../x64/$(Configuration)/%(Filename)_geom.spv</Message>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../x64/$(Configuration)/%(Filename)_geom.spv</Outputs>
+    </CustomBuild>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
