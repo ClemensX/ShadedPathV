@@ -43,7 +43,7 @@ void GeneratedTexturesApp::run()
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
-            .addShader(shaders.cubeShader)
+            //.addShader(shaders.cubeShader)
             .addShader(shaders.billboardShader)
             .addShader(shaders.pbrShader)
             ;
@@ -120,7 +120,6 @@ void GeneratedTexturesApp::init() {
     //engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
     engine.textureStore.loadTexture("debug.ktx", "2dTexture");
 
-    //engine.textureStore.generateBRDFLUT();
     // select texture by uncommenting:
     //engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
     //engine.global.createCubeMapFrom2dTexture("Knife1", "2dTextureCube");
@@ -220,7 +219,8 @@ void GeneratedTexturesApp::updatePerFrame(ThreadResources& tr)
             else {
                 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f + (plus / 100.0f), 0.0f, 0.0f));
             }
-        } else {
+        }
+        else {
             if (wo->objectNum == 0) {
                 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.1f, 0.0f, 0.0f));
             }
@@ -232,6 +232,18 @@ void GeneratedTexturesApp::updatePerFrame(ThreadResources& tr)
         void* data = buf;
         //Log("APP per frame dynamic buffer to address: " << hex << data << endl);
     }
+
+    // billboards
+    BillboardShader::UniformBufferObject bubo{};
+    bubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    bubo.view = lubo.view;
+    bubo.proj = lubo.proj;
+    auto bubo2 = bubo;
+    bubo2.view = lubo2.view;
+    engine.shaders.billboardShader.uploadToGPU(tr, bubo, bubo2);
+    // change individual billboards position:
+    //for (auto& b : engine.shaders.billboardShader.getSortedList()) {
+    //}
 }
 
 void GeneratedTexturesApp::handleInput(InputState& inputState)

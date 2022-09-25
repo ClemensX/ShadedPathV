@@ -13,15 +13,15 @@ void BillboardShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	engine.files.readFile("billboard_frag.spv", file_buffer_frag, FileCategory::FX);
 	engine.files.readFile("billboard_geom.spv", file_buffer_geom, FileCategory::FX);
 	Log("read vert shader: " << file_buffer_vert.size() << endl);
-	Log("read fragment shader: " << file_buffer_frag.size() << endl);
 	Log("read geometry shader: " << file_buffer_geom.size() << endl);
+	Log("read fragment shader: " << file_buffer_frag.size() << endl);
 	// create shader modules
 	vertShaderModule = engine.shaders.createShaderModule(file_buffer_vert);
 	engine.util.debugNameObjectShaderModule(vertShaderModule, "Billboard Vert Shader");
-	fragShaderModule = engine.shaders.createShaderModule(file_buffer_frag);
-	engine.util.debugNameObjectShaderModule(fragShaderModule, "Billboard Frag Shader");
 	geomShaderModule = engine.shaders.createShaderModule(file_buffer_geom);
 	engine.util.debugNameObjectShaderModule(fragShaderModule, "Billboard Geom Shader");
+	fragShaderModule = engine.shaders.createShaderModule(file_buffer_frag);
+	engine.util.debugNameObjectShaderModule(fragShaderModule, "Billboard Frag Shader");
 
 	// descriptor
 	createDescriptorSetLayout();
@@ -105,7 +105,7 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// create pipeline
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineInfo.stageCount = 2;
+	pipelineInfo.stageCount = size(shaderStages);
 	pipelineInfo.pStages = shaderStages;
 	pipelineInfo.pNext = nullptr;
 	pipelineInfo.pVertexInputState = &vertexInputInfo;
@@ -154,21 +154,21 @@ void BillboardShader::createDescriptorSetLayout()
     uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
-	VkDescriptorSetLayoutBinding uboDynamicLayoutBinding{};
-	uboDynamicLayoutBinding.binding = 1;
-	uboDynamicLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-	uboDynamicLayoutBinding.descriptorCount = 1;
-	uboDynamicLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	uboDynamicLayoutBinding.pImmutableSamplers = nullptr; // Optional
+	//VkDescriptorSetLayoutBinding uboDynamicLayoutBinding{};
+	//uboDynamicLayoutBinding.binding = 1;
+	//uboDynamicLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	//uboDynamicLayoutBinding.descriptorCount = 1;
+	//uboDynamicLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	//uboDynamicLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
 	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-	samplerLayoutBinding.binding = 2;
+	samplerLayoutBinding.binding = 1;
 	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	samplerLayoutBinding.descriptorCount = 1;
 	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	samplerLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
-	std::array<VkDescriptorSetLayoutBinding, 3> bindings = { uboLayoutBinding, uboDynamicLayoutBinding, samplerLayoutBinding };
+	std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, /*uboDynamicLayoutBinding,*/ samplerLayoutBinding};
 
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -283,7 +283,7 @@ void BillboardShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadRe
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet2, 0, nullptr);
 	}
 
-	//vkCmdDraw(commandBuffer, static_cast<uint32_t>(lines.size() * 2), 1, 0, 0);
+	vkCmdDraw(commandBuffer, static_cast<uint32_t>(billboards.size()), 1, 0, 0);
 }
 
 

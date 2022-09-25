@@ -18,5 +18,5 @@ void main()
 {
     gl_PointSize = 1.0;
     gl_Position = ubo.proj * ubo.view * vec4(inPosition, 1.0);
-    //debugPrintfEXT("ubo.model 0 0 is %f\n", ubo.model[0][0]);
+    //debugPrintfEXT("bb ubo.model 0 0 is %f\n", ubo.model[0][0]);
 }

@@ -73,15 +73,18 @@ Same scene with camera moved back. You see lines resembling floor level and ceil
 
 ## Libraries
 
-install all needed libraries in folder ```libraries``` next to folder ```ShadedPath```
+install all needed libraries in folder ```libraries``` next to folder ```ShadedPath```:
 
 * GLFW
 * GLM
 * ktx
-* OpenXR
+* OpenXR (header files needs to be in /libraries/openxr/openxr/)
 * Vulkan
 * tinygltf (no need to install - included with our source repo)
 * minaudio (no need to install - included with our source repo)
+
+Visual Studio 2022:
+* Daniel Scherzers GLSL Visual Studio integration: https://marketplace.visualstudio.com/items?itemName=DanielScherzer.GLSL2022
 
 copy ktx.dll to executable path:
 * vulkan\ShadedPathV\ShadedPathV\x64\Debug\ktx.dll

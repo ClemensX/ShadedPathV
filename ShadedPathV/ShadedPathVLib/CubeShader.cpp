@@ -126,6 +126,7 @@ void CubeShader::finishInitialization(ShadedPathEngine& engine, ShaderState& sha
 
 void CubeShader::initialUpload()
 {
+	if (!enabled) return;
 	// we need a buffer to keep validation happy - content is irrelevant
 	static Vertex verts[36];
 	VkDeviceSize bufferSize = sizeof(Vertex) * 36;
@@ -288,6 +289,7 @@ void CubeShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResourc
 }
 
 void CubeShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2, bool outsideMode) {
+	if (!enabled) return;
 	auto& str = tr.cubeResources; // shortcut to cube resources
 	ubo2.farFactor = ubo.farFactor = bloatFactor;
 	ubo2.outside = ubo.outside = outsideMode;
@@ -305,6 +307,7 @@ void CubeShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 
 void CubeShader::setSkybox(string texID)
 {
+	if (!enabled) return;
 	skybox = engine->textureStore.getTexture(texID);
 	if (skybox->vulkanTexture.viewType != VK_IMAGE_VIEW_TYPE_CUBE) {
 		Error("Can only use textures with VK_IMAGE_VIEW_TYPE_CUBE for skybox / cube map");
