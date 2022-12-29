@@ -33,7 +33,7 @@ void GeneratedTexturesApp::run()
         engine.setFramesInFlight(2);
         engine.registerApp(this);
         //engine.enableSound();
-        //engine.setThreadModeSingle();
+        engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("gltfObjects");
@@ -45,6 +45,7 @@ void GeneratedTexturesApp::run()
             .addShader(shaders.clearShader)
             //.addShader(shaders.cubeShader)
             .addShader(shaders.billboardShader)
+            //.addShader(shaders.lineShader)  // enable to see zero cross
             .addShader(shaders.pbrShader)
             ;
         if (enableLines) shaders.addShader(shaders.lineShader);
@@ -80,7 +81,18 @@ void GeneratedTexturesApp::init() {
     };
     vector<LineDef> lines;
     BillboardDef myBillboards[] = {
-        { vec3(0.0f, 0.5f, 0.5f), }
+        { vec3(0.0f, 0.0f, 0.0f), // pos
+          vec3(0.1f, 0.1f, 0.1f), // dir
+          0.5f, // w
+          0.6f, // h
+          1,    // type
+        },
+        { vec3(0.5f, 0.2f, 0.0f), // pos
+          vec3(0.0f, 0.0f, -1.0f), // dir
+          0.5f, // w
+          0.6f, // h
+          0,    // type
+        }
     };
     vector<BillboardDef> billboards;
     for_each(begin(myBillboards), end(myBillboards), [&billboards](BillboardDef l) {billboards.push_back(l); });

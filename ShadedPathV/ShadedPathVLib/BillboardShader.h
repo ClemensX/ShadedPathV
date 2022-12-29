@@ -1,10 +1,14 @@
 #pragma once
 // Billboards - draw simple billboards in world coordinates with direction and size
+// stages: VertexShader --> GeometryShader --> FragmentShader
+
+// BillboardDef is used in applicastion code to define the billboards AND directly used as Vertex definition
 struct BillboardDef {
 	glm::vec3 pos;
 	glm::vec3 dir;
 	float w;
 	float h;
+	int type;  // 0 == face camera, 1 == use provided direction vector
 	TextureID tex;
 };
 
@@ -22,12 +26,8 @@ public:
 	// we limit this to allow for pre-allocated vertex buffer in thread ressources
 	static const size_t MAX_BILLBOARDS = 100000;
 	// define billboard size and pos, --> to GPU as single UBO with all Billboards mem mapped
-	struct Vertex {
-		glm::vec3 pos;
-		glm::vec3 dir;
-		float w;
-		float h;
-	};
+	typedef BillboardDef Vertex;
+
 	struct UniformBufferObject {
 		glm::mat4 model;
 		glm::mat4 view;
@@ -41,8 +41,8 @@ public:
 		return bindingDescription;
 	}
 	// get static std::array of attribute desciptions, make sure to copy to local array, otherwise you get dangling pointers!
-	static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescriptions() {
-		std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions{};
+	static std::array<VkVertexInputAttributeDescription, 5> getAttributeDescriptions() {
+		std::array<VkVertexInputAttributeDescription, 5> attributeDescriptions{};
 		// layout(location = 0) in vec3 inPosition;
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
@@ -63,7 +63,11 @@ public:
 		attributeDescriptions[3].location = 3;
 		attributeDescriptions[3].format = VK_FORMAT_R32_SFLOAT;
 		attributeDescriptions[3].offset = offsetof(Vertex, h);
-
+		// layout(location = 4) in int inType; // billboard type: 0 is towards camera, 1 is absolute inDirection
+		attributeDescriptions[4].binding = 0;
+		attributeDescriptions[4].location = 4;
+		attributeDescriptions[4].format = VK_FORMAT_R32_UINT;
+		attributeDescriptions[4].offset = offsetof(Vertex, type);
 		return attributeDescriptions;
 	}
 	virtual ~BillboardShader() override;
@@ -91,6 +95,8 @@ private:
 	bool disabled = false;
 	std::vector<BillboardDef> billboards;
 
+	// vertex buffer for fixed billboards (one buffer for all threads) 
+	VkBuffer vertexBuffer = nullptr;
 	// vertex buffer device memory
 	VkDeviceMemory vertexBufferMemory = nullptr;
 	VkShaderModule vertShaderModule = nullptr;
@@ -112,10 +118,11 @@ struct BillboardThreadResources : ShaderThreadResources {
 	VkPipelineLayout pipelineLayout = nullptr;
 	VkPipeline graphicsPipeline = nullptr;
 	VkCommandBuffer commandBuffer = nullptr;
-	// vertex buffer for billboards
-	VkBuffer billboardVertexBuffer = nullptr;
+	// vertex buffer for billboards 
+	// currently: only global buffer for all threads, no need to have per thread vertices
+	//VkBuffer billboardVertexBuffer = nullptr;
 	// vertex buffer device memory
-	VkDeviceMemory billboardVertexBufferMemory = nullptr;
+	//VkDeviceMemory billboardVertexBufferMemory = nullptr;
 	// MVP buffer
 	VkBuffer uniformBuffer = nullptr;
 	VkBuffer uniformBuffer2 = nullptr;
