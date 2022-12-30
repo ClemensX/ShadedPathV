@@ -73,7 +73,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/epsilon.hpp>
 #include <glm/gtc/quaternion.hpp>
-//using namespace glm;
+#include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/euler_angles.hpp>
+#include <glm/gtx/norm.hpp>
+
 //
 // OpenXR Headers
 //

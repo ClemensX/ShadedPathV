@@ -81,17 +81,17 @@ void GeneratedTexturesApp::init() {
     };
     vector<LineDef> lines;
     BillboardDef myBillboards[] = {
-        { vec3(0.0f, 0.0f, 0.0f), // pos
-          vec3(0.1f, 0.1f, 0.1f), // dir
-          0.5f, // w
-          0.6f, // h
-          1,    // type
-        },
-        { vec3(0.5f, 0.2f, 0.0f), // pos
-          vec3(0.0f, 0.0f, -1.0f), // dir
+        { vec4(0.0f, 0.0f, 0.0f, 1.0f), // pos
+          vec4(0.1f, 0.1f, 0.1f, 0.0f), // dir
           0.5f, // w
           0.6f, // h
           0,    // type
+        },
+        { vec4(0.5f, 0.2f, 0.0f, 1.0f), // pos
+          vec4(0.1f, 0.1f, 0.1f, 0.0f), // dir
+          0.5f, // w
+          0.6f, // h
+          1,    // type
         }
     };
     vector<BillboardDef> billboards;

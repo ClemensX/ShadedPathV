@@ -1,11 +1,13 @@
 #pragma once
 // Billboards - draw simple billboards in world coordinates with direction and size
 // stages: VertexShader --> GeometryShader --> FragmentShader
+// http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-17-quaternions/
 
 // BillboardDef is used in applicastion code to define the billboards AND directly used as Vertex definition
 struct BillboardDef {
-	glm::vec3 pos;
-	glm::vec3 dir;
+	glm::vec4 pos;
+	glm::vec4 dir;  // direction for rotating a standard billboard to. Will be auto-reformulated as a quaternion before shader is called
+	                // (0.5 0.5 0.5) would turn the billboard towards point (1, 1, 1)
 	float w;
 	float h;
 	int type;  // 0 == face camera, 1 == use provided direction vector

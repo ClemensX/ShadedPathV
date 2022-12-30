@@ -105,3 +105,15 @@ struct FrameBufferAttachment {
     VkImageView view;
 };
 
+// https://github.com/opengl-tutorials/ogl/blob/master/common/quaternion_utils.cpp
+class MathHelper {
+public:
+    // Returns a quaternion such that q*start = dest
+    static glm::quat RotationBetweenVectors(glm::vec3 start, glm::vec3 dest);
+
+    // Returns a quaternion that will make your object looking towards 'direction'.
+    // Similar to RotationBetweenVectors, but also controls the vertical orientation.
+    // This assumes that at rest, the object faces +Z.
+    // Beware, the first parameter is a direction, not the target point !
+    static glm::quat LookAt(glm::vec3 direction, glm::vec3 desiredUp);
+};

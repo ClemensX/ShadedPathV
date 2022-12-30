@@ -316,7 +316,13 @@ void BillboardShader::add(std::vector<BillboardDef>& billboardsToAdd)
 {
 	if (billboardsToAdd.size() == 0)
 		return;
-
+	// convert direction vector to rotation quaternion:
+	for (auto& b : billboardsToAdd) {
+		glm::vec3 defaultDir(0.0f, 0.0f, 1.0f); // towards positive z
+		glm::quat q = MathHelper::RotationBetweenVectors(defaultDir, b.dir);
+		//b.dir = glm::vec4(q.x, q.y, q.z, q.w);
+		b.dir = glm::vec4(q.w, q.x, q.y, q.z);
+	}
 	billboards.insert(billboards.end(), billboardsToAdd.begin(), billboardsToAdd.end());
 }
 
