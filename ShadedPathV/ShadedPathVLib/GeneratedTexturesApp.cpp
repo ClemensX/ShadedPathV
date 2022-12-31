@@ -45,7 +45,7 @@ void GeneratedTexturesApp::run()
             .addShader(shaders.clearShader)
             //.addShader(shaders.cubeShader)
             .addShader(shaders.billboardShader)
-            //.addShader(shaders.lineShader)  // enable to see zero cross
+            .addShader(shaders.lineShader)  // enable to see zero cross
             .addShader(shaders.pbrShader)
             ;
         if (enableLines) shaders.addShader(shaders.lineShader);
@@ -69,6 +69,50 @@ void GeneratedTexturesApp::run()
     Log("LineApp ended" << endl);
 }
 
+
+void createDebugLines(vector<LineDef>& lines) {
+    LineDef l;
+    l.color = Colors::Silver;
+    vec3 v0 = vec3(-0.1, 0, 0);
+    vec3 v1 = vec3(0.1, 0, 0);
+    vec3 v2 = vec3(0, 0.1, 0);
+    l.start = v0;
+    l.end = v1;
+    lines.push_back(l);
+    l.start = v1;
+    l.end = v2;
+    lines.push_back(l);
+    l.start = v2;
+    l.end = v0;
+    lines.push_back(l);
+
+    // now the rotated vertices:
+    glm::vec3 defaultDir(0.0f, 0.0f, 1.0f); // towards positive z
+    glm::vec3 toDir(0.1f, 0.9f, 0.1f);
+    glm::quat q = MathHelper::RotationBetweenVectors(defaultDir, toDir);
+    v0 = q * v0;
+    //vec4 q_vec = vec4(q.x, q.y, q.z, q.w);
+    vec4 q_vec = vec4(q.w, q.x, q.y, q.z);
+    vec4 v0_vec = vec4(v0.x, v0.y, v0.z, 0.0f);
+    vec4 v0_temp = q_vec * v0_vec;
+    vec3 v0_via_vec = vec3(v0_temp);
+    //assert(glm::epsilonEqual(v0.x, v0_via_vec.x, 0.001f));
+    //assert(glm::epsilonEqual(v0.y, v0_via_vec.y, 0.001f));
+    //assert(glm::epsilonEqual(v0.z, v0_via_vec.z, 0.001f));
+    v1 = q * v1;
+    v2 = q * v2;
+    l.color = Colors::Yellow;
+    l.start = v0;
+    l.end = v1;
+    lines.push_back(l);
+    l.start = v1;
+    l.end = v2;
+    lines.push_back(l);
+    l.start = v2;
+    l.end = v0;
+    lines.push_back(l);
+}
+
 void GeneratedTexturesApp::init() {
     // add some lines:
     float aspectRatio = engine.getAspect();
@@ -81,14 +125,14 @@ void GeneratedTexturesApp::init() {
     };
     vector<LineDef> lines;
     BillboardDef myBillboards[] = {
-        { vec4(0.0f, 0.0f, 0.0f, 1.0f), // pos
+        { vec4(-0.5f, 0.1f, -0.5f, 1.0f), // pos
           vec4(0.1f, 0.1f, 0.1f, 0.0f), // dir
           0.5f, // w
           0.6f, // h
           0,    // type
         },
-        { vec4(0.5f, 0.2f, 0.0f, 1.0f), // pos
-          vec4(0.1f, 0.1f, 0.1f, 0.0f), // dir
+        { vec4(0.5f, 0.2f, -0.5f, 1.0f), // pos
+          vec4(0.1f, 0.9f, 0.1f, 0.0f), // dir
           0.5f, // w
           0.6f, // h
           1,    // type
@@ -96,6 +140,7 @@ void GeneratedTexturesApp::init() {
     };
     vector<BillboardDef> billboards;
     for_each(begin(myBillboards), end(myBillboards), [&billboards](BillboardDef l) {billboards.push_back(l); });
+    createDebugLines(lines);
 
     engine.shaders.billboardShader.add(billboards);
     // loading objects wireframe:
