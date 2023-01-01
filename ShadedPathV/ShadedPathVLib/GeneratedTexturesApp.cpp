@@ -26,9 +26,9 @@ void GeneratedTexturesApp::run()
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 960;//480;// 960;//1800;// 800;//3700;
+        int win_width = 2500;//480;// 960;//1800;// 800;//3700; // 2500
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Review generated Textures");
-        camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
+        camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 2000.0f));
 
         engine.setFramesInFlight(2);
         engine.registerApp(this);
@@ -45,7 +45,7 @@ void GeneratedTexturesApp::run()
             .addShader(shaders.clearShader)
             //.addShader(shaders.cubeShader)
             .addShader(shaders.billboardShader)
-            .addShader(shaders.lineShader)  // enable to see zero cross
+            .addShader(shaders.lineShader)  // enable to see zero cross and billboard debug lines
             .addShader(shaders.pbrShader)
             ;
         if (enableLines) shaders.addShader(shaders.lineShader);
@@ -70,47 +70,64 @@ void GeneratedTexturesApp::run()
 }
 
 
-void createDebugLines(vector<LineDef>& lines) {
-    LineDef l;
-    l.color = Colors::Silver;
-    vec3 v0 = vec3(-0.1, 0, 0);
-    vec3 v1 = vec3(0.1, 0, 0);
-    vec3 v2 = vec3(0, 0.1, 0);
-    l.start = v0;
-    l.end = v1;
-    lines.push_back(l);
-    l.start = v1;
-    l.end = v2;
-    lines.push_back(l);
-    l.start = v2;
-    l.end = v0;
-    lines.push_back(l);
+void createDebugLines(vector<LineDef>& lines, vector<BillboardDef>& billboards) {
 
-    // now the rotated vertices:
-    glm::vec3 defaultDir(0.0f, 0.0f, 1.0f); // towards positive z
-    glm::vec3 toDir(0.1f, 0.9f, 0.1f);
-    glm::quat q = MathHelper::RotationBetweenVectors(defaultDir, toDir);
-    v0 = q * v0;
-    //vec4 q_vec = vec4(q.x, q.y, q.z, q.w);
-    vec4 q_vec = vec4(q.w, q.x, q.y, q.z);
-    vec4 v0_vec = vec4(v0.x, v0.y, v0.z, 0.0f);
-    vec4 v0_temp = q_vec * v0_vec;
-    vec3 v0_via_vec = vec3(v0_temp);
-    //assert(glm::epsilonEqual(v0.x, v0_via_vec.x, 0.001f));
-    //assert(glm::epsilonEqual(v0.y, v0_via_vec.y, 0.001f));
-    //assert(glm::epsilonEqual(v0.z, v0_via_vec.z, 0.001f));
-    v1 = q * v1;
-    v2 = q * v2;
-    l.color = Colors::Yellow;
-    l.start = v0;
-    l.end = v1;
-    lines.push_back(l);
-    l.start = v1;
-    l.end = v2;
-    lines.push_back(l);
-    l.start = v2;
-    l.end = v0;
-    lines.push_back(l);
+    for (auto& b : billboards) {
+        if (b.type == 1) {
+            vector<vec3> verts;
+            BillboardShader::calcVertsOrigin(verts);
+            // draw triangle with every 3 verts:
+            for (size_t i = 0; i < verts.size(); i += 3) {
+                vec3 v0 = verts[i];
+                vec3 v1 = verts[i+1];
+                vec3 v2 = verts[i+2];
+                LineDef l;
+                l.color = Colors::Silver;
+                l.start = v0 + vec3(b.pos);
+                l.end = v1 + vec3(b.pos);
+                lines.push_back(l);
+                l.start = v1 + vec3(b.pos);
+                l.end = v2 + vec3(b.pos);
+                lines.push_back(l);
+                l.start = v2 + vec3(b.pos);
+                l.end = v0 + vec3(b.pos);
+                lines.push_back(l);
+                // add rotation direction: (only origin for now)
+                l.color = Colors::Cyan;
+                l.start = vec3(0, 0, 0) + vec3(b.pos);
+                // add with unit length
+                l.end = l.start + normalize(vec3(b.dir));
+                lines.push_back(l);
+
+                // now the rotated vertices:
+                glm::vec3 defaultDir(0.0f, 0.0f, 1.0f); // towards positive z
+                glm::vec3 toDir(b.dir);
+                glm::quat q = MathHelper::RotationBetweenVectors(defaultDir, toDir);
+                v0 = q * v0;
+                v1 = q * v1;
+                v2 = q * v2;
+                //vec4 q_vec = vec4(q.x, q.y, q.z, q.w);
+                //vec4 q_vec = vec4(q.w, q.x, q.y, q.z);
+                //vec4 v0_vec = vec4(v0.x, v0.y, v0.z, 0.0f);
+                //vec4 v0_temp = q_vec * v0_vec;
+                //vec3 v0_via_vec = vec3(v0_temp);
+                //assert(glm::epsilonEqual(v0.x, v0_via_vec.x, 0.001f));
+                //assert(glm::epsilonEqual(v0.y, v0_via_vec.y, 0.001f));
+                //assert(glm::epsilonEqual(v0.z, v0_via_vec.z, 0.001f));
+                l.color = Colors::Yellow;
+                l.start = v0 + vec3(b.pos);
+                l.end = v1 + vec3(b.pos);
+                lines.push_back(l);
+                l.start = v1 + vec3(b.pos);
+                l.end = v2 + vec3(b.pos);
+                lines.push_back(l);
+                l.start = v2 + vec3(b.pos);
+                l.end = v0 + vec3(b.pos);
+                lines.push_back(l);
+            }
+        }
+    }
+
 }
 
 void GeneratedTexturesApp::init() {
@@ -132,7 +149,7 @@ void GeneratedTexturesApp::init() {
           0,    // type
         },
         { vec4(0.5f, 0.2f, -0.5f, 1.0f), // pos
-          vec4(0.1f, 0.9f, 0.1f, 0.0f), // dir
+          vec4(0.3f, 0.0f, 0.0f, 0.0f), // dir
           0.5f, // w
           0.6f, // h
           1,    // type
@@ -140,7 +157,7 @@ void GeneratedTexturesApp::init() {
     };
     vector<BillboardDef> billboards;
     for_each(begin(myBillboards), end(myBillboards), [&billboards](BillboardDef l) {billboards.push_back(l); });
-    createDebugLines(lines);
+    createDebugLines(lines, billboards);
 
     engine.shaders.billboardShader.add(billboards);
     // loading objects wireframe:

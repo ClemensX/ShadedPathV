@@ -89,6 +89,9 @@ public:
 
 	// per frame update of UBO / MVP
 	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
+	// calc verstices around origin needed to display billboard (used e.g. for debugging)
+	// usually this is done in geom shader, not here
+	static void calcVertsOrigin(std::vector<glm::vec3>& verts);
 private:
 
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);

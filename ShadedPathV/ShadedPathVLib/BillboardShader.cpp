@@ -329,6 +329,16 @@ void BillboardShader::add(std::vector<BillboardDef>& billboardsToAdd)
 	billboards.insert(billboards.end(), billboardsToAdd.begin(), billboardsToAdd.end());
 }
 
+void BillboardShader::calcVertsOrigin(std::vector<glm::vec3>& verts)
+{
+	glm::vec3 v0 = glm::vec3(-0.1, 0, 0);
+	glm::vec3 v1 = glm::vec3(0.1, 0, 0);
+	glm::vec3 v2 = glm::vec3(0, 0.1, 0);
+	verts.push_back(v0);
+	verts.push_back(v1);
+	verts.push_back(v2);
+}
+
 BillboardShader::~BillboardShader()
 {
 	Log("BillboardShader destructor\n");

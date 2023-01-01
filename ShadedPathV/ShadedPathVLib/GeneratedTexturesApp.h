@@ -22,4 +22,3 @@ private:
     World world;
     WorldObject *knife1, *knife2;
 };
-
