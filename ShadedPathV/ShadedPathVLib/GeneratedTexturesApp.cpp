@@ -92,7 +92,7 @@ void createDebugLines(vector<LineDef>& lines, vector<BillboardDef>& billboards) 
                 l.start = v2 + vec3(b.pos);
                 l.end = v0 + vec3(b.pos);
                 lines.push_back(l);
-                // add rotation direction: (only origin for now)
+                // add rotation direction:
                 l.color = Colors::Cyan;
                 l.start = vec3(0, 0, 0) + vec3(b.pos);
                 // add with unit length
@@ -117,6 +117,7 @@ void createDebugLines(vector<LineDef>& lines, vector<BillboardDef>& billboards) 
                 l.color = Colors::Yellow;
                 l.start = v0 + vec3(b.pos);
                 l.end = v1 + vec3(b.pos);
+                Log("v1 in app: " << l.end.x << " " << l.end.y << " " << l.end.z << endl);
                 lines.push_back(l);
                 l.start = v1 + vec3(b.pos);
                 l.end = v2 + vec3(b.pos);
@@ -148,8 +149,8 @@ void GeneratedTexturesApp::init() {
           0.6f, // h
           0,    // type
         },
-        { vec4(0.5f, 0.2f, -0.5f, 1.0f), // pos
-          vec4(0.3f, 0.0f, 0.0f, 0.0f), // dir
+        { vec4(-0.2f, 0.2f, 0.0f, 1.0f), // pos
+          vec4(0.3f, 0.1f, 0.0f, 0.0f), // dir
           0.5f, // w
           0.6f, // h
           1,    // type
@@ -257,6 +258,8 @@ void GeneratedTexturesApp::updatePerFrame(ThreadResources& tr)
     engine.shaders.lineShader.addOneTime(lines, tr);
 
     engine.shaders.lineShader.prepareAddLines(tr);
+    //Log("lines proj" << endl);
+    //Util::printMatrix(lubo.proj);
     engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
 
     // cube
@@ -315,9 +318,7 @@ void GeneratedTexturesApp::updatePerFrame(ThreadResources& tr)
     auto bubo2 = bubo;
     bubo2.view = lubo2.view;
     engine.shaders.billboardShader.uploadToGPU(tr, bubo, bubo2);
-    // change individual billboards position:
-    //for (auto& b : engine.shaders.billboardShader.getSortedList()) {
-    //}
+    //Util::printMatrix(bubo.proj);
 }
 
 void GeneratedTexturesApp::handleInput(InputState& inputState)

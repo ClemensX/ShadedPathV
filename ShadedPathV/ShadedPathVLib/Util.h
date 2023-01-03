@@ -24,10 +24,16 @@ public:
     static float getMaxCubeViewDistanceFromFarPlane(float f) {
         return sqrt((f * f) / 3.0f);
     }
-    static void printCStringList(std::vector<const char *> &exts) {
+    static void printCStringList(std::vector<const char*>& exts) {
         for (uint32_t i = 0; i < exts.size(); i++) {
             Log("  " << exts[i] << std::endl);
         }
+    };
+    static void printMatrix (glm::mat4 m) {
+        Log("matrix 1.row: " << m[0][0] << " " << m[0][1] << " " << m[0][2] << " " << m[0][3] << std::endl);
+        Log("matrix 2.row: " << m[1][0] << " " << m[1][1] << " " << m[1][2] << " " << m[1][3] << std::endl);
+        Log("matrix 3.row: " << m[2][0] << " " << m[2][1] << " " << m[2][2] << " " << m[2][3] << std::endl);
+        Log("matrix 4.row: " << m[3][0] << " " << m[3][1] << " " << m[3][2] << " " << m[3][3] << std::endl);
     };
     static std::string decodeVulkanVersion(uint32_t version) {
         std::string s;
