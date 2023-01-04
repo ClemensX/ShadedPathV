@@ -443,53 +443,24 @@ VkCommandBuffer GlobalRendering::beginSingleTimeCommands(bool sync) {
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandPool = commandPool;
     allocInfo.commandBufferCount = 1;
-
-    if (commandBufferSingle == nullptr) {
-        vkAllocateCommandBuffers(device, &allocInfo, &commandBufferSingle);
-    }
-
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    if (false && sync) {
-        VkSemaphoreWaitInfo wait{};
-        VkSemaphore waitSemaphores[] = { singleTimeCommandsSemaphore };
-        wait.sType = VK_STRUCTURE_TYPE_SEMAPHORE_WAIT_INFO;
-        wait.semaphoreCount = 1;
-        wait.pSemaphores = waitSemaphores;
-        vkWaitSemaphores(device, &wait, 10000000000L);
-    }
-    vkBeginCommandBuffer(commandBufferSingle, &beginInfo);
-
-    return commandBufferSingle;
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+    return commandBuffer;
 }
 
 void GlobalRendering::endSingleTimeCommands(VkCommandBuffer commandBuffer, bool sync) {
     vkEndCommandBuffer(commandBuffer);
-
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-    if (syncedOperations)
-    {
-        VkSemaphore signalSemaphores[] = { singleTimeCommandsSemaphore };
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = signalSemaphores;
-        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_TRANSFER_BIT };
-        submitInfo.pWaitDstStageMask = waitStages;
-        syncedOperations = false;
-    }
-    if (sync) {
-        VkSemaphore signalSemaphores[] = { singleTimeCommandsSemaphore };
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
-        syncedOperations = true;
-    }
     vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(graphicsQueue);
-
-    //vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+    vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 }
 
 void GlobalRendering::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {

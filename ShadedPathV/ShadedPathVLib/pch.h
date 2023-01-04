@@ -8,6 +8,7 @@
 #define PCH_H
 
 // global defines to enable/disable features:
+#define LOGFILE true
 // set to true for logging render queue operations
 // submit queue logging
 #define LOG_QUEUE false
@@ -121,8 +122,8 @@ inline void LogFile(const char* s) {
 #elif defined(LOGFILE)
 #define Log(x)\
 {\
-	std::wstringstream s1764;  s1764 << x; \
-	LogFile(s1764.str().c_str()); \
+    std::stringstream s1765; s1765 << x; \
+    LogFile(s1765.str().c_str()); \
 }
 #else
 #define Log(x)
