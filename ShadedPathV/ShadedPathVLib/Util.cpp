@@ -43,22 +43,22 @@ int LogfileScanner::searchForLine(string line, int startline)
 }
 
 void Util::initializeDebugFunctionPointers() {
-    pfnDebugMarkerSetObjectNameEXT = (PFN_vkDebugMarkerSetObjectNameEXT)vkGetDeviceProcAddr(engine->global.device, "vkDebugMarkerSetObjectNameEXT");
+    pfnDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(engine->global.vkInstance, "vkSetDebugUtilsObjectNameEXT");
 }
 
-void Util::debugNameObject(uint64_t object, VkDebugReportObjectTypeEXT objectType, const char* name) {
-    if (pfnDebugMarkerSetObjectNameEXT == nullptr) {
+void Util::debugNameObject(uint64_t object, VkObjectType objectType, const char* name) {
+    if (pfnDebugUtilsObjectNameEXT == nullptr) {
         initializeDebugFunctionPointers();
     }
     // Check for a valid function pointer
-    if (pfnDebugMarkerSetObjectNameEXT)
+    if (pfnDebugUtilsObjectNameEXT)
     {
-        VkDebugMarkerObjectNameInfoEXT nameInfo = {};
-        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT;
+        VkDebugUtilsObjectNameInfoEXT nameInfo = {};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
         nameInfo.objectType = objectType;
-        nameInfo.object = object;
+        nameInfo.objectHandle = object;
         nameInfo.pObjectName = name;
-        pfnDebugMarkerSetObjectNameEXT(engine->global.device, &nameInfo);
+        pfnDebugUtilsObjectNameEXT(engine->global.device, &nameInfo);
     }
 }
 

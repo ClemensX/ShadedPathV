@@ -19,7 +19,7 @@ void BillboardShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	vertShaderModule = engine.shaders.createShaderModule(file_buffer_vert);
 	engine.util.debugNameObjectShaderModule(vertShaderModule, "Billboard Vert Shader");
 	geomShaderModule = engine.shaders.createShaderModule(file_buffer_geom);
-	engine.util.debugNameObjectShaderModule(fragShaderModule, "Billboard Geom Shader");
+	engine.util.debugNameObjectShaderModule(geomShaderModule, "Billboard Geom Shader");
 	fragShaderModule = engine.shaders.createShaderModule(file_buffer_frag);
 	engine.util.debugNameObjectShaderModule(fragShaderModule, "Billboard Frag Shader");
 

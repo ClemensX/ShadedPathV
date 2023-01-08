@@ -60,36 +60,37 @@ public:
 
     // name vulkan objects. used to identify them in debug message from validation layer
     // general purpost method that can be used foe all object types
-    void debugNameObject(uint64_t object, VkDebugReportObjectTypeEXT objectType, const char* name);
+    void debugNameObject(uint64_t object, VkObjectType objectType, const char* name);
 
     // debug name command buffers
     void debugNameObjectCommandBuffer(VkCommandBuffer cbuf, const char* name) {
-        debugNameObject((uint64_t)cbuf, VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT, name);
+        debugNameObject((uint64_t)cbuf, VK_OBJECT_TYPE_COMMAND_BUFFER, name);
     }
     // debug name command buffers
     void debugNameObjectBuffer(VkBuffer buf, const char* name) {
-        debugNameObject((uint64_t)buf, VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, name);
+        debugNameObject((uint64_t)buf, VK_OBJECT_TYPE_BUFFER, name);
     }
     // debug name command buffers
     void debugNameObjectDeviceMmeory(VkDeviceMemory m, const char* name) {
-        debugNameObject((uint64_t)m, VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT, name);
+        debugNameObject((uint64_t)m, VK_OBJECT_TYPE_DEVICE_MEMORY, name);
     }
     // debug name descriptor set layout
     void debugNameObjectDescriptorSetLayout(VkDescriptorSetLayout m, const char* name) {
-        debugNameObject((uint64_t)m, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT, name);
+        debugNameObject((uint64_t)m, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, name);
     }
     // debug name descriptor set
     void debugNameObjectDescriptorSet(VkDescriptorSet m, const char* name) {
-        debugNameObject((uint64_t)m, VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT, name);
+        debugNameObject((uint64_t)m, VK_OBJECT_TYPE_DESCRIPTOR_SET, name);
     }
     // debug name shader module
     void debugNameObjectShaderModule(VkShaderModule m, const char* name) {
-        debugNameObject((uint64_t)m, VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT, name);
+        debugNameObject((uint64_t)m, VK_OBJECT_TYPE_SHADER_MODULE, name);
     }
 
 private:
     void initializeDebugFunctionPointers();
-    PFN_vkDebugMarkerSetObjectNameEXT pfnDebugMarkerSetObjectNameEXT = nullptr;
+    //PFN_vkDebugMarkerSetObjectNameEXT pfnDebugMarkerSetObjectNameEXT = nullptr;
+    PFN_vkSetDebugUtilsObjectNameEXT pfnDebugUtilsObjectNameEXT = nullptr;
     ShadedPathEngine* engine = nullptr;
 };
 

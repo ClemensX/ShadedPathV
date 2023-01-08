@@ -116,8 +116,8 @@ std::vector<const char*> GlobalRendering::getRequiredExtensions() {
     //extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     //extensions.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     //extensions.push_back(VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME);
-    if (DEBUG_MARKER_EXTENSION) {
-        extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
+    if (DEBUG_UTILS_EXTENSION) {
+        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
     if (engine.isMeshShading()) {
         deviceExtensions.push_back(VK_NV_MESH_SHADER_EXTENSION_NAME);
@@ -354,9 +354,10 @@ void GlobalRendering::createLogicalDevice()
         if (engine.isVR()) {
             engine.vr.initVulkanCreateDevice(createInfo);
         } else {
-            if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
-                if (DEBUG_MARKER_EXTENSION) {
-                    Error("Enabled VK_EXT_debug_marker needs Vulkan Configurator running. Did you start it ? ");
+            VkResult res = vkCreateDevice(physicalDevice, &createInfo, nullptr, &device);
+            if (res != VK_SUCCESS) {
+                if (DEBUG_UTILS_EXTENSION) {
+                    Error("Enabled VK_EXT_DEBUG_UTILS needs Vulkan Configurator running. Did you start it ? ");
                 }
                 Error("Device Creation failed.");
             }
@@ -364,6 +365,7 @@ void GlobalRendering::createLogicalDevice()
     }
 
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+    engine.util.debugNameObject((uint64_t)graphicsQueue, VK_OBJECT_TYPE_QUEUE,  "MAIN GRAPHICS QUEUE");
     if (engine.presentation.enabled) {
         engine.presentation.createPresentQueue(indices.presentFamily.value());
     }

@@ -5,7 +5,7 @@ struct ShaderState;
 
 // #undefine for disabling the debug extension
 #if defined(DEBUG) | defined(_DEBUG)
-#define ENABLE_DEBUG_MARKER_EXTENSION
+#define ENABLE_DEBUG_UTILS_EXTENSION
 #endif
 
 struct QueueFamilyIndices {
@@ -57,13 +57,13 @@ public:
 	static const bool USE_PROFILE_DYN_RENDERING = false;
 
 	// flag for debug marker extension used
-#if defined(ENABLE_DEBUG_MARKER_EXTENSION)
-	static const bool DEBUG_MARKER_EXTENSION = true;
+#if defined(ENABLE_DEBUG_UTILS_EXTENSION)
+	static const bool DEBUG_UTILS_EXTENSION = true;
 #else
-	static const bool DEBUG_MARKER_EXTENSION = false;
+	static const bool DEBUG_UTILS_EXTENSION = false;
 #endif
 	// list device and instance extensions
-	static const bool LIST_EXTENSIONS = false;
+	static const bool LIST_EXTENSIONS = true;
 
 	// Vulkan formats we want to set centrally:
 
@@ -144,9 +144,10 @@ private:
 	std::vector<const char*> deviceExtensions = {
 		//VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
 		//VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
-#if defined(ENABLE_DEBUG_MARKER_EXTENSION)
-		VK_EXT_DEBUG_MARKER_EXTENSION_NAME
-#endif
+		// debug_utils is only an instance extension
+//#if defined(ENABLE_DEBUG_UTILS_EXTENSION)
+//		VK_EXT_DEBUG_UTILS_EXTENSION_NAME
+//#endif
 	};
 
 	void gatherDeviceExtensions();
