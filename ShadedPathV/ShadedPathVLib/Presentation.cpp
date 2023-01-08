@@ -304,6 +304,7 @@ void Presentation::initBackBufferPresentationSingle(ThreadResources &res)
     if (vkAllocateCommandBuffers(device, &allocInfo, &res.commandBufferPresentBack) != VK_SUCCESS) {
         Error("failed to allocate command buffers!");
     }
+    engine.util.debugNameObjectCommandBuffer(res.commandBufferPresentBack, "ThreadResources.commandBufferPresentBack");
     if (vkAllocateCommandBuffers(device, &allocInfo, &res.commandBufferUI) != VK_SUCCESS) {
         Error("failed to allocate command buffers!");
     }
