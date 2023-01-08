@@ -15,6 +15,8 @@ void Presentation::initAfterDeviceCreation()
     createImageViews();
 }
 
+uint32_t Presentation::threadId = 0;
+
 void Presentation::initGLFW(bool handleKeyEvents, bool handleMouseMoveEevents, bool handleMouseButtonEvents)
 {
     if (!enabled) return;
@@ -304,7 +306,8 @@ void Presentation::initBackBufferPresentationSingle(ThreadResources &res)
     if (vkAllocateCommandBuffers(device, &allocInfo, &res.commandBufferPresentBack) != VK_SUCCESS) {
         Error("failed to allocate command buffers!");
     }
-    engine.util.debugNameObjectCommandBuffer(res.commandBufferPresentBack, "ThreadResources.commandBufferPresentBack");
+    res.commandBufferDebugName = engine.util.createDebugName("ThreadResources.commandBufferPresentBack", res);
+    engine.util.debugNameObjectCommandBuffer(res.commandBufferPresentBack, res.commandBufferDebugName.c_str());
     if (vkAllocateCommandBuffers(device, &allocInfo, &res.commandBufferUI) != VK_SUCCESS) {
         Error("failed to allocate command buffers!");
     }
@@ -324,6 +327,18 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     // select the right thread resources
     auto& device = engine.global.device;
     auto& global = engine.global;
+
+    // thread checking - make sure present is only called on one thread:
+    std::hash<std::thread::id> myHashObject{};
+    uint32_t threadID = myHashObject(std::this_thread::get_id());
+    if (this->threadId == 0) {
+        this->threadId = threadId;
+    } else {
+        assert(threadId == this->threadId);
+    }
+    //Log("Present thread: " << threadID << endl);
+    // TODO: rework present semaphores and fences: make them global as no ThreadResources specific is needed
+    // TODO: fix SYNC-HAZARD-WRITE-AFTER-READ for main graphics queue
 
     // wait for fence signal
     LogCondF(LOG_QUEUE, "wait present fence image index " << tr.frameIndex << endl);

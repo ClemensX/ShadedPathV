@@ -82,6 +82,9 @@ public:
 	XrFrameState frameState{ XR_TYPE_FRAME_STATE };
 	std::vector<XrCompositionLayerBaseHeader*> layers;
 
+	// Debugging
+	std::string commandBufferDebugName;
+
 private:
 	void createFencesAndSemaphores();
 	void createBackBufferImage();

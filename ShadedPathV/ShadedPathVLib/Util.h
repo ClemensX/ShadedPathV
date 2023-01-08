@@ -1,5 +1,6 @@
 #pragma once
 class ShadedPathEngine;
+class ThreadResources;
 
 namespace Colors {
     const glm::vec4 xm{ 1.0f, 0.0f, 1.0f, 1.0f };
@@ -57,6 +58,9 @@ public:
     };
 
     ~Util() {};
+
+    // create debug name for thread resource object from name and ThreadResource id
+    std::string createDebugName(const char* name, ThreadResources& res);
 
     // name vulkan objects. used to identify them in debug message from validation layer
     // general purpost method that can be used foe all object types
