@@ -424,6 +424,7 @@ TextureStore::~TextureStore()
 	auto& device = engine->global.device;
 	for (auto& tex : textures) {
 		auto &ti = tex.second;
+		Log("Texture found: " << ti.id.c_str() << " " << ti.filename.c_str() << " " << ti.vulkanTexture.deviceMemory << endl);
 		if (ti.available) {
 			vkDestroyImageView(engine->global.device, tex.second.imageView, nullptr);
 			if (ti.isKtxCreated) {

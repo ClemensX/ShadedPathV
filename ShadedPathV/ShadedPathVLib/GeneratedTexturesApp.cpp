@@ -151,8 +151,8 @@ void GeneratedTexturesApp::init() {
         },
         { vec4(-0.2f, 0.2f, 0.0f, 1.0f), // pos
           vec4(0.3f, 0.1f, 0.0f, 0.0f), // dir
-          0.5f, // w
-          0.6f, // h
+          0.3f, // w
+          0.9f, // h
           1,    // type
         }
     };
@@ -207,6 +207,7 @@ void GeneratedTexturesApp::init() {
     engine.shaders.pbrShader.initialUpload();
     engine.shaders.cubeShader.initialUpload();
     engine.shaders.billboardShader.initialUpload();
+    // last thing in init() should always be texture description creation
 }
 
 void GeneratedTexturesApp::drawFrame(ThreadResources& tr) {

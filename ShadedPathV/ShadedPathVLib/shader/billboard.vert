@@ -16,12 +16,15 @@ layout(location = 4) in uint inType; // billboard type: 0 is towards camera, 1 i
 
 layout(location = 1) out uint outType;
 layout(location = 2) out vec4 outQuat;
+layout(location = 3) out float outWidth;
+layout(location = 4) out float outHeight;
 
 void main()
 {
-    gl_PointSize = 1.0;
     outType = inType;
     outQuat = inDirection;
+    outWidth = inWidth;
+    outHeight = inHeight;
     //gl_Position = ubo.proj * ubo.view * vec4(inPosition, 1.0);
     if (inType == 0) {
         gl_Position = ubo.view * vec4(inPosition.xyz, 1.0);
