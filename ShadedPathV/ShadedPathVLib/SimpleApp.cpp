@@ -23,7 +23,7 @@ void SimpleApp::run()
         //engine.setFrameCountLimit(1000);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK); // 960
-        int win_width = 2500;//1800;// 800;//3700;
+        int win_width = 960; //2500;//1800;// 800;//3700;
         engine.enablePresentation(win_width, (int)(win_width /1.77f), "Vulkan Simple App");
         camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
 

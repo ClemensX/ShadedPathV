@@ -165,6 +165,9 @@
     <ClInclude Include="miniaudio\miniaudio.h">
       <Filter>miniaudio</Filter>
     </ClInclude>
+    <ClInclude Include="VulkanResources.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -280,6 +283,9 @@
     </ClCompile>
     <ClCompile Include="miniaudio\extras\stb_vorbis.c">
       <Filter>miniaudio</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanResources.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

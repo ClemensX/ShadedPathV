@@ -252,6 +252,10 @@ Enable compression and create mipmaps:
 
 ```gltf-transform uastc WaterBottle.glb bottle2.glb --level 4 --zstd 18 --verbose```
 
+## Internal
+
+Stuff probably only intersting for internal development: [planning.md](./planning.md)
+
 ### Some arbitrary timings (we be moved elsewhere eventually)
 
 All timings in [microseconds]

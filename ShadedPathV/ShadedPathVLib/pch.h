@@ -272,6 +272,7 @@ inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* ori
 #include "UIShader.h"
 #include "Shaders.h"
 #include "ThreadResources.h"
+#include "VulkanResources.h"
 #include "ShadedPathEngine.h"
 #include "World.h"
 #include "SimpleApp.h"

@@ -152,6 +152,7 @@
     <ClInclude Include="UIShader.h" />
     <ClInclude Include="Util.h" />
     <ClInclude Include="VR.h" />
+    <ClInclude Include="VulkanResources.h" />
     <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
@@ -200,6 +201,7 @@
     <ClCompile Include="UIShader.cpp" />
     <ClCompile Include="Util.cpp" />
     <ClCompile Include="VR.cpp" />
+    <ClCompile Include="VulkanResources.cpp" />
     <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
