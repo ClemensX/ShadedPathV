@@ -6,16 +6,9 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 {
 	ShaderBase::init(engine);
 
-    // load shader binary code
-    vector<byte> file_buffer_vert;
-    vector<byte> file_buffer_frag;
-    engine.files.readFile("triangle_vert.spv", file_buffer_vert, FileCategory::FX);
-    engine.files.readFile("triangle_frag.spv", file_buffer_frag, FileCategory::FX);
-    Log("read vertex shader: " << file_buffer_vert.size() << endl);
-    Log("read fragment shader: " << file_buffer_frag.size() << endl);
     // create shader modules
-    vertShaderModuleTriangle = engine.shaders.createShaderModule(file_buffer_vert);
-    fragShaderModuleTriangle = engine.shaders.createShaderModule(file_buffer_frag);
+    vertShaderModuleTriangle = engine.resources.createShaderModule("triangle_vert.spv");
+    fragShaderModuleTriangle = engine.resources.createShaderModule("triangle_frag.spv");
 
     ThemedTimer::getInstance()->start(TIMER_PART_BUFFER_COPY);
     // create vertex buffer

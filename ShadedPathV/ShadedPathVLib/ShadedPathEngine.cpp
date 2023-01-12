@@ -20,6 +20,7 @@ void ShadedPathEngine::init(string appname)
     ThreadResources::initAll(this);
     textureStore.init(this);
     meshStore.init(this);
+    resources.init(this);
     if (soundEnabled) sound.init();
     initialized = true;
 }

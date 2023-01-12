@@ -5,11 +5,11 @@
 
 int main()
 {
-    //SimpleApp app;
+    SimpleApp app;
     //LineApp app;
     //DeviceCoordApp app;
     //gltfObjectsApp app;
-    GeneratedTexturesApp app;
+    //GeneratedTexturesApp app;
     app.run();
 }
 
