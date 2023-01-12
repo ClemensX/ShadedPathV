@@ -15,5 +15,5 @@ void main()
     //debugPrintfEXT("Cube col tex: %f %f %f\n", out_FragColor.x, out_FragColor.y, out_FragColor.z);
 	out_FragColor = texture(texture1, dir);
     //out_FragColor = vec4( 1.0, 1.0, 1.0, 1.0);
-    //debugPrintfEXT("Cube col: %f %f %f\n", out_FragColor.x, out_FragColor.y, out_FragColor.z);
+    //debugPrintfEXT("Cube col: %f %f %f %f\n", out_FragColor.x, out_FragColor.y, out_FragColor.z, out_FragColor.w);
 }

@@ -43,7 +43,7 @@ void GeneratedTexturesApp::run()
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
-            //.addShader(shaders.cubeShader)
+            .addShader(shaders.cubeShader)
             .addShader(shaders.billboardShader)
             .addShader(shaders.lineShader)  // enable to see zero cross and billboard debug lines
             .addShader(shaders.pbrShader)
@@ -196,10 +196,10 @@ void GeneratedTexturesApp::init() {
     engine.textureStore.loadTexture("debug.ktx", "2dTexture");
 
     // select texture by uncommenting:
-    //engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
+    engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
     //engine.global.createCubeMapFrom2dTexture("Knife1", "2dTextureCube");
     //engine.global.createCubeMapFrom2dTexture("WaterBottle2", "2dTextureCube");
-    engine.global.createCubeMapFrom2dTexture(engine.textureStore.BRDFLUT_TEXTURE_ID, "2dTextureCube");
+    //engine.global.createCubeMapFrom2dTexture(engine.textureStore.BRDFLUT_TEXTURE_ID, "2dTextureCube");
     engine.shaders.cubeShader.setFarPlane(1.0f); // cube around center
     engine.shaders.cubeShader.setSkybox("2dTextureCube");
 

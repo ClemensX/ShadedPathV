@@ -2,10 +2,12 @@
 
 ## Vulkan Resources Use
 
-Current (Q1 2023) use of Vulkan resources per shader:
+Current use of Vulkan resources per shader:
+
+## SimpleShader
 
 SimpleShader is a playfield to try out rendering techniques:
-a single texture is rednered in 2 rectangles that keep rotating
+a single texture is rendered in 2 rectangles that keep rotating
 
 | **SimpleShader** |   |
 | ---      | ---           |
@@ -26,7 +28,9 @@ a single texture is rednered in 2 rectangles that keep rotating
 | poolSizeCount | 4
 | maxSets | 5
 
-Clear Shader is not a complete shader, but is auto-added to the first shader in the list to clear color and depth attachement
+## ClearShader
+
+Clear Shader is not a complete shader and should always be first in list of used shaders. It clears color and depth attachement
 
 | **ClearShader** |   |
 | ---      | ---           |
@@ -41,6 +45,8 @@ Clear Shader is not a complete shader, but is auto-added to the first shader in 
 | ---
 | **Descriptor Pools:** |
 | ---
+
+## LineShader
 
 LineShader draws simple lines given in world coordinates. Each line has start point, end point and color. Fixed lines are stored in GPU at init phase and only read later. Dynamic lines are copied to GPU each frame (have ...Add in their name below)
 
@@ -67,3 +73,78 @@ LineShader draws simple lines given in world coordinates. Each line has start po
 | **Descriptor Pools:** |
 | poolSizeCount | 4
 | maxSets | 5
+
+## CubeShader
+
+CubeShader either draws a skybox or a cube from a CubeMap (viewType VK_IMAGE_VIEW_TYPE_CUBE)
+
+| **CubeShader** |   |
+| ---      | ---           |
+| GLSL Shaders  | vert, frag    | 
+| **Single Resources:**
+| VkShaderModule   | vert, frag | 
+| **Threaded Resources:**
+| VkBuffer  | UBO for MVP: uniformBuffer | 
+| VkBuffer  | UBO for MVP: uniformBuffer2 (for stereo) | 
+| VkRenderPass  | renderPass | 
+| VkFrameBuffer  | frameBuffer | 
+| VkFrameBuffer  | frameBuffer2 (for stereo) | 
+| VkPipeline | graphicsPipeline
+| **Descriptor Set Bindings:** (per render thread)
+| Binding 0 | VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER VK_SHADER_STAGE_VERTEX_BIT
+| Binding 1 | VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER VK_SHADER_STAGE_FRAGMENT_BIT
+| **Descriptor Pools:** |
+| poolSizeCount | 4
+| maxSets | 5
+
+## PBRShader
+
+PBRShader draws objects read from glTF files with PBR lighing
+
+| **PBRShader** |   |
+| ---      | ---           |
+| GLSL Shaders  | vert, frag    | 
+| **Single Resources:**
+| VkShaderModule   | vert, frag | 
+| **Threaded Resources:**
+| VkBuffer  | UBO for MVP: uniformBuffer | 
+| VkBuffer  | UBO for MVP: uniformBuffer2 (for stereo) | 
+| VkBuffer  | Model Matrix for each object: dynamicUniformBuffer
+| VkRenderPass  | renderPass | 
+| VkFrameBuffer  | frameBuffer | 
+| VkFrameBuffer  | frameBuffer2 (for stereo) | 
+| VkPipeline | graphicsPipeline
+| **Descriptor Set Bindings:** (per render thread)
+| Binding 0 | VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER VK_SHADER_STAGE_VERTEX_BIT
+| Binding 1 | VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC VK_SHADER_STAGE_VERTEX_BIT
+| Binding 2 | VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER VK_SHADER_STAGE_FRAGMENT_BIT
+| **Descriptor Pools:** |
+| poolSizeCount | 9
+| maxSets | 1005 (MaxObjects + 5)
+
+## BillboardShader
+
+BillboardShader draws simple billboards in world coordinates with direction and size
+
+| **BillboardShader** |   |
+| ---      | ---           |
+| GLSL Shaders  | vert, geom, frag    | 
+| **Single Resources:**
+| VkShaderModule   | vert, geom, frag | 
+| **Threaded Resources:**
+| VkBuffer  | UBO for MVP: uniformBuffer | 
+| VkBuffer  | UBO for MVP: uniformBuffer2 (for stereo) | 
+| VkRenderPass  | renderPass | 
+| VkFrameBuffer  | frameBuffer | 
+| VkFrameBuffer  | frameBuffer2 (for stereo) | 
+| VkPipeline | graphicsPipeline
+| **Descriptor Set Bindings:** (per render thread)
+| Binding 0 | VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER VK_SHADER_STAGE_VERTEX_BIT \| VK_SHADER_STAGE_GEOMETRY_BIT
+| Binding 1 | VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER VK_SHADER_STAGE_FRAGMENT_BIT
+| **Descriptor Pools:** |
+| poolSizeCount | 6
+| maxSets | 5
+
+## UIShader
+
+UIShader will not be covered here - it is vastly different from the other shaders and there are no plans to unify it with the others

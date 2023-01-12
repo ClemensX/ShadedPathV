@@ -108,6 +108,7 @@ Use Khronos OpenXR sdk directly for VS 2022:
 ## TODO
 Things finished and things to do. Both very small and very large things, just as they come to my mind. 
 
+- [ ] BRDFLUT_TEXTURE cannot be used as cube map (all black). probably needs format conversion
 - [x] Cube maps (needed for PBR environment maps)
 - [ ] Environment maps
 - [ ] Bug: billboard and possibly line shader cannot be last shader in app added (Validation Warning)

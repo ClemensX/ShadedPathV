@@ -38,6 +38,7 @@ void gltfObjectsApp::run()
         // engine initialization
         engine.init("gltfObjects");
 
+        engine.textureStore.generateBRDFLUT();
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
@@ -108,7 +109,10 @@ void gltfObjectsApp::init() {
 
     // load skybox cube texture
     //engine.textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
+    //engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
     engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
+    //engine.global.createCubeMapFrom2dTexture(engine.textureStore.BRDFLUT_TEXTURE_ID, "skyboxTexture");
+
     engine.shaders.cubeShader.setSkybox("skyboxTexture");
     engine.shaders.cubeShader.setFarPlane(2000.0f);
 

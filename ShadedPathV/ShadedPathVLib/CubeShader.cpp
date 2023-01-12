@@ -20,8 +20,7 @@ void CubeShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	createDescriptorSetLayout();
 
 	// descriptor pool
-	// 3 buffers: V,P matrices, line data and dynamic uniform buffer for model matrix
-	// line data is global buffer
+	// 1 buffer: V,P matrices
 	vector<VkDescriptorPoolSize> poolSizes;
 	poolSizes.resize(1);
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
