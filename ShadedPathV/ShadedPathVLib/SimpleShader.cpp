@@ -10,15 +10,13 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
     vertShaderModuleTriangle = engine.resources.createShaderModule("triangle_vert.spv");
     fragShaderModuleTriangle = engine.resources.createShaderModule("triangle_frag.spv");
 
-    ThemedTimer::getInstance()->start(TIMER_PART_BUFFER_COPY);
     // create vertex buffer
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-    engine.global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, vertices.data(), vertexBufferTriangle, vertexBufferMemoryTriangle);
-    ThemedTimer::getInstance()->stop(TIMER_PART_BUFFER_COPY);
+	engine.resources.createVertexBufferStatic(vulkanResourceDefinition, VertexBufferId, bufferSize, vertices.data(), vertexBufferTriangle, vertexBufferMemoryTriangle);
 
     // create index buffer
     bufferSize = sizeof(indices[0]) * indices.size();
-    engine.global.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, bufferSize, indices.data(), indexBufferTriangle, indexBufferMemoryTriangle);
+    engine.resources.createIndexBufferStatic(vulkanResourceDefinition, IndexBufferId, bufferSize, indices.data(), indexBufferTriangle, indexBufferMemoryTriangle);
 
     // descriptor set layout
     createDescriptorSetLayout();

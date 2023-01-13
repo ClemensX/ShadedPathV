@@ -17,6 +17,17 @@ VkShaderModule VulkanResources::createShaderModule(string filename)
     return shaderModule;
 }
 
+void VulkanResources::createVertexBufferStatic(std::vector<VulkanResourceElement>& def, size_t bufferId, VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+{
+    assert(def[bufferId].type == VulkanResourceType::VertexBufferStatic);
+    this->engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, src, buffer, bufferMemory);
+}
+
+void VulkanResources::createIndexBufferStatic(std::vector<VulkanResourceElement>& def, size_t bufferId, VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+{
+    assert(def[bufferId].type == VulkanResourceType::IndexBufferStatic);
+    this->engine->global.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, bufferSize, src, buffer, bufferMemory);
+}
 
 VulkanResources::~VulkanResources()
 {
