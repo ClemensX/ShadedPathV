@@ -153,6 +153,7 @@ protected:
 	ShadedPathEngine* engine = nullptr;
 	VkDevice device = nullptr;
 	GlobalRendering* global = nullptr;
+	VulkanResources resources;
 
 	VkDescriptorSetLayout descriptorSetLayout = nullptr;
 	VkDescriptorPool descriptorPool = nullptr;

@@ -182,7 +182,6 @@ public:
     TextureStore textureStore;
     MeshStore meshStore;
     WorldObjectStore objectStore;
-    VulkanResources resources;
     Sound sound;
 
     // non-Vulkan members

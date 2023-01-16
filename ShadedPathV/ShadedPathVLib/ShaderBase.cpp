@@ -11,6 +11,7 @@ void ShaderBase::init(ShadedPathEngine& engine)
 	this->device = engine.global.device;
 	this->global = &engine.global;
 	this->engine = &engine;
+	resources.init(&engine);
 	enabled = true;
 }
 

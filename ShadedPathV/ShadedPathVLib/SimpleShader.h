@@ -16,14 +16,16 @@ class SimpleShader : public ShaderBase
 public:
     std::vector<VulkanResourceElement> vulkanResourceDefinition = {
         { VulkanResourceType::MVPBuffer },
+        { VulkanResourceType::SingleTexture },
         { VulkanResourceType::VertexBufferStatic },
         { VulkanResourceType::IndexBufferStatic }
     };
 
     // define const indexes to access resourceDefinition vector:
     size_t MVPBufferId = 0;
-    size_t VertexBufferId = 1;
-    size_t IndexBufferId = 2;
+    size_t TextureResourceId = 1;
+    size_t VertexBufferId = 2;
+    size_t IndexBufferId = 3;
 
     struct Vertex {
         glm::vec3 pos;
