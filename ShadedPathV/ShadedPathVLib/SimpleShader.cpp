@@ -28,24 +28,19 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 	//engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "debugTexture");
 	//texture = engine.textureStore.getTexture("debugTexture");
 	texture = engine.textureStore.getTexture(engine.textureStore.BRDFLUT_TEXTURE_ID);
-
-	// descriptor pool
-	vector<VkDescriptorPoolSize> poolSizes;
-	poolSizes.resize(2);
-	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[0].descriptorCount = 1;
-	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[1].descriptorCount = 1;
-	createDescriptorPool(poolSizes);
 }
 
 void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
+	VulkanHandoverResources handover;
 	auto& str = tr.simpleResources; //shortcut to shader thread resources
-	// uniform buffer
+	// MVP uniform buffer
 	createUniformBuffer(tr, str.uniformBuffer, sizeof(UniformBufferObject), str.uniformBufferMemory);
-
-	createDescriptorSets(tr);
+	handover.mvpBuffer = str.uniformBuffer;
+	handover.mvpSize = sizeof(UniformBufferObject);
+	handover.imageView = texture->imageView;
+	handover.descriptorSet = &str.descriptorSet;
+	resources.createThreadResources(handover);
 	createRenderPassAndFramebuffer(tr, shaderState, str.renderPass, str.framebuffer, str.framebuffer2);
 
 	// create shader stage
@@ -124,46 +119,7 @@ void SimpleShader::createDescriptorSetLayout()
 
 void SimpleShader::createDescriptorSets(ThreadResources& tr)
 {
-	auto& str = tr.simpleResources; //shortcut to shader thread resources
-	VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = descriptorPool;
-	allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &descriptorSetLayout;
-    if (vkAllocateDescriptorSets(device, &allocInfo, &str.descriptorSet) != VK_SUCCESS) {
-        Error("failed to allocate descriptor sets!");
-    }
-
-    // populate descriptor set:
-    VkDescriptorBufferInfo bufferInfo{};
-    bufferInfo.buffer = str.uniformBuffer;
-    bufferInfo.offset = 0;
-    bufferInfo.range = sizeof(UniformBufferObject);
-
-    VkDescriptorImageInfo imageInfo{};
-    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    imageInfo.imageView = texture->imageView;
-    imageInfo.sampler = global->textureSampler;
-
-    array<VkWriteDescriptorSet, 2> descriptorWrites{};
-
-    descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[0].dstSet = str.descriptorSet;
-    descriptorWrites[0].dstBinding = 0;
-    descriptorWrites[0].dstArrayElement = 0;
-    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptorWrites[0].descriptorCount = 1;
-    descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-    descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[1].dstSet = str.descriptorSet;
-    descriptorWrites[1].dstBinding = 1;
-    descriptorWrites[1].dstArrayElement = 0;
-    descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptorWrites[1].descriptorCount = 1;
-    descriptorWrites[1].pImageInfo = &imageInfo;
-
-    vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	Error("remove this method from base class!");
 }
 
 void SimpleShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo) {

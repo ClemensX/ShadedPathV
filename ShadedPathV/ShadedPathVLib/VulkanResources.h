@@ -31,6 +31,15 @@ public:
 
 */
 
+// thread resources for vkUpdateDescriptorSets
+// contains resources for all parts defined in vulkanResourceDefinition
+struct VulkanHandoverResources {
+	VkDescriptorSet *descriptorSet = nullptr; // PTR!
+	VkBuffer mvpBuffer = nullptr;
+	VkDeviceSize mvpSize = 0L;
+	VkImageView imageView = nullptr;
+};
+
 
 /*
  * handle vulkan shader resources that relate to descriptors
@@ -59,11 +68,22 @@ public:
 	void createVertexBufferStatic(size_t bufferId, VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	void createIndexBufferStatic(size_t bufferId, VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 
+	// create DescriptorSetLayout and DescriptorPool with enough size for all threads
 	void createDescriptorSetResources(VkDescriptorSetLayout& layout, VkDescriptorPool& pool);
-	void addSetLayoutBinding(VulkanResourceElement el);
+	// populate descriptor set, all necessary resources have to be set in handover struct
+	void createThreadResources(VulkanHandoverResources& res);
 private:
 	ShadedPathEngine* engine = nullptr;
 	std::vector<VulkanResourceElement>* resourceDefinition = nullptr;
-	std::vector <VkDescriptorSetLayoutBinding> bindings;
+	std::vector<VkDescriptorSetLayoutBinding> bindings;
+	std::vector<VkDescriptorPoolSize> poolSizes;
+	std::vector<VkWriteDescriptorSet> descriptorSets;
 
+	void addResourcesForElement(VulkanResourceElement el);
+	void addThreadResourcesForElement(VulkanResourceElement d, VulkanHandoverResources& res);
+	VkDescriptorSetLayout layout = nullptr;
+	VkDescriptorPool pool = nullptr;
+	// resources for temporary store info objects between the various create... calls:
+	std::vector<VkDescriptorBufferInfo> bufferInfos;
+	std::vector<VkDescriptorImageInfo> imageInfos;
 };
