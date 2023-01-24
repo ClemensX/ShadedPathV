@@ -17,6 +17,7 @@ public:
     std::vector<VulkanResourceElement> vulkanResourceDefinition = {
         { VulkanResourceType::MVPBuffer },
         { VulkanResourceType::SingleTexture },
+        { VulkanResourceType::GlobalTextureSet },
         { VulkanResourceType::VertexBufferStatic },
         { VulkanResourceType::IndexBufferStatic }
     };
@@ -24,8 +25,9 @@ public:
     // define const indexes to access resourceDefinition vector:
     size_t MVPBufferId = 0;
     size_t TextureResourceId = 1;
-    size_t VertexBufferId = 2;
-    size_t IndexBufferId = 3;
+    size_t GlobalTextureSetId = 2;
+    size_t VertexBufferId = 3;
+    size_t IndexBufferId = 4;
 
     struct Vertex {
         glm::vec3 pos;

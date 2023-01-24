@@ -20,6 +20,7 @@ void SimpleApp::run()
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
+        engine.setMaxTextures(10);
         //engine.setFrameCountLimit(1000);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK); // 960

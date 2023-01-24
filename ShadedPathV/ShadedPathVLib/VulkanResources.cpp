@@ -38,8 +38,15 @@ void VulkanResources::createDescriptorSetResources(VkDescriptorSetLayout& layout
     for (auto& d : def) {
         addResourcesForElement(d);
     }
+
+    VkDescriptorBindingFlags flag = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flag_info{};
+    flag_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+    flag_info.bindingCount = 1;
+    flag_info.pBindingFlags = &flag;
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.pNext = &flag_info;
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
@@ -80,6 +87,16 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         layoutBinding.descriptorCount = 1;
         layoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        layoutBinding.pImmutableSamplers = nullptr;
+        bindings.push_back(layoutBinding);
+        poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        poolSize.descriptorCount = 1;
+        poolSizes.push_back(poolSize);
+    } else if (el.type == VulkanResourceType::GlobalTextureSet) {
+        layoutBinding.binding = bindingCount;
+        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        layoutBinding.descriptorCount = engine->textureStore.getMaxSize();
+        layoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
         layoutBinding.pImmutableSamplers = nullptr;
         bindings.push_back(layoutBinding);
         poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;

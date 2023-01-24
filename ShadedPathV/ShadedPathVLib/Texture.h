@@ -18,11 +18,14 @@ struct TextureInfo
 };
 typedef ::TextureInfo* TextureID;
 
-// Texture Store:
+// Texture Store. Textures have to be added during init phase, otherwise they will not be accessible by shaders
 class TextureStore {
 public:
-	// init texture store
-	void init(ShadedPathEngine* engine);
+	// max number of textures usable in engine is 1 million.
+	// Do not confuse with maxTextures (actual max texture count) which is set by app at startup
+	static const uint32_t UPPER_LIMIT_TEXTURE_COUNT = 1000000;
+	// init texture store with max number of textures used
+	void init(ShadedPathEngine* engine, size_t maxTextures);
 	~TextureStore();
 	// texture id for brdf lookup table:
 	std::string BRDFLUT_TEXTURE_ID = "brdflut";
@@ -42,10 +45,18 @@ public:
 	// Generate a BRDF integration map storing roughness/NdotV as a look-up-table
 	// BRDF stands for Bidirectional Reflectance Distribution Function
 	void generateBRDFLUT();
+	// actual max texture count as set by app. This many descriptor entries will be allocated
+	// trying to store more textures than this amount will create Error
+	size_t getMaxSize() {
+		return maxTextures;
+	}
 
 private:
 	std::unordered_map<std::string, ::TextureInfo> textures;
 	ShadedPathEngine* engine = nullptr;
 	Util* util;
 	ktxVulkanDeviceInfo vdi;
+	size_t maxTextures = 0;
+	// after adding a texture check that max size is not exceeded
+	void checkStoreSize();
 };

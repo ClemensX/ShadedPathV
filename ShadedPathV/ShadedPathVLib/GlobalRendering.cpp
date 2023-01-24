@@ -231,6 +231,11 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
         return false;
     }
 
+    // check descrtiptor index size suitable for texture count:
+    if (physicalDeviceProperties.properties.limits.maxDescriptorSetSampledImages < TextureStore::UPPER_LIMIT_TEXTURE_COUNT) {
+        Log("Device does not support enough texture slots in descriptors" << endl);
+        return false;
+    }
     return familyIndices.isComplete(engine.presentation.enabled) && extensionsSupported && swapChainAdequate && deviceFeatures.samplerAnisotropy && deviceFeatures.textureCompressionBC;
 }
 
@@ -306,6 +311,7 @@ void GlobalRendering::createLogicalDevice()
     deviceFeatures.samplerAnisotropy = VK_TRUE;
     deviceFeatures.textureCompressionBC = VK_TRUE;
     deviceFeatures.geometryShader = VK_TRUE;
+    deviceFeatures.shaderSampledImageArrayDynamicIndexing = VK_TRUE;
     //deviceFeatures.textureCompressionETC2 = VK_TRUE; not supported on Quadro P2000 with Max-Q Design 1.3.194
     //deviceFeatures.textureCompressionASTC_LDR = VK_TRUE; not supported on Quadro P2000 with Max-Q Design 1.3.194
     //deviceFeatures.dynamicRendering
@@ -762,4 +768,6 @@ void GlobalRendering::logDeviceLimits()
     Log("maxUniformBufferRange (width of one buffer) " << physicalDeviceProperties.properties.limits.maxUniformBufferRange << endl);
     Log("minMemoryMapAlignment " << physicalDeviceProperties.properties.limits.minMemoryMapAlignment << endl);
     Log("minUniformBufferOffsetAlignment " << physicalDeviceProperties.properties.limits.minUniformBufferOffsetAlignment << endl);
+    Log("maxDescriptorSetSampledImages " << physicalDeviceProperties.properties.limits.maxDescriptorSetSampledImages << endl);
+    // maxDescriptorSetSampledImages
 }

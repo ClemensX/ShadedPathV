@@ -2,8 +2,9 @@
 
 using namespace std;
 
-void TextureStore::init(ShadedPathEngine* engine) {
+void TextureStore::init(ShadedPathEngine* engine, size_t maxTextures) {
 	this->engine = engine;
+	this->maxTextures = maxTextures;
 	// Set up Vulkan physical device (gpu), logical device (device), queue
 	// and command pool. Save the handles to these in a struct called vkctx.
 	// ktx VulkanDeviceInfo is used to pass these with the expectation that
@@ -122,12 +123,13 @@ TextureInfo* TextureStore::createTextureSlot(string textureName)
 {
 	// make sure we do not already have this texture stored:
 	if (textures.find(textureName) != textures.end()) {
-		Error("texture already loded");
+		Error("texture already loaded");
 	}
 	TextureInfo initialTexture;  // only used to initialize struct in texture store - do not access this after assignment to store
 	initialTexture.id = textureName;
 	textures[textureName] = initialTexture;
 	TextureInfo* texture = &textures[textureName];
+	checkStoreSize();
 	return texture;
 }
 
@@ -145,6 +147,7 @@ TextureInfo* TextureStore::createTextureSlotForMesh(MeshInfo* mesh, int index)
 	initialTexture.id = id;
 	textures[id] = initialTexture;
 	TextureInfo* texture = &textures[id];
+	checkStoreSize();
 	return texture;
 }
 
@@ -418,6 +421,16 @@ void TextureStore::destroyKTXIntermediate(ktxTexture* ktxTex)
 {
 	ktxTexture_Destroy(ktxTex);
 }
+
+void TextureStore::checkStoreSize()
+{
+	if (textures.size() > maxTextures) {
+		stringstream s;
+		s << "Maximum texture count exceeded: " << maxTextures << endl;
+		Error(s.str());
+	}
+}
+
 
 TextureStore::~TextureStore()
 {

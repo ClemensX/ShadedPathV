@@ -6,6 +6,7 @@ class ShadedPathEngine;
 enum class VulkanResourceType {
 	MVPBuffer, // base matrices, renewed every frame (will be stored ina desciptor set)
 	SingleTexture, // single read-only texture (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER), stored in descriptor set
+	GlobalTextureSet, // all textures of TextureStore in an indexed, unbound descriptor
 	VertexBufferStatic, // vertex buffer, once uplodaded during init phase, only read during frame rendering (will be bound to command buffer)
 	IndexBufferStatic, // index buffer, once uplodaded during init phase, only read during frame rendering (will be bound to command buffer)
 };
