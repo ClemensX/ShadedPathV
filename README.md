@@ -112,6 +112,7 @@ Things finished and things to do. Both very small and very large things, just as
 - [x] Cube maps (needed for PBR environment maps)
 - [ ] Environment maps
 - [ ] Bug: billboard and possibly line shader cannot be last shader in app added (Validation Warning)
+- [ ] Bug: LineApp not running (problem with wireframe loading)
 - [ ] Rest of PBR stages
 - [x] PBR Shader (simple: only base texture display, no lighting)
 - [x] PBR object loading from glTF files (vertices with pos and text coord, textures)

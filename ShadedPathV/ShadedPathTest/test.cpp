@@ -107,6 +107,7 @@ TEST(Engine, Headless) {
         engine.setThreadModeSingle();
         engine.registerApp((ShadedPathApplication*)& testApp);
         engine.init("Test");
+        engine.textureStore.generateBRDFLUT();
         engine.shaders.addShader(engine.shaders.simpleShader);
         engine.shaders.initActiveShaders();
 

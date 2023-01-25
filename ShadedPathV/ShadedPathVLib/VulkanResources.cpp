@@ -100,7 +100,7 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         layoutBinding.pImmutableSamplers = nullptr;
         bindings.push_back(layoutBinding);
         poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSize.descriptorCount = 1;
+        poolSize.descriptorCount = layoutBinding.descriptorCount;
         poolSizes.push_back(poolSize);
     }
 }
