@@ -1,4 +1,5 @@
 #version 450
+// enable dynamic indexing:
 #extension GL_EXT_nonuniform_qualifier : require
 
 layout(location = 0) in vec3 fragColor;

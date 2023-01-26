@@ -323,8 +323,13 @@ void GlobalRendering::createLogicalDevice()
     meshFeatures.taskShader = VK_FALSE;
     meshFeatures.pNext = nullptr;
 
+    constexpr VkPhysicalDeviceDescriptorIndexingFeatures descriptor_indexing_feature{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES,
+        .descriptorBindingPartiallyBound = VK_TRUE,
+    };
     constexpr VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_feature{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
+        .pNext = (void*)&descriptor_indexing_feature,
         .dynamicRendering = VK_TRUE,
     };
     VkDeviceCreateInfo createInfo{};

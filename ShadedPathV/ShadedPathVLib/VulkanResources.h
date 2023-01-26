@@ -4,11 +4,14 @@
 class ShadedPathEngine;
 
 enum class VulkanResourceType {
+	// first VkDescriptorSetLayout:
 	MVPBuffer, // base matrices, renewed every frame (will be stored ina desciptor set)
 	SingleTexture, // single read-only texture (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER), stored in descriptor set
-	GlobalTextureSet, // all textures of TextureStore in an indexed, unbound descriptor
+	// vertex and index buffers
 	VertexBufferStatic, // vertex buffer, once uplodaded during init phase, only read during frame rendering (will be bound to command buffer)
 	IndexBufferStatic, // index buffer, once uplodaded during init phase, only read during frame rendering (will be bound to command buffer)
+	// second VkDescriptorSetLayout
+	GlobalTextureSet, // all textures of TextureStore in an indexed, unbound descriptor in its own DescriptorSetLayout
 };
 
 class VulkanResourceElement {
@@ -79,9 +82,13 @@ private:
 	std::vector<VkDescriptorSetLayoutBinding> bindings;
 	std::vector<VkDescriptorPoolSize> poolSizes;
 	std::vector<VkWriteDescriptorSet> descriptorSets;
+	std::vector<VkDescriptorSetLayoutBinding> textureBindings;
+	std::vector<VkDescriptorPoolSize> texturePoolSizes;
 
 	void addResourcesForElement(VulkanResourceElement el);
 	void addThreadResourcesForElement(VulkanResourceElement d, VulkanHandoverResources& res);
+	// create resources for global texture descriptor set layout
+	void createDescriptorSetResourcesForTextures();
 	VkDescriptorSetLayout layout = nullptr;
 	VkDescriptorPool pool = nullptr;
 	// resources for temporary store info objects between the various create... calls:

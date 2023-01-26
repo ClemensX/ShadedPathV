@@ -449,5 +449,8 @@ TextureStore::~TextureStore()
 		}
 	}
 	ktxVulkanDeviceInfo_Destruct(&vdi);
+	vkDestroyDescriptorSetLayout(device, layout, nullptr);
+	vkDestroyDescriptorPool(device, pool, nullptr);
+
 }
 

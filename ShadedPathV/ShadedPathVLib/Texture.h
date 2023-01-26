@@ -50,7 +50,8 @@ public:
 	size_t getMaxSize() {
 		return maxTextures;
 	}
-
+	VkDescriptorSetLayout layout = nullptr;
+	VkDescriptorPool pool = nullptr;
 private:
 	std::unordered_map<std::string, ::TextureInfo> textures;
 	ShadedPathEngine* engine = nullptr;

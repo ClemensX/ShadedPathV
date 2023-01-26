@@ -39,14 +39,15 @@ void VulkanResources::createDescriptorSetResources(VkDescriptorSetLayout& layout
         addResourcesForElement(d);
     }
 
-    VkDescriptorBindingFlags flag = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
-    VkDescriptorSetLayoutBindingFlagsCreateInfo flag_info{};
-    flag_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
-    flag_info.bindingCount = 1;
-    flag_info.pBindingFlags = &flag;
+    //VkDescriptorBindingFlags flag = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+    //VkDescriptorSetLayoutBindingFlagsCreateInfo flag_info{};
+    //flag_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+    //flag_info.bindingCount = static_cast<uint32_t>(bindings.size());
+    //flag_info.pBindingFlags = &flag;
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.pNext = &flag_info;
+    //layoutInfo.pNext = &flag_info;
+    layoutInfo.pNext = nullptr;
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
@@ -93,15 +94,50 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         poolSize.descriptorCount = 1;
         poolSizes.push_back(poolSize);
     } else if (el.type == VulkanResourceType::GlobalTextureSet) {
-        layoutBinding.binding = bindingCount;
-        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        layoutBinding.descriptorCount = engine->textureStore.getMaxSize();
-        layoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
-        layoutBinding.pImmutableSamplers = nullptr;
-        bindings.push_back(layoutBinding);
-        poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSize.descriptorCount = layoutBinding.descriptorCount;
-        poolSizes.push_back(poolSize);
+        createDescriptorSetResourcesForTextures();
+    }
+}
+void VulkanResources::createDescriptorSetResourcesForTextures()
+{
+    // check if already initialized
+    if (engine->textureStore.layout != nullptr) return;
+
+    VkDescriptorSetLayoutBinding layoutBinding{};
+    VkDescriptorPoolSize poolSize{};
+
+    layoutBinding.binding = 0;
+    layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    layoutBinding.descriptorCount = engine->textureStore.getMaxSize();
+    layoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
+    layoutBinding.pImmutableSamplers = nullptr;
+    textureBindings.push_back(layoutBinding);
+    poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize.descriptorCount = layoutBinding.descriptorCount;
+    texturePoolSizes.push_back(poolSize);
+
+    VkDescriptorBindingFlags flag = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flag_info{};
+    flag_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+    flag_info.bindingCount = 1;
+    flag_info.pBindingFlags = &flag;
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.pNext = &flag_info;
+    layoutInfo.bindingCount = static_cast<uint32_t>(textureBindings.size());
+    layoutInfo.pBindings = textureBindings.data();
+
+    if (vkCreateDescriptorSetLayout(engine->global.device, &layoutInfo, nullptr, &engine->textureStore.layout) != VK_SUCCESS) {
+        Error("failed to create descriptor set layout for textures!");
+    }
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = static_cast<uint32_t>(texturePoolSizes.size());
+    poolInfo.pPoolSizes = texturePoolSizes.data();
+    poolInfo.maxSets = 1; // only one global list for all shaders
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+
+    if (vkCreateDescriptorPool(engine->global.device, &poolInfo, nullptr, &engine->textureStore.pool) != VK_SUCCESS) {
+        Error("failed to create descriptor pool for textures!");
     }
 }
 
