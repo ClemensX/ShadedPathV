@@ -5,7 +5,7 @@ struct MeshInfo;
 
 struct TextureInfo
 {
-	std::string id;
+	std::string id; // textures are usually access by their string name
 	std::string filename;
 	bool available = false; // true if this texture is ready for use in shader code
 	ktxVulkanTexture vulkanTexture;
@@ -15,6 +15,7 @@ struct TextureInfo
 	int gltfUVByteStride = 0;
 	// usually our textures are created through ktx library, but there are some exceptions
 	bool isKtxCreated = true;
+	uint32_t index; // index used for shaders to access the right texture in the global texture array
 };
 typedef ::TextureInfo* TextureID;
 
@@ -50,6 +51,9 @@ public:
 	size_t getMaxSize() {
 		return maxTextures;
 	}
+	// get const ref to map for easy and safe iteration:
+	const std::unordered_map<std::string, ::TextureInfo>& getTexturesMap() { return textures; }
+
 	VkDescriptorSetLayout layout = nullptr;
 	VkDescriptorPool pool = nullptr;
 private:
@@ -60,4 +64,6 @@ private:
 	size_t maxTextures = 0;
 	// after adding a texture check that max size is not exceeded
 	void checkStoreSize();
+	// all creation methods have to call this internally:
+	::TextureInfo* internalCreateTextureSlot(std::string id);
 };

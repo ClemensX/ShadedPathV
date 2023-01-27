@@ -97,49 +97,6 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         createDescriptorSetResourcesForTextures();
     }
 }
-void VulkanResources::createDescriptorSetResourcesForTextures()
-{
-    // check if already initialized
-    if (engine->textureStore.layout != nullptr) return;
-
-    VkDescriptorSetLayoutBinding layoutBinding{};
-    VkDescriptorPoolSize poolSize{};
-
-    layoutBinding.binding = 0;
-    layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    layoutBinding.descriptorCount = engine->textureStore.getMaxSize();
-    layoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
-    layoutBinding.pImmutableSamplers = nullptr;
-    textureBindings.push_back(layoutBinding);
-    poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    poolSize.descriptorCount = layoutBinding.descriptorCount;
-    texturePoolSizes.push_back(poolSize);
-
-    VkDescriptorBindingFlags flag = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
-    VkDescriptorSetLayoutBindingFlagsCreateInfo flag_info{};
-    flag_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
-    flag_info.bindingCount = 1;
-    flag_info.pBindingFlags = &flag;
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.pNext = &flag_info;
-    layoutInfo.bindingCount = static_cast<uint32_t>(textureBindings.size());
-    layoutInfo.pBindings = textureBindings.data();
-
-    if (vkCreateDescriptorSetLayout(engine->global.device, &layoutInfo, nullptr, &engine->textureStore.layout) != VK_SUCCESS) {
-        Error("failed to create descriptor set layout for textures!");
-    }
-    VkDescriptorPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    poolInfo.poolSizeCount = static_cast<uint32_t>(texturePoolSizes.size());
-    poolInfo.pPoolSizes = texturePoolSizes.data();
-    poolInfo.maxSets = 1; // only one global list for all shaders
-    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-
-    if (vkCreateDescriptorPool(engine->global.device, &poolInfo, nullptr, &engine->textureStore.pool) != VK_SUCCESS) {
-        Error("failed to create descriptor pool for textures!");
-    }
-}
 
 void VulkanResources::createThreadResources(VulkanHandoverResources& hdv)
 {
@@ -204,6 +161,71 @@ void VulkanResources::addThreadResourcesForElement(VulkanResourceElement el, Vul
         descSet.pImageInfo = &imageInfos[imageInfos.size() - 1];
 
         descriptorSets.push_back(descSet);
+    }
+}
+
+void VulkanResources::createDescriptorSetResourcesForTextures()
+{
+    // check if already initialized
+    if (engine->textureStore.layout != nullptr) return;
+
+    VkDescriptorSetLayoutBinding layoutBinding{};
+    VkDescriptorPoolSize poolSize{};
+
+    layoutBinding.binding = 0;
+    layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    layoutBinding.descriptorCount = engine->textureStore.getMaxSize();
+    layoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
+    layoutBinding.pImmutableSamplers = nullptr;
+    textureBindings.push_back(layoutBinding);
+    poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize.descriptorCount = layoutBinding.descriptorCount;
+    texturePoolSizes.push_back(poolSize);
+
+    VkDescriptorBindingFlags flag = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flag_info{};
+    flag_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+    flag_info.bindingCount = 1;
+    flag_info.pBindingFlags = &flag;
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.pNext = &flag_info;
+    layoutInfo.bindingCount = static_cast<uint32_t>(textureBindings.size());
+    layoutInfo.pBindings = textureBindings.data();
+
+    if (vkCreateDescriptorSetLayout(engine->global.device, &layoutInfo, nullptr, &engine->textureStore.layout) != VK_SUCCESS) {
+        Error("failed to create descriptor set layout for textures!");
+    }
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = static_cast<uint32_t>(texturePoolSizes.size());
+    poolInfo.pPoolSizes = texturePoolSizes.data();
+    poolInfo.maxSets = 1; // only one global list for all shaders
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+
+    if (vkCreateDescriptorPool(engine->global.device, &poolInfo, nullptr, &engine->textureStore.pool) != VK_SUCCESS) {
+        Error("failed to create descriptor pool for textures!");
+    }
+}
+
+void VulkanResources::updateDescriptorSetForTextures() {
+    if (globalTextureDescriptorSetValid) return;
+    // iterate over all textures and write descriptor sets
+    for (auto& texMapEntry : engine->textureStore.getTexturesMap()) {
+        auto& tex = texMapEntry.second;
+        Log("tex: " << tex.id.c_str() << " index: " << tex.index << endl);
+    }
+    globalTextureDescriptorSetValid = true;
+}
+
+void VulkanResources::updateDescriptorSets(ThreadResources& tr)
+{
+    vector<VulkanResourceElement>& def = *resourceDefinition;
+    for (auto& d : def) {
+        if (d.type == VulkanResourceType::GlobalTextureSet) {
+            updateDescriptorSetForTextures();
+        }
+
     }
 }
 

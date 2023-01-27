@@ -33,18 +33,14 @@ TextureInfo* TextureStore::getTexture(string id)
 
 void TextureStore::loadTexture(string filename, string id)
 {
-	TextureInfo initialTexture;  // only used to initialize struct in texture store - do not access this after assignment to store
 	vector<byte> file_buffer;
-
-	initialTexture.id = id;
-	textures[id] = initialTexture;
-	TextureInfo *texture = &textures[id];
+	TextureInfo *texture = createTextureSlot(id);
 
 	// find texture file, look in pak file first:
 	PakEntry *pakFileEntry = nullptr;
 	pakFileEntry = engine->files.findFileInPak(filename.c_str());
 	// try file system if not found in pak:
-	initialTexture.filename = filename; // TODO check: field not needed? only in this method? --> remove
+	//initialTexture.filename = filename; // TODO check: field not needed? only in this method? --> remove
 	if (pakFileEntry == nullptr) {
 		string binFile = engine->files.findFile(filename.c_str(), FileCategory::TEXTURE);
 		texture->filename = binFile;
@@ -125,12 +121,7 @@ TextureInfo* TextureStore::createTextureSlot(string textureName)
 	if (textures.find(textureName) != textures.end()) {
 		Error("texture already loaded");
 	}
-	TextureInfo initialTexture;  // only used to initialize struct in texture store - do not access this after assignment to store
-	initialTexture.id = textureName;
-	textures[textureName] = initialTexture;
-	TextureInfo* texture = &textures[textureName];
-	checkStoreSize();
-	return texture;
+	return internalCreateTextureSlot(textureName);
 }
 
 TextureInfo* TextureStore::createTextureSlotForMesh(MeshInfo* mesh, int index)
@@ -143,11 +134,17 @@ TextureInfo* TextureStore::createTextureSlotForMesh(MeshInfo* mesh, int index)
 	if (textures.find(id) != textures.end()) {
 		Error("texture already loded");
 	}
+	return internalCreateTextureSlot(id);
+}
+
+TextureInfo* TextureStore::internalCreateTextureSlot(string id)
+{
 	TextureInfo initialTexture;  // only used to initialize struct in texture store - do not access this after assignment to store
 	initialTexture.id = id;
 	textures[id] = initialTexture;
 	TextureInfo* texture = &textures[id];
 	checkStoreSize();
+	texture->index = textures.size()-1;
 	return texture;
 }
 

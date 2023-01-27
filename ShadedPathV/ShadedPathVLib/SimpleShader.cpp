@@ -134,6 +134,7 @@ void SimpleShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo) {
 void SimpleShader::createCommandBuffer(ThreadResources& tr)
 {
 	if (!enabled) return;
+	resources.updateDescriptorSets(tr);
 	auto& str = tr.simpleResources; //shortcut to shader thread resources
 	auto& device = this->engine->global.device;
 	auto& global = this->engine->global;

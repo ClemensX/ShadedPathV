@@ -74,8 +74,11 @@ public:
 
 	// create DescriptorSetLayout and DescriptorPool with enough size for all threads
 	void createDescriptorSetResources(VkDescriptorSetLayout& layout, VkDescriptorPool& pool);
-	// populate descriptor set, all necessary resources have to be set in handover struct
+	// populate descriptor set, all necessary resources have to be set in handover struct.
+	// Called one-time only during init phase
 	void createThreadResources(VulkanHandoverResources& res);
+	// set after init and possibly before each frame
+	void updateDescriptorSets(ThreadResources& tr);
 private:
 	ShadedPathEngine* engine = nullptr;
 	std::vector<VulkanResourceElement>* resourceDefinition = nullptr;
@@ -89,9 +92,12 @@ private:
 	void addThreadResourcesForElement(VulkanResourceElement d, VulkanHandoverResources& res);
 	// create resources for global texture descriptor set layout
 	void createDescriptorSetResourcesForTextures();
+	// update texture descriptors, only once after init
+	void updateDescriptorSetForTextures();
 	VkDescriptorSetLayout layout = nullptr;
 	VkDescriptorPool pool = nullptr;
 	// resources for temporary store info objects between the various create... calls:
 	std::vector<VkDescriptorBufferInfo> bufferInfos;
 	std::vector<VkDescriptorImageInfo> imageInfos;
+	bool globalTextureDescriptorSetValid = false;
 };
