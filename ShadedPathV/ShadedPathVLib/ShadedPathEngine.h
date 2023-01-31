@@ -142,6 +142,13 @@ public:
         threadModeSingle = true;
     };
 
+    // applications have to set max number of used textures because we need to know
+    // at shader creation time
+    // default value is 5
+    void setMaxTextures(size_t maxTextures) {
+        this->maxTextures = maxTextures;
+    }
+
     // initialize Vulkan and other libraries, also internal lists and instances
     // no config methods after calling init
     void init(std::string appname);
@@ -205,6 +212,7 @@ private:
     float backBufferAspect = 1.0f;
     long limitFrameCount = 0;
     int framesInFlight = 2;
+    size_t maxTextures = 5;
     bool limitFrameCountEnabled = false;
     bool initialized = false;
     bool threadsAreFinished();

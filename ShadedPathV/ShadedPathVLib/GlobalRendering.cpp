@@ -231,6 +231,11 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
         return false;
     }
 
+    // check descrtiptor index size suitable for texture count:
+    if (physicalDeviceProperties.properties.limits.maxDescriptorSetSampledImages < TextureStore::UPPER_LIMIT_TEXTURE_COUNT) {
+        Log("Device does not support enough texture slots in descriptors" << endl);
+        return false;
+    }
     return familyIndices.isComplete(engine.presentation.enabled) && extensionsSupported && swapChainAdequate && deviceFeatures.samplerAnisotropy && deviceFeatures.textureCompressionBC;
 }
 
@@ -301,14 +306,16 @@ void GlobalRendering::createLogicalDevice()
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
-    VkPhysicalDeviceFeatures deviceFeatures{};
-    // provoke validation layer warning by commenting out following line:
-    deviceFeatures.samplerAnisotropy = VK_TRUE;
-    deviceFeatures.textureCompressionBC = VK_TRUE;
-    deviceFeatures.geometryShader = VK_TRUE;
-    //deviceFeatures.textureCompressionETC2 = VK_TRUE; not supported on Quadro P2000 with Max-Q Design 1.3.194
-    //deviceFeatures.textureCompressionASTC_LDR = VK_TRUE; not supported on Quadro P2000 with Max-Q Design 1.3.194
-    //deviceFeatures.dynamicRendering
+    VkPhysicalDeviceFeatures deviceFeatures{
+        // provoke validation layer warning by commenting out following line:
+        .geometryShader = VK_TRUE,
+        .samplerAnisotropy = VK_TRUE,
+        .textureCompressionBC = VK_TRUE,
+        .shaderSampledImageArrayDynamicIndexing = VK_TRUE,
+        //deviceFeatures.textureCompressionETC2 = VK_TRUE; not supported on Quadro P2000 with Max-Q Design 1.3.194
+        //deviceFeatures.textureCompressionASTC_LDR = VK_TRUE; not supported on Quadro P2000 with Max-Q Design 1.3.194
+        //deviceFeatures.dynamicRendering
+    };
 
     // set extension details for mesh shader
     VkPhysicalDeviceMeshShaderFeaturesNV meshFeatures = {};
@@ -317,10 +324,19 @@ void GlobalRendering::createLogicalDevice()
     meshFeatures.taskShader = VK_FALSE;
     meshFeatures.pNext = nullptr;
 
-    constexpr VkPhysicalDeviceDynamicRenderingFeaturesKHR dynamic_rendering_feature{
-        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES_KHR,
-        .dynamicRendering = VK_TRUE,
+    VkPhysicalDeviceVulkan12Features deviceFeatures12{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+        .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
+        .descriptorBindingPartiallyBound = VK_TRUE,
+        .runtimeDescriptorArray = VK_TRUE,
     };
+
+    VkPhysicalDeviceFeatures2 deviceFeatures2{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+        .pNext = (void*)&deviceFeatures12,
+        .features = deviceFeatures,
+    };
+
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     if (engine.isMeshShading()) {
@@ -328,11 +344,12 @@ void GlobalRendering::createLogicalDevice()
     }
     if (!USE_PROFILE_DYN_RENDERING) {
         if (engine.isMeshShading()) {
-            meshFeatures.pNext = (void*)&dynamic_rendering_feature;
+            meshFeatures.pNext = (void*)&deviceFeatures2;
         } else {
-            createInfo.pNext = &dynamic_rendering_feature;
+            //createInfo.pNext = &dynamic_rendering_feature;
+            createInfo.pNext = &deviceFeatures2;
         }
-        createInfo.pEnabledFeatures = &deviceFeatures;
+        //createInfo.pEnabledFeatures = &deviceFeatures;
     }
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
@@ -762,4 +779,6 @@ void GlobalRendering::logDeviceLimits()
     Log("maxUniformBufferRange (width of one buffer) " << physicalDeviceProperties.properties.limits.maxUniformBufferRange << endl);
     Log("minMemoryMapAlignment " << physicalDeviceProperties.properties.limits.minMemoryMapAlignment << endl);
     Log("minUniformBufferOffsetAlignment " << physicalDeviceProperties.properties.limits.minUniformBufferOffsetAlignment << endl);
+    Log("maxDescriptorSetSampledImages " << physicalDeviceProperties.properties.limits.maxDescriptorSetSampledImages << endl);
+    // maxDescriptorSetSampledImages
 }

@@ -53,7 +53,6 @@ public:
 	};
 	//uint32_t API_VERSION = VP_KHR_ROADMAP_2022_MIN_API_VERSION;
 
-	// list device and instance extensions
 	static const bool USE_PROFILE_DYN_RENDERING = false;
 
 	// flag for debug marker extension used

@@ -100,7 +100,8 @@ public:
 	// destry thread local shader resources
 	virtual void destroyThreadResources(ThreadResources& tr) = 0;
 
-	// create command buffers. One time auto called before rendering starts
+	// create command buffers. One time auto called before rendering starts.
+	// Also post init phase stuff goes here, like VulcanResources.updateDescriptorSets()
 	virtual void createCommandBuffer(ThreadResources& tr) = 0;
 
 	// add current command buffers
@@ -153,6 +154,7 @@ protected:
 	ShadedPathEngine* engine = nullptr;
 	VkDevice device = nullptr;
 	GlobalRendering* global = nullptr;
+	VulkanResources resources;
 
 	VkDescriptorSetLayout descriptorSetLayout = nullptr;
 	VkDescriptorPool descriptorPool = nullptr;

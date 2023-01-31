@@ -5,55 +5,42 @@ using namespace std;
 void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 {
 	ShaderBase::init(engine);
+	resources.setResourceDefinition(&vulkanResourceDefinition);
 
-    // load shader binary code
-    vector<byte> file_buffer_vert;
-    vector<byte> file_buffer_frag;
-    engine.files.readFile("triangle_vert.spv", file_buffer_vert, FileCategory::FX);
-    engine.files.readFile("triangle_frag.spv", file_buffer_frag, FileCategory::FX);
-    Log("read vertex shader: " << file_buffer_vert.size() << endl);
-    Log("read fragment shader: " << file_buffer_frag.size() << endl);
     // create shader modules
-    vertShaderModuleTriangle = engine.shaders.createShaderModule(file_buffer_vert);
-    fragShaderModuleTriangle = engine.shaders.createShaderModule(file_buffer_frag);
+    vertShaderModuleTriangle = resources.createShaderModule("triangle_vert.spv");
+    fragShaderModuleTriangle = resources.createShaderModule("triangle_frag.spv");
 
-    ThemedTimer::getInstance()->start(TIMER_PART_BUFFER_COPY);
     // create vertex buffer
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-    engine.global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, vertices.data(), vertexBufferTriangle, vertexBufferMemoryTriangle);
-    ThemedTimer::getInstance()->stop(TIMER_PART_BUFFER_COPY);
+	resources.createVertexBufferStatic(VertexBufferId, bufferSize, vertices.data(), vertexBufferTriangle, vertexBufferMemoryTriangle);
 
     // create index buffer
     bufferSize = sizeof(indices[0]) * indices.size();
-    engine.global.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, bufferSize, indices.data(), indexBufferTriangle, indexBufferMemoryTriangle);
+    resources.createIndexBufferStatic(IndexBufferId, bufferSize, indices.data(), indexBufferTriangle, indexBufferMemoryTriangle);
 
     // descriptor set layout
-    createDescriptorSetLayout();
+    resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);
 
     // load texture
-	//engine.textureStore.loadTexture("debug.ktx", "debugTexture");
-	engine.textureStore.loadTexture("dump.ktx", "debugTexture");
-	//engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "debugTexture");
+	engine.textureStore.loadTexture("debug.ktx", "debugTexture");
+	engine.textureStore.loadTexture("dump.ktx", "dumpTexture");
+	engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "pinetreeTexture");  // VK_IMAGE_VIEW_TYPE_CUBE will produce black texture color
 	//texture = engine.textureStore.getTexture("debugTexture");
 	texture = engine.textureStore.getTexture(engine.textureStore.BRDFLUT_TEXTURE_ID);
-
-	// descriptor pool
-	vector<VkDescriptorPoolSize> poolSizes;
-	poolSizes.resize(2);
-	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[0].descriptorCount = 1;
-	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[1].descriptorCount = 1;
-	createDescriptorPool(poolSizes);
 }
 
 void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
+	VulkanHandoverResources handover;
 	auto& str = tr.simpleResources; //shortcut to shader thread resources
-	// uniform buffer
+	// MVP uniform buffer
 	createUniformBuffer(tr, str.uniformBuffer, sizeof(UniformBufferObject), str.uniformBufferMemory);
-
-	createDescriptorSets(tr);
+	handover.mvpBuffer = str.uniformBuffer;
+	handover.mvpSize = sizeof(UniformBufferObject);
+	handover.imageView = texture->imageView;
+	handover.descriptorSet = &str.descriptorSet;
+	resources.createThreadResources(handover);
 	createRenderPassAndFramebuffer(tr, shaderState, str.renderPass, str.framebuffer, str.framebuffer2);
 
 	// create shader stage
@@ -93,7 +80,7 @@ void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// empty for now...
 
 	// pipeline layout
-	createPipelineLayout(&str.pipelineLayout);
+	resources.createPipelineLayout(&str.pipelineLayout);
 
 	// depth stencil
 	auto depthStencil = createStandardDepthStencil();
@@ -127,74 +114,12 @@ void SimpleShader::finishInitialization(ShadedPathEngine& engine, ShaderState& s
 
 void SimpleShader::createDescriptorSetLayout()
 {
-    VkDescriptorSetLayoutBinding uboLayoutBinding{};
-    uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
-
-    VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-    samplerLayoutBinding.binding = 1;
-    samplerLayoutBinding.descriptorCount = 1;
-    samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    samplerLayoutBinding.pImmutableSamplers = nullptr;
-
-    std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
-
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-    layoutInfo.pBindings = bindings.data();
-
-    if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
-        Error("failed to create descriptor set layout!");
-    }
+    Error("remove this method from base class!");
 }
 
 void SimpleShader::createDescriptorSets(ThreadResources& tr)
 {
-	auto& str = tr.simpleResources; //shortcut to shader thread resources
-	VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = descriptorPool;
-	allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &descriptorSetLayout;
-    if (vkAllocateDescriptorSets(device, &allocInfo, &str.descriptorSet) != VK_SUCCESS) {
-        Error("failed to allocate descriptor sets!");
-    }
-
-    // populate descriptor set:
-    VkDescriptorBufferInfo bufferInfo{};
-    bufferInfo.buffer = str.uniformBuffer;
-    bufferInfo.offset = 0;
-    bufferInfo.range = sizeof(UniformBufferObject);
-
-    VkDescriptorImageInfo imageInfo{};
-    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    imageInfo.imageView = texture->imageView;
-    imageInfo.sampler = global->textureSampler;
-
-    array<VkWriteDescriptorSet, 2> descriptorWrites{};
-
-    descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[0].dstSet = str.descriptorSet;
-    descriptorWrites[0].dstBinding = 0;
-    descriptorWrites[0].dstArrayElement = 0;
-    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptorWrites[0].descriptorCount = 1;
-    descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-    descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[1].dstSet = str.descriptorSet;
-    descriptorWrites[1].dstBinding = 1;
-    descriptorWrites[1].dstArrayElement = 0;
-    descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptorWrites[1].descriptorCount = 1;
-    descriptorWrites[1].pImageInfo = &imageInfo;
-
-    vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	Error("remove this method from base class!");
 }
 
 void SimpleShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo) {
@@ -209,6 +134,7 @@ void SimpleShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo) {
 void SimpleShader::createCommandBuffer(ThreadResources& tr)
 {
 	if (!enabled) return;
+	resources.updateDescriptorSets(tr);
 	auto& str = tr.simpleResources; //shortcut to shader thread resources
 	auto& device = this->engine->global.device;
 	auto& global = this->engine->global;
@@ -264,6 +190,7 @@ void SimpleShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResou
 
 	// bind descriptor sets:
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet, 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
 
 	//vkCmdDraw(commandBuffer, static_cast<uint32_t>(simpleShader.vertices.size()), 1, 0, 0);
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);

@@ -14,6 +14,21 @@ struct SimpleThreadResources : ShaderThreadResources {
 class SimpleShader : public ShaderBase
 {
 public:
+    std::vector<VulkanResourceElement> vulkanResourceDefinition = {
+        { VulkanResourceType::MVPBuffer },
+        { VulkanResourceType::SingleTexture },
+        { VulkanResourceType::GlobalTextureSet },
+        { VulkanResourceType::VertexBufferStatic },
+        { VulkanResourceType::IndexBufferStatic }
+    };
+
+    // define const indexes to access resourceDefinition vector:
+    size_t MVPBufferId = 0;
+    size_t TextureResourceId = 1;
+    size_t GlobalTextureSetId = 2;
+    size_t VertexBufferId = 3;
+    size_t IndexBufferId = 4;
+
     struct Vertex {
         glm::vec3 pos;
         glm::vec3 color;
@@ -57,28 +72,6 @@ public:
         bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
         return bindingDescription;
     }
-    /*
-    
-    float: VK_FORMAT_R32_SFLOAT
-    vec2: VK_FORMAT_R32G32_SFLOAT
-    vec3: VK_FORMAT_R32G32B32_SFLOAT
-    vec4: VK_FORMAT_R32G32B32A32_SFLOAT
-    ivec2: VK_FORMAT_R32G32_SINT, a 2-component vector of 32-bit signed integers
-    uvec4: VK_FORMAT_R32G32B32A32_UINT, a 4-component vector of 32-bit unsigned integers
-    double: VK_FORMAT_R64_SFLOAT
-    */
-
-    // alternate format, we prefer explicit assignments below
-    //// location, binding, format, offset
-    //const vector<VkVertexInputAttributeDescription> attributeDescriptions = {
-    //    {0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos)},
-    //    {1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color)},
-    //    {2, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, texCoord)}
-    //};
-
-    //const vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
-    //    return attributeDescriptions;
-    //}
 
     // get static std::array of attribute desciptions, make sure to copy to local array, otherwise you get dangling pointers!
     static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
@@ -109,6 +102,8 @@ public:
     virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
     virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) override;
     virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState) override;
+    // create command buffers. One time auto called before rendering starts.
+    // Also post init phase stuff goes here, like VulcanResources.updateDescriptorSets()
     virtual void createCommandBuffer(ThreadResources& tr) override;
     virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
     virtual void destroyThreadResources(ThreadResources& tr) override;
