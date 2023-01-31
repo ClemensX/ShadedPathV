@@ -79,6 +79,9 @@ public:
 	void createThreadResources(VulkanHandoverResources& res);
 	// set after init and possibly before each frame
 	void updateDescriptorSets(ThreadResources& tr);
+	// create pipeline layout and store in parameter.
+	void createPipelineLayout(VkPipelineLayout* pipelineLayout);
+
 private:
 	ShadedPathEngine* engine = nullptr;
 	std::vector<VulkanResourceElement>* resourceDefinition = nullptr;

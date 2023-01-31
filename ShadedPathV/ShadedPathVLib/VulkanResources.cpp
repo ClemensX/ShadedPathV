@@ -210,11 +210,48 @@ void VulkanResources::createDescriptorSetResourcesForTextures()
 
 void VulkanResources::updateDescriptorSetForTextures() {
     if (globalTextureDescriptorSetValid) return;
+
+    // create DescriptorSet
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = engine->textureStore.pool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &engine->textureStore.layout;
+    if (vkAllocateDescriptorSets(engine->global.device, &allocInfo, &engine->textureStore.descriptorSet) != VK_SUCCESS) {
+        Error("failed to allocate descriptor sets!");
+    }
+
     // iterate over all textures and write descriptor sets
+    // use empty local vectors
+    size_t numTextures = engine->textureStore.getTexturesMap().size();
+    vector<VkDescriptorImageInfo> imageInfos(numTextures);
+    vector<VkWriteDescriptorSet> descriptorSets;
+
     for (auto& texMapEntry : engine->textureStore.getTexturesMap()) {
         auto& tex = texMapEntry.second;
         Log("tex: " << tex.id.c_str() << " index: " << tex.index << endl);
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = tex.imageView;
+        imageInfo.sampler = engine->global.textureSampler;
+        imageInfos[tex.index] = imageInfo;
+        //imageInfos.push_back(imageInfo);
     }
+
+    //for (auto& texMapEntry : engine->textureStore.getTexturesMap()) {
+        //auto& tex = texMapEntry.second;
+        VkWriteDescriptorSet descSet{};
+        descSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descSet.dstSet = engine->textureStore.descriptorSet;
+        descSet.dstBinding = 0;
+        descSet.dstArrayElement = 0;
+        descSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descSet.descriptorCount = imageInfos.size();
+        descSet.pImageInfo = &imageInfos[0];
+
+        descriptorSets.push_back(descSet);
+    //}
+    vkUpdateDescriptorSets(engine->global.device, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
     globalTextureDescriptorSetValid = true;
 }
 
@@ -228,6 +265,27 @@ void VulkanResources::updateDescriptorSets(ThreadResources& tr)
 
     }
 }
+
+// create pipeline layout and store in parameter.
+// auto add set layout for global texture array if needed
+void VulkanResources::createPipelineLayout(VkPipelineLayout* pipelineLayout) {
+    vector<VkDescriptorSetLayout> sets;
+    sets.push_back(layout);
+    if (engine->textureStore.layout) {
+        sets.push_back(engine->textureStore.layout);
+    }
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount = sets.size();
+    pipelineLayoutInfo.pSetLayouts = &sets[0];
+    pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
+    pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+
+    if (vkCreatePipelineLayout(engine->global.device, &pipelineLayoutInfo, nullptr, pipelineLayout) != VK_SUCCESS) {
+        Error("failed to create pipeline layout!");
+    }
+}
+
 
 VulkanResources::~VulkanResources()
 {

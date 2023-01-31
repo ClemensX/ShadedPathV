@@ -56,6 +56,7 @@ public:
 
 	VkDescriptorSetLayout layout = nullptr;
 	VkDescriptorPool pool = nullptr;
+	VkDescriptorSet descriptorSet = nullptr;
 private:
 	std::unordered_map<std::string, ::TextureInfo> textures;
 	ShadedPathEngine* engine = nullptr;

@@ -23,9 +23,9 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
     resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);
 
     // load texture
-	//engine.textureStore.loadTexture("debug.ktx", "debugTexture");
-	engine.textureStore.loadTexture("dump.ktx", "debugTexture");
-	//engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "debugTexture");
+	engine.textureStore.loadTexture("debug.ktx", "debugTexture");
+	engine.textureStore.loadTexture("dump.ktx", "dumpTexture");
+	engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "pinetreeTexture");  // VK_IMAGE_VIEW_TYPE_CUBE will produce black texture color
 	//texture = engine.textureStore.getTexture("debugTexture");
 	texture = engine.textureStore.getTexture(engine.textureStore.BRDFLUT_TEXTURE_ID);
 }
@@ -80,7 +80,7 @@ void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// empty for now...
 
 	// pipeline layout
-	createPipelineLayout(&str.pipelineLayout);
+	resources.createPipelineLayout(&str.pipelineLayout);
 
 	// depth stencil
 	auto depthStencil = createStandardDepthStencil();
@@ -190,6 +190,7 @@ void SimpleShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResou
 
 	// bind descriptor sets:
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet, 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
 
 	//vkCmdDraw(commandBuffer, static_cast<uint32_t>(simpleShader.vertices.size()), 1, 0, 0);
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
