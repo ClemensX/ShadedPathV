@@ -5,42 +5,33 @@ using namespace std;
 void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 {
 	ShaderBase::init(engine);
-	// load shader binary code
-	vector<byte> file_buffer_vert;
-	vector<byte> file_buffer_frag;
-	engine.files.readFile("line_vert.spv", file_buffer_vert, FileCategory::FX);
-	engine.files.readFile("line_frag.spv", file_buffer_frag, FileCategory::FX);
-	Log("read vertex shader: " << file_buffer_vert.size() << endl);
-	Log("read fragment shader: " << file_buffer_frag.size() << endl);
+	resources.setResourceDefinition(&vulkanResourceDefinition);
+
 	// create shader modules
-	vertShaderModule = engine.shaders.createShaderModule(file_buffer_vert);
-	fragShaderModule = engine.shaders.createShaderModule(file_buffer_frag);
+	vertShaderModule = resources.createShaderModule("line_vert.spv");
+	fragShaderModule = resources.createShaderModule("line_frag.spv");
 
-	// descriptor
-	createDescriptorSetLayout();
+	// descriptor set layout
+	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);
 
-	// descriptor pool
-	// 2 buffers: MVP matrix and line data
-	// line data is global buffer
-	vector<VkDescriptorPoolSize> poolSizes;
-	poolSizes.resize(2);
-	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[0].descriptorCount = 1;
-	poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[1].descriptorCount = 1;
-	createDescriptorPool(poolSizes);
 }
 
 void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
+	VulkanHandoverResources handover;
 	auto& trl = tr.lineResources;
-	// uniform buffer
+	// MVP uniform buffer
 	createUniformBuffer(tr, trl.uniformBuffer, sizeof(UniformBufferObject), trl.uniformBufferMemory);
 	if (engine->isStereo()) {
 		createUniformBuffer(tr, trl.uniformBuffer2, sizeof(UniformBufferObject), trl.uniformBufferMemory2);
 	}
+	handover.mvpBuffer = trl.uniformBuffer;
+	handover.mvpBuffer2 = trl.uniformBuffer2;
+	handover.mvpSize = sizeof(UniformBufferObject);
+	handover.descriptorSet = &trl.descriptorSet;
+	handover.descriptorSet2 = &trl.descriptorSet2;
+	resources.createThreadResources(handover);
 
-	createDescriptorSets(tr);
 	// TODO remove hack
 	bool undoLast = false;
 	if (isLastShader()) {
@@ -86,7 +77,7 @@ void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// empty for now...
 
 	// pipeline layout
-	createPipelineLayout(&trl.pipelineLayout);
+	resources.createPipelineLayout(&trl.pipelineLayout);
 
 	// depth stencil
 	auto depthStencil = createStandardDepthStencil();
@@ -179,75 +170,18 @@ void LineShader::initialUpload()
 
 void LineShader::createDescriptorSetLayout()
 {
-    VkDescriptorSetLayoutBinding uboLayoutBinding{};
-    uboLayoutBinding.binding = 0;
-    uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uboLayoutBinding.descriptorCount = 1;
-    uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
-
- //   VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-	//samplerLayoutBinding.binding = 1;
-	//samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	//samplerLayoutBinding.descriptorCount = 1;
-	//samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	//samplerLayoutBinding.pImmutableSamplers = nullptr; // Optional
-
-	//std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
-	std::array<VkDescriptorSetLayoutBinding, 1> bindings = { uboLayoutBinding};
-
-    VkDescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-    layoutInfo.pBindings = bindings.data();
-
-    if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
-        Error("failed to create descriptor set layout!");
-    }
+	Error("remove this method from base class!");
 }
 
 void LineShader::createDescriptorSets(ThreadResources& tr)
 {
-	auto& trl = tr.lineResources;
-	VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = descriptorPool;
-    allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &descriptorSetLayout;
-    if (vkAllocateDescriptorSets(device, &allocInfo, &trl.descriptorSet) != VK_SUCCESS) {
-        Error("failed to allocate descriptor sets!");
-    }
-
-    // populate descriptor set:
-    VkDescriptorBufferInfo bufferInfo{};
-    bufferInfo.buffer = trl.uniformBuffer;
-    bufferInfo.offset = 0;
-    bufferInfo.range = sizeof(UniformBufferObject);
-
-    array<VkWriteDescriptorSet, 1> descriptorWrites{};
-
-    descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptorWrites[0].dstSet = trl.descriptorSet;
-    descriptorWrites[0].dstBinding = 0;
-    descriptorWrites[0].dstArrayElement = 0;
-    descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    descriptorWrites[0].descriptorCount = 1;
-    descriptorWrites[0].pBufferInfo = &bufferInfo;
-
-    vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-	if (engine->isStereo()) {
-		if (vkAllocateDescriptorSets(device, &allocInfo, &trl.descriptorSet2) != VK_SUCCESS) {
-			Error("failed to allocate descriptor sets!");
-		}
-		bufferInfo.buffer = trl.uniformBuffer2;
-		descriptorWrites[0].dstSet = trl.descriptorSet2;
-		vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-	}
+	Error("remove this method from base class!");
 }
 
 void LineShader::createCommandBuffer(ThreadResources& tr)
 {
 	auto& trl = tr.lineResources;
+	resources.updateDescriptorSets(tr);
 	auto& device = engine->global.device;
 	auto& global = engine->global;
 	auto& shaders = engine->shaders;

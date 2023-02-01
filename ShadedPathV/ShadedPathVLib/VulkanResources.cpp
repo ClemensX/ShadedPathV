@@ -58,7 +58,10 @@ void VulkanResources::createDescriptorSetResources(VkDescriptorSetLayout& layout
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = engine->getFramesInFlight(); // max num that can be allocated
+    poolInfo.maxSets = engine->getFramesInFlight(); // max calls to vkCreateDescriptorPool
+    if (engine->isStereo()) {
+        poolInfo.maxSets *= 2;
+    }
     poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
     if (vkCreateDescriptorPool(engine->global.device, &poolInfo, nullptr, &pool) != VK_SUCCESS) {
@@ -83,6 +86,9 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSize.descriptorCount = 1;
         poolSizes.push_back(poolSize);
+        if (engine->isStereo()) {
+            poolSizes.push_back(poolSize);
+        }
     } else if (el.type == VulkanResourceType::SingleTexture) {
         layoutBinding.binding = bindingCount;
         layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -107,14 +113,23 @@ void VulkanResources::createThreadResources(VulkanHandoverResources& hdv)
     allocInfo.descriptorPool = pool;
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &layout;
-    if (vkAllocateDescriptorSets(engine->global.device, &allocInfo, hdv.descriptorSet) != VK_SUCCESS) {
+    VkResult res = vkAllocateDescriptorSets(engine->global.device, &allocInfo, hdv.descriptorSet);
+    if ( res != VK_SUCCESS) {
         Error("failed to allocate descriptor sets!");
+    }
+    if (engine->isStereo()) {
+        if (vkAllocateDescriptorSets(engine->global.device, &allocInfo, hdv.descriptorSet2) != VK_SUCCESS) {
+            Error("failed to allocate descriptor sets!");
+        }
     }
 
     for (auto& d : def) {
         addThreadResourcesForElement(d, hdv);
     }
     vkUpdateDescriptorSets(engine->global.device, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
+    //if (engine->isStereo()) {
+    //    vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+    //}
     descriptorSets.clear();
     bufferInfos.clear();
     imageInfos.clear();
@@ -133,6 +148,10 @@ void VulkanResources::addThreadResourcesForElement(VulkanResourceElement el, Vul
         bufferInfo.offset = 0;
         bufferInfo.range = hdv.mvpSize;
         bufferInfos.push_back(bufferInfo);
+        if (engine->isStereo()) {
+            bufferInfo.buffer = hdv.mvpBuffer2;
+            bufferInfos.push_back(bufferInfo);
+        }
 
         descSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         descSet.dstSet = *hdv.descriptorSet;
@@ -141,8 +160,11 @@ void VulkanResources::addThreadResourcesForElement(VulkanResourceElement el, Vul
         descSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descSet.descriptorCount = 1;
         descSet.pBufferInfo = &bufferInfos[bufferInfos.size() - 1];
-
         descriptorSets.push_back(descSet);
+        if (engine->isStereo()) {
+            descSet.dstSet = *hdv.descriptorSet2;
+            descriptorSets.push_back(descSet);
+        }
     }
     else if (el.type == VulkanResourceType::SingleTexture) {
         if (hdv.imageView == nullptr) Error("Shader did not initialize needed Thread Resources: imageView is missing");

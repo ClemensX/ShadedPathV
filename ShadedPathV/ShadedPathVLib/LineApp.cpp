@@ -16,7 +16,7 @@ void LineApp::run()
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
         //engine.enableVR();
-        //engine.enableStereo();
+        engine.enableStereo();
         engine.enableStereoPresentation();
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
@@ -73,9 +73,12 @@ void LineApp::init() {
     vector<LineDef> lines;
 
     // loading objects
-    engine.meshStore.loadMeshWireframe("WaterBottle.glb", "WaterBottle", lines);
-    auto o = engine.meshStore.getMesh("WaterBottle");
-    Log("Object loaded: " << o->id.c_str() << endl);
+    // TODO currently wireframe rendering is bugged
+    if (false) {
+        engine.meshStore.loadMeshWireframe("WaterBottle.glb", "WaterBottle", lines);
+        auto o = engine.meshStore.getMesh("WaterBottle");
+        Log("Object loaded: " << o->id.c_str() << endl);
+    }
 
 
     // add all intializer objects to vector:

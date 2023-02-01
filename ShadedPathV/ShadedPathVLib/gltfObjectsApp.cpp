@@ -17,8 +17,8 @@ void gltfObjectsApp::run()
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
         //engine.enableVR();
-        engine.enableStereo();
-        //engine.enableStereoPresentation();
+        //engine.enableStereo();
+        engine.enableStereoPresentation();
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");

@@ -5,8 +5,8 @@
 
 int main()
 {
-    SimpleApp app;
-    //LineApp app;
+    //SimpleApp app;
+    LineApp app;
     //DeviceCoordApp app;
     //gltfObjectsApp app;
     //GeneratedTexturesApp app;

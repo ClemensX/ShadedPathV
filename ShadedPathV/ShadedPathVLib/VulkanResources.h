@@ -38,8 +38,10 @@ public:
 // thread resources for vkUpdateDescriptorSets
 // contains resources for all parts defined in vulkanResourceDefinition
 struct VulkanHandoverResources {
-	VkDescriptorSet *descriptorSet = nullptr; // PTR!
+	VkDescriptorSet* descriptorSet = nullptr; // PTR!
+	VkDescriptorSet* descriptorSet2 = nullptr; // PTR! for stereo
 	VkBuffer mvpBuffer = nullptr;
+	VkBuffer mvpBuffer2 = nullptr;  // for stereo
 	VkDeviceSize mvpSize = 0L;
 	VkImageView imageView = nullptr;
 };
