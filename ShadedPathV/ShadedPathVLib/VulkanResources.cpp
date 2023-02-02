@@ -26,6 +26,7 @@ size_t VulkanResources::getResourceDefIndex(VulkanResourceType t)
         }
     }
     Error("Expected resource type not found in resourceDefinition vector");
+    return -1; // keep compiler happy
 }
 
 void VulkanResources::createVertexBufferStatic(VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
@@ -84,7 +85,7 @@ void VulkanResources::createDescriptorSetResources(VkDescriptorSetLayout& layout
 
 void VulkanResources::addResourcesForElement(VulkanResourceElement el)
 {
-    uint32_t bindingCount = bindings.size();
+    uint32_t bindingCount = static_cast<uint32_t>(bindings.size());
     VkDescriptorSetLayoutBinding layoutBinding{};
     VkDescriptorPoolSize poolSize{};
     if (el.type == VulkanResourceType::MVPBuffer) {
@@ -192,8 +193,11 @@ void VulkanResources::addThreadResourcesForElement(VulkanResourceElement el, Vul
         descSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         descSet.descriptorCount = 1;
         descSet.pImageInfo = &imageInfos[imageInfos.size() - 1];
-
         descriptorSets.push_back(descSet);
+        if (engine->isStereo()) {
+            descSet.dstSet = *hdv.descriptorSet2;
+            descriptorSets.push_back(descSet);
+        }
     }
 }
 
@@ -207,7 +211,7 @@ void VulkanResources::createDescriptorSetResourcesForTextures()
 
     layoutBinding.binding = 0;
     layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    layoutBinding.descriptorCount = engine->textureStore.getMaxSize();
+    layoutBinding.descriptorCount = static_cast<uint32_t>(engine->textureStore.getMaxSize());
     layoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
     layoutBinding.pImmutableSamplers = nullptr;
     textureBindings.push_back(layoutBinding);
@@ -279,7 +283,7 @@ void VulkanResources::updateDescriptorSetForTextures() {
         descSet.dstBinding = 0;
         descSet.dstArrayElement = 0;
         descSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descSet.descriptorCount = imageInfos.size();
+        descSet.descriptorCount = static_cast<uint32_t>(imageInfos.size());
         descSet.pImageInfo = &imageInfos[0];
 
         descriptorSets.push_back(descSet);
@@ -309,7 +313,7 @@ void VulkanResources::createPipelineLayout(VkPipelineLayout* pipelineLayout) {
     }
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = sets.size();
+    pipelineLayoutInfo.setLayoutCount = static_cast<uint32_t>(sets.size());
     pipelineLayoutInfo.pSetLayouts = &sets[0];
     pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
     pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional

@@ -23,6 +23,7 @@ void CubeShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 void CubeShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
 	auto& str = tr.cubeResources; // shortcut to cube resources
+
 	// uniform buffer
 	createUniformBuffer(tr, str.uniformBuffer, sizeof(UniformBufferObject), str.uniformBufferMemory);
 	engine->util.debugNameObjectBuffer(str.uniformBuffer, "Cube UBO 1");
@@ -32,7 +33,6 @@ void CubeShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 		engine->util.debugNameObjectBuffer(str.uniformBuffer2, "Cube UBO 2");
 		engine->util.debugNameObjectDeviceMmeory(str.uniformBufferMemory2, "Cube Memory 2");
 	}
-	//createDescriptorSets(tr);
 	createRenderPassAndFramebuffer(tr, shaderState, str.renderPass, str.framebuffer, str.framebuffer2);
 
 	// create shader stage
@@ -68,19 +68,20 @@ void CubeShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// empty for now...
 
 	// pipeline layout
-	const std::vector<VkDescriptorSetLayout> setLayouts = {
-			descriptorSetLayout
-	};
-	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 1;
-	pipelineLayoutInfo.pSetLayouts = setLayouts.data();
-	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+	resources.createPipelineLayout(&str.pipelineLayout);
+	//const std::vector<VkDescriptorSetLayout> setLayouts = {
+	//		descriptorSetLayout
+	//};
+	//VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+	//pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	//pipelineLayoutInfo.setLayoutCount = 1;
+	//pipelineLayoutInfo.pSetLayouts = setLayouts.data();
+	//pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
+	//pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
-	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &str.pipelineLayout) != VK_SUCCESS) {
-		Error("failed to create pipeline layout!");
-	}
+	//if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &str.pipelineLayout) != VK_SUCCESS) {
+	//	Error("failed to create pipeline layout!");
+	//}
 
 	//createPipelineLayout(&str.pipelineLayout);
 
@@ -116,86 +117,12 @@ void CubeShader::finishInitialization(ShadedPathEngine& engine, ShaderState& sha
 
 void CubeShader::createDescriptorSetLayout()
 {
-	VkDescriptorSetLayoutBinding uboLayoutBinding{};
-	uboLayoutBinding.binding = 0;
-	uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	uboLayoutBinding.descriptorCount = 1;
-	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
-
-	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-	samplerLayoutBinding.binding = 1;
-	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	samplerLayoutBinding.descriptorCount = 1;
-	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	samplerLayoutBinding.pImmutableSamplers = nullptr; // Optional
-
-	std::array<VkDescriptorSetLayoutBinding, 2> bindings = { uboLayoutBinding, samplerLayoutBinding };
-
-	VkDescriptorSetLayoutCreateInfo layoutInfo{};
-	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-	layoutInfo.pBindings = bindings.data();
-
-	if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
-		Error("failed to create descriptor set layout!");
-	}
-	engine->util.debugNameObjectDescriptorSetLayout(descriptorSetLayout, "Cube Descriptor Set Layout");
+	Error("remove this method from base class!");
 }
 
 void CubeShader::createDescriptorSets(ThreadResources& tr)
 {
-	auto& str = tr.cubeResources; // shortcut to cube resources
-	VkDescriptorSetAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = descriptorPool;
-	allocInfo.descriptorSetCount = 1;
-	allocInfo.pSetLayouts = &descriptorSetLayout;
-	if (vkAllocateDescriptorSets(device, &allocInfo, &str.descriptorSet) != VK_SUCCESS) {
-		Error("failed to allocate descriptor sets!");
-	}
-	engine->util.debugNameObjectDescriptorSet(str.descriptorSet, "Cube Descriptor Set");
-
-	array<VkWriteDescriptorSet, 2> descriptorWrites{};
-	// populate descriptor set:
-	VkDescriptorBufferInfo bufferInfo0{};
-	bufferInfo0.buffer = str.uniformBuffer;
-	bufferInfo0.offset = 0;
-	bufferInfo0.range = sizeof(UniformBufferObject);
-
-	descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorWrites[0].dstSet = str.descriptorSet;
-	descriptorWrites[0].dstBinding = 0;
-	descriptorWrites[0].dstArrayElement = 0;
-	descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorWrites[0].descriptorCount = 1;
-	descriptorWrites[0].pBufferInfo = &bufferInfo0;
-
-	VkDescriptorImageInfo imageInfo{};
-	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView = skybox->imageView;
-	imageInfo.sampler = global->textureSampler;
-
-	descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorWrites[1].dstSet = str.descriptorSet;
-	descriptorWrites[1].dstBinding = 1;
-	descriptorWrites[1].dstArrayElement = 0;
-	descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptorWrites[1].descriptorCount = 1;
-	descriptorWrites[1].pImageInfo = &imageInfo;
-
-	vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-	if (engine->isStereo()) {
-		if (vkAllocateDescriptorSets(device, &allocInfo, &str.descriptorSet2) != VK_SUCCESS) {
-			Error("failed to allocate descriptor sets!");
-		}
-		engine->util.debugNameObjectDescriptorSet(str.descriptorSet, "Cube Descriptor Set 2");
-		bufferInfo0.buffer = str.uniformBuffer2;
-		descriptorWrites[0].dstSet = str.descriptorSet2;
-		descriptorWrites[1].dstSet = str.descriptorSet2;
-		vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-	}
-
+	Error("remove this method from base class!");
 }
 
 void CubeShader::createCommandBuffer(ThreadResources& tr)
@@ -204,7 +131,19 @@ void CubeShader::createCommandBuffer(ThreadResources& tr)
 	auto& device = engine->global.device;
 	auto& global = engine->global;
 	auto& shaders = engine->shaders;
-	createDescriptorSets(tr);
+	VulkanHandoverResources handover;
+	handover.mvpBuffer = str.uniformBuffer;
+	handover.mvpBuffer2 = str.uniformBuffer2;
+	handover.mvpSize = sizeof(UniformBufferObject);
+	handover.imageView = skybox->imageView;
+	handover.descriptorSet = &str.descriptorSet;
+	handover.descriptorSet2 = &str.descriptorSet2;
+	resources.createThreadResources(handover);
+	engine->util.debugNameObjectDescriptorSet(str.descriptorSet, "Cube Descriptor Set 1");
+	engine->util.debugNameObjectDescriptorSet(str.descriptorSet2, "Cube Descriptor Set 2");
+
+	resources.updateDescriptorSets(tr);
+	//createDescriptorSets(tr);
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = tr.commandPool;

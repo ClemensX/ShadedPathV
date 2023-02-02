@@ -77,7 +77,7 @@ public:
 	// create DescriptorSetLayout and DescriptorPool with enough size for all threads
 	void createDescriptorSetResources(VkDescriptorSetLayout& layout, VkDescriptorPool& pool);
 	// populate descriptor set, all necessary resources have to be set in handover struct.
-	// Called one-time only during init phase
+	// Called one-time only during init phase or after init phase in createCommandBuffer()
 	void createThreadResources(VulkanHandoverResources& res);
 	// set after init and possibly before each frame
 	void updateDescriptorSets(ThreadResources& tr);
