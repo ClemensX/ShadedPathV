@@ -17,17 +17,28 @@ VkShaderModule VulkanResources::createShaderModule(string filename)
     return shaderModule;
 }
 
-void VulkanResources::createVertexBufferStatic(size_t bufferId, VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+size_t VulkanResources::getResourceDefIndex(VulkanResourceType t)
+{
+    for (size_t i = 0; i < resourceDefinition->size(); i++) {
+        auto& rd = resourceDefinition ->at(i);
+        if (rd.type == t) {
+            return i;
+        }
+    }
+    Error("Expected resource type not found in resourceDefinition vector");
+}
+
+void VulkanResources::createVertexBufferStatic(VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
     vector<VulkanResourceElement> &def = *resourceDefinition;
-    assert(def[bufferId].type == VulkanResourceType::VertexBufferStatic);
+    size_t bufferId = getResourceDefIndex(VulkanResourceType::VertexBufferStatic);
     this->engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, src, buffer, bufferMemory);
 }
 
-void VulkanResources::createIndexBufferStatic(size_t bufferId, VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+void VulkanResources::createIndexBufferStatic(VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
     vector<VulkanResourceElement>& def = *resourceDefinition;
-    assert(def[bufferId].type == VulkanResourceType::IndexBufferStatic);
+    size_t bufferId = getResourceDefIndex(VulkanResourceType::IndexBufferStatic);
     this->engine->global.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, bufferSize, src, buffer, bufferMemory);
 }
 

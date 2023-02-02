@@ -206,7 +206,7 @@ void GeneratedTexturesApp::init() {
 
     engine.shaders.lineShader.initialUpload();
     engine.shaders.pbrShader.initialUpload();
-    engine.shaders.cubeShader.initialUpload();
+    //engine.shaders.cubeShader.initialUpload();
     engine.shaders.billboardShader.initialUpload();
     // last thing in init() should always be texture description creation
 }

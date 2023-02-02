@@ -13,11 +13,11 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 
     // create vertex buffer
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
-	resources.createVertexBufferStatic(VertexBufferId, bufferSize, vertices.data(), vertexBufferTriangle, vertexBufferMemoryTriangle);
+	resources.createVertexBufferStatic(bufferSize, vertices.data(), vertexBufferTriangle, vertexBufferMemoryTriangle);
 
     // create index buffer
     bufferSize = sizeof(indices[0]) * indices.size();
-    resources.createIndexBufferStatic(IndexBufferId, bufferSize, indices.data(), indexBufferTriangle, indexBufferMemoryTriangle);
+    resources.createIndexBufferStatic(bufferSize, indices.data(), indexBufferTriangle, indexBufferMemoryTriangle);
 
     // descriptor set layout
     resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);

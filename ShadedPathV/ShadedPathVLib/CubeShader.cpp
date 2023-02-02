@@ -5,28 +5,19 @@ using namespace std;
 void CubeShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 {
 	ShaderBase::init(engine);
-	// load shader binary code
-	vector<byte> file_buffer_vert;
-	vector<byte> file_buffer_frag;
-	engine.files.readFile("cube_vert.spv", file_buffer_vert, FileCategory::FX);
-	engine.files.readFile("cube_frag.spv", file_buffer_frag, FileCategory::FX);
-	Log("read vertex shader: " << file_buffer_vert.size() << endl);
-	Log("read fragment shader: " << file_buffer_frag.size() << endl);
+	resources.setResourceDefinition(&vulkanResourceDefinition);
+
 	// create shader modules
-	vertShaderModule = engine.shaders.createShaderModule(file_buffer_vert);
-	fragShaderModule = engine.shaders.createShaderModule(file_buffer_frag);
+	vertShaderModule = resources.createShaderModule("cube_vert.spv");
+	fragShaderModule = resources.createShaderModule("cube_frag.spv");
 
-	// descriptor
-	createDescriptorSetLayout();
+	// we need a buffer to keep validation happy - content is irrelevant
+	static Vertex verts[36];
+	VkDeviceSize bufferSize = sizeof(Vertex) * 36;
+	resources.createVertexBufferStatic(bufferSize, &(verts[0]), vertexBuffer, vertexBufferMemory);
 
-	// descriptor pool
-	// 1 buffer: V,P matrices
-	vector<VkDescriptorPoolSize> poolSizes;
-	poolSizes.resize(1);
-	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[0].descriptorCount = 1;
-
-	createDescriptorPool(poolSizes, 0);
+	// descriptor set layout
+	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);
 }
 
 void CubeShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
@@ -121,16 +112,6 @@ void CubeShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 
 void CubeShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
 {
-}
-
-void CubeShader::initialUpload()
-{
-	if (!enabled) return;
-	// we need a buffer to keep validation happy - content is irrelevant
-	static Vertex verts[36];
-	VkDeviceSize bufferSize = sizeof(Vertex) * 36;
-	global->uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, &(verts[0]), vertexBuffer, vertexBufferMemory);
-
 }
 
 void CubeShader::createDescriptorSetLayout()

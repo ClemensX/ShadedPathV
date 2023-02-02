@@ -71,8 +71,8 @@ public:
 	VkShaderModule createShaderModule(std::string filename);
 
 	// Buffers
-	void createVertexBufferStatic(size_t bufferId, VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-	void createIndexBufferStatic(size_t bufferId, VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+	void createVertexBufferStatic(VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+	void createIndexBufferStatic(VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 
 	// create DescriptorSetLayout and DescriptorPool with enough size for all threads
 	void createDescriptorSetResources(VkDescriptorSetLayout& layout, VkDescriptorPool& pool);
@@ -93,6 +93,9 @@ private:
 	std::vector<VkDescriptorSetLayoutBinding> textureBindings;
 	std::vector<VkDescriptorPoolSize> texturePoolSizes;
 
+	// look for VulkanResourceType in resourceDefinition vector and return index of first occurence, 
+	// Error() if not found
+	size_t getResourceDefIndex(VulkanResourceType t);
 	void addResourcesForElement(VulkanResourceElement el);
 	void addThreadResourcesForElement(VulkanResourceElement d, VulkanHandoverResources& res);
 	// create resources for global texture descriptor set layout

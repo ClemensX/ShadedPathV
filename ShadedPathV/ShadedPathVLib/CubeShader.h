@@ -5,6 +5,12 @@
 
 class CubeShader : public ShaderBase {
 public:
+	std::vector<VulkanResourceElement> vulkanResourceDefinition = {
+		{ VulkanResourceType::MVPBuffer },
+		{ VulkanResourceType::SingleTexture },
+		{ VulkanResourceType::GlobalTextureSet },
+		{ VulkanResourceType::VertexBufferStatic }
+	};
 	// Vertex is kind of fake as we do not need the actual vertex positions. They are const in the shader
 	struct Vertex {
 		glm::vec3 pos;
@@ -48,9 +54,6 @@ public:
 	// add the pre-computed command buffer for the current object
 	virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
 	virtual void destroyThreadResources(ThreadResources& tr) override;
-
-	// upload of all objects to GPU - only valid before first render
-	void initialUpload();
 
 	// per frame update of UBOs / MVPs
 	// outsideMode is for rendering a cube with cubemaps projected to its 6 sides

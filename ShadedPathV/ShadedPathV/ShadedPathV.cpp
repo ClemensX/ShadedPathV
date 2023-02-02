@@ -6,9 +6,9 @@
 int main()
 {
     //SimpleApp app;
-    LineApp app;
+    //LineApp app;
     //DeviceCoordApp app;
-    //gltfObjectsApp app;
+    gltfObjectsApp app;
     //GeneratedTexturesApp app;
     app.run();
 }

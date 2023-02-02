@@ -21,11 +21,6 @@ public:
 		{ VulkanResourceType::IndexBufferStatic }
 	};
 
-	// define const indexes to access resourceDefinition vector:
-	size_t MVPBufferId = 0;
-	size_t VertexBufferId = 1;
-	size_t IndexBufferId = 2;
-
 	struct Vertex {
 		glm::vec3 pos;
 		glm::vec4 color;
