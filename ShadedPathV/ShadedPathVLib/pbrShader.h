@@ -8,6 +8,15 @@ class PBRShader : public ShaderBase {
 public:
 	// We have to set max number of objects, as dynamic uniform buffers have to be allocated (one entry for each object in a large buffer)
 	uint64_t MaxObjects = 1000;
+
+	std::vector<VulkanResourceElement> vulkanResourceDefinition = {
+		{ VulkanResourceType::MVPBuffer },
+		{ VulkanResourceType::UniformBufferDynamic },
+		{ VulkanResourceType::SingleTexture },
+		{ VulkanResourceType::GlobalTextureSet },
+		{ VulkanResourceType::VertexBufferStatic }
+	};
+
 	struct Vertex {
 		glm::vec3 pos;
 		//glm::vec3 normal;

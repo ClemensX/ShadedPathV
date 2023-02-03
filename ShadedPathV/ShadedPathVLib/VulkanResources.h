@@ -6,6 +6,7 @@ class ShadedPathEngine;
 enum class VulkanResourceType {
 	// first VkDescriptorSetLayout:
 	MVPBuffer, // base matrices, renewed every frame (will be stored ina desciptor set)
+	UniformBufferDynamic, // dynamic buffer that can be indexed in shader code mor during cmd binding
 	SingleTexture, // single read-only texture (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER), stored in descriptor set
 	// vertex and index buffers
 	VertexBufferStatic, // vertex buffer, once uplodaded during init phase, only read during frame rendering (will be bound to command buffer)

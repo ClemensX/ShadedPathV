@@ -8,7 +8,6 @@ public:
 	std::vector<VulkanResourceElement> vulkanResourceDefinition = {
 		{ VulkanResourceType::MVPBuffer },
 		{ VulkanResourceType::SingleTexture },
-		{ VulkanResourceType::GlobalTextureSet },
 		{ VulkanResourceType::VertexBufferStatic }
 	};
 	// Vertex is kind of fake as we do not need the actual vertex positions. They are const in the shader

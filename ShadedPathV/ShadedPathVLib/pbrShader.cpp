@@ -5,40 +5,37 @@ using namespace std;
 void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 {
 	ShaderBase::init(engine);
-	// load shader binary code
-	vector<byte> file_buffer_vert;
-	vector<byte> file_buffer_frag;
-	engine.files.readFile("pbr_vert.spv", file_buffer_vert, FileCategory::FX);
-	engine.files.readFile("pbr_frag.spv", file_buffer_frag, FileCategory::FX);
-	Log("read vertex shader: " << file_buffer_vert.size() << endl);
-	Log("read fragment shader: " << file_buffer_frag.size() << endl);
+	resources.setResourceDefinition(&vulkanResourceDefinition);
+
 	// create shader modules
-	vertShaderModule = engine.shaders.createShaderModule(file_buffer_vert);
-	fragShaderModule = engine.shaders.createShaderModule(file_buffer_frag);
+	vertShaderModule = resources.createShaderModule("pbr_vert.spv");
+	fragShaderModule = resources.createShaderModule("pbr_frag.spv");
 
 	// descriptor
+	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);
 	createDescriptorSetLayout();
 
 	// descriptor pool
 	// 4 buffers: V,P matrices, line data and dynamic uniform buffer for model matrix, texture
 	// line data is global buffer
-	vector<VkDescriptorPoolSize> poolSizes;
-	poolSizes.resize(4);
-	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[0].descriptorCount = 1;
-	poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-	poolSizes[1].descriptorCount = 1;
-	poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[2].descriptorCount = 1;
-	poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[3].descriptorCount = 1;
+	//vector<VkDescriptorPoolSize> poolSizes;
+	//poolSizes.resize(3);
+	//poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	//poolSizes[0].descriptorCount = 1;
+	//poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	//poolSizes[1].descriptorCount = 1;
+	////poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	//poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	//poolSizes[2].descriptorCount = 1;
+	////poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	////poolSizes[3].descriptorCount = 1;
 
-	vector<VkDescriptorPoolSize> poolSizesIndep;
-	poolSizesIndep.resize(1);
-	poolSizesIndep[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizesIndep[0].descriptorCount = static_cast<uint32_t>(MaxObjects);
+	//vector<VkDescriptorPoolSize> poolSizesIndep;
+	//poolSizesIndep.resize(1);
+	//poolSizesIndep[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	//poolSizesIndep[0].descriptorCount = static_cast<uint32_t>(MaxObjects);
 
-	createDescriptorPool(poolSizes, poolSizesIndep, static_cast<uint32_t>(5 + MaxObjects));
+	//createDescriptorPool(poolSizes, poolSizesIndep, static_cast<uint32_t>(5 + MaxObjects));
 }
 
 void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
@@ -166,40 +163,41 @@ void PBRShader::initialUpload()
 void PBRShader::createDescriptorSetLayout()
 {
 	alignedDynamicUniformBufferSize = global->calcConstantBufferSize(sizeof(DynamicUniformBufferObject));
-	VkDescriptorSetLayoutBinding uboLayoutBinding{};
-	uboLayoutBinding.binding = 0;
-	uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	uboLayoutBinding.descriptorCount = 1;
-	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
+	//VkDescriptorSetLayoutBinding uboLayoutBinding{};
+	//uboLayoutBinding.binding = 0;
+	//uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	//uboLayoutBinding.descriptorCount = 1;
+	//uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	//uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
-	VkDescriptorSetLayoutBinding uboDynamicLayoutBinding{};
-	uboDynamicLayoutBinding.binding = 1;
-	uboDynamicLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-	uboDynamicLayoutBinding.descriptorCount = 1;
-	uboDynamicLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	uboDynamicLayoutBinding.pImmutableSamplers = nullptr; // Optional
+	//VkDescriptorSetLayoutBinding uboDynamicLayoutBinding{};
+	//uboDynamicLayoutBinding.binding = 1;
+	//uboDynamicLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+	//uboDynamicLayoutBinding.descriptorCount = 1;
+	//uboDynamicLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	//uboDynamicLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
-	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-	samplerLayoutBinding.binding = 2;
-	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	samplerLayoutBinding.descriptorCount = 1;
-	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	samplerLayoutBinding.pImmutableSamplers = nullptr; // Optional
+	//VkDescriptorSetLayoutBinding samplerLayoutBinding{};
+	//samplerLayoutBinding.binding = 2;
+	//samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	//samplerLayoutBinding.descriptorCount = 1;
+	//samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	//samplerLayoutBinding.pImmutableSamplers = nullptr; // Optional
 
-	std::array<VkDescriptorSetLayoutBinding, 3> bindings = { uboLayoutBinding, uboDynamicLayoutBinding, samplerLayoutBinding };
+	//std::array<VkDescriptorSetLayoutBinding, 3> bindings = { uboLayoutBinding, uboDynamicLayoutBinding, samplerLayoutBinding };
 
-	VkDescriptorSetLayoutCreateInfo layoutInfo{};
-	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-	layoutInfo.pBindings = bindings.data();
+	//VkDescriptorSetLayoutCreateInfo layoutInfo{};
+	//layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	//layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+	//layoutInfo.pBindings = bindings.data();
 
-	if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
-		Error("failed to create descriptor set layout!");
-	}
-	engine->util.debugNameObjectDescriptorSetLayout(descriptorSetLayout, "PBR Descriptor Set Layout");
+	//if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
+	//	Error("failed to create descriptor set layout!");
+	//}
+	//engine->util.debugNameObjectDescriptorSetLayout(descriptorSetLayout, "PBR Descriptor Set Layout");
 
 	// create descriptorset layout used for each mesh individually:
+	VkDescriptorSetLayoutCreateInfo layoutInfo{};
 	VkDescriptorSetLayoutBinding samplerLayoutBinding0{};
 	samplerLayoutBinding0.binding = 0;
 	samplerLayoutBinding0.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;

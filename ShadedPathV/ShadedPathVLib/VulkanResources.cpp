@@ -74,6 +74,13 @@ void VulkanResources::createDescriptorSetResources(VkDescriptorSetLayout& layout
     if (engine->isStereo()) {
         poolInfo.maxSets *= 2;
     }
+    // TODO hack until we have switched to global texture array
+    for (auto& rd : *resourceDefinition) {
+        if (rd.type == VulkanResourceType::UniformBufferDynamic) {
+            poolInfo.maxSets *= 2;
+        }
+    }
+
     poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
     if (vkCreateDescriptorPool(engine->global.device, &poolInfo, nullptr, &pool) != VK_SUCCESS) {
@@ -101,6 +108,17 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         if (engine->isStereo()) {
             poolSizes.push_back(poolSize);
         }
+    } else if (el.type == VulkanResourceType::UniformBufferDynamic) {
+        layoutBinding.binding = bindingCount;
+        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+        layoutBinding.descriptorCount = 1;
+        layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        layoutBinding.pImmutableSamplers = nullptr;
+        bindings.push_back(layoutBinding);
+        poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+        poolSize.descriptorCount = 1;
+        poolSizes.push_back(poolSize);
+
     } else if (el.type == VulkanResourceType::SingleTexture) {
         layoutBinding.binding = bindingCount;
         layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
