@@ -6,7 +6,7 @@ class ShadedPathEngine;
 enum class VulkanResourceType {
 	// first VkDescriptorSetLayout:
 	MVPBuffer, // base matrices, renewed every frame (will be stored ina desciptor set)
-	UniformBufferDynamic, // dynamic buffer that can be indexed in shader code mor during cmd binding
+	UniformBufferDynamic, // dynamic buffer that can be indexed in shader code or during cmd binding
 	SingleTexture, // single read-only texture (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER), stored in descriptor set
 	// vertex and index buffers
 	VertexBufferStatic, // vertex buffer, once uplodaded during init phase, only read during frame rendering (will be bound to command buffer)
@@ -45,6 +45,8 @@ struct VulkanHandoverResources {
 	VkBuffer mvpBuffer2 = nullptr;  // for stereo
 	VkDeviceSize mvpSize = 0L;
 	VkImageView imageView = nullptr;
+	VkBuffer dynBuffer = nullptr;
+	VkDeviceSize dynBufferSize = 0L;
 };
 
 
@@ -78,7 +80,8 @@ public:
 	// create DescriptorSetLayout and DescriptorPool with enough size for all threads
 	void createDescriptorSetResources(VkDescriptorSetLayout& layout, VkDescriptorPool& pool);
 	// populate descriptor set, all necessary resources have to be set in handover struct.
-	// Called one-time only during init phase or after init phase in createCommandBuffer()
+	// Called one-time only during init phase or after init phase in createCommandBuffer().
+	// vkAllocateDescriptorSets and create the VkWriteDescriptorSets
 	void createThreadResources(VulkanHandoverResources& res);
 	// set after init and possibly before each frame
 	void updateDescriptorSets(ThreadResources& tr);

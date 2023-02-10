@@ -68,8 +68,18 @@ void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	//d = (DynamicUniformBufferObject*)data;
 	//ident = mat4(2.0f);
 	//d->model = ident;
+	VulkanHandoverResources handover;
+	handover.mvpBuffer = str.uniformBuffer;
+	handover.mvpBuffer2 = str.uniformBuffer2;
+	handover.mvpSize = sizeof(UniformBufferObject);
+	handover.imageView = nullptr;
+	handover.descriptorSet = &str.descriptorSet;
+	handover.descriptorSet2 = &str.descriptorSet2;
+	handover.dynBuffer = str.dynamicUniformBuffer;
+	handover.dynBufferSize = sizeof(DynamicUniformBufferObject);
+	resources.createThreadResources(handover);
 
-	createDescriptorSets(tr);
+	//createDescriptorSets(tr);
 	createRenderPassAndFramebuffer(tr, shaderState, str.renderPass, str.framebuffer, str.framebuffer2);
 
 	// create shader stage
@@ -105,6 +115,7 @@ void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// empty for now...
 
 	// pipeline layout
+	//resources.createPipelineLayout(&str.pipelineLayout);
 	const std::vector<VkDescriptorSetLayout> setLayouts = {
 			descriptorSetLayout, descriptorSetLayoutForEachMesh
 	};

@@ -5,6 +5,7 @@ using namespace std;
 void VulkanResources::init(ShadedPathEngine* engine) {
 	Log("VulkanResources c'tor\n");
 	this->engine = engine;
+    bufferInfos.reserve(10); // avoid resize as we store pointers to elements of this vector
 }
 
 VkShaderModule VulkanResources::createShaderModule(string filename)
@@ -171,6 +172,7 @@ void VulkanResources::addThreadResourcesForElement(VulkanResourceElement el, Vul
     if (hdv.descriptorSet == nullptr) Error("Shader did not initialize needed Thread Resources: descriptorSet is missing");
 
     if (el.type == VulkanResourceType::MVPBuffer) {
+        assert(bufferInfos.capacity() >= bufferInfos.size() + 2); // make sure we have enough room
         if (hdv.mvpBuffer == nullptr) Error("Shader did not initialize needed Thread Resources: mvpBuffer is missing");
         if (hdv.mvpSize == 0L) Error("Shader did not initialize needed Thread Resources: mvpSize is missing");
         VkDescriptorBufferInfo bufferInfo{};
@@ -196,7 +198,27 @@ void VulkanResources::addThreadResourcesForElement(VulkanResourceElement el, Vul
             descriptorSets.push_back(descSet);
         }
     }
-    else if (el.type == VulkanResourceType::SingleTexture) {
+    else if (el.type == VulkanResourceType::UniformBufferDynamic) {
+        assert(bufferInfos.capacity() >= bufferInfos.size() + 1); // make sure we have enough room
+        if (hdv.dynBuffer == nullptr) Error("Shader did not initialize needed Thread Resources: dynBuffer is missing");
+        if (hdv.dynBufferSize == 0L) Error("Shader did not initialize needed Thread Resources: dynBufferSize is missing");
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = hdv.dynBuffer;
+        bufferInfo.offset = 0;
+        bufferInfo.range = hdv.dynBufferSize;
+        bufferInfos.push_back(bufferInfo);
+
+        descSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descSet.dstSet = *hdv.descriptorSet;
+        descSet.dstBinding = 1;
+        descSet.dstArrayElement = 0;
+        descSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
+        descSet.descriptorCount = 1;
+        descSet.pBufferInfo = &bufferInfos[bufferInfos.size() - 1];
+        descriptorSets.push_back(descSet);
+
+    } else if (el.type == VulkanResourceType::SingleTexture) {
+        if (hdv.imageView == nullptr) return;
         if (hdv.imageView == nullptr) Error("Shader did not initialize needed Thread Resources: imageView is missing");
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

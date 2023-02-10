@@ -140,7 +140,7 @@ void CubeShader::createCommandBuffer(ThreadResources& tr)
 	handover.descriptorSet2 = &str.descriptorSet2;
 	resources.createThreadResources(handover);
 	engine->util.debugNameObjectDescriptorSet(str.descriptorSet, "Cube Descriptor Set 1");
-	engine->util.debugNameObjectDescriptorSet(str.descriptorSet2, "Cube Descriptor Set 2");
+	if (engine->isStereo())	engine->util.debugNameObjectDescriptorSet(str.descriptorSet2, "Cube Descriptor Set 2");
 
 	resources.updateDescriptorSets(tr);
 	//createDescriptorSets(tr);
