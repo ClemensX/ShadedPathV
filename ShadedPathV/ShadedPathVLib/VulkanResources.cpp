@@ -216,7 +216,10 @@ void VulkanResources::addThreadResourcesForElement(VulkanResourceElement el, Vul
         descSet.descriptorCount = 1;
         descSet.pBufferInfo = &bufferInfos[bufferInfos.size() - 1];
         descriptorSets.push_back(descSet);
-
+        if (engine->isStereo()) {
+            descSet.dstSet = *hdv.descriptorSet2;
+            descriptorSets.push_back(descSet);
+        }
     } else if (el.type == VulkanResourceType::SingleTexture) {
         if (hdv.imageView == nullptr) return;
         if (hdv.imageView == nullptr) Error("Shader did not initialize needed Thread Resources: imageView is missing");
