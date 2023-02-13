@@ -86,7 +86,7 @@ public:
 	// set after init and possibly before each frame
 	void updateDescriptorSets(ThreadResources& tr);
 	// create pipeline layout and store in parameter.
-	void createPipelineLayout(VkPipelineLayout* pipelineLayout);
+	void createPipelineLayout(VkPipelineLayout* pipelineLayout, VkDescriptorSetLayout additionalLayout = nullptr, size_t additionalLayoutPos = 0);
 
 private:
 	ShadedPathEngine* engine = nullptr;

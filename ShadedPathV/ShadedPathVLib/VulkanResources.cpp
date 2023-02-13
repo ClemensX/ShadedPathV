@@ -348,9 +348,13 @@ void VulkanResources::updateDescriptorSets(ThreadResources& tr)
 
 // create pipeline layout and store in parameter.
 // auto add set layout for global texture array if needed
-void VulkanResources::createPipelineLayout(VkPipelineLayout* pipelineLayout) {
+void VulkanResources::createPipelineLayout(VkPipelineLayout* pipelineLayout, VkDescriptorSetLayout additionalLayout, size_t additionalLayoutPos) {
     vector<VkDescriptorSetLayout> sets;
     sets.push_back(layout);
+    if (additionalLayout != nullptr) {
+        assert(additionalLayoutPos = 1);
+        sets.push_back(additionalLayout);
+    } 
     if (engine->textureStore.layout) {
         sets.push_back(engine->textureStore.layout);
     }

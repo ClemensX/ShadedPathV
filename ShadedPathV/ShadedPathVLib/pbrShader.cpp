@@ -115,20 +115,20 @@ void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// empty for now...
 
 	// pipeline layout
-	//resources.createPipelineLayout(&str.pipelineLayout);
-	const std::vector<VkDescriptorSetLayout> setLayouts = {
-			descriptorSetLayout, descriptorSetLayoutForEachMesh
-	};
-	VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-	pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutInfo.setLayoutCount = 2;
-	pipelineLayoutInfo.pSetLayouts = setLayouts.data();
-	pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-	pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+	resources.createPipelineLayout(&str.pipelineLayout, descriptorSetLayoutForEachMesh, 1);
+	//const std::vector<VkDescriptorSetLayout> setLayouts = {
+	//		descriptorSetLayout, descriptorSetLayoutForEachMesh
+	//};
+	//VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+	//pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	//pipelineLayoutInfo.setLayoutCount = 2;
+	//pipelineLayoutInfo.pSetLayouts = setLayouts.data();
+	//pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
+	//pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
 
-	if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &str.pipelineLayout) != VK_SUCCESS) {
-		Error("failed to create pipeline layout!");
-	}
+	//if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &str.pipelineLayout) != VK_SUCCESS) {
+	//	Error("failed to create pipeline layout!");
+	//}
 
 	//createPipelineLayout(&str.pipelineLayout);
 
@@ -316,6 +316,7 @@ void PBRShader::createPerMeshDescriptors(MeshInfo* mesh)
 
 void PBRShader::createCommandBuffer(ThreadResources& tr)
 {
+	resources.updateDescriptorSets(tr);
 	auto& str = tr.pbrResources; // shortcut to pbr resources
 	auto& device = engine->global.device;
 	auto& global = engine->global;
@@ -382,6 +383,7 @@ void PBRShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResource
 	vkCmdBindIndexBuffer(commandBuffer, obj->mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 	// mesh texture descriptor set is 2nd in pipeline layout
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 1, 1, &obj->mesh->descriptorSet, 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 2, 1, &engine->textureStore.descriptorSet, 0, nullptr);
 
 	// bind descriptor sets:
 	// One dynamic offset per dynamic descriptor to offset into the ubo containing all model matrices
