@@ -10,14 +10,20 @@ layout(binding = 0) uniform UniformBufferObject {
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inTexCoord0;
 
+struct PBRTextureIndexes {
+  uint baseColor;
+};
+
 layout (binding = 1) uniform UboInstance {
 	mat4 model; 
+    PBRTextureIndexes indexes;
 } uboInstance;
  
 
 
 layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 fragTexCoord;
+layout(location = 2) out PBRTextureIndexes textureIndexes;
 
 void main() {
     //debugPrintfEXT("PBR:[0,0] [3,0] %f %f %f\n", uboInstance.model[0][0], uboInstance.model[3][0], uboInstance.model[0][2]);
@@ -25,6 +31,7 @@ void main() {
     //debugPrintfEXT("                        : %f %f %f\n", uboInstance.model[3][0], uboInstance.model[3][1], uboInstance.model[3][2]);
     //debugPrintfEXT("PBR input vertex world coord: %f %f %f\n", inPosition.x, inPosition.y, inPosition.z);
     gl_Position = ubo.proj * ubo.view * uboInstance.model * vec4(inPosition, 1.0);
+    textureIndexes = uboInstance.indexes;
     //debugPrintfEXT("ubo.model 0 0 is %f\n", ubo.model[0][0]);
     //debugPrintfEXT("ubo.view 0 0 is %f\n", ubo.view[0][0]);
     //debugPrintfEXT("ubo.proj 0 0 is %f\n", ubo.proj[0][0]);

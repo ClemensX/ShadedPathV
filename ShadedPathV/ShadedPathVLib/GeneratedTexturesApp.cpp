@@ -18,7 +18,7 @@ void GeneratedTexturesApp::run()
         engine.enableMouseMoveEvents();
         //engine.enableMeshShader();
         //engine.enableVR();
-        //engine.enableStereo();
+        engine.enableStereo();
         engine.enableStereoPresentation();
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
@@ -200,7 +200,7 @@ void GeneratedTexturesApp::init() {
     engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
     //engine.global.createCubeMapFrom2dTexture("Knife1", "2dTextureCube");
     //engine.global.createCubeMapFrom2dTexture("WaterBottle2", "2dTextureCube");
-    //engine.global.createCubeMapFrom2dTexture(engine.textureStore.BRDFLUT_TEXTURE_ID, "2dTextureCube");
+    //engine.global.createCubeMapFrom2dTexture(engine.textureStore.BRDFLUT_TEXTURE_ID, "2dTextureCube"); // doesn't work (missing mipmaps? format?)
     engine.shaders.cubeShader.setFarPlane(1.0f); // cube around center
     engine.shaders.cubeShader.setSkybox("2dTextureCube");
 

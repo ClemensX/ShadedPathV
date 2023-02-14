@@ -101,6 +101,9 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         layoutBinding.descriptorCount = 1;
         layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        if (addGeomShaderStageToMVP) {
+            layoutBinding.stageFlags |= VK_SHADER_STAGE_GEOMETRY_BIT;
+        }
         layoutBinding.pImmutableSamplers = nullptr;
         bindings.push_back(layoutBinding);
         poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -289,7 +292,8 @@ void VulkanResources::createDescriptorSetResourcesForTextures()
 }
 
 void VulkanResources::updateDescriptorSetForTextures() {
-    if (globalTextureDescriptorSetValid) return;
+    if (globalTextureDescriptorSetValid) return; // TODO: fix calling structure, maybe directly from engine, not from shaders
+    if (engine->textureStore.descriptorSet != nullptr) return;
 
     // create DescriptorSet
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -297,7 +301,8 @@ void VulkanResources::updateDescriptorSetForTextures() {
     allocInfo.descriptorPool = engine->textureStore.pool;
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &engine->textureStore.layout;
-    if (vkAllocateDescriptorSets(engine->global.device, &allocInfo, &engine->textureStore.descriptorSet) != VK_SUCCESS) {
+    VkResult res = vkAllocateDescriptorSets(engine->global.device, &allocInfo, &engine->textureStore.descriptorSet);
+    if (res != VK_SUCCESS) {
         Error("failed to allocate descriptor sets!");
     }
 

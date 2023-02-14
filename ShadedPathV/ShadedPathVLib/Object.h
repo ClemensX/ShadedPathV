@@ -25,7 +25,7 @@ struct MeshInfo
 	VkDeviceMemory vertexBufferMemory = nullptr;
 	VkBuffer indexBuffer = nullptr;
 	VkDeviceMemory indexBufferMemory = nullptr;
-	VkDescriptorSet descriptorSet = nullptr;
+	//VkDescriptorSet descriptorSet = nullptr;
 
 	// gltf link, only valid during gltf parsing!
 	void* gltfMesh = nullptr;

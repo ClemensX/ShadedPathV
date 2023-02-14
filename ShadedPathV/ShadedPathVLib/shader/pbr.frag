@@ -5,15 +5,17 @@
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 fragTexCoord;
 
+struct PBRTextureIndexes {
+  uint baseColor;
+};
+layout(location = 2) flat in PBRTextureIndexes textureIndexes;
+
+
 layout(location = 0) out vec4 outColor;
 
-layout(set = 1, binding = 0) uniform sampler2D baseTex;
-
-layout(set = 2, binding = 0) uniform sampler2D global_textures[];
+layout(set = 1, binding = 0) uniform sampler2D global_textures[];
 
 void main() {
-    vec4 outColor2 = texture(baseTex, fragTexCoord);
-    outColor = outColor2;
-    uint baseIndex = 0;
+    uint baseIndex = textureIndexes.baseColor;
     outColor = texture(global_textures[nonuniformEXT(baseIndex)], fragTexCoord);
 }

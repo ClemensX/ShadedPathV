@@ -209,20 +209,24 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
         if (moveObjects) {
             if (wo->objectNum == 0) {
                 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f + (plus / 10.0f), 0.0f, 0.0f));
-            }
-            else {
+            } else {
                 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f + (plus / 100.0f), 0.0f, 0.0f));
             }
         } else {
             if (wo->objectNum == 0) {
                 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.1f, 0.0f, 0.0f));
+                // test overwriting default textures used:
+                //buf->indexes.baseColor = 0; // set basecolor to brdflut texture
             }
             else {
                 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.2f, 0.0f, 0.0f));
             }
         }
         buf->model = modeltransform;
-        void* data = buf;
+        // we could overwrite texture inxdexes here but they should be pre-set to their regular textures already
+        //buf->indexes.baseColor = 2;
+        // 
+        //void* data = buf;
         //Log("APP per frame dynamic buffer to address: " << hex << data << endl);
         if (engine.isGlobalUpdateThread(tr)) {
             engine.sound.Update(camera);

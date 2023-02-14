@@ -12,7 +12,6 @@ public:
 	std::vector<VulkanResourceElement> vulkanResourceDefinition = {
 		{ VulkanResourceType::MVPBuffer },
 		{ VulkanResourceType::UniformBufferDynamic },
-		{ VulkanResourceType::SingleTexture },
 		{ VulkanResourceType::GlobalTextureSet },
 		{ VulkanResourceType::VertexBufferStatic }
 	};
@@ -30,8 +29,13 @@ public:
 		glm::mat4 view;
 		glm::mat4 proj;
 	};
+	// MUST match shader definition: pbr.vert, pbr.frag
+	struct PBRTextureIndexes {
+		unsigned int baseColor; // uint in shader
+	};
 	struct DynamicUniformBufferObject {
 		glm::mat4 model;
+		PBRTextureIndexes indexes;
 	};
 	// Array entries of DynamicUniformBufferObject have to respect hardware alignment rules
 	uint64_t alignedDynamicUniformBufferSize = 0;
@@ -73,10 +77,6 @@ public:
 	virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
 	virtual void destroyThreadResources(ThreadResources& tr) override;
 
-	// create all dscriptors we need separate for each mesh (for all the textures)
-	void createPerMeshDescriptors(MeshInfo* mesh);
-	VkDescriptorSetLayout descriptorSetLayoutForEachMesh = nullptr;
-
 	// get access to dynamic uniform buffer for an object
 	DynamicUniformBufferObject* getAccessToModel(ThreadResources& tr, UINT num);
 	
@@ -88,6 +88,10 @@ public:
 private:
 
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, WorldObject* obj, bool isRightEye = false);
+
+	// preset PBR texture indexes in the dynamic Uniform Buffer.
+	// Application code can overwrite the setting in drawFrame()
+	void prefillTextureIndexes(ThreadResources& tr);
 
 	UniformBufferObject ubo, updatedUBO;
 	bool disabled = false;

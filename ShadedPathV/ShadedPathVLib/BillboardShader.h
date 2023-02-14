@@ -27,6 +27,13 @@ public:
 	// max # billboards
 	// we limit this to allow for pre-allocated vertex buffer in thread ressources
 	static const size_t MAX_BILLBOARDS = 100000;
+
+	std::vector<VulkanResourceElement> vulkanResourceDefinition = {
+		{ VulkanResourceType::MVPBuffer },
+		{ VulkanResourceType::GlobalTextureSet },
+		{ VulkanResourceType::VertexBufferStatic }
+	};
+
 	// define billboard size and pos, --> to GPU as single UBO with all Billboards mem mapped
 	typedef BillboardDef Vertex;
 

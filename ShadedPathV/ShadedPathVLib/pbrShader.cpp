@@ -13,29 +13,7 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 
 	// descriptor
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);
-	createDescriptorSetLayout();
-
-	// descriptor pool
-	// 4 buffers: V,P matrices, line data and dynamic uniform buffer for model matrix, texture
-	// line data is global buffer
-	//vector<VkDescriptorPoolSize> poolSizes;
-	//poolSizes.resize(3);
-	//poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	//poolSizes[0].descriptorCount = 1;
-	//poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-	//poolSizes[1].descriptorCount = 1;
-	////poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	//poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	//poolSizes[2].descriptorCount = 1;
-	////poolSizes[3].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	////poolSizes[3].descriptorCount = 1;
-
-	//vector<VkDescriptorPoolSize> poolSizesIndep;
-	//poolSizesIndep.resize(1);
-	//poolSizesIndep[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	//poolSizesIndep[0].descriptorCount = static_cast<uint32_t>(MaxObjects);
-
-	//createDescriptorPool(poolSizes, poolSizesIndep, static_cast<uint32_t>(5 + MaxObjects));
+	alignedDynamicUniformBufferSize = global->calcConstantBufferSize(sizeof(DynamicUniformBufferObject));
 }
 
 void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
@@ -115,22 +93,8 @@ void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// empty for now...
 
 	// pipeline layout
-	resources.createPipelineLayout(&str.pipelineLayout, descriptorSetLayoutForEachMesh, 1);
-	//const std::vector<VkDescriptorSetLayout> setLayouts = {
-	//		descriptorSetLayout, descriptorSetLayoutForEachMesh
-	//};
-	//VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-	//pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	//pipelineLayoutInfo.setLayoutCount = 2;
-	//pipelineLayoutInfo.pSetLayouts = setLayouts.data();
-	//pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-	//pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
-
-	//if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &str.pipelineLayout) != VK_SUCCESS) {
-	//	Error("failed to create pipeline layout!");
-	//}
-
-	//createPipelineLayout(&str.pipelineLayout);
+	resources.createPipelineLayout(&str.pipelineLayout);
+	//resources.createPipelineLayout(&str.pipelineLayout, descriptorSetLayoutForEachMesh, 1);
 
 	// depth stencil
 	auto depthStencil = createStandardDepthStencil();
@@ -173,150 +137,32 @@ void PBRShader::initialUpload()
 
 void PBRShader::createDescriptorSetLayout()
 {
-	alignedDynamicUniformBufferSize = global->calcConstantBufferSize(sizeof(DynamicUniformBufferObject));
-	//VkDescriptorSetLayoutBinding uboLayoutBinding{};
-	//uboLayoutBinding.binding = 0;
-	//uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	//uboLayoutBinding.descriptorCount = 1;
-	//uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	//uboLayoutBinding.pImmutableSamplers = nullptr; // Optional
-
-	//VkDescriptorSetLayoutBinding uboDynamicLayoutBinding{};
-	//uboDynamicLayoutBinding.binding = 1;
-	//uboDynamicLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-	//uboDynamicLayoutBinding.descriptorCount = 1;
-	//uboDynamicLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	//uboDynamicLayoutBinding.pImmutableSamplers = nullptr; // Optional
-
-	//VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-	//samplerLayoutBinding.binding = 2;
-	//samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	//samplerLayoutBinding.descriptorCount = 1;
-	//samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	//samplerLayoutBinding.pImmutableSamplers = nullptr; // Optional
-
-	//std::array<VkDescriptorSetLayoutBinding, 3> bindings = { uboLayoutBinding, uboDynamicLayoutBinding, samplerLayoutBinding };
-
-	//VkDescriptorSetLayoutCreateInfo layoutInfo{};
-	//layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	//layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-	//layoutInfo.pBindings = bindings.data();
-
-	//if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS) {
-	//	Error("failed to create descriptor set layout!");
-	//}
-	//engine->util.debugNameObjectDescriptorSetLayout(descriptorSetLayout, "PBR Descriptor Set Layout");
-
-	// create descriptorset layout used for each mesh individually:
-	VkDescriptorSetLayoutCreateInfo layoutInfo{};
-	VkDescriptorSetLayoutBinding samplerLayoutBinding0{};
-	samplerLayoutBinding0.binding = 0;
-	samplerLayoutBinding0.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	samplerLayoutBinding0.descriptorCount = 1;
-	samplerLayoutBinding0.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	samplerLayoutBinding0.pImmutableSamplers = nullptr; // Optional
-
-	std::array<VkDescriptorSetLayoutBinding, 1> bindingsMesh = { samplerLayoutBinding0 };
-
-	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutInfo.bindingCount = static_cast<uint32_t>(bindingsMesh.size());
-	layoutInfo.pBindings = bindingsMesh.data();
-
-	if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &descriptorSetLayoutForEachMesh) != VK_SUCCESS) {
-		Error("failed to create descriptor set layout!");
-	}
-	engine->util.debugNameObjectDescriptorSetLayout(descriptorSetLayoutForEachMesh, "PBR MESH Descriptor Set Layout");
+	Error("remove this method from base class!");
 }
 
 void PBRShader::createDescriptorSets(ThreadResources& tr)
 {
-	auto& str = tr.pbrResources; // shortcut to pbr resources
-	VkDescriptorSetAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = descriptorPool;
-	allocInfo.descriptorSetCount = 1;
-	allocInfo.pSetLayouts = &descriptorSetLayout;
-	if (vkAllocateDescriptorSets(device, &allocInfo, &str.descriptorSet) != VK_SUCCESS) {
-		Error("failed to allocate descriptor sets!");
-	}
-	engine->util.debugNameObjectDescriptorSet(str.descriptorSet, "PBR Descriptor Set 1");
-
-	array<VkWriteDescriptorSet, 2> descriptorWrites{};
-	// populate descriptor set:
-	VkDescriptorBufferInfo bufferInfo0{};
-	bufferInfo0.buffer = str.uniformBuffer;
-	bufferInfo0.offset = 0;
-	bufferInfo0.range = sizeof(UniformBufferObject);
-
-	descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorWrites[0].dstSet = str.descriptorSet;
-	descriptorWrites[0].dstBinding = 0;
-	descriptorWrites[0].dstArrayElement = 0;
-	descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorWrites[0].descriptorCount = 1;
-	descriptorWrites[0].pBufferInfo = &bufferInfo0;
-
-	VkDescriptorBufferInfo bufferInfo1{};
-	bufferInfo1.buffer = str.dynamicUniformBuffer;
-	bufferInfo1.offset = 0;
-	bufferInfo1.range = sizeof(DynamicUniformBufferObject);
-
-	descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorWrites[1].dstSet = str.descriptorSet;
-	descriptorWrites[1].dstBinding = 1;
-	descriptorWrites[1].dstArrayElement = 0;
-	descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-	descriptorWrites[1].descriptorCount = 1;
-	descriptorWrites[1].pBufferInfo = &bufferInfo1;
-
-	vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-	if (engine->isStereo()) {
-		if (vkAllocateDescriptorSets(device, &allocInfo, &str.descriptorSet2) != VK_SUCCESS) {
-			Error("failed to allocate descriptor sets!");
-		}
-		engine->util.debugNameObjectDescriptorSet(str.descriptorSet, "PBR Descriptor Set 2");
-		bufferInfo0.buffer = str.uniformBuffer2;
-		bufferInfo1.buffer = str.dynamicUniformBuffer; // same as for left eye
-		descriptorWrites[0].dstSet = str.descriptorSet2;
-		descriptorWrites[1].dstSet = str.descriptorSet2;
-		vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-	}
-
+	Error("remove this method from base class!");
 }
 
-void PBRShader::createPerMeshDescriptors(MeshInfo* mesh)
+void PBRShader::prefillTextureIndexes(ThreadResources& tr)
 {
-	VkDescriptorSetAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = descriptorPool;
-	allocInfo.descriptorSetCount = 1;
-	allocInfo.pSetLayouts = &descriptorSetLayoutForEachMesh;
-	VkResult res = vkAllocateDescriptorSets(device, &allocInfo, &mesh->descriptorSet);
-	if ( res != VK_SUCCESS) {
-		Error("failed to allocate descriptor sets!");
-	}
-	engine->util.debugNameObjectDescriptorSet(mesh->descriptorSet, "Mesh Texture Descriptor Set");
-	// Descriptor
-	array<VkWriteDescriptorSet, 1> descriptorWrites{};
-	// populate descriptor set:
-	VkDescriptorImageInfo imageInfo0{};
-	imageInfo0.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo0.imageView = mesh->textureInfos[0]->imageView;
-	imageInfo0.sampler = global->textureSampler;
+	auto& str = tr.pbrResources; // shortcut to pbr resources
 
-	descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	descriptorWrites[0].dstSet = mesh->descriptorSet;
-	descriptorWrites[0].dstBinding = 0;
-	descriptorWrites[0].dstArrayElement = 0;
-	descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptorWrites[0].descriptorCount = 1;
-	descriptorWrites[0].pImageInfo = &imageInfo0;
-	vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
+	auto& objs = engine->objectStore.getSortedList();
+	for (auto obj : objs) {
+		//Log(" WorldObject texture count: " << obj->mesh->textureInfos.size() << endl);
+		uint32_t idx = obj->mesh->baseColorTexture->index;
+		PBRShader::DynamicUniformBufferObject* buf = engine->shaders.pbrShader.getAccessToModel(tr, obj->objectNum);
+		buf->indexes.baseColor = idx;
+	}
+
 }
 
 void PBRShader::createCommandBuffer(ThreadResources& tr)
 {
 	resources.updateDescriptorSets(tr);
+	prefillTextureIndexes(tr);
 	auto& str = tr.pbrResources; // shortcut to pbr resources
 	auto& device = engine->global.device;
 	auto& global = engine->global;
@@ -381,9 +227,8 @@ void PBRShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResource
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 	vkCmdBindIndexBuffer(commandBuffer, obj->mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-	// mesh texture descriptor set is 2nd in pipeline layout
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 1, 1, &obj->mesh->descriptorSet, 0, nullptr);
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 2, 1, &engine->textureStore.descriptorSet, 0, nullptr);
+	// bind global texture array:
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
 
 	// bind descriptor sets:
 	// One dynamic offset per dynamic descriptor to offset into the ubo containing all model matrices
@@ -427,7 +272,6 @@ PBRShader::~PBRShader()
 	}
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);
 	vkDestroyShaderModule(device, vertShaderModule, nullptr);
-	vkDestroyDescriptorSetLayout(device, descriptorSetLayoutForEachMesh, nullptr);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 }

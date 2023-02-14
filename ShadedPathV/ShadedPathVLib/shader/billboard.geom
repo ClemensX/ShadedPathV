@@ -4,6 +4,7 @@
 
 layout (points) in;
 layout( triangle_strip, max_vertices = 4 ) out;
+layout(location = 1) out vec2 fragTexCoord;
 
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
@@ -63,12 +64,16 @@ void main()
         v2 = vec4(verts[2], 0) + inP;
         v3 = vec4(verts[3], 0) + inP;
         gl_Position = ubo.proj * v0;
+        fragTexCoord = vec2(0, 0);
         EmitVertex();
         gl_Position = ubo.proj * v1;
+        fragTexCoord = vec2(0, 1);
         EmitVertex();
         gl_Position = ubo.proj * v2;
+        fragTexCoord = vec2(1, 0);
         EmitVertex();
         gl_Position = ubo.proj * v3;
+        fragTexCoord = vec2(1, 1);
         EmitVertex();
         EndPrimitive();
     } else if (inType == 1) {
@@ -92,13 +97,17 @@ void main()
         v2 = ubo.proj * ubo.view * ubo.model * v2;
         v3 = ubo.proj * ubo.view * ubo.model * v3;
         gl_Position = v0;
+        fragTexCoord = vec2(0, 0);
         EmitVertex();
         gl_Position = v1;
         //debugPrintfEXT("bb geom.v1 final x y z is %f %f %f\n", v1.x, v1.y, v1.z);
+        fragTexCoord = vec2(0, 1);
         EmitVertex();
         gl_Position = v2;
+        fragTexCoord = vec2(1, 0);
         EmitVertex();
         gl_Position = v3;
+        fragTexCoord = vec2(1, 1);
         EmitVertex();
         EndPrimitive();
     }

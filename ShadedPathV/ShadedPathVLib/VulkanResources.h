@@ -5,7 +5,7 @@ class ShadedPathEngine;
 
 enum class VulkanResourceType {
 	// first VkDescriptorSetLayout:
-	MVPBuffer, // base matrices, renewed every frame (will be stored ina desciptor set)
+	MVPBuffer, // base matrices, renewed every frame (will be stored in desciptor set)
 	UniformBufferDynamic, // dynamic buffer that can be indexed in shader code or during cmd binding
 	SingleTexture, // single read-only texture (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER), stored in descriptor set
 	// vertex and index buffers
@@ -88,6 +88,11 @@ public:
 	// create pipeline layout and store in parameter.
 	void createPipelineLayout(VkPipelineLayout* pipelineLayout, VkDescriptorSetLayout additionalLayout = nullptr, size_t additionalLayoutPos = 0);
 
+	// signal use of geom shader for MVP buffer
+	void addGeometryShaderStageToMVPBuffer() {
+		this->addGeomShaderStageToMVP = true;
+	}
+
 private:
 	ShadedPathEngine* engine = nullptr;
 	std::vector<VulkanResourceElement>* resourceDefinition = nullptr;
@@ -112,4 +117,5 @@ private:
 	std::vector<VkDescriptorBufferInfo> bufferInfos;
 	std::vector<VkDescriptorImageInfo> imageInfos;
 	bool globalTextureDescriptorSetValid = false;
+	bool addGeomShaderStageToMVP = false;
 };
