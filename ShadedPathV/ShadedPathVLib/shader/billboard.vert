@@ -13,11 +13,13 @@ layout(location = 1) in vec4 inDirection;
 layout(location = 2) in float inWidth;
 layout(location = 3) in float inHeight;
 layout(location = 4) in uint inType; // billboard type: 0 is towards camera, 1 is absolute inDirection
+layout(location = 5) in uint inIndex; // global texture index
 
 layout(location = 1) out uint outType;
 layout(location = 2) out vec4 outQuat;
 layout(location = 3) out float outWidth;
 layout(location = 4) out float outHeight;
+layout(location = 5) out uint outIndex;
 
 void main()
 {
@@ -25,6 +27,7 @@ void main()
     outQuat = inDirection;
     outWidth = inWidth;
     outHeight = inHeight;
+    outIndex = inIndex;
     //gl_Position = ubo.proj * ubo.view * vec4(inPosition, 1.0);
     if (inType == 0) {
         gl_Position = ubo.view * vec4(inPosition.xyz, 1.0);

@@ -18,7 +18,7 @@ void GeneratedTexturesApp::run()
         engine.enableMouseMoveEvents();
         //engine.enableMeshShader();
         //engine.enableVR();
-        engine.enableStereo();
+        //engine.enableStereo();
         engine.enableStereoPresentation();
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
@@ -44,7 +44,7 @@ void GeneratedTexturesApp::run()
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
-            .addShader(shaders.cubeShader)
+            //.addShader(shaders.cubeShader)  // enable to render central cube with debug texture
             .addShader(shaders.billboardShader)
             .addShader(shaders.lineShader)  // enable to see zero cross and billboard debug lines
             .addShader(shaders.pbrShader)
@@ -133,6 +133,12 @@ void createDebugLines(vector<LineDef>& lines, vector<BillboardDef>& billboards) 
 }
 
 void GeneratedTexturesApp::init() {
+    // load skybox cube texture
+    //engine.textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
+    //engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
+    engine.textureStore.loadTexture("debug.ktx", "2dTexture");
+    engine.textureStore.loadTexture("eucalyptus.ktx2", "tree");
+    unsigned int texIndex = engine.textureStore.getTexture("tree")->index;
     // add some lines:
     float aspectRatio = engine.getAspect();
     float plus = 0.0f;
@@ -149,12 +155,14 @@ void GeneratedTexturesApp::init() {
           0.5f, // w
           0.6f, // h
           0,    // type
+          texIndex
         },
         { vec4(-0.2f, 0.2f, 0.0f, 1.0f), // pos
           vec4(0.3f, 0.1f, 0.0f, 0.0f), // dir
           0.3f, // w
           0.9f, // h
           1,    // type
+          texIndex
         }
     };
     vector<BillboardDef> billboards;
@@ -190,11 +198,6 @@ void GeneratedTexturesApp::init() {
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     // Grid with 1m squares, floor on -10m, ceiling on 372m
-
-    // load skybox cube texture
-    //engine.textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
-    //engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
-    engine.textureStore.loadTexture("debug.ktx", "2dTexture");
 
     // select texture by uncommenting:
     engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");

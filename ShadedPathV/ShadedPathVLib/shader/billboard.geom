@@ -5,6 +5,7 @@
 layout (points) in;
 layout( triangle_strip, max_vertices = 4 ) out;
 layout(location = 1) out vec2 fragTexCoord;
+layout(location = 2) out uint textureIndex;
 
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
@@ -16,6 +17,7 @@ layout(location = 1) in uint inTypes[]; // billboard type: 0 is towards camera, 
 layout(location = 2) in vec4 inQuats[]; // quaternion for rotating vertices if type == 1
 layout(location = 3) in float inWidth[];
 layout(location = 4) in float inHeight[];
+layout(location = 5) in uint inIndexes[]; // global texture array indexes
 
 
 void printMatrix(mat4 m) {
@@ -50,6 +52,7 @@ void main()
     vec3 verts[4];
     calcVertsOrigin(verts);
     uint inType = inTypes[0];
+    uint inIndex = inIndexes[0];
     vec4 quat = inQuats[0];
     vec4 inP = gl_in[0].gl_Position;
     //debugPrintfEXT("bb geom.input w h is %f %f\n", inWidth[0], inHeight[0]);
@@ -65,15 +68,19 @@ void main()
         v3 = vec4(verts[3], 0) + inP;
         gl_Position = ubo.proj * v0;
         fragTexCoord = vec2(0, 0);
+        textureIndex = inIndex;
         EmitVertex();
         gl_Position = ubo.proj * v1;
         fragTexCoord = vec2(0, 1);
+        textureIndex = inIndex;
         EmitVertex();
         gl_Position = ubo.proj * v2;
         fragTexCoord = vec2(1, 0);
+        textureIndex = inIndex;
         EmitVertex();
         gl_Position = ubo.proj * v3;
         fragTexCoord = vec2(1, 1);
+        textureIndex = inIndex;
         EmitVertex();
         EndPrimitive();
     } else if (inType == 1) {
@@ -98,16 +105,20 @@ void main()
         v3 = ubo.proj * ubo.view * ubo.model * v3;
         gl_Position = v0;
         fragTexCoord = vec2(0, 0);
+        textureIndex = inIndex;
         EmitVertex();
         gl_Position = v1;
         //debugPrintfEXT("bb geom.v1 final x y z is %f %f %f\n", v1.x, v1.y, v1.z);
         fragTexCoord = vec2(0, 1);
+        textureIndex = inIndex;
         EmitVertex();
         gl_Position = v2;
         fragTexCoord = vec2(1, 0);
+        textureIndex = inIndex;
         EmitVertex();
         gl_Position = v3;
         fragTexCoord = vec2(1, 1);
+        textureIndex = inIndex;
         EmitVertex();
         EndPrimitive();
     }

@@ -29,6 +29,12 @@ High res cube map in action:
 
 ## Current State (Q2 / 2022)
 
+### Texture preparation
+
+Textures not embedded in glTF have to be prepared for engine use. See batch file for details: [create_textures.sh](create_textures.sh).
+Command line is ```../libraries/ktx/bin/toktx --genmipmap --uastc 3 --zcmp 18 --verbose --t2 ../data/texture/eucalyptus.ktx2 ../datainput/texture/eucalyptus.png```
+PNG file must be properly exported: Remove ICC profile chunk during gimp export
+
 ### PBR Shader
 
 As a first step we can now parse glTF files and render objects with just the base texture. No Lighting.
@@ -275,3 +281,6 @@ All timings in [microseconds]
   * catch : Copyright (c) 2012 Two Blue Cubes Ltd. All rights reserved. Distributed under the Boost Software License, Version 1.0.
   * RapidJSON : Copyright (C) 2015 THL A29 Limited, a Tencent company, and Milo Yip. All rights reserved. http://rapidjson.org/
   * dlib(uridecode, uriencode) : Copyright (C) 2003 Davis E. King Boost Software License 1.0. http://dlib.net/dlib/server/server_http.cpp.html
+
+## Asset Licenses
+[licenses.txt](./licenses.txt)

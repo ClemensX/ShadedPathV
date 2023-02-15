@@ -11,7 +11,8 @@ struct BillboardDef {
 	float w;
 	float h;
 	int type;  // 0 == face camera, 1 == use provided direction vector
-	TextureID tex;
+	unsigned int textureIndex = 0; // index to global texture array
+	//TextureID tex;
 };
 
 // per frame resources for this effect
@@ -50,8 +51,8 @@ public:
 		return bindingDescription;
 	}
 	// get static std::array of attribute desciptions, make sure to copy to local array, otherwise you get dangling pointers!
-	static std::array<VkVertexInputAttributeDescription, 5> getAttributeDescriptions() {
-		std::array<VkVertexInputAttributeDescription, 5> attributeDescriptions{};
+	static std::array<VkVertexInputAttributeDescription, 6> getAttributeDescriptions() {
+		std::array<VkVertexInputAttributeDescription, 6> attributeDescriptions{};
 		// layout(location = 0) in vec3 inPosition;
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
@@ -77,6 +78,11 @@ public:
 		attributeDescriptions[4].location = 4;
 		attributeDescriptions[4].format = VK_FORMAT_R32_UINT;
 		attributeDescriptions[4].offset = offsetof(Vertex, type);
+		// layout(location = 5) in int textureIndex; // global texture array index
+		attributeDescriptions[5].binding = 0;
+		attributeDescriptions[5].location = 5;
+		attributeDescriptions[5].format = VK_FORMAT_R32_UINT;
+		attributeDescriptions[5].offset = offsetof(Vertex, textureIndex);
 		return attributeDescriptions;
 	}
 	virtual ~BillboardShader() override;
