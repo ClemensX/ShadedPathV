@@ -15,6 +15,11 @@ layout(set = 1, binding = 0) uniform sampler2D global_textures[];
 void main()
 {
     outColor = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord);
+    // discard transparent pixels (== do not write z-buffer)
+    if (outColor.w < 0.8) {
+        discard;
+    }
+
     //vec3 dir = vec3(1.0, 1.0, 1.0);
     //debugPrintfEXT("bb frag dir: %f %f %f\n", dir.x, dir.y, dir.z);
 //    //debugPrintfEXT("Cube col tex: %f %f %f\n", out_FragColor.x, out_FragColor.y, out_FragColor.z);

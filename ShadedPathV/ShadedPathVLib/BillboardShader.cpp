@@ -77,7 +77,7 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// multisampling
 	auto multisampling = createStandardMultisampling();
 
-	// color blending
+	// standard color blending (disabled), transparent pixels are discarded in fragment shader
 	VkPipelineColorBlendAttachmentState colorBlendAttachment;
 	auto colorBlending = createStandardColorBlending(colorBlendAttachment);
 
