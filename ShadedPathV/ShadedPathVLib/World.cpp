@@ -79,3 +79,14 @@ Grid* World::createWorldGrid(float lineGap, float verticalAdjust) {
 	createGridXZ(grid);
 	return &grid;
 }
+
+vec3 World::getRandomPos() {
+	return getRandomPos(0.0f);
+}
+
+vec3 World::getRandomPos(float minHeight) {
+	float x = MathHelper::RandF(-sizex / 2.0f, sizex / 2.0f);
+	float z = MathHelper::RandF(-sizez / 2.0f, sizez / 2.0f);
+	float y = MathHelper::RandF(minHeight, sizey);
+	return vec3(x, y, z);
+}

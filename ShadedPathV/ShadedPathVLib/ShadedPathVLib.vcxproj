@@ -109,6 +109,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="BillboardDemo.h" />
     <ClInclude Include="BillboardShader.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="ClearShader.h" />
@@ -156,6 +157,7 @@
     <ClInclude Include="World.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BillboardDemo.cpp" />
     <ClCompile Include="BillboardShader.cpp" />
     <ClCompile Include="ClearShader.cpp" />
     <ClCompile Include="CubeShader.cpp" />

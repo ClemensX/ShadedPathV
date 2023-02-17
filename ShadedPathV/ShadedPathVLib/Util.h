@@ -127,4 +127,16 @@ public:
     // This assumes that at rest, the object faces +Z.
     // Beware, the first parameter is a direction, not the target point !
     static glm::quat LookAt(glm::vec3 direction, glm::vec3 desiredUp);
+
+    // Returns random float in [0, 1).
+    static float RandF()
+    {
+        return (float)(rand()) / (float)RAND_MAX;
+    }
+
+    // Returns random float in [a, b).
+    static float RandF(float a, float b)
+    {
+        return a + RandF() * (b - a);
+    }
 };

@@ -9,7 +9,8 @@ int main()
     //LineApp app;
     //DeviceCoordApp app;
     //gltfObjectsApp app;
-    GeneratedTexturesApp app;
+    //GeneratedTexturesApp app;
+    BillboardDemo app;
     app.run();
 }
 

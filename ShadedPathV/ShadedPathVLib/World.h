@@ -23,6 +23,10 @@ public:
 	void createGridXZ(Grid& grid, bool linesmode = true);
 	Grid* createWorldGrid(float lineGap, float verticalAdjust = 0.0f);
 	void setWorldSize(float x, float y, float z) { sizex = x; sizey = y; sizez = z; };
+	// randomly generate one location within the defined world coords
+	glm::vec3 getRandomPos();
+	// randomly generate one location within the defined world coords with a given minimum height
+	glm::vec3 getRandomPos(float minHeight);
 private:
 	// world size in absolute units around origin, e.g. x is from -x to x
 	float sizex = 0.0f, sizey = 0.0f, sizez = 0.0f;

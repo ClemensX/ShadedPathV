@@ -25,9 +25,7 @@ public:
 // and one for dynamic billoards that change every frame
 class BillboardShader : public ShaderBase {
 public:
-	// max # billboards
-	// we limit this to allow for pre-allocated vertex buffer in thread ressources
-	static const size_t MAX_BILLBOARDS = 100000;
+	// max # billboards: we only allow adding billboards during init phase so we know the buffer size when reserving GPU memory
 
 	std::vector<VulkanResourceElement> vulkanResourceDefinition = {
 		{ VulkanResourceType::MVPBuffer },

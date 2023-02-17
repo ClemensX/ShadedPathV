@@ -280,6 +280,6 @@ inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* ori
 #include "LineApp.h"
 #include "gltfObjectsApp.h"
 #include "GeneratedTexturesApp.h"
-
+#include "BillboardDemo.h"
 
 #endif //PCH_H

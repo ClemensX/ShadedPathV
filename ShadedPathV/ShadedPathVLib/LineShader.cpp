@@ -228,7 +228,9 @@ void LineShader::createCommandBuffer(ThreadResources& tr)
 
 void LineShader::addCurrentCommandBuffer(ThreadResources& tr) {
 	tr.activeCommandBuffers.push_back(tr.lineResources.commandBuffer);
-	tr.activeCommandBuffers.push_back(tr.lineResources.commandBufferAdd);
+	if (true) {
+		tr.activeCommandBuffers.push_back(tr.lineResources.commandBufferAdd);
+	}
 };
 
 void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
