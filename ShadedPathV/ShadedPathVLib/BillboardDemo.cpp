@@ -27,7 +27,7 @@ void BillboardDemo::run()
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 960;//480;// 960;//1800;// 800;//3700; // 2500
+        int win_width = 2500;//480;// 960;//1800;// 800;//3700; // 2500
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Billboard Demo");
         camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 2000.0f));
 
@@ -79,9 +79,9 @@ void addRandomBillboards(vector<BillboardDef>& billboards, World &world, unsigne
     b.type = 0;
     b.textureIndex = textureIndex;
     //unsigned long total_billboards = 50000000; // close to 4GB on GPU
-    unsigned long total_billboards = 1000000;
+    //unsigned long total_billboards = 1000000;
     //unsigned long total_billboards = 500000;
-    //unsigned long total_billboards = 200000;
+    unsigned long total_billboards = 200000;
     //unsigned long total_billboards = 5000;
     //unsigned long total_billboards = 12;
     unsigned long billboards_per_texture = total_billboards / 12;

@@ -17,3 +17,5 @@ cube maps:
 http://www.hdrlabs.com/sibl/archive.html
 
 oak PNG Designed By tree from https://pngtree.com/freepng/eucalyptus-spring-outdoor-environmental-plants_6325440.html?sol=downref&id=bef
+
+"Simple grass chunks" (https://skfb.ly/6zz9G) by 3dhdscan is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
