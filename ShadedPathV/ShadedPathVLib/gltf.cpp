@@ -11,6 +11,7 @@ using namespace std;
 #include "tinygltf/tiny_gltf.h"
 
 using namespace tinygltf;
+size_t MeshIndex = 7; // other grass base tex: 1, single: 4, 5, 6, many plants: 7
 
 void glTF::init(ShadedPathEngine* e) {
 	engine = e;
@@ -93,10 +94,11 @@ void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, vector<PBRShader
 	uint32_t indexStart = static_cast<uint32_t>(indexBuffer.size());
 	uint32_t vertexStart = static_cast<uint32_t>(verts.size());
 
-	tinygltf::Material* mat = static_cast<tinygltf::Material*>(mesh->gltfMesh);
+	//tinygltf::Material* mat = static_cast<tinygltf::Material*>(mesh->gltfMesh); // rubbish
 		// parse vertices, indexes:
 	if (model.meshes.size() > 0) {
-		const tinygltf::Mesh gltfMesh = model.meshes[0];
+		const tinygltf::Mesh gltfMesh = model.meshes[MeshIndex];
+		//const tinygltf::Mesh gltfMesh = *(tinygltf::Mesh*)mesh->gltfMesh;
 		if (gltfMesh.primitives.size() > 0) {
 			const tinygltf::Primitive& primitive = gltfMesh.primitives[0];
 			bool hasIndices = primitive.indices > -1;
@@ -129,6 +131,9 @@ void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, vector<PBRShader
 				size_t pos = v * posByteStride;
 				PBRShader::Vertex vert;
 				vert.pos = glm::vec3(bufferPos[pos], bufferPos[pos + 1], bufferPos[pos + 2]);
+				vert.pos.x /= 100;
+				vert.pos.y /= 100;
+				vert.pos.z /= 100;
 				if (mesh->baseColorTexture) {
 					const float* coordDataPtr = mesh->baseColorTexture->gltfTexCoordData;
 					int stride = mesh->baseColorTexture->gltfUVByteStride;
@@ -219,8 +224,8 @@ void glTF::prepareTextures(tinygltf::Model& model, MeshInfo* mesh)
 	// make sure textures are already loded
 	assert(mesh->textureInfos.size() >= model.samplers.size());
 
-	auto& mat = model.materials[0]; // we only support one material per file
-	auto& primitive = model.meshes[0].primitives[0];
+	auto& primitive = model.meshes[MeshIndex].primitives[0];
+	auto& mat = model.materials[primitive.material];
 	// assign textures to engine data:
 	auto baseColorTextureIndex = mat.pbrMetallicRoughness.baseColorTexture.index;
 	auto metallicRoughnessTextureIndex = mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
@@ -284,10 +289,14 @@ void glTF::prepareTextures(tinygltf::Model& model, MeshInfo* mesh)
 
 void glTF::validateModel(tinygltf::Model& model, MeshInfo* mesh)
 {
-	assert(model.materials.size() == 1);
-	assert(model.meshes.size() == 1);
+	//assert(model.materials.size() == 1);
+	//assert(model.meshes.size() == 1);
 	// link back from our mesh to gltf mesh:
-	mesh->gltfMesh = &model.meshes[0];
+	//size_t index = 0;
+	if (model.meshes.size() <= MeshIndex) {
+		MeshIndex = 0; // safeguard
+	}
+	mesh->gltfMesh = &model.meshes[MeshIndex];
 }
 
 // public methods

@@ -43,11 +43,23 @@ As a first step we can now parse glTF files and render objects with just the bas
 ![pbr with only base texture](images/pbr02.png)
 
 ### Texture Loading from glTF Files
+
+gltf-transform needs this to run natively on Windows powershell:
+```
+* KTX-Software has to be in path
+* https://github.com/coreybutler/nvm-windows
+* nvm install latest
+* npm install --global --save @gltf-transform/core @gltf-transform/extensions @gltf-transform/functions
+* npm install --global @gltf-transform/cli
+* Test install via: gltf-transform uastc WaterBottle.glb bottle3.glb
+```
+
+
 Implemented texture workflow for reading glTF files:
 1. Downloaded texture in glTF format (e.g. from Sketchfab) usually have simple .pga or .jpg textures with no mipmaps.
 1. We decided to go for KTX 2 texture containers with supercompressed format VK_FORMAT_BC7_SRGB_BLOCK. It seems to be the only texture compression format that has wide adoption.
 1. This solves two issues: texture size on GPU is greatly reduced and we can include mipmaps offline when preparing the glTF files.
-1. We use gltf-tranform like this to prepare glTF files for engine use:
+1. We use gltf-transform like this to prepare glTF files for engine use:
 
    ```gltf-transform uastc WaterBottle.glb bottle2.glb --level 4 --zstd 18 --verbose```
    

@@ -127,7 +127,7 @@ TextureInfo* TextureStore::createTextureSlot(string textureName)
 TextureInfo* TextureStore::createTextureSlotForMesh(MeshInfo* mesh, int index)
 {
 	stringstream idss;
-	assert(index < 10);
+	assert(index < maxTextures);
 	idss << mesh->id << index;
 	// make sure we do not already have this texture stored:
 	string id = idss.str();

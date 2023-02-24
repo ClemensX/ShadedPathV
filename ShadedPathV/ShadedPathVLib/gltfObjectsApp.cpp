@@ -17,12 +17,12 @@ void gltfObjectsApp::run()
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
         //engine.enableVR();
-        engine.enableStereo();
+        //engine.enableStereo();
         engine.enableStereoPresentation();
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
-        engine.setMaxTextures(10);
+        engine.setMaxTextures(50);
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
@@ -85,7 +85,8 @@ void gltfObjectsApp::init() {
 
     // loading objects:
     //engine.meshStore.loadMesh("WaterBottle.glb", "WaterBottle");
-    engine.meshStore.loadMesh("bottle2.glb", "WaterBottle");
+    //engine.meshStore.loadMesh("bottle2.glb", "WaterBottle");
+    engine.meshStore.loadMesh("grass.glb", "WaterBottle");
     engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
     //auto o = engine.meshStore.getMesh("Knife");
     // add bottle and knife to the scene:

@@ -18,4 +18,8 @@ layout(set = 1, binding = 0) uniform sampler2D global_textures[];
 void main() {
     uint baseIndex = textureIndexes.baseColor;
     outColor = texture(global_textures[nonuniformEXT(baseIndex)], fragTexCoord);
+    // discard transparent pixels (== do not write z-buffer)
+    if (outColor.w < 0.8) {
+        discard;
+    }
 }
