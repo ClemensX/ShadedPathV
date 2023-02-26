@@ -61,8 +61,13 @@ Implemented texture workflow for reading glTF files:
 1. This solves two issues: texture size on GPU is greatly reduced and we can include mipmaps offline when preparing the glTF files.
 1. We use gltf-transform like this to prepare glTF files for engine use:
 
+   Examples:
    ```gltf-transform uastc WaterBottle.glb bottle2.glb --level 4 --zstd 18 --verbose```
-   
+   ```
+   gltf-transform metalrough .\simple_grass_chunks.glb grass_pbr.glb
+   gltf-transform uastc .\grass_pbr.glb grass.glb --level 2 --zstd 1 --verbose
+   ```
+
    * KTX + Basis UASTC texture compression
    * level 4 is highest quality  - maybe use lower for development
    * zstd 18 is default level for Zstandard supercompression

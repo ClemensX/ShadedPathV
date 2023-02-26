@@ -293,6 +293,16 @@ void glTF::validateModel(tinygltf::Model& model, MeshInfo* mesh)
 	//assert(model.meshes.size() == 1);
 	// link back from our mesh to gltf mesh:
 	//size_t index = 0;
+	// verify Metallic Roughness format 
+	for (auto& mat : model.materials) {
+		auto pbrbaseColorIndex = mat.pbrMetallicRoughness.baseColorTexture.index;
+		//Log("pbr base Color index: " << pbrbaseColorIndex << endl);
+		if (pbrbaseColorIndex < 0) {
+			stringstream s;
+			s << "gltf file seems to have wrong format: " << mesh->filename << ". try gltf-transform metalrough infile outfile" << endl;
+			Error(s.str());
+		}
+	}
 	if (model.meshes.size() <= MeshIndex) {
 		MeshIndex = 0; // safeguard
 	}
