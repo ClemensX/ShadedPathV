@@ -74,6 +74,10 @@ Implemented texture workflow for reading glTF files:
    * gltf-transform creates mipmaps by default. use --filter to change default filter **lanczos4**
 
 1. Decoding details are in **texture.cpp**. Workflow is like this (all methods from KTX library):
+
+   >**Warning**
+   >Do not forget to copy ktx.dll from ktx/bin to executable path. Especially after installing new ktx version!
+
    * the engine checks format support at startup like this: ```vkGetPhysicalDeviceFormatProperties(engine->global.physicalDevice, VK_FORMAT_BC7_SRGB_BLOCK, &fp);```
    * after loading binary texture data into CPU memory: **ktxTexture_CreateFromMemory()**
    * check that we have the right texture type: ```kTexture->classId == class_id::ktxTexture2_c``` If this fails we have read a KTX 1 type texture which we cannot handle.
@@ -280,12 +284,6 @@ Enable compression and create mipmaps:
 ## Internal
 
 Stuff probably only intersting for internal development: [planning.md](./planning.md)
-
-### Some arbitrary timings (we be moved elsewhere eventually)
-
-All timings in [microseconds]
-* [38000] Create/Copy small VertexBuffer (1 million times)
-* [50] all w/o actual memcpy()
 
 ## Copyrights of used Components
 

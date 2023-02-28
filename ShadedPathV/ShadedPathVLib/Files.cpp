@@ -42,7 +42,7 @@ void Files::findAssetFolder(string folderName)
 		if (filesystem::exists(to_check)) {
 			assetFolder = to_check;
 			Log("Found asset folder: " << assetFolder << endl);
-			//initPakFiles();
+			initPakFiles();
 			return;
 		}
 		// if parent is identical we are at root
