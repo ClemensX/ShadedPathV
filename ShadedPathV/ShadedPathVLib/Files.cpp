@@ -42,6 +42,7 @@ void Files::findAssetFolder(string folderName)
 		if (filesystem::exists(to_check)) {
 			assetFolder = to_check;
 			Log("Found asset folder: " << assetFolder << endl);
+			//initPakFiles();
 			return;
 		}
 		// if parent is identical we are at root
@@ -67,7 +68,6 @@ string Files::findFile(string filename, FileCategory cat, bool errorIfNotFound, 
 		asset_path = fxFolder / filename;
 		break;
 	case FileCategory::TEXTURE:
-	case FileCategory::TEXTUREPAK:
 		asset_path = assetFolder / TEXTURE_PATH / filename;
 		break;
 	case FileCategory::MESH:
@@ -75,6 +75,9 @@ string Files::findFile(string filename, FileCategory cat, bool errorIfNotFound, 
 		break;
 	case FileCategory::SOUND:
 		asset_path = assetFolder / SOUND_PATH / filename;
+		break;
+	case FileCategory::TEXTUREPAK:
+		asset_path = assetFolder / filename;
 		break;
 	}
 	if (generateFilenameMode) {
@@ -189,4 +192,60 @@ string Files::absoluteFilePath(string filename)
 {
 	string absfile(filesystem::absolute(filename).string());
 	return absfile;
+}
+
+void Files::initPakFiles()
+{
+	string binFile = findFile("data.pak", FileCategory::TEXTUREPAK, false);
+	if (binFile.size() == 0) {
+		Log("pak file texture01.pak not found!" << endl);
+		return;
+	}
+	ifstream bfile(binFile, ios::in | ios::binary);
+#if defined(_DEBUG)
+	Log("pak file opened: " << binFile.c_str() << "\n");
+#endif
+
+	// basic assumptions about data types:
+	assert(sizeof(long long) == 8);
+	assert(sizeof(int) == 4);
+
+	long long magic;
+	bfile.read((char*)&magic, 8);
+	magic = _byteswap_uint64(magic);
+	if (magic != 0x5350313250414B30L) {
+		// magic "SP12PAK0" not found
+		Log("pak file invalid: " << binFile.c_str() << endl);
+		return;
+	}
+	long long numEntries;
+	bfile.read((char*)&numEntries, 8);
+	if (numEntries > 30000) {
+		Log("pak file invalid: contained number of textures: " << numEntries << endl);
+		return;
+	}
+	int num = (int)numEntries;
+	for (int i = 0; i < num; i++) {
+		PakEntry pe;
+		long long ll;
+		bfile.read((char*)&ll, 8);
+		pe.offset = (long)ll;
+		bfile.read((char*)&ll, 8);
+		pe.len = (long)ll;
+		int name_len;
+		bfile.read((char*)&name_len, 4);
+
+		char* tex_name = new char[108 + 1];
+		bfile.read((char*)tex_name, 108);
+		tex_name[name_len] = '\0';
+		//Log("pak entry name: " << tex_name << "\n");
+		pe.name = std::string(tex_name);
+		pe.pakname = binFile;
+		pak_content[pe.name] = pe;
+		delete[] tex_name;
+	}
+	// check:
+	for (auto p : pak_content) {
+		Log(" pak file entry: " << p.second.name.c_str() << endl);
+	}
 }
