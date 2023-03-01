@@ -14,6 +14,19 @@ Some features:
 
 ## Current State (Q1 / 2023)
 
+## PAK Files
+
+PAK file support for storing textures and glTF files in one big binary file. 
+
+If ``data.pak`` is found is asset folder it is auto opened and parsed. All asset files found inside will be used instead of single files. Only files not found in the pak file will be tried in the other asset folders ``texture`` and ``mesh``.
+
+PAK file creation is done with a simple Java class [Pak.java](./tools/texture/src/de/fehrprice/texture/Pak.java). Currently, the list of files to add is hard-coded in the Java class.
+
+Rationale behind our pak file support is as follows:
+* We need a way to protect the IP of assets. If we would simply ship assets in their original form anyone could just copy them into their own projects without any effort. The binary format is *very* simple, but still there is some protection. We will add a disclaimer to binary releases that reverse engineering of pak files is forbidden.
+* There will be no pak file extractor tool. It is a one-way ticket - pak files should only be read by a running engine.
+* Maybe we will need some more protection later (like encrypting assets in pak files), but for now this will do.
+
 ## Billboards
 
 ![billboards](images/billboards01.png)
