@@ -18,7 +18,7 @@ Some features:
 
 PAK file support for storing textures and glTF files in one big binary file. 
 
-If ``data.pak`` is found is asset folder it is auto opened and parsed. All asset files found inside will be used instead of single files. Only files not found in the pak file will be tried in the other asset folders ``texture`` and ``mesh``.
+If ``data.pak`` is found in asset folder it is auto opened and parsed. All asset files found inside will be used instead of single files. Only files not found in the pak file will be tried in the other asset folders ``texture`` and ``mesh``.
 
 PAK file creation is done with a simple Java class [Pak.java](./tools/texture/src/de/fehrprice/texture/Pak.java). Currently, the list of files to add is hard-coded in the Java class.
 
