@@ -1,4 +1,4 @@
-# ShadedPathV
+# ![logo](images/shadedpath_logo_smallest.png) ShadedPathV 
 
 Game Engine in Development!
 
@@ -11,6 +11,18 @@ Some features:
 - Synchronization is done at presentation time, when the backbuffer image is copied to the app window
 - Support VR games via OpenXR
 - Sound support for ogg vorbis: Both background music and spatial sound attached to objects
+
+## Current State (Q1 / 2023)
+
+## Billboards
+
+![billboards](images/billboards01.png)
+
+Performance is ok on my GTX 2080ti with displaying 50 million billboards in 30 to 120 FPS. (4K backbuffer rendering and 1440 Display Window)
+
+50 Million Trees far away @120Hz              | 50 Million Trees closer @30Hz
+:-------------------------:|:-------------------------:
+![50 Million 1](images/m50_01.jpg)  |  ![50 Million 1](images/m50_02.jpg)
 
 ## Mesh Shader
 
@@ -27,7 +39,7 @@ The maps need to be prepared offline like so:
 High res cube map in action:
 ![high res cube map](images/pbr03.png)
 
-## Current State (Q2 / 2022)
+## State Q2 / 2022
 
 ### Texture preparation
 

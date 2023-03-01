@@ -74,7 +74,7 @@ void addRandomBillboards(vector<BillboardDef>& billboards, World &world, unsigne
     BillboardDef b;
     b.pos = vec4(0.0f, 4.05f, 0.0f, 0);
     b.dir = vec4(0.0f, 0.0f, 1.0f, 0.0f);
-    b.h = 10.0f;
+    b.w = b.h = 10.0f;
     b.w = b.h / aspectRatio;
     b.type = 0;
     b.textureIndex = textureIndex;
@@ -106,7 +106,10 @@ void BillboardDemo::init() {
     //engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
     engine.textureStore.loadTexture("debug.ktx", "2dTexture");
     engine.textureStore.loadTexture("eucalyptus.ktx2", "tree");
-    unsigned int texIndex = engine.textureStore.getTexture("tree")->index;
+    engine.textureStore.loadTexture("shadedpath_logo.ktx2", "logo");
+    unsigned int texIndexTree = engine.textureStore.getTexture("tree")->index;
+    unsigned int texIndexLogo = engine.textureStore.getTexture("logo")->index;
+    unsigned int texIndex = texIndexTree;
     // add some lines:
     float aspectRatio = engine.getAspect();
     float plus = 0.0f;
