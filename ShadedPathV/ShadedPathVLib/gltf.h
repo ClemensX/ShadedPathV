@@ -7,6 +7,7 @@ namespace tinygltf {
 	class Model;
 }
 struct MeshInfo;
+struct MeshCollection;
 
 class glTF {
 public:
@@ -16,22 +17,22 @@ public:
 	// only load vertex and index info from model. Useful for wireframe rendering
 	void loadVertices(const unsigned char* data, int size, MeshInfo* mesh, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indexBuffer, std::string filename);
 	// load model and prepare for PBR rendering
-	void load(const unsigned char* data, int size, MeshInfo *mesh, std::string filename);
+	void load(const unsigned char* data, int size, MeshCollection *mesh, std::string filename);
 	// used for hook into tinygltf image loading:
 	struct gltfUserData {
 		ShadedPathEngine* engine = nullptr;
-		MeshInfo* mesh = nullptr;
+		MeshCollection* collection = nullptr;
 	};
 private:
-	// load model from data pointer. Image data will also be parsed with results in mesh->textureInfos[]
-	void loadModel(tinygltf::Model& model, const unsigned char* data, int size, MeshInfo* mesh, std::string filename);
+	// load model from data pointer. Image data will also be parsed with results in MeshCollection->textureInfos[]
+	void loadModel(tinygltf::Model& model, const unsigned char* data, int size, MeshCollection* coll, std::string filename);
 	// copy model vertices and indices into vectors
 	// index buffer will be 32 bit wide in all cases (VK_INDEX_TYPE_UINT32)
 	void loadVertices(tinygltf::Model& model, MeshInfo* mesh, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indexBuffer);
 	// assign textures to their proper PBR members in mesh and read or create texture samplers
-	void prepareTextures(tinygltf::Model& model, MeshInfo* mesh);
+	void prepareTextures(tinygltf::Model& model, MeshCollection* mesh);
 	// validate that gltf is within our parsable features
-	void validateModel(tinygltf::Model& model, MeshInfo* mesh);
+	void validateModel(tinygltf::Model& model, MeshCollection* mesh);
 	ShadedPathEngine* engine = nullptr;
 
 	VkSamplerAddressMode getVkWrapMode(int32_t wrapMode)

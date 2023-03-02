@@ -25,16 +25,25 @@ MeshInfo* MeshStore::getMesh(string id)
 	}
 	return ret;
 }
-MeshInfo* MeshStore::loadMeshFile(string filename, string id, vector<byte>& fileBuffer)
+MeshCollection* MeshStore::loadMeshFile(string filename, string id, vector<byte>& fileBuffer)
 {
 	if (getMesh(id) != nullptr) {
 		Error("Cannot store 2 meshes with same ID in MeshStore.");
 	}
+	// create MeshCollection and one MexhInfo: we have at least one mesh per gltf file
 	MeshInfo initialObject;  // only used to initialize struct in texture store - do not access this after assignment to store
+	MeshCollection initialCollection;  // only used to initialize struct in texture store - do not access this after assignment to store
+	initialCollection.id = id;
+	meshCollections.push_back(initialCollection);
 
+	// add MeshInfo to global mes list
 	initialObject.id = id;
 	meshes[id] = initialObject;
 	MeshInfo* objInfo = &meshes[id];
+	// add MeshInfo to collection of current file
+	MeshCollection* collection = &meshCollections.back();
+	objInfo->collection = collection;
+	collection->meshInfos.push_back(objInfo);
 
 	// find texture file, look in pak file first:
 	PakEntry* pakFileEntry = nullptr;
@@ -51,13 +60,14 @@ MeshInfo* MeshStore::loadMeshFile(string filename, string id, vector<byte>& file
 	else {
 		engine->files.readFile(pakFileEntry, fileBuffer, FileCategory::MESH);
 	}
-	return objInfo;
+	return collection;
 }
 
 void MeshStore::loadMeshWireframe(string filename, string id, vector<LineDef> &lines)
 {
 	vector<byte> file_buffer;
-	auto obj = loadMeshFile(filename, id, file_buffer);
+	MeshCollection* coll = loadMeshFile(filename, id, file_buffer);
+	MeshInfo* obj = coll->meshInfos[0];
 	string fileAndPath = obj->filename;
 	vector<PBRShader::Vertex> vertices;
 	vector<uint32_t> indexBuffer;
@@ -87,10 +97,10 @@ void MeshStore::loadMeshWireframe(string filename, string id, vector<LineDef> &l
 void MeshStore::loadMesh(string filename, string id)
 {
 	vector<byte> file_buffer;
-	auto obj = loadMeshFile(filename, id, file_buffer);
-	string fileAndPath = obj->filename;
-	gltf.load((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), obj, fileAndPath);
-	obj->available = true;
+	MeshCollection* coll = loadMeshFile(filename, id, file_buffer);
+	string fileAndPath = coll->meshInfos[0]->filename;
+	gltf.load((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), coll, fileAndPath);
+	coll->available = true;
 }
 
 void MeshStore::uploadObject(MeshInfo* obj)
