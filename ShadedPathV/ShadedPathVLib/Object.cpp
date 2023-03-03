@@ -25,37 +25,44 @@ MeshInfo* MeshStore::getMesh(string id)
 	}
 	return ret;
 }
+
+MeshInfo* MeshStore::initMeshInfo(MeshCollection* coll, std::string id)
+{
+	MeshInfo initialObject;  // only used to initialize struct in texture store - do not access this after assignment to store
+
+	// add MeshInfo to global and collecion mesh lists
+	initialObject.id = id;
+	initialObject.collection = coll;
+	meshes[id] = initialObject;
+	MeshInfo* mi = &meshes[id];
+	coll->meshInfos.push_back(mi);
+	return mi;
+}
+
 MeshCollection* MeshStore::loadMeshFile(string filename, string id, vector<byte>& fileBuffer)
 {
 	if (getMesh(id) != nullptr) {
 		Error("Cannot store 2 meshes with same ID in MeshStore.");
 	}
 	// create MeshCollection and one MexhInfo: we have at least one mesh per gltf file
-	MeshInfo initialObject;  // only used to initialize struct in texture store - do not access this after assignment to store
 	MeshCollection initialCollection;  // only used to initialize struct in texture store - do not access this after assignment to store
 	initialCollection.id = id;
 	meshCollections.push_back(initialCollection);
-
-	// add MeshInfo to global mes list
-	initialObject.id = id;
-	meshes[id] = initialObject;
-	MeshInfo* objInfo = &meshes[id];
-	// add MeshInfo to collection of current file
 	MeshCollection* collection = &meshCollections.back();
-	objInfo->collection = collection;
-	collection->meshInfos.push_back(objInfo);
+
+	MeshInfo* mi = initMeshInfo(collection, id);
 
 	// find texture file, look in pak file first:
 	PakEntry* pakFileEntry = nullptr;
 	pakFileEntry = engine->files.findFileInPak(filename.c_str());
 	// try file system if not found in pak:
-	initialObject.filename = filename; // TODO check: field not needed? only in this method? --> remove
+	collection->filename = filename;
 	string binFile;
 	if (pakFileEntry == nullptr) {
 		binFile = engine->files.findFile(filename.c_str(), FileCategory::MESH);
-		objInfo->filename = binFile;
+		collection->filename = binFile;
 		//initialTexture.filename = binFile;
-		engine->files.readFile(objInfo->filename.c_str(), fileBuffer, FileCategory::MESH);
+		engine->files.readFile(collection->filename.c_str(), fileBuffer, FileCategory::MESH);
 	}
 	else {
 		engine->files.readFile(pakFileEntry, fileBuffer, FileCategory::MESH);
@@ -68,7 +75,7 @@ void MeshStore::loadMeshWireframe(string filename, string id, vector<LineDef> &l
 	vector<byte> file_buffer;
 	MeshCollection* coll = loadMeshFile(filename, id, file_buffer);
 	MeshInfo* obj = coll->meshInfos[0];
-	string fileAndPath = obj->filename;
+	string fileAndPath = coll->filename;
 	vector<PBRShader::Vertex> vertices;
 	vector<uint32_t> indexBuffer;
 	gltf.loadVertices((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), obj, vertices, indexBuffer, fileAndPath);
@@ -98,7 +105,7 @@ void MeshStore::loadMesh(string filename, string id)
 {
 	vector<byte> file_buffer;
 	MeshCollection* coll = loadMeshFile(filename, id, file_buffer);
-	string fileAndPath = coll->meshInfos[0]->filename;
+	string fileAndPath = coll->filename;
 	gltf.load((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), coll, fileAndPath);
 	coll->available = true;
 }

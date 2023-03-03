@@ -16,7 +16,6 @@ struct MeshCollection
 struct MeshInfo
 {
 	std::string id;
-	std::string filename;
 	bool available = false; // true if this object is ready for use in shader code
 
 	// gltf data: valid after object load, should be cleared after upload
@@ -64,6 +63,8 @@ public:
 	const std::vector<MeshInfo*> &getSortedList();
 	// upload single model to GPU
 	void uploadObject(MeshInfo* obj);
+	// initialize MeshInfo, also add to collection. id is expected to be in collection format like myid.2
+	MeshInfo* initMeshInfo(MeshCollection* coll, std::string id);
 
 	MeshInfo* getMesh(std::string id);
 private:

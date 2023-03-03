@@ -11,7 +11,7 @@ using namespace std;
 #include "tinygltf/tiny_gltf.h"
 
 using namespace tinygltf;
-size_t MeshIndex = 7; // other grass base tex: 1, single: 4, 5, 6, many plants: 7
+size_t MeshIndex = 4; // other grass base tex: 1, single: 4, 5, 6, many plants: 7
 
 void glTF::init(ShadedPathEngine* e) {
 	engine = e;
@@ -308,8 +308,6 @@ void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
 	if (model.meshes.size() <= MeshIndex) {
 		MeshIndex = 0; // safeguard
 	}
-	MeshInfo* mesh = coll->meshInfos[0];
-	mesh->gltfMesh = &model.meshes[MeshIndex];
 }
 
 // public methods
@@ -323,13 +321,21 @@ void glTF::loadVertices(const unsigned char* data, int size, MeshInfo* mesh, vec
 void glTF::load(const unsigned char* data, int size, MeshCollection* coll, string filename)
 {
 	Model model;
+	// parse full gltf file with all meshes and textures. Textures are already pre-loaded into out texture store
 	loadModel(model, data, size, coll, filename);
 	validateModel(model, coll);
 	// at this point all textures of gltf file are loaded. info: mesh->textureInfos[]
-	// meshes are not yet loaded
+	// vertices/indexes are not yet copied from gltf to our buffers
 	Log("Meshes in " << filename.c_str() << endl);
+	int modelindex = 0;
 	for (auto& m : model.meshes) {
 		Log("  " << m.name.c_str() << endl);
+		if (modelindex > 0) {
+
+		}
+		MeshInfo* mesh = coll->meshInfos[0];
+		mesh->gltfMesh = &model.meshes[MeshIndex];
+		modelindex++;
 	}
 	prepareTextures(model, coll);
 	MeshInfo* mesh = coll->meshInfos[0];
