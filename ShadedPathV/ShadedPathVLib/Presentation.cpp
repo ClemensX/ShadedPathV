@@ -330,7 +330,7 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
 
     // thread checking - make sure present is only called on one thread:
     std::hash<std::thread::id> myHashObject{};
-    uint32_t threadID = myHashObject(std::this_thread::get_id());
+    uint32_t threadID = static_cast<uint32_t>(myHashObject(std::this_thread::get_id()));
     if (this->threadId == 0) {
         this->threadId = threadId;
     } else {

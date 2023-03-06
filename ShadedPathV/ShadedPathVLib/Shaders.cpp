@@ -101,7 +101,7 @@ void Shaders::submitFrame(ThreadResources& tr)
 	for (int i = 0; i < tr.activeCommandBuffers.size(); i++) {
 		tr.commandBuffers[i] = tr.activeCommandBuffers[i];
 	}
-	submitInfo.commandBufferCount = tr.activeCommandBuffers.size();
+	submitInfo.commandBufferCount = static_cast<uint32_t>(tr.activeCommandBuffers.size());
 	submitInfo.pCommandBuffers = &tr.commandBuffers[0];
 	//VkSemaphore signalSemaphores[] = { tr.renderFinishedSemaphore };
 	submitInfo.signalSemaphoreCount = 0;

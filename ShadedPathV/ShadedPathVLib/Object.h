@@ -72,7 +72,7 @@ private:
 	std::unordered_map<std::string, MeshInfo> meshes;
 	std::vector<MeshCollection> meshCollections;
 	ShadedPathEngine* engine = nullptr;
-	Util* util;
+	Util* util = nullptr;
 	std::vector<MeshInfo*> sortedList;
 	glTF gltf;
 };

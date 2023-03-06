@@ -106,6 +106,7 @@
     <Lib>
       <AdditionalDependencies>glfw3.lib;ktx.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>..\..\..\libraries\openxr;..\..\..\libraries\glfw\lib-vc2019;..\..\..\libraries\ktx\lib;..\..\..\libraries\vulkan\Lib</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>libcmt.lib; msvcrt.lib; libcmtd.lib</IgnoreSpecificDefaultLibraries>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -166,7 +167,9 @@
     <ClCompile Include="GameTime.cpp" />
     <ClCompile Include="GeneratedTexturesApp.cpp" />
     <ClCompile Include="GlobalRendering.cpp" />
-    <ClCompile Include="gltf.cpp" />
+    <ClCompile Include="gltf.cpp">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
     <ClCompile Include="gltfObjectsApp.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_demo.cpp" />
@@ -195,7 +198,9 @@
     <ClCompile Include="Shaders.cpp" />
     <ClCompile Include="SimpleApp.cpp" />
     <ClCompile Include="SimpleShader.cpp" />
-    <ClCompile Include="Sound.cpp" />
+    <ClCompile Include="Sound.cpp">
+      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="ThreadResources.cpp" />
     <ClCompile Include="Threads.cpp" />

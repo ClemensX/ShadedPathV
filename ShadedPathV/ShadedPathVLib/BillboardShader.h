@@ -107,7 +107,8 @@ private:
 
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
 
-	UniformBufferObject ubo, updatedUBO;
+	UniformBufferObject ubo = {};
+	UniformBufferObject updatedUBO = {};
 	bool disabled = false;
 	std::vector<BillboardDef> billboards;
 

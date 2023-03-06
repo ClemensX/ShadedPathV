@@ -72,12 +72,12 @@ public:
 // counts time between them without any FPS in mind.
 class ThemedTimer {
 	struct TimerEntry {
-		long long time;
+		long long time = 0L;
 		bool used = false;
 	};
 	struct TimerDesc {
 		std::vector<TimerEntry> entries;
-		int numSlots; // number of allocated TimerEntry slots
+		int numSlots = 0; // number of allocated TimerEntry slots
 		int pos = 0;  // next input position
 		long calls = 0L; // count calls to add()
 		long long averageTimeBetweenMicroS = 0; // accumulate time between calls in [microseconds] (1/1000 000 s)

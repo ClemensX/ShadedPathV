@@ -274,7 +274,7 @@ void VR::frameBegin(ThreadResources& tr)
         XrViewState viewState{ XR_TYPE_VIEW_STATE };
         XrView views[2] = { {XR_TYPE_VIEW}, {XR_TYPE_VIEW} };
         uint32_t viewCountOutput;
-        CHECK_XRCMD(xrLocateViews(session, &viewLocateInfo, &viewState, xrConfigViews.size(), &viewCountOutput, views));
+        CHECK_XRCMD(xrLocateViews(session, &viewLocateInfo, &viewState, static_cast<uint32_t>(xrConfigViews.size()), &viewCountOutput, views));
 
         // ...
         // Use viewState and frameState for scene render, and fill in projViews[2]

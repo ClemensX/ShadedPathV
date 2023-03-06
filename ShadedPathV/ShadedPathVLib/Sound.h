@@ -8,7 +8,7 @@ struct ma_sound;
 
 struct SoundDef {
 	bool loop = false;
-	SoundCategory category;
+	SoundCategory category = SoundCategory::MUSIC;
 	// miniaudio entries:
 	ma_sound* masound = nullptr;
 };

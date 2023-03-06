@@ -99,9 +99,10 @@ private:
 
 
 	std::vector<LineDef> lines;
-	int drawAddLinesSize;
+	int drawAddLinesSize = 0;
 
-	UniformBufferObject ubo, updatedUBO;
+	UniformBufferObject ubo = {};
+	UniformBufferObject updatedUBO = {};
 	bool disabled = false;
 	// Inherited via Effect
 	// set in init()

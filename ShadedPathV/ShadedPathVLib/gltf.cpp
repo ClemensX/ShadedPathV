@@ -8,7 +8,21 @@ using namespace std;
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #define STBI_MSC_SECURE_CRT
 // #define TINYGLTF_NOEXCEPTION // optional. disable exception handling.
+// change warning level - we do not want to see minaudio warnings
+#pragma warning( push, 2 )
+
+#pragma warning(disable:33005)
+#pragma warning(disable:6262)
+#pragma warning(disable:6011)
+#pragma warning(disable:6385)
+#pragma warning(disable:26451)
+#pragma warning(disable:6255)
+#pragma warning(disable:6386)
+#pragma warning(disable:6001)
+
 #include "tinygltf/tiny_gltf.h"
+
+#pragma warning( pop )
 
 using namespace tinygltf;
 size_t MeshIndex = 4; // other grass base tex: 1, single: 4, 5, 6, many plants: 7

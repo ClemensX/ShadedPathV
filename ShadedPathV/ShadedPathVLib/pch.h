@@ -65,7 +65,10 @@
 #include <ktxvulkan.h>
 
 // vulkan profile support (SDK 1.3 needed)
+#pragma warning( push, 1 )
+#pragma warning(disable:6011)
 #include <vulkan/vulkan_profiles.hpp>
+#pragma warning( pop )
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
@@ -161,7 +164,7 @@ inline void ErrorExt(std::string msg, const char* file, DWORD line)
 inline std::string Fmt(const char* fmt, ...) {
 	va_list vl;
 	va_start(vl, fmt);
-	int size = std::vsnprintf(nullptr, 0, fmt, vl);
+	size_t size = std::vsnprintf(nullptr, 0, fmt, vl);
 	va_end(vl);
 
 	if (size != -1) {

@@ -51,7 +51,7 @@ void TextureStore::loadTexture(string filename, string id)
 	}
 
 	ktxTexture* kTexture;
-	createKTXFromMemory((const ktx_uint8_t*)file_buffer.data(), file_buffer.size(), &kTexture);
+	createKTXFromMemory((const ktx_uint8_t*)file_buffer.data(), static_cast<int>(file_buffer.size()), &kTexture);
 	createVulkanTextureFromKTKTexture(kTexture, texture);
 }
 
@@ -144,7 +144,7 @@ TextureInfo* TextureStore::internalCreateTextureSlot(string id)
 	textures[id] = initialTexture;
 	TextureInfo* texture = &textures[id];
 	checkStoreSize();
-	texture->index = textures.size()-1;
+	texture->index = static_cast<uint32_t>(textures.size()-1);
 	return texture;
 }
 

@@ -93,7 +93,8 @@ private:
 	// Application code can overwrite the setting in drawFrame()
 	void prefillTextureIndexes(ThreadResources& tr);
 
-	UniformBufferObject ubo, updatedUBO;
+	UniformBufferObject ubo = {};
+	UniformBufferObject updatedUBO = {};
 	bool disabled = false;
 
 	VkShaderModule vertShaderModule = nullptr;

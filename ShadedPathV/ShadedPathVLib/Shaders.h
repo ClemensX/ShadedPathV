@@ -46,7 +46,7 @@ class Shaders
 		}
 	private:
 		std::vector<ShaderBase*> shaderList;
-		ShadedPathEngine* engine;
+		ShadedPathEngine* engine = nullptr;
 		ShaderState shaderState;
 	};
 public:

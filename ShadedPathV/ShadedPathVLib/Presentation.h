@@ -4,8 +4,8 @@ struct InputState {
 	glm::vec2 pos = glm::vec2(0.0f);
 	bool pressedLeft = false;
 	bool pressedRight = false;
-	int key, scancode, action, mods;
-	bool keyEvent, mouseMoveEvent, mouseButtonEvent;
+	int key = 0, scancode = 0, action = 0, mods = 0;
+	bool keyEvent = false, mouseMoveEvent = false, mouseButtonEvent = false;
 };
 
 struct SwapChainSupportDetails {

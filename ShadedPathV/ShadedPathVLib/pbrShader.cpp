@@ -240,7 +240,7 @@ void PBRShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResource
 	else {
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet2, 1, &dynamicOffset);
 	}
-	vkCmdDrawIndexed(commandBuffer, obj->mesh->indices.size(), 1, 0, 0, 0);
+	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);
 }
 
 void PBRShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {

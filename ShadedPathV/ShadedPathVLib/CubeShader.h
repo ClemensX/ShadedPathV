@@ -69,7 +69,8 @@ private:
 	float bloatFactor = 1.0f;
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, bool isRightEye = false);
 	void createSkyboxTextureDescriptors();
-	UniformBufferObject ubo, updatedUBO;
+	UniformBufferObject ubo = {};
+	UniformBufferObject updatedUBO = {};
 	bool disabled = false;
 
 	VkShaderModule vertShaderModule = nullptr;

@@ -94,7 +94,7 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// create pipeline
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineInfo.stageCount = size(shaderStages);
+	pipelineInfo.stageCount = static_cast<uint32_t>(size(shaderStages));
 	pipelineInfo.pStages = shaderStages;
 	pipelineInfo.pNext = nullptr;
 	pipelineInfo.pVertexInputState = &vertexInputInfo;

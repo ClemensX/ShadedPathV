@@ -1,5 +1,18 @@
 #include "pch.h"
 
+// change warning level - we do not want to see minaudio warnings
+#pragma warning( push, 2 )
+
+#pragma warning(disable:33005)
+#pragma warning(disable:6262)
+#pragma warning(disable:6011)
+#pragma warning(disable:6385)
+#pragma warning(disable:26451)
+#pragma warning(disable:6255)
+#pragma warning(disable:6386)
+#pragma warning(disable:6001)
+
+
 // remove our CHECK macro as stb_vorbis.c defines it's own
 #undef CHECK
 #define STB_VORBIS_HEADER_ONLY
@@ -12,6 +25,8 @@
 #undef STB_VORBIS_HEADER_ONLY
 #include "miniaudio/extras/stb_vorbis.c"
 
+#pragma warning( pop )
+
 // always assume 2 source channels, TODO ? check
 //#define SRC_CHANNEL_COUNT 2
 
@@ -21,7 +36,7 @@ ma_engine sound_engine;
 void Sound::init()
 {
 	numDoNothingFrames = 1;
-	HRESULT hr;
+	//HRESULT hr;
 	UINT32 flags = 0;
 #if defined (_DEBUG)
 	//flags |= XAUDIO2_DEBUG_ENGINE;
@@ -185,7 +200,6 @@ void Sound::playSound(std::string id, SoundCategory category, float volume, uint
 	//if (result != MA_SUCCESS) {
 	//	Log("Cannot play sound " << result << std::endl);
 	//}
-	HRESULT hr;
 	assert(sounds.count(id) > 0);
 	SoundDef *sound = &sounds[id];
 	sound->category = category;
