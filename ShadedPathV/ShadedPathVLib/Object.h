@@ -49,7 +49,7 @@ public:
 	// init object store
 	void init(ShadedPathEngine* engine);
 	~MeshStore();
-	// load mesh wireframe and add to Line vector
+	// load mesh wireframe and add to Line vector (only for first mesh in gltf file)
 	void loadMeshWireframe(std::string filename, std::string id, std::vector<LineDef>& lines);
 	// load meshes from glTF file, objects are referenced via id string according to this schema:
 	// ref string == gltf mesh
@@ -64,6 +64,7 @@ public:
 	// upload single model to GPU
 	void uploadObject(MeshInfo* obj);
 	// initialize MeshInfo, also add to collection. id is expected to be in collection format like myid.2
+	// myid.0 is a synonym for myid
 	MeshInfo* initMeshInfo(MeshCollection* coll, std::string id);
 
 	MeshInfo* getMesh(std::string id);

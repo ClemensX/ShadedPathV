@@ -101,7 +101,7 @@ void glTF::loadModel(Model &model, const unsigned char* data, int size, MeshColl
 	return;
 }
 
-void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, vector<PBRShader::Vertex>& verts, vector<uint32_t>& indexBuffer)
+void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, vector<PBRShader::Vertex>& verts, vector<uint32_t>& indexBuffer, int gltfMeshIndex)
 {
 	assert(mesh->gltfMesh != nullptr);
 	// should be sized of passed in vectors:
@@ -111,7 +111,7 @@ void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, vector<PBRShader
 	//tinygltf::Material* mat = static_cast<tinygltf::Material*>(mesh->gltfMesh); // rubbish
 		// parse vertices, indexes:
 	if (model.meshes.size() > 0) {
-		const tinygltf::Mesh gltfMesh = model.meshes[MeshIndex];
+		const tinygltf::Mesh gltfMesh = model.meshes[gltfMeshIndex];
 		//const tinygltf::Mesh gltfMesh = *(tinygltf::Mesh*)mesh->gltfMesh;
 		if (gltfMesh.primitives.size() > 0) {
 			const tinygltf::Primitive& primitive = gltfMesh.primitives[0];
@@ -233,12 +233,12 @@ void getTextureUVCoordinates(tinygltf::Model& model, tinygltf::Primitive& primit
 	getUVCoordinates(model, primitive, texInfo, texCoordSelector);
 }
 
-void glTF::prepareTextures(tinygltf::Model& model, MeshCollection* coll)
+void glTF::prepareTextures(tinygltf::Model& model, MeshCollection* coll, int gltfMeshIndex)
 {
 	// make sure textures are already loded
 	assert(coll->textureInfos.size() >= model.samplers.size());
 
-	auto& primitive = model.meshes[MeshIndex].primitives[0];
+	auto& primitive = model.meshes[gltfMeshIndex].primitives[0];
 	auto& mat = model.materials[primitive.material];
 	// assign textures to engine data:
 	auto baseColorTextureIndex = mat.pbrMetallicRoughness.baseColorTexture.index;
@@ -247,8 +247,7 @@ void glTF::prepareTextures(tinygltf::Model& model, MeshCollection* coll)
 	auto occlusionTextureIndex = mat.occlusionTexture.index;
 	auto emissiveTextureIndex = mat.emissiveTexture.index;
 
-	MeshInfo* mesh = coll->meshInfos[0];
-
+	MeshInfo* mesh = coll->meshInfos[gltfMeshIndex];
 	// texture UV coords are likely the same, but we parse their mem location and stride for all textures anyway:
 	if (baseColorTextureIndex >= 0) {
 		mesh->baseColorTexture = coll->textureInfos[baseColorTextureIndex];
@@ -271,28 +270,10 @@ void glTF::prepareTextures(tinygltf::Model& model, MeshCollection* coll)
 		getTextureUVCoordinates(model, primitive, mesh->occlusionTexture, mat.emissiveTexture.texCoord);
 	}
 
-	// iterate textures in material.values and material.additionalValues:
-	// material.values and material.additionalValues are deprecated
-	//for (auto& texture : mat.values) {
-	//	auto index = texture.second.TextureIndex();
-	//	auto coordIndex = texture.second.TextureTexCoord();
-	//	Log("found texture: " << texture.first.c_str() <<  " index " << index  << " coord index " << coordIndex << endl);
-	//}
-	//for (auto& texture : mat.additionalValues) {
-	//	auto index = texture.second.TextureIndex();
-	//	auto coordIndex = texture.second.TextureTexCoord();
-	//	Log("found texture: " << texture.first.c_str() << " index " << index << " coord index " << coordIndex << endl);
-	//}
 
-	// we have already parsed all gltf images in mesh->textureInfos[]
-	// go through them and fill proper members
-	//for (size_t i = 0; i < mesh->textureInfos.size(); i++) {
-	//	setTextureData(model, mesh, BASE_COLOR_TEXTURE);
-	//}
-
-	// samplers
+	// samplers TODO
 	for (tinygltf::Sampler smpl : model.samplers) {
-		Log("sampler: " << smpl.name.c_str() << endl);
+		//Log("sampler: " << smpl.name.c_str() << endl);
 		//vkglTF::TextureSampler sampler{};
 		//sampler.minFilter = getVkFilterMode(smpl.minFilter);
 		//sampler.magFilter = getVkFilterMode(smpl.magFilter);
@@ -329,7 +310,7 @@ void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
 void glTF::loadVertices(const unsigned char* data, int size, MeshInfo* mesh, vector<PBRShader::Vertex>& verts, vector<uint32_t> &indexBuffer, string filename)
 {
 	Model model;
-	loadVertices(model, mesh, verts, indexBuffer);
+	loadVertices(model, mesh, verts, indexBuffer, 0);
 }
 
 void glTF::load(const unsigned char* data, int size, MeshCollection* coll, string filename)
@@ -344,14 +325,15 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
 	int modelindex = 0;
 	for (auto& m : model.meshes) {
 		Log("  " << m.name.c_str() << endl);
+		MeshInfo* mesh = nullptr;
 		if (modelindex > 0) {
-
+			mesh = engine->meshStore.initMeshInfo(coll, coll->id + "." + to_string(modelindex));
+		} else {
+			mesh = coll->meshInfos[0];
 		}
-		MeshInfo* mesh = coll->meshInfos[0];
-		mesh->gltfMesh = &model.meshes[MeshIndex];
+		mesh->gltfMesh = &model.meshes[modelindex];
+		prepareTextures(model, coll, modelindex);
+		loadVertices(model, mesh, mesh->vertices, mesh->indices, modelindex);
 		modelindex++;
 	}
-	prepareTextures(model, coll);
-	MeshInfo* mesh = coll->meshInfos[0];
-	loadVertices(model, mesh, mesh->vertices, mesh->indices);
 }

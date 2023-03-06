@@ -28,9 +28,9 @@ private:
 	void loadModel(tinygltf::Model& model, const unsigned char* data, int size, MeshCollection* coll, std::string filename);
 	// copy model vertices and indices into vectors
 	// index buffer will be 32 bit wide in all cases (VK_INDEX_TYPE_UINT32)
-	void loadVertices(tinygltf::Model& model, MeshInfo* mesh, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indexBuffer);
+	void loadVertices(tinygltf::Model& model, MeshInfo* mesh, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indexBuffer, int gltfMeshIndex);
 	// assign textures to their proper PBR members in mesh and read or create texture samplers
-	void prepareTextures(tinygltf::Model& model, MeshCollection* mesh);
+	void prepareTextures(tinygltf::Model& model, MeshCollection* coll, int gltfMeshIndex);
 	// validate that gltf is within our parsable features
 	void validateModel(tinygltf::Model& model, MeshCollection* mesh);
 	ShadedPathEngine* engine = nullptr;

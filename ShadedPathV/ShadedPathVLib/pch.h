@@ -57,6 +57,7 @@
 #include <queue>
 #include <array>
 #include <functional>
+#include <regex>
 //using namespace std;
 
 // headers for used libraries

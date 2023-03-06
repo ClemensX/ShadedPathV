@@ -9,6 +9,18 @@ void MeshStore::init(ShadedPathEngine* engine) {
 	gltf.init(engine);
 }
 
+// simple id, only letters, numbers and underscore
+static bool ok_meshid_short_format(const std::string& nom) {
+	static const std::regex re{ "^[a-zA-Z][a-zA-Z0-9_]+$" };
+	return std::regex_match(nom, re);
+}
+
+// long id in format name.number
+static bool ok_meshid_long_format(const std::string& nom) {
+	static const std::regex re{ "^[a-zA-Z][a-zA-Z0-9_]+([.][0-9]+)?$" };
+	return std::regex_match(nom, re);
+}
+
 MeshInfo* MeshStore::getMesh(string id)
 {
 	if (meshes.find(id) == meshes.end()) {
@@ -43,6 +55,11 @@ MeshCollection* MeshStore::loadMeshFile(string filename, string id, vector<byte>
 {
 	if (getMesh(id) != nullptr) {
 		Error("Cannot store 2 meshes with same ID in MeshStore.");
+	}
+	if (ok_meshid_short_format(id) == false) {
+		stringstream s;
+		s << "WorldObjectStore: wrong id format " << id << endl;
+		Error(s.str());
 	}
 	// create MeshCollection and one MexhInfo: we have at least one mesh per gltf file
 	MeshCollection initialCollection;  // only used to initialize struct in texture store - do not access this after assignment to store
@@ -199,8 +216,22 @@ void WorldObjectStore::addObject(WorldObject& w, string id, vec3 pos) {
 }
 
 void WorldObjectStore::addObjectPrivate(WorldObject* w, string id, vec3 pos) {
+	if (ok_meshid_long_format(id) == false) {
+		stringstream s;
+		s << "WorldObjectStore: trying to add object with wrong id format " << id << endl;
+		Error(s.str());
+	} else {
+		// we need to check for name.0 format and rename to just 'name':
+		if (id.ends_with(".0")) {
+			id = id.substr(0, id.length() - 2);
+		}
+	}
 	MeshInfo* mesh = meshStore->getMesh(id);
-	assert(mesh != nullptr);
+	if (mesh == nullptr) {
+		stringstream s;
+		s << "WorldObjectStore: Trying to load non-existing object " << id << endl;
+		Error(s.str());
+	}
 	w->pos() = pos;
 	w->objectStartPos = pos;
 	w->mesh = mesh;

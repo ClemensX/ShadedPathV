@@ -91,7 +91,7 @@ void gltfObjectsApp::init() {
     //auto o = engine.meshStore.getMesh("Knife");
     // add bottle and knife to the scene:
     engine.objectStore.createGroup("bottle_group");
-    bottle = engine.objectStore.addObject("bottle_group", "WaterBottle", vec3(0.0f, 0.0f, 0.0f));
+    bottle = engine.objectStore.addObject("bottle_group", "WaterBottle.7", vec3(0.0f, 0.0f, 0.0f));
     engine.objectStore.createGroup("knife_group");
     engine.objectStore.addObject("knife_group", "Knife", vec3(0.3f, 0.0f, 0.0f));
     //engine.objectStore.addObject("knife_group", "WaterBottle", vec3(0.3f, 0.0f, 0.0f));
