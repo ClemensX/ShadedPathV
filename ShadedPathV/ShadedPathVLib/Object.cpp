@@ -203,7 +203,11 @@ const vector<unique_ptr<WorldObject>>* WorldObjectStore::getGroup(string groupna
 }
 
 WorldObject* WorldObjectStore::addObject(string groupname, string id, vec3 pos) {
-	assert(groups.count(groupname) > 0);
+	if (groups.count(groupname) == 0) {
+		stringstream s;
+		s << "WorldObjectStore: trying to add object to non-existing group " << groupname << endl;
+		Error(s.str());
+	}
 	auto& grp = groups[groupname];
 	grp.push_back(unique_ptr<WorldObject>(new WorldObject()));
 	WorldObject* w = grp[grp.size() - 1].get();

@@ -25,7 +25,6 @@ using namespace std;
 #pragma warning( pop )
 
 using namespace tinygltf;
-size_t MeshIndex = 4; // other grass base tex: 1, single: 4, 5, 6, many plants: 7
 
 void glTF::init(ShadedPathEngine* e) {
 	engine = e;
@@ -103,7 +102,8 @@ void glTF::loadModel(Model &model, const unsigned char* data, int size, MeshColl
 
 void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, vector<PBRShader::Vertex>& verts, vector<uint32_t>& indexBuffer, int gltfMeshIndex)
 {
-	assert(mesh->gltfMesh != nullptr);
+	assert(mesh->gltfMeshIndex >= 0);
+	assert(mesh->gltfMeshIndex == gltfMeshIndex);
 	// should be sized of passed in vectors:
 	uint32_t indexStart = static_cast<uint32_t>(indexBuffer.size());
 	uint32_t vertexStart = static_cast<uint32_t>(verts.size());
@@ -145,9 +145,9 @@ void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, vector<PBRShader
 				size_t pos = v * posByteStride;
 				PBRShader::Vertex vert;
 				vert.pos = glm::vec3(bufferPos[pos], bufferPos[pos + 1], bufferPos[pos + 2]);
-				vert.pos.x /= 100;
-				vert.pos.y /= 100;
-				vert.pos.z /= 100;
+				//vert.pos.x /= 100;
+				//vert.pos.y /= 100;
+				//vert.pos.z /= 100;
 				if (mesh->baseColorTexture) {
 					const float* coordDataPtr = mesh->baseColorTexture->gltfTexCoordData;
 					int stride = mesh->baseColorTexture->gltfUVByteStride;
@@ -286,6 +286,7 @@ void glTF::prepareTextures(tinygltf::Model& model, MeshCollection* coll, int glt
 
 void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
 {
+	stringstream s;
 	//assert(model.materials.size() == 1);
 	//assert(model.meshes.size() == 1);
 	// link back from our mesh to gltf mesh:
@@ -295,13 +296,18 @@ void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
 		auto pbrbaseColorIndex = mat.pbrMetallicRoughness.baseColorTexture.index;
 		//Log("pbr base Color index: " << pbrbaseColorIndex << endl);
 		if (pbrbaseColorIndex < 0) {
-			stringstream s;
 			s << "gltf file seems to have wrong format: " << coll->filename << ". try gltf-transform metalrough infile outfile" << endl;
 			Error(s.str());
 		}
 	}
-	if (model.meshes.size() <= MeshIndex) {
-		MeshIndex = 0; // safeguard
+	for (auto& m : model.meshes) {
+		//Log("  " << m.name.c_str() << endl);
+		size_t size = m.primitives.size();
+		//Log("  primitives: " << size << endl);
+		if (size != 1) {
+			s << "gltf meshes need to have exactly one primitive: " << coll->filename << " " << m.name.c_str() << endl;
+			Error(s.str());
+		}
 	}
 }
 
@@ -311,6 +317,55 @@ void glTF::loadVertices(const unsigned char* data, int size, MeshInfo* mesh, vec
 {
 	Model model;
 	loadVertices(model, mesh, verts, indexBuffer, 0);
+}
+
+void glTF::collectBaseTransform(tinygltf::Model& model, MeshInfo* mesh)
+{
+	Mesh& gltfMesh = model.meshes[mesh->gltfMeshIndex];
+	// collect node children to check uniqueness and have access to parents
+	// map children index to parent index (parent not directly available on tinygltf::Node)
+	unordered_map<int, int> childrenMap;
+	childrenMap[0] = -1; // add one node parent for root
+
+	// look for nodes for this mesh - we can only handle single reference!
+	int found = -1;
+	for (int i = 0; i < model.nodes.size(); i++) {
+		Node& node = model.nodes[i];
+		//Log("node " << node.name.c_str() << endl);
+		if (node.mesh == mesh->gltfMeshIndex) {
+			if (found >= 0) {
+				// 2nd occurence not allowed
+				Error("gltf model has multiple nodes for mesh.");
+			} else {
+				found = i;
+			}
+		}
+		// store children to check well formed strict tree:
+		for (int child : node.children) {
+			if (childrenMap.count(child) > 0) {
+				Error("Invalid node hierarchy found in gltf file");
+			} else {
+				childrenMap[child] = i;
+			}
+		}
+	}
+	if (found == -1) {
+		Log("no mesh reference found in gltf node hierarchy for " << gltfMesh.name.c_str() << " from file " << mesh->collection->filename.c_str() << endl);
+		mesh->baseTransform = glm::mat4(1.0f);
+	}
+
+	// collect node transform hierarchy:
+	glm::mat4 transform(1.0);
+	int curIndex = found;
+	do {
+		Node& node = model.nodes[curIndex];
+		if (node.scale.size() == 3) {
+			glm::vec3 scaleVec(node.scale[0], node.scale[1], node.scale[2]);
+			transform = glm::scale(transform, scaleVec);
+		}
+		curIndex = childrenMap[curIndex];
+	} while (curIndex != -1);
+	mesh->baseTransform = transform;
 }
 
 void glTF::load(const unsigned char* data, int size, MeshCollection* coll, string filename)
@@ -331,9 +386,10 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
 		} else {
 			mesh = coll->meshInfos[0];
 		}
-		mesh->gltfMesh = &model.meshes[modelindex];
+		mesh->gltfMeshIndex = modelindex;
 		prepareTextures(model, coll, modelindex);
 		loadVertices(model, mesh, mesh->vertices, mesh->indices, modelindex);
+		collectBaseTransform(model, mesh);
 		modelindex++;
 	}
 }

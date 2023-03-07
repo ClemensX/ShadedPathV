@@ -14,6 +14,24 @@ Some features:
 
 ## Current State (Q1 / 2023)
 
+## Using Objects from glTF files
+
+Loading a glTF file is done like this. You just specify the file name and an id string that will be used to access meshes in this file. An id can only consist of letters and numbers and underscore.
+```
+engine.meshStore.loadMesh("grass.glb", "Grass");
+```
+Every object needs to be part of an object group (for some bulk operations).
+If there is only one mesh in the file you can access it like so to position the object into the world:
+```
+engine.objectStore.createGroup("ground_group");
+WorldObject *obj = engine.objectStore.addObject("ground_group", "Grass", vec3(0.0f, 0.0f, 0.0f));
+```
+If there are more meshes in the gltf file you add a number selector to it's id when adding it. To select the 7th mesh (counting starts at 0):
+```
+engine.objectStore.addObject("ground_group", "Grass.7", vec3(0.0f, 0.0f, 0.0f));
+```
+The first mesh is available both with ``Grass.0`` and ``Grass``.
+
 ## PAK Files
 
 PAK file support for storing textures and glTF files in one big binary file. 

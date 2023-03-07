@@ -33,6 +33,8 @@ private:
 	void prepareTextures(tinygltf::Model& model, MeshCollection* coll, int gltfMeshIndex);
 	// validate that gltf is within our parsable features
 	void validateModel(tinygltf::Model& model, MeshCollection* mesh);
+	// collect scale and rotation info from gltf nodes hierarchy and store in MeshInfo
+	void collectBaseTransform(tinygltf::Model& model, MeshInfo *mesh);
 	ShadedPathEngine* engine = nullptr;
 
 	VkSamplerAddressMode getVkWrapMode(int32_t wrapMode)

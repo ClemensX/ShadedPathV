@@ -86,12 +86,12 @@ void gltfObjectsApp::init() {
     // loading objects:
     //engine.meshStore.loadMesh("WaterBottle.glb", "WaterBottle");
     //engine.meshStore.loadMesh("bottle2.glb", "WaterBottle");
-    engine.meshStore.loadMesh("grass.glb", "WaterBottle");
+    engine.meshStore.loadMesh("grass.glb", "Grass");
     engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
     //auto o = engine.meshStore.getMesh("Knife");
     // add bottle and knife to the scene:
-    engine.objectStore.createGroup("bottle_group");
-    bottle = engine.objectStore.addObject("bottle_group", "WaterBottle.7", vec3(0.0f, 0.0f, 0.0f));
+    engine.objectStore.createGroup("ground_group");
+    bottle = engine.objectStore.addObject("ground_group", "Grass.7", vec3(0.0f, 0.0f, 0.0f));
     engine.objectStore.createGroup("knife_group");
     engine.objectStore.addObject("knife_group", "Knife", vec3(0.3f, 0.0f, 0.0f));
     //engine.objectStore.addObject("knife_group", "WaterBottle", vec3(0.3f, 0.0f, 0.0f));
@@ -223,12 +223,14 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
                 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.2f, 0.0f, 0.0f));
             }
         }
+        // test model transforms:
+        if (wo->mesh->id.starts_with("Grass")) {
+            // scale to 1%:
+            //modeltransform = scale(mat4(1.0f), vec3(0.01f, 0.01f, 0.01f));
+            // scale from gltf:
+            modeltransform = wo->mesh->baseTransform;
+        }
         buf->model = modeltransform;
-        // we could overwrite texture inxdexes here but they should be pre-set to their regular textures already
-        //buf->indexes.baseColor = 2;
-        // 
-        //void* data = buf;
-        //Log("APP per frame dynamic buffer to address: " << hex << data << endl);
         if (engine.isGlobalUpdateThread(tr)) {
             engine.sound.Update(camera);
         }

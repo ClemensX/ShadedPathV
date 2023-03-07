@@ -35,8 +35,10 @@ struct MeshInfo
 	VkDeviceMemory indexBufferMemory = nullptr;
 	//VkDescriptorSet descriptorSet = nullptr;
 
-	// gltf link, only valid during gltf parsing!
-	void* gltfMesh = nullptr;
+	// gltf mesh index, only valid during gltf parsing. -1 if not yet set
+	int gltfMeshIndex = -1;
+	// base transform from gltf file (default to identity)
+	glm::mat4 baseTransform = glm::mat4(1.0f);
 
 	// link back to collection
 	MeshCollection* collection = nullptr;
