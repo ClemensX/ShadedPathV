@@ -363,6 +363,11 @@ void glTF::collectBaseTransform(tinygltf::Model& model, MeshInfo* mesh)
 			glm::vec3 scaleVec(node.scale[0], node.scale[1], node.scale[2]);
 			transform = glm::scale(transform, scaleVec);
 		}
+		if (node.rotation.size() == 4) {
+			glm::quat quatVec((float)node.rotation[1], (float)node.rotation[2], (float)node.rotation[3], (float)node.rotation[0]);
+			glm::mat4 rotMatrix = glm::toMat4(quatVec);
+			transform = rotMatrix * transform;
+		}
 		curIndex = childrenMap[curIndex];
 	} while (curIndex != -1);
 	mesh->baseTransform = transform;
