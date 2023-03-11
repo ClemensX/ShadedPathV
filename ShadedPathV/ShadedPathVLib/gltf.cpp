@@ -299,6 +299,9 @@ void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
 			s << "gltf file seems to have wrong format: " << coll->filename << ". try gltf-transform metalrough infile outfile" << endl;
 			Error(s.str());
 		}
+		if (mat.doubleSided != true) {
+			Log("PERFORANCE WARNING: gltf material is single sided, but rendered doublesided! " << mat.name.c_str())
+		}
 	}
 	for (auto& m : model.meshes) {
 		//Log("  " << m.name.c_str() << endl);
