@@ -127,3 +127,16 @@ glm::quat MathHelper::LookAt(glm::vec3 direction, glm::vec3 desiredUp)
     // Apply them
     return rot2 * rot1; // remember, in reverse order.
 }
+
+Spatial2D::Spatial2D(int N2plus1) {
+    // make sure we have a side length of form 2 * n + 1:
+    int n = (N2plus1 - 1) >> 1;
+    if (n * 2 != (N2plus1 - 1)) {
+        throw std::out_of_range("Spatial2D needs side length initializer of the form 2 * N + 1");
+    }
+    sidePoints = N2plus1;
+    h = new float [N2plus1 * N2plus1];
+    for (int i = 0; i < N2plus1 * N2plus1; i++) {
+        h[i] = NAN;
+    }
+}

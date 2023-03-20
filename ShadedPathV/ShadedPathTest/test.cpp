@@ -184,6 +184,14 @@ TEST(Timer, FPS) {
     EXPECT_NEAR(1.82f, fps, 0.1f);
 }
 
+TEST(Spacial, Heightmap) {
+    // create heigthmap with 8193 points on each side:
+    ASSERT_NO_THROW(Spatial2D heightmap(4096 * 2 + 1));
+    ASSERT_THROW(Spatial2D heightmap(4096 * 2), std::out_of_range);
+    Spatial2D heightmap(4096 * 2 + 1);
+    EXPECT_EQ(8193 * 8193, heightmap.size());
+}
+
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     // enable single tests

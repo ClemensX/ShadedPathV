@@ -8,9 +8,10 @@ int main()
     //SimpleApp app;
     //LineApp app;
     //DeviceCoordApp app;
-    gltfObjectsApp app;
+    //gltfObjectsApp app;
     //GeneratedTexturesApp app;
     //BillboardDemo app;
+    LandscapeDemo app;
     app.run();
 }
 

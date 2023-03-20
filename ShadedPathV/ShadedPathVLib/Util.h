@@ -140,3 +140,17 @@ public:
         return a + RandF() * (b - a);
     }
 };
+
+// Spatial data for creating hightmap, tailored for Diamond-square algorithm
+class Spatial2D {
+public:
+    Spatial2D(int N2plus1);
+
+    // total number of elements
+    int size() {
+        return sidePoints * sidePoints;
+    }
+private:
+    int sidePoints = 0;
+    float* h = nullptr;
+};
