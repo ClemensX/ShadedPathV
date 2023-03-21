@@ -27,6 +27,11 @@ public:
 	glm::vec3 getRandomPos();
 	// randomly generate one location within the defined world coords with a given minimum height
 	glm::vec3 getRandomPos(float minHeight);
+	// get world sizes (read-only)
+	const glm::vec3 getWorldSize() {
+		glm::vec3 s(sizex, sizey, sizez);
+		return s;
+	}
 private:
 	// world size in absolute units around origin, e.g. x is from -x to x
 	float sizex = 0.0f, sizey = 0.0f, sizez = 0.0f;

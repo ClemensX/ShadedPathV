@@ -67,10 +67,10 @@ Grid* World::createWorldGrid(float lineGap, float verticalAdjust) {
 	float low = 0.0f + verticalAdjust;   // -sizey / 2.0f;
 	float high = sizey + verticalAdjust; // / 2.0f;
 	float step = lineGap;
-	for (float y = low; y <= high; y += step) {
-		grid.center.y = y;
-		//		createGridXZ(grid);
-	}
+	//for (float y = low; y <= high; y += step) {
+	//	grid.center.y = y;
+	//	//		createGridXZ(grid);
+	//}
 	//grid.center.y = 0;
 	//createGridXZ(grid);
 	grid.center.y = low;

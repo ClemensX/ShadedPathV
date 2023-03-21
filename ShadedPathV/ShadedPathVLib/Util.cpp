@@ -128,7 +128,8 @@ glm::quat MathHelper::LookAt(glm::vec3 direction, glm::vec3 desiredUp)
     return rot2 * rot1; // remember, in reverse order.
 }
 
-Spatial2D::Spatial2D(int N2plus1) {
+Spatial2D::Spatial2D(int N2plus1)
+{
     // make sure we have a side length of form 2 * n + 1:
     int n = (N2plus1 - 1) >> 1;
     if (n * 2 != (N2plus1 - 1)) {
@@ -139,4 +140,102 @@ Spatial2D::Spatial2D(int N2plus1) {
     for (int i = 0; i < N2plus1 * N2plus1; i++) {
         h[i] = NAN;
     }
+}
+
+int Spatial2D::index(int x, int y)
+{
+    return y * sidePoints + x;
+}
+
+void Spatial2D::setHeight(int x, int y, float height)
+{
+    //y = this->sidePoints - 1 - y; better do this in lines to world conversion
+    h[index(x, y)] = height;
+}
+
+void Spatial2D::getLines(vector<LineDef> &lines)
+{
+    // horizontal lines:
+    LineDef line;
+    line.color = Colors::Red;
+    int p0 = -1, p1 = -1;
+    for (int y = 0; y < sidePoints; y++) {
+        for (int x = 0; x < sidePoints; x++) {
+            // find p0
+            float h1 = h[index(x, y)];
+            if (!std::isnan(h1)) {
+                // valid point found
+                if (p0 == -1) {
+                    // start point found
+                    p0 = x;
+                }
+                else {
+                    // end point found
+                    float p0height = h[index(p0, y)];
+                    p1 = x;
+                    float p1height = h1;
+                    line.start = vec3(p0, p0height, y);
+                    line.end = vec3(p1, p1height, y);
+                    lines.push_back(line);
+                    p0 = p1 = -1;
+                }
+            }
+        }
+    }
+    // vertical lines:
+    p0 = p1 = -1;
+    for (int x = 0; x < sidePoints; x++) {
+        for (int y = 0; y < sidePoints; y++) {
+            // find p0
+            float h1 = h[index(x, y)];
+            if (!std::isnan(h1)) {
+                // valid point found
+                if (p0 == -1) {
+                    // start point found
+                    p0 = y;
+                }
+                else {
+                    // end point found
+                    float p0height = h[index(x, p0)];
+                    p1 = y;
+                    float p1height = h1;
+                    line.start = vec3(x, p0height, p0);
+                    line.end = vec3(x, p1height, p1);
+                    lines.push_back(line);
+                    p0 = p1 = -1;
+                }
+            }
+        }
+    }
+}
+
+void Spatial2D::adaptLinesToWorld(std::vector<LineDef>& lines, World& world)
+{
+    vec4 center = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+    vec3 worldSize = world.getWorldSize();
+    float depth = worldSize.z;
+    float width = worldSize.x;
+    float halfDepth = depth / 2.0f;
+    float halfWidth = width / 2.0f;
+    int segments = sidePoints - 1;
+    int depthCells = (int)(depth / segments);
+    int widthCells = (int)(width / segments);
+
+    // width/height if one segment in world x direction
+    double indexXfactor = (double)width / (double)segments;
+    double indexZfactor = (double)depth / (double)segments;
+    double startx = -halfWidth;
+    double startz = -halfDepth;
+    Log("index matching:" << endl);
+    Log("    from x: " << startx << " to " << (startx + (segments*indexXfactor)) << endl);
+    for (LineDef& l : lines) {
+        l.start.x = static_cast<float>(startx + l.start.x * indexXfactor);
+        l.start.z = -1.0f * static_cast<float>(startz + l.start.z * indexXfactor);
+        l.end.x = static_cast<float>(startx + l.end.x * indexXfactor);
+        l.end.z = -1.0f * static_cast<float>(startz + l.end.z * indexZfactor);
+    }
+}
+
+void Spatial2D::diamondSquare(int steps)
+{
 }

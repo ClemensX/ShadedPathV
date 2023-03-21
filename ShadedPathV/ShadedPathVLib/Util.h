@@ -1,6 +1,8 @@
 #pragma once
 class ShadedPathEngine;
 class ThreadResources;
+struct LineDef;
+class World;
 
 namespace Colors {
     const glm::vec4 xm{ 1.0f, 0.0f, 1.0f, 1.0f };
@@ -142,6 +144,9 @@ public:
 };
 
 // Spatial data for creating hightmap, tailored for Diamond-square algorithm
+// all points are NAN initially, only non-NAN values will be considered valid
+// only after very last diamond-square step all NANs will be gone
+// https://en.wikipedia.org/wiki/Diamond-square_algorithm
 class Spatial2D {
 public:
     Spatial2D(int N2plus1);
@@ -150,7 +155,22 @@ public:
     int size() {
         return sidePoints * sidePoints;
     }
+    // set height of one point
+    void setHeight(int x, int y, float height);
+
+    // get all lines of current heightmap. Used to draw the current iteration with simple lines.
+    // all NAN points will be omitted, but still may form a line: p1--NAN--NAN--NAN--p2 will draw line p1--p2
+    void getLines(std::vector<LineDef> &lines);
+    // recalculate lines from 0-max index to world coordinates
+    void adaptLinesToWorld(std::vector<LineDef>& lines, World &world);
+    // perform diamond-square. Corner points need to have been set before calling this.
+    // number of steps can be specified. 0 is only setup points, -1 is all steps
+    // heightmap line 0 is at (-halfsize, h, -halfsize) to (halfsize, h, -halfsize)
+    void diamondSquare(int steps = -1);
 private:
     int sidePoints = 0;
     float* h = nullptr;
+
+    // return index into 1 dimensional height array from coords:
+    int index(int x, int y);
 };

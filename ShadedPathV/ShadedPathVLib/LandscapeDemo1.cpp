@@ -143,9 +143,26 @@ void LandscapeDemo::init() {
     engine.shaders.billboardShader.add(billboards);
 
     // Grid with 1m squares, floor on -10m, ceiling on 372m
-    Grid* grid = world.createWorldGrid(1.0f, 0.0f);
-    heightmap = new Spatial2D(4096*2+1);
-    engine.shaders.lineShader.add(grid->lines);
+    //Grid* grid = world.createWorldGrid(1.0f, 0.0f);
+    //engine.shaders.lineShader.add(grid->lines);
+    Spatial2D heightmap(4096 * 2 + 1);
+    // set height of three points at center
+    //heightmap.setHeight(4096, 4096, 0.0f);
+    //heightmap.setHeight(4095, 4096, 0.2f);
+    //heightmap.setHeight(4096, 4095, 0.3f);
+    int lastPos = 8192;
+    // down left and right corner
+    heightmap.setHeight(0, 0, 0.0f);
+    heightmap.setHeight(lastPos, 0, 100.0f);
+    // top left and right corner
+    heightmap.setHeight(0, lastPos, 10.0f);
+    heightmap.setHeight(lastPos, lastPos, 50.0f);
+    // do one iteration
+    heightmap.diamondSquare(1);
+    vector<LineDef> lines;
+    heightmap.getLines(lines);
+    heightmap.adaptLinesToWorld(lines, world);
+    engine.shaders.lineShader.add(lines);
 
     // select texture by uncommenting:
     engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
