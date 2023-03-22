@@ -188,6 +188,7 @@ TEST(Spatial, Heightmap) {
     // create heigthmap with 8193 points on each side:
     ASSERT_NO_THROW(Spatial2D heightmap(4096 * 2 + 1));
     ASSERT_THROW(Spatial2D heightmap(4096 * 2), std::out_of_range);
+    ASSERT_THROW(Spatial2D heightmap(4094 * 2 + 1), std::out_of_range);
     Spatial2D heightmap0(4096 * 2 + 1);
     EXPECT_EQ(8193 * 8193, heightmap0.size());
     // set height of three points at center
@@ -202,15 +203,17 @@ TEST(Spatial, Heightmap) {
     int lastPos = 8192;
     // down left and right corner
     heightmap.setHeight(0, 0, 0.0f);
-    heightmap.setHeight(0, lastPos, 100.0f);
+    heightmap.setHeight(lastPos, 0, 100.0f);
     // top left and right corner
-    heightmap.setHeight(lastPos, 0, 10.0f);
+    heightmap.setHeight(0, lastPos, 10.0f);
     heightmap.setHeight(lastPos, lastPos, 50.0f);
     // do one iteration
-    heightmap.diamondSquare(1);
+    heightmap.diamondSquare(0.0f, 0.0f, 0);
     lines.clear();
     heightmap.getLines(lines);
     EXPECT_EQ(4, lines.size());
+    // one step:
+    heightmap.diamondSquare(10.0f, 0.99f, 1);
 }
 
 int main(int argc, char** argv) {

@@ -131,9 +131,11 @@ glm::quat MathHelper::LookAt(glm::vec3 direction, glm::vec3 desiredUp)
 Spatial2D::Spatial2D(int N2plus1)
 {
     // make sure we have a side length of form 2 * n + 1:
-    int n = (N2plus1 - 1) >> 1;
-    if (n * 2 != (N2plus1 - 1)) {
-        throw std::out_of_range("Spatial2D needs side length initializer of the form 2 * N + 1");
+    double s = log2((double)(N2plus1 - 1));
+    int n = (int)s;
+    int n2 = 2 << (n-1);
+    if (n2 != (N2plus1 - 1)) {
+        throw std::out_of_range("Spatial2D needs side length initializer of the form (2 ^ N) + 1");
     }
     sidePoints = N2plus1;
     h = new float [N2plus1 * N2plus1];
@@ -181,6 +183,7 @@ void Spatial2D::getLines(vector<LineDef> &lines)
                 }
             }
         }
+        p0 = -1;
     }
     // vertical lines:
     p0 = p1 = -1;
@@ -206,6 +209,7 @@ void Spatial2D::getLines(vector<LineDef> &lines)
                 }
             }
         }
+        p0 = -1;
     }
 }
 
@@ -226,8 +230,8 @@ void Spatial2D::adaptLinesToWorld(std::vector<LineDef>& lines, World& world)
     double indexZfactor = (double)depth / (double)segments;
     double startx = -halfWidth;
     double startz = -halfDepth;
-    Log("index matching:" << endl);
-    Log("    from x: " << startx << " to " << (startx + (segments*indexXfactor)) << endl);
+    //Log("index matching:" << endl);
+    //Log("    from x: " << startx << " to " << (startx + (segments*indexXfactor)) << endl);
     for (LineDef& l : lines) {
         l.start.x = static_cast<float>(startx + l.start.x * indexXfactor);
         l.start.z = -1.0f * static_cast<float>(startz + l.start.z * indexXfactor);
@@ -236,6 +240,92 @@ void Spatial2D::adaptLinesToWorld(std::vector<LineDef>& lines, World& world)
     }
 }
 
-void Spatial2D::diamondSquare(int steps)
+void Spatial2D::diamondSquare(float randomMagnitude, float randomDampening, int steps)
 {
+    if (steps == 0) {
+        // nothing to do - simply return the corner points
+        return;
+    }
+    if (randomMagnitude < 0.1f) {
+        Log("ERROR: diamondSquare() needs positive random range");
+        return;
+    }
+    if (randomDampening < 0.932f || randomDampening > 1.0f) {
+        Log("WARNING: diamondSquare() randomDampening should be within [0.933 , 1]");
+    }
+    int circle_step_width = sidePoints-1;
+    diamondSquareOneStep(randomMagnitude, randomDampening, circle_step_width);
+}
+
+void Spatial2D::diamondSquareOneStep(float randomMagnitude, float randomDampening, int squareWidth)
+{
+    diamondStep(randomMagnitude, randomDampening, squareWidth);
+    squareStep(randomMagnitude, randomDampening, squareWidth);
+}
+
+void Spatial2D::diamondStep(float randomMagnitude, float randomDampening, int squareWidth)
+{
+    // iterate over all squares, because of n ^ 2 we will always have same boundaries in x and y direction
+    int iterations_one_axis = (sidePoints - 1) / squareWidth;
+    assert(iterations_one_axis * squareWidth == (sidePoints - 1));
+    int half = squareWidth / 2;
+
+    // iterate over x and y
+    for (int xs = 0; xs < iterations_one_axis; xs++) {
+        for (int ys = 0; ys < iterations_one_axis; ys++) {
+            // we do this for all squares:
+            // calc center coords:
+            int center_x = xs * squareWidth + half;
+            int center_y = ys * squareWidth + half;
+            assert(std::isnan(h[index(center_x, center_y)]));
+            float height = getAverageDiamond(center_x, center_y, half);
+            float r = MathHelper::RandF(0, randomMagnitude);
+            h[index(center_x, center_y)] = height + r;
+        }
+    }
+
+    this->setHeight(half, half - 1, 0.0f);
+    this->setHeight(half, half, 0.0f);
+}
+
+void Spatial2D::squareStep(float randomMagnitude, float randomDampening, int squareWidth)
+{
+    // iterate over all rows via half squareWidth, add one half to x for all even rows
+    int half = squareWidth / 2;
+    int row, col;
+    row = col = 0;
+    bool even = true;
+    while (row < sidePoints) {
+        col = even ? half : 0;
+        while (col < sidePoints) {
+            float height = getAverageSquare(col, row, half);
+            float r = MathHelper::RandF(0, randomMagnitude);
+            h[index(row, col)] = height + r;
+            col += squareWidth;
+        }
+        row += half;
+        even = !even;
+    }
+}
+
+float Spatial2D::getAverageDiamond(int cx, int cy, int half)
+{
+    // calc top left/right and bottom lef/right corner values, none should be NAN
+    // we think of y = 0 as bottom
+    float bl = h[index(cx - half, cy - half)];
+    float br = h[index(cx + half, cy - half)];
+    float tl = h[index(cx - half, cy + half)];
+    float tr = h[index(cx + half, cy + half)];
+    assert(!std::isnan(bl));
+    assert(!std::isnan(br));
+    assert(!std::isnan(tl));
+    assert(!std::isnan(tr));
+    return (tl + tr + bl + br) / 4.0f;
+}
+
+float Spatial2D::getAverageSquare(int cx, int cy, int half)
+{
+    // we think of y = 0 as bottom
+    Log("square:  " << cx << " " << cy << endl);
+    return 4.0f;
 }

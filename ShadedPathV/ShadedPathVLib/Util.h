@@ -166,11 +166,19 @@ public:
     // perform diamond-square. Corner points need to have been set before calling this.
     // number of steps can be specified. 0 is only setup points, -1 is all steps
     // heightmap line 0 is at (-halfsize, h, -halfsize) to (halfsize, h, -halfsize)
-    void diamondSquare(int steps = -1);
+    // randomMagnitude is initial range of random value added to calculated points
+    // RandomDampening is a factor by which the dampeningMagnitude will be made smaller after each step (1 .. 0.933)
+    void diamondSquare(float randomMagnitude, float randomDampening, int steps = -1);
 private:
     int sidePoints = 0;
     float* h = nullptr;
 
     // return index into 1 dimensional height array from coords:
     int index(int x, int y);
+    // one step of diamond square. squareWidth is segments, not points!
+    void diamondSquareOneStep(float randomMagnitude, float randomDampening, int squareWidth);
+    void diamondStep(float randomMagnitude, float randomDampening, int squareWidth);
+    void squareStep(float randomMagnitude, float randomDampening, int squareWidth);
+    float getAverageDiamond(int center_x, int center_y, int half);
+    float getAverageSquare(int center_x, int center_y, int half);
 };

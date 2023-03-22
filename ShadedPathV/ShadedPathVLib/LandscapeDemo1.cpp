@@ -158,7 +158,7 @@ void LandscapeDemo::init() {
     heightmap.setHeight(0, lastPos, 10.0f);
     heightmap.setHeight(lastPos, lastPos, 50.0f);
     // do one iteration
-    heightmap.diamondSquare(1);
+    heightmap.diamondSquare(10.0f, 0.99f, 1);
     vector<LineDef> lines;
     heightmap.getLines(lines);
     heightmap.adaptLinesToWorld(lines, world);
