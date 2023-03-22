@@ -162,6 +162,8 @@ void LandscapeDemo::init() {
     vector<LineDef> lines;
     heightmap.getLines(lines);
     heightmap.adaptLinesToWorld(lines, world);
+    vector<vec3> plist;
+    heightmap.getPoints(plist);
     engine.shaders.lineShader.add(lines);
 
     // select texture by uncommenting:

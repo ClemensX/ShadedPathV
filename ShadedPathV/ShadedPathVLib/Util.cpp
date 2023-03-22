@@ -179,7 +179,8 @@ void Spatial2D::getLines(vector<LineDef> &lines)
                     line.start = vec3(p0, p0height, y);
                     line.end = vec3(p1, p1height, y);
                     lines.push_back(line);
-                    p0 = p1 = -1;
+                    p0 = p1; // end point is also new start point
+                    p1 = -1;
                 }
             }
         }
@@ -205,11 +206,27 @@ void Spatial2D::getLines(vector<LineDef> &lines)
                     line.start = vec3(x, p0height, p0);
                     line.end = vec3(x, p1height, p1);
                     lines.push_back(line);
-                    p0 = p1 = -1;
+                    p0 = p1; // end point is also new start point
+                    p1 = -1;
                 }
             }
         }
         p0 = -1;
+    }
+}
+
+void Spatial2D::getPoints(std::vector<glm::vec3>& points)
+{
+    for (int y = 0; y < sidePoints; y++) {
+        for (int x = 0; x < sidePoints; x++) {
+            float height = h[index(x, y)];
+            if (!std::isnan(height)) {
+                // found point, converto to vec3 and add to list
+                vec3 p(x, height, y);
+                points.push_back(p);
+                //Log("  p " << p.x << " " << p.z  << " height: " << p.y << endl);
+            }
+        }
     }
 }
 
@@ -283,9 +300,6 @@ void Spatial2D::diamondStep(float randomMagnitude, float randomDampening, int sq
             h[index(center_x, center_y)] = height + r;
         }
     }
-
-    this->setHeight(half, half - 1, 0.0f);
-    this->setHeight(half, half, 0.0f);
 }
 
 void Spatial2D::squareStep(float randomMagnitude, float randomDampening, int squareWidth)

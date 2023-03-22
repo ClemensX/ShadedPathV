@@ -161,6 +161,8 @@ public:
     // get all lines of current heightmap. Used to draw the current iteration with simple lines.
     // all NAN points will be omitted, but still may form a line: p1--NAN--NAN--NAN--p2 will draw line p1--p2
     void getLines(std::vector<LineDef> &lines);
+    // get all points of heightmap as vec3
+    void getPoints(std::vector<glm::vec3>& points);
     // recalculate lines from 0-max index to world coordinates
     void adaptLinesToWorld(std::vector<LineDef>& lines, World &world);
     // perform diamond-square. Corner points need to have been set before calling this.
@@ -169,6 +171,7 @@ public:
     // randomMagnitude is initial range of random value added to calculated points
     // RandomDampening is a factor by which the dampeningMagnitude will be made smaller after each step (1 .. 0.933)
     void diamondSquare(float randomMagnitude, float randomDampening, int steps = -1);
+
 private:
     int sidePoints = 0;
     float* h = nullptr;
