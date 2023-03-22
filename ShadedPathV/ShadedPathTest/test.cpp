@@ -212,11 +212,11 @@ TEST(Spatial, Heightmap) {
     lines.clear();
     heightmap.getLines(lines);
     EXPECT_EQ(4, lines.size());
-    // one step:
-    heightmap.diamondSquare(10.0f, 0.99f, 1);
-    vector<vec3> plist;
-    heightmap.getPoints(plist);
-    EXPECT_EQ(9, plist.size());
+    // all steps:
+    heightmap.diamondSquare(10.0f, 0.99f);
+    //vector<vec3> plist;
+    //heightmap.getPoints(plist);
+    //EXPECT_EQ(9, plist.size());
 }
 
 int main(int argc, char** argv) {

@@ -150,20 +150,21 @@ void LandscapeDemo::init() {
     //heightmap.setHeight(4096, 4096, 0.0f);
     //heightmap.setHeight(4095, 4096, 0.2f);
     //heightmap.setHeight(4096, 4095, 0.3f);
-    int lastPos = 8192;
+    int lastPos = 4096 * 2;
     // down left and right corner
     heightmap.setHeight(0, 0, 0.0f);
-    heightmap.setHeight(lastPos, 0, 100.0f);
+    heightmap.setHeight(lastPos, 0, 300.0f);
     // top left and right corner
     heightmap.setHeight(0, lastPos, 10.0f);
     heightmap.setHeight(lastPos, lastPos, 50.0f);
-    // do one iteration
-    heightmap.diamondSquare(10.0f, 0.99f, 1);
+    // do two iteration
+    heightmap.diamondSquare(200.0f, 0.9f, 13);
     vector<LineDef> lines;
     heightmap.getLines(lines);
     heightmap.adaptLinesToWorld(lines, world);
     vector<vec3> plist;
     heightmap.getPoints(plist);
+    Log("num points: " << plist.size() << endl);
     engine.shaders.lineShader.add(lines);
 
     // select texture by uncommenting:

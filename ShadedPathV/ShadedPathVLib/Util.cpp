@@ -270,8 +270,17 @@ void Spatial2D::diamondSquare(float randomMagnitude, float randomDampening, int 
     if (randomDampening < 0.932f || randomDampening > 1.0f) {
         Log("WARNING: diamondSquare() randomDampening should be within [0.933 , 1]");
     }
+    if (steps == -1) {
+        int segments = this->sidePoints - 1;
+        int cs = (int)log2((double)segments);
+        steps = cs;
+    }
     int circle_step_width = sidePoints-1;
-    diamondSquareOneStep(randomMagnitude, randomDampening, circle_step_width);
+    for (int i = 0; i < steps; i++) {
+        diamondSquareOneStep(randomMagnitude, randomDampening, circle_step_width);
+        randomMagnitude *= randomDampening;
+        circle_step_width /= 2;
+    }
 }
 
 void Spatial2D::diamondSquareOneStep(float randomMagnitude, float randomDampening, int squareWidth)
@@ -296,8 +305,9 @@ void Spatial2D::diamondStep(float randomMagnitude, float randomDampening, int sq
             int center_y = ys * squareWidth + half;
             assert(std::isnan(h[index(center_x, center_y)]));
             float height = getAverageDiamond(center_x, center_y, half);
-            float r = MathHelper::RandF(0, randomMagnitude);
-            h[index(center_x, center_y)] = height + r;
+            float r = MathHelper::RandF(-randomMagnitude, randomMagnitude);
+            height += r;
+            h[index(center_x, center_y)] = height;
         }
     }
 }
@@ -312,9 +322,11 @@ void Spatial2D::squareStep(float randomMagnitude, float randomDampening, int squ
     while (row < sidePoints) {
         col = even ? half : 0;
         while (col < sidePoints) {
+            assert(std::isnan(h[index(col, row)]));
             float height = getAverageSquare(col, row, half);
-            float r = MathHelper::RandF(0, randomMagnitude);
-            h[index(row, col)] = height + r;
+            float r = MathHelper::RandF(-randomMagnitude, randomMagnitude);
+            height += r;
+            h[index(col, row)] = height;
             col += squareWidth;
         }
         row += half;
@@ -339,7 +351,44 @@ float Spatial2D::getAverageDiamond(int cx, int cy, int half)
 
 float Spatial2D::getAverageSquare(int cx, int cy, int half)
 {
+    // calc left/right/bottom/left from center
     // we think of y = 0 as bottom
-    Log("square:  " << cx << " " << cy << endl);
-    return 4.0f;
+    //Log("square:  " << cx << " " << cy << endl);
+    float div = 0.0f;
+    float add = 0.0f;
+    // left point
+    float h = getHeightSave(cx - half, cy, half);
+    if (!std::isnan(h)) {
+        div += 1.0f;
+        add += h;
+    }
+    // top point
+    h = getHeightSave(cx, cy + half, half);
+    if (!std::isnan(h)) {
+        div += 1.0f;
+        add += h;
+    }
+    // right points
+    h = getHeightSave(cx + half, cy, half);
+    if (!std::isnan(h)) {
+        div += 1.0f;
+        add += h;
+    }
+    // bottom point
+    h = getHeightSave(cx, cy - half, half);
+    if (!std::isnan(h)) {
+        div += 1.0f;
+        add += h;
+    }
+    return add/div;
+}
+
+float Spatial2D::getHeightSave(int center_x, int center_y, int half)
+{
+    if (center_x < 0 || center_x >= sidePoints ||
+        center_y < 0 || center_y >= sidePoints) {
+        return NAN;
+    }
+    float height = h[index(center_x, center_y)];
+    return height;
 }

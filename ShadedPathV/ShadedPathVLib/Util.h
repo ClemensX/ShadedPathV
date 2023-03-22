@@ -184,4 +184,6 @@ private:
     void squareStep(float randomMagnitude, float randomDampening, int squareWidth);
     float getAverageDiamond(int center_x, int center_y, int half);
     float getAverageSquare(int center_x, int center_y, int half);
+    // return height value, NAN if outside boundaries
+    float getHeightSave(int center_x, int center_y, int half);
 };
