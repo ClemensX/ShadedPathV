@@ -142,6 +142,7 @@ Spatial2D::Spatial2D(int N2plus1)
     for (int i = 0; i < N2plus1 * N2plus1; i++) {
         h[i] = NAN;
     }
+    heightmap_size = N2plus1 * N2plus1;
 }
 
 int Spatial2D::index(int x, int y)
@@ -151,8 +152,11 @@ int Spatial2D::index(int x, int y)
 
 void Spatial2D::setHeight(int x, int y, float height)
 {
-    //y = this->sidePoints - 1 - y; better do this in lines to world conversion
-    h[index(x, y)] = height;
+    int i = index(x, y);
+    if (i >= heightmap_size) {
+        throw std::out_of_range("Spacial2D tried to set point outside range of heightmap!");
+    }
+    h[i] = height;
 }
 
 void Spatial2D::getLines(vector<LineDef> &lines)

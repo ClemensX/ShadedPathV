@@ -153,7 +153,7 @@ public:
 
     // total number of elements
     int size() {
-        return sidePoints * sidePoints;
+        return heightmap_size;
     }
     // set height of one point
     void setHeight(int x, int y, float height);
@@ -188,4 +188,5 @@ private:
     float getAverageSquare(int center_x, int center_y, int half);
     // return height value, NAN if outside boundaries
     float getHeightSave(int center_x, int center_y, int half);
+    int heightmap_size = 0;
 };

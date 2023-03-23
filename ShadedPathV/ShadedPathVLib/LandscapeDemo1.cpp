@@ -145,12 +145,12 @@ void LandscapeDemo::init() {
     // Grid with 1m squares, floor on -10m, ceiling on 372m
     //Grid* grid = world.createWorldGrid(1.0f, 0.0f);
     //engine.shaders.lineShader.add(grid->lines);
-    Spatial2D heightmap(4096 * 2 + 1);
+    Spatial2D heightmap(1024 * 2 + 1);
     // set height of three points at center
     //heightmap.setHeight(4096, 4096, 0.0f);
     //heightmap.setHeight(4095, 4096, 0.2f);
     //heightmap.setHeight(4096, 4095, 0.3f);
-    int lastPos = 4096 * 2;
+    int lastPos = 1024 * 2;
     // down left and right corner
     heightmap.setHeight(0, 0, 0.0f);
     heightmap.setHeight(lastPos, 0, 300.0f);
@@ -158,13 +158,13 @@ void LandscapeDemo::init() {
     heightmap.setHeight(0, lastPos, 10.0f);
     heightmap.setHeight(lastPos, lastPos, 50.0f);
     // do two iteration
-    heightmap.diamondSquare(200.0f, 0.9f, 13);
+    heightmap.diamondSquare(200.0f, 0.5f);
     vector<LineDef> lines;
     heightmap.getLines(lines);
     heightmap.adaptLinesToWorld(lines, world);
-    vector<vec3> plist;
-    heightmap.getPoints(plist);
-    Log("num points: " << plist.size() << endl);
+    //vector<vec3> plist;
+    //heightmap.getPoints(plist);
+    //Log("num points: " << plist.size() << endl);
     engine.shaders.lineShader.add(lines);
 
     // select texture by uncommenting:

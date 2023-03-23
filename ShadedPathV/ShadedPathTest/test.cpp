@@ -185,23 +185,26 @@ TEST(Timer, FPS) {
 }
 
 TEST(Spatial, Heightmap) {
-    // create heigthmap with 8193 points on each side:
-    ASSERT_NO_THROW(Spatial2D heightmap(4096 * 2 + 1));
-    ASSERT_THROW(Spatial2D heightmap(4096 * 2), std::out_of_range);
-    ASSERT_THROW(Spatial2D heightmap(4094 * 2 + 1), std::out_of_range);
-    Spatial2D heightmap0(4096 * 2 + 1);
-    EXPECT_EQ(8193 * 8193, heightmap0.size());
+    int heightmap_points_side = 1024 + 1;
+    int heightmap_segments_side = heightmap_points_side - 1;
+    // create heigthmap with heightmap_points_side points on each side:
+    ASSERT_NO_THROW(Spatial2D heightmap(heightmap_points_side));
+    ASSERT_THROW(Spatial2D heightmap(heightmap_segments_side), std::out_of_range);
+    ASSERT_THROW(Spatial2D heightmap(heightmap_points_side-4), std::out_of_range);
+    Spatial2D heightmap0(heightmap_points_side);
+    EXPECT_EQ(heightmap_points_side * heightmap_points_side, heightmap0.size());
     // set height of three points at center
-    heightmap0.setHeight(4096, 4096, 0.0f);
-    heightmap0.setHeight(4095, 4096, 0.2f);
-    heightmap0.setHeight(4096, 4095, 0.3f);
+    int half = heightmap_segments_side / 2;
+    heightmap0.setHeight(half, half, 0.0f);
+    heightmap0.setHeight(half - 1, half, 0.2f);
+    heightmap0.setHeight(half, half - 1, 0.3f);
     EXPECT_FALSE(heightmap0.isAllPointsSet());
     vector<LineDef> lines;
     heightmap0.getLines(lines);
     ASSERT_EQ(2, lines.size());
 
-    Spatial2D heightmap(4096 * 2 + 1);
-    int lastPos = 8192;
+    Spatial2D heightmap(heightmap_points_side);
+    int lastPos = heightmap_segments_side;
     // down left and right corner
     heightmap.setHeight(0, 0, 0.0f);
     heightmap.setHeight(lastPos, 0, 100.0f);
