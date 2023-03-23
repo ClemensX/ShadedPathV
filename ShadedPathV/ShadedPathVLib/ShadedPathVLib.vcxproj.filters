@@ -174,6 +174,9 @@
     <ClInclude Include="LandscapeDemo1.h">
       <Filter>Apps</Filter>
     </ClInclude>
+    <ClInclude Include="LandscapeGenerator.h">
+      <Filter>Apps</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -297,6 +300,9 @@
       <Filter>Apps</Filter>
     </ClCompile>
     <ClCompile Include="LandscapeDemo1.cpp">
+      <Filter>Apps</Filter>
+    </ClCompile>
+    <ClCompile Include="LandscapeGenerator.cpp">
       <Filter>Apps</Filter>
     </ClCompile>
   </ItemGroup>

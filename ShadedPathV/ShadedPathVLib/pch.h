@@ -286,5 +286,6 @@ inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* ori
 #include "GeneratedTexturesApp.h"
 #include "BillboardDemo.h"
 #include "LandscapeDemo1.h"
+#include "LandscapeGenerator.h"
 
 #endif //PCH_H

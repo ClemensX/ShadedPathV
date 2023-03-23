@@ -11,7 +11,8 @@ int main()
     //gltfObjectsApp app;
     //GeneratedTexturesApp app;
     //BillboardDemo app;
-    LandscapeDemo app;
+    //LandscapeDemo app;
+    LandscapeGenerator app;
     app.run();
 }
 

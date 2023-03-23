@@ -1,14 +1,13 @@
 #pragma once
 
 // generate billboards to teview mass rendering
-class BillboardDemo : ShadedPathApplication
+class LandscapeGenerator : ShadedPathApplication
 {
 public:
     void init();
     void run();
     void drawFrame(ThreadResources& tr) override;
     void handleInput(InputState& inputState) override;
-    void addRandomBillboards(std::vector<BillboardDef>& billboards, World& world, unsigned int textureIndex, float aspectRatio);
 private:
     ShadedPathEngine engine;
     Shaders& shaders = engine.shaders;
@@ -17,4 +16,5 @@ private:
     CameraPositioner_FirstPerson* positioner;
     InputState input;
     World world;
+    Spatial2D* heightmap = nullptr;
 };

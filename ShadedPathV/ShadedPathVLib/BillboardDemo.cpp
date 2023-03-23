@@ -70,7 +70,7 @@ void BillboardDemo::run()
     Log("BillboardDemo ended" << endl);
 }
 
-void addRandomBillboards(vector<BillboardDef>& billboards, World &world, unsigned int textureIndex, float aspectRatio) {
+void BillboardDemo::addRandomBillboards(vector<BillboardDef>& billboards, World &world, unsigned int textureIndex, float aspectRatio) {
     BillboardDef b;
     b.pos = vec4(0.0f, 4.05f, 0.0f, 0);
     b.dir = vec4(0.0f, 0.0f, 1.0f, 0.0f);
