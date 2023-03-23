@@ -230,6 +230,17 @@ void Spatial2D::getPoints(std::vector<glm::vec3>& points)
     }
 }
 
+bool Spatial2D::isAllPointsSet()
+{
+    int totalSize = size();
+    for (int i = 0; i < totalSize; i++) {
+        if (std::isnan(h[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void Spatial2D::adaptLinesToWorld(std::vector<LineDef>& lines, World& world)
 {
     vec4 center = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -264,20 +275,23 @@ void Spatial2D::diamondSquare(float randomMagnitude, float randomDampening, int 
         return;
     }
     if (randomMagnitude < 0.1f) {
-        Log("ERROR: diamondSquare() needs positive random range");
+        Log("ERROR: diamondSquare() needs positive random range" << endl);
         return;
     }
     if (randomDampening < 0.932f || randomDampening > 1.0f) {
-        Log("WARNING: diamondSquare() randomDampening should be within [0.933 , 1]");
+        Log("WARNING: diamondSquare() randomDampening should be within [0.933 , 1] << endl");
     }
     if (steps == -1) {
-        int segments = this->sidePoints - 1;
+        int segments = sidePoints - 1;
         int cs = (int)log2((double)segments);
         steps = cs;
     }
-    int circle_step_width = sidePoints-1;
+    int circle_step_width = sidePoints - 1;
     for (int i = 0; i < steps; i++) {
         diamondSquareOneStep(randomMagnitude, randomDampening, circle_step_width);
+        //vector<vec3> pts;
+        //this->getPoints(pts);
+        //Log(" Diamond Square side lenght " << (circle_step_width+1) << " has points: " << pts.size() << endl);
         randomMagnitude *= randomDampening;
         circle_step_width /= 2;
     }

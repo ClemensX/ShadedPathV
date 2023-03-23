@@ -195,6 +195,7 @@ TEST(Spatial, Heightmap) {
     heightmap0.setHeight(4096, 4096, 0.0f);
     heightmap0.setHeight(4095, 4096, 0.2f);
     heightmap0.setHeight(4096, 4095, 0.3f);
+    EXPECT_FALSE(heightmap0.isAllPointsSet());
     vector<LineDef> lines;
     heightmap0.getLines(lines);
     ASSERT_EQ(2, lines.size());
@@ -214,9 +215,11 @@ TEST(Spatial, Heightmap) {
     EXPECT_EQ(4, lines.size());
     // all steps:
     heightmap.diamondSquare(10.0f, 0.99f);
-    //vector<vec3> plist;
-    //heightmap.getPoints(plist);
-    //EXPECT_EQ(9, plist.size());
+    vector<vec3> plist;
+    heightmap.getPoints(plist);
+    // we should have a height point in all line/row crossings
+    //EXPECT_EQ((4096 * 2 + 1)*(4096 * 2 + 1), plist.size());
+    EXPECT_TRUE(heightmap.isAllPointsSet());
 }
 
 int main(int argc, char** argv) {
