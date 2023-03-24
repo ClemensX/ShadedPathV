@@ -8,6 +8,7 @@ public:
     void run();
     void drawFrame(ThreadResources& tr) override;
     void handleInput(InputState& inputState) override;
+    void buildCustomUI() override;
 private:
     ShadedPathEngine engine;
     Shaders& shaders = engine.shaders;

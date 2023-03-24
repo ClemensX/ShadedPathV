@@ -198,6 +198,7 @@ void UI::buildUI()
                 else
                     ImGui::Text("Mouse Position: <invalid>");
             }
+            engine->app->buildCustomUI();
             if (ImGui::BeginPopupContextWindow())
             {
                 if (ImGui::MenuItem("Custom", NULL, corner == -1)) corner = -1;

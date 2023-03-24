@@ -8,6 +8,7 @@ public:
     // called from multiple threads, only local resources should be changed
     virtual void drawFrame(ThreadResources& tr) = 0;
     virtual void handleInput(InputState& inputState) = 0;
+    virtual void buildCustomUI() {};
 };
 
 // Engine contains options and aggregates GlobalRendering, Presentation, Shaders, ThreadResources

@@ -36,7 +36,7 @@ void LandscapeGenerator::run()
         //engine.setThreadModeSingle();
 
         // engine initialization
-        engine.init("LandscapeDemo");
+        engine.init("LandscapeGenerator");
 
         engine.textureStore.generateBRDFLUT();
         //this_thread::sleep_for(chrono::milliseconds(3000));
@@ -175,3 +175,49 @@ void LandscapeGenerator::handleInput(InputState& inputState)
             positioner->setUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
     }
 }
+
+static void HelpMarker(const char* desc)
+{
+    ImGui::TextDisabled("(?)");
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(desc);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+}
+
+void LandscapeGenerator::buildCustomUI()
+{
+    ImGui::Separator();
+    ImGui::Text("Diamond Square Parameters");
+    ImGui::PushItemWidth(120);
+    static int N = 5;
+    ImGui::InputInt("N", &N);
+    //ImGui::SameLine(); HelpMarker(
+    //    "You can apply arithmetic operators +,*,/ on numerical values.\n"
+    //    "  e.g. [ 100 ], input \'*2\', result becomes [ 200 ]\n"
+    //    "Use +- to subtract.");
+    ImGui::SameLine();
+    int n2plus1 = 0;
+    if (2 < N && N < 14) {
+        n2plus1 = (int)(pow(2, N) + 1);
+    } else {
+        n2plus1 = 0;
+    }
+    
+    ImGui::Text("pixel width: %d", n2plus1);
+    static float dampening = 0.6f;
+    ImGui::SameLine();
+    ImGui::InputFloat("Dampening", &dampening, 0.01f, 0.1f, "%.3f");
+    static float magnitude = 200.0f;
+    ImGui::SameLine();
+    ImGui::InputFloat("Magnitude", &magnitude, 1.00f, 10.0f, "%.1f");
+    static float seed = 1.0f;
+    ImGui::SameLine();
+    ImGui::InputFloat("Seed", &seed, 0.01f, 0.1f, "%.3f");
+
+    ImGui::PopItemWidth();
+};
