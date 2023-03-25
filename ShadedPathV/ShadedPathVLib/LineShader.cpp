@@ -340,10 +340,16 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 	// mak
 	// copy added lines to GPU:
 	VkDeviceSize bufferSize = sizeof(Vertex) * MAX_DYNAMIC_LINES;
-	size_t copy_size = trl.verticesAddLines.size() * sizeof(Vertex);
-	vkMapMemory(device, trl.vertexBufferAddMemory, 0, bufferSize, 0, &data);
-	memcpy(data, trl.verticesAddLines.data(), copy_size);
-	vkUnmapMemory(device, trl.vertexBufferAddMemory);
+	size_t numAddLines = trl.verticesAddLines.size();
+	if (numAddLines > 0) {
+		if (numAddLines > MAX_DYNAMIC_LINES) {
+			Error("LineShader added more dynamic lines than allowed max.");
+		}
+		size_t copy_size = trl.verticesAddLines.size() * sizeof(Vertex);
+		vkMapMemory(device, trl.vertexBufferAddMemory, 0, bufferSize, 0, &data);
+		memcpy(data, trl.verticesAddLines.data(), copy_size);
+		vkUnmapMemory(device, trl.vertexBufferAddMemory);
+	}
 }
 
 LineShader::~LineShader()

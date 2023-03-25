@@ -33,7 +33,7 @@ void LandscapeGenerator::run()
         engine.setFramesInFlight(2);
         engine.registerApp(this);
         //engine.enableSound();
-        //engine.setThreadModeSingle();
+        engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("LandscapeGenerator");
@@ -74,31 +74,6 @@ void LandscapeGenerator::init() {
     // add some lines:
     float aspectRatio = engine.getAspect();
 
-    // Grid with 1m squares, floor on -10m, ceiling on 372m
-    //Grid* grid = world.createWorldGrid(1.0f, 0.0f);
-    //engine.shaders.lineShader.add(grid->lines);
-    Spatial2D heightmap(1024 + 1);
-    // set height of three points at center
-    //heightmap.setHeight(4096, 4096, 0.0f);
-    //heightmap.setHeight(4095, 4096, 0.2f);
-    //heightmap.setHeight(4096, 4095, 0.3f);
-    int lastPos = 1024;
-    // down left and right corner
-    heightmap.setHeight(0, 0, 0.0f);
-    heightmap.setHeight(lastPos, 0, 300.0f);
-    // top left and right corner
-    heightmap.setHeight(0, lastPos, 10.0f);
-    heightmap.setHeight(lastPos, lastPos, 50.0f);
-    // do two iteration
-    heightmap.diamondSquare(200.0f, 0.5f);
-    vector<LineDef> lines;
-    heightmap.getLines(lines);
-    heightmap.adaptLinesToWorld(lines, world);
-    //vector<vec3> plist;
-    //heightmap.getPoints(plist);
-    //Log("num points: " << plist.size() << endl);
-    engine.shaders.lineShader.add(lines);
-
     engine.shaders.lineShader.initialUpload();
 }
 
@@ -124,6 +99,36 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
     old_seconds = seconds;
 
     // lines
+    engine.shaders.lineShader.clearAddLines(tr);
+    if (parameters.generate) {
+        parameters.generate = false;
+        Log("Generate thread " << tr.frameIndex << endl);
+        // Grid with 1m squares, floor on -10m, ceiling on 372m
+        //Grid* grid = world.createWorldGrid(1.0f, 0.0f);
+        //engine.shaders.lineShader.add(grid->lines);
+        Spatial2D heightmap(1024 + 1);
+        // set height of three points at center
+        //heightmap.setHeight(4096, 4096, 0.0f);
+        //heightmap.setHeight(4095, 4096, 0.2f);
+        //heightmap.setHeight(4096, 4095, 0.3f);
+        int lastPos = 1024;
+        // down left and right corner
+        heightmap.setHeight(0, 0, 0.0f);
+        heightmap.setHeight(lastPos, 0, 300.0f);
+        // top left and right corner
+        heightmap.setHeight(0, lastPos, 10.0f);
+        heightmap.setHeight(lastPos, lastPos, 50.0f);
+        // do two iteration
+        heightmap.diamondSquare(200.0f, 0.5f);
+        lines.clear();
+        heightmap.getLines(lines);
+        heightmap.adaptLinesToWorld(lines, world);
+        //vector<vec3> plist;
+        //heightmap.getPoints(plist);
+        //Log("num points: " << plist.size() << endl);
+    }
+    engine.shaders.lineShader.addOneTime(lines, tr);
+
     LineShader::UniformBufferObject lubo{};
     lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     lubo.view = camera->getViewMatrix();
@@ -218,6 +223,43 @@ void LandscapeGenerator::buildCustomUI()
     static float seed = 1.0f;
     ImGui::SameLine();
     ImGui::InputFloat("Seed", &seed, 0.01f, 0.1f, "%.3f");
+
+    ImGui::Text("Start hight for corners:");
+    static float h_tl = 0.0f;
+    ImGui::SameLine();
+    ImGui::InputFloat("Top L", &h_tl, 1.0f, 10.0f, "%.3f");
+    static float h_tr = 0.0f;
+    ImGui::SameLine();
+    ImGui::InputFloat("Top R", &h_tr, 1.0f, 10.0f, "%.3f");
+    static float h_bl = 0.0f;
+    ImGui::SameLine();
+    ImGui::InputFloat("Bottom L", &h_bl, 1.0f, 10.0f, "%.3f");
+    static float h_br = 0.0f;
+    ImGui::SameLine();
+    ImGui::InputFloat("Buttom R", &h_br, 1.0f, 10.0f, "%.3f");
+
+    static int generations = 1;
+    ImGui::InputInt("Iterations", &generations);
+    ImGui::SameLine();
+    static int clicked = 0;
+    if (ImGui::Button("Generate")) {
+        clicked++;
+    }
+    if (clicked & 1)
+    {
+        // generate new landscape
+        parameters.n = n2plus1;
+        parameters.dampening = dampening;
+        parameters.magnitude = magnitude;
+        parameters.seed = seed;
+        parameters.h_tl = h_tl;
+        parameters.h_tr = h_tr;
+        parameters.h_bl = h_bl;
+        parameters.h_br = h_br;
+        parameters.generations = generations;
+        parameters.generate = true;
+        clicked = 0;
+    }
 
     ImGui::PopItemWidth();
 };

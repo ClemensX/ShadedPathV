@@ -18,4 +18,20 @@ private:
     InputState input;
     World world;
     Spatial2D* heightmap = nullptr;
+    // generation parameters set from UI:
+    struct Parameters {
+        int n;
+        float dampening;
+        float magnitude;
+        float seed;
+        float h_tl;
+        float h_tr;
+        float h_bl;
+        float h_br;
+        int generations;
+        bool generate = false;
+    };
+    Parameters parameters;
+    // store generated lines:
+    std::vector<LineDef> lines;
 };
