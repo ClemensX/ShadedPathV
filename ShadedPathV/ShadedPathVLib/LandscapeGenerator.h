@@ -23,7 +23,7 @@ private:
         int n;
         float dampening;
         float magnitude;
-        float seed;
+        int seed;
         float h_tl;
         float h_tr;
         float h_bl;
@@ -34,4 +34,5 @@ private:
     Parameters parameters;
     // store generated lines:
     std::vector<LineDef> lines;
+    std::mutex monitorMutex;
 };

@@ -170,7 +170,7 @@ public:
     // heightmap line 0 is at (-halfsize, h, -halfsize) to (halfsize, h, -halfsize)
     // randomMagnitude is initial range of random value added to calculated points
     // RandomDampening is a factor by which the dampeningMagnitude will be made smaller after each step (1 .. 0.933)
-    void diamondSquare(float randomMagnitude, float randomDampening, int steps = -1);
+    void diamondSquare(float randomMagnitude, float randomDampening, int seed = 1, int steps = -1);
     // check that every point is set (no more NAN elements). This means we have a full heightmap
     bool isAllPointsSet();
 

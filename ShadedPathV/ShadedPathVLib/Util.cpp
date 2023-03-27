@@ -272,11 +272,14 @@ void Spatial2D::adaptLinesToWorld(std::vector<LineDef>& lines, World& world)
     }
 }
 
-void Spatial2D::diamondSquare(float randomMagnitude, float randomDampening, int steps)
+void Spatial2D::diamondSquare(float randomMagnitude, float randomDampening, int seed, int steps)
 {
     if (steps == 0) {
         // nothing to do - simply return the corner points
         return;
+    }
+    if (seed != 0) {
+        srand(seed);
     }
     if (randomMagnitude < 0.1f) {
         Log("ERROR: diamondSquare() needs positive random range" << endl);
@@ -285,10 +288,10 @@ void Spatial2D::diamondSquare(float randomMagnitude, float randomDampening, int 
     if (randomDampening < 0.932f || randomDampening > 1.0f) {
         Log("WARNING: diamondSquare() randomDampening should be within [0.933 , 1] << endl");
     }
-    if (steps == -1) {
-        int segments = sidePoints - 1;
-        int cs = (int)log2((double)segments);
-        steps = cs;
+    int segments = sidePoints - 1;
+    int max_steps = (int)log2((double)segments);
+    if (steps == -1 || steps > max_steps) {
+        steps = max_steps;
     }
     int circle_step_width = sidePoints - 1;
     for (int i = 0; i < steps; i++) {
