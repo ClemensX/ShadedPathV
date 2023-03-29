@@ -7,8 +7,8 @@ void LandscapeGenerator::run()
 {
     Log("LandscapeGenerator started" << endl);
     {
-        // camera initialization
-        CameraPositioner_FirstPerson positioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        // camera initialization camera pos (241.638,732.069,2261.37) look at (-0.108512,-0.289912,-0.950882)
+        CameraPositioner_FirstPerson positioner(glm::vec3(241.638f, 732.069f, 2261.37f), glm::vec3(-0.108512f, -0.289912f, -0.950882f), glm::vec3(0.0f, 1.0f, 0.0f));
         positioner.setMaxSpeed(25.0f);
         Camera camera(positioner);
         this->camera = &camera;
@@ -105,9 +105,10 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
         std::unique_lock<std::mutex> lock(monitorMutex);
         if (parameters.generate && parameters.n > 0) {
             parameters.generate = false;
-            Log("Generate thread " << tr.frameIndex << endl);
-            Spatial2D heightmap(parameters.n);
-            int lastPos = parameters.n - 1;
+            //Log("Generate thread " << tr.frameIndex << endl);
+            int n2plus1 = (int)(pow(2, parameters.n) + 1);
+            Spatial2D heightmap(n2plus1);
+            int lastPos = n2plus1 - 1;
             // down left and right corner
             heightmap.setHeight(0, 0, parameters.h_bl);
             heightmap.setHeight(lastPos, 0, parameters.h_br);
@@ -128,6 +129,7 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
 
     LineShader::UniformBufferObject lubo{};
     lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    //if (tr.frameNum % 100 == 0) camera->log();
     lubo.view = camera->getViewMatrix();
     lubo.proj = camera->getProjectionNDC();
     // we still need to call prepareAddLines() even if we didn't actually add some
@@ -179,15 +181,15 @@ void LandscapeGenerator::handleInput(InputState& inputState)
         if (kname != NULL) {
             //Log("key == " << key << " " << kname << endl);
             if (strcmp("+", kname) == 0 && action == GLFW_RELEASE) {
-                parameters.generate = true;
+                parameters.paramsChangedOutsideUI = true;
                 parameters.generations += 1;
             }
             if (strcmp("-", kname) == 0 && action == GLFW_RELEASE) {
-                parameters.generate = true;
+                parameters.paramsChangedOutsideUI = true;
                 parameters.generations -= 1;
             }
             if (strcmp("g", kname) == 0 && action == GLFW_RELEASE) {
-                parameters.generate = true;
+                parameters.paramsChangedOutsideUI = true;
                 parameters.seed += 1;
             }
         }
@@ -213,51 +215,48 @@ void LandscapeGenerator::buildCustomUI()
         "g generate new seed\n" 
         "+ next Generation\n"
         "- previous Generation";
+    static Parameters localp = initialParameters;
+    if (parameters.paramsChangedOutsideUI) {
+        parameters.paramsChangedOutsideUI = false;
+        parameters.generate = true;
+        localp = parameters;
+    }
     if (ImGui::CollapsingHeader("Params"))
     {
         ImGui::SameLine(); HelpMarker(helpText.c_str());
         ImGui::Separator();
         ImGui::Text("Diamond Square Parameters");
         ImGui::PushItemWidth(120);
-        static int N = 10;
-        ImGui::InputInt("N", &N);
+        ImGui::InputInt("N", &localp.n);
         ImGui::SameLine();
         int n2plus1 = 0;
-        if (2 < N && N < 14) {
-            n2plus1 = (int)(pow(2, N) + 1);
+        if (2 < localp.n && localp.n < 14) {
+            n2plus1 = (int)(pow(2, localp.n) + 1);
         }
         else {
             n2plus1 = 0;
         }
 
         ImGui::Text("pixel width: %d", n2plus1);
-        static float dampening = 0.6f;
         ImGui::SameLine();
-        ImGui::InputFloat("Dampening", &dampening, 0.01f, 0.1f, "%.3f");
-        static float magnitude = 200.0f;
+        ImGui::InputFloat("Dampening", &localp.dampening, 0.01f, 0.1f, "%.3f");
         ImGui::SameLine();
-        ImGui::InputFloat("Magnitude", &magnitude, 1.00f, 10.0f, "%.1f");
-        static int seed = 1;
-        seed = parameters.seed;
+        ImGui::InputFloat("Magnitude", &localp.magnitude, 1.00f, 10.0f, "%.1f");
+        //seed = parameters.seed;
         ImGui::SameLine();
-        ImGui::InputInt("Seed", &seed, 1, 10);
+        ImGui::InputInt("Seed", &localp.seed, 1, 10);
 
         ImGui::Text("Start hight for corners:");
-        static float h_tl = 0.0f;
         ImGui::SameLine();
-        ImGui::InputFloat("Top L", &h_tl, 1.0f, 10.0f, "%.3f");
-        static float h_tr = 0.0f;
+        ImGui::InputFloat("Top L", &localp.h_tl, 1.0f, 10.0f, "%.3f");
         ImGui::SameLine();
-        ImGui::InputFloat("Top R", &h_tr, 1.0f, 10.0f, "%.3f");
-        static float h_bl = 0.0f;
+        ImGui::InputFloat("Top R", &localp.h_tr, 1.0f, 10.0f, "%.3f");
         ImGui::SameLine();
-        ImGui::InputFloat("Bottom L", &h_bl, 1.0f, 10.0f, "%.3f");
-        static float h_br = 0.0f;
+        ImGui::InputFloat("Bottom L", &localp.h_bl, 1.0f, 10.0f, "%.3f");
         ImGui::SameLine();
-        ImGui::InputFloat("Buttom R", &h_br, 1.0f, 10.0f, "%.3f");
+        ImGui::InputFloat("Buttom R", &localp.h_br, 1.0f, 10.0f, "%.3f");
 
-        static int generations = 1;
-        ImGui::InputInt("Iterations", &generations);
+        ImGui::InputInt("Iterations", &localp.generations);
         ImGui::SameLine();
         static int clicked = 0;
         if (ImGui::Button("Generate")) {
@@ -266,15 +265,15 @@ void LandscapeGenerator::buildCustomUI()
         if (clicked & 1)
         {
             // generate new landscape
-            parameters.n = n2plus1;
-            parameters.dampening = dampening;
-            parameters.magnitude = magnitude;
-            parameters.seed = seed;
-            parameters.h_tl = h_tl;
-            parameters.h_tr = h_tr;
-            parameters.h_bl = h_bl;
-            parameters.h_br = h_br;
-            parameters.generations = generations;
+            parameters.n = localp.n;
+            parameters.dampening = localp.dampening;
+            parameters.magnitude = localp.magnitude;
+            parameters.seed = localp.seed;
+            parameters.h_tl = localp.h_tl;
+            parameters.h_tr = localp.h_tr;
+            parameters.h_bl = localp.h_bl;
+            parameters.h_br = localp.h_br;
+            parameters.generations = localp.generations;
             parameters.generate = true;
             clicked = 0;
         }

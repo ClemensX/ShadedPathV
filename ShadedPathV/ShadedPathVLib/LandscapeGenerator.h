@@ -30,8 +30,11 @@ private:
         float h_br;
         int generations;
         bool generate = false;
+        bool paramsChangedOutsideUI = false;
     };
-    Parameters parameters;
+    // define set of initial parameters - used here and in Imgui init code
+    const Parameters initialParameters = { 10, 0.6f, 200.0f, 1, 0.0f, 0.0f, 0.0f, 0.0f, 1 };
+    Parameters parameters = initialParameters;
     // store generated lines:
     std::vector<LineDef> lines;
     std::mutex monitorMutex;

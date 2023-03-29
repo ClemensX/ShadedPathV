@@ -45,6 +45,12 @@ public:
 		return projection;
 	}
 
+	// log camera position and lookAt
+	void log() {
+		auto p = getPosition();
+		auto l = getLookAt();
+		Log(" camera pos (" << p.x << "," << p.y << "," << p.z << ") look at (" << l.x << "," << l.y << "," << l.z << ")" << std::endl);
+	}
 private:
 	CameraPositionerInterface& positioner;
 	glm::mat4 projection = glm::mat4(1.0f);
