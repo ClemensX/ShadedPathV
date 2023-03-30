@@ -60,6 +60,13 @@ void Shaders::Config::destroyThreadResources(ThreadResources& tr)
 	}
 }
 
+void Shaders::Config::shutdownShaderUpdateThreads()
+{
+	for (ShaderBase* shader : shaderList) {
+		shader->shutdownUpdateThread();
+	}
+}
+
 void Shaders::createCommandBuffers(ThreadResources& tr)
 {
 	config.createCommandBuffers(tr);
@@ -76,6 +83,11 @@ void Shaders::gatherActiveCommandBuffers(ThreadResources& tr) {
 void Shaders::destroyThreadResources(ThreadResources& tr)
 {
 	config.destroyThreadResources(tr);
+}
+
+void Shaders::shutdownShaderUpdateThreads()
+{
+	config.shutdownShaderUpdateThreads();
 }
 
 // SHADER Triangle

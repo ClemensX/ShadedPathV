@@ -71,6 +71,8 @@ public:
 
 	// add lines - they will never  be removed
 	void add(std::vector<LineDef>& linesToAdd);
+	// global update
+	void updateGlobal(std::vector<LineDef>& linesToAdd);
 	// initial upload of all added lines - only valid before first render
 	void initialUpload();
 
@@ -144,6 +146,14 @@ public:
 		};
 		lines.insert(lines.end(), crossLines, crossLines + std::size(crossLines));
 	}
+
+	private:
+		struct LineShaderUpdateElement : ShaderUpdateElement {
+			std::vector<LineDef>* linesToAdd;
+		};
+		std::array<LineShaderUpdateElement, 10> updateArray;
+	protected:
+		void update(int i) override;
 };
 
 struct LineThreadResources : ShaderThreadResources {

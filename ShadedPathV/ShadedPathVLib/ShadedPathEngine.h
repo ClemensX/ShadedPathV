@@ -208,6 +208,9 @@ public:
     }
     ShadedPathApplication* app = nullptr;
     std::string appname;
+    ThreadGroup &getThreadGroup() {
+        return threads;
+    }
 private:
     State state = INIT;
     float backBufferAspect = 1.0f;

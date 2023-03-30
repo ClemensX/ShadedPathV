@@ -146,6 +146,12 @@ public:
 		return lastShader;
 	}
 
+	void shutdownUpdateThread() {
+		if (shaderUpdateQueueInfo.threadRunning) {
+			shaderUpdateQueue.shutdown();
+		}
+	}
+
 protected:
 	// signal if this shader is in use, set during init()
 	bool enabled = false;
@@ -259,5 +265,63 @@ protected:
 		depthStencil.back = {}; // Optional
 		return depthStencil;
 	}
+
+	// thread handling for global resource updates (for non-thread local resources)
+
+	// all shaders have to subclass this for their update array
+	struct ShaderUpdateElement {
+		bool free = true;   // can be reserved
+		bool inuse = false; // update process in progress
+	};
+	// do this in shader:
+	//std::array<ShaderUpdateElement, 10> updateArray;
+
+	// we simply use indexes into the update array for handling resources
+	ThreadsafeWaitingQueue<int> shaderUpdateQueue;
+
+	// everything from here should only be called from within sync blocks via shaderUpdateQueue
+	struct ShaderUpdateQueueInfo {
+		bool workInProgress = false;
+		bool reservedSlotsAvailable = false;
+		bool threadRunning = false;
+	};
+	ShaderUpdateQueueInfo shaderUpdateQueueInfo;
+
+	static void runUpdateThread(ShaderBase* shader_instance);
+
+	void startUpdateThread();
+
+	// the actual update method that operates on a single ShaderUpdateElement
+	virtual void update(int i) {};
+
+	// get update slot. will terminate engine if no slot available!
+	// all previously reserved slots which are not already worked on will be simply removed (set to free)
+	// only the newest update slot should still be in queue
+	template <typename T, std::size_t size>
+	size_t reserveUpdateSlot(const std::array<T, size>& updateArray) {
+		for (size_t i = 0; i < size; i++) {
+			ShaderUpdateElement* el = (ShaderUpdateElement*)&updateArray[i];
+			if (el->free) {
+				freeAllReservedSlots<T,size>(updateArray);
+				el->free = false;
+				shaderUpdateQueueInfo.reservedSlotsAvailable = true;
+				return i;
+			}
+		}
+		Error("ShaderBase: no slots available for global shader update!");
+		// keep compiler happy
+		return 0;
+	};
+
+	// free all reserved slots that are not already worked on
+	template <typename T, std::size_t size>
+	void freeAllReservedSlots(const std::array<T, size>& updateArray) {
+		for (size_t i = 0; i < size; i++) {
+			ShaderUpdateElement* el = (ShaderUpdateElement*)&updateArray[i];
+			if (el->free == false && el->inuse == false) {
+				el->free = true;
+			}
+		}
+	};
 };
 

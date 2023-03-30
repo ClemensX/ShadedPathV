@@ -318,6 +318,7 @@ void ShadedPathEngine::shutdown()
 {
     shutdown_mode = true;
     /*queue.shutdown();*/
+    shaders.shutdownShaderUpdateThreads();
     for (int i = 0; i < framesInFlight; i++) {
         auto& tr = threadResources[i];
         tr.renderThreadContinueQueue.shutdown();

@@ -120,6 +120,7 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
             lines.clear();
             heightmap.getLines(lines);
             heightmap.adaptLinesToWorld(lines, world);
+            engine.shaders.lineShader.updateGlobal(lines);
             //vector<vec3> plist;
             //heightmap.getPoints(plist);
             //Log("num points: " << plist.size() << endl);

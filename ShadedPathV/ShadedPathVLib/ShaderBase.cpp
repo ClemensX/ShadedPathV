@@ -180,6 +180,36 @@ void ShaderBase::createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState
 	}
 }
 
+void ShaderBase::startUpdateThread()
+{
+	if (shaderUpdateQueueInfo.threadRunning) {
+		Error("shader update thread can only be started once!");
+		return;
+	}
+	void* native_handle = engine->getThreadGroup().add_t(runUpdateThread, this);
+	wstring mod_name = wstring(L"shader_update");//.append(L"_").append(to_wstring(i));
+	SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
+}
+
+void ShaderBase::runUpdateThread(ShaderBase* shader_instance)
+{
+	LogCondF(LOG_QUEUE, "run shader update thread" << endl);
+	shader_instance->shaderUpdateQueueInfo.threadRunning = true;
+	//this_thread::sleep_for(chrono::milliseconds(1000 * (10 - tr->frameIndex)));
+	while (shader_instance->engine->isShutdown() == false) {
+		// wait until queue submit thread issued all present commands
+//        tr->renderThreadContinue->wait(false);
+		optional<int> i = shader_instance->shaderUpdateQueue.pop();
+		if (!i) {
+			break;
+		}
+		// update using slot i
+		shader_instance->update(i.value());
+		LogCondF(LOG_QUEUE, "updated shader data " << endl);
+	}
+	LogCondF(LOG_QUEUE, "run shader update thread end" << endl);
+}
+
 ShaderBase::~ShaderBase()
 {
 }

@@ -285,9 +285,9 @@ void Spatial2D::diamondSquare(float randomMagnitude, float randomDampening, int 
         Log("ERROR: diamondSquare() needs positive random range" << endl);
         return;
     }
-    if (randomDampening < 0.932f || randomDampening > 1.0f) {
-        Log("WARNING: diamondSquare() randomDampening should be within [0.933 , 1] << endl");
-    }
+    //if (randomDampening < 0.932f || randomDampening > 1.0f) {
+    //    Log("WARNING: diamondSquare() randomDampening should be within [0.933 , 1] << endl");
+    //}
     int segments = sidePoints - 1;
     int max_steps = (int)log2((double)segments);
     if (steps == -1 || steps > max_steps) {

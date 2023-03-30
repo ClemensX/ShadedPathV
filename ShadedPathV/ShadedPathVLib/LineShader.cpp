@@ -13,7 +13,9 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 
 	// descriptor set layout
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);
-
+	//reserveUpdateSlot(updateArray);
+	//reserveUpdateSlot(updateArray);
+	startUpdateThread();
 }
 
 void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
@@ -350,6 +352,18 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 		memcpy(data, trl.verticesAddLines.data(), copy_size);
 		vkUnmapMemory(device, trl.vertexBufferAddMemory);
 	}
+}
+
+void LineShader::update(int i)
+{
+	Log("update line shader global buffer via slot " << i << endl);
+	Log("update line shader global end " << i << endl);
+}
+
+void LineShader::updateGlobal(std::vector<LineDef>& linesToAdd)
+{
+	int i = reserveUpdateSlot(updateArray);
+	this->shaderUpdateQueue.push(i);
 }
 
 LineShader::~LineShader()
