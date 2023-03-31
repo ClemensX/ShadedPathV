@@ -356,15 +356,17 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 
 void LineShader::update(int i)
 {
-	int num = updateArray[i].num;
-	Log("update line shader global buffer via slot " << i << " update num " << num << endl);
+	auto &u = updateArray[i];
+	Log("update line shader global buffer via slot " << i << " update num " << u.num << endl);
+	Log("  --> push " << u.linesToAdd->size() << " lines to GPU" << endl);
 	this_thread::sleep_for(chrono::milliseconds(4000));
 	Log("update line shader global end " << i << endl);
 }
 
 void LineShader::updateGlobal(std::vector<LineDef>& linesToAdd)
 {
-	int i = reserveUpdateSlot(updateArray);
+	int i = (int) reserveUpdateSlot(updateArray);
+	updateArray[i].linesToAdd = &linesToAdd;
 	this->shaderUpdateQueue.push(i);
 }
 
