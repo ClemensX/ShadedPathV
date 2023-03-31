@@ -38,6 +38,7 @@ public:
     const std::string engineName = "ShadedPathV";
     const std::string engineVersion = "0.1";
     const uint32_t engineVersionInt = 1;
+    std::string vulkanAPIVersion = global.getVulkanAPIString();
 
     virtual ~ShadedPathEngine();
 

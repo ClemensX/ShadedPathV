@@ -197,6 +197,11 @@ public:
 		cond.notify_one();
 	}
 
+	size_t size() {
+		std::unique_lock<std::mutex> lock(monitorMutex);
+		return myqueue.size();
+	}
+
 	void shutdown() {
 		std::unique_lock<std::mutex> lock(monitorMutex);
 		in_shutdown = true;

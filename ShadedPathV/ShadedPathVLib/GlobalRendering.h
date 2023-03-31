@@ -35,6 +35,8 @@ private:
 public:
 	GlobalRendering(ShadedPathEngine& s) : engine(s) {
 		Log("GlobalRendering c'tor\n");
+		// log vulkan version as string
+		Log("Vulkan API Version: " << getVulkanAPIString().c_str() << std::endl);
 	};
 
 	~GlobalRendering() {
@@ -138,6 +140,7 @@ public:
 		VkDeviceSize align = physicalDeviceProperties.properties.limits.minUniformBufferOffsetAlignment;
 		return (originalSize + (align - 1)) & ~(align - 1); // must be a multiple of align bytes
 	};
+	static std::string getVulkanAPIString();
 
 private:
 	std::vector<const char*> deviceExtensions = {

@@ -272,6 +272,7 @@ protected:
 	struct ShaderUpdateElement {
 		bool free = true;   // can be reserved
 		bool inuse = false; // update process in progress
+		unsigned long num = 0; // count updates
 	};
 	// do this in shader:
 	//std::array<ShaderUpdateElement, 10> updateArray;
@@ -284,6 +285,7 @@ protected:
 		bool workInProgress = false;
 		bool reservedSlotsAvailable = false;
 		bool threadRunning = false;
+		unsigned long last_update_num = 0; // hold highest used update num so far
 	};
 	ShaderUpdateQueueInfo shaderUpdateQueueInfo;
 
@@ -293,6 +295,23 @@ protected:
 
 	// the actual update method that operates on a single ShaderUpdateElement
 	virtual void update(int i) {};
+	virtual ShaderUpdateElement* getUpdateElement(int i) {
+		return nullptr;
+	}
+
+	int manageMultipleUpdateSlots(int slot, int next_slot) {
+		ShaderUpdateElement* cur = getUpdateElement(slot);
+		ShaderUpdateElement* next = getUpdateElement(next_slot);
+		if (next->num > cur->num) {
+			// we found newer update - remove the old one
+			cur->free = true;
+			return next_slot;
+		} else {
+			// cur is newer than next - remove next element
+			next->free = true;
+			return slot;
+		}
+	}
 
 	// get update slot. will terminate engine if no slot available!
 	// all previously reserved slots which are not already worked on will be simply removed (set to free)
@@ -304,6 +323,7 @@ protected:
 			if (el->free) {
 				freeAllReservedSlots<T,size>(updateArray);
 				el->free = false;
+				el->num = shaderUpdateQueueInfo.last_update_num++;
 				shaderUpdateQueueInfo.reservedSlotsAvailable = true;
 				return i;
 			}

@@ -154,6 +154,10 @@ public:
 		std::array<LineShaderUpdateElement, 10> updateArray;
 	protected:
 		void update(int i) override;
+		ShaderUpdateElement* getUpdateElement(int i) override {
+			return &updateArray[i];
+		}
+
 };
 
 struct LineThreadResources : ShaderThreadResources {

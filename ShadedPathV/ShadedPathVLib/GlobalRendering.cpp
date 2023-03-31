@@ -7,6 +7,20 @@ const vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
 };
 
+string GlobalRendering::getVulkanAPIString()
+{
+    uint32_t apiNumber;
+    VkResult res = vkEnumerateInstanceVersion(&apiNumber);
+    if (res != VK_SUCCESS) Error("Cannot call vulkan API");
+    uint32_t major = VK_API_VERSION_MAJOR(apiNumber);
+    uint32_t minor = VK_API_VERSION_MINOR(apiNumber);
+    uint32_t patch = VK_API_VERSION_PATCH(apiNumber);
+    uint32_t variant = VK_API_VERSION_VARIANT(apiNumber);
+    stringstream vulkan_version;
+    vulkan_version << "" << major << "." << minor << "." << patch;
+    return vulkan_version.str();
+}
+
 void GlobalRendering::initBeforePresentation()
 {
     gatherDeviceExtensions();

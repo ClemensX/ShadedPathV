@@ -356,7 +356,9 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 
 void LineShader::update(int i)
 {
-	Log("update line shader global buffer via slot " << i << endl);
+	int num = updateArray[i].num;
+	Log("update line shader global buffer via slot " << i << " update num " << num << endl);
+	this_thread::sleep_for(chrono::milliseconds(4000));
 	Log("update line shader global end " << i << endl);
 }
 

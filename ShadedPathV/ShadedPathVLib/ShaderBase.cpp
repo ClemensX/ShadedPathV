@@ -195,16 +195,28 @@ void ShaderBase::runUpdateThread(ShaderBase* shader_instance)
 {
 	LogCondF(LOG_QUEUE, "run shader update thread" << endl);
 	shader_instance->shaderUpdateQueueInfo.threadRunning = true;
-	//this_thread::sleep_for(chrono::milliseconds(1000 * (10 - tr->frameIndex)));
 	while (shader_instance->engine->isShutdown() == false) {
-		// wait until queue submit thread issued all present commands
-//        tr->renderThreadContinue->wait(false);
-		optional<int> i = shader_instance->shaderUpdateQueue.pop();
-		if (!i) {
+		optional<int> opt_slot = shader_instance->shaderUpdateQueue.pop();
+		if (!opt_slot) {
 			break;
 		}
-		// update using slot i
-		shader_instance->update(i.value());
+		// find the highest update in queue and discard the others
+		// this is the only place with pop(), so should be safe to
+		// query length as it will never decrease outside this method
+		int slot = opt_slot.value();
+		size_t size = shader_instance->shaderUpdateQueue.size();
+		if (size > 0) {
+			for (int i = 0; i < size; i++) {
+				optional<int> opt_next_slot = shader_instance->shaderUpdateQueue.pop();
+				if (!opt_next_slot) {
+					break;
+				}
+				int next_slot = opt_next_slot.value();
+				slot = shader_instance->manageMultipleUpdateSlots(slot, next_slot);
+			}
+		}
+		// update using slot number
+		shader_instance->update(slot);
 		LogCondF(LOG_QUEUE, "updated shader data " << endl);
 	}
 	LogCondF(LOG_QUEUE, "run shader update thread end" << endl);
