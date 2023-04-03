@@ -154,7 +154,6 @@
       <AdditionalIncludeDirectories>..\..\..\libraries\glm;..\..\..\libraries\glfw\include;..\..\..\libraries\ktx\include;..\..\..\libraries\vulkan\Include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
