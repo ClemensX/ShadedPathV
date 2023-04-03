@@ -263,18 +263,18 @@ void LandscapeGenerator::buildCustomUI()
         if (ImGui::Button("Generate")) {
             clicked++;
         }
+        // generate new landscape
+        parameters.n = localp.n;
+        parameters.dampening = localp.dampening;
+        parameters.magnitude = localp.magnitude;
+        parameters.seed = localp.seed;
+        parameters.h_tl = localp.h_tl;
+        parameters.h_tr = localp.h_tr;
+        parameters.h_bl = localp.h_bl;
+        parameters.h_br = localp.h_br;
+        parameters.generations = localp.generations;
         if (clicked & 1)
         {
-            // generate new landscape
-            parameters.n = localp.n;
-            parameters.dampening = localp.dampening;
-            parameters.magnitude = localp.magnitude;
-            parameters.seed = localp.seed;
-            parameters.h_tl = localp.h_tl;
-            parameters.h_tr = localp.h_tr;
-            parameters.h_bl = localp.h_bl;
-            parameters.h_br = localp.h_br;
-            parameters.generations = localp.generations;
             parameters.generate = true;
             clicked = 0;
         }
