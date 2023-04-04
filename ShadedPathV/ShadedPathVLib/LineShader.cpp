@@ -294,29 +294,29 @@ void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadReso
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = engine->getBackBufferExtent();
 
-	renderPassInfo.clearValueCount = 0;
+renderPassInfo.clearValueCount = 0;
 
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.graphicsPipelineAdd);
-	VkBuffer vertexBuffers[] = { vertexBuffer };
-	VkDeviceSize offsets[] = { 0 };
-	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.graphicsPipelineAdd);
+VkBuffer vertexBuffers[] = { vertexBuffer };
+VkDeviceSize offsets[] = { 0 };
+vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-	// bind descriptor sets:
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet, 0, nullptr);
+// bind descriptor sets:
+vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet, 0, nullptr);
 
+vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+vkCmdDraw(commandBuffer, static_cast<uint32_t>(trl.verticesAddLines.size()), 1, 0, 0);
+vkCmdEndRenderPass(commandBuffer);
+if (engine->isStereo()) {
+	renderPassInfo.framebuffer = trl.framebufferAdd2;
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet2, 0, nullptr);
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(trl.verticesAddLines.size()), 1, 0, 0);
 	vkCmdEndRenderPass(commandBuffer);
-	if (engine->isStereo()) {
-		renderPassInfo.framebuffer = trl.framebufferAdd2;
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet2, 0, nullptr);
-		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		vkCmdDraw(commandBuffer, static_cast<uint32_t>(trl.verticesAddLines.size()), 1, 0, 0);
-		vkCmdEndRenderPass(commandBuffer);
-	}
-	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-		Error("failed to record triangle command buffer!");
-	}
+}
+if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+	Error("failed to record triangle command buffer!");
+}
 }
 
 void LineShader::prepareAddLines(ThreadResources& tr)
@@ -356,18 +356,53 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 
 void LineShader::update(int i)
 {
-	auto &u = updateArray[i];
+	// TODO think about moving update_finished logic to base class
+	auto& u = updateArray[i];
 	Log("update line shader global buffer via slot " << i << " update num " << u.num << endl);
 	Log("  --> push " << u.linesToAdd->size() << " lines to GPU" << endl);
-	this_thread::sleep_for(chrono::milliseconds(4000));
+	if (shaderUpdateQueueInfo.update_finished_counter == 0) {
+		// all previous updates finished: we can handle a new one
+		shaderUpdateQueueInfo.update_available = 0;
+	}
+	if (shaderUpdateQueueInfo.update_available > 0) {
+		// race condition: we have an update while another still ist handled by render threads
+		Log("WARNING RACE CONDITION LineShader - update delayed by 500ms" << endl);
+		this_thread::sleep_for(chrono::milliseconds(500));
+		if (shaderUpdateQueueInfo.update_finished_counter == 0) {
+			// all previous updates finished: we can handle a new one
+			shaderUpdateQueueInfo.update_available = 0;
+		}
+		if (shaderUpdateQueueInfo.update_available > 0) {
+			// give up
+			Error("ERROR RACE CONDITION LineShader");
+		}
+	}
+	//this_thread::sleep_for(chrono::milliseconds(4000));
+
+	// after update signal newest generation in shader:
+	shaderUpdateQueueInfo.update_available = u.num;
+	shaderUpdateQueueInfo.update_finished_counter = engine->getFramesInFlight();
 	Log("update line shader global end " << i << endl);
 }
 
 void LineShader::updateGlobal(std::vector<LineDef>& linesToAdd)
 {
-	int i = (int) reserveUpdateSlot(updateArray);
+	int i = (int)reserveUpdateSlot(updateArray);
 	updateArray[i].linesToAdd = &linesToAdd;
 	this->shaderUpdateQueue.push(i);
+}
+
+void LineShader::handleUpdatedResources(ThreadResources& tr)
+{
+	if (shaderUpdateQueueInfo.update_available > 0 && tr.global_update_num < shaderUpdateQueueInfo.update_available) {
+		// not yet switched for this update
+
+		// do the switch
+		// switch()
+
+		tr.global_update_num = shaderUpdateQueueInfo.update_available;
+		shaderUpdateQueueInfo.update_finished_counter--;
+	}
 }
 
 LineShader::~LineShader()

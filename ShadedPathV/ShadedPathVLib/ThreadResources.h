@@ -45,6 +45,9 @@ public:
 	FrameBufferAttachment colorAttachment/*, depthAttachment*/;
 	FrameBufferAttachment colorAttachment2; // right side view
 
+	// signal switch to new set of resources
+	unsigned long global_update_num = 0;
+
 	// ShaderThreadResources
 	ClearThreadResources clearResources;
 	LineThreadResources lineResources;

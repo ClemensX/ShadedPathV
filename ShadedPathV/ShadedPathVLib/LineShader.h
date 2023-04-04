@@ -71,13 +71,16 @@ public:
 
 	// add lines - they will never  be removed
 	void add(std::vector<LineDef>& linesToAdd);
-	// global update
+	// global update: use the background thread to store line data on GPU, then switch pointers so that all threads use the new line buffer
 	void updateGlobal(std::vector<LineDef>& linesToAdd);
 	// initial upload of all added lines - only valid before first render
 	void initialUpload();
 
 	// add lines for just one frame
 	void addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& tr);
+
+	// check if we need to switch resources for next render run
+	void handleUpdatedResources(ThreadResources& tr);
 
 	void createCommandBufferLineAdd(ThreadResources& tr);
 
@@ -153,6 +156,8 @@ public:
 		};
 		std::array<LineShaderUpdateElement, 10> updateArray;
 	protected:
+		// global update method - guaranteed to be in sync mode: only 1 update at a time
+		// but render threads may still use old data!
 		void update(int i) override;
 		ShaderUpdateElement* getUpdateElement(int i) override {
 			return &updateArray[i];

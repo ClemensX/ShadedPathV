@@ -126,6 +126,7 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
             //Log("num points: " << plist.size() << endl);
         }
         engine.shaders.lineShader.addOneTime(lines, tr);
+        engine.shaders.lineShader.handleUpdatedResources(tr);
     }
 
     LineShader::UniformBufferObject lubo{};

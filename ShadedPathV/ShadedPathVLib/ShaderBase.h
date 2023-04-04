@@ -285,7 +285,9 @@ protected:
 		bool workInProgress = false;
 		bool reservedSlotsAvailable = false;
 		bool threadRunning = false;
-		unsigned long last_update_num = 0; // hold highest used update num so far
+		std::atomic<unsigned long> last_update_num = 1;  // hold highest used update num so far
+		std::atomic<unsigned long> update_available = 0; // hold number of current update (after preparing GPU and during threads working on maybe the last one still)
+		std::atomic<unsigned long> update_finished_counter = 0; // will be set to framesInFlight and reduced by render threads
 	};
 	ShaderUpdateQueueInfo shaderUpdateQueueInfo;
 
