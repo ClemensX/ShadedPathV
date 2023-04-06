@@ -294,29 +294,29 @@ void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadReso
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = engine->getBackBufferExtent();
 
-renderPassInfo.clearValueCount = 0;
+	renderPassInfo.clearValueCount = 0;
 
-vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.graphicsPipelineAdd);
-VkBuffer vertexBuffers[] = { vertexBuffer };
-VkDeviceSize offsets[] = { 0 };
-vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.graphicsPipelineAdd);
+	VkBuffer vertexBuffers[] = { vertexBuffer };
+	VkDeviceSize offsets[] = { 0 };
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
-// bind descriptor sets:
-vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet, 0, nullptr);
+	// bind descriptor sets:
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet, 0, nullptr);
 
-vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-vkCmdDraw(commandBuffer, static_cast<uint32_t>(trl.verticesAddLines.size()), 1, 0, 0);
-vkCmdEndRenderPass(commandBuffer);
-if (engine->isStereo()) {
-	renderPassInfo.framebuffer = trl.framebufferAdd2;
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet2, 0, nullptr);
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(trl.verticesAddLines.size()), 1, 0, 0);
 	vkCmdEndRenderPass(commandBuffer);
-}
-if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-	Error("failed to record triangle command buffer!");
-}
+	if (engine->isStereo()) {
+		renderPassInfo.framebuffer = trl.framebufferAdd2;
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet2, 0, nullptr);
+		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdDraw(commandBuffer, static_cast<uint32_t>(trl.verticesAddLines.size()), 1, 0, 0);
+		vkCmdEndRenderPass(commandBuffer);
+	}
+	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+		Error("failed to record triangle command buffer!");
+	}
 }
 
 void LineShader::prepareAddLines(ThreadResources& tr)
@@ -378,6 +378,7 @@ void LineShader::update(int i)
 		}
 	}
 	//this_thread::sleep_for(chrono::milliseconds(4000));
+	updateAndSwitch(u.linesToAdd);
 
 	// after update signal newest generation in shader:
 	shaderUpdateQueueInfo.update_available = u.num;
@@ -392,16 +393,65 @@ void LineShader::updateGlobal(std::vector<LineDef>& linesToAdd)
 	this->shaderUpdateQueue.push(i);
 }
 
+void LineShader::updateAndSwitch(std::vector<LineDef>* linesToAdd)
+{
+	// create vertex buffer in CPU mem
+	vector<Vertex> all(linesToAdd->size() * 2);
+	// handle fixed lines:
+	size_t index = 0;
+	for (LineDef& line : *linesToAdd) {
+		Vertex v1, v2;
+		v1.color = line.color;
+		v1.pos = line.start;
+		v2.color = line.color;
+		v2.pos = line.end;
+		all[index++] = v1;
+		all[index++] = v2;
+	}
+
+	// if there are no fixed lines we have nothing to do here
+	if (all.size() == 0) return;
+
+	// create and copy vertex buffer in GPU
+	VkDeviceSize bufferSize = sizeof(Vertex) * all.size();
+	global->uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, all.data(), vertexBufferUpdates, vertexBufferMemoryUpdates);
+}
+
 void LineShader::handleUpdatedResources(ThreadResources& tr)
 {
 	if (shaderUpdateQueueInfo.update_available > 0 && tr.global_update_num < shaderUpdateQueueInfo.update_available) {
 		// not yet switched for this update
 
 		// do the switch
-		// switch()
+		switchGlobalThreadResources(tr);
 
 		tr.global_update_num = shaderUpdateQueueInfo.update_available;
 		shaderUpdateQueueInfo.update_finished_counter--;
+	}
+}
+
+void LineShader::switchGlobalThreadResources(ThreadResources& res)
+{
+	auto& device = engine->global.device;
+	auto& global = engine->global;
+	auto& shaders = engine->shaders;
+	auto& trl = res.lineResources;
+	assert(vertexBufferUpdates != vertexBuffer);
+	if (vertexBufferUpdates != nullptr) {
+		// delete old resources TODO should be done elswhere: we do nor know here when access is finished
+		//assert(false);
+	}
+	if (trl.commandBufferUpdate == nullptr) {
+		VkCommandBufferAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.commandPool = res.commandPool;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandBufferCount = (uint32_t)1;
+
+		if (vkAllocateCommandBuffers(device, &allocInfo, &trl.commandBufferUpdate) != VK_SUCCESS) {
+			Error("failed to allocate command buffers!");
+		}
+		engine->util.debugNameObjectCommandBuffer(trl.commandBufferUpdate, "GLOBAL UPDATE COMMAND BUFFER");
 	}
 }
 

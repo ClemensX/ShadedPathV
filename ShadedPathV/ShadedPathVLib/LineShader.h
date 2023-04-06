@@ -71,7 +71,8 @@ public:
 
 	// add lines - they will never  be removed
 	void add(std::vector<LineDef>& linesToAdd);
-	// global update: use the background thread to store line data on GPU, then switch pointers so that all threads use the new line buffer
+	// global update: initiate update of global line data 
+	// might take several frames until effect is visible: old buffer will be used until new one is ready
 	void updateGlobal(std::vector<LineDef>& linesToAdd);
 	// initial upload of all added lines - only valid before first render
 	void initialUpload();
@@ -117,12 +118,18 @@ private:
 	VkBuffer vertexBuffer = nullptr;
 	// vertex buffer device memory
 	VkDeviceMemory vertexBufferMemory = nullptr;
+	// vertex buffer for updates: (one buffer for all threads) 
+	VkBuffer vertexBufferUpdates = nullptr;
+	// vertex buffer device memory for Updates
+	VkDeviceMemory vertexBufferMemoryUpdates = nullptr;
 	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;
 	// create descriptor set layout (one per effect)
 	virtual void createDescriptorSetLayout() override;
 	// create descritor sets (one or more per render thread)
 	virtual void createDescriptorSets(ThreadResources& res) override;
+	// store line data on GPU, then switch pointers so that all threads use the new line buffer
+	void updateAndSwitch(std::vector<LineDef>* linesToAdd);
 
 	// util methods
 public:
@@ -159,6 +166,8 @@ public:
 		// global update method - guaranteed to be in sync mode: only 1 update at a time
 		// but render threads may still use old data!
 		void update(int i) override;
+		// after global resource update each thread has to re-create command buffers and switch to new resource set
+		void switchGlobalThreadResources(ThreadResources& res);
 		ShaderUpdateElement* getUpdateElement(int i) override {
 			return &updateArray[i];
 		}
@@ -177,6 +186,7 @@ struct LineThreadResources : ShaderThreadResources {
 	VkPipeline graphicsPipelineAdd = nullptr;
 	VkCommandBuffer commandBuffer = nullptr;
 	VkCommandBuffer commandBufferAdd = nullptr;
+	VkCommandBuffer commandBufferUpdate = nullptr;
 	// vertex buffer for added lines
 	VkBuffer vertexBufferAdd = nullptr;
 	// vertex buffer device memory

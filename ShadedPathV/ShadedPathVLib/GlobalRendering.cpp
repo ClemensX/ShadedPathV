@@ -310,13 +310,14 @@ void GlobalRendering::createLogicalDevice()
         uniqueQueueFamilies.insert({ indices.presentFamily.value() });
     }
 
-    float queuePriority = 1.0f;
+    float queuePriority[] = {1.0f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f};
+    //float queuePriority[] {1.0f};
     for (uint32_t queueFamily : uniqueQueueFamilies) {
         VkDeviceQueueCreateInfo queueCreateInfo{};
         queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueCreateInfo.queueFamilyIndex = queueFamily;
-        queueCreateInfo.queueCount = 1;
-        queueCreateInfo.pQueuePriorities = &queuePriority;
+        queueCreateInfo.queueCount = 16;
+        queueCreateInfo.pQueuePriorities = &queuePriority[0];
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
