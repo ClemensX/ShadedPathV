@@ -15,7 +15,7 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);
 	//reserveUpdateSlot(updateArray);
 	//reserveUpdateSlot(updateArray);
-	startUpdateThread();
+	//startUpdateThread();
 }
 
 void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
