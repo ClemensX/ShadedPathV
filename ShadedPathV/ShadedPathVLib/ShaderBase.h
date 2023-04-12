@@ -9,6 +9,15 @@ struct ShaderState;
 struct ShaderThreadResources {
 };
 
+// all shaders have to subclass this for their update array
+struct ShaderUpdateElement {
+	bool free = true;   // can be reserved
+	bool inuse = false; // update process in progress
+	unsigned long num = 0; // count updates
+	size_t arrayIndex = 0; // we need to know array index into updateArray by having just a pointer to an element
+	ShaderBase* shaderInstance = nullptr;
+};
+		
 // Info needed to connect shaders during intialization.
 // Like DepthBuffer, sizes, image formats and states
 class ShaderBase
@@ -146,12 +155,6 @@ public:
 		return lastShader;
 	}
 
-	void shutdownUpdateThread() {
-		if (shaderUpdateQueueInfo.threadRunning) {
-			shaderUpdateQueue.shutdown();
-		}
-	}
-
 protected:
 	// signal if this shader is in use, set during init()
 	bool enabled = false;
@@ -267,83 +270,26 @@ protected:
 	}
 
 	// thread handling for global resource updates (for non-thread local resources)
+	// each shader has 2 resource sets A and B. They will be triggered to upload, enable and disable by engine
+	enum class GlobalResourceState { INACTIVE, ACTIVE, UPLOADING };
+	enum class GlobalResourceSet { SET_A, SET_B };
 
-	// all shaders have to subclass this for their update array
-	struct ShaderUpdateElement {
-		bool free = true;   // can be reserved
-		bool inuse = false; // update process in progress
-		unsigned long num = 0; // count updates
-	};
-	// do this in shader:
+	// will only be called from global update thread to do the resource copy to GPU
+	virtual void uploadResourceSet(ShaderUpdateElement* resUpdateEl, GlobalResourceSet set) {};
+
+	// each shader class has its own update array. do this in shader:
 	//std::array<ShaderUpdateElement, 10> updateArray;
 
-	// we simply use indexes into the update array for handling resources
-	ThreadsafeWaitingQueue<int> shaderUpdateQueue;
-
-	// everything from here should only be called from within sync blocks via shaderUpdateQueue
-	struct ShaderUpdateQueueInfo {
-		bool workInProgress = false;
-		bool reservedSlotsAvailable = false;
-		bool threadRunning = false;
-		std::atomic<unsigned long> last_update_num = 1;  // hold highest used update num so far
-		std::atomic<unsigned long> update_available = 0; // hold number of current update (after preparing GPU and during threads working on maybe the last one still)
-		std::atomic<unsigned long> update_finished_counter = 0; // will be set to framesInFlight and reduced by render threads
-	};
-	ShaderUpdateQueueInfo shaderUpdateQueueInfo;
-
-	static void runUpdateThread(ShaderBase* shader_instance);
-
-	void startUpdateThread();
-
 	// the actual update method that operates on a single ShaderUpdateElement
-	virtual void update(int i) {};
 	virtual ShaderUpdateElement* getUpdateElement(int i) {
 		return nullptr;
 	}
+private:
+		GlobalResourceState resourceSetA = GlobalResourceState::INACTIVE;
+		GlobalResourceState resourceSetB = GlobalResourceState::INACTIVE;
 
-	int manageMultipleUpdateSlots(int slot, int next_slot) {
-		ShaderUpdateElement* cur = getUpdateElement(slot);
-		ShaderUpdateElement* next = getUpdateElement(next_slot);
-		if (next->num > cur->num) {
-			// we found newer update - remove the old one
-			cur->free = true;
-			return next_slot;
-		} else {
-			// cur is newer than next - remove next element
-			next->free = true;
-			return slot;
-		}
-	}
+public:
+		virtual void update(ShaderUpdateElement* el) {};
 
-	// get update slot. will terminate engine if no slot available!
-	// all previously reserved slots which are not already worked on will be simply removed (set to free)
-	// only the newest update slot should still be in queue
-	template <typename T, std::size_t size>
-	size_t reserveUpdateSlot(const std::array<T, size>& updateArray) {
-		for (size_t i = 0; i < size; i++) {
-			ShaderUpdateElement* el = (ShaderUpdateElement*)&updateArray[i];
-			if (el->free) {
-				freeAllReservedSlots<T,size>(updateArray);
-				el->free = false;
-				el->num = shaderUpdateQueueInfo.last_update_num++;
-				shaderUpdateQueueInfo.reservedSlotsAvailable = true;
-				return i;
-			}
-		}
-		Error("ShaderBase: no slots available for global shader update!");
-		// keep compiler happy
-		return 0;
-	};
-
-	// free all reserved slots that are not already worked on
-	template <typename T, std::size_t size>
-	void freeAllReservedSlots(const std::array<T, size>& updateArray) {
-		for (size_t i = 0; i < size; i++) {
-			ShaderUpdateElement* el = (ShaderUpdateElement*)&updateArray[i];
-			if (el->free == false && el->inuse == false) {
-				el->free = true;
-			}
-		}
-	};
 };
 

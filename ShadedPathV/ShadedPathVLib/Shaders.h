@@ -34,8 +34,6 @@ class Shaders
 
 		// destroy shader thread resources
 		void destroyThreadResources(ThreadResources& tr);
-		// shutdown
-		void shutdownShaderUpdateThreads();
 
 		void setEngine(ShadedPathEngine* s) {
 			engine = s;
@@ -79,8 +77,6 @@ public:
 
 	// destroy all shader thread local resources
 	void destroyThreadResources(ThreadResources& tr);
-
-	void shutdownShaderUpdateThreads();
 
 	// general methods
 	void queueSubmit(ThreadResources& tr);

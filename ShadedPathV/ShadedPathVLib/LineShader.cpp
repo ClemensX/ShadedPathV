@@ -354,43 +354,46 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 	}
 }
 
-void LineShader::update(int i)
+void LineShader::update(ShaderUpdateElement *el)
 {
+	LineShaderUpdateElement *u = static_cast<LineShaderUpdateElement*>(el);
 	// TODO think about moving update_finished logic to base class
-	auto& u = updateArray[i];
-	Log("update line shader global buffer via slot " << i << " update num " << u.num << endl);
-	Log("  --> push " << u.linesToAdd->size() << " lines to GPU" << endl);
-	if (shaderUpdateQueueInfo.update_finished_counter == 0) {
-		// all previous updates finished: we can handle a new one
-		shaderUpdateQueueInfo.update_available = 0;
-	}
-	if (shaderUpdateQueueInfo.update_available > 0) {
-		// race condition: we have an update while another still ist handled by render threads
-		Log("WARNING RACE CONDITION LineShader - update delayed by 500ms" << endl);
-		this_thread::sleep_for(chrono::milliseconds(500));
-		if (shaderUpdateQueueInfo.update_finished_counter == 0) {
-			// all previous updates finished: we can handle a new one
-			shaderUpdateQueueInfo.update_available = 0;
-		}
-		if (shaderUpdateQueueInfo.update_available > 0) {
-			// give up
-			Error("ERROR RACE CONDITION LineShader");
-		}
-	}
-	//this_thread::sleep_for(chrono::milliseconds(4000));
-	updateAndSwitch(u.linesToAdd);
+	Log("update line shader global buffer via slot " << u->arrayIndex << " update num " << u->num << endl);
+	Log("  --> push " << u->linesToAdd->size() << " lines to GPU" << endl);
+	//if (shaderUpdateQueueInfo.update_finished_counter == 0) {
+	//	// all previous updates finished: we can handle a new one
+	//	shaderUpdateQueueInfo.update_available = 0;
+	//}
+	//if (shaderUpdateQueueInfo.update_available > 0) {
+	//	// race condition: we have an update while another still ist handled by render threads
+	//	Log("WARNING RACE CONDITION LineShader - update delayed by 500ms" << endl);
+	//	this_thread::sleep_for(chrono::milliseconds(500));
+	//	if (shaderUpdateQueueInfo.update_finished_counter == 0) {
+	//		// all previous updates finished: we can handle a new one
+	//		shaderUpdateQueueInfo.update_available = 0;
+	//	}
+	//	if (shaderUpdateQueueInfo.update_available > 0) {
+	//		// give up
+	//		Error("ERROR RACE CONDITION LineShader");
+	//	}
+	//}
+	////this_thread::sleep_for(chrono::milliseconds(4000));
+	//updateAndSwitch(u.linesToAdd);
 
-	// after update signal newest generation in shader:
-	shaderUpdateQueueInfo.update_available = u.num;
-	shaderUpdateQueueInfo.update_finished_counter = engine->getFramesInFlight();
-	Log("update line shader global end " << i << endl);
+	//// after update signal newest generation in shader:
+	//shaderUpdateQueueInfo.update_available = u.num;
+	//shaderUpdateQueueInfo.update_finished_counter = engine->getFramesInFlight();
+	Log("update line shader global end " << u->arrayIndex << endl);
 }
 
 void LineShader::updateGlobal(std::vector<LineDef>& linesToAdd)
 {
-	int i = (int)reserveUpdateSlot(updateArray);
+	int i = (int)engine->reserveUpdateSlot(updateArray);
+	updateArray[i].shaderInstance = this; // TODO move elsewhere - to shader init?
+	updateArray[i].arrayIndex = i; // TODO move elsewhere - to shader init?
 	updateArray[i].linesToAdd = &linesToAdd;
-	this->shaderUpdateQueue.push(i);
+	//engine->shaderUpdateQueue.push(i);
+	engine->pushUpdate(&updateArray[i]);
 }
 
 void LineShader::updateAndSwitch(std::vector<LineDef>* linesToAdd)
@@ -419,15 +422,15 @@ void LineShader::updateAndSwitch(std::vector<LineDef>* linesToAdd)
 
 void LineShader::handleUpdatedResources(ThreadResources& tr)
 {
-	if (shaderUpdateQueueInfo.update_available > 0 && tr.global_update_num < shaderUpdateQueueInfo.update_available) {
-		// not yet switched for this update
+	//if (shaderUpdateQueueInfo.update_available > 0 && tr.global_update_num < shaderUpdateQueueInfo.update_available) {
+	//	// not yet switched for this update
 
-		// do the switch
-		switchGlobalThreadResources(tr);
+	//	// do the switch
+	//	switchGlobalThreadResources(tr);
 
-		tr.global_update_num = shaderUpdateQueueInfo.update_available;
-		shaderUpdateQueueInfo.update_finished_counter--;
-	}
+	//	tr.global_update_num = shaderUpdateQueueInfo.update_available;
+	//	shaderUpdateQueueInfo.update_finished_counter--;
+	//}
 }
 
 void LineShader::switchGlobalThreadResources(ThreadResources& res)

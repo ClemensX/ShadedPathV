@@ -79,6 +79,7 @@ void ShadedPathEngine::prepareDrawing()
         startQueueSubmitThread();
         startRenderThreads();
     }
+    startUpdateThread();
     //for (ThreadResources& tr : threadResources) {
     //    shaders.createCommandBufferBackBufferImageDump(tr);
     //}
@@ -259,6 +260,50 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
 
 bool ShadedPathEngine::queueThreadFinished = false;
 
+void ShadedPathEngine::runUpdateThread(ShadedPathEngine* engine_instance)
+{
+    LogCondF(LOG_QUEUE, "run global update thread" << endl);
+    while (engine_instance->isShutdown() == false) {
+        optional<ShaderUpdateElement*> opt_el = engine_instance->shaderUpdateQueue.pop();
+        if (!opt_el) {
+            break;
+        }
+        // run the update in shader class
+        // this is the only place with pop(), so should be safe to
+        // query length as it will never decrease outside this method
+        ShaderUpdateElement *el = opt_el.value();
+        el->shaderInstance->update(el);
+        // update using slot number
+        //engine_instance->update(slot);
+        LogCondF(LOG_QUEUE, "updated shader data " << endl);
+    }
+    LogCondF(LOG_QUEUE, "run shader update thread end" << endl);
+}
+
+void ShadedPathEngine::update(int i)
+{
+}
+
+int ShadedPathEngine::manageMultipleUpdateSlots(int slot, int next_slot) {
+    ShaderUpdateElement* cur = getUpdateElement(slot);
+    ShaderUpdateElement* next = getUpdateElement(next_slot);
+    if (next->num > cur->num) {
+        // we found newer update - remove the old one
+        cur->free = true;
+        return next_slot;
+    }
+    else {
+        // cur is newer than next - remove next element
+        next->free = true;
+        return slot;
+    }
+}
+
+void ShadedPathEngine::pushUpdate(ShaderUpdateElement* updateElement)
+{
+    shaderUpdateQueue.push(updateElement);
+}
+
 void ShadedPathEngine::startRenderThreads()
 {
     if (!initialized) {
@@ -294,6 +339,20 @@ void ShadedPathEngine::startQueueSubmitThread()
     SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
 }
 
+void ShadedPathEngine::startUpdateThread()
+{
+    if (!initialized) {
+        Error("cannot start update thread: pipeline not initialized\n");
+        return;
+    }
+    void* native_handle = threads.add_t(runUpdateThread, this);
+    wstring mod_name = wstring(L"global_update");//.append(L"_").append(to_wstring(i));
+    SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
+    shaderUpdateQueueInfo.threadRunning = true;
+}
+
+
+
 bool ShadedPathEngine::isGlobalUpdateThread(ThreadResources& tr)
 {
     // checking for frame index == 0 should be ok for single and multi thread mode.
@@ -318,7 +377,10 @@ void ShadedPathEngine::shutdown()
 {
     shutdown_mode = true;
     /*queue.shutdown();*/
-    shaders.shutdownShaderUpdateThreads();
+    if (shaderUpdateQueueInfo.threadRunning) {
+        shaderUpdateQueue.shutdown();
+    }
+
     for (int i = 0; i < framesInFlight; i++) {
         auto& tr = threadResources[i];
         tr.renderThreadContinueQueue.shutdown();

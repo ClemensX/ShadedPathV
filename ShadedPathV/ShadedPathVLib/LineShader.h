@@ -165,12 +165,12 @@ public:
 	protected:
 		// global update method - guaranteed to be in sync mode: only 1 update at a time
 		// but render threads may still use old data!
-		void update(int i) override;
+		void update(ShaderUpdateElement* el) override;
 		// after global resource update each thread has to re-create command buffers and switch to new resource set
 		void switchGlobalThreadResources(ThreadResources& res);
-		ShaderUpdateElement* getUpdateElement(int i) override {
-			return &updateArray[i];
-		}
+		//ShaderUpdateElement* getUpdateElement(int i) override {
+		//	return &updateArray[i];
+		//}
 
 };
 

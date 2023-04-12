@@ -180,48 +180,6 @@ void ShaderBase::createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState
 	}
 }
 
-void ShaderBase::startUpdateThread()
-{
-	if (shaderUpdateQueueInfo.threadRunning) {
-		Error("shader update thread can only be started once!");
-		return;
-	}
-	void* native_handle = engine->getThreadGroup().add_t(runUpdateThread, this);
-	wstring mod_name = wstring(L"shader_update");//.append(L"_").append(to_wstring(i));
-	SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
-}
-
-void ShaderBase::runUpdateThread(ShaderBase* shader_instance)
-{
-	LogCondF(LOG_QUEUE, "run shader update thread" << endl);
-	shader_instance->shaderUpdateQueueInfo.threadRunning = true;
-	while (shader_instance->engine->isShutdown() == false) {
-		optional<int> opt_slot = shader_instance->shaderUpdateQueue.pop();
-		if (!opt_slot) {
-			break;
-		}
-		// find the highest update in queue and discard the others
-		// this is the only place with pop(), so should be safe to
-		// query length as it will never decrease outside this method
-		int slot = opt_slot.value();
-		size_t size = shader_instance->shaderUpdateQueue.size();
-		if (size > 0) {
-			for (int i = 0; i < size; i++) {
-				optional<int> opt_next_slot = shader_instance->shaderUpdateQueue.pop();
-				if (!opt_next_slot) {
-					break;
-				}
-				int next_slot = opt_next_slot.value();
-				slot = shader_instance->manageMultipleUpdateSlots(slot, next_slot);
-			}
-		}
-		// update using slot number
-		shader_instance->update(slot);
-		LogCondF(LOG_QUEUE, "updated shader data " << endl);
-	}
-	LogCondF(LOG_QUEUE, "run shader update thread end" << endl);
-}
-
 ShaderBase::~ShaderBase()
 {
 }
