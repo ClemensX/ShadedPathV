@@ -10,6 +10,7 @@ struct ShaderState;
 
 struct QueueFamilyIndices {
 	std::optional<uint32_t> graphicsFamily;
+	std::optional<uint32_t> transferFamily;
 	std::optional<uint32_t> presentFamily;
 	bool isComplete(bool presentationEnabled) {
 		if (presentationEnabled)
@@ -96,12 +97,13 @@ public:
 
 	// Vulkan helper
 
+	enum class QueueSelector { GRAPHICS, TRANSFER };
 	// Upload index or vertex buffer
-	void uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize bufferSize, const void *src, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+	void uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize bufferSize, const void *src, VkBuffer& buffer, VkDeviceMemory& bufferMemory, QueueSelector queue = QueueSelector::GRAPHICS);
 	// Buffer Creation
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
 	// copy buffer
-	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, QueueSelector queue = QueueSelector::GRAPHICS);
 	// images
 	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 	VkImageView createImageViewCube(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
@@ -122,19 +124,22 @@ public:
 	VkDevice device = nullptr;
 	VkInstance vkInstance = nullptr;
 	VkQueue graphicsQueue = nullptr;
+	VkQueue transferQueue = nullptr;
 	VkSampler textureSampler = nullptr;
 	VkPhysicalDeviceProperties2 physicalDeviceProperties;
 	VkSemaphore singleTimeCommandsSemaphore = nullptr;
 	// create command pool for use outside rendering threads
 
-	void createCommandPool();
+	void createCommandPools();
 	VkCommandPool commandPool = nullptr;
+	VkCommandPool commandPoolTransfer = nullptr;
 	bool syncedOperations = false;
 	VkCommandBuffer commandBufferSingle = nullptr;
 	void createCommandPool(VkCommandPool& pool);
+	void createCommandPoolTransfer(VkCommandPool& pool);
 	// single time commands with optional syncing
-	VkCommandBuffer beginSingleTimeCommands(bool sync = false);
-	void endSingleTimeCommands(VkCommandBuffer commandBuffer, bool sync = false);
+	VkCommandBuffer beginSingleTimeCommands(bool sync = false, QueueSelector queue = QueueSelector::GRAPHICS);
+	void endSingleTimeCommands(VkCommandBuffer commandBuffer, bool sync = false, QueueSelector queue = QueueSelector::GRAPHICS);
 	void createTextureSampler();
 	inline uint64_t calcConstantBufferSize(uint64_t originalSize) {
 		VkDeviceSize align = physicalDeviceProperties.properties.limits.minUniformBufferOffsetAlignment;
@@ -161,6 +166,8 @@ private:
 	void pickPhysicalDevice(bool listmode = false);
 	// list or select physical devices
 	bool isDeviceSuitable(VkPhysicalDevice device, bool listmode = false);
+	// list queue flags as text
+	std::string getQueueFlagsString(VkQueueFlags flags);
 
 	// swap chain query
 	bool checkDeviceExtensionSupport(VkPhysicalDevice phys_device, bool listmode);

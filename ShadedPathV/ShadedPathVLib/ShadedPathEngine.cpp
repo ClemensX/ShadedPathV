@@ -264,15 +264,18 @@ void ShadedPathEngine::runUpdateThread(ShadedPathEngine* engine_instance)
 {
     LogCondF(LOG_QUEUE, "run global update thread" << endl);
     while (engine_instance->isShutdown() == false) {
+        // this is the only place with pop():
         optional<ShaderUpdateElement*> opt_el = engine_instance->shaderUpdateQueue.pop();
         if (!opt_el) {
             break;
         }
         // run the update in shader class
-        // this is the only place with pop(), so should be safe to
-        // query length as it will never decrease outside this method
         ShaderUpdateElement *el = opt_el.value();
-        el->shaderInstance->update(el);
+        el = engine_instance->selectLatestUpdate(el);
+        if (!el->free) {
+            el->shaderInstance->update(el);
+            el->free = true;
+        }
         // update using slot number
         //engine_instance->update(slot);
         LogCondF(LOG_QUEUE, "updated shader data " << endl);
@@ -280,23 +283,46 @@ void ShadedPathEngine::runUpdateThread(ShadedPathEngine* engine_instance)
     LogCondF(LOG_QUEUE, "run shader update thread end" << endl);
 }
 
+ShaderUpdateElement* ShadedPathEngine::selectLatestUpdate(ShaderUpdateElement* el)
+{
+    size_t size = el->shaderInstance->getUpdateArraySize();
+    size_t latest = el->arrayIndex;
+    ShaderBase* shader = el->shaderInstance;
+    for (size_t i = 0; i < size; i++) {
+        if (i == latest) continue;
+        ShaderUpdateElement* next = shader->getUpdateElement(i);
+        if (next->free) continue;
+        ShaderUpdateElement* latestEl = shader->getUpdateElement(latest);
+        if (next->num > latestEl->num) {
+            // we found newer update - remove the old one
+            latestEl->free = true;
+            latest = i;
+        } else {
+            // current el is newer than next - remove next element
+            next->free = true;
+        }
+    }
+    return shader->getUpdateElement(latest);
+}
+
 void ShadedPathEngine::update(int i)
 {
 }
 
 int ShadedPathEngine::manageMultipleUpdateSlots(int slot, int next_slot) {
-    ShaderUpdateElement* cur = getUpdateElement(slot);
-    ShaderUpdateElement* next = getUpdateElement(next_slot);
-    if (next->num > cur->num) {
-        // we found newer update - remove the old one
-        cur->free = true;
-        return next_slot;
-    }
-    else {
-        // cur is newer than next - remove next element
-        next->free = true;
-        return slot;
-    }
+    //ShaderUpdateElement* cur = getUpdateElement(slot);
+    //ShaderUpdateElement* next = getUpdateElement(next_slot);
+    //if (next->num > cur->num) {
+    //    // we found newer update - remove the old one
+    //    cur->free = true;
+    //    return next_slot;
+    //}
+    //else {
+    //    // cur is newer than next - remove next element
+    //    next->free = true;
+    //    return slot;
+    //}
+    return 0;
 }
 
 void ShadedPathEngine::pushUpdate(ShaderUpdateElement* updateElement)

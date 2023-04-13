@@ -36,7 +36,7 @@ void GlobalRendering::initAfterPresentation()
     // list queue properties:
     findQueueFamilies(physicalDevice, true);
     createLogicalDevice();
-    createCommandPool();
+    createCommandPools();
     createTextureSampler();
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -52,6 +52,7 @@ void GlobalRendering::shutdown()
     vkDestroySampler(device, textureSampler, nullptr);
     vkDestroySemaphore(device, singleTimeCommandsSemaphore, nullptr);
     vkDestroyCommandPool(device, commandPool, nullptr);
+    vkDestroyCommandPool(device, commandPoolTransfer, nullptr);
     vkDestroyDevice(device, nullptr);
     device = nullptr;
     vkDestroyInstance(vkInstance, nullptr);
@@ -267,7 +268,14 @@ QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, b
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphicsFamily = i;
             if (listmode) {
-                Log("found graphics queue, max queues: " << queueFamily.queueCount << endl);
+                Log("found graphics queue at index " << i << ", max queues: " << queueFamily.queueCount << endl);
+            }
+        }
+        if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) {
+            indices.transferFamily = i;
+            if (listmode) {
+                Log("found transfer queue at index " << i << ", max queues: " << queueFamily.queueCount << endl);
+                //Log("  other queue flags: " << getQueueFlagsString(queueFamily.queueFlags).c_str() << endl);
             }
         }
         if (engine.presentation.enabled) {
@@ -282,7 +290,44 @@ QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, b
         }
         i++;
     }
+    i = 0;
+    // try to find transfer only queue (supposedly better DMA performance)
+    for (const auto& queueFamily : queueFamilies) {
+        if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) {
+            auto flags = queueFamily.queueFlags;
+            // cancel out irrelevant bits:
+            flags &= ~VK_QUEUE_SPARSE_BINDING_BIT;
+            flags &= ~VK_QUEUE_OPTICAL_FLOW_BIT_NV;
+            flags &= ~VK_QUEUE_PROTECTED_BIT;
+            if (flags == VK_QUEUE_TRANSFER_BIT) {
+                indices.transferFamily = i;
+                if (listmode) {
+                    Log("found transfer ONLY queue at index " << i << ", max queues: " << queueFamily.queueCount << endl);
+                    //Log("  other queue flags: " << getQueueFlagsString(queueFamily.queueFlags).c_str() << endl);
+                }
+                break;
+            }
+        }
+        i++;
+    }
+    if (indices.graphicsFamily == indices.transferFamily) {
+        Error("ERROR: did not find fransfer only queue");
+    }
     return indices;
+}
+
+string GlobalRendering::getQueueFlagsString(VkQueueFlags flags)
+{
+    string t;
+    if (flags & VK_QUEUE_GRAPHICS_BIT) t += "GRAPHICS ";
+    if (flags & VK_QUEUE_COMPUTE_BIT) t += "COMPUTE ";
+    if (flags & VK_QUEUE_TRANSFER_BIT) t += "TRANSFER ";
+    if (flags & VK_QUEUE_SPARSE_BINDING_BIT) t += "SPARSE_BINDING ";
+    if (flags & VK_QUEUE_PROTECTED_BIT) t += "PROTECTED ";
+    if (flags & 0x00000020) t += "VIDEO_DECODE "; // VK_QUEUE_VIDEO_DECODE_BIT_KHR
+    if (flags & 0x00000040) t += "VIDEO_ENCODE "; // VK_QUEUE_VIDEO_ENCODE_BIT_KHR 
+    if (flags & VK_QUEUE_OPTICAL_FLOW_BIT_NV) t += "OPTICAL_FLOW ";
+    return t;
 }
 
 uint32_t GlobalRendering::findMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags properties) {
@@ -306,6 +351,7 @@ void GlobalRendering::createLogicalDevice()
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value() };
+    uniqueQueueFamilies.insert({ indices.transferFamily.value() });
     if (engine.presentation.enabled) {
         uniqueQueueFamilies.insert({ indices.presentFamily.value() });
     }
@@ -316,7 +362,7 @@ void GlobalRendering::createLogicalDevice()
         VkDeviceQueueCreateInfo queueCreateInfo{};
         queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueCreateInfo.queueFamilyIndex = queueFamily;
-        queueCreateInfo.queueCount = 16;
+        queueCreateInfo.queueCount = 1;
         queueCreateInfo.pQueuePriorities = &queuePriority[0];
         queueCreateInfos.push_back(queueCreateInfo);
     }
@@ -397,7 +443,9 @@ void GlobalRendering::createLogicalDevice()
     }
 
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
-    engine.util.debugNameObject((uint64_t)graphicsQueue, VK_OBJECT_TYPE_QUEUE,  "MAIN GRAPHICS QUEUE");
+    engine.util.debugNameObject((uint64_t)graphicsQueue, VK_OBJECT_TYPE_QUEUE, "MAIN GRAPHICS QUEUE");
+    vkGetDeviceQueue(device, indices.transferFamily.value(), 0, &transferQueue);
+    engine.util.debugNameObject((uint64_t)transferQueue, VK_OBJECT_TYPE_QUEUE, "TRANSFER QUEUE");
     if (engine.presentation.enabled) {
         engine.presentation.createPresentQueue(indices.presentFamily.value());
     }
@@ -466,16 +514,32 @@ void GlobalRendering::createCommandPool(VkCommandPool& pool)
     }
 }
 
-void GlobalRendering::createCommandPool()
+void GlobalRendering::createCommandPoolTransfer(VkCommandPool& pool)
 {
-    createCommandPool(commandPool);
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.queueFamilyIndex = familyIndices.transferFamily.value();
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    if (vkCreateCommandPool(device, &poolInfo, nullptr, &pool) != VK_SUCCESS) {
+        Error("failed to create transfer command pool!");
+    }
 }
 
-VkCommandBuffer GlobalRendering::beginSingleTimeCommands(bool sync) {
+void GlobalRendering::createCommandPools()
+{
+    createCommandPool(commandPool);
+    createCommandPoolTransfer(commandPoolTransfer);
+}
+
+VkCommandBuffer GlobalRendering::beginSingleTimeCommands(bool sync, QueueSelector queue) {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = commandPool;
+    if (queue == QueueSelector::GRAPHICS) {
+        allocInfo.commandPool = commandPool;
+    } else if (queue == QueueSelector::TRANSFER) {
+        allocInfo.commandPool = commandPoolTransfer;
+    }
     allocInfo.commandBufferCount = 1;
     VkCommandBuffer commandBuffer;
     vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
@@ -487,15 +551,21 @@ VkCommandBuffer GlobalRendering::beginSingleTimeCommands(bool sync) {
     return commandBuffer;
 }
 
-void GlobalRendering::endSingleTimeCommands(VkCommandBuffer commandBuffer, bool sync) {
+void GlobalRendering::endSingleTimeCommands(VkCommandBuffer commandBuffer, bool sync, QueueSelector queue) {
     vkEndCommandBuffer(commandBuffer);
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-    vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    vkQueueWaitIdle(graphicsQueue);
-    vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+    if (queue == QueueSelector::GRAPHICS) {
+        vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(graphicsQueue);
+        vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
+    } else if (queue == QueueSelector::TRANSFER) {
+        vkQueueSubmit(transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
+        vkQueueWaitIdle(transferQueue);
+        vkFreeCommandBuffers(device, commandPoolTransfer, 1, &commandBuffer);
+    }
 }
 
 void GlobalRendering::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
@@ -524,17 +594,17 @@ void GlobalRendering::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
 }
 
-void GlobalRendering::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
-    auto commandBuffer = beginSingleTimeCommands();
+void GlobalRendering::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, QueueSelector queue) {
+    auto commandBuffer = beginSingleTimeCommands(false, queue);
     VkBufferCopy copyRegion{};
     copyRegion.srcOffset = 0; // Optional
     copyRegion.dstOffset = 0; // Optional
     copyRegion.size = size;
     vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-    endSingleTimeCommands(commandBuffer);
+    endSingleTimeCommands(commandBuffer, false, queue);
 }
 
-void GlobalRendering::uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+void GlobalRendering::uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory, QueueSelector queue)
 {
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -550,10 +620,12 @@ void GlobalRendering::uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize buf
         buffer, bufferMemory);
 
     //for (int i = 0; i < 10000; i++)
-    engine.global.copyBuffer(stagingBuffer, buffer, bufferSize);
+    engine.global.copyBuffer(stagingBuffer, buffer, bufferSize, queue);
 
     vkDestroyBuffer(engine.global.device, stagingBuffer, nullptr);
     vkFreeMemory(engine.global.device, stagingBufferMemory, nullptr);
+    vkDestroyBuffer(engine.global.device, buffer, nullptr);
+    vkFreeMemory(engine.global.device, bufferMemory, nullptr);
 }
 
 void GlobalRendering::createTextureSampler()

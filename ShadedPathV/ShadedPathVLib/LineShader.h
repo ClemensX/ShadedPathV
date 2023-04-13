@@ -128,8 +128,8 @@ private:
 	virtual void createDescriptorSetLayout() override;
 	// create descritor sets (one or more per render thread)
 	virtual void createDescriptorSets(ThreadResources& res) override;
-	// store line data on GPU, then switch pointers so that all threads use the new line buffer
-	void updateAndSwitch(std::vector<LineDef>* linesToAdd);
+	// store line data on GPU, respect resource set
+	void updateAndSwitch(std::vector<LineDef>* linesToAdd, GlobalResourceSet set);
 
 	// util methods
 public:
@@ -166,11 +166,14 @@ public:
 		// global update method - guaranteed to be in sync mode: only 1 update at a time
 		// but render threads may still use old data!
 		void update(ShaderUpdateElement* el) override;
+		size_t getUpdateArraySize() override {
+			return updateArray.size();
+		}
 		// after global resource update each thread has to re-create command buffers and switch to new resource set
 		void switchGlobalThreadResources(ThreadResources& res);
-		//ShaderUpdateElement* getUpdateElement(int i) override {
-		//	return &updateArray[i];
-		//}
+		ShaderUpdateElement* getUpdateElement(size_t i) override {
+			return &updateArray[i];
+		}
 
 };
 

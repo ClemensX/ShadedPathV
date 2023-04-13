@@ -297,7 +297,9 @@ private:
         // keep compiler happy
         return 0;
     };
+
     int manageMultipleUpdateSlots(int slot, int next_slot);
+
     // free all reserved slots that are not already worked on
     template <typename T, std::size_t size>
     void freeAllReservedSlots(const std::array<T, size>& updateArray) {
@@ -309,10 +311,13 @@ private:
         }
     };
 
+    // return the newest update element for a single shader and free all others
+    ShaderUpdateElement* selectLatestUpdate(ShaderUpdateElement* el);
+
     void pushUpdate(ShaderUpdateElement* updateElement);
-    std::array<ShaderUpdateElement, 10> updateArray;
-    ShaderUpdateElement* getUpdateElement(int i) {
-        return &updateArray[i];
-    }
+    //std::array<ShaderUpdateElement, 10> updateArray;
+    //ShaderUpdateElement* getUpdateElement(int i) {
+    //    return &updateArray[i];
+    //}
 };
 

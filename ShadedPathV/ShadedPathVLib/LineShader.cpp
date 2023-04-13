@@ -360,6 +360,9 @@ void LineShader::update(ShaderUpdateElement *el)
 	// TODO think about moving update_finished logic to base class
 	Log("update line shader global buffer via slot " << u->arrayIndex << " update num " << u->num << endl);
 	Log("  --> push " << u->linesToAdd->size() << " lines to GPU" << endl);
+	GlobalResourceSet set = getInactiveResourceSet();
+	updateAndSwitch(u->linesToAdd, set);
+
 	//if (shaderUpdateQueueInfo.update_finished_counter == 0) {
 	//	// all previous updates finished: we can handle a new one
 	//	shaderUpdateQueueInfo.update_available = 0;
@@ -377,7 +380,7 @@ void LineShader::update(ShaderUpdateElement *el)
 	//		Error("ERROR RACE CONDITION LineShader");
 	//	}
 	//}
-	////this_thread::sleep_for(chrono::milliseconds(4000));
+	this_thread::sleep_for(chrono::milliseconds(4000));
 	//updateAndSwitch(u.linesToAdd);
 
 	//// after update signal newest generation in shader:
@@ -396,7 +399,7 @@ void LineShader::updateGlobal(std::vector<LineDef>& linesToAdd)
 	engine->pushUpdate(&updateArray[i]);
 }
 
-void LineShader::updateAndSwitch(std::vector<LineDef>* linesToAdd)
+void LineShader::updateAndSwitch(std::vector<LineDef>* linesToAdd, GlobalResourceSet set)
 {
 	// create vertex buffer in CPU mem
 	vector<Vertex> all(linesToAdd->size() * 2);
@@ -417,7 +420,10 @@ void LineShader::updateAndSwitch(std::vector<LineDef>* linesToAdd)
 
 	// create and copy vertex buffer in GPU
 	VkDeviceSize bufferSize = sizeof(Vertex) * all.size();
-	global->uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, all.data(), vertexBufferUpdates, vertexBufferMemoryUpdates);
+	if (set == GlobalResourceSet::SET_A) {
+		global->uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, all.data(), vertexBufferUpdates, vertexBufferMemoryUpdates, GlobalRendering::QueueSelector::TRANSFER);
+	}
+	else Error("not implemented");
 }
 
 void LineShader::handleUpdatedResources(ThreadResources& tr)
