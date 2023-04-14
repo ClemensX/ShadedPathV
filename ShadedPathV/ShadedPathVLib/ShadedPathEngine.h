@@ -315,9 +315,21 @@ private:
     ShaderUpdateElement* selectLatestUpdate(ShaderUpdateElement* el);
 
     void pushUpdate(ShaderUpdateElement* updateElement);
-    //std::array<ShaderUpdateElement, 10> updateArray;
-    //ShaderUpdateElement* getUpdateElement(int i) {
-    //    return &updateArray[i];
-    //}
+
+    template <typename T, std::size_t size>
+    void printUpdateArray(const std::array<T, size>& updateArray) {
+        std::stringstream s;
+        for (size_t i = 0; i < size; i++) {
+            ShaderUpdateElement* el = (ShaderUpdateElement*)&updateArray[i];
+            s << " " << el->num;
+            if (el->free) {
+                s << "-";
+            } else {
+                s << "x";
+            }
+        }
+        s << std::endl;
+        Log(s.str().c_str());
+    };
 };
 

@@ -261,3 +261,43 @@ private:
 	std::condition_variable cond;
 	bool in_shutdown{ false };
 };
+
+// allow update thread to wait for render threads having adopted resource switches
+class RenderThreadNotification {
+	ThreadsafeWaitingQueue<int> queue;
+	// render threads do not wait() but check this atomic for > 0
+	// then notify update thread
+	// update thread sets this to number of render threads initially
+	// and decreases for every pop() render thread
+	atomic<int> outstandingAdoptions;
+	GlobalResourceSet currentResourceSet;
+	// keep track of notifications: 1 means not done
+	std::array<int, 10> notificationList;
+public:
+	// update thread waiting method:
+	void waitForRenderThreads(int num, GlobalResourceSet resourceSet) {
+		if (num > notificationList.size()) Error("too many render threads");
+		for (int i = 0; i < num; i++) {
+			notificationList[i] = 1;
+		}
+		currentResourceSet = resourceSet;
+		while (true) {
+			outstandingAdoptions = num;
+			std::optional<int> opt = queue.pop();
+			if (opt.has_value()) {
+				outstandingAdoptions--;
+			}
+			if (outstandingAdoptions == 0) {
+				break;
+			}
+		}
+	}
+
+	// fast check method for render threads if there is work to do (just checking atomic value)
+	bool resourceSwitchAvailable(int renderThreadNum, GlobalResourceSet& resSet) {
+		if (outstandingAdoptions == 0) {
+			return false;
+		}
+
+	}
+};

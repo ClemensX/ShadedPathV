@@ -15,7 +15,7 @@ enum class GlobalResourceSet { SET_A, SET_B };
 
 // all shaders have to subclass this for their update array
 struct ShaderUpdateElement {
-	bool free = true;   // can be reserved
+	std::atomic<bool> free = true;   // can be reserved
 	bool inuse = false; // update process in progress
 	unsigned long num = 0; // count updates
 	size_t arrayIndex = 0; // we need to know array index into updateArray by having just a pointer to an element

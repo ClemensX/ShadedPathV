@@ -386,17 +386,21 @@ void LineShader::update(ShaderUpdateElement *el)
 	//// after update signal newest generation in shader:
 	//shaderUpdateQueueInfo.update_available = u.num;
 	//shaderUpdateQueueInfo.update_finished_counter = engine->getFramesInFlight();
-	Log("update line shader global end " << u->arrayIndex << endl);
+	Log("update line shader global end " << u->arrayIndex << " update num " << u->num << endl);
 }
 
 void LineShader::updateGlobal(std::vector<LineDef>& linesToAdd)
 {
+	//Log("LineShader update global start");
+	//engine->printUpdateArray(updateArray);
 	int i = (int)engine->reserveUpdateSlot(updateArray);
 	updateArray[i].shaderInstance = this; // TODO move elsewhere - to shader init?
 	updateArray[i].arrayIndex = i; // TODO move elsewhere - to shader init?
 	updateArray[i].linesToAdd = &linesToAdd;
 	//engine->shaderUpdateQueue.push(i);
 	engine->pushUpdate(&updateArray[i]);
+	//Log("LineShader update end         ");
+	//engine->printUpdateArray(updateArray);
 }
 
 void LineShader::updateAndSwitch(std::vector<LineDef>* linesToAdd, GlobalResourceSet set)
