@@ -3,6 +3,7 @@
  * Threads, ThreadGroups
  */
 
+enum class GlobalResourceSet;
  // currently size() is not guarded against xapp->getMaxThreadCount(), but fails on using comand vectors if index too high
 class ThreadGroup {
 public:
@@ -269,7 +270,7 @@ class RenderThreadNotification {
 	// then notify update thread
 	// update thread sets this to number of render threads initially
 	// and decreases for every pop() render thread
-	atomic<int> outstandingAdoptions;
+	std::atomic<int> outstandingAdoptions;
 	GlobalResourceSet currentResourceSet;
 	// keep track of notifications: 1 means not done
 	std::array<int, 10> notificationList;

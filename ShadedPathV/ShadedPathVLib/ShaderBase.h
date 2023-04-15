@@ -304,6 +304,7 @@ public:
 			return GlobalResourceSet::SET_B;
 		} else {
 			Error("ERROR: no resource slot available");
+			return GlobalResourceSet::SET_A; // keep compiler happy
 		}
 	}
 
