@@ -207,12 +207,24 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance, ThreadRes
 {
     LogCondF(LOG_QUEUE, "run DrawFrame start " << tr->frameIndex << endl);
     //this_thread::sleep_for(chrono::milliseconds(1000 * (10 - tr->frameIndex)));
+    GlobalResourceSet set;
+    bool doSwitch;
+    ShaderBase* shaderInstance = nullptr;
     while (engine_instance->isShutdown() == false) {
         // wait until queue submit thread issued all present commands
-//        tr->renderThreadContinue->wait(false);
+        // tr->renderThreadContinue->wait(false);
         optional<unsigned long> o = tr->renderThreadContinueQueue.pop();
         if (!o) {
             break;
+        }
+        // check for new resource set available after shader global data update
+        doSwitch = engine_instance->updateNotifier.resourceSwitchAvailable(tr->frameIndex, set, shaderInstance);
+        if (doSwitch) {
+            Log("Switch resource set for render thread " << tr->frameIndex << " to set " << (set == GlobalResourceSet::SET_B) << endl);
+            // switch resource sets
+            shaderInstance->resourceSwitch(set);
+            // signal completion
+            engine_instance->updateNotifier.resourceSwitchComplete(tr->frameIndex);
         }
         // draw next frame
         engine_instance->drawFrame(*tr);
@@ -275,10 +287,13 @@ void ShadedPathEngine::runUpdateThread(ShadedPathEngine* engine_instance)
         if (!el->free) {
             el->shaderInstance->update(el);
             el->free = true;
+            LogCondF(LOG_QUEUE, "updated shader data " << endl);
+            Log("updated shader data " << endl);
+            // now wait until all render threads have adopted the update
+            engine_instance->updateNotifier.waitForRenderThreads(engine_instance->framesInFlight, el->globalResourceSet, el->shaderInstance);
         }
         // update using slot number
         //engine_instance->update(slot);
-        LogCondF(LOG_QUEUE, "updated shader data " << endl);
     }
     LogCondF(LOG_QUEUE, "run shader update thread end" << endl);
 }

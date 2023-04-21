@@ -93,6 +93,9 @@ public:
 	void prepareAddLines(ThreadResources& tr);
 	// per frame update of UBO / MVP
 	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
+
+	// resource switch after upload of new data has finished:
+	void resourceSwitch(GlobalResourceSet set) override;
 private:
 
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);

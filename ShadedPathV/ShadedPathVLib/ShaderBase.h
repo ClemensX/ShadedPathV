@@ -296,6 +296,7 @@ public:
 		return 0;
 	}
 	virtual void update(ShaderUpdateElement* el) {};
+	virtual void resourceSwitch(GlobalResourceSet set) {};
 
 	GlobalResourceSet getInactiveResourceSet() {
 		if (resourceSetA == GlobalResourceState::INACTIVE) {

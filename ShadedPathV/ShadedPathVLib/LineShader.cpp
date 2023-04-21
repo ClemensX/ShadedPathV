@@ -247,7 +247,8 @@ void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResourc
 	// bind descriptor sets:
 	if (!isRightEye) {
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet, 0, nullptr);
-	} else {
+	}
+	else {
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet2, 0, nullptr);
 	}
 
@@ -426,6 +427,14 @@ void LineShader::updateAndSwitch(std::vector<LineDef>* linesToAdd, GlobalResourc
 	VkDeviceSize bufferSize = sizeof(Vertex) * all.size();
 	if (set == GlobalResourceSet::SET_A) {
 		global->uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, all.data(), vertexBufferUpdates, vertexBufferMemoryUpdates, GlobalRendering::QueueSelector::TRANSFER);
+	}
+	else Error("not implemented");
+}
+
+void LineShader::resourceSwitch(GlobalResourceSet set)
+{
+	if (set == GlobalResourceSet::SET_A) {
+		Log("LineShader::resourceSwitch() to SET_A" << endl;)
 	}
 	else Error("not implemented");
 }

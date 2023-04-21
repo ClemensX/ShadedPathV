@@ -4,6 +4,8 @@
  */
 
 enum class GlobalResourceSet;
+class ShaderBase;
+
  // currently size() is not guarded against xapp->getMaxThreadCount(), but fails on using comand vectors if index too high
 class ThreadGroup {
 public:
@@ -272,21 +274,24 @@ class RenderThreadNotification {
 	// and decreases for every pop() render thread
 	std::atomic<int> outstandingAdoptions;
 	GlobalResourceSet currentResourceSet;
+	ShaderBase* currentShaderInstance = nullptr;
 	// keep track of notifications: 1 means not done
 	std::array<int, 10> notificationList;
 public:
 	// update thread waiting method:
-	void waitForRenderThreads(int num, GlobalResourceSet resourceSet) {
+	// no need to sync because we only have 1 update thread
+	void waitForRenderThreads(int num, GlobalResourceSet resourceSet, ShaderBase* shaderInstance) {
 		if (num > notificationList.size()) Error("too many render threads");
 		for (int i = 0; i < num; i++) {
 			notificationList[i] = 1;
 		}
 		currentResourceSet = resourceSet;
+		currentShaderInstance = shaderInstance;
+		outstandingAdoptions = num;
 		while (true) {
-			outstandingAdoptions = num;
 			std::optional<int> opt = queue.pop();
 			if (opt.has_value()) {
-				outstandingAdoptions--;
+				internalResourceSwitchComplete(opt.value());
 			}
 			if (outstandingAdoptions == 0) {
 				break;
@@ -294,11 +299,34 @@ public:
 		}
 	}
 
-	// fast check method for render threads if there is work to do (just checking atomic value)
-	bool resourceSwitchAvailable(int renderThreadNum, GlobalResourceSet& resSet) {
+	// render threads: fast check to see if there is work to do (just checking atomic value)
+	bool resourceSwitchAvailable(int renderThreadNum, GlobalResourceSet& resSet, ShaderBase*& shaderInstance) {
 		if (outstandingAdoptions == 0) {
 			return false;
 		}
+		if (notificationList[renderThreadNum] == 1) {
+			shaderInstance = currentShaderInstance;
+			resSet = currentResourceSet;
+			return true;
+		}
+		return false;
+	}
 
+	// render threads: signal completed resource switch
+	void resourceSwitchComplete(int renderThreadNum) {
+		// double check that we actually wait for this thread:
+		if (notificationList[renderThreadNum] == 1 && outstandingAdoptions > 0) {
+			Log("resourceSwitchComplete(" << renderThreadNum << ")" << std::endl);
+			queue.push(renderThreadNum);
+		} else {
+			Log("WARNING: unexpected call to resourceSwitchComplete(" << renderThreadNum << ")" << std::endl);
+		}
+	}
+private:
+	void internalResourceSwitchComplete(int renderThreadNum) {
+		Log("internalResourceSwitchComplete(" << renderThreadNum << ")" << std::endl);
+		notificationList[renderThreadNum] = 0;
+		outstandingAdoptions--;
+		queue.push(renderThreadNum);
 	}
 };
