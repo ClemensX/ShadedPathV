@@ -135,7 +135,7 @@ void Files::readFile(string filename, vector<byte>& buffer, FileCategory cat) {
 		bfile.seekg(0, std::ios::end);
 		streampos len = bfile.tellg() - start;
 		bfile.seekg(start);
-		buffer.resize((SIZE_T)len);
+		buffer.resize((size_t)len);
 		bfile.read((char*)&(buffer[0]), len);
 		bfile.close();
 	}

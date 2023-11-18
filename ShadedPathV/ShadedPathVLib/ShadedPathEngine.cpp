@@ -144,16 +144,16 @@ VkExtent2D ShadedPathEngine::getExtentForResolution(ShadedPathEngine::Resolution
 {
     switch (res) {
     case Resolution::FourK:
-        return VkExtent2D(3840, 2160);
+        return {3840, 2160};
     case Resolution::TwoK:
-        return VkExtent2D(1920, 1080);
+        return {1920, 1080};
     case Resolution::OneK:
     case Resolution::DeviceDefault:
-        return VkExtent2D(960, 540);
+        return {960, 540};
     case Resolution::Small:
-        return VkExtent2D(480, 270);
+        return {480, 270};
     default:
-        return VkExtent2D(960, 540);
+        return {960, 540};
     }
 }
 
@@ -359,8 +359,13 @@ void ShadedPathEngine::startRenderThreads()
     for (int i = 0; i < framesInFlight; i++) {
         auto* tr = &threadResources[i];
         void* native_handle = threads.add_t(runDrawFrame, this, tr);
+#if defined(_WIN64)
         wstring mod_name = wstring(L"render_thread").append(L"_").append(to_wstring(i));
         SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
+#else
+        string mod_name = string("render_thread").append("_").append(to_string(i));
+        Log("Cannot set thread name on this OS: " << native_handle << " " << mod_name.c_str());
+#endif
     }
 }
 
@@ -376,8 +381,13 @@ void ShadedPathEngine::startQueueSubmitThread()
     //}
     // one queue submit thread for all threads:
     void* native_handle = threads.add_t(runQueueSubmit, this);
-    wstring mod_name = wstring(L"queue_submit");//.append(L"_").append(to_wstring(i));
-    SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
+#if defined(_WIN64)
+        wstring mod_name = wstring(L"queue_submit");
+        SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
+#else
+        string mod_name = string("queue_submit");
+        Log("Cannot set thread name on this OS: " << native_handle << " " << mod_name.c_str());
+#endif
 }
 
 void ShadedPathEngine::startUpdateThread()
@@ -387,8 +397,13 @@ void ShadedPathEngine::startUpdateThread()
         return;
     }
     void* native_handle = threads.add_t(runUpdateThread, this);
-    wstring mod_name = wstring(L"global_update");//.append(L"_").append(to_wstring(i));
-    SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
+#if defined(_WIN64)
+        wstring mod_name = wstring(L"global_update");
+        SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
+#else
+        string mod_name = string("global_update");
+        Log("Cannot set thread name on this OS: " << native_handle << " " << mod_name.c_str());
+#endif
     shaderUpdateQueueInfo.threadRunning = true;
 }
 

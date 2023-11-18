@@ -42,3 +42,22 @@ ShadedPathV/x64
 ShadedPathV/packages/**
 *.bmp
 spe_run.log
+
+# cmake build folders
+build/
+build_debug/
+build_release/
+
+# cmake generated and user files
+**/CMakeCache.txt
+**/CMakeUserPresets.json
+**/CTestTestfile.cmake
+**/CPackConfig.cmake
+**/cmake_install.cmake
+**/install_manifest.txt
+**/compile_commands.json
+
+**/CMakeFiles
+
+# macOS unwanted files
+.DS_Store

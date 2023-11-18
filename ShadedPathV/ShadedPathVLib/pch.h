@@ -36,8 +36,10 @@
 
 // Windows headers
 
+#if defined(_WIN64)
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 #include <windows.h>
+#endif
 
 // c++ standard lib headers
 #include <iostream>
@@ -86,12 +88,28 @@
 // OpenXR Headers
 //
 
+//#if defined(_WIN64)
 #define XR_USE_GRAPHICS_API_VULKAN
 #include <openxr/openxr.h>
 #include <openxr/openxr_platform.h>
 #include <openxr/openxr_reflection.h>
+//#endif
 
 // global definitions and macros
+
+#if !defined(_WIN64)
+typedef unsigned long DWORD, *PDWORD, *LPDWORD;
+typedef long long LONGLONG;
+typedef unsigned int UINT;
+#endif
+
+#if defined(__APPLE__)
+
+#include <libkern/OSByteOrder.h>
+#define _byteswap_uint64(x) OSSwapInt64(x)
+
+#endif
+
 
 //{
 //std::byte b;
@@ -152,11 +170,15 @@ inline void ErrorExt(std::string msg, const char* file, DWORD line)
 	s << file << " " << line << '\n';
 	Log(s.str().c_str());
 	//exit(0);
+#if defined(_WIN64)
 	s << "\n\nClick 'yes' to debug break and 'no' to hard exit.";
 	int nResult = MessageBoxA(GetForegroundWindow(), s.str().c_str(), "Unexpected error encountered", MB_YESNO | MB_ICONERROR);
 	if (nResult == IDYES)
 		DebugBreak();
 	else exit(0);
+#else
+    exit(0);
+#endif
 }
 
 #define Error(x) ErrorExt((x), __FILE__,  (DWORD)__LINE__)
@@ -231,7 +253,7 @@ inline std::optional<std::string> xr_to_string(XrInstance instance, XrResult res
 [[noreturn]] inline void ThrowXrResult(XrInstance instance, XrResult res, const char* originator = nullptr, const char* sourceLocation = nullptr) {
 	std::optional<std::string> resString = xr_to_string(instance, res);
 	if (resString == std::nullopt) {
-		Throw(Fmt("XrResult failure [%s]", std::to_string(res)), originator, sourceLocation);
+		Throw(Fmt("XrResult failure [%s]", std::to_string(res).c_str()), originator, sourceLocation);
 	} else {
 		Throw(Fmt("XrResult failure [%s]", resString.value().c_str()), originator, sourceLocation);
 	}
@@ -267,7 +289,7 @@ inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* ori
 #include "ClearShader.h"
 #include "SimpleShader.h"
 #include "LineShader.h"
-#include "PBRShader.h"
+#include "pbrShader.h"
 #include "CubeShader.h"
 #include "BillboardShader.h"
 #include "gltf.h"

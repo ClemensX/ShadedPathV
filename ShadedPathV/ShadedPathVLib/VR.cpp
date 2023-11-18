@@ -152,8 +152,8 @@ void VR::createInstanceInternal() {
     createInfo.enabledExtensionCount = (uint32_t)extensions.size();
     createInfo.enabledExtensionNames = extensions.data();
 
-    strcpy_s(createInfo.applicationInfo.applicationName, engine.appname.c_str());
-    strcpy_s(createInfo.applicationInfo.engineName, engine.engineName.c_str());
+    strcpy(createInfo.applicationInfo.applicationName, engine.appname.c_str());
+    strcpy(createInfo.applicationInfo.engineName, engine.engineName.c_str());
     createInfo.applicationInfo.engineVersion = engine.engineVersionInt;
     createInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
     try {

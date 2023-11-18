@@ -37,10 +37,6 @@ void Sound::init()
 {
 	numDoNothingFrames = 1;
 	//HRESULT hr;
-	UINT32 flags = 0;
-#if defined (_DEBUG)
-	//flags |= XAUDIO2_DEBUG_ENGINE;
-#endif
 	// init minaudio high level API engine
 	result = ma_engine_init(NULL, &sound_engine);
 	if (result != MA_SUCCESS) {
@@ -168,16 +164,16 @@ void Sound::Update(Camera* camera) {
 #define fourccDPDS 'sdpd'
 #endif
 
-VOID Sound::openSoundFile(std::string fileName, std::string id, bool loop)
+void Sound::openSoundFile(std::string fileName, std::string id, bool loop)
 {
 	if (engine.isRendering()) {
 		Log("WARNING: do not load sound files during rendering!");
 	}
 	std::string binFile;
 	binFile = engine.files.findFile(fileName.c_str(), FileCategory::SOUND);
-	SoundDef sd;
+	SoundDef sd{};
 	if (sounds.count(id) == 0) {
-		ZeroMemory(&sd, sizeof(sd));
+		//ZeroMemory(&sd, sizeof(sd));
 	} else {
 		sd = sounds[id];
 	}

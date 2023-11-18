@@ -6,7 +6,9 @@ using namespace std;
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+#if defined(_WIN64)
 #define STBI_MSC_SECURE_CRT
+#endif
 // #define TINYGLTF_NOEXCEPTION // optional. disable exception handling.
 // change warning level - we do not want to see minaudio warnings
 #pragma warning( push, 2 )

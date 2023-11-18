@@ -41,7 +41,11 @@ private:
 class ThreadInfo {
 public:
 	static DWORD thread_osid() {
+#if defined(_WIN64)
 		DWORD osid = GetCurrentThreadId();
+#else
+        DWORD osid = std::hash<std::thread::id>()(std::this_thread::get_id());
+#endif
 		return osid;
 	}
 };
@@ -124,7 +128,7 @@ public:
 		}
 		else {
 			// sleep at least 2ms to give other update threads a chance
-			Sleep(2);
+			std::this_thread::sleep_for(std::chrono::milliseconds(2));
 		}
 		lastCallTime = now;// chrono::high_resolution_clock::now();
 	};
