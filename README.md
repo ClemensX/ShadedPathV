@@ -141,17 +141,31 @@ Red lines show the world size of 2 square km. Lines are drawn every 1m. White cr
 ![Same scene with camera moved back](images/view002.PNG)
 Same scene with camera moved back. You see lines resembling floor level and ceiling (380 m apart). The textures are so small that they should use highest or 2nd highest mip level with 1x1 or 2x2 image size.
 
-## Libraries
+## Dev Setup and Library usage
+Prerequisites that need to installed before dev setup:
+* C++ 20 supported by CMake (VisualStudio 2022, gcc, clang,...)
+* Vulkan SDK https://vulkan.lunarg.com/
+* git
 
-install all needed libraries in folder ```libraries``` next to folder ```ShadedPath```:
+Install ShadedPathV to empty folder ```sp```:
+```
+cd <folder containing sp>
+git clone https://github.com/ClemensX/ShadedPathV.git sp
 
-* GLFW
-* GLM
-* ktx
-* OpenXR (header files needs to be in /libraries/openxr/openxr/)
-* Vulkan
-* tinygltf (no need to install - included with our source repo)
-* minaudio (no need to install - included with our source repo)
+install vcpkg (if not already installed):
+git clone https://github.com/microsoft/vcpkg.git
+cd vcpkg
+./bootstrap-vcpkg.sh or bootstrap-vcpkg.bat
+```
+To install dependencies call vcpkg from its folder:
+```
+vcpkg install glfw3
+vcpkg install ktx[tools,vulkan]
+vcpkg install glm
+vcpkg install openxr-loader[vulkan]
+```
+
+all libraries should be installed and found (glfw and ktx)
 
 Visual Studio 2022:
 * Daniel Scherzers GLSL Visual Studio integration: https://marketplace.visualstudio.com/items?itemName=DanielScherzer.GLSL2022
