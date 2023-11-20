@@ -3,6 +3,19 @@
     "version-string": "0.1",
     "dependencies": [
         "glfw3",
-        "ktx"
+        {
+            "name": "ktx",
+            "features": [
+                "tools",
+                "vulkan"
+            ]
+        },
+        "glm",
+        {
+            "name": "openxr-loader",
+            "features": [
+                "vulkan"
+            ]
+        }
     ]
 }

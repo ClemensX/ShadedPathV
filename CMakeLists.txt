@@ -29,6 +29,8 @@ message(STATUS "checking libraries:")
 find_package(Vulkan REQUIRED)
 find_package(glfw3 3.3 CONFIG REQUIRED)
 find_package(ktx 4.3 CONFIG REQUIRED)
+find_path(GLFW_INC GLFW REQUIRED)
+message(STATUS "glfw path = ${GLFW_INC}")
 
 
 message(STATUS "Vulkan libraries = ${Vulkan_LIBRARIES}")
@@ -39,7 +41,7 @@ message(STATUS "glfw he = ${glfw3_INCLUDE_DIRS}")
 message(STATUS "glfw he = ${glfw_INCLUDE_DIRS}")
 
 include_directories(${Vulkan_INCLUDE_DIRS})
-include_directories($ENV{VCPKG_ROOT}/installed/x64-windows/include)
+include_directories(${GLFW_INC})
 #include_directories(${glfw})
 #find_library(libktx NAMES libktx.dylib PATHS /usr/local/lib REQUIRED)
 #message(STATUS "Path to library ktx = ${libktx}")

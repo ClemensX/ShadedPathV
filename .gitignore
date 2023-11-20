@@ -61,3 +61,7 @@ build_release/
 
 # macOS unwanted files
 .DS_Store
+
+# local vcpkg files
+vcpkg_installed
+

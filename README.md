@@ -157,8 +157,16 @@ git clone https://github.com/microsoft/vcpkg.git
 cd vcpkg
 ./bootstrap-vcpkg.sh or bootstrap-vcpkg.bat
 ```
+Add vcpkg env var and add to path (e.g. in ``~/.bashrc`` or ``~/.zshrc``)
+Linux/macos:
+```
+export VCPKG_ROOT=/path/to/vcpkg
+export PATH=$VCPKG_ROOT:$PATH
+```
+
 To install dependencies call vcpkg from its folder:
 ```
+vcpkg --allow-unsupported install
 vcpkg install glfw3
 vcpkg install ktx[tools,vulkan]
 vcpkg install glm
