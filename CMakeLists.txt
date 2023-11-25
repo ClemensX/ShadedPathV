@@ -27,14 +27,17 @@ target_include_directories(shadedpathv PUBLIC
         "${CMAKE_CURRENT_BINARY_DIR}"
     )
 
+# be sure to delete build folder after changing this code!
 check_cxx_source_compiles("
-    int main(int argc, char* argv[])
-    { return 0;
+    #include <openxr.h>
+    int main()
+    {
+      return 0;
     }
 " OPENXR_AVAILABLE)
     if (OPENXR_AVAILABLE)
       message(STATUS "openxr available")
-      target_compile_definitions(shadedpath_lib PRIVATE "OPENXR_AVAILABLE")
+      target_compile_definitions(shadedpath.lib PRIVATE "OPENXR_AVAILABLE")
     else()
       message(STATUS "openxr NOT available")
     endif()
