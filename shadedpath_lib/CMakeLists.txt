@@ -1,0 +1,18 @@
+option(USE_MYMATH "Use tutorial provided math implementation" OFF)
+add_library(shadedpath.lib mymath.cpp)
+target_include_directories(shadedpath.lib INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(shadedpath.lib PUBLIC sp_compiler_flags)
+if (USE_MYMATH)
+  target_compile_definitions(shadedpath.lib PRIVATE "USE_MYMATH")
+  add_library(sqrtLibrary STATIC mysqrt.cpp)
+  target_link_libraries(sqrtLibrary PUBLIC sp_compiler_flags)
+  target_link_libraries(shadedpath.lib PRIVATE sqrtLibrary)
+endif()
+
+# install:
+set(installable_libs shadedpath.lib sp_compiler_flags)
+if(TARGET sqrtLibrary)
+  list(APPEND installable_libs sqrtLibrary)
+endif()
+install(TARGETS ${installable_libs} DESTINATION lib)
+install(FILES mymath.h DESTINATION include)
