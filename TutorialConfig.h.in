@@ -1,5 +1,0 @@
-// the configured options and settings for Tutorial
-// TODO 10: Define shadedpathv_VERSION_MAJOR and shadedpathv_VERSION_MINOR
-
-#define VERSION_MAJOR @shadedpathv_VERSION_MAJOR@
-#define VERSION_MINOR @shadedpathv_VERSION_MINOR@
