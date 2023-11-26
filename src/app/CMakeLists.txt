@@ -1,1 +1,4 @@
-add_executable(app ShadedPathV.cpp)
+add_executable(app
+  LandscapeGenerator.cpp
+  ShadedPathV.cpp
+)
