@@ -4,6 +4,8 @@
 //#include "pch.h"
 
 #include <stdio.h>
+#include "LandscapeGenerator.h"
+
 int main()
 {
     printf("ShadedPathV app\n");
@@ -14,7 +16,7 @@ int main()
     //GeneratedTexturesApp app;
     //BillboardDemo app;
     //LandscapeDemo app;
-    //LandscapeGenerator app; lastused
+    LandscapeGenerator app;
     //app.run();
 }
 
