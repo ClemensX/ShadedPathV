@@ -1,5 +1,7 @@
 #pragma once
 
+#import "Util.h"
+#import "ClearShader.h"
 // forward declarations
 class ShadedPathEngine;
 

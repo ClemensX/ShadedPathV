@@ -1,16 +1,18 @@
 #pragma once
 
+#include "mainheader.h"
+
 // all applications must implement this class and register with engine.
 // All callback methods are defined here
 class ShadedPathApplication
 {
 public:
     // called from multiple threads, only local resources should be changed
-    //virtual void drawFrame(ThreadResources& tr) = 0;
-    //virtual void handleInput(InputState& inputState) = 0;
+    virtual void drawFrame(ThreadResources& tr) = 0;
+    virtual void handleInput(InputState& inputState) = 0;
     virtual void buildCustomUI() {};
 };
-#if defined(nixo)
+
 // Engine contains options and aggregates GlobalRendering, Presentation, Shaders, ThreadResources
 // who do the vulkan work
 class ShadedPathEngine
@@ -332,4 +334,3 @@ private:
         Log(s.str().c_str());
     };
 };
-#endif
