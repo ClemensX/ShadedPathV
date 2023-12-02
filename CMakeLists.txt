@@ -2,6 +2,10 @@
 cmake_minimum_required(VERSION 3.27)
 project(ShadedPathV VERSION 0.1.0 LANGUAGES C CXX)
 enable_testing()
+if(MSVC)
+message(STATUS "UNICODE chars enabled for MSVC")
+add_definitions(-DUNICODE -D_UNICODE)
+endif()
 # cmake folder
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 # Project wide setup
@@ -25,4 +29,5 @@ endif()
 
 # call chain:
 # cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=~/dev/cpp/vcpkg/scripts/buildsystems/vcpkg.cmake
+# cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=c:\dev\vulkan\vcpkg\scripts\buildsystems\vcpkg.cmake
 # cmake --build ./build
