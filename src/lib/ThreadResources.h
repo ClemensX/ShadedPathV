@@ -1,7 +1,5 @@
 #pragma once
 
-#import "Util.h"
-#import "ClearShader.h"
 // forward declarations
 class ShadedPathEngine;
 
@@ -84,8 +82,10 @@ public:
 	bool threadFinished = false;
 
 	// VR
-	XrFrameState frameState{ XR_TYPE_FRAME_STATE };
-	std::vector<XrCompositionLayerBaseHeader*> layers;
+#   if defined(OPENXR_AVAILABLE)	
+	  XrFrameState frameState{ XR_TYPE_FRAME_STATE };
+	  std::vector<XrCompositionLayerBaseHeader*> layers;
+#   endif
 
 	// Debugging
 	std::string commandBufferDebugName;

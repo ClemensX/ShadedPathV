@@ -1,5 +1,5 @@
 #pragma once
-
+#if defined(OPENXR_AVAILABLE)
 // OpenXR VR implementation, see https://github.com/KhronosGroup/OpenXR-SDK-Source.git
 class VR
 {
@@ -50,5 +50,15 @@ private:
 	void createSpace();
 
 };
-
-
+#else
+class VR
+{
+	public:
+		VR(ShadedPathEngine& s) : engine(s) {
+			Log("VR c'tor\n");
+		};
+		~VR();
+	private:
+		ShadedPathEngine& engine;
+};
+#endif

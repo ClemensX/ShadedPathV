@@ -1,9 +1,9 @@
-#include "ThreadResources.h"
+#include "mainheader.h"
 
 using namespace std;
 
 ShadedPathEngine* ThreadResources::engine = nullptr;
-#if defined(nixo)
+
 ThreadResources::ThreadResources()
 {
 	Log("ThreadResource c'tor: " << this << endl);
@@ -128,4 +128,3 @@ ThreadResources::~ThreadResources()
     }
     Log("ThreadResource destructed: " << this << endl);
 };
-#endif

@@ -74,6 +74,17 @@
 #include <glm/gtx/euler_angles.hpp>
 #include <glm/gtx/norm.hpp>
 
+//
+// OpenXR Headers
+//
+
+#if defined(OPENXR_AVAILABLE)
+#define XR_USE_GRAPHICS_API_VULKAN
+#include <openxr/openxr.h>
+#include <openxr/openxr_platform.h>
+#include <openxr/openxr_reflection.h>
+#endif
+
 // global definitions and macros
 
 #if !defined(_WIN64)
@@ -220,7 +231,7 @@ inline std::string Fmt(const char* fmt, ...) {
 #include "Threads.h"
 #include "Presentation.h"
 #include "Camera.h"
-//#include "VR.h"
+#include "VR.h"
 #include "GlobalRendering.h"
 #include "VulkanResources.h"
 #include "Texture.h"

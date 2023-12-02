@@ -1,3 +1,5 @@
+#pragma once
+
 class Util;
 struct SoundDef;
 

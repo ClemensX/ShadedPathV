@@ -3,8 +3,7 @@
 
 //#include "pch.h"
 
-#include <stdio.h>
-#include "LandscapeGenerator.h"
+#include "mainheader.h"
 
 int main()
 {

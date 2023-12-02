@@ -7,11 +7,10 @@ class LandscapeGenerator : ShadedPathApplication
 public:
     void init();
     void run();
-    //void drawFrame(ThreadResources& tr) override;
-    //void handleInput(InputState& inputState) override;
+    void drawFrame(ThreadResources& tr) override;
+    void handleInput(InputState& inputState) override;
     void buildCustomUI() override;
 private:
-#if defined(nixo)
     ShadedPathEngine engine;
     Shaders& shaders = engine.shaders;
     void updatePerFrame(ThreadResources& tr);
@@ -40,5 +39,4 @@ private:
     // store generated lines:
     std::vector<LineDef> lines;
     std::mutex monitorMutex;
-#endif
 };

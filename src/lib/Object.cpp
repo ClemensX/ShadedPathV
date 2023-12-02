@@ -1,5 +1,4 @@
 #include "mainheader.h"
-#include "Object.h"
 
 using namespace std;
 using namespace glm;

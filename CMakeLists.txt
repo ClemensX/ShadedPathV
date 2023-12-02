@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.27)
 project(ShadedPathV VERSION 0.1.0 LANGUAGES C CXX)
 enable_testing()
 if(MSVC)
-message(STATUS "UNICODE chars enabled for MSVC")
-add_definitions(-DUNICODE -D_UNICODE)
+  message(STATUS "UNICODE chars enabled for MSVC")
+  add_definitions(-DUNICODE -D_UNICODE)
 endif()
 # cmake folder
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -16,6 +16,8 @@ set(CMAKE_CXX_EXTENSIONS NO)
 # Externally provided content
 include(cmake/dependencies.cmake)
 # Main targets built by this project
+#include_directories("${CMAKE_CURRENT_SOURCE_DIR}/lib")
+
 add_subdirectory(src/lib)
 add_subdirectory(src/app)
 

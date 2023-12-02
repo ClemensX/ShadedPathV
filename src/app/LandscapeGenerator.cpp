@@ -1,15 +1,8 @@
-#include "LandscapeGenerator.h"
+#include "mainheader.h"
 
 using namespace std;
-//using namespace glm;
+using namespace glm;
 
-    void LandscapeGenerator::init() {};
-    void LandscapeGenerator::run() {};
-    //void drawFrame(ThreadResources& tr) override;
-    //void handleInput(InputState& inputState) override;
-    void LandscapeGenerator::buildCustomUI() {};
-
-#if defined(nixo)
 void LandscapeGenerator::run()
 {
     Log("LandscapeGenerator started" << endl);
@@ -291,4 +284,3 @@ void LandscapeGenerator::buildCustomUI()
     }
     ImGui::SameLine(); HelpMarker(helpText.c_str());
 };
-#endif

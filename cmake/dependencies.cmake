@@ -32,6 +32,16 @@ message(STATUS "ktx headers = ${KTX_INC}")
 find_path(GLM_INC GLM REQUIRED)
 message(STATUS "glm headers = ${GLM_INC}")
 
+#disable OpenXR if include not found:
+find_path(OPENXR_INC NAMES openxr.h)
+if (OPENXR_INC)
+  add_definitions(OPENXR_AVAILABLE)
+else()
+  message(WARNING "OpenXR build disabled")
+endif()
+message(STATUS "OpenXR headers = ${OPENXR_INC}")
+
+
 include_directories(${Vulkan_INCLUDE_DIRS})
 include_directories(${GLFW_INC})
 include_directories(${KTX_INC})
