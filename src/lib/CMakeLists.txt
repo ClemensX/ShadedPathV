@@ -46,3 +46,19 @@ target_link_libraries(shadedpath
     Vulkan::Vulkan
     KTX::ktx
   )
+
+# GLSL C:\dev\vulkan\ShadedPathV\ShadedPathV\ShadedPathVLib\shader\line.vert -o ../x64/Debug/line_vert.spv
+# compile shaders:
+message(STATUS "runtime ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+message(STATUS "runtime ${CMAKE_CURRENT_BINARY_DIR}")
+source_group("shader" FILES ${VULKAN_SHADERS})
+set(glsl_output_files "")
+add_custom_command(
+  OUTPUT line_vert.spv
+  COMMAND Vulkan::glslc ${CMAKE_CURRENT_SOURCE_DIR}/shader/line.vert -o line_vert.spv
+  #DEPENDS ./shader/line.vert
+)
+list(APPEND glsl_output_files line_vert.spv)
+
+add_custom_target(shader_compiles ALL DEPENDS ${glsl_output_files})
+add_dependencies(shadedpath shader_compiles)

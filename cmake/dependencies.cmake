@@ -18,6 +18,11 @@ find_path(GLFW_INC GLFW REQUIRED)
 message(STATUS "glfw path = ${GLFW_INC}")
 find_package(glm CONFIG REQUIRED)
 
+# check glsl compiler is found:
+if(NOT Vulkan_glslc_FOUND)
+  message(ERROR "Vulkan glslc not found")
+endif()
+
 
 message(STATUS "Vulkan libraries = ${Vulkan_LIBRARIES}")
 message(STATUS "Vulkan headers = ${Vulkan_INCLUDE_DIRS}")
