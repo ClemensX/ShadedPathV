@@ -57,7 +57,22 @@ class VR
 		VR(ShadedPathEngine& s) : engine(s) {
 			Log("VR c'tor\n");
 		};
-		~VR();
+		~VR(){};
+	// VR has to be initialized before Vulkan instance creation
+	void init() {};
+	// initialize Vulkan instance via XR_KHR_vulkan_enable2 extension
+	void initVulkanEnable2(VkInstanceCreateInfo &instInfo){};
+	// create logical devive via XR_KHR_vulkan_enable2 extension
+	void initVulkanCreateDevice(VkDeviceCreateInfo& createInfo){};
+	// create XR Session
+	void createSession(){};
+	// Transferred from Sample Code:
+	void logLayersAndExtensions(){};
+	void createInstanceInternal(){};
+
+	// threaded frame generation
+	void frameBegin(ThreadResources& tr){};
+	void frameEnd(ThreadResources& tr){};
 	private:
 		ShadedPathEngine& engine;
 };

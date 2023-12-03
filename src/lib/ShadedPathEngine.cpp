@@ -2,7 +2,6 @@
 
 using namespace std;
 
-#if defined(nixo)
 void ShadedPathEngine::init(string appname)
 {
     this->appname = appname;
@@ -461,5 +460,3 @@ ShadedPathEngine::~ShadedPathEngine()
     ThemedTimer::getInstance()->logInfo(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
     ThemedTimer::getInstance()->logInfo(TIMER_PART_BUFFER_COPY);
 }
-
-#endif
