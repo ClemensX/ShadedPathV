@@ -9,10 +9,11 @@ include_directories("${PROJECT_SOURCE_DIR}/src/lib")
 #  message(STATUS "dir='${dir}'")
 #endforeach()
 target_link_libraries(app PRIVATE shadedpath)
-add_custom_command(TARGET app POST_BUILD
-#COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_BINARY_DIR}/../lib/*.spv" $<TARGET_FILE_DIR:app>
-#COMMAND ${CMAKE_COMMAND} -E copy C:/dev/cpp/cmaketest/build/src/lib/line_vert.spv $<TARGET_FILE_DIR:app>
-COMMAND Vulkan::glslc ${PROJECT_SOURCE_DIR}/src/lib/shader/line.vert -o $<TARGET_FILE_DIR:app>/line_vert.spv
+add_custom_command(POST_BUILD
+#add_custom_command(TARGET app POST_BUILD
+  OUTPUT line_vert.spv
+  COMMAND Vulkan::glslc ${PROJECT_SOURCE_DIR}/src/lib/shader/line.vert -o $<TARGET_FILE_DIR:app>/line_vert.spv
+  DEPENDS ${PROJECT_SOURCE_DIR}/src/lib/shader/line.vert
 )
 
 #add_custom_command(
