@@ -25,7 +25,8 @@ void Files::findFxFolder()
 	}
 
 	// then look at rel path (used from running inside VS)
-	current = current / ".." / "x64" / FX_PATH;
+	//current = current / ".." / "x64" / FX_PATH;
+	current = current / FX_PATH;
 	to_check =  current / fx_test_filename;
 	if (filesystem::exists(to_check)) {
 		fxFolder = current;

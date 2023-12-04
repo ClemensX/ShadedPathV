@@ -16,7 +16,7 @@ int main()
     //BillboardDemo app;
     //LandscapeDemo app;
     LandscapeGenerator app;
-    //app.run();
+    app.run();
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
