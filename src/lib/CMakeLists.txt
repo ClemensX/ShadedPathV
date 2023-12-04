@@ -46,7 +46,9 @@ target_link_libraries(shadedpath
     Vulkan::Vulkan
     KTX::ktx
   )
-
+if(APPLE)
+  #target_compile_options(shadedpath PUBLIC -Wreturn-type)
+endif()
 # GLSL C:\dev\vulkan\ShadedPathV\ShadedPathV\ShadedPathVLib\shader\line.vert -o ../x64/Debug/line_vert.spv
 # compile shaders:
 message(STATUS "runtime ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")

@@ -5,6 +5,13 @@ enable_testing()
 if(MSVC)
   message(STATUS "UNICODE chars enabled for MSVC")
   add_definitions(-DUNICODE -D_UNICODE)
+elseif(APPLE)
+  #message(STATUS "AAAAAA")
+  add_compile_options(-Wall -Wextra -Werror -Wno-error=unused-variable -Wno-error=unused-function
+  -Wno-error=implicit-function-declaration -Wno-return-type -Wno-unused-parameter -Wno-unknown-pragmas
+  -Wno-defaulted-function-deleted -Wno-unused-private-field -Wno-sign-compare -Wno-deprecated-declarations
+  -Wno-unused-but-set-variable -Wno-format-security -Wno-null-conversion
+  )
 endif()
 # cmake folder
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)

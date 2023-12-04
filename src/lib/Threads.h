@@ -284,16 +284,16 @@ class RenderThreadNotification {
 public:
 	// update thread waiting method:
 	// no need to sync because we only have 1 update thread
-	void waitForRenderThreads(int num, GlobalResourceSet resourceSet, ShaderBase* shaderInstance) {
+	void waitForRenderThreads(size_t num, GlobalResourceSet resourceSet, ShaderBase* shaderInstance) {
 		if (num > notificationList.size()) Error("too many render threads");
-		for (int i = 0; i < num; i++) {
+		for (size_t i = 0; i < num; i++) {
 			notificationList[i] = 1;
 		}
 		currentResourceSet = resourceSet;
 		currentShaderInstance = shaderInstance;
 		outstandingAdoptions = num;
 		while (true) {
-			std::optional<int> opt = queue.pop();
+			std::optional<size_t> opt = queue.pop();
 			if (opt.has_value()) {
 				internalResourceSwitchComplete(opt.value());
 			}

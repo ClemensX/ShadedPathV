@@ -22,11 +22,11 @@ public:
     ShadedPathEngine() :
         global(*this),
         presentation(*this),
-        vr(*this),
-        sound(*this),
         shaders(*this),
         util(*this),
+        vr(*this),
         objectStore(&meshStore),
+        sound(*this),
         limiter(60.0f)
     {
         Log("Engine c'tor\n");

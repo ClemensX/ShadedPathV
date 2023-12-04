@@ -124,6 +124,7 @@ inline void LogFile(const char* s) {
 
 #if defined(DEBUG) | defined(_DEBUG)
 #define LogCond(y,x) if(y){Log(x)}
+#if defined(_WIN64)
 #define Log(x)\
 {\
     std::wstringstream s1764;  s1764 << x; \
@@ -131,6 +132,13 @@ inline void LogFile(const char* s) {
     std::stringstream s1765; s1765 << x; \
     LogFile(s1765.str().c_str()); \
 }
+#else
+#define Log(x)\
+{\
+    std::stringstream s1765; s1765 << x; \
+    LogFile(s1765.str().c_str()); \
+}
+#endif
 #elif defined(LOGFILE)
 #define Log(x)\
 {\
@@ -177,7 +185,7 @@ inline void ErrorExt(std::string msg, const char* file, DWORD line)
 inline std::string Fmt(const char* fmt, ...) {
 	va_list vl;
 	va_start(vl, fmt);
-	size_t size = std::vsnprintf(nullptr, 0, fmt, vl);
+	int size = std::vsnprintf(nullptr, 0, fmt, vl);
 	va_end(vl);
 
 	if (size != -1) {
