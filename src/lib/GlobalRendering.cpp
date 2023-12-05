@@ -84,7 +84,9 @@ void GlobalRendering::initVulkanInstance()
     auto extensions = getRequiredExtensions();
     createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     createInfo.ppEnabledExtensionNames = extensions.data();
-
+#   if defined(__APPLE__)    
+    createInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+#   endif
     if (USE_PROFILE_DYN_RENDERING) {
         VpInstanceCreateInfo vpCreateInfo{};
         vpCreateInfo.pCreateInfo = &createInfo;
@@ -127,7 +129,10 @@ std::vector<const char*> GlobalRendering::getRequiredExtensions() {
 
     // vector will be moved on return
     std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-
+#   if defined(__APPLE__)
+        extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        deviceExtensions.push_back("VK_KHR_portability_subset");
+#   endif
     //extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
     //extensions.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     //extensions.push_back(VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME);
@@ -239,7 +244,7 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
     VkFormatFeatureFlags flagsToCheck = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT | VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
     if ((fp.linearTilingFeatures & flagsToCheck) == 0) {
         Log("device does not support needed linearTilingFeatures" << endl);
-        return false;
+        //return false;
     }
     if ((fp.optimalTilingFeatures & flagsToCheck) == 0) {
         Log("device does not support needed optimalTilingFeatures" << endl);
@@ -299,6 +304,16 @@ QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, b
             flags &= ~VK_QUEUE_SPARSE_BINDING_BIT;
             flags &= ~VK_QUEUE_OPTICAL_FLOW_BIT_NV;
             flags &= ~VK_QUEUE_PROTECTED_BIT;
+#           if defined(ALLOW_USING_NON_TRANSFER_ONLY_QUEUE)
+            if (flags & VK_QUEUE_TRANSFER_BIT && i != indices.graphicsFamily && i != indices.presentFamily) {
+                indices.transferFamily = i;
+                if (listmode) {
+                    Log("found transfer ONLY queue at index " << i << ", max queues: " << queueFamily.queueCount << endl);
+                    //Log("  other queue flags: " << getQueueFlagsString(queueFamily.queueFlags).c_str() << endl);
+                }
+                break;
+            }
+#           endif
             if (flags == VK_QUEUE_TRANSFER_BIT) {
                 indices.transferFamily = i;
                 if (listmode) {

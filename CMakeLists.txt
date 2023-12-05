@@ -6,7 +6,7 @@ if(MSVC)
   message(STATUS "UNICODE chars enabled for MSVC")
   add_definitions(-DUNICODE -D_UNICODE)
 elseif(APPLE)
-  #message(STATUS "AAAAAA")
+  add_definitions(-DALLOW_USING_NON_TRANSFER_ONLY_QUEUE)
   add_compile_options(-Wall -Wextra -Werror -Wno-error=unused-variable -Wno-error=unused-function
   -Wno-error=implicit-function-declaration -Wno-return-type -Wno-unused-parameter -Wno-unknown-pragmas
   -Wno-defaulted-function-deleted -Wno-unused-private-field -Wno-sign-compare -Wno-deprecated-declarations

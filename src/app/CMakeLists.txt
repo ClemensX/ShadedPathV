@@ -43,6 +43,7 @@ target_link_libraries(app PRIVATE shadedpath)
 
 # shader compile take from openxr tutorial:
 source_group("Shaders" FILES ${VULKAN_SHADERS})
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/shader.bin)
 
 function(compile_glsl run_target_name)
     set(glsl_output_files "")

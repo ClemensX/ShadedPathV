@@ -65,7 +65,7 @@ public:
 	static const bool DEBUG_UTILS_EXTENSION = false;
 #endif
 	// list device and instance extensions
-	static const bool LIST_EXTENSIONS = false;
+	static const bool LIST_EXTENSIONS = true;
 
 	// Vulkan formats we want to set centrally:
 

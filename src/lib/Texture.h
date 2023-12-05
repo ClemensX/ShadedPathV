@@ -26,7 +26,11 @@ class TextureStore {
 public:
 	// max number of textures usable in engine is 1 million.
 	// Do not confuse with maxTextures (actual max texture count) which is set by app at startup
+#   if defined(__APPLE__)
+	static const uint32_t UPPER_LIMIT_TEXTURE_COUNT = 640;
+#   else
 	static const uint32_t UPPER_LIMIT_TEXTURE_COUNT = 1000000;
+#   endif
 	// init texture store with max number of textures used
 	void init(ShadedPathEngine* engine, size_t maxTextures);
 	~TextureStore();
