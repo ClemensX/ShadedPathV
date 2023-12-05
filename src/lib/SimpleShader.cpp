@@ -8,8 +8,8 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 	resources.setResourceDefinition(&vulkanResourceDefinition);
 
     // create shader modules
-    vertShaderModuleTriangle = resources.createShaderModule("triangle_vert.spv");
-    fragShaderModuleTriangle = resources.createShaderModule("triangle_frag.spv");
+    vertShaderModuleTriangle = resources.createShaderModule("triangle.vert.spv");
+    fragShaderModuleTriangle = resources.createShaderModule("triangle.frag.spv");
 
     // create vertex buffer
     VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();

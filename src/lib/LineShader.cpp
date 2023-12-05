@@ -8,8 +8,8 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	resources.setResourceDefinition(&vulkanResourceDefinition);
 
 	// create shader modules
-	vertShaderModule = resources.createShaderModule("line_vert.spv");
-	fragShaderModule = resources.createShaderModule("line_frag.spv");
+	vertShaderModule = resources.createShaderModule("line.vert.spv");
+	fragShaderModule = resources.createShaderModule("line.frag.spv");
 
 	// descriptor set layout
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);

@@ -13,9 +13,10 @@ using namespace std;
 void Files::findFxFolder()
 {
 	filesystem::path current = filesystem::current_path();
-	string fx_test_filename = "line_vert.spv";
+	string fx_test_filename = "line.vert.spv";
 
 	// first look at CD:
+	current = filesystem::current_path() / "shader.bin";
 	filesystem::path to_check = current / fx_test_filename;
 	Log("Looking for shader files: " << to_check << endl);
 	if (filesystem::exists(to_check)) {
@@ -26,7 +27,8 @@ void Files::findFxFolder()
 
 	// then look at rel path (used from running inside VS)
 	//current = current / ".." / "x64" / FX_PATH;
-	current = current / FX_PATH;
+	//current = current / FX_PATH;
+	current = filesystem::current_path() / ".." / "shader.bin";
 	to_check =  current / fx_test_filename;
 	if (filesystem::exists(to_check)) {
 		fxFolder = current;

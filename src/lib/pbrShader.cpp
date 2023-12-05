@@ -8,8 +8,8 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	resources.setResourceDefinition(&vulkanResourceDefinition);
 
 	// create shader modules
-	vertShaderModule = resources.createShaderModule("pbr_vert.spv");
-	fragShaderModule = resources.createShaderModule("pbr_frag.spv");
+	vertShaderModule = resources.createShaderModule("pbr.vert.spv");
+	fragShaderModule = resources.createShaderModule("pbr.frag.spv");
 
 	// descriptor
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);

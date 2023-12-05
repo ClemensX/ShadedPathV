@@ -8,8 +8,8 @@ void CubeShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	resources.setResourceDefinition(&vulkanResourceDefinition);
 
 	// create shader modules
-	vertShaderModule = resources.createShaderModule("cube_vert.spv");
-	fragShaderModule = resources.createShaderModule("cube_frag.spv");
+	vertShaderModule = resources.createShaderModule("cube.vert.spv");
+	fragShaderModule = resources.createShaderModule("cube.frag.spv");
 
 	// we need a buffer to keep validation happy - content is irrelevant
 	static Vertex verts[36];

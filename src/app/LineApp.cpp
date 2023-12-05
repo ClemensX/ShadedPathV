@@ -1,15 +1,14 @@
-#include "pch.h"
+#include "mainheader.h"
 
 using namespace std;
 using namespace glm;
 
-void gltfObjectsApp::run()
+void LineApp::run()
 {
-    Log("gltfObjectsApp started" << endl);
+    Log("SimpleApp started" << endl);
     {
         // camera initialization
         CameraPositioner_FirstPerson positioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        positioner.setMaxSpeed(0.1f);
         Camera camera(positioner);
         this->camera = &camera;
         this->positioner = &positioner;
@@ -17,36 +16,30 @@ void gltfObjectsApp::run()
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
         //engine.enableVR();
-        //engine.enableStereo();
+        engine.enableStereo();
         engine.enableStereoPresentation();
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
-        engine.setMaxTextures(50);
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 1800;//480;// 960;//1800;// 800;//3700; // 2500;
-        //engine.enablePresentation(win_width, (int)(win_width / 3.55f), "Render glTF objects");
-        engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF objects");
+        int win_width = 960;// 960;//1800;// 800;//3700;
+        engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Vulkan Simple Line App");
         camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
 
         engine.setFramesInFlight(2);
         engine.registerApp(this);
-        //engine.enableSound();
-        engine.setThreadModeSingle();
+        //engine.setThreadModeSingle();
 
         // engine initialization
-        engine.init("gltfObjects");
+        engine.init("LineApp");
 
-        engine.textureStore.generateBRDFLUT();
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
-            .addShader(shaders.cubeShader)
-            .addShader(shaders.pbrShader)
+            .addShader(shaders.lineShader)
             ;
-        if (enableLines) shaders.addShader(shaders.lineShader);
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         shaders.initActiveShaders();
 
@@ -64,10 +57,10 @@ void gltfObjectsApp::run()
         }
         engine.waitUntilShutdown();
     }
-    Log("gltfObjectsApp ended" << endl);
+    Log("LineApp ended" << endl);
 }
 
-void gltfObjectsApp::init() {
+void LineApp::init() {
     // add some lines:
     float aspectRatio = engine.getAspect();
     float plus = 0.0f;
@@ -79,23 +72,13 @@ void gltfObjectsApp::init() {
     };
     vector<LineDef> lines;
 
-    // loading objects wireframe:
-    //engine.objectStore.loadObject("WaterBottle.glb", "WaterBottle", lines);
-    //engine.objectStore.loadMeshWireframe("small_knife_dagger/scene.gltf", "Knife", lines);
-
-    // loading objects:
-    //engine.meshStore.loadMesh("WaterBottle.glb", "WaterBottle");
-    //engine.meshStore.loadMesh("bottle2.glb", "WaterBottle");
-    engine.meshStore.loadMesh("grass.glb", "Grass");
-    engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
-    //auto o = engine.meshStore.getMesh("Knife");
-    // add bottle and knife to the scene:
-    engine.objectStore.createGroup("ground_group");
-    bottle = engine.objectStore.addObject("ground_group", "Grass.7", vec3(0.0f, 0.0f, 0.0f));
-    engine.objectStore.createGroup("knife_group");
-    engine.objectStore.addObject("knife_group", "Knife", vec3(0.3f, 0.0f, 0.0f));
-    //engine.objectStore.addObject("knife_group", "WaterBottle", vec3(0.3f, 0.0f, 0.0f));
-    //Log("Object loaded: " << o->id.c_str() << endl);
+    // loading objects
+    // TODO currently wireframe rendering is bugged
+    if (false) {
+        engine.meshStore.loadMeshWireframe("WaterBottle.glb", "WaterBottle", lines);
+        auto o = engine.meshStore.getMesh("WaterBottle");
+        Log("Object loaded: " << o->id.c_str() << endl);
+    }
 
 
     // add all intializer objects to vector:
@@ -109,32 +92,15 @@ void gltfObjectsApp::init() {
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     // Grid with 1m squares, floor on -10m, ceiling on 372m
 
-    // load skybox cube texture
-    //engine.textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
-    //engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
-    engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
-    //engine.global.createCubeMapFrom2dTexture(engine.textureStore.BRDFLUT_TEXTURE_ID, "skyboxTexture");
-
-    engine.shaders.cubeShader.setSkybox("skyboxTexture");
-    engine.shaders.cubeShader.setFarPlane(2000.0f);
-
-
     engine.shaders.lineShader.initialUpload();
-    engine.shaders.pbrShader.initialUpload();
-    // load and play music
-    engine.sound.openSoundFile("power.ogg", "BACKGROUND_MUSIC", true);
-    //engine.sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 1.0f, 6000);
-    // add sound to object
-    engine.sound.addWorldObject(bottle);
-    engine.sound.changeSound(bottle, "BACKGROUND_MUSIC");
 }
 
-void gltfObjectsApp::drawFrame(ThreadResources& tr) {
+void LineApp::drawFrame(ThreadResources& tr) {
     updatePerFrame(tr);
     engine.shaders.submitFrame(tr);
 }
 
-void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
+void LineApp::updatePerFrame(ThreadResources& tr)
 {
     static double old_seconds = 0.0f;
     double seconds = engine.gameTime.getTimeSeconds();
@@ -179,65 +145,9 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
 
     engine.shaders.lineShader.prepareAddLines(tr);
     engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
-
-    // cube
-    CubeShader::UniformBufferObject cubo{};
-    cubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-    cubo.view = camera->getViewMatrixAtCameraPos();
-    //cubo.view = lubo.view; // uncomment to have stationary cube, not centered at camera
-    cubo.proj = lubo.proj;
-    auto cubo2 = cubo;
-    cubo2.view = cubo.view;
-    engine.shaders.cubeShader.uploadToGPU(tr, cubo, cubo2);
- 
-    // pbr
-    PBRShader::UniformBufferObject pubo{};
-    mat4 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    pubo.model = modeltransform;
-    pubo.view = lubo.view;
-    pubo.proj = lubo.proj;
-    auto pubo2 = pubo;
-    pubo2.view = lubo2.view;
-    engine.shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
-    // change individual objects position:
-    //auto grp = engine.objectStore.getGroup("knife_group");
-    for (auto& wo : engine.objectStore.getSortedList()) {
-        //Log(" adapt object " << obj.get()->objectNum << endl);
-        //WorldObject *wo = obj.get();
-        PBRShader::DynamicUniformBufferObject* buf = engine.shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
-        mat4 modeltransform;
-        bool moveObjects = false;
-        if (moveObjects) {
-            if (wo->objectNum == 0) {
-                modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f + (plus / 10.0f), 0.0f, 0.0f));
-            } else {
-                modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f + (plus / 100.0f), 0.0f, 0.0f));
-            }
-        } else {
-            if (wo->objectNum == 0) {
-                modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.1f, 0.0f, 0.0f));
-                // test overwriting default textures used:
-                //buf->indexes.baseColor = 0; // set basecolor to brdflut texture
-            }
-            else {
-                modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.2f, 0.0f, 0.0f));
-            }
-        }
-        // test model transforms:
-        if (wo->mesh->id.starts_with("Grass")) {
-            // scale to 1%:
-            //modeltransform = scale(mat4(1.0f), vec3(0.01f, 0.01f, 0.01f));
-            // scale from gltf:
-            modeltransform = wo->mesh->baseTransform;
-        }
-        buf->model = modeltransform;
-        if (engine.isGlobalUpdateThread(tr)) {
-            engine.sound.Update(camera);
-        }
-    }
 }
 
-void gltfObjectsApp::handleInput(InputState& inputState)
+void LineApp::handleInput(InputState& inputState)
 {
     if (inputState.mouseButtonEvent) {
         //Log("mouse button pressed (left/right): " << inputState.pressedLeft << " / " << inputState.pressedRight << endl);

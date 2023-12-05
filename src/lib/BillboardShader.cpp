@@ -9,11 +9,11 @@ void BillboardShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	resources.addGeometryShaderStageToMVPBuffer(); // we need to signal use of geometry shader for MVP buffer
 
 	// create shader modules
-	vertShaderModule = resources.createShaderModule("billboard_vert.spv");
+	vertShaderModule = resources.createShaderModule("billboard.vert.spv");
 	engine.util.debugNameObjectShaderModule(vertShaderModule, "Billboard Vert Shader");
-	geomShaderModule = resources.createShaderModule("billboard_geom.spv");
+	geomShaderModule = resources.createShaderModule("billboard.geom.spv");
 	engine.util.debugNameObjectShaderModule(geomShaderModule, "Billboard Geom Shader");
-	fragShaderModule = resources.createShaderModule("billboard_frag.spv");
+	fragShaderModule = resources.createShaderModule("billboard.frag.spv");
 	engine.util.debugNameObjectShaderModule(fragShaderModule, "Billboard Frag Shader");
 
 	// descriptor

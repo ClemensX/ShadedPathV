@@ -349,8 +349,8 @@ void TextureStore::generateBRDFLUT()
 	// load shader binary code
 	vector<byte> file_buffer_vert;
 	vector<byte> file_buffer_frag;
-	engine->files.readFile("genbrdflut_vert.spv", file_buffer_vert, FileCategory::FX);
-	engine->files.readFile("genbrdflut_frag.spv", file_buffer_frag, FileCategory::FX);
+	engine->files.readFile("genbrdflut.vert.spv", file_buffer_vert, FileCategory::FX);
+	engine->files.readFile("genbrdflut.frag.spv", file_buffer_frag, FileCategory::FX);
 	//Log("read vertex shader: " << file_buffer_vert.size() << endl);
 	//Log("read fragment shader: " << file_buffer_frag.size() << endl);
 	// create shader modules
