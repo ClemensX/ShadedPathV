@@ -5,6 +5,13 @@
 
 #include "mainheader.h"
 #include "LandscapeGenerator.h"
+#include "SimpleApp.h"
+#include "DeviceCoordApp.h"
+#include "LineApp.h"
+#include "gltfObjectsApp.h"
+#include "GeneratedTexturesApp.h"
+#include "BillboardDemo.h"
+#include "LandscapeDemo1.h"
 
 int main()
 {

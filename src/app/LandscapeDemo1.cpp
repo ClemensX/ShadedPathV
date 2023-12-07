@@ -1,4 +1,5 @@
-#include "pch.h"
+#include "mainheader.h"
+#include "LandscapeDemo1.h"
 
 using namespace std;
 using namespace glm;

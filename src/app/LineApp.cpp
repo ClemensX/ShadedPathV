@@ -1,4 +1,5 @@
 #include "mainheader.h"
+#include "LineApp.h"
 
 using namespace std;
 using namespace glm;
@@ -30,7 +31,7 @@ void LineApp::run()
 
         engine.setFramesInFlight(2);
         engine.registerApp(this);
-        //engine.setThreadModeSingle();
+        engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("LineApp");

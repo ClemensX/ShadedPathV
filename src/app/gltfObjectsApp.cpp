@@ -1,4 +1,5 @@
 #include "mainheader.h"
+#include "gltfObjectsApp.h"
 
 using namespace std;
 using namespace glm;

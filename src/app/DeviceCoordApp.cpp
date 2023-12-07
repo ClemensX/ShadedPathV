@@ -1,42 +1,37 @@
 #include "mainheader.h"
+#include "DeviceCoordApp.h"
 
 using namespace std;
 using namespace glm;
 
-void LineApp::run()
+
+void DeviceCoordApp::run()
 {
-    Log("SimpleApp started" << endl);
+    Log("DeviceCoordApp started" << endl);
     {
         // camera initialization
-        CameraPositioner_FirstPerson positioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        CameraPositioner_FirstPerson positioner(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         Camera camera(positioner);
         this->camera = &camera;
         this->positioner = &positioner;
         engine.enableKeyEvents();
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
-        //engine.enableVR();
-        engine.enableStereo();
-        engine.enableStereoPresentation();
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
-        //engine.setFrameCountLimit(1000);
-        engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
-        //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 960;// 960;//1800;// 800;//3700;
-        engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Vulkan Simple Line App");
-        camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
-
+        engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); //oneK == 960
+        int win_width = 960;//1800;// 800;//3700;
+        engine.enablePresentation(win_width, (int)(win_width /1.77f), "Vulkan Device Coordinates");
         engine.setFramesInFlight(2);
         engine.registerApp(this);
-        //engine.setThreadModeSingle();
 
         // engine initialization
-        engine.init("LineApp");
+        engine.init("DeviceCoordApp");
 
         // add shaders used in this app
         shaders
+            .addShader(shaders.uiShader)
             .addShader(shaders.clearShader)
             .addShader(shaders.lineShader)
             ;
@@ -49,7 +44,6 @@ void LineApp::run()
         // some shaders may need additional preparation
         engine.prepareDrawing();
 
-
         // rendering
         while (!engine.shouldClose()) {
             engine.pollEvents();
@@ -57,50 +51,20 @@ void LineApp::run()
         }
         engine.waitUntilShutdown();
     }
-    Log("LineApp ended" << endl);
+    Log("DeviceCoordApp ended" << endl);
 }
 
-void LineApp::init() {
-    // add some lines:
-    float aspectRatio = engine.getAspect();
-    float plus = 0.0f;
-    LineDef myLines[] = {
-        // start, end, color
-        { glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) },
-        { glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { glm::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f) }
-    };
-    vector<LineDef> lines;
-
-    // loading objects
-    // TODO currently wireframe rendering is bugged
-    if (false) {
-        engine.meshStore.loadMeshWireframe("WaterBottle.glb", "WaterBottle", lines);
-        auto o = engine.meshStore.getMesh("WaterBottle");
-        Log("Object loaded: " << o->id.c_str() << endl);
-    }
-
-
-    // add all intializer objects to vector:
-    for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
-    LineShader::addZeroCross(lines);
-    //LineShader::addCross(lines, vec3(1.0f, 1.0f, 1.0f), vec4(1.0f, 1.0f, 0.0f, 1.0f));
-
-    engine.shaders.lineShader.add(lines);
-
+void DeviceCoordApp::init() {
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
-    // Grid with 1m squares, floor on -10m, ceiling on 372m
-
-    engine.shaders.lineShader.initialUpload();
 }
 
-void LineApp::drawFrame(ThreadResources& tr) {
+void DeviceCoordApp::drawFrame(ThreadResources& tr) {
     updatePerFrame(tr);
     engine.shaders.submitFrame(tr);
 }
 
-void LineApp::updatePerFrame(ThreadResources& tr)
+void DeviceCoordApp::updatePerFrame(ThreadResources& tr)
 {
     static double old_seconds = 0.0f;
     double seconds = engine.gameTime.getTimeSeconds();
@@ -115,39 +79,42 @@ void LineApp::updatePerFrame(ThreadResources& tr)
     double deltaSeconds = seconds - old_seconds;
     positioner->update(deltaSeconds, input.pos, input.pressedLeft);
     old_seconds = seconds;
+    static bool downmode;
+    float a = -1.0f; float b = 1.0f; float z = 5.0f;
+    // move float vlaue object between a and b in z seconds
+    float rel_time = static_cast<float>(fmod(seconds, z));
+    downmode = fmod(seconds, 2 * z) > z ? true : false;
+    float floatVal = (b - a) * rel_time / z;
+    floatVal = (downmode) ? b - floatVal : a + floatVal;
+    //Log(" floatVal " << downmode <<  " " << floatVal << endl);
 
     // lines
     LineShader::UniformBufferObject lubo{};
-    lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-    lubo.view = camera->getViewMatrix();
-    lubo.proj = camera->getProjectionNDC();
-
-    // TODO hack 2nd view
-    mat4 v2 = translate(lubo.view, vec3(0.3f, 0.0f, 0.0f));
-    auto lubo2 = lubo;
-    lubo2.view = v2;
+    lubo.model = mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    lubo.view = mat4(1.0f);
+    lubo.proj = mat4(1.0f);
 
     // dynamic lines:
     engine.shaders.lineShader.clearAddLines(tr);
-    float aspectRatio = engine.getAspect();
     static float plus = 0.0f;
-    LineDef myLines[] = {
-        // start, end, color
-        { glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) }
-    };
-    plus += 0.001f;
     vector<LineDef> lines;
-    // add all intializer objects to vector:
-    for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
+    // x runs from -1 to 1 from left to right
+    LineDef move1 = { vec3(-1.0f, floatVal,0.0f), vec3(1.0f,floatVal,0.0f), vec4(0.0f, 1.0f, 0.0f, 1.0f) };
+    // y runs from -1 to 1 from top to bottom
+    LineDef move2 = { vec3(floatVal, -1.0,0.0f), vec3(floatVal,1.0,0.0f), vec4(1.0f, 0.0f, 0.0f, 1.0f) };
+    float zVal = (floatVal + 1.0f) / 2.0f;
+    // z runs from 0 to 1 from eye into screen (to the back)
+    LineDef move3 = { vec3(-1.0f, 0.0,zVal), vec3(1.0f,0.0,zVal), vec4(0.0f, 0.0f, 1.0f, 1.0f) };
+    lines.push_back(move1);
+    lines.push_back(move2);
+    lines.push_back(move3);
     engine.shaders.lineShader.addOneTime(lines, tr);
 
     engine.shaders.lineShader.prepareAddLines(tr);
-    engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
+    engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo);
 }
 
-void LineApp::handleInput(InputState& inputState)
+void DeviceCoordApp::handleInput(InputState& inputState)
 {
     if (inputState.mouseButtonEvent) {
         //Log("mouse button pressed (left/right): " << inputState.pressedLeft << " / " << inputState.pressedRight << endl);

@@ -1,4 +1,5 @@
-#include "pch.h"
+#include "mainheader.h"
+#include "SimpleApp.h"
 
 using namespace std;
 using namespace glm;
@@ -30,7 +31,7 @@ void SimpleApp::run()
 
         engine.setFramesInFlight(2);
         engine.registerApp(this);
-        //engine.setThreadModeSingle();
+        engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("SimpleApp");

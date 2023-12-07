@@ -1,4 +1,5 @@
-#include "pch.h"
+#include "mainheader.h"
+#include "BillboardDemo.h"
 
 using namespace std;
 using namespace glm;

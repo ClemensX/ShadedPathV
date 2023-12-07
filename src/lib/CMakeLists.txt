@@ -29,6 +29,7 @@ add_library(shadedpath
   GlobalRendering.cpp
   Presentation.cpp
   ShadedPathEngine.cpp
+  World.cpp
 )
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 

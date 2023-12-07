@@ -1,4 +1,5 @@
-#include "pch.h"
+#include "mainheader.h"
+#include "GeneratedTexturesApp.h"
 
 using namespace std;
 using namespace glm;
