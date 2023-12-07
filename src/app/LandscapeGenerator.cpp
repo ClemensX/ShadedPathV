@@ -1,4 +1,5 @@
 #include "mainheader.h"
+#include "LandscapeGenerator.h"
 
 using namespace std;
 using namespace glm;

@@ -4,6 +4,7 @@
 //#include "pch.h"
 
 #include "mainheader.h"
+#include "LandscapeGenerator.h"
 
 int main()
 {

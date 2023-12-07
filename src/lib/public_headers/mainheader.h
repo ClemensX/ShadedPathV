@@ -272,4 +272,4 @@ inline std::string Fmt(const char* fmt, ...) {
 #include "GeneratedTexturesApp.h"
 #include "BillboardDemo.h"
 #include "LandscapeDemo1.h"
-#include "LandscapeGenerator.h"
+//#include "LandscapeGenerator.h"
