@@ -19,11 +19,6 @@
 #define TIMER_PART_BACKBUFFER_COPY_AND_PRESENT "PartPresentBackBuffer"
 #define TIMER_PART_BUFFER_COPY "PartBufferCopy"
 
-// Dear ImGui headers:
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_glfw.h"
-#include "imgui/imgui_impl_vulkan.h"
-
 // Windows headers
 
 #if defined(_WIN64)
@@ -53,15 +48,26 @@
 //using namespace std;
 
 // headers for used libraries
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-#include "ktxvulkan.h"
+#define VK_ENABLE_BETA_EXTENSIONS
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_beta.h>
+#include <vulkan/vulkan.hpp>
+//#define GLFW_INCLUDE_VULKAN
 
 // vulkan profile support (SDK 1.3 needed)
 #pragma warning( push, 1 )
 #pragma warning(disable:6011)
 #include <vulkan/vulkan_profiles.hpp>
 #pragma warning( pop )
+
+// Dear ImGui headers:
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_vulkan.h"
+
+#include <GLFW/glfw3.h>
+// glfw has included vulkan/vulkan.h
+#include "ktxvulkan.h"
 
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE

@@ -400,11 +400,19 @@ void GlobalRendering::createLogicalDevice()
     meshFeatures.taskShader = VK_FALSE;
     meshFeatures.pNext = nullptr;
 
+    VkPhysicalDevicePortabilitySubsetFeaturesKHR portability{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR,
+        .events = VK_TRUE,
+    };
+
     VkPhysicalDeviceVulkan12Features deviceFeatures12{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
         .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
         .descriptorBindingPartiallyBound = VK_TRUE,
         .runtimeDescriptorArray = VK_TRUE,
+#       if defined(__APPLE__)
+        .pNext = (void*)&portability,
+#       endif
     };
 
     VkPhysicalDeviceFeatures2 deviceFeatures2{
@@ -412,6 +420,12 @@ void GlobalRendering::createLogicalDevice()
         .pNext = (void*)&deviceFeatures12,
         .features = deviceFeatures,
     };
+
+    // disable geom shaders for mac as they don't support them TODO remove geom shaders alltogether
+    // and use compute shaders instead
+#   if defined(__APPLE__)
+    deviceFeatures2.features.geometryShader = false;
+#   endif
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

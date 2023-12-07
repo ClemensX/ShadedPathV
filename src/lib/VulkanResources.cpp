@@ -107,7 +107,8 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         layoutBinding.pImmutableSamplers = nullptr;
         bindings.push_back(layoutBinding);
         poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSize.descriptorCount = 1;
+        // https://community.khronos.org/t/vk-error-out-of-pool-memory-when-allocating-second-descriptor-sets/104304/3
+        poolSize.descriptorCount = 1 * engine->getFramesInFlight(); // TODO hack
         poolSizes.push_back(poolSize);
         if (engine->isStereo()) {
             poolSizes.push_back(poolSize);
@@ -120,7 +121,7 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         layoutBinding.pImmutableSamplers = nullptr;
         bindings.push_back(layoutBinding);
         poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-        poolSize.descriptorCount = 1;
+        poolSize.descriptorCount = 1 * engine->getFramesInFlight(); // TODO hack
         poolSizes.push_back(poolSize);
 
     } else if (el.type == VulkanResourceType::SingleTexture) {

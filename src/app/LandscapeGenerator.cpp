@@ -26,14 +26,14 @@ void LandscapeGenerator::run()
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 960;//480;// 960;//1800;// 800;//3700; // 2500
+        int win_width = 2500;//480;// 960;//1800;// 800;//3700; // 2500
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Landscape Generator (Diamond Square Algorithm)");
         camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f));
 
         engine.setFramesInFlight(2);
         engine.registerApp(this);
         //engine.enableSound();
-        //engine.setThreadModeSingle();
+        engine.setThreadModeSingle(); // TODO currently multi thred rendering is broken
 
         // engine initialization
         engine.init("LandscapeGenerator");
