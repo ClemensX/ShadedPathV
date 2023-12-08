@@ -1,5 +1,6 @@
 #version 450
 // enable dynamic indexing:
+// https://github.com/KhronosGroup/MoltenVK/issues/1696
 #extension GL_EXT_nonuniform_qualifier : require
 #extension GL_KHR_vulkan_glsl:enable
 

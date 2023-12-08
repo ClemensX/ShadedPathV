@@ -138,6 +138,13 @@ inline void LogFile(const char* s) {
     std::stringstream s1765; s1765 << x; \
     LogFile(s1765.str().c_str()); \
 }
+#elif defined(__APPLE__)
+#define Log(x)\
+{\
+    std::stringstream s1765; s1765 << x; \
+    LogFile(s1765.str().c_str()); \
+	printf("%s", s1765.str().c_str()); \
+}
 #else
 #define Log(x)\
 {\

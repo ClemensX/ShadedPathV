@@ -16,14 +16,14 @@
 int main()
 {
     printf("ShadedPathV app\n");
-    //SimpleApp app;
+    SimpleApp app;
     //LineApp app;
     //DeviceCoordApp app;
     //gltfObjectsApp app;
     //GeneratedTexturesApp app;
     //BillboardDemo app;
     //LandscapeDemo app;
-    LandscapeGenerator app;
+    //LandscapeGenerator app;
     app.run();
 }
 
