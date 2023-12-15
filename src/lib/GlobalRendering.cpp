@@ -425,6 +425,13 @@ void GlobalRendering::createLogicalDevice()
     // and use compute shaders instead
 #   if defined(__APPLE__)
     deviceFeatures2.features.geometryShader = false;
+    // use this  in shell: export MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS=1
+    //setenv("MVK_CONFIG_USE_METAL_ARGUMENT_BUFFERS", "1", 1);
+    //MVKConfiguration conf;
+    //size_t sz;
+    //if (vkGetMoltenVKConfigurationMVK(VK_NULL_HANDLE, &conf, &sz) != VK_SUCCESS) Error("cannot call MoltenVK configuration");
+    //Log("MoltenVK useMetalArgumentBuffers: " << conf.useMetalArgumentBuffers << endl);
+    //vkSetMoltenVKConfigurationMVK();
 #   endif
 
     VkDeviceCreateInfo createInfo{};

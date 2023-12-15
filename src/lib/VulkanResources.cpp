@@ -132,7 +132,7 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         layoutBinding.pImmutableSamplers = nullptr;
         bindings.push_back(layoutBinding);
         poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSize.descriptorCount = 1;
+        poolSize.descriptorCount = 1 * engine->getFramesInFlight(); // TODO hack
         poolSizes.push_back(poolSize);
     } else if (el.type == VulkanResourceType::GlobalTextureSet) {
         createDescriptorSetResourcesForTextures();
