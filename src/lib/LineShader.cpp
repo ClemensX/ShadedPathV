@@ -323,6 +323,11 @@ void LineShader::recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadReso
 void LineShader::prepareAddLines(ThreadResources& tr)
 {
 	if (!enabled) return;
+	if (vertexBufferUpdates != nullptr) {
+		// TODO impl resource switch here
+		//recordDrawCommandAdd(tr.lineResources.commandBufferAdd, tr, vertexBufferUpdates);
+		//return;
+	}
 	recordDrawCommandAdd(tr.lineResources.commandBufferAdd, tr, tr.lineResources.vertexBufferAdd);
 }
 
@@ -381,7 +386,7 @@ void LineShader::update(ShaderUpdateElement *el)
 	//		Error("ERROR RACE CONDITION LineShader");
 	//	}
 	//}
-	this_thread::sleep_for(chrono::milliseconds(4000));
+	//this_thread::sleep_for(chrono::milliseconds(4000));
 	//updateAndSwitch(u.linesToAdd);
 
 	//// after update signal newest generation in shader:

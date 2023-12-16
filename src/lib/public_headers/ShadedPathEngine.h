@@ -60,7 +60,7 @@ public:
     ShadedPathEngine(ShadedPathEngine const&) = delete;
     void operator=(ShadedPathEngine const&) = delete;
 
-    // enable output window, withour calling this only background processing is possible
+    // enable output window, without calling this only background processing is possible
     void enablePresentation(int w, int h, const char* name);
 
     // enable UI overlay. currently only possible if presentation is enabled
@@ -142,6 +142,7 @@ public:
     void setFrameCountLimit(long max);
 
     // default is multi thread mode - use this for all in one single thread
+    // will disable render threads and global update thread
     void setThreadModeSingle() {
         threadModeSingle = true;
     };
@@ -241,6 +242,9 @@ private:
     RenderQueue queue;
     // we simply use indexes into the update array for handling resources
     ThreadsafeWaitingQueue<ShaderUpdateElement*> shaderUpdateQueue;
+    // we need a separate update queue for threadModeSingle
+    std::queue<ShaderUpdateElement*> shaderUpdateQueueSingle;
+    void updateSingle(ShaderUpdateElement* el, ShadedPathEngine* engine_instance);
     static bool queueThreadFinished;
     void startRenderThreads();
     void startQueueSubmitThread();

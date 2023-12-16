@@ -78,8 +78,8 @@ void ShadedPathEngine::prepareDrawing()
     if (!threadModeSingle) {
         startQueueSubmitThread();
         startRenderThreads();
+        startUpdateThread();
     }
-    startUpdateThread();
     //for (ThreadResources& tr : threadResources) {
     //    shaders.createCommandBufferBackBufferImageDump(tr);
     //}
@@ -96,6 +96,12 @@ void ShadedPathEngine::drawFrame()
         presentation.presentBackBufferImage(tr);
         ThemedTimer::getInstance()->add(TIMER_PRESENT_FRAME);
         advanceFrameCountersAfterPresentation();
+        while (!shaderUpdateQueueSingle.empty()) {
+            ShaderUpdateElement* el = shaderUpdateQueueSingle.front();
+            shaderUpdateQueueSingle.pop();
+            updateSingle(el, this);
+        }
+
     }
 }
 
@@ -272,6 +278,23 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
 
 bool ShadedPathEngine::queueThreadFinished = false;
 
+void ShadedPathEngine::updateSingle(ShaderUpdateElement* el, ShadedPathEngine* engine_instance) {
+    // run the update in shader class
+    el = engine_instance->selectLatestUpdate(el);
+    if (!el->free) {
+        el->shaderInstance->update(el);
+        el->free = true;
+        LogCondF(LOG_QUEUE, "updated shader data " << endl);
+        Log("updated shader data " << endl);
+        // now wait until all render threads have adopted the update
+        if (!engine_instance->threadModeSingle) {
+            engine_instance->updateNotifier.waitForRenderThreads(engine_instance->getFramesInFlight(), el->globalResourceSet, el->shaderInstance);
+        }
+    }
+    // update using slot number
+    //engine_instance->update(slot);
+}
+
 void ShadedPathEngine::runUpdateThread(ShadedPathEngine* engine_instance)
 {
     LogCondF(LOG_QUEUE, "run global update thread" << endl);
@@ -281,19 +304,7 @@ void ShadedPathEngine::runUpdateThread(ShadedPathEngine* engine_instance)
         if (!opt_el) {
             break;
         }
-        // run the update in shader class
-        ShaderUpdateElement *el = opt_el.value();
-        el = engine_instance->selectLatestUpdate(el);
-        if (!el->free) {
-            el->shaderInstance->update(el);
-            el->free = true;
-            LogCondF(LOG_QUEUE, "updated shader data " << endl);
-            Log("updated shader data " << endl);
-            // now wait until all render threads have adopted the update
-            engine_instance->updateNotifier.waitForRenderThreads(engine_instance->framesInFlight, el->globalResourceSet, el->shaderInstance);
-        }
-        // update using slot number
-        //engine_instance->update(slot);
+        engine_instance->updateSingle(opt_el.value(), engine_instance);
     }
     LogCondF(LOG_QUEUE, "run shader update thread end" << endl);
 }
@@ -342,6 +353,10 @@ int ShadedPathEngine::manageMultipleUpdateSlots(int slot, int next_slot) {
 
 void ShadedPathEngine::pushUpdate(ShaderUpdateElement* updateElement)
 {
+    if (threadModeSingle) {
+        shaderUpdateQueueSingle.push(updateElement);
+        return;
+    }
     shaderUpdateQueue.push(updateElement);
 }
 
