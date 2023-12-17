@@ -207,3 +207,9 @@ struct LineThreadResources : ShaderThreadResources {
 	VkDescriptorSet descriptorSet2 = nullptr;
 	std::vector<LineShader::Vertex> verticesAddLines;
 };
+
+// manage all resources associated with ONE line drawing resource
+// we have: Global (fixed after init), Local (only valid for one draw), 1-2 Update (updated sometimes according to app needs)
+class LineResourceManager {
+
+};

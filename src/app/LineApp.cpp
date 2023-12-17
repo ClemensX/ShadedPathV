@@ -93,11 +93,11 @@ void LineApp::init() {
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     // Grid with 1m squares, floor on -10m, ceiling on 372m
 
-    engine.shaders.lineShader.initialUpload();
+    //engine.shaders.lineShader.initialUpload();
 }
 
 void LineApp::drawFrame(ThreadResources& tr) {
-    updatePerFrame(tr);
+    //updatePerFrame(tr);
     engine.shaders.submitFrame(tr);
 }
 
