@@ -1,22 +1,14 @@
 #pragma once
-
 // line effect - draw simple lines in world coordinates
 struct LineDef {
 	glm::vec3 start, end;
 	glm::vec4 color;
 };
 
-
-// each execution needs one instance of ApplicationData
-struct LineShaderApplicationData {
+// per frame resources for this effect
+struct LineFrameData {
 public:
-	std::vector<LineDef> lines;
-};
-
-// building block for execution.
-// there may be a number of these in existence (Fixed, GlobalUpodate, perFrame)
-class LineSubShader {
-
+	std::vector<LineDef> addLines;
 };
 
 // line shader draws lines, it creates 2 pipelines, one for fixed lines (uploaded at start)
@@ -85,6 +77,9 @@ public:
 	// initial upload of all added lines - only valid before first render
 	void initialUpload();
 
+	// add lines for just one frame
+	void addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& tr);
+
 	// check if we need to switch resources for next render run
 	void handleUpdatedResources(ThreadResources& tr);
 
@@ -94,6 +89,8 @@ public:
 	// NOT after adding last group of lines
 	void clearAddLines(ThreadResources& tr);
 
+	// prepare command buffer for added lines
+	void prepareAddLines(ThreadResources& tr);
 	// per frame update of UBO / MVP
 	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
 
@@ -102,6 +99,7 @@ public:
 private:
 
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
+	void recordDrawCommandAdd(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
 	//// update cbuffer and vertex buffer
 	//void update();
 	//void updateUBO(UniformBufferObject newCBV);
@@ -138,15 +136,6 @@ private:
 
 	// util methods
 public:
-	// add lines for just one frame
-	void addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& tr) {
-
-	}
-
-	// prepare command buffer for added lines
-	void prepareAddLines(ThreadResources& tr) {
-
-	}
 
 	static void addCross(std::vector<LineDef>& lines, glm::vec3 pos, glm::vec4 color) {
 		static float oDistance = 5.0f;
