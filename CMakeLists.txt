@@ -5,6 +5,9 @@ enable_testing()
 if(MSVC)
   message(STATUS "UNICODE chars enabled for MSVC")
   add_definitions(-DUNICODE -D_UNICODE)
+  add_definitions(-DALLOW_USING_NON_TRANSFER_ONLY_QUEUE)
+  # uncomment for regular vulkan device, set for small graphics like Intel Iris Xe
+  add_definitions(-DUSE_SMALL_GRAPHICS)
 elseif(APPLE)
   add_definitions(-DALLOW_USING_NON_TRANSFER_ONLY_QUEUE)
   add_compile_options(-Wall -Wextra -Werror -Wno-error=unused-variable -Wno-error=unused-function
@@ -39,4 +42,5 @@ endif()
 # call chain:
 # cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=~/dev/cpp/vcpkg/scripts/buildsystems/vcpkg.cmake
 # cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=c:\dev\vulkan\vcpkg\scripts\buildsystems\vcpkg.cmake
+# cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=C:\dev\cpp\vcpkg\scripts\buildsystems\vcpkg.cmake
 # cmake --build ./build

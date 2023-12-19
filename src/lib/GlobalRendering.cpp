@@ -308,7 +308,7 @@ QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, b
             if (flags & VK_QUEUE_TRANSFER_BIT && i != indices.graphicsFamily && i != indices.presentFamily) {
                 indices.transferFamily = i;
                 if (listmode) {
-                    Log("found transfer ONLY queue at index " << i << ", max queues: " << queueFamily.queueCount << endl);
+                    Log("ALLOW_USING_NON_TRANSFER_ONLY_QUEUE found transfer queue at index " << i << ", max queues: " << queueFamily.queueCount << endl);
                     //Log("  other queue flags: " << getQueueFlagsString(queueFamily.queueFlags).c_str() << endl);
                 }
                 break;
@@ -326,7 +326,11 @@ QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, b
         i++;
     }
     if (indices.graphicsFamily == indices.transferFamily) {
-        Error("ERROR: did not find fransfer only queue");
+#       if !defined(ALLOW_USING_NON_TRANSFER_ONLY_QUEUE)
+            Error("ERROR: did not find fransfer only queue");
+#       else
+            Log("WARNING: did not find fransfer only queue" << endl);
+#       endif
     }
     return indices;
 }

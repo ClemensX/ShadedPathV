@@ -28,6 +28,8 @@ public:
 	// Do not confuse with maxTextures (actual max texture count) which is set by app at startup
 #   if defined(__APPLE__)
 	static const uint32_t UPPER_LIMIT_TEXTURE_COUNT = 640;
+#   elif defined(USE_SMALL_GRAPHICS)
+	static const uint32_t UPPER_LIMIT_TEXTURE_COUNT = 1800;
 #   else
 	static const uint32_t UPPER_LIMIT_TEXTURE_COUNT = 1000000;
 #   endif
