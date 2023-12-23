@@ -2,12 +2,13 @@
 cmake_minimum_required(VERSION 3.27)
 project(ShadedPathV VERSION 0.1.0 LANGUAGES C CXX)
 enable_testing()
+# remove from git:
+include(cmake/local_options.cmake)
 if(MSVC)
   message(STATUS "UNICODE chars enabled for MSVC")
   add_definitions(-DUNICODE -D_UNICODE)
   add_definitions(-DALLOW_USING_NON_TRANSFER_ONLY_QUEUE)
   # uncomment for regular vulkan device, set for small graphics like Intel Iris Xe
-  add_definitions(-DUSE_SMALL_GRAPHICS)
 elseif(APPLE)
   add_definitions(-DALLOW_USING_NON_TRANSFER_ONLY_QUEUE)
   add_compile_options(-Wall -Wextra -Werror -Wno-error=unused-variable -Wno-error=unused-function
