@@ -1,9 +1,36 @@
 #pragma once
 
-// line effect - draw simple lines in world coordinates
+/*
+ * Line Shader - draw various lines:
+ * 1) Fixed global lines - initialized once during init()
+ * 2) Global set of lines updated through Gobal Update Thread. Use this for displaying large line sets like object wireframes that need to change over time.
+ * 3) local changes updated for each drawing thread. Only use for small line sets to bring dynamic element to line drawing. Lines have to be uploaded for each and every frame. Use rarely.
+ */
+
+ // basic line definitions
 struct LineDef {
 	glm::vec3 start, end;
 	glm::vec4 color;
+};
+
+class LineShader;
+
+/*
+ * LineSubShader includes everything for one shader invocation.
+ * There will be 3 sub shaders: For fixed global lines, for global updated lines  and for each frame a local one
+ */
+class LineSubShader {
+
+public:
+	// name is used in shader debugging
+	void init(LineShader* parent, std::string debugName) {
+		lineShader = parent;
+		name = debugName;
+		Log("LineSubShader init: " << debugName.c_str() << std::endl);
+	}
+private:
+	LineShader* lineShader =  nullptr;
+	std::string name;
 };
 
 
@@ -13,16 +40,12 @@ public:
 	std::vector<LineDef> lines;
 };
 
-// building block for execution.
-// there may be a number of these in existence (Fixed, GlobalUpodate, perFrame)
-class LineSubShader {
-
-};
-
 // line shader draws lines, it creates 2 pipelines, one for fixed lines (uploaded at start)
 // and one for dynamic lines that change every frame
 class LineShader : public ShaderBase {
 public:
+	LineSubShader globalLineSubShader;
+
 	std::vector<VulkanResourceElement> vulkanResourceDefinition = {
 		{ VulkanResourceType::MVPBuffer },
 		{ VulkanResourceType::VertexBufferStatic },
@@ -78,7 +101,7 @@ public:
 	virtual void destroyThreadResources(ThreadResources& tr) override;
 
 	// add lines - they will never  be removed
-	void add(std::vector<LineDef>& linesToAdd);
+	void addGlobalConst(std::vector<LineDef>& linesToAdd);
 	// global update: initiate update of global line data 
 	// might take several frames until effect is visible: old buffer will be used until new one is ready
 	void updateGlobal(std::vector<LineDef>& linesToAdd);
@@ -90,9 +113,12 @@ public:
 
 	void createCommandBufferLineAdd(ThreadResources& tr);
 
+	// add lines just for this draw thread
+	void addLocalLines(std::vector<LineDef>& linesToAdd, ThreadResources& tr);
+
 	// clear line buffer, has to be called at begin of each frame
 	// NOT after adding last group of lines
-	void clearAddLines(ThreadResources& tr);
+	void clearLocalLines(ThreadResources& tr);
 
 	// per frame update of UBO / MVP
 	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO

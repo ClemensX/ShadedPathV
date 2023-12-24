@@ -13,6 +13,8 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 
 	// descriptor set layout
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);
+
+	globalLineSubShader.init(this, "GlobalLineSubshader");
 }
 
 void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
@@ -49,14 +51,17 @@ void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResourc
 {
 }
 
-void LineShader::clearAddLines(ThreadResources& tr)
+void LineShader::clearLocalLines(ThreadResources& tr)
 {
 }
 
-void LineShader::add(vector<LineDef>& linesToAdd)
+void LineShader::addGlobalConst(vector<LineDef>& linesToAdd)
 {
 }
 
+void LineShader::addLocalLines(std::vector<LineDef>& linesToAdd, ThreadResources& tr)
+{
+}
 
 void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
 	if (!enabled) return;

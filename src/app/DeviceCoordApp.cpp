@@ -95,7 +95,7 @@ void DeviceCoordApp::updatePerFrame(ThreadResources& tr)
     lubo.proj = mat4(1.0f);
 
     // dynamic lines:
-    engine.shaders.lineShader.clearAddLines(tr);
+    engine.shaders.lineShader.clearLocalLines(tr);
     static float plus = 0.0f;
     vector<LineDef> lines;
     // x runs from -1 to 1 from left to right

@@ -89,13 +89,13 @@ void SimpleApp::init() {
     LineShader::addZeroCross(lines);
     LineShader::addCross(lines, vec3(1.0f, 1.0f, 1.0f), vec4(1.0f, 1.0f, 0.0f, 1.0f));
 
-    engine.shaders.lineShader.add(lines);
+    engine.shaders.lineShader.addGlobalConst(lines);
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     // Grid with 1m squares, floor on -10m, ceiling on 372m
     Grid *grid = world.createWorldGrid(1.0f, -10.0f);
-    engine.shaders.lineShader.add(grid->lines);
+    engine.shaders.lineShader.addGlobalConst(grid->lines);
 
     engine.shaders.lineShader.initialUpload();
 }
@@ -156,7 +156,7 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
     lubo.proj = camera->getProjectionNDC();
 
     // dynamic lines:
-    engine.shaders.lineShader.clearAddLines(tr);
+    engine.shaders.lineShader.clearLocalLines(tr);
     float aspectRatio = engine.getAspect();
     static float plus = 0.0f;
     LineDef myLines[] = {

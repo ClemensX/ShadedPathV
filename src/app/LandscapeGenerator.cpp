@@ -100,7 +100,7 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
     old_seconds = seconds;
 
     // lines
-    engine.shaders.lineShader.clearAddLines(tr);
+    engine.shaders.lineShader.clearLocalLines(tr);
     {
         // thread protection needed
         std::unique_lock<std::mutex> lock(monitorMutex);

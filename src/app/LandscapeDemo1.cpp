@@ -166,7 +166,7 @@ void LandscapeDemo::init() {
     //vector<vec3> plist;
     //heightmap.getPoints(plist);
     //Log("num points: " << plist.size() << endl);
-    engine.shaders.lineShader.add(lines);
+    engine.shaders.lineShader.addGlobalConst(lines);
 
     // select texture by uncommenting:
     engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");

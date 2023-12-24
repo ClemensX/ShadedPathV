@@ -87,7 +87,7 @@ void LineApp::init() {
     LineShader::addZeroCross(lines);
     //LineShader::addCross(lines, vec3(1.0f, 1.0f, 1.0f), vec4(1.0f, 1.0f, 0.0f, 1.0f));
 
-    engine.shaders.lineShader.add(lines);
+    engine.shaders.lineShader.addGlobalConst(lines);
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
@@ -129,7 +129,7 @@ void LineApp::updatePerFrame(ThreadResources& tr)
     lubo2.view = v2;
 
     // dynamic lines:
-    engine.shaders.lineShader.clearAddLines(tr);
+    engine.shaders.lineShader.clearLocalLines(tr);
     float aspectRatio = engine.getAspect();
     static float plus = 0.0f;
     LineDef myLines[] = {
