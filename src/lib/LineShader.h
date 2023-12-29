@@ -14,6 +14,7 @@ struct LineDef {
 };
 
 class LineShader;
+class LineThreadResources;
 
 /*
  * LineSubShader includes everything for one shader invocation.
@@ -28,9 +29,37 @@ public:
 		name = debugName;
 		Log("LineSubShader init: " << debugName.c_str() << std::endl);
 	}
+	void setVertShaderModule(VkShaderModule sm) {
+		vertShaderModule = sm;
+	}
+	void setFragShaderModule(VkShaderModule sm) {
+		fragShaderModule = sm;
+	}
+	void initSingle(ThreadResources& tr, ShaderState& shaderState);
+	//void setResources(LineThreadResources* resources) {
+	//	lineThreadResources = resources;
+	//}
+	void setVulkanResources(VulkanResources* vr) {
+		vulkanResources = vr;
+	}
+	bool initDone = false; // TODO hack: prevent mutliple init() for now...
+	bool commandBufferDone = false;
+
+	void initialUpload();
+	void createCommandBuffer(ThreadResources& tr);
+	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
+	void destroy();
 private:
 	LineShader* lineShader =  nullptr;
+	LineThreadResources* lineThreadResources = nullptr;
+	VulkanResources* vulkanResources = nullptr;
 	std::string name;
+	VkShaderModule vertShaderModule = nullptr;
+	VkShaderModule fragShaderModule = nullptr;
+	// vertex buffer for fixed lines (one buffer for all threads) 
+	VkBuffer vertexBuffer = nullptr;
+	// vertex buffer device memory
+	VkDeviceMemory vertexBufferMemory = nullptr;
 };
 
 
@@ -38,6 +67,33 @@ private:
 struct LineShaderApplicationData {
 public:
 	std::vector<LineDef> lines;
+};
+
+struct LineThreadResources : ShaderThreadResources {
+	VkFramebuffer framebuffer = nullptr;
+	VkFramebuffer framebuffer2 = nullptr;
+	VkFramebuffer framebufferAdd = nullptr;
+	VkFramebuffer framebufferAdd2 = nullptr;
+	VkRenderPass renderPass = nullptr;
+	VkRenderPass renderPassAdd = nullptr;
+	VkPipelineLayout pipelineLayout = nullptr;
+	VkPipeline graphicsPipeline = nullptr;
+	VkPipeline graphicsPipelineAdd = nullptr;
+	VkCommandBuffer commandBuffer = nullptr;
+	VkCommandBuffer commandBufferAdd = nullptr;
+	VkCommandBuffer commandBufferUpdate = nullptr;
+	// vertex buffer for added lines
+	VkBuffer vertexBufferAdd = nullptr;
+	// vertex buffer device memory
+	VkDeviceMemory vertexBufferAddMemory = nullptr;
+	// MVP buffer
+	VkBuffer uniformBuffer = nullptr;
+	VkBuffer uniformBuffer2 = nullptr;
+	// MVP buffer device memory
+	VkDeviceMemory uniformBufferMemory = nullptr;
+	VkDeviceMemory uniformBufferMemory2 = nullptr;
+	VkDescriptorSet descriptorSet = nullptr;
+	VkDescriptorSet descriptorSet2 = nullptr;
 };
 
 // line shader draws lines, it creates 2 pipelines, one for fixed lines (uploaded at start)
@@ -125,8 +181,9 @@ public:
 
 	// resource switch after upload of new data has finished:
 	void resourceSwitch(GlobalResourceSet set) override;
+	std::vector<LineDef> lines;
 private:
-
+	LineThreadResources globalLineThreadResources;
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
 	//// update cbuffer and vertex buffer
 	//void update();
@@ -136,7 +193,6 @@ private:
 	//void destroy();
 
 
-	std::vector<LineDef> lines;
 	int drawAddLinesSize = 0;
 
 	UniformBufferObject ubo = {};
@@ -145,10 +201,10 @@ private:
 	// Inherited via Effect
 	// set in init()
 
-	// vertex buffer for fixed lines (one buffer for all threads) 
-	VkBuffer vertexBuffer = nullptr;
-	// vertex buffer device memory
-	VkDeviceMemory vertexBufferMemory = nullptr;
+	//// vertex buffer for fixed lines (one buffer for all threads) 
+	//VkBuffer vertexBuffer = nullptr;
+	//// vertex buffer device memory
+	//VkDeviceMemory vertexBufferMemory = nullptr;
 	// vertex buffer for updates: (one buffer for all threads) 
 	VkBuffer vertexBufferUpdates = nullptr;
 	// vertex buffer device memory for Updates
@@ -215,34 +271,6 @@ public:
 			return &updateArray[i];
 		}
 
-};
-
-struct LineThreadResources : ShaderThreadResources {
-	VkFramebuffer framebuffer = nullptr;
-	VkFramebuffer framebuffer2 = nullptr;
-	VkFramebuffer framebufferAdd = nullptr;
-	VkFramebuffer framebufferAdd2 = nullptr;
-	VkRenderPass renderPass = nullptr;
-	VkRenderPass renderPassAdd = nullptr;
-	VkPipelineLayout pipelineLayout = nullptr;
-	VkPipeline graphicsPipeline = nullptr;
-	VkPipeline graphicsPipelineAdd = nullptr;
-	VkCommandBuffer commandBuffer = nullptr;
-	VkCommandBuffer commandBufferAdd = nullptr;
-	VkCommandBuffer commandBufferUpdate = nullptr;
-	// vertex buffer for added lines
-	VkBuffer vertexBufferAdd = nullptr;
-	// vertex buffer device memory
-	VkDeviceMemory vertexBufferAddMemory = nullptr;
-	// MVP buffer
-	VkBuffer uniformBuffer = nullptr;
-	VkBuffer uniformBuffer2 = nullptr;
-	// MVP buffer device memory
-	VkDeviceMemory uniformBufferMemory = nullptr;
-	VkDeviceMemory uniformBufferMemory2 = nullptr;
-	VkDescriptorSet descriptorSet = nullptr;
-	VkDescriptorSet descriptorSet2 = nullptr;
-	std::vector<LineShader::Vertex> verticesAddLines;
 };
 
 // manage all resources associated with ONE line drawing resource

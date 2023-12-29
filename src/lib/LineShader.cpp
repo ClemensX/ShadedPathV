@@ -14,11 +14,20 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	// descriptor set layout
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);
 
-	globalLineSubShader.init(this, "GlobalLineSubshader");
+	// wee need one global shader
+	if (!globalLineSubShader.initDone) {
+		globalLineSubShader.init(this, "GlobalLineSubshader");
+		globalLineSubShader.setVertShaderModule(vertShaderModule);
+		globalLineSubShader.setFragShaderModule(fragShaderModule);
+		//globalLineSubShader.setResources(&globalLineThreadResources);
+		globalLineSubShader.setVulkanResources(&resources);
+		//globalLineSubShader.initSingle(shaderState);
+	}
 }
 
 void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
+	if (!globalLineSubShader.initDone)	globalLineSubShader.initSingle(tr, shaderState);
 }
 
 void LineShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
@@ -28,6 +37,8 @@ void LineShader::finishInitialization(ShadedPathEngine& engine, ShaderState& sha
 
 void LineShader::initialUpload()
 {
+	if (!enabled) return;
+	globalLineSubShader.initialUpload();
 }
 
 void LineShader::createDescriptorSetLayout()
@@ -42,6 +53,9 @@ void LineShader::createDescriptorSets(ThreadResources& tr)
 
 void LineShader::createCommandBuffer(ThreadResources& tr)
 {
+	if (!globalLineSubShader.commandBufferDone) {
+		globalLineSubShader.createCommandBuffer(tr);
+	}
 }
 
 void LineShader::addCurrentCommandBuffer(ThreadResources& tr) {
@@ -57,6 +71,10 @@ void LineShader::clearLocalLines(ThreadResources& tr)
 
 void LineShader::addGlobalConst(vector<LineDef>& linesToAdd)
 {
+	if (linesToAdd.size() == 0 && lines.size() == 0)
+		return;
+
+	lines.insert(lines.end(), linesToAdd.begin(), linesToAdd.end());
 }
 
 void LineShader::addLocalLines(std::vector<LineDef>& linesToAdd, ThreadResources& tr)
@@ -121,8 +139,9 @@ LineShader::~LineShader()
 	if (!enabled) {
 		return;
 	}
-	vkDestroyBuffer(device, vertexBuffer, nullptr);
-	vkFreeMemory(device, vertexBufferMemory, nullptr);
+	//vkDestroyBuffer(device, vertexBuffer, nullptr);
+	//vkFreeMemory(device, vertexBufferMemory, nullptr);
+	globalLineSubShader.destroy();
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);
 	vkDestroyShaderModule(device, vertShaderModule, nullptr);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
@@ -149,4 +168,188 @@ void LineShader::destroyThreadResources(ThreadResources& tr)
 		vkDestroyBuffer(device, trl.uniformBuffer2, nullptr);
 		vkFreeMemory(device, trl.uniformBufferMemory2, nullptr);
 	}
+}
+
+// LineSubShader
+void LineSubShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
+{
+	VulkanHandoverResources handover;
+	auto& trl = tr.lineResources;
+	// MVP uniform buffer
+	lineShader->createUniformBuffer(tr, trl.uniformBuffer,
+		sizeof(LineShader::UniformBufferObject), trl.uniformBufferMemory);
+	handover.mvpBuffer = trl.uniformBuffer;
+	handover.mvpSize = sizeof(LineShader::UniformBufferObject);
+	handover.descriptorSet = &trl.descriptorSet;
+	vulkanResources->createThreadResources(handover);
+
+	lineShader->createRenderPassAndFramebuffer(tr, shaderState, trl.renderPass, trl.framebuffer, trl.framebuffer2);
+
+	// create shader stage
+	auto vertShaderStageInfo = lineShader->engine->shaders.createVertexShaderCreateInfo(vertShaderModule);
+	auto fragShaderStageInfo = lineShader->engine->shaders.createFragmentShaderCreateInfo(fragShaderModule);
+	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+
+	// vertex input
+	auto binding_desc = lineShader->getBindingDescription();
+	auto attribute_desc = lineShader->getAttributeDescriptions();
+	auto vertexInputInfo = lineShader->createVertexInputCreateInfo(&binding_desc, attribute_desc.data(), attribute_desc.size());
+
+	// input assembly
+	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
+	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+	inputAssembly.primitiveRestartEnable = VK_FALSE;
+
+	// viewport and scissors
+	VkPipelineViewportStateCreateInfo viewportState = shaderState.viewportState;
+
+	// rasterizer
+	auto rasterizer = lineShader->createStandardRasterizer();
+
+	// multisampling
+	auto multisampling = lineShader->createStandardMultisampling();
+
+	// color blending
+	VkPipelineColorBlendAttachmentState colorBlendAttachment;
+	auto colorBlending = lineShader->createStandardColorBlending(colorBlendAttachment);
+
+	// dynamic state
+	// empty for now...
+
+	// pipeline layout
+	vulkanResources->createPipelineLayout(&trl.pipelineLayout);
+
+	// depth stencil
+	auto depthStencil = lineShader->createStandardDepthStencil();
+
+	// create pipeline
+	VkGraphicsPipelineCreateInfo pipelineInfo{};
+	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineInfo.stageCount = 2;
+	pipelineInfo.pStages = shaderStages;
+	pipelineInfo.pVertexInputState = &vertexInputInfo;
+	pipelineInfo.pInputAssemblyState = &inputAssembly;
+	pipelineInfo.pViewportState = &viewportState;
+	pipelineInfo.pRasterizationState = &rasterizer;
+	pipelineInfo.pMultisampleState = &multisampling;
+	pipelineInfo.pDepthStencilState = &depthStencil;
+	pipelineInfo.pColorBlendState = &colorBlending;
+	pipelineInfo.pDynamicState = nullptr; // Optional
+	pipelineInfo.layout = trl.pipelineLayout;
+	pipelineInfo.renderPass = trl.renderPass;
+	pipelineInfo.subpass = 0;
+	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
+	pipelineInfo.basePipelineIndex = -1; // Optional
+	if (vkCreateGraphicsPipelines(lineShader->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &trl.graphicsPipeline) != VK_SUCCESS) {
+		Error("failed to create graphics pipeline!");
+	}
+	//pipelineInfo.renderPass = trl.renderPassAdd;
+	//if (vkCreateGraphicsPipelines(lineShader->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &trl.graphicsPipelineAdd) != VK_SUCCESS) {
+	//	Error("failed to create graphics pipeline!");
+	//}
+
+	// create and map vertex buffer in GPU (for lines added for a single frame)
+	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * LineShader::MAX_DYNAMIC_LINES;
+	lineShader->createVertexBuffer(tr, trl.vertexBufferAdd, bufferSize, trl.vertexBufferAddMemory);
+	//createCommandBufferLineAdd(tr);
+	initDone = true;
+}
+
+void LineSubShader::createCommandBuffer(ThreadResources& tr)
+{
+	auto& trl = tr.lineResources;
+	vulkanResources->updateDescriptorSets(tr);
+	auto& engine = lineShader->engine;
+	auto& device = engine->global.device;
+	auto& global = engine->global;
+	auto& shaders = engine->shaders;
+	VkCommandBufferAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.commandPool = tr.commandPool;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandBufferCount = (uint32_t)1;
+
+	if (vkAllocateCommandBuffers(device, &allocInfo, &trl.commandBuffer) != VK_SUCCESS) {
+		Error("failed to allocate command buffers!");
+	}
+	engine->util.debugNameObjectCommandBuffer(trl.commandBuffer, "LINE COMMAND BUFFER");
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = 0; // Optional
+	beginInfo.pInheritanceInfo = nullptr; // Optional
+
+	if (vkBeginCommandBuffer(trl.commandBuffer, &beginInfo) != VK_SUCCESS) {
+		Error("failed to begin recording triangle command buffer!");
+	}
+	VkRenderPassBeginInfo renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassInfo.renderPass = trl.renderPass;
+	renderPassInfo.framebuffer = trl.framebuffer;
+	renderPassInfo.renderArea.offset = { 0, 0 };
+	renderPassInfo.renderArea.extent = engine->getBackBufferExtent();
+
+	renderPassInfo.clearValueCount = 0;
+
+	vkCmdBeginRenderPass(trl.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	recordDrawCommand(trl.commandBuffer, tr, vertexBuffer);
+	vkCmdEndRenderPass(trl.commandBuffer);
+	//if (engine->isStereo()) {
+	//	renderPassInfo.framebuffer = trl.framebuffer2;
+	//	vkCmdBeginRenderPass(trl.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	//	recordDrawCommand(trl.commandBuffer, tr, vertexBuffer, true);
+	//	vkCmdEndRenderPass(trl.commandBuffer);
+	//}
+	if (vkEndCommandBuffer(trl.commandBuffer) != VK_SUCCESS) {
+		Error("failed to record triangle command buffer!");
+	}
+	commandBufferDone = true;
+}
+
+void LineSubShader::initialUpload()
+{
+	// create vertex buffer in CPU mem
+	vector<LineShader::Vertex> all;
+	// handle fixed lines:
+	for (LineDef& line : lineShader->lines) {
+		LineShader::Vertex v1, v2;
+		v1.color = line.color;
+		v1.pos = line.start;
+		v2.color = line.color;
+		v2.pos = line.end;
+		all.push_back(v1);
+		all.push_back(v2);
+	}
+
+	// if there are no fixed lines we have nothing to do here
+	if (all.size() == 0) return;
+
+	// create and copy vertex buffer in GPU
+	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * all.size();
+	lineShader->engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, all.data(), vertexBuffer, vertexBufferMemory);
+}
+
+void LineSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
+{
+	auto& trl = tr.lineResources;
+	if (vertexBuffer == nullptr) return; // no fixed lines to draw
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.graphicsPipeline);
+	VkBuffer vertexBuffers[] = { vertexBuffer };
+	VkDeviceSize offsets[] = { 0 };
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+	// bind descriptor sets:
+	if (!isRightEye) {
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet, 0, nullptr);
+	}
+	else {
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet2, 0, nullptr);
+	}
+
+	vkCmdDraw(commandBuffer, static_cast<uint32_t>(lineShader->lines.size() * 2), 1, 0, 0);
+}
+
+void LineSubShader::destroy() {
+	vkDestroyBuffer(lineShader->device, vertexBuffer, nullptr);
+	vkFreeMemory(lineShader->device, vertexBufferMemory, nullptr);
 }

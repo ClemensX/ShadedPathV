@@ -664,8 +664,8 @@ void GlobalRendering::uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize buf
 
     vkDestroyBuffer(engine.global.device, stagingBuffer, nullptr);
     vkFreeMemory(engine.global.device, stagingBufferMemory, nullptr);
-    vkDestroyBuffer(engine.global.device, buffer, nullptr);
-    vkFreeMemory(engine.global.device, bufferMemory, nullptr);
+    //vkDestroyBuffer(engine.global.device, buffer, nullptr);
+    //vkFreeMemory(engine.global.device, bufferMemory, nullptr);
 }
 
 void GlobalRendering::createTextureSampler()

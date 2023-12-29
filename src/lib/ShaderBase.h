@@ -152,6 +152,9 @@ public:
 	// create VertexBuffer. buffer GPU memory is mapped to uniformBufferMemory for CPU access
 	void createVertexBuffer(ThreadResources& res, VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory);
 
+	// create render pass and framebuffer with respect to shader state
+	void createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState shaderState, VkRenderPass& renderPass, VkFramebuffer& frameBuffer, VkFramebuffer& frameBuffer2);
+
 	void setLastShader(bool last) {
 		lastShader = last;
 	}
@@ -160,7 +163,7 @@ public:
 		return lastShader;
 	}
 
-protected:
+//protected:
 	// signal if this shader is in use, set during init()
 	bool enabled = false;
 	bool lastShader = false;
@@ -173,8 +176,6 @@ protected:
 	VkDescriptorSetLayout descriptorSetLayout = nullptr;
 	VkDescriptorPool descriptorPool = nullptr;
 
-	// create render pass and framebuffer with respect to shader state
-	void createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState shaderState, VkRenderPass& renderPass, VkFramebuffer& frameBuffer, VkFramebuffer& frameBuffer2);
 
 	// util methods to simplify shader creation
 	VkPipelineVertexInputStateCreateInfo createVertexInputCreateInfo(VkVertexInputBindingDescription* vertexInputBinding, const VkVertexInputAttributeDescription* vertexInputAttributes, size_t attributes_size) {

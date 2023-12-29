@@ -17,8 +17,8 @@ void LineApp::run()
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
         //engine.enableVR();
-        engine.enableStereo();
-        engine.enableStereoPresentation();
+        //engine.enableStereo();
+        //engine.enableStereoPresentation();
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
@@ -93,7 +93,7 @@ void LineApp::init() {
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     // Grid with 1m squares, floor on -10m, ceiling on 372m
 
-    //engine.shaders.lineShader.initialUpload();
+    engine.shaders.lineShader.initialUpload();
 }
 
 void LineApp::drawFrame(ThreadResources& tr) {
