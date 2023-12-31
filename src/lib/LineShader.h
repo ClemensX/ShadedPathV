@@ -49,6 +49,10 @@ public:
 	void createCommandBuffer(ThreadResources& tr);
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
 	void destroy();
+	// gradually move ThreadResources here:
+	VkCommandBuffer commandBuffer = nullptr;
+	VkPipeline graphicsPipeline = nullptr;
+
 private:
 	LineShader* lineShader =  nullptr;
 	LineThreadResources* lineThreadResources = nullptr;
@@ -56,10 +60,6 @@ private:
 	std::string name;
 	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;
-	// vertex buffer for fixed lines (one buffer for all threads) 
-	VkBuffer vertexBuffer = nullptr;
-	// vertex buffer device memory
-	VkDeviceMemory vertexBufferMemory = nullptr;
 };
 
 
@@ -77,9 +77,9 @@ struct LineThreadResources : ShaderThreadResources {
 	VkRenderPass renderPass = nullptr;
 	VkRenderPass renderPassAdd = nullptr;
 	VkPipelineLayout pipelineLayout = nullptr;
-	VkPipeline graphicsPipeline = nullptr;
+	//VkPipeline graphicsPipeline = nullptr;
 	VkPipeline graphicsPipelineAdd = nullptr;
-	VkCommandBuffer commandBuffer = nullptr;
+	//VkCommandBuffer commandBuffer = nullptr;
 	VkCommandBuffer commandBufferAdd = nullptr;
 	VkCommandBuffer commandBufferUpdate = nullptr;
 	// vertex buffer for added lines
@@ -100,7 +100,7 @@ struct LineThreadResources : ShaderThreadResources {
 // and one for dynamic lines that change every frame
 class LineShader : public ShaderBase {
 public:
-	LineSubShader globalLineSubShader;
+	//LineSubShader globalLineSubShader;
 	std::vector<LineSubShader> lineSubShaders;
 
 	std::vector<VulkanResourceElement> vulkanResourceDefinition = {
@@ -183,6 +183,12 @@ public:
 	// resource switch after upload of new data has finished:
 	void resourceSwitch(GlobalResourceSet set) override;
 	std::vector<LineDef> lines;
+
+	// global resources used by all LineSubShaders:
+	// vertex buffer for fixed lines (one buffer for all threads) 
+	VkBuffer vertexBuffer = nullptr;
+	// vertex buffer device memory
+	VkDeviceMemory vertexBufferMemory = nullptr;
 private:
 	LineThreadResources globalLineThreadResources;
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
