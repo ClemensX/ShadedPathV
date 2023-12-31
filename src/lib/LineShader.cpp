@@ -27,7 +27,8 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 
 void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
-	if (!globalLineSubShader.initDone)	globalLineSubShader.initSingle(tr, shaderState);
+	//if (!globalLineSubShader.initDone)
+		globalLineSubShader.initSingle(tr, shaderState);
 }
 
 void LineShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
@@ -53,12 +54,14 @@ void LineShader::createDescriptorSets(ThreadResources& tr)
 
 void LineShader::createCommandBuffer(ThreadResources& tr)
 {
-	if (!globalLineSubShader.commandBufferDone) {
+	//if (!globalLineSubShader.commandBufferDone) {
 		globalLineSubShader.createCommandBuffer(tr);
-	}
+	//}
 }
 
 void LineShader::addCurrentCommandBuffer(ThreadResources& tr) {
+	tr.activeCommandBuffers.push_back(tr.lineResources.commandBuffer);
+
 };
 
 void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
@@ -83,6 +86,19 @@ void LineShader::addLocalLines(std::vector<LineDef>& linesToAdd, ThreadResources
 
 void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
 	if (!enabled) return;
+	auto& trl = tr.lineResources;
+	// copy ubo to GPU:
+	void* data;
+	//globalLineSubShader.uploadToGPU(tr, ubo);
+	vkMapMemory(device, trl.uniformBufferMemory, 0, sizeof(ubo), 0, &data);
+	memcpy(data, &ubo, sizeof(ubo));
+	vkUnmapMemory(device, trl.uniformBufferMemory);
+	if (engine->isStereo()) {
+		vkMapMemory(device, trl.uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
+		memcpy(data, &ubo2, sizeof(ubo2));
+		vkUnmapMemory(device, trl.uniformBufferMemory2);
+	}
+
 }
 
 void LineShader::update(ShaderUpdateElement *el)
@@ -348,6 +364,7 @@ void LineSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadReso
 
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(lineShader->lines.size() * 2), 1, 0, 0);
 }
+
 
 void LineSubShader::destroy() {
 	vkDestroyBuffer(lineShader->device, vertexBuffer, nullptr);

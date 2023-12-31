@@ -97,7 +97,7 @@ void LineApp::init() {
 }
 
 void LineApp::drawFrame(ThreadResources& tr) {
-    //updatePerFrame(tr);
+    updatePerFrame(tr);
     engine.shaders.submitFrame(tr);
 }
 
