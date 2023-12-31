@@ -13,6 +13,8 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 
 	// descriptor set layout
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);
+	resources.createPipelineLayout(&pipelineLayout);
+
 	int fl = engine.getFramesInFlight();
 	for (int i = 0; i < fl; i++) {
 		LineSubShader sub;
@@ -109,19 +111,8 @@ void LineShader::addLocalLines(std::vector<LineDef>& linesToAdd, ThreadResources
 
 void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
 	if (!enabled) return;
-	auto& trl = tr.lineResources;
-	// copy ubo to GPU:
-	void* data;
-	//globalLineSubShader.uploadToGPU(tr, ubo);
-	vkMapMemory(device, trl.uniformBufferMemory, 0, sizeof(ubo), 0, &data);
-	memcpy(data, &ubo, sizeof(ubo));
-	vkUnmapMemory(device, trl.uniformBufferMemory);
-	if (engine->isStereo()) {
-		vkMapMemory(device, trl.uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
-		memcpy(data, &ubo2, sizeof(ubo2));
-		vkUnmapMemory(device, trl.uniformBufferMemory2);
-	}
-
+	LineSubShader& sub = lineSubShaders[tr.threadResourcesIndex];
+	sub.uploadToGPU(tr, ubo);
 }
 
 void LineShader::update(ShaderUpdateElement *el)
@@ -190,27 +181,23 @@ LineShader::~LineShader()
 	vkDestroyShaderModule(device, vertShaderModule, nullptr);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 }
 
 void LineShader::destroyThreadResources(ThreadResources& tr)
 {
-	auto& trl = tr.lineResources;
-	vkDestroyFramebuffer(device, trl.framebuffer, nullptr);
-	vkDestroyFramebuffer(device, trl.framebufferAdd, nullptr);
-	vkDestroyRenderPass(device, trl.renderPass, nullptr);
-	vkDestroyRenderPass(device, trl.renderPassAdd, nullptr);
 	//vkDestroyPipeline(device, trl.graphicsPipeline, nullptr);
-	vkDestroyPipeline(device, trl.graphicsPipelineAdd, nullptr);
-	vkDestroyPipelineLayout(device, trl.pipelineLayout, nullptr);
-	vkDestroyBuffer(device, trl.uniformBuffer, nullptr);
-	vkFreeMemory(device, trl.uniformBufferMemory, nullptr);
-	vkDestroyBuffer(device, trl.vertexBufferAdd, nullptr);
-	vkFreeMemory(device, trl.vertexBufferAddMemory, nullptr);
+	//vkDestroyPipeline(device, trl.graphicsPipelineAdd, nullptr);
+	//vkDestroyPipelineLayout(device, trl.pipelineLayout, nullptr);
+	//vkDestroyBuffer(device, trl.uniformBuffer, nullptr);
+	//vkFreeMemory(device, trl.uniformBufferMemory, nullptr);
+	//vkDestroyBuffer(device, trl.vertexBufferAdd, nullptr);
+	//vkFreeMemory(device, trl.vertexBufferAddMemory, nullptr);
 	if (engine->isStereo()) {
-		vkDestroyFramebuffer(device, trl.framebuffer2, nullptr);
-		vkDestroyFramebuffer(device, trl.framebufferAdd2, nullptr);
-		vkDestroyBuffer(device, trl.uniformBuffer2, nullptr);
-		vkFreeMemory(device, trl.uniformBufferMemory2, nullptr);
+		//vkDestroyFramebuffer(device, trl.framebuffer2, nullptr);
+		//vkDestroyFramebuffer(device, trl.framebufferAdd2, nullptr);
+		//vkDestroyBuffer(device, trl.uniformBuffer2, nullptr);
+		//vkFreeMemory(device, trl.uniformBufferMemory2, nullptr);
 	}
 }
 
@@ -219,16 +206,15 @@ void LineSubShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
 	LineSubShader& sub = lineShader->lineSubShaders[tr.threadResourcesIndex];
 	VulkanHandoverResources handover;
-	auto& trl = tr.lineResources;
 	// MVP uniform buffer
-	lineShader->createUniformBuffer(tr, trl.uniformBuffer,
-		sizeof(LineShader::UniformBufferObject), trl.uniformBufferMemory);
-	handover.mvpBuffer = trl.uniformBuffer;
+	lineShader->createUniformBuffer(tr, uniformBuffer,
+		sizeof(LineShader::UniformBufferObject), uniformBufferMemory);
+	handover.mvpBuffer = uniformBuffer;
 	handover.mvpSize = sizeof(LineShader::UniformBufferObject);
-	handover.descriptorSet = &trl.descriptorSet;
+	handover.descriptorSet = &descriptorSet;
 	vulkanResources->createThreadResources(handover);
 
-	lineShader->createRenderPassAndFramebuffer(tr, shaderState, trl.renderPass, trl.framebuffer, trl.framebuffer2);
+	lineShader->createRenderPassAndFramebuffer(tr, shaderState, renderPass, framebuffer, framebuffer /*trl.framebuffer2*/);
 
 	// create shader stage
 	auto vertShaderStageInfo = lineShader->engine->shaders.createVertexShaderCreateInfo(vertShaderModule);
@@ -263,7 +249,7 @@ void LineSubShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// empty for now...
 
 	// pipeline layout
-	vulkanResources->createPipelineLayout(&trl.pipelineLayout);
+	//vulkanResources->createPipelineLayout(&trl.pipelineLayout);
 
 	// depth stencil
 	auto depthStencil = lineShader->createStandardDepthStencil();
@@ -281,8 +267,8 @@ void LineSubShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	pipelineInfo.pDepthStencilState = &depthStencil;
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = nullptr; // Optional
-	pipelineInfo.layout = trl.pipelineLayout;
-	pipelineInfo.renderPass = trl.renderPass;
+	pipelineInfo.layout = lineShader->pipelineLayout;
+	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional
@@ -296,7 +282,7 @@ void LineSubShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 
 	// create and map vertex buffer in GPU (for lines added for a single frame)
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * LineShader::MAX_DYNAMIC_LINES;
-	lineShader->createVertexBuffer(tr, trl.vertexBufferAdd, bufferSize, trl.vertexBufferAddMemory);
+	//lineShader->createVertexBuffer(tr, trl.vertexBufferAdd, bufferSize, trl.vertexBufferAddMemory);
 	//createCommandBufferLineAdd(tr);
 	initDone = true;
 }
@@ -304,7 +290,6 @@ void LineSubShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 void LineSubShader::createCommandBuffer(ThreadResources& tr)
 {
 	LineSubShader& sub = lineShader->lineSubShaders[tr.threadResourcesIndex];
-	auto& trl = tr.lineResources;
 	vulkanResources->updateDescriptorSets(tr);
 	auto& engine = lineShader->engine;
 	auto& device = engine->global.device;
@@ -330,8 +315,8 @@ void LineSubShader::createCommandBuffer(ThreadResources& tr)
 	}
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = trl.renderPass;
-	renderPassInfo.framebuffer = trl.framebuffer;
+	renderPassInfo.renderPass = renderPass;
+	renderPassInfo.framebuffer = framebuffer;
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = engine->getBackBufferExtent();
 
@@ -359,7 +344,6 @@ void LineSubShader::initialUpload()
 void LineSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
 {
 	LineSubShader& sub = lineShader->lineSubShaders[tr.threadResourcesIndex];
-	auto& trl = tr.lineResources;
 	if (vertexBuffer == nullptr) return; // no fixed lines to draw
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, sub.graphicsPipeline);
 	VkBuffer vertexBuffers[] = { vertexBuffer };
@@ -368,16 +352,39 @@ void LineSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadReso
 
 	// bind descriptor sets:
 	if (!isRightEye) {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet, 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lineShader->pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 	}
 	else {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, trl.pipelineLayout, 0, 1, &trl.descriptorSet2, 0, nullptr);
+		//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lineShader->pipelineLayout, 0, 1, &trl.descriptorSet2, 0, nullptr);
 	}
 
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(lineShader->lines.size() * 2), 1, 0, 0);
 }
 
+void LineSubShader::uploadToGPU(ThreadResources& tr, LineShader::UniformBufferObject& ubo) {
+	// copy ubo to GPU:
+	auto& device = lineShader->device;
+	void* data;
+	//globalLineSubShader.uploadToGPU(tr, ubo);
+	vkMapMemory(device, uniformBufferMemory, 0, sizeof(ubo), 0, &data);
+	memcpy(data, &ubo, sizeof(ubo));
+	vkUnmapMemory(device, uniformBufferMemory);
+	//if (engine->isStereo()) {
+	//	vkMapMemory(device, trl.uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
+	//	memcpy(data, &ubo2, sizeof(ubo2));
+	//	vkUnmapMemory(device, trl.uniformBufferMemory2);
+	//}
+
+}
 
 void LineSubShader::destroy() {
-	vkDestroyPipeline(lineShader->device, graphicsPipeline, nullptr);
+	auto& device = lineShader->device;
+	vkDestroyPipeline(device, graphicsPipeline, nullptr);
+	vkDestroyFramebuffer(device, framebuffer, nullptr);
+	//vkDestroyFramebuffer(device, trl.framebufferAdd, nullptr);
+	vkDestroyRenderPass(device, renderPass, nullptr);
+	//vkDestroyRenderPass(device, trl.renderPassAdd, nullptr);
+	vkDestroyBuffer(device, uniformBuffer, nullptr);
+	vkFreeMemory(device, uniformBufferMemory, nullptr);
+
 }

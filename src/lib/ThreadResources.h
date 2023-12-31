@@ -50,7 +50,7 @@ public:
 
 	// ShaderThreadResources
 	ClearThreadResources clearResources;
-	LineThreadResources lineResources;
+	//LineThreadResources lineResources;
 	PBRThreadResources pbrResources;
 	SimpleThreadResources simpleResources;
 	CubeThreadResources cubeResources;

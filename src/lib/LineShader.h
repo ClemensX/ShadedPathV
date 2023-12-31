@@ -13,54 +13,9 @@ struct LineDef {
 	glm::vec4 color;
 };
 
-class LineShader;
-class LineThreadResources;
-
-/*
- * LineSubShader includes everything for one shader invocation.
- * There will be 3 sub shaders: For fixed global lines, for global updated lines  and for each frame a local one
- */
-class LineSubShader {
-
-public:
-	// name is used in shader debugging
-	void init(LineShader* parent, std::string debugName) {
-		lineShader = parent;
-		name = debugName;
-		Log("LineSubShader init: " << debugName.c_str() << std::endl);
-	}
-	void setVertShaderModule(VkShaderModule sm) {
-		vertShaderModule = sm;
-	}
-	void setFragShaderModule(VkShaderModule sm) {
-		fragShaderModule = sm;
-	}
-	void initSingle(ThreadResources& tr, ShaderState& shaderState);
-	//void setResources(LineThreadResources* resources) {
-	//	lineThreadResources = resources;
-	//}
-	void setVulkanResources(VulkanResources* vr) {
-		vulkanResources = vr;
-	}
-	bool initDone = false; // TODO hack: prevent mutliple init() for now...
-	bool commandBufferDone = false;
-
-	void initialUpload();
-	void createCommandBuffer(ThreadResources& tr);
-	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
-	void destroy();
-	// gradually move ThreadResources here:
-	VkCommandBuffer commandBuffer = nullptr;
-	VkPipeline graphicsPipeline = nullptr;
-
-private:
-	LineShader* lineShader =  nullptr;
-	LineThreadResources* lineThreadResources = nullptr;
-	VulkanResources* vulkanResources = nullptr;
-	std::string name;
-	VkShaderModule vertShaderModule = nullptr;
-	VkShaderModule fragShaderModule = nullptr;
-};
+//class LineShader;
+//struct LineShader::UniformBufferObject;
+//class LineThreadResources;
 
 
 // each execution needs one instance of ApplicationData
@@ -69,33 +24,28 @@ public:
 	std::vector<LineDef> lines;
 };
 
-struct LineThreadResources : ShaderThreadResources {
-	VkFramebuffer framebuffer = nullptr;
-	VkFramebuffer framebuffer2 = nullptr;
-	VkFramebuffer framebufferAdd = nullptr;
-	VkFramebuffer framebufferAdd2 = nullptr;
-	VkRenderPass renderPass = nullptr;
-	VkRenderPass renderPassAdd = nullptr;
-	VkPipelineLayout pipelineLayout = nullptr;
+//struct LineThreadResources : ShaderThreadResources {
+	//VkPipelineLayout pipelineLayout = nullptr;
 	//VkPipeline graphicsPipeline = nullptr;
-	VkPipeline graphicsPipelineAdd = nullptr;
+	//VkPipeline graphicsPipelineAdd = nullptr;
 	//VkCommandBuffer commandBuffer = nullptr;
-	VkCommandBuffer commandBufferAdd = nullptr;
-	VkCommandBuffer commandBufferUpdate = nullptr;
+	//VkCommandBuffer commandBufferAdd = nullptr;
+	//VkCommandBuffer commandBufferUpdate = nullptr;
 	// vertex buffer for added lines
-	VkBuffer vertexBufferAdd = nullptr;
+	//VkBuffer vertexBufferAdd = nullptr;
 	// vertex buffer device memory
-	VkDeviceMemory vertexBufferAddMemory = nullptr;
+	//VkDeviceMemory vertexBufferAddMemory = nullptr;
 	// MVP buffer
-	VkBuffer uniformBuffer = nullptr;
-	VkBuffer uniformBuffer2 = nullptr;
+	//VkBuffer uniformBuffer = nullptr;
+	//VkBuffer uniformBuffer2 = nullptr;
 	// MVP buffer device memory
-	VkDeviceMemory uniformBufferMemory = nullptr;
-	VkDeviceMemory uniformBufferMemory2 = nullptr;
-	VkDescriptorSet descriptorSet = nullptr;
-	VkDescriptorSet descriptorSet2 = nullptr;
-};
+	//VkDeviceMemory uniformBufferMemory = nullptr;
+	//VkDeviceMemory uniformBufferMemory2 = nullptr;
+	//VkDescriptorSet descriptorSet = nullptr;
+	//VkDescriptorSet descriptorSet2 = nullptr;
+//};
 
+class LineSubShader;
 // line shader draws lines, it creates 2 pipelines, one for fixed lines (uploaded at start)
 // and one for dynamic lines that change every frame
 class LineShader : public ShaderBase {
@@ -189,8 +139,9 @@ public:
 	VkBuffer vertexBuffer = nullptr;
 	// vertex buffer device memory
 	VkDeviceMemory vertexBufferMemory = nullptr;
+	VkPipelineLayout pipelineLayout = nullptr;
 private:
-	LineThreadResources globalLineThreadResources;
+	//LineThreadResources globalLineThreadResources;
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
 	//// update cbuffer and vertex buffer
 	//void update();
@@ -285,3 +236,65 @@ public:
 class LineResourceManager {
 
 };
+
+/*
+ * LineSubShader includes everything for one shader invocation.
+ * There will be 3 sub shaders: For fixed global lines, for global updated lines  and for each frame a local one
+ */
+class LineSubShader {
+
+public:
+	// name is used in shader debugging
+	void init(LineShader* parent, std::string debugName) {
+		lineShader = parent;
+		name = debugName;
+		Log("LineSubShader init: " << debugName.c_str() << std::endl);
+	}
+	void setVertShaderModule(VkShaderModule sm) {
+		vertShaderModule = sm;
+	}
+	void setFragShaderModule(VkShaderModule sm) {
+		fragShaderModule = sm;
+	}
+	void initSingle(ThreadResources& tr, ShaderState& shaderState);
+	//void setResources(LineThreadResources* resources) {
+	//	lineThreadResources = resources;
+	//}
+	void setVulkanResources(VulkanResources* vr) {
+		vulkanResources = vr;
+	}
+	bool initDone = false; // TODO hack: prevent mutliple init() for now...
+	bool commandBufferDone = false;
+
+	void initialUpload();
+	void createCommandBuffer(ThreadResources& tr);
+	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
+	// per frame update of UBO / MVP
+	void uploadToGPU(ThreadResources& tr, LineShader::UniformBufferObject& ubo);
+
+	void destroy();
+
+	// gradually move ThreadResources here:
+	VkCommandBuffer commandBuffer = nullptr;
+	VkPipeline graphicsPipeline = nullptr;
+	VkFramebuffer framebuffer = nullptr;
+	//VkFramebuffer framebuffer2 = nullptr;
+	//VkFramebuffer framebufferAdd = nullptr;
+	//VkFramebuffer framebufferAdd2 = nullptr;
+	VkRenderPass renderPass = nullptr;
+	//VkRenderPass renderPassAdd = nullptr;
+	VkDescriptorSet descriptorSet = nullptr;
+	// MVP buffer
+	VkBuffer uniformBuffer = nullptr;
+	// MVP buffer device memory
+	VkDeviceMemory uniformBufferMemory = nullptr;
+
+private:
+	LineShader* lineShader = nullptr;
+	//LineThreadResources* lineThreadResources = nullptr;
+	VulkanResources* vulkanResources = nullptr;
+	std::string name;
+	VkShaderModule vertShaderModule = nullptr;
+	VkShaderModule fragShaderModule = nullptr;
+};
+
