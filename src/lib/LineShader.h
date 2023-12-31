@@ -101,6 +101,7 @@ struct LineThreadResources : ShaderThreadResources {
 class LineShader : public ShaderBase {
 public:
 	LineSubShader globalLineSubShader;
+	std::vector<LineSubShader> lineSubShaders;
 
 	std::vector<VulkanResourceElement> vulkanResourceDefinition = {
 		{ VulkanResourceType::MVPBuffer },

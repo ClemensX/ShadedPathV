@@ -13,6 +13,17 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 
 	// descriptor set layout
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);
+	int fl = engine.getFramesInFlight();
+	for (int i = 0; i < fl; i++) {
+		LineSubShader sub;
+		sub.init(this, "GlobalLineSubshader");
+		sub.setVertShaderModule(vertShaderModule);
+		sub.setFragShaderModule(fragShaderModule);
+		//sub.setResources(&globalLineThreadResources);
+		sub.setVulkanResources(&resources);
+		//sub.initSingle(shaderState);
+		lineSubShaders.push_back(sub);
+	}
 
 	// wee need one global shader
 	if (!globalLineSubShader.initDone) {
@@ -23,6 +34,7 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 		globalLineSubShader.setVulkanResources(&resources);
 		//globalLineSubShader.initSingle(shaderState);
 	}
+
 }
 
 void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)

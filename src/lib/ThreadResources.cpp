@@ -3,10 +3,12 @@
 using namespace std;
 
 ShadedPathEngine* ThreadResources::engine = nullptr;
+int ThreadResources::threadResourcesCount = 0;
 
 ThreadResources::ThreadResources()
 {
 	Log("ThreadResource c'tor: " << this << endl);
+    threadResourcesIndex = threadResourcesCount++;
 }
 
 void ThreadResources::initAll(ShadedPathEngine* engine)

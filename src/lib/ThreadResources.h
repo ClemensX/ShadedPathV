@@ -89,10 +89,13 @@ public:
 
 	// Debugging
 	std::string commandBufferDebugName;
+	int threadResourcesIndex;
 
 private:
 	void createFencesAndSemaphores();
 	void createBackBufferImage();
 	void createCommandPool();
 	void createDepthResources();
+	// we need to know which ThreadRessources we have for sub shaders in arrays
+	static int threadResourcesCount;
 };
