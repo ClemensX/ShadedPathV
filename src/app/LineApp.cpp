@@ -16,6 +16,7 @@ void LineApp::run()
         engine.enableKeyEvents();
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
+        engine.enableMeshShader();
         //engine.enableVR();
         //engine.enableStereo();
         //engine.enableStereoPresentation();

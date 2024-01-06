@@ -140,7 +140,7 @@ std::vector<const char*> GlobalRendering::getRequiredExtensions() {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
     if (engine.isMeshShading()) {
-        deviceExtensions.push_back(VK_NV_MESH_SHADER_EXTENSION_NAME);
+        deviceExtensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     }
 
     Log("requested Vulkan instance extensions:" << endl)
@@ -189,8 +189,8 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
     vkGetPhysicalDeviceProperties(device, &deviceProperties);
     vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
     // query extension details (mesh shader)
-    VkPhysicalDeviceMeshShaderPropertiesNV meshProperties = {};
-    meshProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_NV;
+    VkPhysicalDeviceMeshShaderPropertiesEXT meshProperties = {};
+    meshProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
     meshProperties.pNext = nullptr;
     VkPhysicalDeviceProperties2 deviceProperties2 = {};
     deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
@@ -222,19 +222,22 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
     }
     // check mesh support:
     // set extension details for mesh shader
-    VkPhysicalDeviceMeshShaderFeaturesNV meshFeatures = {};
-    meshFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshFeatures = {};
+    meshFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
     meshFeatures.pNext = nullptr;
     VkPhysicalDeviceFeatures2 feature2{};
     feature2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
     feature2.pNext = &meshFeatures;
     vkGetPhysicalDeviceFeatures2(device, &feature2);
-    VkPhysicalDeviceMeshShaderFeaturesNV* meshSupport = (VkPhysicalDeviceMeshShaderFeaturesNV*)feature2.pNext;
+    VkPhysicalDeviceMeshShaderFeaturesEXT* meshSupport = (VkPhysicalDeviceMeshShaderFeaturesEXT*)feature2.pNext;
     if (engine.isMeshShading()) {
         //Log(meshSupport << endl);
         if (!meshSupport->meshShader || !meshSupport->taskShader) {
-            Log("device does not support needed Mesh Shader" << endl);
+            Log("device does not support Mesh Shaders" << endl);
+            Log("You might try not to enable Mesh Shader in app code by removing: engine.enableMeshShader()" << endl);
             return false;
+        } else {
+            Log("Mesh Shader enabled!" << endl);
         }
     }
     // check compressed texture support:
@@ -398,8 +401,8 @@ void GlobalRendering::createLogicalDevice()
     };
 
     // set extension details for mesh shader
-    VkPhysicalDeviceMeshShaderFeaturesNV meshFeatures = {};
-    meshFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_NV;
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshFeatures = {};
+    meshFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
     meshFeatures.meshShader = VK_TRUE;
     meshFeatures.taskShader = VK_FALSE;
     meshFeatures.pNext = nullptr;
