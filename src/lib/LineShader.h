@@ -267,6 +267,11 @@ public:
 	bool commandBufferDone = false;
 
 	void initialUpload();
+
+	// all sections need: buffer allocation and recording draw commands.
+	// stage they are called at will be very different
+	void allocateCommandBuffer(ThreadResources& tr, VkCommandBuffer* cmdBuferPtr, const char* debugName);
+
 	void createCommandBuffer(ThreadResources& tr);
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
 	// per frame update of UBO / MVP

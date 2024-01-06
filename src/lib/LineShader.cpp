@@ -287,7 +287,7 @@ void LineSubShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	initDone = true;
 }
 
-void LineSubShader::createCommandBuffer(ThreadResources& tr)
+void LineSubShader::allocateCommandBuffer(ThreadResources& tr, VkCommandBuffer* cmdBuferPtr, const char* debugName)
 {
 	LineSubShader& sub = lineShader->lineSubShaders[tr.threadResourcesIndex];
 	vulkanResources->updateDescriptorSets(tr);
@@ -304,7 +304,14 @@ void LineSubShader::createCommandBuffer(ThreadResources& tr)
 	if (vkAllocateCommandBuffers(device, &allocInfo, &sub.commandBuffer) != VK_SUCCESS) {
 		Error("failed to allocate command buffers!");
 	}
-	engine->util.debugNameObjectCommandBuffer(sub.commandBuffer, "LINE COMMAND BUFFER");
+	engine->util.debugNameObjectCommandBuffer(sub.commandBuffer, debugName);
+}
+
+void LineSubShader::createCommandBuffer(ThreadResources& tr)
+{
+	auto& engine = lineShader->engine;
+	LineSubShader& sub = lineShader->lineSubShaders[tr.threadResourcesIndex];
+	allocateCommandBuffer(tr, &sub.commandBuffer, "LINE COMMAND BUFFER");
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0; // Optional
