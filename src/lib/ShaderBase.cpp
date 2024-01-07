@@ -15,7 +15,7 @@ void ShaderBase::init(ShadedPathEngine& engine)
 	enabled = true;
 }
 
-void ShaderBase::createUniformBuffer(ThreadResources& res, VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory)
+void ShaderBase::createUniformBuffer(VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory)
 {
 	VkDeviceSize bufferSize = size;
 	// we do not want to handle zero length buffers
@@ -28,7 +28,7 @@ void ShaderBase::createUniformBuffer(ThreadResources& res, VkBuffer& uniformBuff
 		uniformBuffer, uniformBufferMemory);
 }
 
-void ShaderBase::createVertexBuffer(ThreadResources& res, VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory)
+void ShaderBase::createVertexBuffer(VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory)
 {
 	VkDeviceSize bufferSize = size;
 	// we do not want to handle zero length buffers

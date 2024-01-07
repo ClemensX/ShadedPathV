@@ -17,6 +17,7 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 
 	int fl = engine.getFramesInFlight();
 	for (int i = 0; i < fl; i++) {
+		// gllobal shaders
 		LineSubShader sub;
 		sub.init(this, "GlobalLineSubshader");
 		sub.setVertShaderModule(vertShaderModule);
@@ -24,13 +25,21 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 		//sub.setResources(&globalLineThreadResources);
 		sub.setVulkanResources(&resources);
 		//sub.initSingle(shaderState);
-		lineSubShaders.push_back(sub);
+		globalLineSubShaders.push_back(sub);
+
+		// per frame lines:
+		LineSubShader pf;
+		pf.init(this, "PerFrameLineSubshader");
+		pf.setVertShaderModule(vertShaderModule);
+		pf.setFragShaderModule(fragShaderModule);
+		pf.setVulkanResources(&resources);
+		perFrameLineSubShaders.push_back(pf);
 	}
 }
 
 void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
-	LineSubShader& sub = lineSubShaders[tr.threadResourcesIndex];
+	LineSubShader& sub = globalLineSubShaders[tr.threadResourcesIndex];
 	//if (!globalLineSubShader.initDone)
 		sub.initSingle(tr, shaderState);
 }
@@ -77,7 +86,7 @@ void LineShader::createDescriptorSets(ThreadResources& tr)
 
 void LineShader::createCommandBuffer(ThreadResources& tr)
 {
-	LineSubShader& sub = lineSubShaders[tr.threadResourcesIndex];
+	LineSubShader& sub = globalLineSubShaders[tr.threadResourcesIndex];
 	//if (!globalLineSubShader.commandBufferDone) {
 		sub.createCommandBuffer(tr);
 	//}
@@ -85,7 +94,7 @@ void LineShader::createCommandBuffer(ThreadResources& tr)
 
 void LineShader::addCurrentCommandBuffer(ThreadResources& tr) {
 	//tr.activeCommandBuffers.push_back(tr.lineResources.commandBuffer);
-	tr.activeCommandBuffers.push_back(lineSubShaders[tr.threadResourcesIndex].commandBuffer);
+	tr.activeCommandBuffers.push_back(globalLineSubShaders[tr.threadResourcesIndex].commandBuffer);
 
 };
 
@@ -111,7 +120,7 @@ void LineShader::addLocalLines(std::vector<LineDef>& linesToAdd, ThreadResources
 
 void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
 	if (!enabled) return;
-	LineSubShader& sub = lineSubShaders[tr.threadResourcesIndex];
+	LineSubShader& sub = globalLineSubShaders[tr.threadResourcesIndex];
 	sub.uploadToGPU(tr, ubo);
 }
 
@@ -172,7 +181,10 @@ LineShader::~LineShader()
 	//vkDestroyBuffer(device, vertexBuffer, nullptr);
 	//vkFreeMemory(device, vertexBufferMemory, nullptr);
 	//globalLineSubShader.destroy();
-	for (LineSubShader sub : lineSubShaders) {
+	for (LineSubShader sub : globalLineSubShaders) {
+		sub.destroy();
+	}
+	for (LineSubShader sub : perFrameLineSubShaders) {
 		sub.destroy();
 	}
 	vkDestroyBuffer(device, vertexBuffer, nullptr);
@@ -202,13 +214,21 @@ void LineShader::destroyThreadResources(ThreadResources& tr)
 }
 
 // LineSubShader
+
+void LineSubShader::init(LineShader* parent, std::string debugName) {
+	lineShader = parent;
+	name = debugName;
+	engine = lineShader->engine;
+	device = &engine->global.device;
+	Log("LineSubShader init: " << debugName.c_str() << std::endl);
+}
+
 void LineSubShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
-	LineSubShader& sub = lineShader->lineSubShaders[tr.threadResourcesIndex];
 	VulkanHandoverResources handover;
 	// MVP uniform buffer
-	lineShader->createUniformBuffer(tr, uniformBuffer,
-		sizeof(LineShader::UniformBufferObject), uniformBufferMemory);
+	lineShader->createUniformBuffer(uniformBuffer, sizeof(LineShader::UniformBufferObject),
+		uniformBufferMemory);
 	handover.mvpBuffer = uniformBuffer;
 	handover.mvpSize = sizeof(LineShader::UniformBufferObject);
 	handover.descriptorSet = &descriptorSet;
@@ -272,7 +292,7 @@ void LineSubShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional
-	if (vkCreateGraphicsPipelines(lineShader->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &sub.graphicsPipeline) != VK_SUCCESS) {
+	if (vkCreateGraphicsPipelines(lineShader->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
 		Error("failed to create graphics pipeline!");
 	}
 	//pipelineInfo.renderPass = trl.renderPassAdd;
@@ -284,40 +304,31 @@ void LineSubShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * LineShader::MAX_DYNAMIC_LINES;
 	//lineShader->createVertexBuffer(tr, trl.vertexBufferAdd, bufferSize, trl.vertexBufferAddMemory);
 	//createCommandBufferLineAdd(tr);
-	initDone = true;
 }
 
 void LineSubShader::allocateCommandBuffer(ThreadResources& tr, VkCommandBuffer* cmdBuferPtr, const char* debugName)
 {
-	LineSubShader& sub = lineShader->lineSubShaders[tr.threadResourcesIndex];
 	vulkanResources->updateDescriptorSets(tr);
-	auto& engine = lineShader->engine;
-	auto& device = engine->global.device;
-	auto& global = engine->global;
-	auto& shaders = engine->shaders;
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = tr.commandPool;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = (uint32_t)1;
 
-	if (vkAllocateCommandBuffers(device, &allocInfo, &sub.commandBuffer) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(*device, &allocInfo, &commandBuffer) != VK_SUCCESS) {
 		Error("failed to allocate command buffers!");
 	}
-	engine->util.debugNameObjectCommandBuffer(sub.commandBuffer, debugName);
+	engine->util.debugNameObjectCommandBuffer(commandBuffer, debugName);
 }
 
-void LineSubShader::createCommandBuffer(ThreadResources& tr)
+void LineSubShader::addRenderPassAndDrawCommands(ThreadResources& tr, VkCommandBuffer* cmdBufferPtr, VkBuffer vertexBuffer)
 {
-	auto& engine = lineShader->engine;
-	LineSubShader& sub = lineShader->lineSubShaders[tr.threadResourcesIndex];
-	allocateCommandBuffer(tr, &sub.commandBuffer, "LINE COMMAND BUFFER");
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0; // Optional
 	beginInfo.pInheritanceInfo = nullptr; // Optional
 
-	if (vkBeginCommandBuffer(sub.commandBuffer, &beginInfo) != VK_SUCCESS) {
+	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
 		Error("failed to begin recording triangle command buffer!");
 	}
 	VkRenderPassBeginInfo renderPassInfo{};
@@ -329,19 +340,24 @@ void LineSubShader::createCommandBuffer(ThreadResources& tr)
 
 	renderPassInfo.clearValueCount = 0;
 
-	vkCmdBeginRenderPass(sub.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	recordDrawCommand(sub.commandBuffer, tr, lineShader->vertexBuffer);
-	vkCmdEndRenderPass(sub.commandBuffer);
+	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	recordDrawCommand(commandBuffer, tr, vertexBuffer);
+	vkCmdEndRenderPass(commandBuffer);
 	//if (engine->isStereo()) {
 	//	renderPassInfo.framebuffer = trl.framebuffer2;
 	//	vkCmdBeginRenderPass(trl.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	//	recordDrawCommand(trl.commandBuffer, tr, vertexBuffer, true);
 	//	vkCmdEndRenderPass(trl.commandBuffer);
 	//}
-	if (vkEndCommandBuffer(sub.commandBuffer) != VK_SUCCESS) {
+	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
 		Error("failed to record triangle command buffer!");
 	}
-	commandBufferDone = true;
+}
+
+void LineSubShader::createCommandBuffer(ThreadResources& tr)
+{
+	allocateCommandBuffer(tr, &commandBuffer, "LINE COMMAND BUFFER");
+	addRenderPassAndDrawCommands(tr, &commandBuffer, lineShader->vertexBuffer);
 }
 
 void LineSubShader::initialUpload()
@@ -350,9 +366,8 @@ void LineSubShader::initialUpload()
 
 void LineSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
 {
-	LineSubShader& sub = lineShader->lineSubShaders[tr.threadResourcesIndex];
 	if (vertexBuffer == nullptr) return; // no fixed lines to draw
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, sub.graphicsPipeline);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 	VkBuffer vertexBuffers[] = { vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
@@ -385,13 +400,12 @@ void LineSubShader::uploadToGPU(ThreadResources& tr, LineShader::UniformBufferOb
 }
 
 void LineSubShader::destroy() {
-	auto& device = lineShader->device;
-	vkDestroyPipeline(device, graphicsPipeline, nullptr);
-	vkDestroyFramebuffer(device, framebuffer, nullptr);
+	vkDestroyPipeline(*device, graphicsPipeline, nullptr);
+	vkDestroyFramebuffer(*device, framebuffer, nullptr);
 	//vkDestroyFramebuffer(device, trl.framebufferAdd, nullptr);
-	vkDestroyRenderPass(device, renderPass, nullptr);
+	vkDestroyRenderPass(*device, renderPass, nullptr);
 	//vkDestroyRenderPass(device, trl.renderPassAdd, nullptr);
-	vkDestroyBuffer(device, uniformBuffer, nullptr);
-	vkFreeMemory(device, uniformBufferMemory, nullptr);
+	vkDestroyBuffer(*device, uniformBuffer, nullptr);
+	vkFreeMemory(*device, uniformBufferMemory, nullptr);
 
 }

@@ -20,17 +20,17 @@ void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
 	auto& str = tr.pbrResources; // shortcut to pbr resources
 	// uniform buffer
-	createUniformBuffer(tr, str.uniformBuffer, sizeof(UniformBufferObject), str.uniformBufferMemory);
+	createUniformBuffer(str.uniformBuffer, sizeof(UniformBufferObject), str.uniformBufferMemory);
 	engine->util.debugNameObjectBuffer(str.uniformBuffer, "PBR UBO 1");
 	engine->util.debugNameObjectDeviceMmeory(str.uniformBufferMemory, "PBR Memory 1");
 	if (engine->isStereo()) {
-		createUniformBuffer(tr, str.uniformBuffer2, sizeof(UniformBufferObject), str.uniformBufferMemory2);
+		createUniformBuffer(str.uniformBuffer2, sizeof(UniformBufferObject), str.uniformBufferMemory2);
 		engine->util.debugNameObjectBuffer(str.uniformBuffer2, "PBR UBO 2");
 		engine->util.debugNameObjectDeviceMmeory(str.uniformBufferMemory2, "PBR Memory 2");
 	}
 	// dynamic uniform buffer
 	auto bufSize = alignedDynamicUniformBufferSize * MaxObjects;
-	createUniformBuffer(tr, str.dynamicUniformBuffer, bufSize, str.dynamicUniformBufferMemory);
+	createUniformBuffer(str.dynamicUniformBuffer, bufSize, str.dynamicUniformBufferMemory);
 	engine->util.debugNameObjectBuffer(str.dynamicUniformBuffer, "PBR dynamic UBO");
 	engine->util.debugNameObjectDeviceMmeory(str.dynamicUniformBufferMemory, "PBR dynamic UBO Memory");
 	// permanently map the dynamic buffer to CPU memory:

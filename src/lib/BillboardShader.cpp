@@ -24,10 +24,10 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
 	auto& str = tr.billboardResources; // shortcut to shader thread resources
 	// uniform buffers for MVP
-	createUniformBuffer(tr, str.uniformBuffer, sizeof(UniformBufferObject), str.uniformBufferMemory);
+	createUniformBuffer(str.uniformBuffer, sizeof(UniformBufferObject), str.uniformBufferMemory);
 	engine->util.debugNameObjectBuffer(str.uniformBuffer, "Billboard Uniform Buffer");
 	if (engine->isStereo()) {
-		createUniformBuffer(tr, str.uniformBuffer2, sizeof(UniformBufferObject), str.uniformBufferMemory2);
+		createUniformBuffer(str.uniformBuffer2, sizeof(UniformBufferObject), str.uniformBufferMemory2);
 		engine->util.debugNameObjectBuffer(str.uniformBuffer, "Billboard Uniform Stereo Buffer");
 	}
 

@@ -25,11 +25,11 @@ void CubeShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	auto& str = tr.cubeResources; // shortcut to cube resources
 
 	// uniform buffer
-	createUniformBuffer(tr, str.uniformBuffer, sizeof(UniformBufferObject), str.uniformBufferMemory);
+	createUniformBuffer(str.uniformBuffer, sizeof(UniformBufferObject), str.uniformBufferMemory);
 	engine->util.debugNameObjectBuffer(str.uniformBuffer, "Cube UBO 1");
 	engine->util.debugNameObjectDeviceMmeory(str.uniformBufferMemory, "Cube Memory 1");
 	if (engine->isStereo()) {
-		createUniformBuffer(tr, str.uniformBuffer2, sizeof(UniformBufferObject), str.uniformBufferMemory2);
+		createUniformBuffer(str.uniformBuffer2, sizeof(UniformBufferObject), str.uniformBufferMemory2);
 		engine->util.debugNameObjectBuffer(str.uniformBuffer2, "Cube UBO 2");
 		engine->util.debugNameObjectDeviceMmeory(str.uniformBufferMemory2, "Cube Memory 2");
 	}

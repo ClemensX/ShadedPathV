@@ -35,7 +35,7 @@ void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	VulkanHandoverResources handover;
 	auto& str = tr.simpleResources; //shortcut to shader thread resources
 	// MVP uniform buffer
-	createUniformBuffer(tr, str.uniformBuffer, sizeof(UniformBufferObject), str.uniformBufferMemory);
+	createUniformBuffer(str.uniformBuffer, sizeof(UniformBufferObject), str.uniformBufferMemory);
 	handover.mvpBuffer = str.uniformBuffer;
 	handover.mvpSize = sizeof(UniformBufferObject);
 	handover.imageView = texture->imageView;

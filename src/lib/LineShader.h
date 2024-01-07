@@ -50,8 +50,8 @@ class LineSubShader;
 // and one for dynamic lines that change every frame
 class LineShader : public ShaderBase {
 public:
-	//LineSubShader globalLineSubShader;
-	std::vector<LineSubShader> lineSubShaders;
+	std::vector<LineSubShader> globalLineSubShaders;
+	std::vector<LineSubShader> perFrameLineSubShaders;
 
 	std::vector<VulkanResourceElement> vulkanResourceDefinition = {
 		{ VulkanResourceType::MVPBuffer },
@@ -245,11 +245,7 @@ class LineSubShader {
 
 public:
 	// name is used in shader debugging
-	void init(LineShader* parent, std::string debugName) {
-		lineShader = parent;
-		name = debugName;
-		Log("LineSubShader init: " << debugName.c_str() << std::endl);
-	}
+	void init(LineShader* parent, std::string debugName);
 	void setVertShaderModule(VkShaderModule sm) {
 		vertShaderModule = sm;
 	}
@@ -263,14 +259,13 @@ public:
 	void setVulkanResources(VulkanResources* vr) {
 		vulkanResources = vr;
 	}
-	bool initDone = false; // TODO hack: prevent mutliple init() for now...
-	bool commandBufferDone = false;
 
 	void initialUpload();
 
 	// all sections need: buffer allocation and recording draw commands.
 	// stage they are called at will be very different
-	void allocateCommandBuffer(ThreadResources& tr, VkCommandBuffer* cmdBuferPtr, const char* debugName);
+	void allocateCommandBuffer(ThreadResources& tr, VkCommandBuffer* cmdBufferPtr, const char* debugName);
+	void addRenderPassAndDrawCommands(ThreadResources& tr, VkCommandBuffer* cmdBufferPtr, VkBuffer vertexBuffer);
 
 	void createCommandBuffer(ThreadResources& tr);
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
@@ -301,5 +296,7 @@ private:
 	std::string name;
 	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;
+	ShadedPathEngine* engine = nullptr;
+	VkDevice* device = nullptr;
 };
 

@@ -147,10 +147,10 @@ public:
 
 	// create UniformBuffer. Size has to be provided by subclasses (no clean way to do it via inheritance or CRTP)
 	// buffer GPU memory is mapped to uniformBufferMemory for CPU access
-	void createUniformBuffer(ThreadResources& res, VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory);
+	void createUniformBuffer(VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory);
 
 	// create VertexBuffer. buffer GPU memory is mapped to uniformBufferMemory for CPU access
-	void createVertexBuffer(ThreadResources& res, VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory);
+	void createVertexBuffer(VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory);
 
 	// create render pass and framebuffer with respect to shader state
 	void createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState shaderState, VkRenderPass& renderPass, VkFramebuffer& frameBuffer, VkFramebuffer& frameBuffer2);
