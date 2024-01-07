@@ -12,7 +12,7 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	fragShaderModule = resources.createShaderModule("line.frag.spv");
 
 	// descriptor set layout
-	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);
+	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, 2);
 	resources.createPipelineLayout(&pipelineLayout);
 
 	int fl = engine.getFramesInFlight();
@@ -33,6 +33,7 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 		pf.setVertShaderModule(vertShaderModule);
 		pf.setFragShaderModule(fragShaderModule);
 		pf.setVulkanResources(&resources);
+		pf.addPerFrameResources();
 		perFrameLineSubShaders.push_back(pf);
 	}
 }
@@ -40,8 +41,10 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
 	LineSubShader& sub = globalLineSubShaders[tr.threadResourcesIndex];
-	//if (!globalLineSubShader.initDone)
-		sub.initSingle(tr, shaderState);
+	sub.initSingle(tr, shaderState);
+	LineSubShader& pf = perFrameLineSubShaders[tr.threadResourcesIndex];
+	pf.initSingle(tr, shaderState);
+
 }
 
 void LineShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
@@ -306,6 +309,13 @@ void LineSubShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	//createCommandBufferLineAdd(tr);
 }
 
+void LineSubShader::addPerFrameResources() {
+	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * LineShader::MAX_DYNAMIC_LINES;
+	lineShader->createVertexBuffer(vertexBufferAdd, bufferSize, vertexBufferAddMemory);
+	//createCommandBufferLineAdd(tr);
+
+}
+
 void LineSubShader::allocateCommandBuffer(ThreadResources& tr, VkCommandBuffer* cmdBuferPtr, const char* debugName)
 {
 	vulkanResources->updateDescriptorSets(tr);
@@ -407,5 +417,8 @@ void LineSubShader::destroy() {
 	//vkDestroyRenderPass(device, trl.renderPassAdd, nullptr);
 	vkDestroyBuffer(*device, uniformBuffer, nullptr);
 	vkFreeMemory(*device, uniformBufferMemory, nullptr);
-
+	if (vertexBufferAdd) {
+		vkDestroyBuffer(*device, vertexBufferAdd, nullptr);
+		vkFreeMemory(*device, vertexBufferAddMemory, nullptr);
+	}
 }

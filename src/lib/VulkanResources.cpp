@@ -44,7 +44,7 @@ void VulkanResources::createIndexBufferStatic(VkDeviceSize bufferSize, const voi
     this->engine->global.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, bufferSize, src, buffer, bufferMemory);
 }
 
-void VulkanResources::createDescriptorSetResources(VkDescriptorSetLayout& layout, VkDescriptorPool& pool)
+void VulkanResources::createDescriptorSetResources(VkDescriptorSetLayout& layout, VkDescriptorPool& pool, int poolMaxSetsFactor)
 {
     vector<VulkanResourceElement>& def = *resourceDefinition;
 
@@ -71,7 +71,7 @@ void VulkanResources::createDescriptorSetResources(VkDescriptorSetLayout& layout
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
     poolInfo.pPoolSizes = poolSizes.data();
-    poolInfo.maxSets = engine->getFramesInFlight(); // max calls to vkCreateDescriptorPool
+    poolInfo.maxSets = engine->getFramesInFlight() * poolMaxSetsFactor; // max calls to vkCreateDescriptorPool
     if (engine->isStereo()) {
         poolInfo.maxSets *= 2;
     }

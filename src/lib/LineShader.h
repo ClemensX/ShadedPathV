@@ -259,6 +259,8 @@ public:
 	void setVulkanResources(VulkanResources* vr) {
 		vulkanResources = vr;
 	}
+	// add resources needed for per frame added lines
+	void addPerFrameResources();
 
 	void initialUpload();
 
@@ -288,6 +290,9 @@ public:
 	VkBuffer uniformBuffer = nullptr;
 	// MVP buffer device memory
 	VkDeviceMemory uniformBufferMemory = nullptr;
+	// additional per frame resources
+	VkBuffer vertexBufferAdd = nullptr;
+	VkDeviceMemory vertexBufferAddMemory = nullptr;
 
 private:
 	LineShader* lineShader = nullptr;
