@@ -106,6 +106,8 @@ private:
 	// look for VulkanResourceType in resourceDefinition vector and return index of first occurence, 
 	// Error() if not found
 	size_t getResourceDefIndex(VulkanResourceType t);
+	// add resources for element af specific type.
+	// option to overide if more sets needed (e.g. 2x uniform buffers for LineShader)
 	void addResourcesForElement(VulkanResourceElement el);
 	void addThreadResourcesForElement(VulkanResourceElement d, VulkanHandoverResources& res);
 	// create resources for global texture descriptor set layout

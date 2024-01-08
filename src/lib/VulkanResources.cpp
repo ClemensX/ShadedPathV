@@ -108,7 +108,11 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         bindings.push_back(layoutBinding);
         poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         // https://community.khronos.org/t/vk-error-out-of-pool-memory-when-allocating-second-descriptor-sets/104304/3
-        poolSize.descriptorCount = 1 * engine->getFramesInFlight(); // TODO hack
+        int uniformBufferFactor = 1;
+#       if (defined(OVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT))
+        uniformBufferFactor = 2;
+#       endif
+        poolSize.descriptorCount = uniformBufferFactor * engine->getFramesInFlight(); // TODO hack
         poolSizes.push_back(poolSize);
         if (engine->isStereo()) {
             poolSizes.push_back(poolSize);
