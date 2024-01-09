@@ -15,6 +15,7 @@ void GameTime::init(LONGLONG gamedayFactor)
 {
 	this->gamedayFactor = (double)gamedayFactor;
 	now = chrono::steady_clock::now();
+	advanceTime();
 }
 
 void GameTime::advanceTime()

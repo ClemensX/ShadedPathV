@@ -39,8 +39,17 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 
 void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
+	// TODO remove hack
+	bool undoLast = false;
+	if (isLastShader()) {
+		undoLast = true;
+		setLastShader(false);
+	}
 	LineSubShader& sub = globalLineSubShaders[tr.threadResourcesIndex];
 	sub.initSingle(tr, shaderState);
+	if (undoLast) {
+		setLastShader(true);
+	}
 	LineSubShader& pf = perFrameLineSubShaders[tr.threadResourcesIndex];
 	pf.initSingle(tr, shaderState);
 	pf.addPerFrameResources(tr);
