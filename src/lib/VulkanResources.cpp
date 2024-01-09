@@ -110,6 +110,7 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         // https://community.khronos.org/t/vk-error-out-of-pool-memory-when-allocating-second-descriptor-sets/104304/3
         int uniformBufferFactor = 1;
 #       if (defined(OVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT))
+        Log("WARNING: OVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT used. Look into resource management!" << endl);
         uniformBufferFactor = 2;
 #       endif
         poolSize.descriptorCount = uniformBufferFactor * engine->getFramesInFlight(); // TODO hack

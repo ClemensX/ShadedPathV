@@ -120,9 +120,6 @@ public:
 
 	void createCommandBufferLineAdd(ThreadResources& tr);
 
-	// add lines just for this draw thread
-	void addLocalLines(std::vector<LineDef>& linesToAdd, ThreadResources& tr);
-
 	// clear line buffer, has to be called at begin of each frame
 	// NOT after adding last group of lines
 	void clearLocalLines(ThreadResources& tr);
@@ -179,14 +176,10 @@ private:
 	// util methods
 public:
 	// add lines for just one frame
-	void addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& tr) {
-
-	}
+	void addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& tr);
 
 	// prepare command buffer for added lines
-	void prepareAddLines(ThreadResources& tr) {
-
-	}
+	void prepareAddLines(ThreadResources& tr);
 
 	static void addCross(std::vector<LineDef>& lines, glm::vec3 pos, glm::vec4 color) {
 		static float oDistance = 5.0f;
@@ -239,7 +232,7 @@ class LineResourceManager {
 
 /*
  * LineSubShader includes everything for one shader invocation.
- * There will be 3 sub shaders: For fixed global lines, for global updated lines  and for each frame a local one
+ * There will be 3 sub shaders: For fixed global lines, for global updated lines and for each frame a local one
  */
 class LineSubShader {
 
@@ -260,7 +253,7 @@ public:
 		vulkanResources = vr;
 	}
 	// add resources needed for per frame added lines
-	void addPerFrameResources();
+	void addPerFrameResources(ThreadResources& tr);
 
 	void initialUpload();
 
@@ -269,10 +262,11 @@ public:
 	void allocateCommandBuffer(ThreadResources& tr, VkCommandBuffer* cmdBufferPtr, const char* debugName);
 	void addRenderPassAndDrawCommands(ThreadResources& tr, VkCommandBuffer* cmdBufferPtr, VkBuffer vertexBuffer);
 
-	void createCommandBuffer(ThreadResources& tr);
+	void createGlobalCommandBufferAndRenderPass(ThreadResources& tr);
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
 	// per frame update of UBO / MVP
 	void uploadToGPU(ThreadResources& tr, LineShader::UniformBufferObject& ubo);
+	void uploadToGPUAddedLines(ThreadResources& tr, LineShader::UniformBufferObject& ubo);
 
 	void destroy();
 
@@ -293,6 +287,8 @@ public:
 	// additional per frame resources
 	VkBuffer vertexBufferAdd = nullptr;
 	VkDeviceMemory vertexBufferAddMemory = nullptr;
+	VkCommandBuffer commandBufferAdd = nullptr;
+	std::vector<LineShader::Vertex> verticesAddLines;
 
 private:
 	LineShader* lineShader = nullptr;
