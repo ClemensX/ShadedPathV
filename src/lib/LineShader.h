@@ -13,41 +13,15 @@ struct LineDef {
 	glm::vec4 color;
 };
 
-//class LineShader;
-//struct LineShader::UniformBufferObject;
-//class LineThreadResources;
-
-
 // each execution needs one instance of ApplicationData
 struct LineShaderApplicationData {
 public:
 	std::vector<LineDef> lines;
 };
 
-//struct LineThreadResources : ShaderThreadResources {
-	//VkPipelineLayout pipelineLayout = nullptr;
-	//VkPipeline graphicsPipeline = nullptr;
-	//VkPipeline graphicsPipelineAdd = nullptr;
-	//VkCommandBuffer commandBuffer = nullptr;
-	//VkCommandBuffer commandBufferAdd = nullptr;
-	//VkCommandBuffer commandBufferUpdate = nullptr;
-	// vertex buffer for added lines
-	//VkBuffer vertexBufferAdd = nullptr;
-	// vertex buffer device memory
-	//VkDeviceMemory vertexBufferAddMemory = nullptr;
-	// MVP buffer
-	//VkBuffer uniformBuffer = nullptr;
-	//VkBuffer uniformBuffer2 = nullptr;
-	// MVP buffer device memory
-	//VkDeviceMemory uniformBufferMemory = nullptr;
-	//VkDeviceMemory uniformBufferMemory2 = nullptr;
-	//VkDescriptorSet descriptorSet = nullptr;
-	//VkDescriptorSet descriptorSet2 = nullptr;
-//};
-
+// forward
 class LineSubShader;
-// line shader draws lines, it creates 2 pipelines, one for fixed lines (uploaded at start)
-// and one for dynamic lines that change every frame
+
 class LineShader : public ShaderBase {
 public:
 	std::vector<LineSubShader> globalLineSubShaders;

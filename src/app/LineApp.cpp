@@ -32,7 +32,7 @@ void LineApp::run()
 
         engine.setFramesInFlight(2);
         engine.registerApp(this);
-        engine.setThreadModeSingle();
+        //engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("LineApp");
@@ -137,16 +137,43 @@ void LineApp::updatePerFrame(ThreadResources& tr)
         // start, end, color
         { glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
         { glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) }
+        { glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
+        { glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f ), glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
+        { glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
+        { glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) }
     };
     plus += 0.001f;
     vector<LineDef> lines;
     // add all intializer objects to vector:
     for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
+    increaseLineStack(lines);
     engine.shaders.lineShader.addOneTime(lines, tr);
 
     engine.shaders.lineShader.prepareAddLines(tr);
     engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
+}
+
+void LineApp::increaseLineStack(std::vector<LineDef>& lines)
+{
+    currentLineStackCount++;
+    auto col = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+    for (int i = 0; i < currentLineStackCount; i++) {
+        float fac = 0.001f * engine.getAspect() * i;
+        auto a1 = glm::vec3(-0.25f, fac, -0.25f);
+        auto a2 = glm::vec3( 0.25f, fac, -0.25f);
+        auto a3 = glm::vec3( 0.25f, fac,  0.25f);
+        auto a4 = glm::vec3(-0.25f, fac,  0.25f);
+        LineDef ld;
+        ld.color = col;
+        ld.start = a1; ld.end = a2;
+        lines.push_back(ld);
+        ld.start = a2; ld.end = a3;
+        lines.push_back(ld);
+        ld.start = a3; ld.end = a4;
+        lines.push_back(ld);
+        ld.start = a4; ld.end = a1;
+        lines.push_back(ld);
+    }
 }
 
 void LineApp::handleInput(InputState& inputState)

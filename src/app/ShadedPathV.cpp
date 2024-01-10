@@ -14,10 +14,10 @@ int main()
 {
     Log("ShadedPathV app\n");
     //SimpleApp app;
-    LineApp app;
+    LineApp app; // ok
     //DeviceCoordApp app;
     //gltfObjectsApp app;
-    //GeneratedTexturesApp app;
+    //GeneratedTexturesApp app; // ok
     //BillboardDemo app;
     //LandscapeDemo app;
     //LandscapeGenerator app;

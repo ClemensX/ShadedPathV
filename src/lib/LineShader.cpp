@@ -132,7 +132,7 @@ void LineShader::addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& t
 	if (linesToAdd.size() == 0)
 		return;
 	auto& vec = pf.verticesAddLines;
-	// handle fixed lines:
+	// handle added lines:
 	for (LineDef& line : linesToAdd) {
 		Vertex v1, v2;
 		v1.color = line.color;
@@ -426,7 +426,8 @@ void LineSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadReso
 		//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lineShader->pipelineLayout, 0, 1, &trl.descriptorSet2, 0, nullptr);
 	}
 
-	vkCmdDraw(commandBuffer, static_cast<uint32_t>(lineShader->lines.size() * 2), 1, 0, 0);
+	//vkCmdDraw(commandBuffer, static_cast<uint32_t>(lineShader->lines.size() * 2), 1, 0, 0);
+	vkCmdDraw(commandBuffer, static_cast<uint32_t>(verticesAddLines.size()), 1, 0, 0);
 }
 
 void LineSubShader::uploadToGPU(ThreadResources& tr, LineShader::UniformBufferObject& ubo) {

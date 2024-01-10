@@ -16,5 +16,10 @@ private:
     CameraPositioner_FirstPerson* positioner;
     InputState input;
     World world;
+
+    // implent square formed of lines
+    // it is increased on every call by one more square slightly above the others
+    void increaseLineStack(std::vector<LineDef>& lines);
+    int currentLineStackCount = 0;
 };
 
