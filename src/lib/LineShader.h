@@ -26,6 +26,7 @@ class LineShader : public ShaderBase {
 public:
 	std::vector<LineSubShader> globalLineSubShaders;
 	std::vector<LineSubShader> perFrameLineSubShaders;
+	std::vector<LineSubShader> globalUpdateLineSubShaders;
 
 	std::vector<VulkanResourceElement> vulkanResourceDefinition = {
 		{ VulkanResourceType::MVPBuffer },

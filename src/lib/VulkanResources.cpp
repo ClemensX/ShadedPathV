@@ -111,7 +111,7 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         int uniformBufferFactor = 1;
 #       if (defined(OVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT))
         Log("WARNING: OVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT used. Look into resource management!" << endl);
-        uniformBufferFactor = 2;
+        uniformBufferFactor = 3;
 #       endif
         poolSize.descriptorCount = uniformBufferFactor * engine->getFramesInFlight(); // TODO hack
         poolSizes.push_back(poolSize);

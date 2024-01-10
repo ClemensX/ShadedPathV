@@ -12,7 +12,7 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	fragShaderModule = resources.createShaderModule("line.frag.spv");
 
 	// descriptor set layout
-	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, 2);
+	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, 3);
 	resources.createPipelineLayout(&pipelineLayout);
 
 	int fl = engine.getFramesInFlight();
@@ -34,6 +34,14 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 		pf.setFragShaderModule(fragShaderModule);
 		pf.setVulkanResources(&resources);
 		perFrameLineSubShaders.push_back(pf);
+
+		// lines added permanently through global update thread
+		LineSubShader gu;
+		gu.init(this, "GlobalUpdateLineSubshader");
+		gu.setVertShaderModule(vertShaderModule);
+		gu.setFragShaderModule(fragShaderModule);
+		gu.setVulkanResources(&resources);
+		globalUpdateLineSubShaders.push_back(gu);
 	}
 }
 
@@ -47,6 +55,8 @@ void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	}
 	LineSubShader& sub = globalLineSubShaders[tr.threadResourcesIndex];
 	sub.initSingle(tr, shaderState);
+	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
+	ug.initSingle(tr, shaderState);
 	if (undoLast) {
 		setLastShader(true);
 	}
