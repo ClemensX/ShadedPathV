@@ -156,6 +156,12 @@ public:
 	// prepare command buffer for added lines
 	void prepareAddLines(ThreadResources& tr);
 
+	// add lines permanently via update thread
+	void addPermament(std::vector<LineDef>& linesToAdd, ThreadResources& tr);
+
+	// prepare command buffer for permanent lines
+	void preparePermamentLines(ThreadResources& tr);
+
 	static void addCross(std::vector<LineDef>& lines, glm::vec3 pos, glm::vec4 color) {
 		static float oDistance = 5.0f;
 		LineDef crossLines[] = {
@@ -196,7 +202,10 @@ public:
 		ShaderUpdateElement* getUpdateElement(size_t i) override {
 			return &updateArray[i];
 		}
-
+	public:
+		LineShaderUpdateElement updateElementA, updateElementB;
+		bool activeUpdateElementisA = true;
+		bool doUpdatePermament = true;
 };
 
 // manage all resources associated with ONE line drawing resource

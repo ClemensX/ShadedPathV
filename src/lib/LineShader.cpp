@@ -22,9 +22,7 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 		sub.init(this, "GlobalLineSubshader");
 		sub.setVertShaderModule(vertShaderModule);
 		sub.setFragShaderModule(fragShaderModule);
-		//sub.setResources(&globalLineThreadResources);
 		sub.setVulkanResources(&resources);
-		//sub.initSingle(shaderState);
 		globalLineSubShaders.push_back(sub);
 
 		// per frame lines 
@@ -142,6 +140,25 @@ void LineShader::addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& t
 	if (linesToAdd.size() == 0)
 		return;
 	auto& vec = pf.verticesAddLines;
+	// handle added lines:
+	for (LineDef& line : linesToAdd) {
+		Vertex v1, v2;
+		v1.color = line.color;
+		v1.pos = line.start;
+		v2.color = line.color;
+		v2.pos = line.end;
+		vec.push_back(v1);
+		vec.push_back(v2);
+	}
+}
+
+void LineShader::addPermament(std::vector<LineDef>& linesToAdd, ThreadResources& tr)
+{
+	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
+	//auto& lines = getInactiveAppDataSet(user)->oneTimeLines;
+	if (linesToAdd.size() == 0)
+		return;
+	auto& vec = ug.verticesAddLines;
 	// handle added lines:
 	for (LineDef& line : linesToAdd) {
 		Vertex v1, v2;

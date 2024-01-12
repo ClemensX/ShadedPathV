@@ -146,8 +146,15 @@ void LineApp::updatePerFrame(ThreadResources& tr)
     vector<LineDef> lines;
     // add all intializer objects to vector:
     for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
-    increaseLineStack(lines);
+    //increaseLineStack(lines);
     engine.shaders.lineShader.addOneTime(lines, tr);
+
+    if (engine.shaders.lineShader.doUpdatePermament) {
+        // global update initial content:
+        vector<LineDef> linesUpdate;
+        increaseLineStack(linesUpdate);
+        engine.shaders.lineShader.addPermament(linesUpdate, tr);
+    }
 
     engine.shaders.lineShader.prepareAddLines(tr);
     engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
