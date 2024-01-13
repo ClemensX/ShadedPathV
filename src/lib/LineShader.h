@@ -205,7 +205,7 @@ public:
 	public:
 		LineShaderUpdateElement updateElementA, updateElementB;
 		bool activeUpdateElementisA = true;
-		bool doUpdatePermament = true;
+		bool doUpdatePermament = false;
 };
 
 // manage all resources associated with ONE line drawing resource
@@ -272,7 +272,8 @@ public:
 	VkBuffer vertexBufferAdd = nullptr;
 	VkDeviceMemory vertexBufferAddMemory = nullptr;
 	VkCommandBuffer commandBufferAdd = nullptr;
-	std::vector<LineShader::Vertex> verticesAddLines;
+	std::vector<LineShader::Vertex> vertices;
+	size_t drawCount = 0; // set number of draw calls for this sub shader
 
 private:
 	LineShader* lineShader = nullptr;

@@ -106,6 +106,8 @@ void LineShader::createDescriptorSets(ThreadResources& tr)
 void LineShader::createCommandBuffer(ThreadResources& tr)
 {
 	LineSubShader& sub = globalLineSubShaders[tr.threadResourcesIndex];
+	sub.drawCount = lines.size() * 2;
+
 	sub.createGlobalCommandBufferAndRenderPass(tr);
 }
 
@@ -122,7 +124,7 @@ void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResourc
 void LineShader::clearLocalLines(ThreadResources& tr)
 {
 	LineSubShader& pf = perFrameLineSubShaders[tr.threadResourcesIndex];
-	pf.verticesAddLines.clear();
+	pf.vertices.clear();
 }
 
 void LineShader::addGlobalConst(vector<LineDef>& linesToAdd)
@@ -139,7 +141,7 @@ void LineShader::addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& t
 	//auto& lines = getInactiveAppDataSet(user)->oneTimeLines;
 	if (linesToAdd.size() == 0)
 		return;
-	auto& vec = pf.verticesAddLines;
+	auto& vec = pf.vertices;
 	// handle added lines:
 	for (LineDef& line : linesToAdd) {
 		Vertex v1, v2;
@@ -150,6 +152,7 @@ void LineShader::addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& t
 		vec.push_back(v1);
 		vec.push_back(v2);
 	}
+	pf.drawCount = pf.vertices.size();
 }
 
 void LineShader::addPermament(std::vector<LineDef>& linesToAdd, ThreadResources& tr)
@@ -158,7 +161,7 @@ void LineShader::addPermament(std::vector<LineDef>& linesToAdd, ThreadResources&
 	//auto& lines = getInactiveAppDataSet(user)->oneTimeLines;
 	if (linesToAdd.size() == 0)
 		return;
-	auto& vec = ug.verticesAddLines;
+	auto& vec = ug.vertices;
 	// handle added lines:
 	for (LineDef& line : linesToAdd) {
 		Vertex v1, v2;
@@ -169,6 +172,7 @@ void LineShader::addPermament(std::vector<LineDef>& linesToAdd, ThreadResources&
 		vec.push_back(v1);
 		vec.push_back(v2);
 	}
+	ug.drawCount = ug.vertices.size();
 }
 
 void LineShader::prepareAddLines(ThreadResources& tr)
@@ -454,7 +458,7 @@ void LineSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadReso
 	}
 
 	//vkCmdDraw(commandBuffer, static_cast<uint32_t>(lineShader->lines.size() * 2), 1, 0, 0);
-	vkCmdDraw(commandBuffer, static_cast<uint32_t>(verticesAddLines.size()), 1, 0, 0);
+	vkCmdDraw(commandBuffer, static_cast<uint32_t>(drawCount), 1, 0, 0);
 }
 
 void LineSubShader::uploadToGPU(ThreadResources& tr, LineShader::UniformBufferObject& ubo) {
@@ -480,14 +484,13 @@ void LineSubShader::uploadToGPUAddedLines(ThreadResources& tr, LineShader::Unifo
 	uploadToGPU(tr, ubo);
 	// copy added lines to GPU:
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * LineShader::MAX_DYNAMIC_LINES;
-	size_t numAddLines = verticesAddLines.size();
-	if (numAddLines > 0) {
-		if (numAddLines > LineShader::MAX_DYNAMIC_LINES) {
+	if (drawCount > 0) {
+		if (drawCount > LineShader::MAX_DYNAMIC_LINES) {
 			Error("LineShader added more dynamic lines than allowed max.");
 		}
-		size_t copy_size = verticesAddLines.size() * sizeof(LineShader::Vertex);
+		size_t copy_size = drawCount * sizeof(LineShader::Vertex);
 		vkMapMemory(device, vertexBufferAddMemory, 0, bufferSize, 0, &data);
-		memcpy(data, verticesAddLines.data(), copy_size);
+		memcpy(data, vertices.data(), copy_size);
 		vkUnmapMemory(device, vertexBufferAddMemory);
 	}
 }
