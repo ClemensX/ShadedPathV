@@ -160,7 +160,7 @@ public:
 	void addPermament(std::vector<LineDef>& linesToAdd, ThreadResources& tr);
 
 	// prepare command buffer for permanent lines
-	void preparePermamentLines(ThreadResources& tr);
+	void preparePermanentLines(ThreadResources& tr);
 
 	static void addCross(std::vector<LineDef>& lines, glm::vec3 pos, glm::vec4 color) {
 		static float oDistance = 5.0f;
@@ -205,7 +205,7 @@ public:
 	public:
 		LineShaderUpdateElement updateElementA, updateElementB;
 		bool activeUpdateElementisA = true;
-		bool doUpdatePermament = false;
+		bool doUpdatePermament = true;
 };
 
 // manage all resources associated with ONE line drawing resource

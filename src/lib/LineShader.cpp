@@ -159,6 +159,7 @@ void LineShader::addPermament(std::vector<LineDef>& linesToAdd, ThreadResources&
 {
 	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
 	//auto& lines = getInactiveAppDataSet(user)->oneTimeLines;
+	ug.vertices.clear();
 	if (linesToAdd.size() == 0)
 		return;
 	auto& vec = ug.vertices;
@@ -185,6 +186,13 @@ void LineShader::prepareAddLines(ThreadResources& tr)
 	}
 	LineSubShader& pf = perFrameLineSubShaders[tr.threadResourcesIndex];
 	pf.addRenderPassAndDrawCommands(tr, &pf.commandBufferAdd, pf.vertexBufferAdd);
+}
+
+void LineShader::preparePermanentLines(ThreadResources& tr)
+{
+	if (!enabled) return;
+	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
+	//ug.addRenderPassAndDrawCommands(tr, &ug.commandBufferAdd, ug.vertexBufferAdd);
 }
 
 void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
@@ -256,6 +264,9 @@ LineShader::~LineShader()
 		sub.destroy();
 	}
 	for (LineSubShader sub : perFrameLineSubShaders) {
+		sub.destroy();
+	}
+	for (LineSubShader sub : globalUpdateLineSubShaders) {
 		sub.destroy();
 	}
 	vkDestroyBuffer(device, vertexBuffer, nullptr);
@@ -498,7 +509,7 @@ void LineSubShader::uploadToGPUAddedLines(ThreadResources& tr, LineShader::Unifo
 void LineSubShader::destroy() {
 	vkDestroyPipeline(*device, graphicsPipeline, nullptr);
 	vkDestroyFramebuffer(*device, framebuffer, nullptr);
-	//vkDestroyFramebuffer(device, trl.framebufferAdd, nullptr);
+	//kDestroyFramebuffer(device, trl.framebufferAdd, nullptr);
 	vkDestroyRenderPass(*device, renderPass, nullptr);
 	//vkDestroyRenderPass(device, trl.renderPassAdd, nullptr);
 	vkDestroyBuffer(*device, uniformBuffer, nullptr);
