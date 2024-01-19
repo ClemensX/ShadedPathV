@@ -192,7 +192,25 @@ void LineShader::preparePermanentLines(ThreadResources& tr)
 {
 	if (!enabled) return;
 	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
+	// initiate global update with ug.vertices, then create render pass and draw command
+	LineShaderUpdateElement* el = getNextUpdateElement();
+	el->verticesAddr = &ug.vertices;
+	doGlobalUpdate(el);
 	//ug.addRenderPassAndDrawCommands(tr, &ug.commandBufferAdd, ug.vertexBufferAdd);
+	// TODO why is tr.renderPass already set?
+}
+
+void LineShader::doGlobalUpdate(LineShaderUpdateElement* el)
+{
+	// TODO free last gen resources
+	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * el->verticesAddr->size();
+	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, el->verticesAddr->data(), el->vertexBuffer, el->vertexBufferMemory);
+	Log("global update:  uploaded " << el->verticesAddr->size() << " vertices");
+}
+
+LineShader::LineShaderUpdateElement* LineShader::getNextUpdateElement()
+{
+	return &updateElementA;
 }
 
 void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {

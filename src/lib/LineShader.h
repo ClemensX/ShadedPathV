@@ -188,6 +188,9 @@ public:
 	private:
 		struct LineShaderUpdateElement : ShaderUpdateElement {
 			std::vector<LineDef>* linesToAdd;
+			std::vector<LineShader::Vertex>* verticesAddr = nullptr;
+			VkBuffer vertexBuffer = nullptr;
+			VkDeviceMemory vertexBufferMemory = nullptr;
 		};
 		std::array<LineShaderUpdateElement, 10> updateArray;
 	protected:
@@ -204,8 +207,11 @@ public:
 		}
 	public:
 		LineShaderUpdateElement updateElementA, updateElementB;
-		bool activeUpdateElementisA = true;
-		bool doUpdatePermament = true;
+		bool activeUpdateElementisA = true;		// distinguish beween set a and b
+		bool doUpdatePermament = true;			// switch in app code
+		bool permanentUpdateAvailable = false;	// actual resources need to be drawn
+		LineShaderUpdateElement* getNextUpdateElement();
+		void doGlobalUpdate(LineShaderUpdateElement* el);
 };
 
 // manage all resources associated with ONE line drawing resource
