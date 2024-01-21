@@ -113,8 +113,12 @@ void LineShader::createCommandBuffer(ThreadResources& tr)
 
 void LineShader::addCurrentCommandBuffer(ThreadResources& tr) {
 	tr.activeCommandBuffers.push_back(globalLineSubShaders[tr.threadResourcesIndex].commandBuffer);
+	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
+	LineShaderUpdateElement* el = getCurrentUpdateElement();
+	if (el != nullptr) {
+		tr.activeCommandBuffers.push_back(ug.commandBuffer); // TODO null on frame index 1
+	}
 	tr.activeCommandBuffers.push_back(perFrameLineSubShaders[tr.threadResourcesIndex].commandBuffer);
-
 };
 
 void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
@@ -195,22 +199,73 @@ void LineShader::preparePermanentLines(ThreadResources& tr)
 	// initiate global update with ug.vertices, then create render pass and draw command
 	LineShaderUpdateElement* el = getNextUpdateElement();
 	el->verticesAddr = &ug.vertices;
-	doGlobalUpdate(el);
+	doGlobalUpdate(el, ug, tr);
 	//ug.addRenderPassAndDrawCommands(tr, &ug.commandBufferAdd, ug.vertexBufferAdd);
 	// TODO why is tr.renderPass already set?
 }
 
-void LineShader::doGlobalUpdate(LineShaderUpdateElement* el)
+void LineShader::doGlobalUpdate(LineShaderUpdateElement* el, LineSubShader& ug, ThreadResources& tr)
 {
 	// TODO free last gen resources
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * el->verticesAddr->size();
 	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, el->verticesAddr->data(), el->vertexBuffer, el->vertexBufferMemory);
-	Log("global update:  uploaded " << el->verticesAddr->size() << " vertices");
+	Log("global update:  uploaded " << el->verticesAddr->size() << " vertices" << endl);
+	permanentUpdatePending = true;
+	el->active = true;
 }
+
+void LineSubShader::handlePermanentUpdates(LineSubShader& ug, ThreadResources& tr)
+{
+	// TODO check multi thraed stability
+	//Log("handle " << lineShader->permanentUpdatePending << endl);
+	if (lineShader->permanentUpdatePending) {
+		assert(lineShader->getCurrentUpdateElement() != nullptr);
+		// check if this thread still has to update
+		if (ug.handlePermanentUpdate) {
+			Log("thread " << tr.frameIndex << " should handle permanent update" << endl);
+			LineShader::LineShaderUpdateElement* el = lineShader->getCurrentUpdateElement();
+			if (ug.commandBuffer != nullptr) {
+				// remove old resources no longer in use
+				//assert(false); // not implemented
+			}
+			if (ug.commandBuffer == nullptr) {
+				ug.allocateCommandBuffer(tr, &ug.commandBufferAdd, "LINE PERMANENT COMMAND BUFFER");
+			}
+			ug.drawCount = el->verticesAddr->size();
+			ug.addRenderPassAndDrawCommands(tr, &ug.commandBufferAdd, el->vertexBuffer);
+			ug.handlePermanentUpdate = false;
+		}
+		// check if all threads have updated already
+		// do not run multi-threaded
+		bool finished = true;
+		for (int i = 0; i < engine->getFramesInFlight(); i++) {
+			LineSubShader& ug = lineShader->globalUpdateLineSubShaders[i];
+			if (ug.handlePermanentUpdate == true) {
+				finished = false;
+				break;
+			}
+		}
+		if (finished) {
+			Log("thread " << tr.frameIndex << " permanent update DONE" << endl);
+			lineShader->permanentUpdatePending = false;
+		} else {
+			Log("thread " << tr.frameIndex << " permanent update NOT finished" << endl);
+		}
+	}
+}
+
 
 LineShader::LineShaderUpdateElement* LineShader::getNextUpdateElement()
 {
 	return &updateElementA;
+}
+
+LineShader::LineShaderUpdateElement* LineShader::getCurrentUpdateElement()
+{
+	if (updateElementA.active) {
+		return &updateElementA;
+	}
+	return nullptr;
 }
 
 void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
@@ -219,6 +274,9 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 	sub.uploadToGPU(tr, ubo);
 	LineSubShader& pf = perFrameLineSubShaders[tr.threadResourcesIndex];
 	pf.uploadToGPUAddedLines(tr, ubo);
+	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
+	ug.uploadToGPU(tr, ubo);
+	ug.handlePermanentUpdates(ug, tr);
 }
 
 void LineShader::update(ShaderUpdateElement *el)

@@ -185,13 +185,14 @@ public:
 		lines.insert(lines.end(), crossLines, crossLines + std::size(crossLines));
 	}
 
+	struct LineShaderUpdateElement : ShaderUpdateElement {
+		std::vector<LineDef>* linesToAdd;
+		std::vector<LineShader::Vertex>* verticesAddr = nullptr;
+		VkBuffer vertexBuffer = nullptr;
+		VkDeviceMemory vertexBufferMemory = nullptr;
+		bool active = false;
+	};
 	private:
-		struct LineShaderUpdateElement : ShaderUpdateElement {
-			std::vector<LineDef>* linesToAdd;
-			std::vector<LineShader::Vertex>* verticesAddr = nullptr;
-			VkBuffer vertexBuffer = nullptr;
-			VkDeviceMemory vertexBufferMemory = nullptr;
-		};
 		std::array<LineShaderUpdateElement, 10> updateArray;
 	protected:
 		// global update method - guaranteed to be in sync mode: only 1 update at a time
@@ -210,8 +211,10 @@ public:
 		bool activeUpdateElementisA = true;		// distinguish beween set a and b
 		bool doUpdatePermament = true;			// switch in app code
 		bool permanentUpdateAvailable = false;	// actual resources need to be drawn
+		bool permanentUpdatePending = false;    // signal that not all threads have switched to new update set
 		LineShaderUpdateElement* getNextUpdateElement();
-		void doGlobalUpdate(LineShaderUpdateElement* el);
+		LineShaderUpdateElement* getCurrentUpdateElement();
+		void doGlobalUpdate(LineShaderUpdateElement* el, LineSubShader& ug, ThreadResources& tr);
 };
 
 // manage all resources associated with ONE line drawing resource
@@ -239,6 +242,7 @@ public:
 	//void setResources(LineThreadResources* resources) {
 	//	lineThreadResources = resources;
 	//}
+	void handlePermanentUpdates(LineSubShader& u, ThreadResources& tr);
 	void setVulkanResources(VulkanResources* vr) {
 		vulkanResources = vr;
 	}
@@ -280,6 +284,7 @@ public:
 	VkCommandBuffer commandBufferAdd = nullptr;
 	std::vector<LineShader::Vertex> vertices;
 	size_t drawCount = 0; // set number of draw calls for this sub shader
+	bool handlePermanentUpdate = true; // initially true, then set to false after switching to new permanent resources
 
 private:
 	LineShader* lineShader = nullptr;
