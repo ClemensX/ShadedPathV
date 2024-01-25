@@ -149,7 +149,7 @@ void LineApp::updatePerFrame(ThreadResources& tr)
     //increaseLineStack(lines);
     engine.shaders.lineShader.addOneTime(lines, tr);
 
-    if ((tr.frameNum+290) % 300 == 0 && engine.shaders.lineShader.doUpdatePermament) {
+    if ((tr.frameNum+9) % 10 == 0 && engine.shaders.lineShader.doUpdatePermament) {
         // global update initial content:
         vector<LineDef> linesUpdate;
         increaseLineStack(linesUpdate);

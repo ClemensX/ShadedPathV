@@ -34,7 +34,7 @@ void LandscapeGenerator::run()
         engine.setFramesInFlight(2);
         engine.registerApp(this);
         //engine.enableSound();
-        engine.setThreadModeSingle(); // TODO currently multi thred rendering is broken
+        engine.setThreadModeSingle(); // TODO currently multi thread rendering is broken
 
         // engine initialization
         engine.init("LandscapeGenerator");
@@ -100,7 +100,7 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
     old_seconds = seconds;
 
     // lines
-    engine.shaders.lineShader.clearLocalLines(tr);
+    //engine.shaders.lineShader.clearLocalLines(tr);
     {
         // thread protection needed
         std::unique_lock<std::mutex> lock(monitorMutex);
@@ -125,8 +125,10 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
             //vector<vec3> plist;
             //heightmap.getPoints(plist);
             //Log("num points: " << plist.size() << endl);
+            engine.shaders.lineShader.addPermament(lines, tr);
+            engine.shaders.lineShader.preparePermanentLines(tr);
         }
-        engine.shaders.lineShader.addOneTime(lines, tr);
+        //engine.shaders.lineShader.addOneTime(lines, tr);
         //engine.shaders.lineShader.handleUpdatedResources(tr);
     }
 
