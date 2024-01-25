@@ -191,6 +191,8 @@ public:
 		VkBuffer vertexBuffer = nullptr;
 		VkDeviceMemory vertexBufferMemory = nullptr;
 		bool active = false;
+		bool isFirstElement = false;
+		long activationFrameNum = -1; // higher value means newer generation
 	};
 	private:
 		std::array<LineShaderUpdateElement, 10> updateArray;

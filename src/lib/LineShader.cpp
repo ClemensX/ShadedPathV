@@ -15,6 +15,7 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, 3);
 	resources.createPipelineLayout(&pipelineLayout);
 
+	updateElementA.isFirstElement = true;
 	int fl = engine.getFramesInFlight();
 	for (int i = 0; i < fl; i++) {
 		// global fixed lines (one common vertex buffer)
@@ -200,11 +201,13 @@ void LineShader::preparePermanentLines(ThreadResources& tr)
 	
 	// initiate global update with ug.vertices, then create render pass and draw command
 	LineShaderUpdateElement* el = getNextUpdateElement();
+	if (el == nullptr) {
+		Log("ERROR: race condition - no more update slots for LineShader\n");
+		return;
+	}
 	reuseUpdateElement(el);
 	el->verticesAddr = &ug.vertices;
 	doGlobalUpdate(el, ug, tr);
-	//ug.addRenderPassAndDrawCommands(tr, &ug.commandBufferAdd, ug.vertexBufferAdd);
-	// TODO why is tr.renderPass already set?
 }
 
 void LineShader::reuseUpdateElement(LineShaderUpdateElement* el)
@@ -226,6 +229,7 @@ void LineShader::doGlobalUpdate(LineShaderUpdateElement* el, LineSubShader& ug, 
 	}
 	permanentUpdatePending = true;
 	el->active = true;
+	el->activationFrameNum = tr.frameNum;
 }
 
 void LineSubShader::handlePermanentUpdates(LineSubShader& ug, ThreadResources& tr)
@@ -236,8 +240,9 @@ void LineSubShader::handlePermanentUpdates(LineSubShader& ug, ThreadResources& t
 		assert(lineShader->getCurrentUpdateElement() != nullptr);
 		// check if this thread still has to update
 		if (ug.handlePermanentUpdate) {
-			Log("thread " << tr.frameIndex << " should handle permanent update" << endl);
 			LineShader::LineShaderUpdateElement* el = lineShader->getCurrentUpdateElement();
+			const char* elemName = el->isFirstElement ? "updateElementA" : "updateElementB";
+			Log("thread " << tr.frameIndex << " should handle permanent update for " << elemName << endl);
 			if (ug.commandBuffer != nullptr) {
 				// remove old resources no longer in use
 			}
@@ -261,6 +266,13 @@ void LineSubShader::handlePermanentUpdates(LineSubShader& ug, ThreadResources& t
 		if (finished) {
 			Log("thread " << tr.frameIndex << " permanent update DONE" << endl);
 			lineShader->permanentUpdatePending = false;
+			// try to free outdated update element
+			LineShader::LineShaderUpdateElement* a = &lineShader->updateElementA;
+			LineShader::LineShaderUpdateElement* b = &lineShader->updateElementB;
+			if (a->active && b->active) {
+				if (a->activationFrameNum > b->activationFrameNum) b->active = false;
+				else a->active = false;
+			}
 		} else {
 			Log("thread " << tr.frameIndex << " permanent update NOT finished" << endl);
 		}
@@ -270,13 +282,21 @@ void LineSubShader::handlePermanentUpdates(LineSubShader& ug, ThreadResources& t
 
 LineShader::LineShaderUpdateElement* LineShader::getNextUpdateElement()
 {
-	return &updateElementA;
+	if (!updateElementA.active)
+		return &updateElementA;
+	else if (!updateElementB.active)
+		return &updateElementB;
+	return nullptr;
 }
 
 LineShader::LineShaderUpdateElement* LineShader::getCurrentUpdateElement()
 {
-	if (updateElementA.active) {
+	if (updateElementA.active && updateElementB.active) {
+		return updateElementA.activationFrameNum > updateElementB.activationFrameNum ? &updateElementA : &updateElementB;
+	} else if (updateElementA.active) {
 		return &updateElementA;
+	} else if (updateElementB.active) {
+		return &updateElementB;
 	}
 	return nullptr;
 }
