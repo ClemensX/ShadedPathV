@@ -213,6 +213,8 @@ public:
 		bool permanentUpdateAvailable = false;	// actual resources need to be drawn
 		bool permanentUpdatePending = false;    // signal that not all threads have switched to new update set
 		LineShaderUpdateElement* getNextUpdateElement();
+		// free old resources:
+		void reuseUpdateElement(LineShaderUpdateElement* el);
 		LineShaderUpdateElement* getCurrentUpdateElement();
 		void doGlobalUpdate(LineShaderUpdateElement* el, LineSubShader& ug, ThreadResources& tr);
 };

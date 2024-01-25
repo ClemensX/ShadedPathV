@@ -196,12 +196,21 @@ void LineShader::preparePermanentLines(ThreadResources& tr)
 {
 	if (!enabled) return;
 	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
+	Log("preparePermanentLines: index " << tr.frameIndex << endl);
+	
 	// initiate global update with ug.vertices, then create render pass and draw command
 	LineShaderUpdateElement* el = getNextUpdateElement();
+	reuseUpdateElement(el);
 	el->verticesAddr = &ug.vertices;
 	doGlobalUpdate(el, ug, tr);
 	//ug.addRenderPassAndDrawCommands(tr, &ug.commandBufferAdd, ug.vertexBufferAdd);
 	// TODO why is tr.renderPass already set?
+}
+
+void LineShader::reuseUpdateElement(LineShaderUpdateElement* el)
+{
+	vkDestroyBuffer(device, el->vertexBuffer, nullptr);
+	vkFreeMemory(device, el->vertexBufferMemory, nullptr);
 }
 
 void LineShader::doGlobalUpdate(LineShaderUpdateElement* el, LineSubShader& ug, ThreadResources& tr)
@@ -209,7 +218,12 @@ void LineShader::doGlobalUpdate(LineShaderUpdateElement* el, LineSubShader& ug, 
 	// TODO free last gen resources
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * el->verticesAddr->size();
 	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, el->verticesAddr->data(), el->vertexBuffer, el->vertexBufferMemory);
-	Log("global update:  uploaded " << el->verticesAddr->size() << " vertices" << endl);
+	Log("doGlobalUpdate:  uploaded " << el->verticesAddr->size() << " vertices" << endl);
+	// first set update flag in sub shaders, then here:
+	for (int i = 0; i < engine->getFramesInFlight(); i++) {
+		LineSubShader& ug = globalUpdateLineSubShaders[i];
+		ug.handlePermanentUpdate = true;
+	}
 	permanentUpdatePending = true;
 	el->active = true;
 }
@@ -226,7 +240,6 @@ void LineSubShader::handlePermanentUpdates(LineSubShader& ug, ThreadResources& t
 			LineShader::LineShaderUpdateElement* el = lineShader->getCurrentUpdateElement();
 			if (ug.commandBuffer != nullptr) {
 				// remove old resources no longer in use
-				//assert(false); // not implemented
 			}
 			if (ug.commandBuffer == nullptr) {
 				ug.allocateCommandBuffer(tr, &ug.commandBufferAdd, "LINE PERMANENT COMMAND BUFFER");
@@ -336,6 +349,8 @@ LineShader::~LineShader()
 	//vkDestroyBuffer(device, vertexBuffer, nullptr);
 	//vkFreeMemory(device, vertexBufferMemory, nullptr);
 	//globalLineSubShader.destroy();
+	reuseUpdateElement(&updateElementA);
+	reuseUpdateElement(&updateElementB);
 	for (LineSubShader sub : globalLineSubShaders) {
 		sub.destroy();
 	}
