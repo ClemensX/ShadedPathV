@@ -29,6 +29,7 @@ class Shaders
 		// Initialize ShaderState and all shaders
 		Config& init();
 
+		void doGlobalUpdate();
 		void createCommandBuffers(ThreadResources& tr);
 		void gatherActiveCommandBuffers(ThreadResources& tr);
 
@@ -77,6 +78,9 @@ public:
 
 	// destroy all shader thread local resources
 	void destroyThreadResources(ThreadResources& tr);
+
+	// perform expensive updates in global update thread
+	void doGlobalUpdate();
 
 	// general methods
 	void queueSubmit(ThreadResources& tr);

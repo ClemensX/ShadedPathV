@@ -232,7 +232,7 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
             modeltransform = wo->mesh->baseTransform;
         }
         buf->model = modeltransform;
-        if (engine.isGlobalUpdateThread(tr)) {
+        if (engine.isDedicatedRenderUpdateThread(tr)) {
             engine.sound.Update(camera);
         }
     }

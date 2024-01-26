@@ -80,8 +80,8 @@ void ShadedPathEngine::prepareDrawing()
     if (!threadModeSingle) {
         startQueueSubmitThread();
         startRenderThreads();
-        startUpdateThread();
     }
+    startUpdateThread();
     //for (ThreadResources& tr : threadResources) {
     //    shaders.createCommandBufferBackBufferImageDump(tr);
     //}
@@ -300,16 +300,22 @@ void ShadedPathEngine::updateSingle(ShaderUpdateElement* el, ShadedPathEngine* e
 void ShadedPathEngine::runUpdateThread(ShadedPathEngine* engine_instance)
 {
     isUpdateThread = true;
-    LogCondF(LOG_QUEUE, "run global update thread" << endl);
+    LogCondF(LOG_QUEUE, "run shader update thread" << endl);
     while (engine_instance->isShutdown() == false) {
         // this is the only place with pop():
         optional<ShaderUpdateElement*> opt_el = engine_instance->shaderUpdateQueue.pop();
         if (!opt_el) {
             break;
         }
-        engine_instance->updateSingle(opt_el.value(), engine_instance);
+        engine_instance->doGlobalShaderUpdates();
+        //engine_instance->updateSingle(opt_el.value(), engine_instance);
     }
     LogCondF(LOG_QUEUE, "run shader update thread end" << endl);
+}
+
+void ShadedPathEngine::doGlobalShaderUpdates()
+{
+    shaders.doGlobalUpdate();
 }
 
 ShaderUpdateElement* ShadedPathEngine::selectLatestUpdate(ShaderUpdateElement* el)
@@ -356,10 +362,10 @@ int ShadedPathEngine::manageMultipleUpdateSlots(int slot, int next_slot) {
 
 void ShadedPathEngine::pushUpdate(ShaderUpdateElement* updateElement)
 {
-    if (threadModeSingle) {
-        shaderUpdateQueueSingle.push(updateElement);
-        return;
-    }
+    //if (threadModeSingle) {
+    //    shaderUpdateQueueSingle.push(updateElement);
+    //    return;
+    //}
     shaderUpdateQueue.push(updateElement);
 }
 
@@ -418,7 +424,7 @@ void ShadedPathEngine::startUpdateThread()
 
 
 
-bool ShadedPathEngine::isGlobalUpdateThread(ThreadResources& tr)
+bool ShadedPathEngine::isDedicatedRenderUpdateThread(ThreadResources& tr)
 {
     // checking for frame index == 0 should be ok for single and multi thread mode.
     return tr.frameIndex == 0;

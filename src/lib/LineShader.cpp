@@ -194,6 +194,16 @@ void LineShader::prepareAddLines(ThreadResources& tr)
 	pf.addRenderPassAndDrawCommands(tr, &pf.commandBufferAdd, pf.vertexBufferAdd);
 }
 
+void LineShader::assertUpdateThread() {
+	assert(engine->isUpdateThread);
+}
+
+void LineShader::doGlobalUpdate()
+{
+	assertUpdateThread();
+	Log("LineShader performing background update\n");
+}
+
 void LineShader::preparePermanentLines(ThreadResources& tr)
 {
 	if (!enabled) return;
@@ -207,6 +217,7 @@ void LineShader::preparePermanentLines(ThreadResources& tr)
 		return;
 	}
 	reuseUpdateElement(el);
+	triggerUpdateThread();
 	el->verticesAddr = &ug.vertices;
 	doGlobalUpdate(el, ug, tr);
 }
@@ -323,20 +334,25 @@ void LineShader::update(ShaderUpdateElement *el)
 	updateAndSwitch(u->linesToAdd, set);
 	Log("update line shader global end " << u->arrayIndex << " update num " << u->num << endl);
 }
+static ShaderUpdateElement fake;
 
-void LineShader::updateGlobal(std::vector<LineDef>& linesToAdd)
-{
-	//Log("LineShader update global start");
-	//engine->printUpdateArray(updateArray);
-	int i = (int)engine->reserveUpdateSlot(updateArray);
-	updateArray[i].shaderInstance = this; // TODO move elsewhere - to shader init?
-	updateArray[i].arrayIndex = i; // TODO move elsewhere - to shader init?
-	updateArray[i].linesToAdd = &linesToAdd;
-	//engine->shaderUpdateQueue.push(i);
-	engine->pushUpdate(&updateArray[i]);
-	//Log("LineShader update end         ");
-	//engine->printUpdateArray(updateArray);
+void LineShader::triggerUpdateThread() {
+	engine->pushUpdate(&fake);
 }
+
+//void LineShader::updateGlobal(std::vector<LineDef>& linesToAdd)
+//{
+//	//Log("LineShader update global start");
+//	//engine->printUpdateArray(updateArray);
+//	int i = (int)engine->reserveUpdateSlot(updateArray);
+//	updateArray[i].shaderInstance = this; // TODO move elsewhere - to shader init?
+//	updateArray[i].arrayIndex = i; // TODO move elsewhere - to shader init?
+//	updateArray[i].linesToAdd = &linesToAdd;
+//	//engine->shaderUpdateQueue.push(i);
+//	engine->pushUpdate(&updateArray[i]);
+//	//Log("LineShader update end         ");
+//	//engine->printUpdateArray(updateArray);
+//}
 
 void LineShader::updateAndSwitch(std::vector<LineDef>* linesToAdd, GlobalResourceSet set)
 {

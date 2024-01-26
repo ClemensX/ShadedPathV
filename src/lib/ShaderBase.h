@@ -110,7 +110,12 @@ public:
 	// finish shader initialization
 	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderSate) = 0;
 
-	// destry thread local shader resources
+	// lengthy background updates
+	virtual void doGlobalUpdate() {
+		// default implementation does nothing
+	}
+
+	// destroy thread local shader resources
 	virtual void destroyThreadResources(ThreadResources& tr) = 0;
 
 	// create command buffers. One time auto called before rendering starts.

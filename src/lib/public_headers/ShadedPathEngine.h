@@ -168,7 +168,8 @@ public:
     void drawFrame(ThreadResources& tr);
     // some things need to be done from only one thread (like sound updates).
     // Apps should check with this method during updatePerFrame()
-    bool isGlobalUpdateThread(ThreadResources& tr);
+    // should be replaced by global update thread later? // TODO
+    bool isDedicatedRenderUpdateThread(ThreadResources& tr);
 
     // poll events via presentation layer
     void pollEvents();
@@ -184,6 +185,8 @@ public:
     void shutdown();
     // Wait until engine threads have ended rendering.
     void waitUntilShutdown();
+    // call all shaders to do background updates
+    void doGlobalShaderUpdates();
 
     thread_local static bool isUpdateThread;
     GlobalRendering global;
@@ -249,6 +252,7 @@ private:
     static bool queueThreadFinished;
     void startRenderThreads();
     void startQueueSubmitThread();
+    // global update thread for shuffling data to GPU in the background
     void startUpdateThread();
     // start the processing thread in the background and return immediately. May only be called once
     static void runDrawFrame(ShadedPathEngine* engine_instance, ThreadResources* tr);

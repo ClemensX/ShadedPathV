@@ -82,11 +82,13 @@ public:
 	virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
 	virtual void destroyThreadResources(ThreadResources& tr) override;
 
+	virtual void doGlobalUpdate() override;
+
 	// add lines - they will never  be removed
 	void addGlobalConst(std::vector<LineDef>& linesToAdd);
-	// global update: initiate update of global line data 
+	// global update: initiate update of permanent line data in background
 	// might take several frames until effect is visible: old buffer will be used until new one is ready
-	void updateGlobal(std::vector<LineDef>& linesToAdd);
+	void triggerUpdateThread();
 	// initial upload of all added lines - only valid before first render
 	void initialUpload();
 
@@ -219,6 +221,7 @@ public:
 		void reuseUpdateElement(LineShaderUpdateElement* el);
 		LineShaderUpdateElement* getCurrentUpdateElement();
 		void doGlobalUpdate(LineShaderUpdateElement* el, LineSubShader& ug, ThreadResources& tr);
+		void assertUpdateThread();
 };
 
 // manage all resources associated with ONE line drawing resource
