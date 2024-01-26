@@ -185,6 +185,7 @@ public:
     // Wait until engine threads have ended rendering.
     void waitUntilShutdown();
 
+    thread_local static bool isUpdateThread;
     GlobalRendering global;
     Presentation presentation;
     Shaders shaders;

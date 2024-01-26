@@ -2,6 +2,8 @@
 
 using namespace std;
 
+thread_local bool ShadedPathEngine::isUpdateThread = false; // static
+
 void ShadedPathEngine::init(string appname)
 {
     this->appname = appname;
@@ -297,6 +299,7 @@ void ShadedPathEngine::updateSingle(ShaderUpdateElement* el, ShadedPathEngine* e
 
 void ShadedPathEngine::runUpdateThread(ShadedPathEngine* engine_instance)
 {
+    isUpdateThread = true;
     LogCondF(LOG_QUEUE, "run global update thread" << endl);
     while (engine_instance->isShutdown() == false) {
         // this is the only place with pop():

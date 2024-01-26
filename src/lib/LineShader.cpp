@@ -162,6 +162,7 @@ void LineShader::addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& t
 
 void LineShader::addPermament(std::vector<LineDef>& linesToAdd, ThreadResources& tr)
 {
+	assert(engine->isUpdateThread == false);
 	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
 	//auto& lines = getInactiveAppDataSet(user)->oneTimeLines;
 	ug.vertices.clear();

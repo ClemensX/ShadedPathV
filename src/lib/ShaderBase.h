@@ -29,7 +29,6 @@ class ShaderBase
 {
 public:
 	ShaderBase() {
-
 	};
 
 	// virtual methods each subclass has to provide
