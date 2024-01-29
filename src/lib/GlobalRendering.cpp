@@ -90,8 +90,9 @@ void GlobalRendering::initVulkanInstance()
     if (USE_PROFILE_DYN_RENDERING) {
         VpInstanceCreateInfo vpCreateInfo{};
         vpCreateInfo.pCreateInfo = &createInfo;
-        vpCreateInfo.pProfile = &profile;
-        vpCreateInfo.flags = VP_INSTANCE_CREATE_MERGE_EXTENSIONS_BIT;
+        vpCreateInfo.enabledFullProfileCount = 1;
+        vpCreateInfo.pEnabledFullProfiles = &profile;
+        vpCreateInfo.flags = VP_INSTANCE_CREATE_FLAG_BITS_MAX_ENUM;
 
         if (vpCreateInstance(&vpCreateInfo, nullptr, &vkInstance) != VK_SUCCESS) {
             Error("failed to create instance!");
@@ -464,8 +465,9 @@ void GlobalRendering::createLogicalDevice()
     if (USE_PROFILE_DYN_RENDERING) {
         VpDeviceCreateInfo vpCreateInfo{};
         vpCreateInfo.pCreateInfo = &createInfo;
-        vpCreateInfo.pProfile = &profile;
-        vpCreateInfo.flags = VP_DEVICE_CREATE_MERGE_EXTENSIONS_BIT;
+        vpCreateInfo.enabledFullProfileCount = 1;
+        vpCreateInfo.pEnabledFullProfiles = &profile;
+        vpCreateInfo.flags = VP_INSTANCE_CREATE_FLAG_BITS_MAX_ENUM;
 
         checkDeviceProfileSupport(vkInstance, physicalDevice);
         if (vpCreateDevice(physicalDevice, &vpCreateInfo, nullptr, &device) != VK_SUCCESS) {
