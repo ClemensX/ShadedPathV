@@ -92,11 +92,6 @@ public:
 	// initial upload of all added lines - only valid before first render
 	void initialUpload();
 
-	// check if we need to switch resources for next render run
-	void handleUpdatedResources(ThreadResources& tr);
-
-	void createCommandBufferLineAdd(ThreadResources& tr);
-
 	// clear line buffer, has to be called at begin of each frame
 	// NOT after adding last group of lines
 	void clearLocalLines(ThreadResources& tr);
@@ -196,20 +191,10 @@ public:
 		bool isFirstElement = false;
 		long activationFrameNum = -1; // higher value means newer generation
 	};
-	private:
-		std::array<LineShaderUpdateElement, 10> updateArray;
 	protected:
 		// global update method - guaranteed to be in sync mode: only 1 update at a time
 		// but render threads may still use old data!
 		void update(ShaderUpdateElement* el) override;
-		size_t getUpdateArraySize() override {
-			return updateArray.size();
-		}
-		// after global resource update each thread has to re-create command buffers and switch to new resource set
-		void switchGlobalThreadResources(ThreadResources& res);
-		ShaderUpdateElement* getUpdateElement(size_t i) override {
-			return &updateArray[i];
-		}
 	public:
 		LineShaderUpdateElement updateElementA, updateElementB;
 		bool activeUpdateElementisA = true;		// distinguish beween set a and b
@@ -222,12 +207,6 @@ public:
 		LineShaderUpdateElement* getCurrentUpdateElement();
 		void doGlobalUpdate(LineShaderUpdateElement* el, LineSubShader& ug, ThreadResources& tr);
 		void assertUpdateThread();
-};
-
-// manage all resources associated with ONE line drawing resource
-// we have: Global (fixed after init), Local (only valid for one draw), 1-2 Update (updated sometimes according to app needs)
-class LineResourceManager {
-
 };
 
 /*

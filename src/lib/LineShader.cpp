@@ -195,7 +195,7 @@ void LineShader::prepareAddLines(ThreadResources& tr)
 }
 
 void LineShader::assertUpdateThread() {
-	assert(engine->isUpdateThread);
+	assert(engine->isUpdateThread == true);
 }
 
 void LineShader::doGlobalUpdate()
@@ -217,9 +217,9 @@ void LineShader::preparePermanentLines(ThreadResources& tr)
 		return;
 	}
 	reuseUpdateElement(el);
-	triggerUpdateThread();
 	el->verticesAddr = &ug.vertices;
-	doGlobalUpdate(el, ug, tr);
+	triggerUpdateThread();
+	//doGlobalUpdate(el, ug, tr);
 }
 
 void LineShader::reuseUpdateElement(LineShaderUpdateElement* el)
@@ -230,6 +230,7 @@ void LineShader::reuseUpdateElement(LineShaderUpdateElement* el)
 
 void LineShader::doGlobalUpdate(LineShaderUpdateElement* el, LineSubShader& ug, ThreadResources& tr)
 {
+	assertUpdateThread();
 	// TODO free last gen resources
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * el->verticesAddr->size();
 	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, el->verticesAddr->data(), el->vertexBuffer, el->vertexBufferMemory);
@@ -340,20 +341,6 @@ void LineShader::triggerUpdateThread() {
 	engine->pushUpdate(&fake);
 }
 
-//void LineShader::updateGlobal(std::vector<LineDef>& linesToAdd)
-//{
-//	//Log("LineShader update global start");
-//	//engine->printUpdateArray(updateArray);
-//	int i = (int)engine->reserveUpdateSlot(updateArray);
-//	updateArray[i].shaderInstance = this; // TODO move elsewhere - to shader init?
-//	updateArray[i].arrayIndex = i; // TODO move elsewhere - to shader init?
-//	updateArray[i].linesToAdd = &linesToAdd;
-//	//engine->shaderUpdateQueue.push(i);
-//	engine->pushUpdate(&updateArray[i]);
-//	//Log("LineShader update end         ");
-//	//engine->printUpdateArray(updateArray);
-//}
-
 void LineShader::updateAndSwitch(std::vector<LineDef>* linesToAdd, GlobalResourceSet set)
 {
 	if (set == GlobalResourceSet::SET_A) {
@@ -369,23 +356,12 @@ void LineShader::resourceSwitch(GlobalResourceSet set)
 	else Error("not implemented");
 }
 
-void LineShader::handleUpdatedResources(ThreadResources& tr)
-{
-}
-
-void LineShader::switchGlobalThreadResources(ThreadResources& res)
-{
-}
-
 LineShader::~LineShader()
 {
 	Log("LineShader destructor\n");
 	if (!enabled) {
 		return;
 	}
-	//vkDestroyBuffer(device, vertexBuffer, nullptr);
-	//vkFreeMemory(device, vertexBufferMemory, nullptr);
-	//globalLineSubShader.destroy();
 	reuseUpdateElement(&updateElementA);
 	reuseUpdateElement(&updateElementB);
 	for (LineSubShader sub : globalLineSubShaders) {
