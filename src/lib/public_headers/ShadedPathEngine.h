@@ -147,6 +147,16 @@ public:
         threadModeSingle = true;
     };
 
+    // single queue mode is set automatically, if only one vulkan queue is available 
+    // on the device. Will cause severe perfomance penalties
+    void setSingleQueueMode() {
+        singleQueueMode = true;
+    }
+
+    bool isSingleQueueMode() {
+        return this->singleQueueMode;
+    }
+
     // applications have to set max number of used textures because we need to know
     // at shader creation time
     // default value is 5
@@ -236,6 +246,7 @@ private:
     bool stereoPresentation = false;
     bool meshShaderEnabled = false;
     bool soundEnabled = false;
+    bool singleQueueMode = false;
     // backbuffer size:
     VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);
     // check if backbuffer and window have same aspect - warning if not
@@ -246,6 +257,9 @@ private:
     RenderQueue queue;
     // we simply use indexes into the update array for handling resources
     ThreadsafeWaitingQueue<ShaderUpdateElement*> shaderUpdateQueue;
+    // for singleQueue we need yet another sync between update thread and main thread
+    SynchronizedDataConsumption<SingleQueueTransferInfo*> singleQueueSynchronization;
+
     // we need a separate update queue for threadModeSingle
     std::queue<ShaderUpdateElement*> shaderUpdateQueueSingle;
     void updateSingle(ShaderUpdateElement* el, ShadedPathEngine* engine_instance);

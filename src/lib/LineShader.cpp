@@ -115,7 +115,7 @@ void LineShader::createCommandBuffer(ThreadResources& tr)
 void LineShader::addCurrentCommandBuffer(ThreadResources& tr) {
 	tr.activeCommandBuffers.push_back(globalLineSubShaders[tr.threadResourcesIndex].commandBuffer);
 	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
-	LineShaderUpdateElement* el = getCurrentUpdateElement();
+	LineShaderUpdateElement* el = getActiveUpdateElement();
 	if (el != nullptr) {
 		tr.activeCommandBuffers.push_back(ug.commandBuffer); // TODO null on frame index 1
 	}
@@ -198,12 +198,6 @@ void LineShader::assertUpdateThread() {
 	assert(engine->isUpdateThread == true);
 }
 
-void LineShader::doGlobalUpdate()
-{
-	assertUpdateThread();
-	Log("LineShader performing background update\n");
-}
-
 void LineShader::preparePermanentLines(ThreadResources& tr)
 {
 	if (!enabled) return;
@@ -211,7 +205,7 @@ void LineShader::preparePermanentLines(ThreadResources& tr)
 	Log("preparePermanentLines: index " << tr.frameIndex << endl);
 	
 	// initiate global update with ug.vertices, then create render pass and draw command
-	LineShaderUpdateElement* el = getNextUpdateElement();
+	LineShaderUpdateElement* el = lockNextUpdateElement();
 	if (el == nullptr) {
 		Log("ERROR: race condition - no more update slots for LineShader\n");
 		return;
@@ -220,6 +214,25 @@ void LineShader::preparePermanentLines(ThreadResources& tr)
 	el->verticesAddr = &ug.vertices;
 	triggerUpdateThread();
 	//doGlobalUpdate(el, ug, tr);
+}
+
+void LineShader::doGlobalUpdate()
+{
+	assertUpdateThread();
+	Log("LineShader performing background update\n");
+	LineShaderUpdateElement* el = getCurrentlyWorkedOnUpdateElement();
+	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * el->verticesAddr->size();
+	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, el->verticesAddr->data(), el->vertexBuffer, el->vertexBufferMemory,
+		GlobalRendering::QueueSelector::TRANSFER, GlobalRendering::QUEUE_FLAG_PERMANENT_UPDATE);
+	Log("doGlobalUpdate:  uploaded " << el->verticesAddr->size() << " vertices" << endl);
+	// first set update flag in sub shaders, then here:
+	for (int i = 0; i < engine->getFramesInFlight(); i++) {
+		LineSubShader& ug = globalUpdateLineSubShaders[i];
+		ug.handlePermanentUpdate = true;
+	}
+	permanentUpdatePending = true;
+	el->active = true;
+	//el->activationFrameNum = tr.frameNum;
 }
 
 void LineShader::reuseUpdateElement(LineShaderUpdateElement* el)
@@ -250,10 +263,10 @@ void LineSubShader::handlePermanentUpdates(LineSubShader& ug, ThreadResources& t
 	// TODO check multi thraed stability
 	//Log("handle " << lineShader->permanentUpdatePending << endl);
 	if (lineShader->permanentUpdatePending) {
-		assert(lineShader->getCurrentUpdateElement() != nullptr);
+		assert(lineShader->getCurrentlyWorkedOnUpdateElement() != nullptr);
 		// check if this thread still has to update
 		if (ug.handlePermanentUpdate) {
-			LineShader::LineShaderUpdateElement* el = lineShader->getCurrentUpdateElement();
+			LineShader::LineShaderUpdateElement* el = lineShader->getCurrentlyWorkedOnUpdateElement();
 			const char* elemName = el->isFirstElement ? "updateElementA" : "updateElementB";
 			Log("thread " << tr.frameIndex << " should handle permanent update for " << elemName << endl);
 			if (ug.commandBuffer != nullptr) {
@@ -293,22 +306,32 @@ void LineSubShader::handlePermanentUpdates(LineSubShader& ug, ThreadResources& t
 }
 
 
-LineShader::LineShaderUpdateElement* LineShader::getNextUpdateElement()
+LineShader::LineShaderUpdateElement* LineShader::lockNextUpdateElement()
 {
-	if (!updateElementA.active)
-		return &updateElementA;
-	else if (!updateElementB.active)
-		return &updateElementB;
+	if (!updateElementA.active) {
+		currentlyWorkedOnUpdateElement = &updateElementA;
+		return currentlyWorkedOnUpdateElement;
+	} else if (!updateElementB.active) {
+		currentlyWorkedOnUpdateElement = &updateElementB;
+		return currentlyWorkedOnUpdateElement;
+	}
 	return nullptr;
 }
 
-LineShader::LineShaderUpdateElement* LineShader::getCurrentUpdateElement()
+LineShader::LineShaderUpdateElement* LineShader::getCurrentlyWorkedOnUpdateElement()
+{
+	return currentlyWorkedOnUpdateElement;
+}
+
+LineShader::LineShaderUpdateElement* LineShader::getActiveUpdateElement()
 {
 	if (updateElementA.active && updateElementB.active) {
 		return updateElementA.activationFrameNum > updateElementB.activationFrameNum ? &updateElementA : &updateElementB;
-	} else if (updateElementA.active) {
+	}
+	else if (updateElementA.active) {
 		return &updateElementA;
-	} else if (updateElementB.active) {
+	}
+	else if (updateElementB.active) {
 		return &updateElementB;
 	}
 	return nullptr;

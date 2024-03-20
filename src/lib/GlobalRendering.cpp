@@ -491,6 +491,12 @@ void GlobalRendering::createLogicalDevice()
     engine.util.debugNameObject((uint64_t)graphicsQueue, VK_OBJECT_TYPE_QUEUE, "MAIN GRAPHICS QUEUE");
     vkGetDeviceQueue(device, indices.transferFamily.value(), 0, &transferQueue);
     engine.util.debugNameObject((uint64_t)transferQueue, VK_OBJECT_TYPE_QUEUE, "TRANSFER QUEUE");
+    // we normally rely on 2 different queues for multithreading (mainly global updates and render threads)
+    // enable single queue rendering with a warning
+    if (graphicsQueue == transferQueue) {
+        engine.setSingleQueueMode();
+        Log("WARNING: Your device does only offer a single queue. Expect severe performance penalties\n");
+    }
     if (engine.presentation.enabled) {
         engine.presentation.createPresentQueue(indices.presentFamily.value());
     }
@@ -596,18 +602,22 @@ VkCommandBuffer GlobalRendering::beginSingleTimeCommands(bool sync, QueueSelecto
     return commandBuffer;
 }
 
-void GlobalRendering::endSingleTimeCommands(VkCommandBuffer commandBuffer, bool sync, QueueSelector queue) {
+void GlobalRendering::endSingleTimeCommands(VkCommandBuffer commandBuffer, bool sync, QueueSelector queue, uint64_t flags) {
     vkEndCommandBuffer(commandBuffer);
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
-    if (queue == QueueSelector::GRAPHICS) {
+    if (flags & QUEUE_FLAG_PERMANENT_UPDATE) {
+        Log("submit single command via graphics queue")
+    } else if (queue == QueueSelector::GRAPHICS) {
         vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
         vkQueueWaitIdle(graphicsQueue);
         vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
     } else if (queue == QueueSelector::TRANSFER) {
+        Log("subbi\n");
         vkQueueSubmit(transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
+        Log("subbi end\n");
         vkQueueWaitIdle(transferQueue);
         vkFreeCommandBuffers(device, commandPoolTransfer, 1, &commandBuffer);
     }
@@ -639,7 +649,7 @@ void GlobalRendering::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
 }
 
-void GlobalRendering::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, QueueSelector queue) {
+void GlobalRendering::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, QueueSelector queue, uint64_t flags) {
     auto commandBuffer = beginSingleTimeCommands(false, queue);
     VkBufferCopy copyRegion{};
     copyRegion.srcOffset = 0; // Optional
@@ -649,7 +659,8 @@ void GlobalRendering::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDevic
     endSingleTimeCommands(commandBuffer, false, queue);
 }
 
-void GlobalRendering::uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory, QueueSelector queue)
+void GlobalRendering::uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory,
+    QueueSelector queue, uint64_t flags)
 {
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;

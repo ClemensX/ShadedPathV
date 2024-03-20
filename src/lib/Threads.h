@@ -334,3 +334,83 @@ private:
 		queue.push(renderThreadNum);
 	}
 };
+
+// producer thread creates datatransfer data to be picked up by another thread
+// and wait until the other thread has completed working with the data
+template<typename T>
+class SynchronizedDataConsumption {
+	T data;
+	mutable std::mutex monitorMutex;
+	std::condition_variable condSignalConsumer;
+	std::condition_variable condSignalProducer;
+	bool in_shutdown = false;
+	bool logEnable = false;
+	std::string logName = "n/a";
+
+public:
+	SynchronizedDataConsumption(const SynchronizedDataConsumption<T>&) = delete;
+	SynchronizedDataConsumption& operator=(const SynchronizedDataConsumption<T>&) = delete;
+	// allow move() of a queue
+	SynchronizedDataConsumption(SynchronizedDataConsumption<T>&& other) {
+		std::unique_lock<std::mutex> lock(monitorMutex);
+		data = std::move(other.data);
+	}
+	// Create queue with logging info, waiting threads will be suspended every 3 seconds
+	// to check for shutdown mode
+	SynchronizedDataConsumption() = default;
+	virtual ~SynchronizedDataConsumption() {};
+
+	// set and enable logging info (to be called before any push/pop operation
+	void setLoggingInfo(bool enable, std::string name) {
+		std::unique_lock<std::mutex> lock(monitorMutex);
+		logEnable = enable;
+		logName = name;
+	}
+
+	// wait until item available, if nothing is returned queue is in shutdown
+	std::optional<T> pop() {
+		std::unique_lock<std::mutex> lock(monitorMutex);
+		while (data == nullptr) {
+			condSignalConsumer.wait_for(lock, std::chrono::milliseconds(3000));
+			if (data == nullptr) {
+				LogCondF(logEnable, logName + " timeout wait suspended\n");
+			}
+			else {
+				LogCondF(logEnable, logName + " pop\n");
+			}
+			if (in_shutdown) {
+				LogCondF(LOG_QUEUE, "RenderQueue shutdown in pop\n");
+				condSignalConsumer.notify_all();
+				return std::nullopt;
+			}
+		}
+		assert(data != nullptr);
+		condSignalConsumer.notify_one();
+		return data;
+	}
+
+	// push item and notify one waiting thread
+	void push(const T& item) {
+		std::unique_lock<std::mutex> lock(monitorMutex);
+		if (in_shutdown) {
+			//throw "RenderQueue shutdown in push";
+			LogCondF(logEnable, logName + " shutdown in push\n");
+			return;
+		}
+		data = item;
+		LogCondF(logEnable, logName + " length 1" << std::endl);
+		condSignalConsumer.notify_one();
+	}
+
+	size_t size() {
+		std::unique_lock<std::mutex> lock(monitorMutex);
+		return data == nullptr ? 0 : 1;
+	}
+
+	void shutdown() {
+		std::unique_lock<std::mutex> lock(monitorMutex);
+		in_shutdown = true;
+		condSignalConsumer.notify_all();
+	}
+};
+

@@ -201,12 +201,20 @@ public:
 		bool doUpdatePermament = true;			// switch in app code
 		bool permanentUpdateAvailable = false;	// actual resources need to be drawn
 		bool permanentUpdatePending = false;    // signal that not all threads have switched to new update set
-		LineShaderUpdateElement* getNextUpdateElement();
+		// render thread requests an update element. After that this update element is the one currently worked on
+		// and returned by getCurrentUpdateElement()
+		LineShaderUpdateElement* lockNextUpdateElement();
 		// free old resources:
 		void reuseUpdateElement(LineShaderUpdateElement* el);
-		LineShaderUpdateElement* getCurrentUpdateElement();
+		// get active update element. Only one element can be active at any given time
+		LineShaderUpdateElement* getActiveUpdateElement();
+
+		// get update element currently worked on, this is fixed until all render threads have adapted it
+		LineShaderUpdateElement* getCurrentlyWorkedOnUpdateElement();
 		void doGlobalUpdate(LineShaderUpdateElement* el, LineSubShader& ug, ThreadResources& tr);
 		void assertUpdateThread();
+	private:
+		std::atomic<LineShaderUpdateElement*> currentlyWorkedOnUpdateElement = nullptr;
 };
 
 /*
