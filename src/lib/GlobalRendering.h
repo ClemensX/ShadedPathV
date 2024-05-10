@@ -157,6 +157,18 @@ public:
 	};
 	static std::string getVulkanAPIString();
 
+	// AI method to return current time as UTC string
+    std::string getCurrentTimeUTCString() {
+        // Get the current time
+        std::time_t currentTime = std::time(nullptr);
+
+        // Convert the current time to UTC string
+        std::tm* utcTime = std::gmtime(&currentTime);
+        char buffer[80];
+        std::strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", utcTime);
+
+        return std::string(buffer);
+    }
 private:
 	std::vector<const char*> deviceExtensions = {
 		//VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME

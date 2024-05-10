@@ -92,6 +92,12 @@ public:
     void debugNameObjectShaderModule(VkShaderModule m, const char* name) {
         debugNameObject((uint64_t)m, VK_OBJECT_TYPE_SHADER_MODULE, name);
     }
+	static std::wstring string2wstring(const std::string& s) {
+        std::wstringstream wss;
+        wss << s.c_str();
+        std::wstring wstr = wss.str();
+		return wstr;
+    }
 
 private:
     void initializeDebugFunctionPointers();

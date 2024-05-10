@@ -237,6 +237,7 @@ void LineShader::doGlobalUpdate()
 
 void LineShader::reuseUpdateElement(LineShaderUpdateElement* el)
 {
+	Log("reuseUpdateElement:  destroy buffer " << hex << el->vertexBuffer << endl);
 	vkDestroyBuffer(device, el->vertexBuffer, nullptr);
 	vkFreeMemory(device, el->vertexBufferMemory, nullptr);
 }

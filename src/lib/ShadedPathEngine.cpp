@@ -382,11 +382,8 @@ void ShadedPathEngine::startRenderThreads()
     //pipelineStartTime = chrono::high_resolution_clock::now();
     for (int i = 0; i < framesInFlight; i++) {
         auto* tr = &threadResources[i];
-        void* native_handle = threads.add_t(runDrawFrame, this, tr);
-        wstring mod_name = wstring(L"render_thread").append(L"_").append(to_wstring(i));
-#if defined(_WIN64)
-        SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
-#endif
+        std::string name = "render_thread_" + std::to_string(i);
+        threads.addThread(ThreadCategory::Draw, name, runDrawFrame, this, tr);
     }
 }
 
@@ -396,16 +393,8 @@ void ShadedPathEngine::startQueueSubmitThread()
         Error("cannot start update thread: pipeline not initialized\n");
         return;
     }
-    //if (updateCallback == nullptr) {
-    //    Error(L"cannot start update thread: no update consumer specified\n");
-    //    return;
-    //}
     // one queue submit thread for all threads:
-    void* native_handle = threads.add_t(runQueueSubmit, this);
-    wstring mod_name = wstring(L"queue_submit");//.append(L"_").append(to_wstring(i));
-#if defined(_WIN64)
-    SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
-#endif
+    threads.addThread(ThreadCategory::DrawQueueSubmit, "queue_submit", runQueueSubmit, this);
 }
 
 void ShadedPathEngine::startUpdateThread()
@@ -414,11 +403,7 @@ void ShadedPathEngine::startUpdateThread()
         Error("cannot start update thread: pipeline not initialized\n");
         return;
     }
-    void* native_handle = threads.add_t(runUpdateThread, this);
-    wstring mod_name = wstring(L"global_update");//.append(L"_").append(to_wstring(i));
-#if defined(_WIN64)
-    SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
-#endif
+    threads.addThread(ThreadCategory::GlobalUpdate, "global_update", runUpdateThread, this);
     shaderUpdateQueueInfo.threadRunning = true;
 }
 

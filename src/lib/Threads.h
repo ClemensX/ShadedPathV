@@ -6,18 +6,31 @@
 enum class GlobalResourceSet;
 class ShaderBase;
 
- // currently size() is not guarded against xapp->getMaxThreadCount(), but fails on using comand vectors if index too high
+enum class ThreadCategory {
+	// Drawing thread
+	Draw,
+	// global update thread
+	GlobalUpdate,
+	// submitting draw commands
+	DrawQueueSubmit
+};
+
+// currently size() is not guarded against xapp->getMaxThreadCount(), but fails on using comand vectors if index too high
 class ThreadGroup {
 public:
 	ThreadGroup() = default;
 	ThreadGroup(const ThreadGroup&) = delete;
 	ThreadGroup& operator=(const ThreadGroup&) = delete;
 
-	// store and start Thread
+	// method to call add_t () with ThreadCategory and name of thread
 	template <class Fn, class... Args>
-	void* add_t(Fn&& F, Args&&... A) {
-		threads.emplace_back(std::thread(F, A...));
-		return threads.back().native_handle();
+	void* addThread(ThreadCategory category, const std::string& name, Fn&& F, Args&&... A) {
+		void* native_handle = add_t(F, A...);
+		std::wstring mod_name = Util::string2wstring(name);
+#if defined(_WIN64)
+		SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
+#endif
+		return native_handle;
 	}
 
 	// wait for all threads to finish
@@ -35,6 +48,13 @@ public:
 
 	std::size_t size() const { return threads.size(); }
 private:
+	// store and start Thread
+	template <class Fn, class... Args>
+	void* add_t(Fn&& F, Args&&... A) {
+		threads.emplace_back(std::thread(F, A...));
+		return threads.back().native_handle();
+	}
+
 	std::vector<std::thread> threads;
 };
 
@@ -48,6 +68,8 @@ public:
 #endif
 		return osid;
 	}
+	std::string threadName;
+
 };
 
 /*enum FrameState { Free, Drawing, Executing };

@@ -4,7 +4,7 @@
 #define LOGFILE true
 // set to true for logging render queue operations
 // submit queue logging
-#define LOG_QUEUE false
+#define LOG_QUEUE true
 // render thread continuation logging:
 #define LOG_RENDER_CONTINUATION false
 
