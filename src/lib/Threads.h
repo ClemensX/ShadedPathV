@@ -15,6 +15,21 @@ enum class ThreadCategory {
 	DrawQueueSubmit
 };
 
+class ThreadInfo {
+public:
+	static DWORD thread_osid() {
+#if defined(_WIN64)
+		DWORD osid = GetCurrentThreadId();
+#else
+		DWORD osid = std::hash<std::thread::id>()(std::this_thread::get_id());
+#endif
+		return osid;
+	}
+	std::string name;
+	std::thread thread;
+	std::thread::id id;
+};
+
 // currently size() is not guarded against xapp->getMaxThreadCount(), but fails on using comand vectors if index too high
 class ThreadGroup {
 public:
@@ -25,9 +40,16 @@ public:
 	// method to call add_t () with ThreadCategory and name of thread
 	template <class Fn, class... Args>
 	void* addThread(ThreadCategory category, const std::string& name, Fn&& F, Args&&... A) {
-		void* native_handle = add_t(F, A...);
-		std::wstring mod_name = Util::string2wstring(name);
+		ThreadInfo info;
+		info.name = name;
+		info.thread = std::thread([this, &info, func = std::forward<Fn>(F), A...]() mutable {
+			info.id = std::this_thread::get_id();
+			func(std::forward<Args>(A)...);
+			});
+		threads.push_back(std::move(info));
+		auto native_handle = threads.back().thread.native_handle();
 #if defined(_WIN64)
+		std::wstring mod_name = Util::string2wstring(name);
 		SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
 #endif
 		return native_handle;
@@ -36,8 +58,8 @@ public:
 	// wait for all threads to finish
 	void join_all() {
 		for (auto& t : threads) {
-			if (t.joinable()) {
-				t.join();
+			if (t.thread.joinable()) {
+				t.thread.join();
 			}
 		}
 	}
@@ -47,29 +69,9 @@ public:
 	}
 
 	std::size_t size() const { return threads.size(); }
+
 private:
-	// store and start Thread
-	template <class Fn, class... Args>
-	void* add_t(Fn&& F, Args&&... A) {
-		threads.emplace_back(std::thread(F, A...));
-		return threads.back().native_handle();
-	}
-
-	std::vector<std::thread> threads;
-};
-
-class ThreadInfo {
-public:
-	static DWORD thread_osid() {
-#if defined(_WIN64)
-		DWORD osid = GetCurrentThreadId();
-#else
-        DWORD osid = std::hash<std::thread::id>()(std::this_thread::get_id());
-#endif
-		return osid;
-	}
-	std::string threadName;
-
+	std::vector<ThreadInfo> threads;
 };
 
 /*enum FrameState { Free, Drawing, Executing };
