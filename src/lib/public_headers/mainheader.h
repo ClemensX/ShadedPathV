@@ -31,6 +31,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <string>
 #include <vector>
 #include <optional>
 #include <set>
@@ -128,16 +129,17 @@ inline void LogFile(const char* s) {
 	out.close();
 }
 
-
 #if defined(DEBUG) | defined(_DEBUG)
 #define LogCond(y,x) if(y){Log(x)}
 #if defined(_WIN64)
 #define Log(x)\
 {\
-    std::wstringstream s1764;  s1764 << x; \
-    OutputDebugString(s1764.str().c_str()); \
-    std::stringstream s1765; s1765 << x; \
-    LogFile(s1765.str().c_str()); \
+    std::stringstream s1768;  s1768 << x; \
+    std::string str = s1768.str(); \
+    std::wstring wstr(str.begin(), str.end()); \
+    std::wstringstream wss(wstr); \
+    OutputDebugString(wss.str().c_str()); \
+    LogFile(str.c_str()); \
 }
 #elif defined(__APPLE__)
 #define Log(x)\

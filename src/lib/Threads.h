@@ -28,9 +28,27 @@ public:
 	std::string name;
 	std::thread thread;
 	std::thread::id id;
+	ThreadCategory category;
+
+	static std::string to_string(ThreadCategory category) {
+		switch (category) {
+		case ThreadCategory::Draw:
+			return "Draw";
+		case ThreadCategory::GlobalUpdate:
+			return "GlobalUpdate";
+		case ThreadCategory::DrawQueueSubmit:
+			return "DrawQueueSubmit";
+		default:
+			return "Unknown";
+		}
+	}
+
+	friend std::ostream& operator<<(std::ostream& os, const ThreadInfo& info) {
+		return os << "ThreadInfo: " << info.name.c_str() << " id: " << info.id << " category: " << to_string(info.category).c_str();
+	}
+
 };
 
-// currently size() is not guarded against xapp->getMaxThreadCount(), but fails on using comand vectors if index too high
 class ThreadGroup {
 public:
 	ThreadGroup() = default;
@@ -42,11 +60,12 @@ public:
 	void* addThread(ThreadCategory category, const std::string& name, Fn&& F, Args&&... A) {
 		ThreadInfo info;
 		info.name = name;
+		info.category = category;
 		info.thread = std::thread([this, &info, func = std::forward<Fn>(F), A...]() mutable {
-			info.id = std::this_thread::get_id();
 			func(std::forward<Args>(A)...);
 			});
 		threads.push_back(std::move(info));
+		threads.back().id = threads.back().thread.get_id();
 		auto native_handle = threads.back().thread.native_handle();
 #if defined(_WIN64)
 		std::wstring mod_name = Util::string2wstring(name);
@@ -54,6 +73,24 @@ public:
 #endif
 		return native_handle;
 	}
+
+	// find current thread in group and return reference to ThreadInfo
+	ThreadInfo& current_thread() {
+		auto id = std::this_thread::get_id();
+		for (auto& t : threads) {
+			if (t.id == id) {
+				return t;
+			}
+		}
+		throw std::runtime_error("current_thread() not found");
+	}
+
+	// log current thread info
+	void log_current_thread() {
+		auto& t = current_thread();
+		Log(t << std::endl);
+	}
+
 
 	// wait for all threads to finish
 	void join_all() {

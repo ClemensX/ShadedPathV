@@ -114,6 +114,7 @@ void ShadedPathEngine::drawFrame(ThreadResources& tr)
     tr.frameNum = getNextFrameNumber();
     assert(oldNum < tr.frameNum);
     // wait for fence signal
+    threads.log_current_thread();
     LogCondF(LOG_QUEUE, "wait drawFrame() present fence image index " << tr.frameIndex << endl);
     LogCondF(LOG_FENCE, "render thread wait present fence " << hex << ThreadInfo::thread_osid() << endl);
     vkWaitForFences(global.device, 1, &tr.presentFence, VK_TRUE, UINT64_MAX);
