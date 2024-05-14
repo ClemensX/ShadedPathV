@@ -104,7 +104,7 @@ void gltfObjectsApp::init() {
     LineShader::addZeroCross(lines);
     //LineShader::addCross(lines, vec3(1.0f, 1.0f, 1.0f), vec4(1.0f, 1.0f, 0.0f, 1.0f));
 
-    engine.shaders.lineShader.addGlobalConst(lines);
+    engine.shaders.lineShader.addFixedGlobalLines(lines);
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
@@ -120,7 +120,7 @@ void gltfObjectsApp::init() {
     engine.shaders.cubeShader.setFarPlane(2000.0f);
 
 
-    engine.shaders.lineShader.initialUpload();
+    //engine.shaders.lineShader.initialUpload();
     engine.shaders.pbrShader.initialUpload();
     // load and play music
     engine.sound.openSoundFile("power.ogg", "BACKGROUND_MUSIC", true);

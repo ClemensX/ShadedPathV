@@ -149,7 +149,7 @@ void BillboardDemo::init() {
     // Grid with 1m squares, floor on -10m, ceiling on 372m
     Grid* grid = world.createWorldGrid(1.0f, 0.0f);
     //engine.shaders.lineShader.add(grid->lines);
-    engine.shaders.lineShader.addGlobalConst(lines);
+    engine.shaders.lineShader.addFixedGlobalLines(lines);
 
     // select texture by uncommenting:
     engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
@@ -159,7 +159,7 @@ void BillboardDemo::init() {
     engine.shaders.cubeShader.setFarPlane(1.0f); // cube around center
     engine.shaders.cubeShader.setSkybox("2dTextureCube");
 
-    engine.shaders.lineShader.initialUpload();
+    //engine.shaders.lineShader.initialUpload();
     //engine.shaders.pbrShader.initialUpload();
     //engine.shaders.cubeShader.initialUpload();
     engine.shaders.billboardShader.initialUpload();

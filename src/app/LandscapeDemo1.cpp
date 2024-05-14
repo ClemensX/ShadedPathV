@@ -166,14 +166,14 @@ void LandscapeDemo::init() {
     //vector<vec3> plist;
     //heightmap.getPoints(plist);
     //Log("num points: " << plist.size() << endl);
-    engine.shaders.lineShader.addGlobalConst(lines);
+    engine.shaders.lineShader.addFixedGlobalLines(lines);
 
     // select texture by uncommenting:
     engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
     engine.shaders.cubeShader.setFarPlane(1.0f); // cube around center
     engine.shaders.cubeShader.setSkybox("2dTextureCube");
 
-    engine.shaders.lineShader.initialUpload();
+    //engine.shaders.lineShader.initialUpload();
     //engine.shaders.pbrShader.initialUpload();
     //engine.shaders.cubeShader.initialUpload();
     engine.shaders.billboardShader.initialUpload();

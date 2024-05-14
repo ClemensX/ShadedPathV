@@ -89,15 +89,15 @@ void SimpleApp::init() {
     LineShader::addZeroCross(lines);
     LineShader::addCross(lines, vec3(1.0f, 1.0f, 1.0f), vec4(1.0f, 1.0f, 0.0f, 1.0f));
 
-    engine.shaders.lineShader.addGlobalConst(lines);
+    engine.shaders.lineShader.addFixedGlobalLines(lines);
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     // Grid with 1m squares, floor on -10m, ceiling on 372m
     Grid *grid = world.createWorldGrid(1.0f, -10.0f);
-    engine.shaders.lineShader.addGlobalConst(grid->lines);
+    engine.shaders.lineShader.addFixedGlobalLines(grid->lines);
 
-    engine.shaders.lineShader.initialUpload();
+    //engine.shaders.lineShader.initialUpload();
 }
 
 void SimpleApp::drawFrame(ThreadResources& tr) {

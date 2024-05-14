@@ -85,16 +85,16 @@ void LineApp::init() {
 
     // add all intializer objects to vector:
     for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
-    LineShader::addZeroCross(lines);
+    //LineShader::addZeroCross(lines);
     //LineShader::addCross(lines, vec3(1.0f, 1.0f, 1.0f), vec4(1.0f, 1.0f, 0.0f, 1.0f));
 
-    engine.shaders.lineShader.addGlobalConst(lines);
+    engine.shaders.lineShader.addFixedGlobalLines(lines);
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     // Grid with 1m squares, floor on -10m, ceiling on 372m
 
-    engine.shaders.lineShader.initialUpload();
+	engine.shaders.lineShader.uploadFixedGlobalLines();
 }
 
 void LineApp::drawFrame(ThreadResources& tr) {
@@ -148,16 +148,17 @@ void LineApp::updatePerFrame(ThreadResources& tr)
     for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
     //increaseLineStack(lines);
     engine.shaders.lineShader.addOneTime(lines, tr);
-
-    if ((tr.frameNum+9) % 10 == 0 && engine.shaders.lineShader.doUpdatePermament) {
-        // global update initial content:
-        vector<LineDef> linesUpdate;
-        increaseLineStack(linesUpdate);
-        engine.shaders.lineShader.addPermament(linesUpdate, tr);
-        engine.shaders.lineShader.preparePermanentLines(tr);
-    }
-
     engine.shaders.lineShader.prepareAddLines(tr);
+
+    //if ((tr.frameNum+9) % 10 == 0 && engine.shaders.lineShader.doUpdatePermament) {
+    //    // global update initial content:
+    //    vector<LineDef> linesUpdate;
+    //    increaseLineStack(linesUpdate);
+    //    engine.shaders.lineShader.addPermament(linesUpdate, tr);
+    //    engine.shaders.lineShader.preparePermanentLines(tr);
+    //}
+
+    //engine.shaders.lineShader.prepareAddLines(tr);
     engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
 }
 

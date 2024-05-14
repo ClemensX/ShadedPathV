@@ -10,7 +10,7 @@
 // render thread fence logging:
 #define LOG_FENCE false
 // global update threads logging
-#define LOG_GLOBAL_UPDATE true
+#define LOG_GLOBAL_UPDATE false
 
 // timer topics:
 // FPS like

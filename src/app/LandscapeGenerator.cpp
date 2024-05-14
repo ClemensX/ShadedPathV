@@ -75,7 +75,7 @@ void LandscapeGenerator::init() {
     // add some lines:
     float aspectRatio = engine.getAspect();
 
-    engine.shaders.lineShader.initialUpload();
+    //engine.shaders.lineShader.initialUpload();
 }
 
 void LandscapeGenerator::drawFrame(ThreadResources& tr) {

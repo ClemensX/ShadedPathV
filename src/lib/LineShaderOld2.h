@@ -85,12 +85,12 @@ public:
 	virtual void doGlobalUpdate() override;
 
 	// add lines - they will never  be removed
-	void addFixedGlobalLines(std::vector<LineDef>& linesToAdd);
+	void addGlobalConst(std::vector<LineDef>& linesToAdd);
 	// global update: initiate update of permanent line data in background
 	// might take several frames until effect is visible: old buffer will be used until new one is ready
 	void triggerUpdateThread();
-	// upload fixed global lines - only valid before first render
-	void uploadFixedGlobalLines();
+	// initial upload of all added lines - only valid before first render
+	void initialUpload();
 
 	// clear line buffer, has to be called at begin of each frame
 	// NOT after adding last group of lines
@@ -105,9 +105,9 @@ public:
 
 	// global resources used by all LineSubShaders:
 	// vertex buffer for fixed lines (one buffer for all threads) 
-	VkBuffer vertexBufferFixedGlobal = nullptr;
+	VkBuffer vertexBuffer = nullptr;
 	// vertex buffer device memory
-	VkDeviceMemory vertexBufferMemoryFixedGlobal = nullptr;
+	VkDeviceMemory vertexBufferMemory = nullptr;
 	VkPipelineLayout pipelineLayout = nullptr;
 private:
 	//LineThreadResources globalLineThreadResources;
@@ -234,12 +234,20 @@ public:
 		fragShaderModule = sm;
 	}
 	void initSingle(ThreadResources& tr, ShaderState& shaderState);
+	//void setResources(LineThreadResources* resources) {
+	//	lineThreadResources = resources;
+	//}
+	void handlePermanentUpdates(LineSubShader& u, ThreadResources& tr);
 	void setVulkanResources(VulkanResources* vr) {
 		vulkanResources = vr;
 	}
+	// add resources needed for per frame added lines
+	void addPerFrameResources(ThreadResources& tr);
 
-	// All sections need: buffer allocation and recording draw commands.
-	// Stage they are called at will be very different
+	void initialUpload();
+
+	// all sections need: buffer allocation and recording draw commands.
+	// stage they are called at will be very different
 	void allocateCommandBuffer(ThreadResources& tr, VkCommandBuffer* cmdBufferPtr, const char* debugName);
 	void addRenderPassAndDrawCommands(ThreadResources& tr, VkCommandBuffer* cmdBufferPtr, VkBuffer vertexBuffer);
 
@@ -247,6 +255,7 @@ public:
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
 	// per frame update of UBO / MVP
 	void uploadToGPU(ThreadResources& tr, LineShader::UniformBufferObject& ubo);
+	void uploadToGPUAddedLines(ThreadResources& tr, LineShader::UniformBufferObject& ubo);
 
 	void destroy();
 
@@ -254,22 +263,28 @@ public:
 	VkCommandBuffer commandBuffer = nullptr;
 	VkPipeline graphicsPipeline = nullptr;
 	VkFramebuffer framebuffer = nullptr;
+	//VkFramebuffer framebuffer2 = nullptr;
+	//VkFramebuffer framebufferAdd = nullptr;
+	//VkFramebuffer framebufferAdd2 = nullptr;
 	VkRenderPass renderPass = nullptr;
+	//VkRenderPass renderPassAdd = nullptr;
 	VkDescriptorSet descriptorSet = nullptr;
 	// MVP buffer
 	VkBuffer uniformBuffer = nullptr;
 	// MVP buffer device memory
 	VkDeviceMemory uniformBufferMemory = nullptr;
 	// additional per frame resources
+	VkBuffer vertexBufferAdd = nullptr;
+	VkDeviceMemory vertexBufferAddMemory = nullptr;
+	VkCommandBuffer commandBufferAdd = nullptr;
 	std::vector<LineShader::Vertex> vertices;
-	size_t drawCount = 0; // set number of draw calls for this sub shader, also used as indicator if this is active
-	// for cases where vertex buffer is stored in sub shader:
-	VkBuffer vertexBufferLocal = nullptr;
-	// vertex buffer device memory
-	VkDeviceMemory vertexBufferMemoryLocal = nullptr;
+	size_t drawCount = 0; // set number of draw calls for this sub shader
+	bool handlePermanentUpdate = true; // initially true, then set to false after switching to new permanent resources
+	int currentRenderElemet = -1; // 0 or 1, depending which update element is currently used
 
 private:
 	LineShader* lineShader = nullptr;
+	//LineThreadResources* lineThreadResources = nullptr;
 	VulkanResources* vulkanResources = nullptr;
 	std::string name;
 	VkShaderModule vertShaderModule = nullptr;

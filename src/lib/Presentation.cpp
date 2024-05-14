@@ -482,7 +482,7 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     submitInfo.pSignalSemaphores = signalSemaphores;
 
     //vkDeviceWaitIdle(global.device); does not help
-    engine.getThreadGroup().log_current_thread();
+    if (LOG_GLOBAL_UPDATE) engine.getThreadGroup().log_current_thread();
     LogCondF(LOG_FENCE, "queue thread submit present fence " << hex << ThreadInfo::thread_osid() << endl);
     if (vkQueueSubmit(engine.global.graphicsQueue, 1, &submitInfo, tr.presentFence) != VK_SUCCESS) {
         Error("failed to submit draw command buffer!");
