@@ -212,6 +212,7 @@ public:
 		// get update element currently worked on, this is fixed until all render threads have adapted it
 		LineShaderUpdateElement* getCurrentlyWorkedOnUpdateElement();
 		void doGlobalUpdate(LineShaderUpdateElement* el, LineSubShader& ug, ThreadResources& tr);
+		void resetWorkedOnElement();
 		void assertUpdateThread();
 	private:
 		std::atomic<LineShaderUpdateElement*> currentlyWorkedOnUpdateElement = nullptr;
@@ -279,6 +280,7 @@ public:
 	std::vector<LineShader::Vertex> vertices;
 	size_t drawCount = 0; // set number of draw calls for this sub shader
 	bool handlePermanentUpdate = true; // initially true, then set to false after switching to new permanent resources
+	int currentRenderElemet = -1; // 0 or 1, depending which update element is currently used
 
 private:
 	LineShader* lineShader = nullptr;

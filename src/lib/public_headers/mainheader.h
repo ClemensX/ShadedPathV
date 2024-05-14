@@ -4,11 +4,13 @@
 #define LOGFILE true
 // set to true for logging render queue operations
 // submit queue logging
-#define LOG_QUEUE true
+#define LOG_QUEUE false
 // render thread continuation logging:
 #define LOG_RENDER_CONTINUATION false
-
+// render thread fence logging:
 #define LOG_FENCE false
+// global update threads logging
+#define LOG_GLOBAL_UPDATE true
 
 // timer topics:
 // FPS like
