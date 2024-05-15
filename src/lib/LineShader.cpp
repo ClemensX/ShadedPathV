@@ -52,6 +52,9 @@ void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 		undoLast = true;
 		setLastShader(false);
 	}
+	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
+	ug.initSingle(tr, shaderState);
+	ug.allocateCommandBuffer(tr, &ug.commandBuffer, "LINE PERMANENT COMMAND BUFFER");
 	LineSubShader& pf = perFrameLineSubShaders[tr.threadResourcesIndex];
 	pf.initSingle(tr, shaderState);
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * LineShader::MAX_DYNAMIC_LINES;
@@ -62,9 +65,6 @@ void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	}
 	LineSubShader& sub = globalLineSubShaders[tr.threadResourcesIndex];
 	sub.initSingle(tr, shaderState);
-	//LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
-	//ug.initSingle(tr, shaderState);
-	//pf.addPerFrameResources(tr);
 }
 
 void LineShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
@@ -210,8 +210,8 @@ void LineShader::assertUpdateThread() {
 void LineShader::preparePermanentLines(ThreadResources& tr)
 {
 	if (!enabled) return;
-	//LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
-	//LogCond(LOG_GLOBAL_UPDATE, "preparePermanentLines: index " << tr.frameIndex << endl);
+	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
+	LogCond(LOG_GLOBAL_UPDATE, "preparePermanentLines: index " << tr.frameIndex << endl);
 	//
 	//// initiate global update with ug.vertices, then create render pass and draw command
 	//LineShaderUpdateElement* el = lockNextUpdateElement();
@@ -232,6 +232,17 @@ void LineShader::preparePermanentLines(ThreadResources& tr)
 	//el->verticesAddr = &ug.vertices;
 	//triggerUpdateThread();
 	////doGlobalUpdate(el, ug, tr);
+
+	// TODO: do in update thread, using direct approach for now
+	// delete old buffer
+	vkDestroyBuffer(device, ug.vertexBufferLocal, nullptr);
+	vkFreeMemory(device, ug.vertexBufferMemoryLocal, nullptr);
+	// create new buffer
+	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * ug.vertices.size();
+	//engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, ug.vertices.data(), ug.vertexBufferLocal, ug.vertexBufferMemoryLocal);
+	// recreate cmd buffer	
+	ug.addRenderPassAndDrawCommands(tr, &ug.commandBuffer, ug.vertexBufferLocal);
+
 }
 
 void LineShader::doGlobalUpdate()

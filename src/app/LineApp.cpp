@@ -130,7 +130,6 @@ void LineApp::updatePerFrame(ThreadResources& tr)
     lubo2.view = v2;
 
     // dynamic lines:
-    engine.shaders.lineShader.clearLocalLines(tr);
     float aspectRatio = engine.getAspect();
     static float plus = 0.0f;
     LineDef myLines[] = {
@@ -145,20 +144,20 @@ void LineApp::updatePerFrame(ThreadResources& tr)
     plus += 0.001f;
     vector<LineDef> lines;
     // add all intializer objects to vector:
+    engine.shaders.lineShader.clearLocalLines(tr);
     for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
     //increaseLineStack(lines);
     engine.shaders.lineShader.addOneTime(lines, tr);
     engine.shaders.lineShader.prepareAddLines(tr);
 
-    //if ((tr.frameNum+9) % 10 == 0 && engine.shaders.lineShader.doUpdatePermament) {
-    //    // global update initial content:
-    //    vector<LineDef> linesUpdate;
-    //    increaseLineStack(linesUpdate);
-    //    engine.shaders.lineShader.addPermament(linesUpdate, tr);
-    //    engine.shaders.lineShader.preparePermanentLines(tr);
-    //}
+    if ((tr.frameNum+9) % 10 == 0 && engine.shaders.lineShader.doUpdatePermament) {
+        // global update initial content:
+        vector<LineDef> linesUpdate;
+        increaseLineStack(linesUpdate);
+        engine.shaders.lineShader.addPermament(linesUpdate, tr);
+        engine.shaders.lineShader.preparePermanentLines(tr);
+    }
 
-    //engine.shaders.lineShader.prepareAddLines(tr);
     engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
 }
 
@@ -183,6 +182,7 @@ void LineApp::increaseLineStack(std::vector<LineDef>& lines)
         ld.start = a4; ld.end = a1;
         lines.push_back(ld);
     }
+	Log("Line stack increased to " << currentLineStackCount << endl);
 }
 
 void LineApp::handleInput(InputState& inputState)
