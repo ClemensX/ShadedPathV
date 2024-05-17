@@ -22,7 +22,7 @@ public:
 // forward
 class LineSubShader;
 
-class LineShader : public ShaderBase {
+class LineShader : public ShaderBase, public GlobalUpdateBase {
 public:
 	std::vector<LineSubShader> globalLineSubShaders;
 	std::vector<LineSubShader> perFrameLineSubShaders;
@@ -83,6 +83,9 @@ public:
 	virtual void destroyThreadResources(ThreadResources& tr) override;
 
 	virtual void doGlobalUpdate() override;
+
+	virtual void createUpdateSet(GlobalUpdateElement& el) override;
+	virtual void signalGlobalUpdateRunning(bool isRunning) override;
 
 	// add lines - they will never  be removed
 	void addFixedGlobalLines(std::vector<LineDef>& linesToAdd);
@@ -187,6 +190,7 @@ public:
 		std::vector<LineShader::Vertex>* verticesAddr = nullptr;
 		VkBuffer vertexBuffer = nullptr;
 		VkDeviceMemory vertexBufferMemory = nullptr;
+		GlobalUpdateDesignator setDesignator;
 		bool active = false;
 		bool isFirstElement = false;
 		long activationFrameNum = -1; // higher value means newer generation
@@ -216,6 +220,7 @@ public:
 		void assertUpdateThread();
 	private:
 		std::atomic<LineShaderUpdateElement*> currentlyWorkedOnUpdateElement = nullptr;
+		bool globalUpdateRunning = false;
 };
 
 /*

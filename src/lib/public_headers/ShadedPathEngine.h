@@ -21,6 +21,7 @@ public:
     // construct engine instance together with its needed aggregates
     ShadedPathEngine() :
         global(*this),
+		globalUpdate(*this),
         presentation(*this),
         shaders(*this),
         util(*this),
@@ -200,6 +201,7 @@ public:
 
     thread_local static bool isUpdateThread;
     GlobalRendering global;
+	GlobalUpdate globalUpdate;
     Presentation presentation;
     Shaders shaders;
     Util util;
@@ -229,6 +231,10 @@ public:
     ThreadGroup &getThreadGroup() {
         return threads;
     }
+	auto& getShaderUpdateQueue() {
+		return shaderUpdateQueue;
+	}
+
 private:
     State state = INIT;
     float backBufferAspect = 1.0f;
@@ -256,7 +262,7 @@ private:
     ThreadGroup threads;
     RenderQueue queue;
     // we simply use indexes into the update array for handling resources
-    ThreadsafeWaitingQueue<ShaderUpdateElement*> shaderUpdateQueue;
+    ThreadsafeWaitingQueue<GlobalUpdateElement*> shaderUpdateQueue;
     // for singleQueue we need yet another sync between update thread and main thread
     SynchronizedDataConsumption<SingleQueueTransferInfo*> singleQueueSynchronization;
 
@@ -339,7 +345,7 @@ private:
     // return the newest update element for a single shader and free all others
     ShaderUpdateElement* selectLatestUpdate(ShaderUpdateElement* el);
 
-    void pushUpdate(ShaderUpdateElement* updateElement);
+    void pushUpdate(GlobalUpdateElement* updateElement);
 
     template <typename T, std::size_t size>
     void printUpdateArray(const std::array<T, size>& updateArray) {

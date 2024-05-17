@@ -303,12 +303,8 @@ void ShadedPathEngine::runUpdateThread(ShadedPathEngine* engine_instance)
     isUpdateThread = true;
     LogCondF(LOG_QUEUE, "run shader update thread" << endl);
     while (engine_instance->isShutdown() == false) {
-        // this is the only place with pop():
-        optional<ShaderUpdateElement*> opt_el = engine_instance->shaderUpdateQueue.pop();
-        if (!opt_el) {
-            break;
-        }
-        engine_instance->doGlobalShaderUpdates();
+        engine_instance->globalUpdate.doGlobalShaderUpdates();
+        //engine_instance->doGlobalShaderUpdates();
         //engine_instance->updateSingle(opt_el.value(), engine_instance);
     }
     LogCondF(LOG_QUEUE, "run shader update thread end" << endl);
@@ -361,7 +357,7 @@ int ShadedPathEngine::manageMultipleUpdateSlots(int slot, int next_slot) {
     return 0;
 }
 
-void ShadedPathEngine::pushUpdate(ShaderUpdateElement* updateElement)
+void ShadedPathEngine::pushUpdate(GlobalUpdateElement* updateElement)
 {
     //if (threadModeSingle) {
     //    shaderUpdateQueueSingle.push(updateElement);

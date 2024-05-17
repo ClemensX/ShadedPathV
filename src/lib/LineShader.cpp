@@ -5,6 +5,7 @@ using namespace std;
 void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 {
 	ShaderBase::init(engine);
+	engine.globalUpdate.registerShader(this);
 	resources.setResourceDefinition(&vulkanResourceDefinition);
 
 	// create shader modules
@@ -177,6 +178,10 @@ void LineShader::addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& t
 void LineShader::addPermament(std::vector<LineDef>& linesToAdd, ThreadResources& tr)
 {
 	assert(engine->isUpdateThread == false);
+	if (globalUpdateRunning) {
+		Error("ERROR: trying to add permanent lines while global update is running\n");
+		return;
+	}
 	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
 	//auto& lines = getInactiveAppDataSet(user)->oneTimeLines;
 	ug.vertices.clear();
@@ -310,9 +315,12 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 		memcpy(data, pf.vertices.data(), copy_size);
 		vkUnmapMemory(device, pf.vertexBufferMemoryLocal);
 	}
-	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
-	ug.uploadToGPU(tr, ubo);
-	//ug.handlePermanentUpdates(ug, tr);
+	auto activeElement = getActiveUpdateElement();	
+	if (activeElement != nullptr) {
+		LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
+		ug.uploadToGPU(tr, ubo);
+		//ug.handlePermanentUpdates(ug, tr);
+	}
 }
 
 void LineShader::update(ShaderUpdateElement *el)
@@ -328,7 +336,7 @@ void LineShader::update(ShaderUpdateElement *el)
 static ShaderUpdateElement fake;
 
 void LineShader::triggerUpdateThread() {
-	engine->pushUpdate(&fake);
+	//engine->pushUpdate(&fake);
 }
 
 void LineShader::updateAndSwitch(std::vector<LineDef>* linesToAdd, GlobalResourceSet set)
@@ -581,4 +589,35 @@ void LineSubShader::destroy() {
 	vkFreeMemory(*device, uniformBufferMemory, nullptr);
 	vkDestroyBuffer(*device, vertexBufferLocal, nullptr);
 	vkFreeMemory(*device, vertexBufferMemoryLocal, nullptr);
+}
+
+
+// using new global update scheme
+void LineShader::createUpdateSet(GlobalUpdateElement& el) {
+	if (el.updateDesignator == GlobalUpdateDesignator::SET_A) {
+		updateElementA.setDesignator = el.updateDesignator;
+		Log("LineShader::createUpdateSet A\n");
+	} else {
+		updateElementB.setDesignator = el.updateDesignator;
+		Log("LineShader::createUpdateSet B\n");
+	}
+	updateElementA.active = false;
+}
+
+LineShader::LineShaderUpdateElement* LineShader::getActiveUpdateElement()
+{
+	if (updateElementA.active) {
+		return &updateElementA;
+	}
+	else if (updateElementB.active) {
+		return &updateElementB;
+	}
+	else {
+		return nullptr;
+	}
+}
+
+void LineShader::signalGlobalUpdateRunning(bool isRunning)
+{
+	globalUpdateRunning = isRunning;
 }

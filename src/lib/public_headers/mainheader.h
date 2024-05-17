@@ -259,6 +259,7 @@ inline std::string Fmt(const char* fmt, ...) {
 #include "Camera.h"
 #include "VR.h"
 #include "GlobalRendering.h"
+#include "GlobalUpdate.h"
 #include "VulkanResources.h"
 #include "Texture.h"
 #include "ShaderBase.h"

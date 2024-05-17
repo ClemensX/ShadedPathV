@@ -27,6 +27,7 @@ add_library(shadedpath
   ShaderBase.cpp
   Shaders.cpp
   GlobalRendering.cpp
+  GlobalUpdate.cpp
   Presentation.cpp
   ShadedPathEngine.cpp
   World.cpp
