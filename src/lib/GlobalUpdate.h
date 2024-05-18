@@ -7,7 +7,7 @@ enum class GlobalUpdateDesignator { SET_A, SET_B };
 
 // all shaders have to subclass this for their update array
 struct GlobalUpdateElement {
-	//std::atomic<bool> free = true;   // can be reserved
+	std::atomic<bool> free = true;   // can be reserved
 	//bool inuse = false; // update process in progress
 	//unsigned long num = 0; // count updates
 	//size_t arrayIndex = 0; // we need to know array index into updateArray by having just a pointer to an element
@@ -24,7 +24,8 @@ public:
 	// signal that global update is currently being prepared,
 	// so single thread resources in application code should not be updated
 	// during updatePerFrame() call
-	virtual void signalGlobalUpdateRunning(bool isRunning) = 0;
+	virtual bool signalGlobalUpdateRunning(bool isRunning) = 0;
+	virtual void updateGlobal(GlobalUpdateElement& currentSet) = 0;
 };
 
 // all methofds run in update thread unless otherwise noted
@@ -55,5 +56,8 @@ public:
 	void registerShader(GlobalUpdateBase* shader) {
 		shaders.push_back(shader);
 	}
+
+private:
+	GlobalUpdateElement& getInctiveSet();
 };
 

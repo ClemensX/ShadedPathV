@@ -85,7 +85,8 @@ public:
 	virtual void doGlobalUpdate() override;
 
 	virtual void createUpdateSet(GlobalUpdateElement& el) override;
-	virtual void signalGlobalUpdateRunning(bool isRunning) override;
+	virtual bool signalGlobalUpdateRunning(bool isRunning) override;
+	virtual void updateGlobal(GlobalUpdateElement& currentSet) override;
 
 	// add lines - they will never  be removed
 	void addFixedGlobalLines(std::vector<LineDef>& linesToAdd);
@@ -221,6 +222,7 @@ public:
 	private:
 		std::atomic<LineShaderUpdateElement*> currentlyWorkedOnUpdateElement = nullptr;
 		bool globalUpdateRunning = false;
+		bool renderThreadUpdateRunning = false;
 };
 
 /*

@@ -12,6 +12,16 @@ void GlobalUpdate::doGlobalShaderUpdates()
     if (!opt_el) {
         return;
     }
+	// we just ask every shader to update itself,
+	// TODO maybe just call the shader that pushed()?
+	GlobalUpdateElement& currentSet = getInctiveSet();
+	currentSet.free = false;
+		for (auto& shader : shaders) {
+			if (shader->signalGlobalUpdateRunning(true)) {
+				shader->updateGlobal(currentSet);
+				shader->signalGlobalUpdateRunning(false);
+			}
+		}
 }
 
 void GlobalUpdate::ctreateUpdateSets()
@@ -19,7 +29,17 @@ void GlobalUpdate::ctreateUpdateSets()
 	for (auto& shader : shaders) {
         shader->createUpdateSet(setA);
         shader->createUpdateSet(setB);
-        shader->signalGlobalUpdateRunning(true); // TEST
     }
     updateSetsCreated = true;
+}
+
+GlobalUpdateElement& GlobalUpdate::getInctiveSet()
+{
+	if (setA.free) {
+		return setA;
+	} else if (setB.free) {
+		return setB;
+	}
+	Error("Both update sets are in use, this should not happen\n");
+	return setA; // keep compiler happy
 }

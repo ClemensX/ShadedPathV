@@ -182,6 +182,11 @@ void LineShader::addPermament(std::vector<LineDef>& linesToAdd, ThreadResources&
 		Error("ERROR: trying to add permanent lines while global update is running\n");
 		return;
 	}
+	if (renderThreadUpdateRunning) {
+		Error("ERROR: trying to add permanent lines while another threads runs the same (should not happen)\n");
+		return;
+	}
+	renderThreadUpdateRunning = true; // TODO use atomic
 	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
 	//auto& lines = getInactiveAppDataSet(user)->oneTimeLines;
 	ug.vertices.clear();
@@ -198,7 +203,9 @@ void LineShader::addPermament(std::vector<LineDef>& linesToAdd, ThreadResources&
 		vec.push_back(v1);
 		vec.push_back(v2);
 	}
-	ug.drawCount = ug.vertices.size();
+	triggerUpdateThread();
+	renderThreadUpdateRunning = false;
+	//ug.drawCount = ug.vertices.size();
 }
 
 void LineShader::prepareAddLines(ThreadResources& tr)
@@ -334,9 +341,10 @@ void LineShader::update(ShaderUpdateElement *el)
 	LogCond(LOG_GLOBAL_UPDATE, "update line shader global end " << u->arrayIndex << " update num " << u->num << endl);
 }
 static ShaderUpdateElement fake;
+static GlobalUpdateElement fake2;
 
 void LineShader::triggerUpdateThread() {
-	//engine->pushUpdate(&fake);
+	engine->pushUpdate(&fake2);
 }
 
 void LineShader::updateAndSwitch(std::vector<LineDef>* linesToAdd, GlobalResourceSet set)
@@ -617,7 +625,19 @@ LineShader::LineShaderUpdateElement* LineShader::getActiveUpdateElement()
 	}
 }
 
-void LineShader::signalGlobalUpdateRunning(bool isRunning)
+bool LineShader::signalGlobalUpdateRunning(bool isRunning)
 {
+	if (isRunning) {
+		if (globalUpdateRunning || renderThreadUpdateRunning) {
+			return false;
+		}
+	}
 	globalUpdateRunning = isRunning;
+	return true;
+}
+
+void LineShader::updateGlobal(GlobalUpdateElement& currentSet)
+{
+	assertUpdateThread();
+	Log("LineShader::updateGlobal\n");
 }
