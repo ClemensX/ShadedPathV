@@ -14,6 +14,19 @@ struct GlobalUpdateElement {
 	//GlobalResourceSet globalResourceSet;
 	ShaderBase* shaderInstance = nullptr;
 	GlobalUpdateDesignator updateDesignator;
+	static std::string to_string(GlobalUpdateDesignator des) {
+		switch (des) {
+		case GlobalUpdateDesignator::SET_A:
+			return "SET_A";
+		case GlobalUpdateDesignator::SET_B:
+			return "SET_B";
+		default:
+			return "Unknown";
+		}
+	};
+	std::string to_string() {
+		return to_string(updateDesignator);
+	}
 };
 
 // base class for shaders using global update
@@ -58,6 +71,6 @@ public:
 	}
 
 private:
-	GlobalUpdateElement& getInctiveSet();
+	GlobalUpdateElement& getInactiveSet();
 };
 

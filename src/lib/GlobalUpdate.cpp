@@ -14,7 +14,7 @@ void GlobalUpdate::doGlobalShaderUpdates()
     }
 	// we just ask every shader to update itself,
 	// TODO maybe just call the shader that pushed()?
-	GlobalUpdateElement& currentSet = getInctiveSet();
+	GlobalUpdateElement& currentSet = getInactiveSet();
 	currentSet.free = false;
 		for (auto& shader : shaders) {
 			if (shader->signalGlobalUpdateRunning(true)) {
@@ -33,7 +33,7 @@ void GlobalUpdate::ctreateUpdateSets()
     updateSetsCreated = true;
 }
 
-GlobalUpdateElement& GlobalUpdate::getInctiveSet()
+GlobalUpdateElement& GlobalUpdate::getInactiveSet()
 {
 	if (setA.free) {
 		return setA;

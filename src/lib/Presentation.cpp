@@ -22,9 +22,21 @@ void Presentation::initGLFW(bool handleKeyEvents, bool handleMouseMoveEevents, b
     if (!enabled) return;
     glfwInit();
     if (true) {
+        // Get the primary monitor
+        GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
+
+        // Get the video mode of the primary monitor
+        const GLFWvidmode* videoMode = glfwGetVideoMode(primaryMonitor);
+
+        // Retrieve the desktop size
+        int desktopWidth = videoMode->width;
+        int desktopHeight = videoMode->height;
+
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         window = glfwCreateWindow(engine.win_width, engine.win_height, engine.win_name, nullptr, nullptr);
+		// Set window position to right half near the top of the screen
+        glfwSetWindowPos(window, desktopWidth/2, 30);
         // validate requested window size:
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);

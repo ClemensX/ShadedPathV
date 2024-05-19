@@ -639,5 +639,5 @@ bool LineShader::signalGlobalUpdateRunning(bool isRunning)
 void LineShader::updateGlobal(GlobalUpdateElement& currentSet)
 {
 	assertUpdateThread();
-	Log("LineShader::updateGlobal\n");
+	Log("LineShader::updateGlobal set " << currentSet.to_string() << endl);
 }
