@@ -113,6 +113,14 @@ public:
 	// vertex buffer device memory
 	VkDeviceMemory vertexBufferMemoryFixedGlobal = nullptr;
 	VkPipelineLayout pipelineLayout = nullptr;
+
+	// Resources for permamnent lines:
+	VkBuffer vertexBufferSetA = nullptr;
+	VkDeviceMemory vertexBufferMemorySetA = nullptr;
+	VkBuffer vertexBufferSetB = nullptr;
+	VkDeviceMemory vertexBufferMemorySetB = nullptr;
+	std::vector<LineShader::Vertex> verticesPermanent;
+
 private:
 	//LineThreadResources globalLineThreadResources;
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);

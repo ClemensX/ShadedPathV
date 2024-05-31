@@ -95,7 +95,7 @@ void LineShader::uploadFixedGlobalLines()
 
 	// create and copy vertex buffer in GPU
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * all.size();
-	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, all.data(), vertexBufferFixedGlobal, vertexBufferMemoryFixedGlobal);
+	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, all.data(), vertexBufferFixedGlobal, vertexBufferMemoryFixedGlobal, "LineShader Global Buffer");
 }
 
 void LineShader::createDescriptorSetLayout()
@@ -187,12 +187,9 @@ void LineShader::addPermament(std::vector<LineDef>& linesToAdd, ThreadResources&
 		return;
 	}
 	renderThreadUpdateRunning = true; // TODO use atomic
-	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
-	//auto& lines = getInactiveAppDataSet(user)->oneTimeLines;
-	ug.vertices.clear();
+	verticesPermanent.clear();
 	if (linesToAdd.size() == 0)
 		return;
-	auto& vec = ug.vertices;
 	// handle added lines:
 	for (LineDef& line : linesToAdd) {
 		Vertex v1, v2;
@@ -200,8 +197,8 @@ void LineShader::addPermament(std::vector<LineDef>& linesToAdd, ThreadResources&
 		v1.pos = line.start;
 		v2.color = line.color;
 		v2.pos = line.end;
-		vec.push_back(v1);
-		vec.push_back(v2);
+		verticesPermanent.push_back(v1);
+		verticesPermanent.push_back(v2);
 	}
 	triggerUpdateThread();
 	renderThreadUpdateRunning = false;
@@ -291,7 +288,7 @@ void LineShader::doGlobalUpdate(LineShaderUpdateElement* el, LineSubShader& ug, 
 	assertUpdateThread();
 	// TODO free last gen resources
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * el->verticesAddr->size();
-	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, el->verticesAddr->data(), el->vertexBuffer, el->vertexBufferMemory);
+	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, el->verticesAddr->data(), el->vertexBuffer, el->vertexBufferMemory, "NIX");
 	LogCond(LOG_GLOBAL_UPDATE, "doGlobalUpdate:  uploaded " << el->verticesAddr->size() << " vertices" << endl);
 	// first set update flag in sub shaders, then here:
 	for (int i = 0; i < engine->getFramesInFlight(); i++) {
@@ -640,4 +637,16 @@ void LineShader::updateGlobal(GlobalUpdateElement& currentSet)
 {
 	assertUpdateThread();
 	Log("LineShader::updateGlobal set " << currentSet.to_string() << endl);
+	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * verticesPermanent.size();
+	VkBuffer vertexBuffer = nullptr;
+	VkDeviceMemory vertexBufferMemory = nullptr;
+	if (currentSet.updateDesignator == GlobalUpdateDesignator::SET_A) {
+		vertexBuffer = vertexBufferSetA;
+		vertexBufferMemory = vertexBufferMemorySetA;
+	} else {
+		vertexBuffer = vertexBufferSetB;
+		vertexBufferMemory = vertexBufferMemorySetB;
+	}
+	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, verticesPermanent.data(), vertexBuffer, vertexBufferMemory, "LineShader Global UPDATE Buffer " + currentSet.to_string(), GlobalRendering::QueueSelector::TRANSFER);
+
 }

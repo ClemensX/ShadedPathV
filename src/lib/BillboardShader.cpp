@@ -124,7 +124,7 @@ void BillboardShader::initialUpload()
 
 	// create and copy vertex buffer in GPU
 	VkDeviceSize bufferSize = sizeof(Vertex) * billboards.size();
-	global->uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, billboards.data(), vertexBuffer, vertexBufferMemory);
+	global->uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, billboards.data(), vertexBuffer, vertexBufferMemory, "BillboardShader Global Buffer");
 }
 
 // assigning stage flags is a little more advanced because we need to pass some bindings to geom stages

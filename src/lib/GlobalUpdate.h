@@ -72,5 +72,8 @@ public:
 
 private:
 	GlobalUpdateElement& getInactiveSet();
+	bool isInactiveSetAvailable() {
+		return setA.free || setB.free;
+	}
 };
 

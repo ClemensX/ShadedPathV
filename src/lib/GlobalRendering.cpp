@@ -615,15 +615,15 @@ void GlobalRendering::endSingleTimeCommands(VkCommandBuffer commandBuffer, bool 
         vkQueueWaitIdle(graphicsQueue);
         vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
     } else if (queue == QueueSelector::TRANSFER) {
-        Log("subbi\n");
+        Log("submit via transfer queue\n");
         vkQueueSubmit(transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
-        Log("subbi end\n");
+        Log("submit via transfer queue END\n");
         vkQueueWaitIdle(transferQueue);
         vkFreeCommandBuffers(device, commandPoolTransfer, 1, &commandBuffer);
     }
 }
 
-void GlobalRendering::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory) {
+void GlobalRendering::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory, string bufferDebugName) {
     VkBufferCreateInfo bufferInfo{};
     bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.size = size;
@@ -648,6 +648,9 @@ void GlobalRendering::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
     }
 
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
+    engine.util.debugNameObjectBuffer(buffer, bufferDebugName.c_str());
+    string memName = bufferDebugName + " memory";
+    engine.util.debugNameObjectDeviceMmeory(bufferMemory, memName.c_str());
 }
 
 void GlobalRendering::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, QueueSelector queue, uint64_t flags) {
@@ -661,12 +664,12 @@ void GlobalRendering::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDevic
 }
 
 void GlobalRendering::uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory,
-    QueueSelector queue, uint64_t flags)
+    string bufferDebugName, QueueSelector queue, uint64_t flags)
 {
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
     createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        stagingBuffer, stagingBufferMemory);
+        stagingBuffer, stagingBufferMemory, bufferDebugName + " Staging");
 
     void* data;
     vkMapMemory(engine.global.device, stagingBufferMemory, 0, bufferSize, 0, &data);
@@ -674,7 +677,7 @@ void GlobalRendering::uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize buf
     vkUnmapMemory(engine.global.device, stagingBufferMemory);
 
     createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage, VK_MEMORY_HEAP_DEVICE_LOCAL_BIT,
-        buffer, bufferMemory);
+        buffer, bufferMemory, bufferDebugName);
 
     //for (int i = 0; i < 10000; i++)
     engine.global.copyBuffer(stagingBuffer, buffer, bufferSize, queue);

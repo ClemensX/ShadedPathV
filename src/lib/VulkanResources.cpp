@@ -34,14 +34,14 @@ void VulkanResources::createVertexBufferStatic(VkDeviceSize bufferSize, const vo
 {
     vector<VulkanResourceElement> &def = *resourceDefinition;
     size_t bufferId = getResourceDefIndex(VulkanResourceType::VertexBufferStatic);
-    this->engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, src, buffer, bufferMemory);
+    this->engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, src, buffer, bufferMemory, "VertexBufferStatic");
 }
 
 void VulkanResources::createIndexBufferStatic(VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
     vector<VulkanResourceElement>& def = *resourceDefinition;
     size_t bufferId = getResourceDefIndex(VulkanResourceType::IndexBufferStatic);
-    this->engine->global.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, bufferSize, src, buffer, bufferMemory);
+    this->engine->global.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, bufferSize, src, buffer, bufferMemory, "IndexBufferStatic");
 }
 
 void VulkanResources::createDescriptorSetResources(VkDescriptorSetLayout& layout, VkDescriptorPool& pool, int poolMaxSetsFactor)

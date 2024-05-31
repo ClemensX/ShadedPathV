@@ -150,12 +150,21 @@ void LineApp::updatePerFrame(ThreadResources& tr)
     engine.shaders.lineShader.addOneTime(lines, tr);
     engine.shaders.lineShader.prepareAddLines(tr);
 
-    if ((tr.frameNum+9) % 10 == 0 && engine.shaders.lineShader.doUpdatePermament) {
-        // global update initial content:
-        vector<LineDef> linesUpdate;
-        increaseLineStack(linesUpdate);
-        engine.shaders.lineShader.addPermament(linesUpdate, tr);
-        engine.shaders.lineShader.preparePermanentLines(tr);
+    bool doSingleUpdate = true; // debug: enable single permanent update
+    if (doSingleUpdate) {
+        if (tr.frameNum == 11) {
+            // single update
+            increaseLineStack(lines);
+            engine.shaders.lineShader.addPermament(lines, tr);
+            engine.shaders.lineShader.preparePermanentLines(tr);
+        }
+    } else {
+        if ((tr.frameNum + 9) % 10 == 0 && engine.shaders.lineShader.doUpdatePermament) {
+            // global update
+            increaseLineStack(lines);
+            engine.shaders.lineShader.addPermament(lines, tr);
+            engine.shaders.lineShader.preparePermanentLines(tr);
+        }
     }
 
     engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);

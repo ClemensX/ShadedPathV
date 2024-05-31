@@ -25,7 +25,7 @@ void ShaderBase::createUniformBuffer(VkBuffer& uniformBuffer, size_t size, VkDev
 		Error(s.str());
 	}
 	global->createBuffer(bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		uniformBuffer, uniformBufferMemory);
+		uniformBuffer, uniformBufferMemory, "uniform buffer for MVP");
 }
 
 void ShaderBase::createVertexBuffer(VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory)
@@ -38,7 +38,7 @@ void ShaderBase::createVertexBuffer(VkBuffer& uniformBuffer, size_t size, VkDevi
 		Error(s.str());
 	}
 	global->createBuffer(bufferSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		uniformBuffer, uniformBufferMemory);
+		uniformBuffer, uniformBufferMemory, "remove: do not call ShaderBase::createVertexBuffer");
 }
 
 void ShaderBase::createDescriptorPool(vector<VkDescriptorPoolSize> &poolSizes, uint32_t overrideMaxSet)

@@ -12,6 +12,10 @@ void GlobalUpdate::doGlobalShaderUpdates()
     if (!opt_el) {
         return;
     }
+	if (!isInactiveSetAvailable()) {
+		Log("WARNING: skipping global update - no slot available\n");
+		return;
+	}
 	// we just ask every shader to update itself,
 	// TODO maybe just call the shader that pushed()?
 	GlobalUpdateElement& currentSet = getInactiveSet();
