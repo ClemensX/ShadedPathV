@@ -19,6 +19,11 @@ public:
 	std::vector<LineDef> lines;
 };
 
+struct LineShaderUpdateElementNEW {
+	VkBuffer vertexBuffer = nullptr;
+	VkDeviceMemory vertexBufferMemory = nullptr;
+};
+
 // forward
 class LineSubShader;
 
@@ -115,10 +120,14 @@ public:
 	VkPipelineLayout pipelineLayout = nullptr;
 
 	// Resources for permamnent lines:
-	VkBuffer vertexBufferSetA = nullptr;
-	VkDeviceMemory vertexBufferMemorySetA = nullptr;
-	VkBuffer vertexBufferSetB = nullptr;
-	VkDeviceMemory vertexBufferMemorySetB = nullptr;
+	LineShaderUpdateElementNEW globalUpdateElementA, globalUpdateElementB;
+	// free old resources:
+	void reuseUpdateElement(LineShaderUpdateElementNEW* el);
+
+	//VkBuffer vertexBufferSetA = nullptr;
+	//VkDeviceMemory vertexBufferMemorySetA = nullptr;
+	//VkBuffer vertexBufferSetB = nullptr;
+	//VkDeviceMemory vertexBufferMemorySetB = nullptr;
 	std::vector<LineShader::Vertex> verticesPermanent;
 
 private:
@@ -209,6 +218,7 @@ public:
 		// but render threads may still use old data!
 		void update(ShaderUpdateElement* el) override;
 	public:
+		[[deprecated("This struct is deprecated. Use GlobalUpdateElement instead.")]]
 		LineShaderUpdateElement updateElementA, updateElementB;
 		bool activeUpdateElementisA = true;		// distinguish beween set a and b
 		bool doUpdatePermament = true;			// switch in app code

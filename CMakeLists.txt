@@ -7,14 +7,18 @@ include(cmake/local_options.cmake)
 if(MSVC)
   message(STATUS "UNICODE chars enabled for MSVC")
   add_definitions(-DUNICODE -D_UNICODE)
-  add_definitions(-DALLOW_USING_NON_TRANSFER_ONLY_QUEUE)
-  # uncomment for regular vulkan device, set for small graphics like Intel Iris Xe
+  add_compile_options(/sdl)
+  # comment next line to get deprecation errors:
+  add_compile_options(/wd4996)
+  #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=deprecated")
+  #add_definitions(-DALLOW_USING_NON_TRANSFER_ONLY_QUEUE)
+  # comment for regular vulkan device, uncomment for small graphics like Intel Iris Xe
 elseif(APPLE)
   add_definitions(-DALLOW_USING_NON_TRANSFER_ONLY_QUEUE)
   add_compile_options(-Wall -Wextra -Werror -Wno-error=unused-variable -Wno-error=unused-function
   -Wno-error=implicit-function-declaration -Wno-return-type -Wno-unused-parameter -Wno-unknown-pragmas
   -Wno-defaulted-function-deleted -Wno-unused-private-field -Wno-sign-compare -Wno-deprecated-declarations
-  -Wno-unused-but-set-variable -Wno-format-security -Wno-null-conversion
+  -Wno-unused-but-set-variable -Wno-format-security -Wno-null-conversion -Wno-error=deprecated
   )
 endif()
 # cmake folder
@@ -43,5 +47,4 @@ endif()
 # call chain:
 # cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=~/dev/cpp/vcpkg/scripts/buildsystems/vcpkg.cmake
 # cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=c:\dev\vulkan\vcpkg\scripts\buildsystems\vcpkg.cmake
-# cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=C:\dev\cpp\vcpkg\scripts\buildsystems\vcpkg.cmake
 # cmake --build ./build

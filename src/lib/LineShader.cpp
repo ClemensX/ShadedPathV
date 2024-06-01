@@ -276,6 +276,7 @@ void LineShader::doGlobalUpdate()
 	////el->activationFrameNum = tr.frameNum;
 }
 
+[[deprecated("This method is deprecated. Use GlobalUpdateElement instead.")]]
 void LineShader::reuseUpdateElement(LineShaderUpdateElement* el)
 {
 	LogCond(LOG_GLOBAL_UPDATE, "reuseUpdateElement:  destroy buffer " << hex << el->vertexBuffer << endl);
@@ -337,6 +338,7 @@ void LineShader::update(ShaderUpdateElement *el)
 	updateAndSwitch(u->linesToAdd, set);
 	LogCond(LOG_GLOBAL_UPDATE, "update line shader global end " << u->arrayIndex << " update num " << u->num << endl);
 }
+[[deprecated("This struct is deprecated. Use GlobalUpdateElement instead.")]]
 static ShaderUpdateElement fake;
 static GlobalUpdateElement fake2;
 
@@ -365,8 +367,10 @@ LineShader::~LineShader()
 	if (!enabled) {
 		return;
 	}
-	reuseUpdateElement(&updateElementA);
-	reuseUpdateElement(&updateElementB);
+	//reuseUpdateElement(&updateElementA);
+	//reuseUpdateElement(&updateElementB);
+	reuseUpdateElement(&globalUpdateElementA);
+	reuseUpdateElement(&globalUpdateElementB);
 	for (LineSubShader sub : globalLineSubShaders) {
 		sub.destroy();
 	}
@@ -638,15 +642,22 @@ void LineShader::updateGlobal(GlobalUpdateElement& currentSet)
 	assertUpdateThread();
 	Log("LineShader::updateGlobal set " << currentSet.to_string() << endl);
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * verticesPermanent.size();
-	VkBuffer vertexBuffer = nullptr;
+	LineShaderUpdateElementNEW* updateElem = nullptr;
 	VkDeviceMemory vertexBufferMemory = nullptr;
 	if (currentSet.updateDesignator == GlobalUpdateDesignator::SET_A) {
-		vertexBuffer = vertexBufferSetA;
-		vertexBufferMemory = vertexBufferMemorySetA;
+		updateElem = &globalUpdateElementA;
 	} else {
-		vertexBuffer = vertexBufferSetB;
-		vertexBufferMemory = vertexBufferMemorySetB;
+		updateElem = &globalUpdateElementB;
 	}
-	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, verticesPermanent.data(), vertexBuffer, vertexBufferMemory, "LineShader Global UPDATE Buffer " + currentSet.to_string(), GlobalRendering::QueueSelector::TRANSFER);
+	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, verticesPermanent.data(), updateElem->vertexBuffer, updateElem->vertexBufferMemory, "LineShader Global UPDATE Buffer " + currentSet.to_string(), GlobalRendering::QueueSelector::TRANSFER);
 
+}
+
+void LineShader::reuseUpdateElement(LineShaderUpdateElementNEW* el)
+{
+	LogCond(LOG_GLOBAL_UPDATE, "reuseUpdateElement:  destroy buffer " << hex << el->vertexBuffer << endl);
+	vkDestroyBuffer(device, el->vertexBuffer, nullptr);
+	el->vertexBuffer = nullptr;
+	vkFreeMemory(device, el->vertexBufferMemory, nullptr);
+	el->vertexBufferMemory = nullptr;
 }

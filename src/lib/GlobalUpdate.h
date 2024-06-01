@@ -5,7 +5,7 @@
 
 enum class GlobalUpdateDesignator { SET_A, SET_B };
 
-// all shaders have to subclass this for their update array
+// used in all the global update methods to signal upadte status
 struct GlobalUpdateElement {
 	std::atomic<bool> free = true;   // can be reserved
 	//bool inuse = false; // update process in progress
