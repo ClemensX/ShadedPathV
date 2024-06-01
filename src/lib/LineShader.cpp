@@ -320,11 +320,19 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 		memcpy(data, pf.vertices.data(), copy_size);
 		vkUnmapMemory(device, pf.vertexBufferMemoryLocal);
 	}
-	auto activeElement = getActiveUpdateElement();	
-	if (activeElement != nullptr) {
-		LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
-		ug.uploadToGPU(tr, ubo);
-		//ug.handlePermanentUpdates(ug, tr);
+	//auto activeElement = getActiveUpdateElement();	
+	//if (activeElement != nullptr) {
+	//	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
+	//	ug.uploadToGPU(tr, ubo);
+	//	//ug.handlePermanentUpdates(ug, tr);
+	//}
+	auto* applyGlobalUpdateSet = engine->globalUpdate.getChangedGlobalUpdateSet(currentGlobalUpdateElement);
+	auto* detachGlobalUpdateSet = engine->globalUpdate.getDispensableGlobalUpdateSet(currentGlobalUpdateElement);
+	if (applyGlobalUpdateSet != nullptr) {
+		Log("render thread " << tr.frameIndex << " should apply global update set " << applyGlobalUpdateSet->to_string() << endl);
+	}
+	if (detachGlobalUpdateSet != nullptr) {
+		Log("render thread " << tr.frameIndex << " should detach global update set " << detachGlobalUpdateSet->to_string() << endl);
 	}
 }
 

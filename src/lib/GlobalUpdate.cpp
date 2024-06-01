@@ -20,12 +20,13 @@ void GlobalUpdate::doGlobalShaderUpdates()
 	// TODO maybe just call the shader that pushed()?
 	GlobalUpdateElement& currentSet = getInactiveSet();
 	currentSet.free = false;
-		for (auto& shader : shaders) {
-			if (shader->signalGlobalUpdateRunning(true)) {
-				shader->updateGlobal(currentSet);
-				shader->signalGlobalUpdateRunning(false);
-			}
+	for (auto& shader : shaders) {
+		if (shader->signalGlobalUpdateRunning(true)) {
+			shader->updateGlobal(currentSet);
+			shader->signalGlobalUpdateRunning(false);
 		}
+	}
+	currentSet.readyToRender = true;
 }
 
 void GlobalUpdate::ctreateUpdateSets()

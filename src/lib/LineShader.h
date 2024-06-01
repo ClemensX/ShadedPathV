@@ -121,6 +121,7 @@ public:
 
 	// Resources for permamnent lines:
 	LineShaderUpdateElementNEW globalUpdateElementA, globalUpdateElementB;
+	GlobalUpdateElement* currentGlobalUpdateElement = nullptr;
 	// free old resources:
 	void reuseUpdateElement(LineShaderUpdateElementNEW* el);
 
@@ -164,6 +165,7 @@ private:
 	// create descritor sets (one or more per render thread)
 	virtual void createDescriptorSets(ThreadResources& res) override;
 	// store line data on GPU, respect resource set
+	[[deprecated("This method is deprecated. Use GlobalUpdate scheme instead.")]]
 	void updateAndSwitch(std::vector<LineDef>* linesToAdd, GlobalResourceSet set);
 
 	// util methods
@@ -216,6 +218,7 @@ public:
 	protected:
 		// global update method - guaranteed to be in sync mode: only 1 update at a time
 		// but render threads may still use old data!
+		[[deprecated("This method is deprecated. Use GlobalUpdate scheme instead.")]]
 		void update(ShaderUpdateElement* el) override;
 	public:
 		[[deprecated("This struct is deprecated. Use GlobalUpdateElement instead.")]]

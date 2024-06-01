@@ -8,6 +8,8 @@ enum class GlobalUpdateDesignator { SET_A, SET_B };
 // used in all the global update methods to signal upadte status
 struct GlobalUpdateElement {
 	std::atomic<bool> free = true;   // can be reserved
+	std::atomic<bool> readyToRender = false; // update is ready to be rendered
+	std::atomic<bool> active = false; // true: somebody uses this for rendering, false: should be applied
 	//bool inuse = false; // update process in progress
 	//unsigned long num = 0; // count updates
 	//size_t arrayIndex = 0; // we need to know array index into updateArray by having just a pointer to an element
@@ -68,6 +70,30 @@ public:
 	void ctreateUpdateSets();
 	void registerShader(GlobalUpdateBase* shader) {
 		shaders.push_back(shader);
+	}
+
+	// util methods for shaders
+
+	// find the update set that should be applied, nullptr means none
+	GlobalUpdateElement* getChangedGlobalUpdateSet(GlobalUpdateElement* currentUpdateSet) {
+		bool setAcanBeApplied = setA.readyToRender && !setA.active;
+		bool setBcanBeApplied = setB.readyToRender && !setB.active;
+		if (setAcanBeApplied && setBcanBeApplied) {
+			Error("Both update sets are ready to render, this should not happen\n");
+		}
+		if (setAcanBeApplied && currentUpdateSet != &setA) return &setA;
+		if (setBcanBeApplied && currentUpdateSet != &setB) return &setB;
+		return nullptr;
+	}
+	GlobalUpdateElement* getDispensableGlobalUpdateSet(GlobalUpdateElement* currentUpdateSet) {
+		// if we are not currently rendering there is nothing to dispense
+		if (currentUpdateSet == nullptr) return nullptr;
+		GlobalUpdateElement* changedGlobalUpdateSet = getChangedGlobalUpdateSet(currentUpdateSet);
+		if (changedGlobalUpdateSet != nullptr) {
+			// if we apply another update set, we can dispense the current one
+			return currentUpdateSet;
+		}
+		return nullptr;
 	}
 
 private:
