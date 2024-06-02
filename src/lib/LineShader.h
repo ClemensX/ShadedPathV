@@ -22,6 +22,7 @@ public:
 struct LineShaderUpdateElementNEW {
 	VkBuffer vertexBuffer = nullptr;
 	VkDeviceMemory vertexBufferMemory = nullptr;
+	size_t drawCount = 0;
 };
 
 // forward
@@ -120,11 +121,25 @@ public:
 	VkPipelineLayout pipelineLayout = nullptr;
 
 	// Resources for permamnent lines:
+	// line shader specific rersources
 	LineShaderUpdateElementNEW globalUpdateElementA, globalUpdateElementB;
+	// for handling global updates (independent of sub shaders)
 	GlobalUpdateElement* currentGlobalUpdateElement = nullptr;
+
+	LineShaderUpdateElementNEW* getMatchingShaderResources(GlobalUpdateElement* el) {
+		if (el->updateDesignator == GlobalUpdateDesignator::SET_A) {
+			return &globalUpdateElementA;
+		}
+		else {
+			return &globalUpdateElementB;
+		}
+	}
+
 	// free old resources:
 	void reuseUpdateElement(LineShaderUpdateElementNEW* el);
-
+	// single thread methods to change current global update:
+	void applyGlobalUpdate(LineSubShader& updateShader, ThreadResources& tr, GlobalUpdateElement* updateSet);
+	void detachGlobalUpdate(LineSubShader& updateShader, ThreadResources& tr, GlobalUpdateElement* updateSet);
 	//VkBuffer vertexBufferSetA = nullptr;
 	//VkDeviceMemory vertexBufferMemorySetA = nullptr;
 	//VkBuffer vertexBufferSetB = nullptr;
