@@ -10,6 +10,7 @@ struct GlobalUpdateElement {
 	std::atomic<bool> free = true;   // can be reserved
 	std::atomic<bool> readyToRender = false; // update is ready to be rendered
 	std::atomic<bool> active = false; // true: somebody uses this for rendering, false: should be applied
+	long updateNumber = -1; // unique number for each update, always increasing
 	//bool inuse = false; // update process in progress
 	//unsigned long num = 0; // count updates
 	//size_t arrayIndex = 0; // we need to know array index into updateArray by having just a pointer to an element
@@ -75,20 +76,26 @@ public:
 	// util methods for shaders
 
 	// find the update set that should be applied, nullptr means none
-	GlobalUpdateElement* getChangedGlobalUpdateSet(GlobalUpdateElement* currentUpdateSet) {
-		bool setAcanBeApplied = setA.readyToRender && !setA.active;
-		bool setBcanBeApplied = setB.readyToRender && !setB.active;
-		if (setAcanBeApplied && setBcanBeApplied) {
-			Error("Both update sets are ready to render, this should not happen\n");
-		}
-		if (setAcanBeApplied && currentUpdateSet != &setA) return &setA;
-		if (setBcanBeApplied && currentUpdateSet != &setB) return &setB;
+	// the current drawing thread only needs to know if it need to switch to another set
+	// called only from drawing threads
+	GlobalUpdateElement* getChangedGlobalUpdateSet(GlobalUpdateElement* currentUpdateSet, long currentlyRenderingUpdateNumber) {
+		if (shouldUpdateToSet(setA, currentUpdateSet, currentlyRenderingUpdateNumber))
+			return &setA;
+		if (shouldUpdateToSet(setB, currentUpdateSet, currentlyRenderingUpdateNumber))
+			return &setB;
+		//bool setAcanBeApplied = setA.readyToRender && !setA.active;
+		//bool setBcanBeApplied = setB.readyToRender && !setB.active;
+		//if (setAcanBeApplied && setBcanBeApplied) {
+		//	Error("Both update sets are ready to render, this should not happen\n");
+		//}
+		//if (setAcanBeApplied && currentUpdateSet != &setA) return &setA;
+		//if (setBcanBeApplied && currentUpdateSet != &setB) return &setB;
 		return nullptr;
 	}
 	GlobalUpdateElement* getDispensableGlobalUpdateSet(GlobalUpdateElement* currentUpdateSet) {
 		// if we are not currently rendering there is nothing to dispense
 		if (currentUpdateSet == nullptr) return nullptr;
-		GlobalUpdateElement* changedGlobalUpdateSet = getChangedGlobalUpdateSet(currentUpdateSet);
+		GlobalUpdateElement* changedGlobalUpdateSet = getChangedGlobalUpdateSet(currentUpdateSet, -1);
 		if (changedGlobalUpdateSet != nullptr) {
 			// if we apply another update set, we can dispense the current one
 			return currentUpdateSet;
@@ -96,10 +103,28 @@ public:
 		return nullptr;
 	}
 
+	long getNextUpdateNumber()
+	{
+		long n = nextFreeUpdateNum++;
+		return n;
+	}
+
 private:
+	bool shouldUpdateToSet(GlobalUpdateElement& set, GlobalUpdateElement* currentUpdateSet, long currentlyRenderingUpdateNumber) {
+		// only readyToRender sets can be updated
+		if (!set.readyToRender)	return false;
+		// easy case: no current update set
+		if (currentUpdateSet == nullptr) return true;
+		// if we are currently rendering the set, we cannot update it
+		if (currentUpdateSet == &set) return false;
+		// if the update number is lower than the current rendering update number, we can update
+		if (currentlyRenderingUpdateNumber < set.updateNumber) return true;
+		return false;
+	}
 	GlobalUpdateElement& getInactiveSet();
 	bool isInactiveSetAvailable() {
 		return setA.free || setB.free;
 	}
+	std::atomic<long> nextFreeUpdateNum = 0;
 };
 

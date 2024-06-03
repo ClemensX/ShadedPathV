@@ -158,6 +158,12 @@ void LineApp::updatePerFrame(ThreadResources& tr)
             engine.shaders.lineShader.addPermament(lines, tr);
             engine.shaders.lineShader.preparePermanentLines(tr);
         }
+        if (tr.frameNum == 100) {
+            // single update
+            increaseLineStack(lines);
+            engine.shaders.lineShader.addPermament(lines, tr);
+            engine.shaders.lineShader.preparePermanentLines(tr);
+        }
     } else {
         if ((tr.frameNum + 9) % 10 == 0 && engine.shaders.lineShader.doUpdatePermament) {
             // global update

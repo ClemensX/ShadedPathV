@@ -333,15 +333,16 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 	//}
 	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
 	// handle changed update sets:
-	auto* applyGlobalUpdateSet = engine->globalUpdate.getChangedGlobalUpdateSet(ug.currentGlobalUpdateElement);
+	auto* applyGlobalUpdateSet = engine->globalUpdate.getChangedGlobalUpdateSet(ug.currentGlobalUpdateElement, ug.updateNumber);
 	auto* detachGlobalUpdateSet = engine->globalUpdate.getDispensableGlobalUpdateSet(ug.currentGlobalUpdateElement);
+	detachGlobalUpdateSet = nullptr;
 	if (applyGlobalUpdateSet != nullptr) {
-		Log("render thread " << tr.frameIndex << " should apply global update set " << applyGlobalUpdateSet->to_string() << endl);
+		Log("render thread " << tr.frameIndex << " should apply global update " << applyGlobalUpdateSet->updateNumber << " set " << applyGlobalUpdateSet->to_string() << endl);
 		applyGlobalUpdate(ug, tr, applyGlobalUpdateSet);
 		ug.currentGlobalUpdateElement = applyGlobalUpdateSet;
 	}
 	if (detachGlobalUpdateSet != nullptr) {
-		Log("render thread " << tr.frameIndex << " should detach global update set " << detachGlobalUpdateSet->to_string() << endl);
+		Log("render thread " << tr.frameIndex << " should detach global " << detachGlobalUpdateSet->updateNumber << " update set " << detachGlobalUpdateSet->to_string() << endl);
 	}
 	// if we have an active update set, we need to upload its MVP matrix to GPU
 	if (ug.currentGlobalUpdateElement != nullptr) {
@@ -662,7 +663,7 @@ bool LineShader::signalGlobalUpdateRunning(bool isRunning)
 void LineShader::updateGlobal(GlobalUpdateElement& currentSet)
 {
 	assertUpdateThread();
-	Log("LineShader::updateGlobal set " << currentSet.to_string() << endl);
+	Log("LineShader::updateGlobal " << currentSet.updateNumber << " set " << currentSet.to_string() << endl);
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * verticesPermanent.size();
 	LineShaderUpdateElementNEW* updateElem = nullptr;
 	VkDeviceMemory vertexBufferMemory = nullptr;
@@ -692,4 +693,5 @@ void LineShader::applyGlobalUpdate(LineSubShader& updateShader, ThreadResources&
 	updateShader.drawCount = shaderResources->drawCount;
 	updateShader.addRenderPassAndDrawCommands(tr, &updateShader.commandBuffer, shaderResources->vertexBuffer);
 	updateShader.active = true;
+	updateShader.updateNumber = updateSet->updateNumber;
 }
