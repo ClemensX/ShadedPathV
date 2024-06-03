@@ -117,7 +117,10 @@ void LineShader::createCommandBuffer(ThreadResources& tr)
 }
 
 void LineShader::addCurrentCommandBuffer(ThreadResources& tr) {
-	//LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
+	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
+	if (ug.active) {
+		tr.activeCommandBuffers.push_back(ug.commandBuffer);
+	}
 	//LineShaderUpdateElement* el = getActiveUpdateElement();
 	//if (el != nullptr) {
 	//	tr.activeCommandBuffers.push_back(ug.commandBuffer); // TODO null on frame index 1
@@ -303,7 +306,7 @@ void LineShader::doGlobalUpdate(LineShaderUpdateElement* el, LineSubShader& ug, 
 	//el->activationFrameNum = tr.frameNum;
 }
 
-
+// called from user code in drawing thread
 void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
 	if (!enabled) return;
 	LineSubShader& sub = globalLineSubShaders[tr.threadResourcesIndex];
@@ -329,14 +332,20 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 	//	//ug.handlePermanentUpdates(ug, tr);
 	//}
 	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
-	auto* applyGlobalUpdateSet = engine->globalUpdate.getChangedGlobalUpdateSet(currentGlobalUpdateElement);
-	auto* detachGlobalUpdateSet = engine->globalUpdate.getDispensableGlobalUpdateSet(currentGlobalUpdateElement);
+	// handle changed update sets:
+	auto* applyGlobalUpdateSet = engine->globalUpdate.getChangedGlobalUpdateSet(ug.currentGlobalUpdateElement);
+	auto* detachGlobalUpdateSet = engine->globalUpdate.getDispensableGlobalUpdateSet(ug.currentGlobalUpdateElement);
 	if (applyGlobalUpdateSet != nullptr) {
 		Log("render thread " << tr.frameIndex << " should apply global update set " << applyGlobalUpdateSet->to_string() << endl);
 		applyGlobalUpdate(ug, tr, applyGlobalUpdateSet);
+		ug.currentGlobalUpdateElement = applyGlobalUpdateSet;
 	}
 	if (detachGlobalUpdateSet != nullptr) {
 		Log("render thread " << tr.frameIndex << " should detach global update set " << detachGlobalUpdateSet->to_string() << endl);
+	}
+	// if we have an active update set, we need to upload its MVP matrix to GPU
+	if (ug.currentGlobalUpdateElement != nullptr) {
+		ug.uploadToGPU(tr, ubo);
 	}
 }
 
@@ -665,7 +674,6 @@ void LineShader::updateGlobal(GlobalUpdateElement& currentSet)
 	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, verticesPermanent.data(),
 		updateElem->vertexBuffer, updateElem->vertexBufferMemory, "LineShader Global UPDATE Buffer " + currentSet.to_string(), GlobalRendering::QueueSelector::TRANSFER);
 	updateElem->drawCount = verticesPermanent.size();
-
 }
 
 void LineShader::reuseUpdateElement(LineShaderUpdateElementNEW* el)
@@ -683,4 +691,5 @@ void LineShader::applyGlobalUpdate(LineSubShader& updateShader, ThreadResources&
 	auto* shaderResources = getMatchingShaderResources(updateSet);
 	updateShader.drawCount = shaderResources->drawCount;
 	updateShader.addRenderPassAndDrawCommands(tr, &updateShader.commandBuffer, shaderResources->vertexBuffer);
+	updateShader.active = true;
 }

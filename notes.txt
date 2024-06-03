@@ -15,3 +15,12 @@ Source: Conversation with Bing, 12/12/2023
 (3) GitHub: Let’s build from here · GitHub. https://github.com/KhronosGroup/GLSL/blob/master/extensions/ext/GL_EXT_nonuniform_qualifier.txt.
 (4) nonuniformEXT(<literal here>) segfaults #1900 - GitHub. https://github.com/KhronosGroup/glslang/issues/1900.
 (5) Pro Tip: Improved GLSL Syntax for Vulkan DescriptorSet Indexing. https://developer.nvidia.com/blog/improved-glsl-syntax-vulkans-descriptorset-indexing/.
+
+handle permamnent lines (NEW):
+
+
+addCurrentCommandBuffer 
+
+reuseUpdateElement?
+
+ug.addRenderPassAndDrawCommands(tr, &ug.commandBuffer, ug.vertexBufferLocal);

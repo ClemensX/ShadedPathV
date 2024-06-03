@@ -124,7 +124,6 @@ public:
 	// line shader specific rersources
 	LineShaderUpdateElementNEW globalUpdateElementA, globalUpdateElementB;
 	// for handling global updates (independent of sub shaders)
-	GlobalUpdateElement* currentGlobalUpdateElement = nullptr;
 
 	LineShaderUpdateElementNEW* getMatchingShaderResources(GlobalUpdateElement* el) {
 		if (el->updateDesignator == GlobalUpdateDesignator::SET_A) {
@@ -310,6 +309,9 @@ public:
 	VkBuffer vertexBufferLocal = nullptr;
 	// vertex buffer device memory
 	VkDeviceMemory vertexBufferMemoryLocal = nullptr;
+	//std::atomic<bool> active = false;
+	bool active = false;
+	GlobalUpdateElement* currentGlobalUpdateElement = nullptr;
 
 private:
 	LineShader* lineShader = nullptr;
