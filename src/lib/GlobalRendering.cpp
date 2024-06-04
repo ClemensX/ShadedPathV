@@ -615,9 +615,9 @@ void GlobalRendering::endSingleTimeCommands(VkCommandBuffer commandBuffer, bool 
         vkQueueWaitIdle(graphicsQueue);
         vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
     } else if (queue == QueueSelector::TRANSFER) {
-        Log("submit via transfer queue\n");
+        //Log("submit via transfer queue\n");
         vkQueueSubmit(transferQueue, 1, &submitInfo, VK_NULL_HANDLE);
-        Log("submit via transfer queue END\n");
+        //Log("submit via transfer queue END\n");
         vkQueueWaitIdle(transferQueue);
         vkFreeCommandBuffers(device, commandPoolTransfer, 1, &commandBuffer);
     }

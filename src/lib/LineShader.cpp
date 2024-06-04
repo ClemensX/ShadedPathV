@@ -337,7 +337,7 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 	auto* detachGlobalUpdateSet = engine->globalUpdate.getDispensableGlobalUpdateSet(ug.currentGlobalUpdateElement);
 	detachGlobalUpdateSet = nullptr;
 	if (applyGlobalUpdateSet != nullptr) {
-		Log("render thread " << tr.frameIndex << " should apply global update " << applyGlobalUpdateSet->updateNumber << " set " << applyGlobalUpdateSet->to_string() << endl);
+		//Log("render thread " << tr.frameIndex << " should apply global update " << applyGlobalUpdateSet->updateNumber << " set " << applyGlobalUpdateSet->to_string() << endl);
 		applyGlobalUpdate(ug, tr, applyGlobalUpdateSet);
 	}
 	if (detachGlobalUpdateSet != nullptr) {
@@ -662,7 +662,7 @@ bool LineShader::signalGlobalUpdateRunning(bool isRunning)
 void LineShader::updateGlobal(GlobalUpdateElement& currentSet)
 {
 	assertUpdateThread();
-	Log("LineShader::updateGlobal " << currentSet.updateNumber << " set " << currentSet.to_string() << endl);
+	//Log("LineShader::updateGlobal " << currentSet.updateNumber << " set " << currentSet.to_string() << endl);
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * verticesPermanent.size();
 	LineShaderUpdateElementNEW* updateElem = nullptr;
 	VkDeviceMemory vertexBufferMemory = nullptr;
@@ -671,6 +671,7 @@ void LineShader::updateGlobal(GlobalUpdateElement& currentSet)
 	} else {
 		updateElem = &globalUpdateElementB;
 	}
+	//reuseUpdateElement(updateElem); --> may delete resources still in use by drawing threads
 	updateElem->active = true;
 	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, verticesPermanent.data(),
 		updateElem->vertexBuffer, updateElem->vertexBufferMemory, "LineShader Global UPDATE Buffer " + currentSet.to_string(), GlobalRendering::QueueSelector::TRANSFER);
@@ -690,6 +691,7 @@ void LineShader::reuseUpdateElement(LineShaderUpdateElementNEW* el)
 void LineShader::applyGlobalUpdate(LineSubShader& updateSubShader, ThreadResources& tr, GlobalUpdateElement* updateSet)
 {
 	auto* shaderResources = getMatchingShaderResources(updateSet);
+	//reuseUpdateElement(shaderResources); // TODO check!!!!
 	updateSubShader.drawCount = shaderResources->drawCount;
 	updateSubShader.addRenderPassAndDrawCommands(tr, &updateSubShader.commandBuffer, shaderResources->vertexBuffer);
 	updateSubShader.active = true;

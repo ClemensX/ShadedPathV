@@ -150,7 +150,7 @@ void LineApp::updatePerFrame(ThreadResources& tr)
     engine.shaders.lineShader.addOneTime(lines, tr);
     engine.shaders.lineShader.prepareAddLines(tr);
 
-    bool doSingleUpdate = true; // debug: enable single permanent update
+    bool doSingleUpdate = false; // debug: enable single permanent update
     if (doSingleUpdate) {
         if (tr.frameNum == 11) {
             // single update
