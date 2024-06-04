@@ -339,7 +339,6 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 	if (applyGlobalUpdateSet != nullptr) {
 		Log("render thread " << tr.frameIndex << " should apply global update " << applyGlobalUpdateSet->updateNumber << " set " << applyGlobalUpdateSet->to_string() << endl);
 		applyGlobalUpdate(ug, tr, applyGlobalUpdateSet);
-		ug.currentGlobalUpdateElement = applyGlobalUpdateSet;
 	}
 	if (detachGlobalUpdateSet != nullptr) {
 		Log("render thread " << tr.frameIndex << " should detach global " << detachGlobalUpdateSet->updateNumber << " update set " << detachGlobalUpdateSet->to_string() << endl);
@@ -688,18 +687,26 @@ void LineShader::reuseUpdateElement(LineShaderUpdateElementNEW* el)
 }
 
 // called from drawing thread
-void LineShader::applyGlobalUpdate(LineSubShader& updateShader, ThreadResources& tr, GlobalUpdateElement* updateSet)
+void LineShader::applyGlobalUpdate(LineSubShader& updateSubShader, ThreadResources& tr, GlobalUpdateElement* updateSet)
 {
 	auto* shaderResources = getMatchingShaderResources(updateSet);
-	updateShader.drawCount = shaderResources->drawCount;
-	updateShader.addRenderPassAndDrawCommands(tr, &updateShader.commandBuffer, shaderResources->vertexBuffer);
-	updateShader.active = true;
-	updateShader.updateNumber = updateSet->updateNumber;
+	updateSubShader.drawCount = shaderResources->drawCount;
+	updateSubShader.addRenderPassAndDrawCommands(tr, &updateSubShader.commandBuffer, shaderResources->vertexBuffer);
+	updateSubShader.active = true;
+	updateSubShader.updateNumber = updateSet->updateNumber;
+	updateSubShader.currentGlobalUpdateElement = updateSet; // used update element will be checked in isGlobalUpdateSetActive()
 }
 
+// auto called from drawing thread (synchronized)
 bool LineShader::isGlobalUpdateSetActive(ThreadResources& tr, GlobalUpdateElement* set)
 {
 	//Log("LineShader::isGlobalUpdateSetActive for drawing thread " << tr.frameIndex << " for " << set->to_string() << endl);
-	LineShaderUpdateElementNEW* updateElem = getMatchingShaderResources(set);
-	return updateElem->active;
+	//LineShaderUpdateElementNEW* updateElem = getMatchingShaderResources(set);
+	//return updateElem->active;
+	for (int i = 0; i < engine->getFramesInFlight(); i++) {
+		LineSubShader& ug = globalUpdateLineSubShaders[i];
+		if(ug.currentGlobalUpdateElement == set)
+			return true;
+	}
+	return false;
 }
