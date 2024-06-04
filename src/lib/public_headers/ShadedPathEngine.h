@@ -307,6 +307,7 @@ private:
     };
     ShaderUpdateQueueInfo shaderUpdateQueueInfo;
     RenderThreadNotification updateNotifier;
+
     // get update slot. will terminate engine if no slot available!
     // all previously reserved slots which are not already worked on will be simply removed (set to free)
     // only the newest update slot should still be in queue

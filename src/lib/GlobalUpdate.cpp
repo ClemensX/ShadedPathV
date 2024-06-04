@@ -12,6 +12,8 @@ void GlobalUpdate::doGlobalShaderUpdates()
     if (!opt_el) {
         return;
     }
+	if (setA.usedByShaders) Log("setA used by shaders\n");
+	if (setB.usedByShaders) Log("setB used by shaders\n");
 	if (!isInactiveSetAvailable()) {
 		Log("WARNING: skipping global update - no slot available\n");
 		return;
@@ -48,4 +50,21 @@ GlobalUpdateElement& GlobalUpdate::getInactiveSet()
 	}
 	Error("Both update sets are in use, this should not happen\n");
 	return setA; // keep compiler happy
+}
+
+void GlobalUpdate::singleDrawingThreadMaintenance()
+{
+	for (auto& shader : shaders) {
+		for (ThreadResources& res : engine.threadResources) {
+			//Log("maintenance for drawing thread " << tr->frameIndex << endl);
+			bool used = shader->isGlobalUpdateSetActive(res, &setA);
+			if (used) {
+				setA.usedByShaders = true;
+			}
+			used = shader->isGlobalUpdateSetActive(res, &setB);
+			if (used) {
+				setB.usedByShaders = true;
+			}
+		}
+	}
 }

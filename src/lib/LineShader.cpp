@@ -223,9 +223,9 @@ void LineShader::assertUpdateThread() {
 // called from user code in drawing thread
 void LineShader::preparePermanentLines(ThreadResources& tr)
 {
-	if (!enabled) return;
-	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
-	LogCond(LOG_GLOBAL_UPDATE, "preparePermanentLines: index " << tr.frameIndex << endl);
+	//if (!enabled) return;
+	//LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
+	//LogCond(LOG_GLOBAL_UPDATE, "preparePermanentLines: index " << tr.frameIndex << endl);
 	//
 	//// initiate global update with ug.vertices, then create render pass and draw command
 	//LineShaderUpdateElement* el = lockNextUpdateElement();
@@ -249,13 +249,13 @@ void LineShader::preparePermanentLines(ThreadResources& tr)
 
 	// TODO: do in update thread, using direct approach for now
 	// delete old buffer
-	vkDestroyBuffer(device, ug.vertexBufferLocal, nullptr);
-	vkFreeMemory(device, ug.vertexBufferMemoryLocal, nullptr);
+	//vkDestroyBuffer(device, ug.vertexBufferLocal, nullptr);
+	//vkFreeMemory(device, ug.vertexBufferMemoryLocal, nullptr);
 	// create new buffer
-	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * ug.vertices.size();
+	//VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * ug.vertices.size();
 	//engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, ug.vertices.data(), ug.vertexBufferLocal, ug.vertexBufferMemoryLocal);
 	// recreate cmd buffer	
-	ug.addRenderPassAndDrawCommands(tr, &ug.commandBuffer, ug.vertexBufferLocal);
+	//ug.addRenderPassAndDrawCommands(tr, &ug.commandBuffer, ug.vertexBufferLocal);
 
 }
 
@@ -672,6 +672,7 @@ void LineShader::updateGlobal(GlobalUpdateElement& currentSet)
 	} else {
 		updateElem = &globalUpdateElementB;
 	}
+	updateElem->active = true;
 	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, verticesPermanent.data(),
 		updateElem->vertexBuffer, updateElem->vertexBufferMemory, "LineShader Global UPDATE Buffer " + currentSet.to_string(), GlobalRendering::QueueSelector::TRANSFER);
 	updateElem->drawCount = verticesPermanent.size();
@@ -694,4 +695,11 @@ void LineShader::applyGlobalUpdate(LineSubShader& updateShader, ThreadResources&
 	updateShader.addRenderPassAndDrawCommands(tr, &updateShader.commandBuffer, shaderResources->vertexBuffer);
 	updateShader.active = true;
 	updateShader.updateNumber = updateSet->updateNumber;
+}
+
+bool LineShader::isGlobalUpdateSetActive(ThreadResources& tr, GlobalUpdateElement* set)
+{
+	//Log("LineShader::isGlobalUpdateSetActive for drawing thread " << tr.frameIndex << " for " << set->to_string() << endl);
+	LineShaderUpdateElementNEW* updateElem = getMatchingShaderResources(set);
+	return updateElem->active;
 }

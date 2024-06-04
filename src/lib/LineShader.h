@@ -23,6 +23,7 @@ struct LineShaderUpdateElementNEW {
 	VkBuffer vertexBuffer = nullptr;
 	VkDeviceMemory vertexBufferMemory = nullptr;
 	size_t drawCount = 0;
+	bool active = false; // store usage state, set by global update thread, reset by render thread
 };
 
 // forward
@@ -133,6 +134,8 @@ public:
 			return &globalUpdateElementB;
 		}
 	}
+
+	bool isGlobalUpdateSetActive(ThreadResources& tr, GlobalUpdateElement* set) override;
 
 	// free old resources:
 	void reuseUpdateElement(LineShaderUpdateElementNEW* el);

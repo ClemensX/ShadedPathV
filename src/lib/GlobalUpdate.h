@@ -2,6 +2,8 @@
 
 // this class implements a general scheme to update shader resources in the background
 // there are always two sets of resources, A and B and this class is responsible for triggering updating one set while the other is in use
+// update sets are only reserved for use by the global update thread, but then can only be put back to being unused
+// if all shaders have finished using it. This is checked by singleDrawingThreadMaintenance() after each drame has been drawn.
 
 enum class GlobalUpdateDesignator { SET_A, SET_B };
 
@@ -9,7 +11,8 @@ enum class GlobalUpdateDesignator { SET_A, SET_B };
 struct GlobalUpdateElement {
 	std::atomic<bool> free = true;   // can be reserved
 	std::atomic<bool> readyToRender = false; // update is ready to be rendered
-	std::atomic<bool> active = false; // true: somebody uses this for rendering, false: should be applied
+	//std::atomic<bool> active = false; // true: somebody uses this for rendering, false: should be applied
+	bool usedByShaders = false; // true: some shader is using this set, false: can be dispensed (filled during singleDrawingThreadMaintenance())
 	long updateNumber = -1; // unique number for each update, always increasing
 	//bool inuse = false; // update process in progress
 	//unsigned long num = 0; // count updates
@@ -42,9 +45,12 @@ public:
 	// during updatePerFrame() call
 	virtual bool signalGlobalUpdateRunning(bool isRunning) = 0;
 	virtual void updateGlobal(GlobalUpdateElement& currentSet) = 0;
+	// each shader taking part in global updates has to overide this method to maintain update sets
+	virtual bool isGlobalUpdateSetActive(ThreadResources& res, GlobalUpdateElement* set) = 0;
+
 };
 
-// all methofds run in update thread unless otherwise noted
+// all methods run in update thread unless otherwise noted
 class GlobalUpdate
 {
 private:
@@ -109,7 +115,18 @@ public:
 		return n;
 	}
 
+	void doSyncedDrawingThreadMaintenance() {
+		{
+			std::unique_lock<std::mutex> lock(maintenanceMutex);
+			singleDrawingThreadMaintenance();
+		}
+	}
+
 private:
+	mutable std::mutex maintenanceMutex; // used for maintenance tasks that have to be run with no other drawing thread running
+	void singleDrawingThreadMaintenance();
+
+
 	bool shouldUpdateToSet(GlobalUpdateElement& set, GlobalUpdateElement* currentUpdateSet, long currentlyRenderingUpdateNumber) {
 		// only readyToRender sets can be updated
 		if (!set.readyToRender)	return false;

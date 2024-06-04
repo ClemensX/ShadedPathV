@@ -26,6 +26,10 @@ class Shaders
 			return *this;
 		}
 
+		std::vector<ShaderBase*>& getShaders() {
+			return shaderList;
+		}
+
 		// Initialize ShaderState and all shaders
 		Config& init();
 
@@ -62,6 +66,10 @@ public:
 	Shaders& addShader(ShaderBase& shader) {
 		config.add(shader);
 		return *this;
+	}
+
+	std::vector<ShaderBase*>& getShaders() {
+		return config.getShaders();
 	}
 
 	// Initialize ShaderState and all added shaders

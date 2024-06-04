@@ -237,8 +237,10 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance, ThreadRes
         }
         // draw next frame
         engine_instance->drawFrame(*tr);
+        engine_instance->globalUpdate.doSyncedDrawingThreadMaintenance();
         engine_instance->queue.push(tr);
         LogCondF(LOG_QUEUE, "pushed frame: " << tr->frameNum << endl);
+
     }
     LogCondF(LOG_QUEUE, "run DrawFrame end " << tr->frameIndex << endl);
     tr->threadFinished = true;
