@@ -12,6 +12,7 @@ void GlobalUpdate::doGlobalShaderUpdates()
     if (!opt_el) {
         return;
     }
+	signalGlobalUpdateRunning(true);
 	//if (setA.usedByShaders) Log("setA used by shaders\n");
 	//if (setB.usedByShaders) Log("setB used by shaders\n");
 	GlobalUpdateElement* currentSet = nullptr;
@@ -25,6 +26,7 @@ void GlobalUpdate::doGlobalShaderUpdates()
 		}
 		if (!isInactiveSetAvailable()) {
 			Log("WARNING: skipping global update - no slot available\n");
+			signalGlobalUpdateRunning(false);
 			return;
 		}
 		// we just ask every shader to update itself,
@@ -34,13 +36,12 @@ void GlobalUpdate::doGlobalShaderUpdates()
 		currentSet->free = false;
 		currentSet->readyToRender = false;
 	}
+
 	for (auto& shader : shaders) {
-		if (shader->signalGlobalUpdateRunning(true)) {
-			shader->updateGlobal(*currentSet);
-			shader->signalGlobalUpdateRunning(false);
-		}
+		shader->updateGlobal(*currentSet);
 	}
 	currentSet->readyToRender = true;
+	signalGlobalUpdateRunning(false);
 }
 
 void GlobalUpdate::ctreateUpdateSets()
@@ -86,4 +87,9 @@ void GlobalUpdate::singleDrawingThreadMaintenance()
 	//Log("singleDrawingThreadMaintenance() frameNum: " << fn << endl);
 	//Log("         setA.free: " << setA.free << " usedbyshader " << setA.usedByShaders << endl);
 	//Log("         setB.free: " << setB.free << " usedbyshader " << setB.usedByShaders << endl);
+}
+
+void GlobalUpdate::signalGlobalUpdateRunning(bool isRunning)
+{
+	globalUpdateRunning = isRunning;
 }

@@ -40,10 +40,6 @@ class GlobalUpdateBase {
 public:
 	// all update sets have to be creted in deactive state
 	virtual void createUpdateSet(GlobalUpdateElement& el) = 0;
-	// signal that global update is currently being prepared,
-	// so single thread resources in application code should not be updated
-	// during updatePerFrame() call
-	virtual bool signalGlobalUpdateRunning(bool isRunning) = 0;
 	virtual void updateGlobal(GlobalUpdateElement& currentSet) = 0;
 	// each shader taking part in global updates has to overide this method to maintain update sets
 	virtual bool isGlobalUpdateSetActive(ThreadResources& res, GlobalUpdateElement* set) = 0;
@@ -122,6 +118,10 @@ public:
 		}
 	}
 
+	bool isRunning() {
+		return globalUpdateRunning;
+	}
+
 private:
 	mutable std::mutex maintenanceMutex; // used for maintenance tasks that have to be run with no other drawing thread running
 	void singleDrawingThreadMaintenance();
@@ -143,5 +143,11 @@ private:
 		return setA.free || setB.free;
 	}
 	std::atomic<long> nextFreeUpdateNum = 0;
+	std::atomic<bool> globalUpdateRunning = false;
+	// signal that global update is currently being prepared,
+	// so single thread resources in application code should not be updated
+	// during updatePerFrame() call
+	void signalGlobalUpdateRunning(bool isRunning);
+
 };
 

@@ -92,7 +92,6 @@ public:
 	virtual void doGlobalUpdate() override;
 
 	virtual void createUpdateSet(GlobalUpdateElement& el) override;
-	virtual bool signalGlobalUpdateRunning(bool isRunning) override;
 	virtual void updateGlobal(GlobalUpdateElement& currentSet) override;
 
 	// add lines - they will never  be removed
@@ -259,7 +258,6 @@ public:
 		void assertUpdateThread();
 	private:
 		std::atomic<LineShaderUpdateElement*> currentlyWorkedOnUpdateElement = nullptr;
-		bool globalUpdateRunning = false;
 		bool renderThreadUpdateRunning = false;
 };
 

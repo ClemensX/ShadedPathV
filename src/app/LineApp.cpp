@@ -203,7 +203,7 @@ void LineApp::increaseLineStack(std::vector<LineDef>& lines)
         ld.start = a4; ld.end = a1;
         lines.push_back(ld);
     }
-	Log("Line stack increased to " << currentLineStackCount << endl);
+	//Log("Line stack increased to " << currentLineStackCount << endl);
 }
 
 void LineApp::handleInput(InputState& inputState)

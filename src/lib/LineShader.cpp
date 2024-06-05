@@ -182,8 +182,9 @@ void LineShader::addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& t
 void LineShader::addPermament(std::vector<LineDef>& linesToAdd, ThreadResources& tr)
 {
 	assert(engine->isUpdateThread == false);
-	if (globalUpdateRunning) {
-		Error("ERROR: trying to add permanent lines while global update is running\n");
+	if (engine->globalUpdate.isRunning()) {
+		//Error("ERROR: trying to add permanent lines while global update is running\n");
+		Log("WARNING: trying to add permanent lines while global update is running\n");
 		return;
 	}
 	if (renderThreadUpdateRunning) {
@@ -647,17 +648,6 @@ LineShader::LineShaderUpdateElement* LineShader::getActiveUpdateElement()
 	}
 }
 
-bool LineShader::signalGlobalUpdateRunning(bool isRunning)
-{
-	if (isRunning) {
-		if (globalUpdateRunning || renderThreadUpdateRunning) {
-			return false;
-		}
-	}
-	globalUpdateRunning = isRunning;
-	return true;
-}
-
 // called from update thread
 void LineShader::updateGlobal(GlobalUpdateElement& currentSet)
 {
@@ -672,6 +662,7 @@ void LineShader::updateGlobal(GlobalUpdateElement& currentSet)
 		updateElem = &globalUpdateElementB;
 	}
 	//reuseUpdateElement(updateElem); --> may delete resources still in use by drawing threads
+	//Log("LineShader::updateGlobal wants to update to gen " << currentSet.updateNumber << " would delete, draw count " << updateElem->drawCount << endl);
 	updateElem->active = true;
 	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, verticesPermanent.data(),
 		updateElem->vertexBuffer, updateElem->vertexBufferMemory, "LineShader Global UPDATE Buffer " + currentSet.to_string(), GlobalRendering::QueueSelector::TRANSFER);
