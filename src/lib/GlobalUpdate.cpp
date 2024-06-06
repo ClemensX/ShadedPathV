@@ -71,12 +71,12 @@ void GlobalUpdate::singleDrawingThreadMaintenance()
 	for (auto& shader : shaders) {
 		for (ThreadResources& res : engine.threadResources) {
 			//Log("maintenance for drawing thread " << tr->frameIndex << endl);
-			bool used = res.currentGlobalUpdateElement == &setA;
+			bool used = shader->isGlobalUpdateSetActive(res, &setA);
 			if (used) {
 				//Log("setA used by shader, prev usage: " << setA.usedByShaders << endl);
 				setA.usedByShaders = true;
 			}
-			used = res.currentGlobalUpdateElement == &setB;
+			used = shader->isGlobalUpdateSetActive(res, &setB);
 			if (used) {
 				//Log("setB used by shader, prev usage: " << setB.usedByShaders << endl);
 				setB.usedByShaders = true;
@@ -92,8 +92,4 @@ void GlobalUpdate::singleDrawingThreadMaintenance()
 void GlobalUpdate::signalGlobalUpdateRunning(bool isRunning)
 {
 	globalUpdateRunning = isRunning;
-}
-
-void GlobalUpdate::markGlobalUpdateSetAsUsed(GlobalUpdateElement* updateSet, ThreadResources& tr) {
-	tr.currentGlobalUpdateElement = updateSet; // TODO: what if multiple shaders use different sets in same frame?
 }

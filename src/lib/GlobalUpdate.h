@@ -5,7 +5,6 @@
 // update sets are only reserved for use by the global update thread, but then can only be put back to being unused
 // if all shaders have finished using it. This is checked by singleDrawingThreadMaintenance() after each drame has been drawn.
 
-class ThreadResources;
 enum class GlobalUpdateDesignator { SET_A, SET_B };
 
 // used in all the global update methods to signal upadte status
@@ -122,8 +121,6 @@ public:
 	bool isRunning() {
 		return globalUpdateRunning;
 	}
-
-	void markGlobalUpdateSetAsUsed(GlobalUpdateElement* updateSet, ThreadResources& tr);
 
 private:
 	mutable std::mutex maintenanceMutex; // used for maintenance tasks that have to be run with no other drawing thread running

@@ -312,7 +312,7 @@ public:
 	VkDeviceMemory vertexBufferMemoryLocal = nullptr;
 	//std::atomic<bool> active = false;
 	bool active = false;
-	//GlobalUpdateElement* currentGlobalUpdateElement = nullptr;
+	GlobalUpdateElement* currentGlobalUpdateElement = nullptr;
 	long updateNumber = -1; // matches update number in GlobalUpdateElement, for knowing which global update has been applied
 
 private:
