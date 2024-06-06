@@ -47,13 +47,6 @@ VkShaderModule Shaders::createShaderModule(const vector<byte>& code)
 	return shaderModule;
 }
 
-void Shaders::Config::doGlobalUpdate()
-{
-	for (ShaderBase* shader : shaderList) {
-		shader->doGlobalUpdate();
-	}
-}
-
 void Shaders::Config::createCommandBuffers(ThreadResources& tr) {
 	for (ShaderBase* shader : shaderList) {
 		shader->createCommandBuffer(tr);
@@ -83,11 +76,6 @@ void Shaders::gatherActiveCommandBuffers(ThreadResources& tr) {
 void Shaders::destroyThreadResources(ThreadResources& tr)
 {
 	config.destroyThreadResources(tr);
-}
-
-void Shaders::doGlobalUpdate()
-{
-	config.doGlobalUpdate();
 }
 
 // SHADER Triangle

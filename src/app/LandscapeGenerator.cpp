@@ -126,7 +126,6 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
             //heightmap.getPoints(plist);
             //Log("num points: " << plist.size() << endl);
             engine.shaders.lineShader.addPermament(lines, tr);
-            engine.shaders.lineShader.preparePermanentLines(tr);
         }
         //engine.shaders.lineShader.addOneTime(lines, tr);
         //engine.shaders.lineShader.handleUpdatedResources(tr);

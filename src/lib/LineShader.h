@@ -89,8 +89,6 @@ public:
 	virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
 	virtual void destroyThreadResources(ThreadResources& tr) override;
 
-	virtual void doGlobalUpdate() override;
-
 	virtual void createUpdateSet(GlobalUpdateElement& el) override;
 	virtual void updateGlobal(GlobalUpdateElement& currentSet) override;
 	virtual void freeUpdateResources(GlobalUpdateElement* updateSet);
@@ -176,9 +174,6 @@ public:
 	// add lines permanently via update thread
 	void addPermament(std::vector<LineDef>& linesToAdd, ThreadResources& tr);
 
-	// prepare command buffer for permanent lines
-	void preparePermanentLines(ThreadResources& tr);
-
 	static void addCross(std::vector<LineDef>& lines, glm::vec3 pos, glm::vec4 color) {
 		static float oDistance = 5.0f;
 		LineDef crossLines[] = {
@@ -203,13 +198,9 @@ public:
 	}
 
 	public:
-		bool activeUpdateElementisA = true;		// distinguish beween set a and b
-		bool doUpdatePermament = true;			// switch in app code
-		bool permanentUpdateAvailable = false;	// actual resources need to be drawn
-		bool permanentUpdatePending = false;    // signal that not all threads have switched to new update set
 		void assertUpdateThread();
 	private:
-		bool renderThreadUpdateRunning = false;
+		std::atomic<bool> renderThreadUpdateRunning = false;
 };
 
 /*
@@ -261,9 +252,7 @@ public:
 	VkBuffer vertexBufferLocal = nullptr;
 	// vertex buffer device memory
 	VkDeviceMemory vertexBufferMemoryLocal = nullptr;
-	//std::atomic<bool> active = false;
 	bool active = false;
-	//GlobalUpdateElement* currentGlobalUpdateElement = nullptr;
 	long updateNumber = -1; // matches update number in GlobalUpdateElement, for knowing which global update has been applied
 
 private:

@@ -110,11 +110,6 @@ public:
 	// finish shader initialization
 	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderSate) = 0;
 
-	// lengthy background updates
-	virtual void doGlobalUpdate() {
-		// default implementation does nothing
-	}
-
 	// destroy thread local shader resources
 	virtual void destroyThreadResources(ThreadResources& tr) = 0;
 
