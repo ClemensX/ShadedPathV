@@ -46,7 +46,9 @@ public:
 	FrameBufferAttachment colorAttachment2; // right side view
 
 	// signal switch to new set of resources
-	unsigned long global_update_num = 0;
+	unsigned long global_update_num = 0; // TODO cleanup - not used
+	// store for each drawing thred which update set is currently in use
+	GlobalUpdateElement* currentGlobalUpdateElement = nullptr;
 
 	// ShaderThreadResources
 	ClearThreadResources clearResources;

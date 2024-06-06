@@ -334,8 +334,8 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 	//}
 	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
 	// handle changed update sets:
-	auto* applyGlobalUpdateSet = engine->globalUpdate.getChangedGlobalUpdateSet(ug.currentGlobalUpdateElement, ug.updateNumber);
-	auto* detachGlobalUpdateSet = engine->globalUpdate.getDispensableGlobalUpdateSet(ug.currentGlobalUpdateElement);
+	auto* applyGlobalUpdateSet = engine->globalUpdate.getChangedGlobalUpdateSet(tr.currentGlobalUpdateElement, ug.updateNumber);
+	auto* detachGlobalUpdateSet = engine->globalUpdate.getDispensableGlobalUpdateSet(tr.currentGlobalUpdateElement);
 	detachGlobalUpdateSet = nullptr;
 	if (applyGlobalUpdateSet != nullptr) {
 		//Log("render thread " << tr.frameIndex << " should apply global update " << applyGlobalUpdateSet->updateNumber << " set " << applyGlobalUpdateSet->to_string() << endl);
@@ -345,8 +345,9 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 		Log("render thread " << tr.frameIndex << " should detach global " << detachGlobalUpdateSet->updateNumber << " update set " << detachGlobalUpdateSet->to_string() << endl);
 	}
 	// if we have an active update set, we need to upload its MVP matrix to GPU
-	if (ug.currentGlobalUpdateElement != nullptr) {
-		ug.uploadToGPU(tr, ubo);
+	//if (ug.currentGlobalUpdateElement != nullptr) {
+	if (tr.currentGlobalUpdateElement != nullptr) {
+			ug.uploadToGPU(tr, ubo);
 	}
 }
 
@@ -687,19 +688,6 @@ void LineShader::applyGlobalUpdate(LineSubShader& updateSubShader, ThreadResourc
 	updateSubShader.addRenderPassAndDrawCommands(tr, &updateSubShader.commandBuffer, shaderResources->vertexBuffer);
 	updateSubShader.active = true;
 	updateSubShader.updateNumber = updateSet->updateNumber;
-	updateSubShader.currentGlobalUpdateElement = updateSet; // used update element will be checked in isGlobalUpdateSetActive()
+	engine->globalUpdate.markGlobalUpdateSetAsUsed(updateSet, tr);
 }
 
-// auto called from drawing thread (synchronized)
-bool LineShader::isGlobalUpdateSetActive(ThreadResources& tr, GlobalUpdateElement* set)
-{
-	//Log("LineShader::isGlobalUpdateSetActive for drawing thread " << tr.frameIndex << " for " << set->to_string() << endl);
-	//LineShaderUpdateElementNEW* updateElem = getMatchingShaderResources(set);
-	//return updateElem->active;
-	for (int i = 0; i < engine->getFramesInFlight(); i++) {
-		LineSubShader& ug = globalUpdateLineSubShaders[i];
-		if(ug.currentGlobalUpdateElement == set)
-			return true;
-	}
-	return false;
-}
