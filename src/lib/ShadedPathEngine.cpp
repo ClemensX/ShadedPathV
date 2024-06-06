@@ -99,11 +99,11 @@ void ShadedPathEngine::drawFrame()
         presentation.presentBackBufferImage(tr);
         ThemedTimer::getInstance()->add(TIMER_PRESENT_FRAME);
         advanceFrameCountersAfterPresentation();
-        while (!shaderUpdateQueueSingle.empty()) {
-            ShaderUpdateElement* el = shaderUpdateQueueSingle.front();
-            shaderUpdateQueueSingle.pop();
-            updateSingle(el, this);
-        }
+        //while (!shaderUpdateQueueSingle.empty()) {
+        //    ShaderUpdateElement* el = shaderUpdateQueueSingle.front();
+        //    shaderUpdateQueueSingle.pop();
+        //    updateSingle(el, this);
+        //}
 
     }
 }
@@ -227,15 +227,6 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance, ThreadRes
         if (!o) {
             break;
         }
-        // check for new resource set available after shader global data update
-        doSwitch = engine_instance->updateNotifier.resourceSwitchAvailable(tr->frameIndex, set, shaderInstance);
-        if (doSwitch) {
-            Log("Switch resource set for render thread " << tr->frameIndex << " to set " << (set == GlobalResourceSet::SET_B) << endl);
-            // switch resource sets
-            shaderInstance->resourceSwitch(set);
-            // signal completion
-            engine_instance->updateNotifier.resourceSwitchComplete(tr->frameIndex);
-        }
         // draw next frame
         engine_instance->drawFrame(*tr);
         engine_instance->globalUpdate.doSyncedDrawingThreadMaintenance();
@@ -284,80 +275,14 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
 
 bool ShadedPathEngine::queueThreadFinished = false;
 
-void ShadedPathEngine::updateSingle(ShaderUpdateElement* el, ShadedPathEngine* engine_instance) {
-    // run the update in shader class
-    el = engine_instance->selectLatestUpdate(el);
-    if (!el->free) {
-        el->shaderInstance->update(el);
-        el->free = true;
-        LogCondF(LOG_QUEUE, "updated shader data " << endl);
-        Log("updated shader data " << endl);
-        // now wait until all render threads have adopted the update
-        if (!engine_instance->threadModeSingle) {
-            engine_instance->updateNotifier.waitForRenderThreads(engine_instance->getFramesInFlight(), el->globalResourceSet, el->shaderInstance);
-        }
-    }
-    // update using slot number
-    //engine_instance->update(slot);
-}
-
 void ShadedPathEngine::runUpdateThread(ShadedPathEngine* engine_instance)
 {
     isUpdateThread = true;
     LogCondF(LOG_QUEUE, "run shader update thread" << endl);
     while (engine_instance->isShutdown() == false) {
         engine_instance->globalUpdate.doGlobalShaderUpdates();
-        //engine_instance->doGlobalShaderUpdates();
-        //engine_instance->updateSingle(opt_el.value(), engine_instance);
     }
     LogCondF(LOG_QUEUE, "run shader update thread end" << endl);
-}
-
-void ShadedPathEngine::doGlobalShaderUpdates()
-{
-    shaders.doGlobalUpdate();
-}
-
-ShaderUpdateElement* ShadedPathEngine::selectLatestUpdate(ShaderUpdateElement* el)
-{
-    size_t size = el->shaderInstance->getUpdateArraySize();
-    size_t latest = el->arrayIndex;
-    ShaderBase* shader = el->shaderInstance;
-    for (size_t i = 0; i < size; i++) {
-        if (i == latest) continue;
-        ShaderUpdateElement* next = shader->getUpdateElement(i);
-        if (next->free) continue;
-        ShaderUpdateElement* latestEl = shader->getUpdateElement(latest);
-        if (next->num > latestEl->num) {
-            // we found newer update - remove the old one
-            latestEl->free = true;
-            latest = i;
-        } else {
-            // current el is newer than next - remove next element
-            next->free = true;
-        }
-    }
-    return shader->getUpdateElement(latest);
-}
-
-void ShadedPathEngine::update(int i)
-{
-}
-
-int ShadedPathEngine::manageMultipleUpdateSlots(int slot, int next_slot) {
-    //ShaderUpdateElement* cur = getUpdateElement(slot);
-    //ShaderUpdateElement* next = getUpdateElement(next_slot);
-    //if (next->num > cur->num) {
-    //    // we found newer update - remove the old one
-    //    cur->free = true;
-    //    return next_slot;
-    //}
-    //else {
-    //    // cur is newer than next - remove next element
-    //    next->free = true;
-    //    return slot;
-    //}
-    return 0;
 }
 
 void ShadedPathEngine::pushUpdate(GlobalUpdateElement* updateElement)
@@ -404,7 +329,6 @@ void ShadedPathEngine::startUpdateThread()
         return;
     }
     threads.addThread(ThreadCategory::GlobalUpdate, "global_update", runUpdateThread, this);
-    shaderUpdateQueueInfo.threadRunning = true;
 }
 
 
@@ -433,9 +357,9 @@ void ShadedPathEngine::shutdown()
 {
     shutdown_mode = true;
     /*queue.shutdown();*/
-    if (shaderUpdateQueueInfo.threadRunning) {
+    //if (shaderUpdateQueueInfo.threadRunning) {
         shaderUpdateQueue.shutdown();
-    }
+    //}
 
     for (int i = 0; i < framesInFlight; i++) {
         auto& tr = threadResources[i];

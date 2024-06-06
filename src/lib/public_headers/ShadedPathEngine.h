@@ -196,8 +196,6 @@ public:
     void shutdown();
     // Wait until engine threads have ended rendering.
     void waitUntilShutdown();
-    // call all shaders to do background updates
-    void doGlobalShaderUpdates();
 
     thread_local static bool isUpdateThread;
     GlobalRendering global;
@@ -234,6 +232,7 @@ public:
 	auto& getShaderUpdateQueue() {
 		return shaderUpdateQueue;
 	}
+    void pushUpdate(GlobalUpdateElement* updateElement);
 
 private:
     State state = INIT;
@@ -263,11 +262,9 @@ private:
     RenderQueue queue;
     // we simply use indexes into the update array for handling resources
     ThreadsafeWaitingQueue<GlobalUpdateElement*> shaderUpdateQueue;
-    // for singleQueue we need yet another sync between update thread and main thread
-    SynchronizedDataConsumption<SingleQueueTransferInfo*> singleQueueSynchronization;
 
     // we need a separate update queue for threadModeSingle
-    std::queue<ShaderUpdateElement*> shaderUpdateQueueSingle;
+    std::queue<ShaderUpdateElement*> shaderUpdateQueueSingle; // TODO: rework
     void updateSingle(ShaderUpdateElement* el, ShadedPathEngine* engine_instance);
     static bool queueThreadFinished;
     void startRenderThreads();
@@ -285,8 +282,6 @@ private:
     void advanceFrameCountersAfterPresentation();
     // get next frame number for drawing threads:
     long getNextFrameNumber();
-    // the actual update method that operates on a single ShaderUpdateElement
-    void update(int i);
     // current frame index - always within 0 .. threadResources.size() - 1
     std::atomic<size_t> currentFrameIndex = 0;
 
@@ -294,73 +289,4 @@ private:
     std::atomic<long> frameNum = 0;
     // for rendering threads
     std::atomic<long> nextFreeFrameNum = 0;
-
-    public:
-    // everything from here should only be called from within sync blocks via shaderUpdateQueue
-    struct ShaderUpdateQueueInfo {
-        bool workInProgress = false;
-        bool reservedSlotsAvailable = false;
-        bool threadRunning = false;
-        std::atomic<unsigned long> last_update_num = 1;  // hold highest used update num so far
-        std::atomic<unsigned long> update_available = 0; // hold number of current update (after preparing GPU and during threads working on maybe the last one still)
-        std::atomic<unsigned long> update_finished_counter = 0; // will be set to framesInFlight and reduced by render threads
-    };
-    ShaderUpdateQueueInfo shaderUpdateQueueInfo;
-    RenderThreadNotification updateNotifier;
-
-    // get update slot. will terminate engine if no slot available!
-    // all previously reserved slots which are not already worked on will be simply removed (set to free)
-    // only the newest update slot should still be in queue
-    // beware: code can't be in cpp because the template generation will not work!
-    template <typename T, std::size_t size>
-    size_t reserveUpdateSlot(const std::array<T, size>& updateArray) {
-        for (size_t i = 0; i < size; i++) {
-            ShaderUpdateElement* el = (ShaderUpdateElement*)&updateArray[i];
-            if (el->free) {
-                freeAllReservedSlots<T, size>(updateArray);
-                el->free = false;
-                el->num = shaderUpdateQueueInfo.last_update_num++;
-                //el->shaderInstance = T; was set already in shader class
-                shaderUpdateQueueInfo.reservedSlotsAvailable = true;
-                return i;
-            }
-        }
-        Error("ShaderBase: no slots available for global shader update!");
-        // keep compiler happy
-        return 0;
-    };
-
-    int manageMultipleUpdateSlots(int slot, int next_slot);
-
-    // free all reserved slots that are not already worked on
-    template <typename T, std::size_t size>
-    void freeAllReservedSlots(const std::array<T, size>& updateArray) {
-        for (size_t i = 0; i < size; i++) {
-            ShaderUpdateElement* el = (ShaderUpdateElement*)&updateArray[i];
-            if (el->free == false && el->inuse == false) {
-                el->free = true;
-            }
-        }
-    };
-
-    // return the newest update element for a single shader and free all others
-    ShaderUpdateElement* selectLatestUpdate(ShaderUpdateElement* el);
-
-    void pushUpdate(GlobalUpdateElement* updateElement);
-
-    template <typename T, std::size_t size>
-    void printUpdateArray(const std::array<T, size>& updateArray) {
-        std::stringstream s;
-        for (size_t i = 0; i < size; i++) {
-            ShaderUpdateElement* el = (ShaderUpdateElement*)&updateArray[i];
-            s << " " << el->num;
-            if (el->free) {
-                s << "-";
-            } else {
-                s << "x";
-            }
-        }
-        s << std::endl;
-        Log(s.str().c_str());
-    };
 };
