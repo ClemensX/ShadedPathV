@@ -42,8 +42,6 @@ public:
 	// all update sets have to be creted in deactive state
 	virtual void createUpdateSet(GlobalUpdateElement& el) = 0;
 	virtual void updateGlobal(GlobalUpdateElement& currentSet) = 0;
-	// each shader taking part in global updates has to overide this method to maintain update sets
-	virtual bool isGlobalUpdateSetActive(ThreadResources& res, GlobalUpdateElement* set) = 0;
 
 };
 

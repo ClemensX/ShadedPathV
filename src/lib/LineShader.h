@@ -134,8 +134,6 @@ public:
 		}
 	}
 
-	bool isGlobalUpdateSetActive(ThreadResources& tr, GlobalUpdateElement* set) override;
-
 	// free old resources:
 	void reuseUpdateElement(LineShaderUpdateElementNEW* el);
 	// single thread methods to change current global update:
