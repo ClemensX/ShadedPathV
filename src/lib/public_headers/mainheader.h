@@ -13,13 +13,14 @@
 #define LOG_GLOBAL_UPDATE false
 
 // timer topics:
-// FPS like
+// FPS like (will display FPS value in loginfo() output)
 #define TIMER_DRAW_FRAME "DrawFrame"
 #define TIMER_PRESENT_FRAME "PresentFrame"
 #define TIMER_INPUT_THREAD "InputThread"
 // part timers for sub-frame timings like presenting or buffer upload
 #define TIMER_PART_BACKBUFFER_COPY_AND_PRESENT "PartPresentBackBuffer"
 #define TIMER_PART_BUFFER_COPY "PartBufferCopy"
+#define TIMER_PART_GLOBAL_UPDATE "PartGlobalUpdate"
 
 // Windows headers
 

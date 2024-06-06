@@ -668,6 +668,7 @@ void LineShader::updateGlobal(GlobalUpdateElement& currentSet)
 	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, verticesPermanent.data(),
 		updateElem->vertexBuffer, updateElem->vertexBufferMemory, "LineShader Global UPDATE Buffer " + currentSet.to_string(), GlobalRendering::QueueSelector::TRANSFER);
 	updateElem->drawCount = verticesPermanent.size();
+	//this_thread::sleep_for(chrono::milliseconds(3000)); //test slow update
 }
 
 void LineShader::reuseUpdateElement(LineShaderUpdateElementNEW* el)

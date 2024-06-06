@@ -43,11 +43,13 @@ void GlobalUpdate::doGlobalShaderUpdates()
 		currentSet->readyToRender = false;
 	}
 
+	ThemedTimer::getInstance()->start(TIMER_PART_GLOBAL_UPDATE);
 	for (auto& shader : shaders) {
 		shader->updateGlobal(*currentSet);
 	}
 	currentSet->readyToRender = true;
 	signalGlobalUpdateRunning(false);
+	ThemedTimer::getInstance()->stop(TIMER_PART_GLOBAL_UPDATE);
 }
 
 void GlobalUpdate::ctreateUpdateSets()
