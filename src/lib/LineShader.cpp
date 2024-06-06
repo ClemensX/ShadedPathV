@@ -672,7 +672,10 @@ void LineShader::updateGlobal(GlobalUpdateElement& currentSet)
 
 void LineShader::reuseUpdateElement(LineShaderUpdateElementNEW* el)
 {
-	LogCond(LOG_GLOBAL_UPDATE, "reuseUpdateElement:  destroy buffer " << hex << el->vertexBuffer << endl);
+	if (el->vertexBuffer == nullptr) return;
+	if (el->vertexBufferMemory == nullptr) return;
+	//LogCond(LOG_GLOBAL_UPDATE, "reuseUpdateElement:  destroy buffer " << hex << el->vertexBuffer << endl);
+	//Log("reuseUpdateElement:  destroy buffer " << hex << el->vertexBuffer << endl);
 	vkDestroyBuffer(device, el->vertexBuffer, nullptr);
 	el->vertexBuffer = nullptr;
 	vkFreeMemory(device, el->vertexBufferMemory, nullptr);
@@ -691,3 +694,8 @@ void LineShader::applyGlobalUpdate(LineSubShader& updateSubShader, ThreadResourc
 	engine->globalUpdate.markGlobalUpdateSetAsUsed(updateSet, tr);
 }
 
+void LineShader::freeUpdateResources(GlobalUpdateElement* updateSet)
+{
+	auto* shaderResources = getMatchingShaderResources(updateSet);
+	reuseUpdateElement(shaderResources);
+}

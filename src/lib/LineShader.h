@@ -93,6 +93,8 @@ public:
 
 	virtual void createUpdateSet(GlobalUpdateElement& el) override;
 	virtual void updateGlobal(GlobalUpdateElement& currentSet) override;
+	virtual void freeUpdateResources(GlobalUpdateElement* updateSet);
+
 
 	// add lines - they will never  be removed
 	void addFixedGlobalLines(std::vector<LineDef>& linesToAdd);

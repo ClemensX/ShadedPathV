@@ -42,6 +42,7 @@ public:
 	// all update sets have to be creted in deactive state
 	virtual void createUpdateSet(GlobalUpdateElement& el) = 0;
 	virtual void updateGlobal(GlobalUpdateElement& currentSet) = 0;
+	virtual void freeUpdateResources(GlobalUpdateElement* updateSet) = 0;
 
 };
 

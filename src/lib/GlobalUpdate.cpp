@@ -19,9 +19,15 @@ void GlobalUpdate::doGlobalShaderUpdates()
 	{
 		std::unique_lock<std::mutex> lock(maintenanceMutex);
 		if (!setA.usedByShaders) {
+			for (auto& shader : shaders) {
+				shader->freeUpdateResources(&setA);
+			}
 			setA.free = true;
 		}
 		if (!setB.usedByShaders) {
+			for (auto& shader : shaders) {
+				shader->freeUpdateResources(&setB);
+			}
 			setB.free = true;
 		}
 		if (!isInactiveSetAvailable()) {
