@@ -19,7 +19,7 @@ public:
 	std::vector<LineDef> lines;
 };
 
-struct LineShaderUpdateElementNEW {
+struct LineShaderUpdateElement {
 	VkBuffer vertexBuffer = nullptr;
 	VkDeviceMemory vertexBufferMemory = nullptr;
 	size_t drawCount = 0;
@@ -122,10 +122,10 @@ public:
 
 	// Resources for permamnent lines:
 	// line shader specific rersources
-	LineShaderUpdateElementNEW globalUpdateElementA, globalUpdateElementB;
+	LineShaderUpdateElement globalUpdateElementA, globalUpdateElementB;
 	// for handling global updates (independent of sub shaders)
 
-	LineShaderUpdateElementNEW* getMatchingShaderResources(GlobalUpdateElement* el) {
+	LineShaderUpdateElement* getMatchingShaderResources(GlobalUpdateElement* el) {
 		if (el->updateDesignator == GlobalUpdateDesignator::SET_A) {
 			return &globalUpdateElementA;
 		}
@@ -135,7 +135,7 @@ public:
 	}
 
 	// free old resources:
-	void reuseUpdateElement(LineShaderUpdateElementNEW* el);
+	void reuseUpdateElement(LineShaderUpdateElement* el);
 	// single thread methods to change current global update:
 	void applyGlobalUpdate(LineSubShader& updateShader, ThreadResources& tr, GlobalUpdateElement* updateSet);
 	std::vector<LineShader::Vertex> verticesPermanent;

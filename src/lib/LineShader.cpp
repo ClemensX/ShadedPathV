@@ -494,7 +494,7 @@ void LineShader::updateGlobal(GlobalUpdateElement& currentSet)
 	assertUpdateThread();
 	//Log("LineShader::updateGlobal " << currentSet.updateNumber << " set " << currentSet.to_string() << endl);
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * verticesPermanent.size();
-	LineShaderUpdateElementNEW* updateElem = nullptr;
+	LineShaderUpdateElement* updateElem = nullptr;
 	VkDeviceMemory vertexBufferMemory = nullptr;
 	if (currentSet.updateDesignator == GlobalUpdateDesignator::SET_A) {
 		updateElem = &globalUpdateElementA;
@@ -509,7 +509,7 @@ void LineShader::updateGlobal(GlobalUpdateElement& currentSet)
 	//this_thread::sleep_for(chrono::milliseconds(3000)); //test slow update
 }
 
-void LineShader::reuseUpdateElement(LineShaderUpdateElementNEW* el)
+void LineShader::reuseUpdateElement(LineShaderUpdateElement* el)
 {
 	if (el->vertexBuffer == nullptr) return;
 	if (el->vertexBufferMemory == nullptr) return;
