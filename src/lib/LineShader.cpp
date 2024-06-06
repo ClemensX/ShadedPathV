@@ -16,7 +16,6 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, 3);
 	resources.createPipelineLayout(&pipelineLayout);
 
-	updateElementA.isFirstElement = true;
 	int fl = engine.getFramesInFlight();
 	for (int i = 0; i < fl; i++) {
 		// global fixed lines (one common vertex buffer)
@@ -188,7 +187,7 @@ void LineShader::addPermament(std::vector<LineDef>& linesToAdd, ThreadResources&
 		return;
 	}
 	if (renderThreadUpdateRunning) {
-		Error("ERROR: trying to add permanent lines while another threads runs the same (should not happen)\n");
+		Log("WARNING: trying to add permanent lines while another threads runs the same (should not happen)\n");
 		return;
 	}
 	renderThreadUpdateRunning = true; // TODO use atomic
@@ -282,31 +281,6 @@ void LineShader::doGlobalUpdate()
 	////el->activationFrameNum = tr.frameNum;
 }
 
-[[deprecated("This method is deprecated. Use GlobalUpdateElement instead.")]]
-void LineShader::reuseUpdateElement(LineShaderUpdateElement* el)
-{
-	//LogCond(LOG_GLOBAL_UPDATE, "reuseUpdateElement:  destroy buffer " << hex << el->vertexBuffer << endl);
-	//vkDestroyBuffer(device, el->vertexBuffer, nullptr);
-	//vkFreeMemory(device, el->vertexBufferMemory, nullptr);
-}
-
-void LineShader::doGlobalUpdate(LineShaderUpdateElement* el, LineSubShader& ug, ThreadResources& tr)
-{
-	//assertUpdateThread();
-	//// TODO free last gen resources
-	//VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * el->verticesAddr->size();
-	//engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, el->verticesAddr->data(), el->vertexBuffer, el->vertexBufferMemory, "NIX");
-	//LogCond(LOG_GLOBAL_UPDATE, "doGlobalUpdate:  uploaded " << el->verticesAddr->size() << " vertices" << endl);
-	//// first set update flag in sub shaders, then here:
-	//for (int i = 0; i < engine->getFramesInFlight(); i++) {
-	//	LineSubShader& ug = globalUpdateLineSubShaders[i];
-	//	//ug.handlePermanentUpdate = true;
-	//}
-	//permanentUpdatePending = true;
-	//el->active = true;
-	//el->activationFrameNum = tr.frameNum;
-}
-
 // called from user code in drawing thread
 void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
 	if (!enabled) return;
@@ -345,29 +319,10 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 	}
 }
 
-void LineShader::update(ShaderUpdateElement *el)
-{
-	//LineShaderUpdateElement *u = static_cast<LineShaderUpdateElement*>(el);
-	//// TODO think about moving update_finished logic to base class
-	//LogCond(LOG_GLOBAL_UPDATE, "update line shader global buffer via slot " << u->arrayIndex << " update num " << u->num << endl);
-	//LogCond(LOG_GLOBAL_UPDATE, "  --> push " << u->linesToAdd->size() << " lines to GPU" << endl);
-	//GlobalResourceSet set = getInactiveResourceSet();
-	//updateAndSwitch(u->linesToAdd, set);
-	//LogCond(LOG_GLOBAL_UPDATE, "update line shader global end " << u->arrayIndex << " update num " << u->num << endl);
-}
-[[deprecated("This struct is deprecated. Use GlobalUpdateElement instead.")]]
-static ShaderUpdateElement fake;
 static GlobalUpdateElement fake2;
 
 void LineShader::triggerUpdateThread() {
 	engine->pushUpdate(&fake2);
-}
-
-void LineShader::updateAndSwitch(std::vector<LineDef>* linesToAdd, GlobalResourceSet set)
-{
-	//if (set == GlobalResourceSet::SET_A) {
-	//}
-	//else Error("not implemented");
 }
 
 void LineShader::resourceSwitch(GlobalResourceSet set)
@@ -607,6 +562,10 @@ void LineSubShader::uploadToGPU(ThreadResources& tr, LineShader::UniformBufferOb
 
 }
 
+void LineShader::createUpdateSet(GlobalUpdateElement& el)
+{
+}
+
 void LineSubShader::destroy() {
 	vkDestroyPipeline(*device, graphicsPipeline, nullptr);
 	vkDestroyFramebuffer(*device, framebuffer, nullptr);
@@ -615,32 +574,6 @@ void LineSubShader::destroy() {
 	vkFreeMemory(*device, uniformBufferMemory, nullptr);
 	vkDestroyBuffer(*device, vertexBufferLocal, nullptr);
 	vkFreeMemory(*device, vertexBufferMemoryLocal, nullptr);
-}
-
-
-// using new global update scheme
-void LineShader::createUpdateSet(GlobalUpdateElement& el) {
-	if (el.updateDesignator == GlobalUpdateDesignator::SET_A) {
-		updateElementA.setDesignator = el.updateDesignator;
-		Log("LineShader::createUpdateSet A\n");
-	} else {
-		updateElementB.setDesignator = el.updateDesignator;
-		Log("LineShader::createUpdateSet B\n");
-	}
-	updateElementA.active = false;
-}
-
-LineShader::LineShaderUpdateElement* LineShader::getActiveUpdateElement()
-{
-	if (updateElementA.active) {
-		return &updateElementA;
-	}
-	else if (updateElementB.active) {
-		return &updateElementB;
-	}
-	else {
-		return nullptr;
-	}
 }
 
 // called from update thread

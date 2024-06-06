@@ -265,7 +265,6 @@ private:
 
     // we need a separate update queue for threadModeSingle
     std::queue<ShaderUpdateElement*> shaderUpdateQueueSingle; // TODO: rework
-    void updateSingle(ShaderUpdateElement* el, ShadedPathEngine* engine_instance);
     static bool queueThreadFinished;
     void startRenderThreads();
     void startQueueSubmitThread();

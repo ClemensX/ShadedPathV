@@ -39,7 +39,7 @@ struct GlobalUpdateElement {
 // base class for shaders using global update
 class GlobalUpdateBase {
 public:
-	// all update sets have to be creted in deactive state
+	// all update sets have to be created in deactive state
 	virtual void createUpdateSet(GlobalUpdateElement& el) = 0;
 	virtual void updateGlobal(GlobalUpdateElement& currentSet) = 0;
 	virtual void freeUpdateResources(GlobalUpdateElement* updateSet) = 0;

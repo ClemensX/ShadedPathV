@@ -140,22 +140,10 @@ public:
 	void reuseUpdateElement(LineShaderUpdateElementNEW* el);
 	// single thread methods to change current global update:
 	void applyGlobalUpdate(LineSubShader& updateShader, ThreadResources& tr, GlobalUpdateElement* updateSet);
-	void detachGlobalUpdate(LineSubShader& updateShader, ThreadResources& tr, GlobalUpdateElement* updateSet);
-	//VkBuffer vertexBufferSetA = nullptr;
-	//VkDeviceMemory vertexBufferMemorySetA = nullptr;
-	//VkBuffer vertexBufferSetB = nullptr;
-	//VkDeviceMemory vertexBufferMemorySetB = nullptr;
 	std::vector<LineShader::Vertex> verticesPermanent;
 
 private:
-	//LineThreadResources globalLineThreadResources;
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
-	//// update cbuffer and vertex buffer
-	//void update();
-	//void updateUBO(UniformBufferObject newCBV);
-	//// draw all lines in single call to GPU
-	//void draw();
-	//void destroy();
 
 
 	int drawAddLinesSize = 0;
@@ -166,10 +154,6 @@ private:
 	// Inherited via Effect
 	// set in init()
 
-	//// vertex buffer for fixed lines (one buffer for all threads) 
-	//VkBuffer vertexBuffer = nullptr;
-	//// vertex buffer device memory
-	//VkDeviceMemory vertexBufferMemory = nullptr;
 	// vertex buffer for updates: (one buffer for all threads) 
 	VkBuffer vertexBufferUpdates = nullptr;
 	// vertex buffer device memory for Updates
@@ -180,9 +164,6 @@ private:
 	virtual void createDescriptorSetLayout() override;
 	// create descritor sets (one or more per render thread)
 	virtual void createDescriptorSets(ThreadResources& res) override;
-	// store line data on GPU, respect resource set
-	[[deprecated("This method is deprecated. Use GlobalUpdate scheme instead.")]]
-	void updateAndSwitch(std::vector<LineDef>* linesToAdd, GlobalResourceSet set);
 
 	// util methods
 public:
@@ -221,43 +202,13 @@ public:
 		lines.insert(lines.end(), crossLines, crossLines + std::size(crossLines));
 	}
 
-	struct LineShaderUpdateElement : ShaderUpdateElement {
-		std::vector<LineDef>* linesToAdd;
-		std::vector<LineShader::Vertex>* verticesAddr = nullptr;
-		VkBuffer vertexBuffer = nullptr;
-		VkDeviceMemory vertexBufferMemory = nullptr;
-		GlobalUpdateDesignator setDesignator;
-		bool active = false;
-		bool isFirstElement = false;
-		long activationFrameNum = -1; // higher value means newer generation
-	};
-	protected:
-		// global update method - guaranteed to be in sync mode: only 1 update at a time
-		// but render threads may still use old data!
-		[[deprecated("This method is deprecated. Use GlobalUpdate scheme instead.")]]
-		void update(ShaderUpdateElement* el) override;
 	public:
-		[[deprecated("This struct is deprecated. Use GlobalUpdateElement instead.")]]
-		LineShaderUpdateElement updateElementA, updateElementB;
 		bool activeUpdateElementisA = true;		// distinguish beween set a and b
 		bool doUpdatePermament = true;			// switch in app code
 		bool permanentUpdateAvailable = false;	// actual resources need to be drawn
 		bool permanentUpdatePending = false;    // signal that not all threads have switched to new update set
-		// render thread requests an update element. After that this update element is the one currently worked on
-		// and returned by getCurrentUpdateElement()
-		LineShaderUpdateElement* lockNextUpdateElement();
-		// free old resources:
-		void reuseUpdateElement(LineShaderUpdateElement* el);
-		// get active update element. Only one element can be active at any given time
-		LineShaderUpdateElement* getActiveUpdateElement();
-
-		// get update element currently worked on, this is fixed until all render threads have adapted it
-		LineShaderUpdateElement* getCurrentlyWorkedOnUpdateElement();
-		void doGlobalUpdate(LineShaderUpdateElement* el, LineSubShader& ug, ThreadResources& tr);
-		void resetWorkedOnElement();
 		void assertUpdateThread();
 	private:
-		std::atomic<LineShaderUpdateElement*> currentlyWorkedOnUpdateElement = nullptr;
 		bool renderThreadUpdateRunning = false;
 };
 
