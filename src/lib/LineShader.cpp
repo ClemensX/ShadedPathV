@@ -335,17 +335,11 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
 	// handle changed update sets:
 	auto* applyGlobalUpdateSet = engine->globalUpdate.getChangedGlobalUpdateSet(tr.currentGlobalUpdateElement, ug.updateNumber);
-	auto* detachGlobalUpdateSet = engine->globalUpdate.getDispensableGlobalUpdateSet(tr.currentGlobalUpdateElement);
-	detachGlobalUpdateSet = nullptr;
 	if (applyGlobalUpdateSet != nullptr) {
 		//Log("render thread " << tr.frameIndex << " should apply global update " << applyGlobalUpdateSet->updateNumber << " set " << applyGlobalUpdateSet->to_string() << endl);
 		applyGlobalUpdate(ug, tr, applyGlobalUpdateSet);
 	}
-	if (detachGlobalUpdateSet != nullptr) {
-		Log("render thread " << tr.frameIndex << " should detach global " << detachGlobalUpdateSet->updateNumber << " update set " << detachGlobalUpdateSet->to_string() << endl);
-	}
 	// if we have an active update set, we need to upload its MVP matrix to GPU
-	//if (ug.currentGlobalUpdateElement != nullptr) {
 	if (tr.currentGlobalUpdateElement != nullptr) {
 			ug.uploadToGPU(tr, ubo);
 	}

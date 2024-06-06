@@ -67,7 +67,7 @@ public:
 		Log("GlobalUpdate destructor\n");
 	};
 
-	// called every cycle from main engine
+	// called continously in ShadedPathEngine::runUpdateThread
 	void doGlobalShaderUpdates();
 	// called once to let all shaders intitialize for updates.
 	void ctreateUpdateSets();
@@ -85,23 +85,6 @@ public:
 			return &setA;
 		if (shouldUpdateToSet(setB, currentUpdateSet, currentlyRenderingUpdateNumber))
 			return &setB;
-		//bool setAcanBeApplied = setA.readyToRender && !setA.active;
-		//bool setBcanBeApplied = setB.readyToRender && !setB.active;
-		//if (setAcanBeApplied && setBcanBeApplied) {
-		//	Error("Both update sets are ready to render, this should not happen\n");
-		//}
-		//if (setAcanBeApplied && currentUpdateSet != &setA) return &setA;
-		//if (setBcanBeApplied && currentUpdateSet != &setB) return &setB;
-		return nullptr;
-	}
-	GlobalUpdateElement* getDispensableGlobalUpdateSet(GlobalUpdateElement* currentUpdateSet) {
-		// if we are not currently rendering there is nothing to dispense
-		if (currentUpdateSet == nullptr) return nullptr;
-		GlobalUpdateElement* changedGlobalUpdateSet = getChangedGlobalUpdateSet(currentUpdateSet, -1);
-		if (changedGlobalUpdateSet != nullptr) {
-			// if we apply another update set, we can dispense the current one
-			return currentUpdateSet;
-		}
 		return nullptr;
 	}
 
