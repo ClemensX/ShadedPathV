@@ -27,14 +27,14 @@ void LandscapeGenerator::run()
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 800;//480;// 960;//1800;// 800;//3700; // 2500
+        int win_width = 2500;//480;// 960;//1800;// 800;//3700; // 2500
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Landscape Generator (Diamond Square Algorithm)");
         camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f));
 
         engine.setFramesInFlight(2);
         engine.registerApp(this);
         //engine.enableSound();
-        engine.setThreadModeSingle(); // TODO currently multi thread rendering is broken
+        //engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("LandscapeGenerator");
@@ -103,8 +103,8 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
     //engine.shaders.lineShader.clearLocalLines(tr);
     {
         // thread protection needed
-        std::unique_lock<std::mutex> lock(monitorMutex);
         if (parameters.generate && parameters.n > 0) {
+            std::unique_lock<std::mutex> lock(monitorMutex);
             parameters.generate = false;
             //Log("Generate thread " << tr.frameIndex << endl);
             int n2plus1 = (int)(pow(2, parameters.n) + 1);

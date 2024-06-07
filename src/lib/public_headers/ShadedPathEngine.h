@@ -139,6 +139,8 @@ public:
         return soundEnabled;
     }
 
+    ThreadInfo mainThreadInfo;
+
     // limit number of rendered frames - cannot be used together with presentation enabled
     void setFrameCountLimit(long max);
 
@@ -225,9 +227,6 @@ public:
     }
     ShadedPathApplication* app = nullptr;
     std::string appname;
-    ThreadGroup &getThreadGroup() {
-        return threads;
-    }
 	auto& getShaderUpdateQueue() {
 		return shaderUpdateQueue;
 	}
@@ -236,8 +235,13 @@ public:
 		return threadModeSingle || isUpdateThread_;
 	}
 
+    void log_current_thread();
+
 private:
     thread_local static bool isUpdateThread_;
+    ThreadGroup& getThreadGroup() {
+        return threads;
+    }
     State state = INIT;
     float backBufferAspect = 1.0f;
     long limitFrameCount = 0;

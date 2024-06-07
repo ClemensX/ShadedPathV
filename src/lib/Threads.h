@@ -12,7 +12,9 @@ enum class ThreadCategory {
 	// global update thread
 	GlobalUpdate,
 	// submitting draw commands
-	DrawQueueSubmit
+	DrawQueueSubmit,
+	// main thread
+	MainThread
 };
 
 class ThreadInfo {
@@ -38,6 +40,8 @@ public:
 			return "GlobalUpdate";
 		case ThreadCategory::DrawQueueSubmit:
 			return "DrawQueueSubmit";
+		case ThreadCategory::MainThread:
+			return "MainThread";
 		default:
 			return "Unknown";
 		}

@@ -14,6 +14,10 @@ void ShadedPathEngine::init(string appname)
     ThemedTimer::getInstance()->create(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT, 1000);
     ThemedTimer::getInstance()->create(TIMER_PART_GLOBAL_UPDATE, 1000);
     ThemedTimer::getInstance()->create(TIMER_PART_BUFFER_COPY, 10);
+    mainThreadInfo.name = "Main Thread";
+    mainThreadInfo.category = ThreadCategory::MainThread;
+    mainThreadInfo.id = this_thread::get_id();
+
     presentation.initGLFW(enabledKeyEvents, enabledMouseMoveEvents, enabledMousButtonEvents);
     vr.init();
     global.initBeforePresentation();
@@ -25,6 +29,17 @@ void ShadedPathEngine::init(string appname)
     meshStore.init(this);
     if (soundEnabled) sound.init();
     initialized = true;
+}
+
+void ShadedPathEngine::log_current_thread() {
+    // check for main thread (used in single thread mode)
+    if (mainThreadInfo.id == this_thread::get_id()) {
+        Log(mainThreadInfo << std::endl);
+        return;
+	}
+    // check for worker threads
+    auto& t = getThreadGroup().current_thread();
+    Log(t << std::endl);
 }
 
 void ShadedPathEngine::enablePresentation(int w, int h, const char* name) {
