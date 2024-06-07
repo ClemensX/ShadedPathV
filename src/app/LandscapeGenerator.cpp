@@ -27,7 +27,7 @@ void LandscapeGenerator::run()
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 2500;//480;// 960;//1800;// 800;//3700; // 2500
+        int win_width = 800;//480;// 960;//1800;// 800;//3700; // 2500
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Landscape Generator (Diamond Square Algorithm)");
         camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f));
 
@@ -149,6 +149,7 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
 
 void LandscapeGenerator::handleInput(InputState& inputState)
 {
+    if (useAutoCamera) return;
     if (inputState.mouseButtonEvent) {
         //Log("mouse button pressed (left/right): " << inputState.pressedLeft << " / " << inputState.pressedRight << endl);
         input.pressedLeft = inputState.pressedLeft;
@@ -225,6 +226,13 @@ void LandscapeGenerator::buildCustomUI()
         parameters.generate = true;
         localp = parameters;
     }
+    ImGui::Separator();
+    ImGui::Text("Line count: %d", lines.size());
+    ImGui::Separator();
+    double time = ThemedTimer::getInstance()->getLatestTiming(TIMER_PART_GLOBAL_UPDATE);
+    ImGui::Text("Last GPU Upload Time: %.1f ms", time / 1000.0f);
+    ImGui::Separator();
+    ImGui::Checkbox("Auto Moving Camera", &useAutoCamera);
     if (ImGui::CollapsingHeader("Params"))
     {
         ImGui::SameLine(); HelpMarker(helpText.c_str());

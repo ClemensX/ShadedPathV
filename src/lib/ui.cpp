@@ -168,7 +168,7 @@ void UI::buildUI()
         string fps = engine->fpsCounter.getFPSAsString();
         //string appname("SimpleAp");
         string appname = engine->appname;
-        appname = "ShadedPathV " + appname + " FPS: " + fps;
+        appname = "ShadedPath " + appname + " FPS: " + fps;
 
         static int corner = 1;
         ImGuiIO& io = ImGui::GetIO();

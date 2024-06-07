@@ -19,7 +19,7 @@ int main()
     //gltfObjectsApp app; // ok
     //GeneratedTexturesApp app; // ok
     //BillboardDemo app; // ok
-    LandscapeDemo app; // ok
-    //LandscapeGenerator app; // ok
+    //LandscapeDemo app; // ok
+    LandscapeGenerator app; // ok
     app.run();
 }

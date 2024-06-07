@@ -39,4 +39,5 @@ private:
     // store generated lines:
     std::vector<LineDef> lines;
     std::mutex monitorMutex;
+    bool useAutoCamera = false;
 };

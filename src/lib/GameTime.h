@@ -176,6 +176,15 @@ public:
 		double fps = 1000000.0 / (double)td.averageTimeBetweenMicroS;
 		return fps;
 	}
+
+	double getLatestTiming(std::string name) {
+		if (!check_name(name)) return 0.0f;
+		auto& td = timerMap[name];
+		int cur_pos = td.pos;
+		if (cur_pos == 0) return 0.0f;
+		return (double)td.entries[cur_pos - 1].time;
+	}
+
 	// log ThemedTimer as FPS
 	void logFPS(std::string name) {
 		if (!check_name(name)) return;
