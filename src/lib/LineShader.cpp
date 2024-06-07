@@ -172,7 +172,7 @@ void LineShader::addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& t
 // called from user code in drawing thread 
 void LineShader::addPermament(std::vector<LineDef>& linesToAdd, ThreadResources& tr)
 {
-	assert(engine->isUpdateThread == false);
+	//assert(engine->isUpdateThread() == false);
 	if (engine->globalUpdate.isRunning()) {
 		//Error("ERROR: trying to add permanent lines while global update is running\n");
 		Log("WARNING: trying to add permanent lines while global update is running\n");
@@ -209,7 +209,7 @@ void LineShader::prepareAddLines(ThreadResources& tr)
 }
 
 void LineShader::assertUpdateThread() {
-	assert(engine->isUpdateThread == true);
+	assert(engine->isUpdateThread() == true);
 }
 
 // called from user code in drawing thread

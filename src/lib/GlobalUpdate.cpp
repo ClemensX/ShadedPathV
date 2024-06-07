@@ -2,16 +2,26 @@
 
 using namespace std;
 
-void GlobalUpdate::doGlobalShaderUpdates()
+void GlobalUpdate::doGlobalShaderUpdates(bool threadModeSingle)
 {
     if (!updateSetsCreated) {
 		ctreateUpdateSets();
 	}
     // this is the only place with pop():
-    optional<GlobalUpdateElement*> opt_el = engine.getShaderUpdateQueue().pop();
-    if (!opt_el) {
-        return;
-    }
+	if (threadModeSingle) {
+		if (engine.getShaderUpdateQueue().size() > 0) {
+			optional<GlobalUpdateElement*> opt_el = engine.getShaderUpdateQueue().pop();
+			if (!opt_el) {
+				return;
+			}
+		}
+		else return;
+	} else {
+		optional<GlobalUpdateElement*> opt_el = engine.getShaderUpdateQueue().pop();
+		if (!opt_el) {
+			return;
+		}
+	}
 	signalGlobalUpdateRunning(true);
 	//if (setA.usedByShaders) Log("setA used by shaders\n");
 	//if (setB.usedByShaders) Log("setB used by shaders\n");

@@ -2,7 +2,7 @@
 
 using namespace std;
 
-thread_local bool ShadedPathEngine::isUpdateThread = false; // static
+thread_local bool ShadedPathEngine::isUpdateThread_ = false; // static
 
 void ShadedPathEngine::init(string appname)
 {
@@ -81,8 +81,8 @@ void ShadedPathEngine::prepareDrawing()
     if (!threadModeSingle) {
         startQueueSubmitThread();
         startRenderThreads();
+        startUpdateThread();
     }
-    startUpdateThread();
     //for (ThreadResources& tr : threadResources) {
     //    shaders.createCommandBufferBackBufferImageDump(tr);
     //}
@@ -95,10 +95,12 @@ void ShadedPathEngine::drawFrame()
         ThemedTimer::getInstance()->add(TIMER_DRAW_FRAME);
         auto& tr = threadResources[currentFrameIndex];
         drawFrame(tr);
+        globalUpdate.doSyncedDrawingThreadMaintenance();
         shaders.queueSubmit(tr);
         presentation.presentBackBufferImage(tr);
         ThemedTimer::getInstance()->add(TIMER_PRESENT_FRAME);
         advanceFrameCountersAfterPresentation();
+        globalUpdate.doGlobalShaderUpdates(true); // call global update in single thread mode
         //while (!shaderUpdateQueueSingle.empty()) {
         //    ShaderUpdateElement* el = shaderUpdateQueueSingle.front();
         //    shaderUpdateQueueSingle.pop();
@@ -251,9 +253,9 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
         LogCondF(LOG_QUEUE, "engine received frame: " << v->frameNum << endl);
         engine_instance->shaders.queueSubmit(*v);
         // if we are pop()ed by drawing thread we can be sure to own the thread until presentFence is signalled,
-        // we still have to wat for inFlightFence to make sure rendering has ended
+        // we still have to wait for inFlightFence to make sure rendering has ended
         ThemedTimer::getInstance()->start(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
-        engine_instance->presentation.presentBackBufferImage(*v);
+        engine_instance->presentation.presentBackBufferImage(*v); // TODO: test discarding out-of-sync frames
         if (v->frameNum != engine_instance->frameNum) {
             LogF("Frames async: drawing:" << v->frameNum << " present: " << engine_instance->frameNum << endl);
             //Error("Frames out of sync");
@@ -277,7 +279,7 @@ bool ShadedPathEngine::queueThreadFinished = false;
 
 void ShadedPathEngine::runUpdateThread(ShadedPathEngine* engine_instance)
 {
-    isUpdateThread = true;
+    isUpdateThread_ = true;
     LogCondF(LOG_QUEUE, "run shader update thread" << endl);
     while (engine_instance->isShutdown() == false) {
         engine_instance->globalUpdate.doGlobalShaderUpdates();

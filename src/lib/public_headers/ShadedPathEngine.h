@@ -197,7 +197,6 @@ public:
     // Wait until engine threads have ended rendering.
     void waitUntilShutdown();
 
-    thread_local static bool isUpdateThread;
     GlobalRendering global;
 	GlobalUpdate globalUpdate;
     Presentation presentation;
@@ -233,8 +232,12 @@ public:
 		return shaderUpdateQueue;
 	}
     void pushUpdate(GlobalUpdateElement* updateElement);
+    bool isUpdateThread() {
+		return threadModeSingle || isUpdateThread_;
+	}
 
 private:
+    thread_local static bool isUpdateThread_;
     State state = INIT;
     float backBufferAspect = 1.0f;
     long limitFrameCount = 0;

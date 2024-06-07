@@ -68,7 +68,7 @@ public:
 	};
 
 	// called continously in ShadedPathEngine::runUpdateThread
-	void doGlobalShaderUpdates();
+	void doGlobalShaderUpdates(bool threadModeSingle = false);
 	// called once to let all shaders intitialize for updates.
 	void ctreateUpdateSets();
 	void registerShader(GlobalUpdateBase* shader) {
