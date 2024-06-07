@@ -163,24 +163,26 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
     lubo2.view = v2;
 
     // dynamic lines:
-    engine.shaders.lineShader.clearLocalLines(tr);
-    float aspectRatio = engine.getAspect();
     static float plus = 0.0f;
-    LineDef myLines[] = {
-        // start, end, color
-        { glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) }
-    };
     plus += 0.001f;
-    vector<LineDef> lines;
-    // add all intializer objects to vector:
-    for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
-    engine.shaders.lineShader.addOneTime(lines, tr);
+    if (enableLines) {
+        engine.shaders.lineShader.clearLocalLines(tr);
+        float aspectRatio = engine.getAspect();
+        LineDef myLines[] = {
+            // start, end, color
+            { glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
+            { glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
+            { glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) }
+        };
+        vector<LineDef> lines;
+        // add all intializer objects to vector:
+        for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
+        engine.shaders.lineShader.addOneTime(lines, tr);
 
-    engine.shaders.lineShader.prepareAddLines(tr);
-    engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
+        engine.shaders.lineShader.prepareAddLines(tr);
+        engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
 
+    }
     // cube
     CubeShader::UniformBufferObject cubo{};
     cubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!

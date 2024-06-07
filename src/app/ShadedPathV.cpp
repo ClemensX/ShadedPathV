@@ -13,13 +13,13 @@
 int main()
 {
     Log("ShadedPathV app\n");
-    //SimpleApp app;
+    //SimpleApp app; // ok
     //LineApp app; // ok
-    //DeviceCoordApp app;
-    //gltfObjectsApp app;
+    //DeviceCoordApp app; // ok
+    //gltfObjectsApp app; // ok
     //GeneratedTexturesApp app; // ok
-    //BillboardDemo app;
-    //LandscapeDemo app;
-    LandscapeGenerator app; // ok
+    //BillboardDemo app; // ok
+    LandscapeDemo app; // ok
+    //LandscapeGenerator app; // ok
     app.run();
 }
