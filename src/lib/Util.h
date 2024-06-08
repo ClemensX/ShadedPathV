@@ -196,3 +196,19 @@ private:
     float getHeightSave(int center_x, int center_y, int half);
     int heightmap_size = 0;
 };
+
+class Mover {
+public:
+    glm::vec3 position;
+    glm::vec3 rotationAxis;
+    float rotationSpeed;
+
+    Mover(glm::vec3 pos, glm::vec3 axis, float speed) : position(pos), rotationAxis(axis), rotationSpeed(speed) {};
+
+    void moveCircle(float deltaTime) {
+        float angle = deltaTime * rotationSpeed;
+        glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(angle), rotationAxis);
+        position = glm::vec3(rotationMatrix * glm::vec4(position, 1.0f));
+    }
+
+};

@@ -11,9 +11,13 @@ void LandscapeGenerator::run()
         // camera initialization camera pos (241.638,732.069,2261.37) look at (-0.108512,-0.289912,-0.950882)
         CameraPositioner_FirstPerson positioner(glm::vec3(241.638f, 732.069f, 2261.37f), glm::vec3(-0.108512f, -0.289912f, -0.950882f), glm::vec3(0.0f, 1.0f, 0.0f));
         positioner.setMaxSpeed(25.0f);
-        Camera camera(positioner);
+        CameraPositioner_AutoMove autoMovePositioner(glm::vec3(1500.0f, 700.069f, 500.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 10.0f);
+        Camera camera;
+        camera.changePositioner(positioner);
+        //Camera camera(autoMovePositioner);
         this->camera = &camera;
         this->positioner = &positioner;
+        this->autoMovePositioner = &autoMovePositioner;
         engine.enableKeyEvents();
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
@@ -27,7 +31,7 @@ void LandscapeGenerator::run()
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 800;//480;// 960;//1800;// 800;//3700; // 2500
+        int win_width = 2500;//480;// 960;//1800;// 800;//3700; // 2500
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Landscape Generator (Diamond Square Algorithm)");
         camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f));
 
@@ -96,7 +100,11 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
         return;
     }
     double deltaSeconds = seconds - old_seconds;
-    positioner->update(deltaSeconds, input.pos, input.pressedLeft);
+    if (useAutoCamera) {
+		autoMovePositioner->update(deltaSeconds);
+	} else {
+		positioner->update(deltaSeconds, input.pos, input.pressedLeft);
+	}
     old_seconds = seconds;
 
     // lines
@@ -149,7 +157,15 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
 
 void LandscapeGenerator::handleInput(InputState& inputState)
 {
-    if (useAutoCamera) return;
+    if (useAutoCamera != useAutoCameraCheckbox) {
+        // switch camera type
+        useAutoCamera = useAutoCameraCheckbox;
+        if (useAutoCamera) {
+            camera->changePositioner(*autoMovePositioner);
+        } else {
+            camera->changePositioner(*positioner);
+        }
+    }
     if (inputState.mouseButtonEvent) {
         //Log("mouse button pressed (left/right): " << inputState.pressedLeft << " / " << inputState.pressedRight << endl);
         input.pressedLeft = inputState.pressedLeft;
@@ -166,18 +182,26 @@ void LandscapeGenerator::handleInput(InputState& inputState)
         auto action = inputState.action;
         auto mods = inputState.mods;
         const bool press = action != GLFW_RELEASE;
-        if (key == GLFW_KEY_W)
+        if (key == GLFW_KEY_W) {
             positioner->movement.forward_ = press;
-        if (key == GLFW_KEY_S)
+            autoMovePositioner->movement.up_ = press;
+        }
+        if (key == GLFW_KEY_S) {
             positioner->movement.backward_ = press;
+            autoMovePositioner->movement.down_ = press;
+        }
         if (key == GLFW_KEY_A)
             positioner->movement.left_ = press;
         if (key == GLFW_KEY_D)
             positioner->movement.right_ = press;
-        if (key == GLFW_KEY_1)
+        if (key == GLFW_KEY_1) {
             positioner->movement.up_ = press;
-        if (key == GLFW_KEY_2)
+            autoMovePositioner->movement.up_ = press;
+        }
+        if (key == GLFW_KEY_2) {
             positioner->movement.down_ = press;
+            autoMovePositioner->movement.down_ = press;
+        }
         if (mods & GLFW_MOD_SHIFT)
             positioner->movement.fastSpeed_ = press;
         if (key == GLFW_KEY_SPACE)
@@ -232,7 +256,7 @@ void LandscapeGenerator::buildCustomUI()
     double time = ThemedTimer::getInstance()->getLatestTiming(TIMER_PART_GLOBAL_UPDATE);
     ImGui::Text("Last GPU Upload Time: %.1f ms", time / 1000.0f);
     ImGui::Separator();
-    ImGui::Checkbox("Auto Moving Camera", &useAutoCamera);
+    ImGui::Checkbox("Auto Moving Camera", &useAutoCameraCheckbox);
     if (ImGui::CollapsingHeader("Params"))
     {
         ImGui::SameLine(); HelpMarker(helpText.c_str());

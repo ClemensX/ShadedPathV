@@ -11,7 +11,8 @@ void BillboardDemo::run()
         // camera initialization
         CameraPositioner_FirstPerson positioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         positioner.setMaxSpeed(5.0f);
-        Camera camera(positioner);
+        Camera camera;
+        camera.changePositioner(positioner);
         this->camera = &camera;
         this->positioner = &positioner;
         engine.enableKeyEvents();

@@ -16,6 +16,7 @@ private:
     void updatePerFrame(ThreadResources& tr);
     Camera* camera;
     CameraPositioner_FirstPerson* positioner;
+    CameraPositioner_AutoMove* autoMovePositioner;
     InputState input;
     World world;
     Spatial2D* heightmap = nullptr;
@@ -40,4 +41,5 @@ private:
     std::vector<LineDef> lines;
     std::mutex monitorMutex;
     bool useAutoCamera = false;
+    bool useAutoCameraCheckbox = false;
 };

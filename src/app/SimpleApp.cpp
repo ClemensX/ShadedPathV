@@ -10,7 +10,8 @@ void SimpleApp::run()
     {
         // camera initialization
         CameraPositioner_FirstPerson positioner(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        Camera camera(positioner);
+        Camera camera;
+        camera.changePositioner(positioner);
         this->camera = &camera;
         this->positioner = &positioner;
         engine.enableKeyEvents();
