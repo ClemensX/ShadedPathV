@@ -1,0 +1,26 @@
+bing ai:
+To enable `GL_EXT_nonuniform_qualifier` using MoltenVK, you can follow the steps below:
+
+1. First, ensure that you have the latest version of MoltenVK installed on your system.
+2. Next, add the following line to your code: `#extension GL_EXT_nonuniform_qualifier : enable`.
+3. Finally, compile your code and run it.
+
+Please note that `GL_EXT_nonuniform_qualifier` is an extension that is not supported by all devices. You should check if your device supports this extension before using it in your code. If your device does not support this extension, you may need to use a different approach to achieve your desired functionality.
+
+I hope this helps! Let me know if you have any other questions.
+
+Source: Conversation with Bing, 12/12/2023
+(1) when do i need GL_EXT_nonuniform_qualifier? - Stack Overflow. https://stackoverflow.com/questions/70949572/when-do-i-need-gl-ext-nonuniform-qualifier.
+(2) GitHub: Let’s build from here · GitHub. https://raw.githubusercontent.com/KhronosGroup/GLSL/master/extensions/ext/GL_EXT_nonuniform_qualifier.txt.
+(3) GitHub: Let’s build from here · GitHub. https://github.com/KhronosGroup/GLSL/blob/master/extensions/ext/GL_EXT_nonuniform_qualifier.txt.
+(4) nonuniformEXT(<literal here>) segfaults #1900 - GitHub. https://github.com/KhronosGroup/glslang/issues/1900.
+(5) Pro Tip: Improved GLSL Syntax for Vulkan DescriptorSet Indexing. https://developer.nvidia.com/blog/improved-glsl-syntax-vulkans-descriptorset-indexing/.
+
+handle permamnent lines (NEW):
+
+
+addCurrentCommandBuffer 
+
+reuseUpdateElement?
+
+ug.addRenderPassAndDrawCommands(tr, &ug.commandBuffer, ug.vertexBufferLocal);

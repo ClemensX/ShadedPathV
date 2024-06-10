@@ -1,4 +1,5 @@
-.vs/**
+# Prerequisites
+*.d
 
 # Compiled Object files
 *.slo
@@ -17,6 +18,7 @@
 
 # Fortran module files
 *.mod
+*.smod
 
 # Compiled Static libraries
 *.lai
@@ -28,40 +30,9 @@
 *.exe
 *.out
 *.app
-/data
 
-ShadedPathV/.vs/**
-ShadedPathV/ShadedPathTest/x64
-ShadedPathV/ShadedPathVLib/x64
-ShadedPathV/ShadedPathV/x64
-ShadedPathV/x64
-
-/*.bak
-
-# Test Framework
-ShadedPathV/packages/**
-*.bmp
-spe_run.log
-
-# cmake build folders
-build/
-build_debug/
-build_release/
-
-# cmake generated and user files
-**/CMakeCache.txt
-**/CMakeUserPresets.json
-**/CTestTestfile.cmake
-**/CPackConfig.cmake
-**/cmake_install.cmake
-**/install_manifest.txt
-**/compile_commands.json
-
-**/CMakeFiles
-
-# macOS unwanted files
+#cmake
+build
 .DS_Store
-
-# local vcpkg files
-vcpkg_installed
-
+local_options.cmake
+.vs
