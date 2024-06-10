@@ -1,6 +1,0 @@
-add_executable(shadedpath pch.cpp ShadedPathV.cpp)
-target_compile_features(shadedpath PUBLIC cxx_std_20)
-#target_link_libraries(shadedpath shadedpathv ${glfw} -framework Cocoa -framework OpenGL -framework IOKit ${vulkan1} ${vulkan13})
-target_link_libraries(shadedpath shadedpathv glfw KTX::ktx Vulkan::Vulkan)
-#target_include_directories(shadedpathv PUBLIC .)
-#target_precompile_headers(shadedpathv.lib PUBLIC pch.h)
