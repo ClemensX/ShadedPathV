@@ -11,9 +11,42 @@ Some features:
 - Synchronization is done at presentation time, when the backbuffer image is copied to the app window
 - Support VR games via OpenXR
 - Sound support for ogg vorbis: Both background music and spatial sound attached to objects
+- Upload of GPU resources in a background thread for stutter free rendering
 
-## Current State (Q1 / 2023)
+## Current State (Q2 / 2024)
 
+## Landscape generation with Diamond-square algorithm
+
+We needed a way to generate landscapes and decided to implement the diamond-square algorithm. This is shown in the app *LandscapeGenerator*. It also utilizes the new background GPU uploading mechanism. Otherwise there would be stuttering because e.g. uploading 2 million lines to GPU memory takes longer than drawing a frame. Uploading is done in the background and only after it is finished the render threads switch to the new resource set.
+
+![billboards](images/dsquaresnap2.png)
+
+## cmake build
+
+Changed build from manual VS2022 project to cmake.
+
+Currently this is Windows only. We also tried 
+Mac build, but realized that their Vulkan support is lacking too much. Maybe we will pick up later if the situation changes. 
+
+Linux build is tempting, but we haven't tried it yet.
+
+We use **vcpkg** for dependency management. If some of the required libraries are missing the build will fail. If all dependencies are setup correctly on your local machine the build is initiated like this. Please adapt the toolchain file path to yours!
+
+Clone the repo, then type commands in highest project folder:
+
+Create the VS2022 project:
+```
+cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=c:\dev\vulkan\vcpkg\scripts\buildsystems\vcpkg.cmake
+```
+
+Now you can either open VS2022 from the ./build folder and build in the IDE, or run this command:
+```
+cmake --build ./build
+```
+
+If all goes well you will find the built app here: ``.build/src/app/Debug``
+
+## Q1 / 2023
 ## Using Objects from glTF files
 
 Loading a glTF file is done like this. You just specify the file name and an id string that will be used to access meshes in this file. An id can only consist of letters and numbers and underscore.
