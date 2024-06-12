@@ -54,6 +54,8 @@ void LandscapeDemo::run()
             ;
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         shaders.initActiveShaders();
+        shaders.initiateShader_BackBufferImageDump(false); // enable image dumps upon request
+
 
         // init app rendering:
         init();
@@ -255,6 +257,8 @@ void LandscapeDemo::handleInput(InputState& inputState)
         auto action = inputState.action;
         auto mods = inputState.mods;
         const bool press = action != GLFW_RELEASE;
+        if (key == GLFW_KEY_P && press)
+            shaders.backBufferImageDumpNextFrame();
         if (key == GLFW_KEY_W)
             positioner->movement.forward_ = press;
         if (key == GLFW_KEY_S)

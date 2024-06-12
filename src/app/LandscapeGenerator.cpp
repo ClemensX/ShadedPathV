@@ -53,7 +53,7 @@ void LandscapeGenerator::run()
             ;
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         shaders.initActiveShaders();
-        //shaders.initiateShader_BackBufferImageDump(false); // enable image dumps upon request
+        shaders.initiateShader_BackBufferImageDump(false); // enable image dumps upon request
 
         // init app rendering:
         init();
