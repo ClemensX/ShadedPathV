@@ -89,13 +89,13 @@ void LineApp::init() {
     //LineShader::addZeroCross(lines);
     //LineShader::addCross(lines, vec3(1.0f, 1.0f, 1.0f), vec4(1.0f, 1.0f, 0.0f, 1.0f));
 
-    engine.shaders.lineShader.addFixedGlobalLines(lines);
+    //engine.shaders.lineShader.addFixedGlobalLines(lines);
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     // Grid with 1m squares, floor on -10m, ceiling on 372m
 
-	engine.shaders.lineShader.uploadFixedGlobalLines();
+	//engine.shaders.lineShader.uploadFixedGlobalLines();
 }
 
 void LineApp::drawFrame(ThreadResources& tr) {

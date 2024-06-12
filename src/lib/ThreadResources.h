@@ -51,7 +51,7 @@ public:
 	GlobalUpdateElement* currentGlobalUpdateElement = nullptr;
 
 	// ShaderThreadResources
-	ClearThreadResources clearResources;
+	//ClearThreadResources clearResources;
 	//LineThreadResources lineResources;
 	PBRThreadResources pbrResources;
 	SimpleThreadResources simpleResources;

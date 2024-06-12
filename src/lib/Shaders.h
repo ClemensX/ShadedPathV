@@ -73,6 +73,15 @@ public:
 
 	// Initialize ShaderState and all added shaders
 	Shaders& initActiveShaders() {
+		auto& shaders = getShaders();
+		if (shaders.size() == 0) Error("No shaders added to Shaders object");
+		auto shaderInstance = shaders.back();
+		// check subclass for EndShader
+		EndShader* derivedPtr = dynamic_cast<EndShader*>(shaderInstance);
+		if (derivedPtr == nullptr) {
+			// last shader should be EndShader
+			config.add(endShader);
+		}
 		config.init();
 		return *this;
 	}
@@ -93,6 +102,7 @@ public:
 	// SHADERS. All shaders instances are here, but each shader has to be activated in application code
 
 	ClearShader clearShader;
+	EndShader endShader;
 	SimpleShader simpleShader;
 	LineShader lineShader;
 	UIShader uiShader;

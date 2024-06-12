@@ -2,12 +2,8 @@
 
 #include "ShaderBase.h"
 
-struct ClearThreadResources : ShaderThreadResources {
-    VkFramebuffer framebuffer = nullptr;
-    VkFramebuffer framebuffer2 = nullptr;
-    VkRenderPass renderPass = nullptr;
-    VkCommandBuffer commandBuffer = nullptr;
-};
+// forward
+class ClearSubShader;
 
 // ClearShader is used as first shader to clear framebuffer and depth buffers.
 // Creates a static command buffer during initialization that can simply be applied later in Frame drawing
@@ -32,5 +28,32 @@ public:
     virtual void createDescriptorSets(ThreadResources& res) override;
 
 private:
+    std::vector<ClearSubShader> clearSubShaders;
 };
 
+class ClearSubShader
+{
+public:
+    // name is used in shader debugging
+    void init(ClearShader* parent, std::string debugName);
+    void initSingle(ThreadResources& tr, ShaderState& shaderState) {};
+    void allocateCommandBuffer(ThreadResources& tr, VkCommandBuffer* cmdBufferPtr, const char* debugName);
+    void createGlobalCommandBufferAndRenderPass(ThreadResources& tr);
+    void addRenderPassAndDrawCommands(ThreadResources& tr, VkCommandBuffer* cmdBufferPtr);
+    void destroy();
+    VkCommandBuffer commandBuffer = nullptr;
+    VkFramebuffer framebuffer = nullptr;
+    VkFramebuffer framebuffer2 = nullptr;
+    VkRenderPass renderPass = nullptr;
+
+private:
+    ClearShader* clearShader = nullptr;
+    std::string name;
+    ShadedPathEngine* engine = nullptr;
+    VkDevice* device = nullptr;
+};
+
+// use identical shader with new name for ending shader chain
+class EndShader : public ClearShader {
+    void init(ShadedPathEngine& engine, ShaderState& shaderState) override;
+};
