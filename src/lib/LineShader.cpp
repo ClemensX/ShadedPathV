@@ -46,12 +46,6 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 
 void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
-	// TODO remove hack
-	bool undoLast = false;
-	if (isLastShader()) {
-		undoLast = true;
-		setLastShader(false);
-	}
 	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
 	ug.initSingle(tr, shaderState);
 	ug.allocateCommandBuffer(tr, &ug.commandBuffer, "LINE PERMANENT COMMAND BUFFER");
@@ -60,9 +54,6 @@ void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * LineShader::MAX_DYNAMIC_LINES;
 	createVertexBuffer(pf.vertexBufferLocal, bufferSize, pf.vertexBufferMemoryLocal);
 	pf.allocateCommandBuffer(tr, &pf.commandBuffer, "LINE ADD COMMAND BUFFER");
-	if (undoLast) {
-		setLastShader(true);
-	}
 	LineSubShader& sub = globalLineSubShaders[tr.threadResourcesIndex];
 	sub.initSingle(tr, shaderState);
 }

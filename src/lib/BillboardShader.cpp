@@ -39,17 +39,7 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	handover.descriptorSet = &str.descriptorSet;
 	handover.descriptorSet2 = &str.descriptorSet2;
 	resources.createThreadResources(handover);
-	//createDescriptorSets(tr);
-	// TODO remove hack
-	bool undoLast = false;
-	if (isLastShader()) {
-		undoLast = true;
-		setLastShader(false);
-	}
 	createRenderPassAndFramebuffer(tr, shaderState, str.renderPass, str.framebuffer, str.framebuffer2);
-	if (undoLast) {
-		setLastShader(true);
-	}
 
 	// create shader stage
 	auto vertShaderStageInfo = engine->shaders.createVertexShaderCreateInfo(vertShaderModule);
