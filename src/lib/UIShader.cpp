@@ -2,14 +2,6 @@
 
 using namespace std;
 
-void UIShader::createDescriptorSetLayout()
-{
-}
-
-void UIShader::createDescriptorSets(ThreadResources& res)
-{
-}
-
 void UIShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 {
 	ShaderBase::init(engine);

@@ -136,16 +136,6 @@ void PBRShader::initialUpload()
 	}
 }
 
-void PBRShader::createDescriptorSetLayout()
-{
-	Error("remove this method from base class!");
-}
-
-void PBRShader::createDescriptorSets(ThreadResources& tr)
-{
-	Error("remove this method from base class!");
-}
-
 void PBRShader::prefillTextureIndexes(ThreadResources& tr)
 {
 	auto& str = tr.pbrResources; // shortcut to pbr resources

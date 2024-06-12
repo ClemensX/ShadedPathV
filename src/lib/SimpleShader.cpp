@@ -112,16 +112,6 @@ void SimpleShader::finishInitialization(ShadedPathEngine& engine, ShaderState& s
 {
 }
 
-void SimpleShader::createDescriptorSetLayout()
-{
-    Error("remove this method from base class!");
-}
-
-void SimpleShader::createDescriptorSets(ThreadResources& tr)
-{
-	Error("remove this method from base class!");
-}
-
 void SimpleShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo) {
 	if (!enabled) Error("Shader disabled. Calling methods on it is not allowed.");
     // copy ubo to GPU:

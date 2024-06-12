@@ -22,11 +22,6 @@ public:
 
     virtual ~UIShader() override;
 
-    // create descriptor set layout (one per effect)
-    virtual void createDescriptorSetLayout() override;
-    // create descritor sets (one or more per render thread)
-    virtual void createDescriptorSets(ThreadResources& res) override;
-
 private:
 };
 

@@ -115,16 +115,6 @@ void CubeShader::finishInitialization(ShadedPathEngine& engine, ShaderState& sha
 {
 }
 
-void CubeShader::createDescriptorSetLayout()
-{
-	Error("remove this method from base class!");
-}
-
-void CubeShader::createDescriptorSets(ThreadResources& tr)
-{
-	Error("remove this method from base class!");
-}
-
 void CubeShader::createCommandBuffer(ThreadResources& tr)
 {
 	auto& str = tr.cubeResources; // shortcut to cube resources

@@ -75,10 +75,6 @@ private:
 
 	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;
-	// create descriptor set layout (one per effect)
-	virtual void createDescriptorSetLayout() override;
-	// create descritor sets (one or more per render thread)
-	virtual void createDescriptorSets(ThreadResources& res) override;
 
 	VkBuffer vertexBuffer = nullptr;
 	VkDeviceMemory vertexBufferMemory = nullptr;

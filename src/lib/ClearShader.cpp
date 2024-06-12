@@ -1,15 +1,5 @@
 #include "mainheader.h"
 
-void ClearShader::createDescriptorSetLayout()
-{
-	Error("remove this method from base class!");
-}
-
-void ClearShader::createDescriptorSets(ThreadResources& res)
-{
-	Error("remove this method from base class!");
-}
-
 void ClearShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 {
 	shaderState.isClear = true;

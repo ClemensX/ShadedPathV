@@ -117,17 +117,6 @@ void BillboardShader::initialUpload()
 	global->uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, billboards.data(), vertexBuffer, vertexBufferMemory, "BillboardShader Global Buffer");
 }
 
-// assigning stage flags is a little more advanced because we need to pass some bindings to geom stages
-void BillboardShader::createDescriptorSetLayout()
-{
-	Error("remove this method from base class!");
-}
-
-void BillboardShader::createDescriptorSets(ThreadResources& tr)
-{
-	Error("remove this method from base class!");
-}
-
 void BillboardShader::createCommandBuffer(ThreadResources& tr)
 {
 	resources.updateDescriptorSets(tr);

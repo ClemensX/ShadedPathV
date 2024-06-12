@@ -107,11 +107,6 @@ public:
     // pre-record draw commands (one time call)
     void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, VkBuffer indexBuffer);
     
-    // create descriptor set layout (one per effect)
-    virtual void createDescriptorSetLayout() override;
-    // create descritor sets (one or more per render thread)
-    virtual void createDescriptorSets(ThreadResources& res) override;
-
     TextureInfo* texture = nullptr;
 
 private:

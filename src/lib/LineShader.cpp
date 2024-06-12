@@ -88,16 +88,6 @@ void LineShader::uploadFixedGlobalLines()
 	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, all.data(), vertexBufferFixedGlobal, vertexBufferMemoryFixedGlobal, "LineShader Global Buffer");
 }
 
-void LineShader::createDescriptorSetLayout()
-{
-	Error("remove this method from base class!");
-}
-
-void LineShader::createDescriptorSets(ThreadResources& tr)
-{
-	Error("remove this method from base class!");
-}
-
 void LineShader::createCommandBuffer(ThreadResources& tr)
 {
 	LineSubShader& sub = globalLineSubShaders[tr.threadResourcesIndex];

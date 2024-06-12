@@ -120,13 +120,6 @@ public:
 	// add current command buffers
 	virtual void addCurrentCommandBuffer(ThreadResources& tr) = 0;
 
-	// create descriptor set layout and assign to BaseShader variable
-	// (one per shader)
-	virtual void createDescriptorSetLayout() = 0;
-
-	// each shader must initialize its descriptor sets for all render threads
-	virtual void createDescriptorSets(ThreadResources& res) = 0;
-
 	// Base class methodas that can be used in the subclasses
 
 	// common initializations, usually called as first step in subclass init()
