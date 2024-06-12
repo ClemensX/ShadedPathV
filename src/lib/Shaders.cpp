@@ -110,9 +110,11 @@ void Shaders::submitFrame(ThreadResources& tr)
 	tr.submitinfos.push_back(submitInfo);
 }
 
-void Shaders::initiateShader_BackBufferImageDump()
+void Shaders::initiateShader_BackBufferImageDump(bool dumpAll)
 {
-	enabledImageDump = true;
+	if (dumpAll) {
+		enabledAllImageDump = true;
+	} 
 	for (auto& res : engine.threadResources) {
 		initiateShader_BackBufferImageDumpSingle(res);
 	}
@@ -122,7 +124,6 @@ void Shaders::initiateShader_BackBufferImageDump()
 
 void Shaders::initiateShader_BackBufferImageDumpSingle(ThreadResources& res)
 {
-	enabledImageDump = true;
 	auto& device = engine.global.device;
 	auto& global = engine.global;
 	global.createImage(engine.getBackBufferExtent().width, engine.getBackBufferExtent().height, 1, VK_SAMPLE_COUNT_1_BIT, global.ImageFormat, VK_IMAGE_TILING_LINEAR,
@@ -143,7 +144,8 @@ void Shaders::initiateShader_BackBufferImageDumpSingle(ThreadResources& res)
 
 void Shaders::executeBufferImageDump(ThreadResources& tr)
 {
-	if (!enabledImageDump) return;
+	if (!enabledAllImageDump && !enabledImageDumpForNextFrame) return;
+	enabledImageDumpForNextFrame = false; // reset
 	auto& device = engine.global.device;
 	auto& global = engine.global;
 	VkCommandBufferAllocateInfo allocInfo{};
@@ -229,10 +231,10 @@ void Shaders::executeBufferImageDump(ThreadResources& tr)
 	// ppm header
 	file << "P6\n" << imageCopyRegion.extent.width << "\n" << imageCopyRegion.extent.height << "\n" << 255 << "\n";
 
-	// If source is BGR (destination is always RGB) and we can't use blit (which does automatic conversion), we'll have to manually swizzle color components
-	// Check if source is BGR and needs swizzle
+	// If source is BGR (destination is always RGB), we'll have to manually swizzle color components
+	// Crazy way to check if source is BGR and dest is RGB. As we already know that we ciuld also simply set colorSwizzle to true...
 	std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
-	const bool colorSwizzle = (std::find(formatsBGR.begin(), formatsBGR.end(), VK_FORMAT_R8G8B8A8_UNORM) != formatsBGR.end());
+	const bool colorSwizzle = !(std::find(formatsBGR.begin(), formatsBGR.end(), VK_FORMAT_R8G8B8A8_UNORM) != formatsBGR.end());
 	const char* imagedata = tr.imagedata;
 	// ppm binary pixel data
 	for (int32_t y = 0; y < height; y++) {
