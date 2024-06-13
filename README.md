@@ -15,6 +15,10 @@ Some features:
 
 ## Current State (Q2 / 2024)
 
+## Screenshots
+
+We always had the option to run the engine in screenshot mode, where every frame will be stored in the file system after rendering. This mode is mostly useful for automated tests. Now we added an option to store the next rendered single frame. The screenshot is taken from backbuffer, not from the output window, so it will be in the resolution of the backbuffer. See *LandacapeGenerator* app for details.
+
 ## Landscape generation with Diamond-square algorithm
 
 We needed a way to generate landscapes and decided to implement the diamond-square algorithm. This is shown in the app *LandscapeGenerator*. It also utilizes the new background GPU uploading mechanism. Otherwise there would be stuttering because e.g. uploading 2 million lines to GPU memory takes longer than drawing a frame. Uploading is done in the background and only after it is finished the render threads switch to the new resource set.
