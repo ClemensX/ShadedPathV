@@ -220,39 +220,19 @@ void Shaders::executeBufferImageDump(ThreadResources& tr)
 	vkFreeCommandBuffers(device, tr.commandPool, 1, &tr.commandBufferImageDump);
 	// now copy image data to file:
 	stringstream name;
-	name << "out_" << setw(2) << setfill('0') << imageCouter++ << ".ppm";
-	auto filename = engine.files.findFile(name.str(), FileCategory::TEXTURE, false, true);
+	name << "out_" << setw(2) << setfill('0') << imageCounter++ << ".ppm";
+	//auto filename = engine.files.findFile(name.str(), FileCategory::TEXTURE, false, true); // we rather use current directory, maybe reconsider later
+    auto filename = name.str();
 	if (!engine.files.checkFileForWrite(filename)) {
+		Log("Could not write image dump file: " << filename << endl);
 		return;
 	}
-	std::ofstream file(filename, std::ios::out | std::ios::binary);
-	int32_t height = imageCopyRegion.extent.height;
-	int32_t width = imageCopyRegion.extent.width;
-	// ppm header
-	file << "P6\n" << imageCopyRegion.extent.width << "\n" << imageCopyRegion.extent.height << "\n" << 255 << "\n";
-
 	// If source is BGR (destination is always RGB), we'll have to manually swizzle color components
-	// Crazy way to check if source is BGR and dest is RGB. As we already know that we ciuld also simply set colorSwizzle to true...
+	// Crazy way to check if source is BGR and dest is RGB. As we already know that we could also simply set colorSwizzle to true...
 	std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
 	const bool colorSwizzle = !(std::find(formatsBGR.begin(), formatsBGR.end(), VK_FORMAT_R8G8B8A8_UNORM) != formatsBGR.end());
-	const char* imagedata = tr.imagedata;
-	// ppm binary pixel data
-	for (int32_t y = 0; y < height; y++) {
-		unsigned int* row = (unsigned int*)imagedata;
-		for (int32_t x = 0; x < width; x++) {
-			if (colorSwizzle) {
-				file.write((char*)row + 2, 1);
-				file.write((char*)row + 1, 1);
-				file.write((char*)row, 1);
-			}
-			else {
-				file.write((char*)row, 3);
-			}
-			row++;
-		}
-		imagedata += tr.subResourceLayout.rowPitch;
-	}
-	file.close();
+	Util::drawPPM(filename, tr.imagedata, imageCopyRegion.extent.width, imageCopyRegion.extent.height,
+		tr.subResourceLayout.rowPitch, colorSwizzle);
 	Log("written image dump file: " << engine.files.absoluteFilePath(filename).c_str() << endl);
 }
 

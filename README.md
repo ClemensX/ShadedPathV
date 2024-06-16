@@ -50,6 +50,11 @@ cmake --build ./build
 
 If all goes well you will find the built app here: ``.build/src/app/Debug``
 
+### Debugging
+
+Make sure to copy https://github.com/g-truc/glm/blob/master/util/glm.natvis to your local machine. This will enable you to see glm vectors in the debugger properly.
+You can use this folder ``C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\Common7\Packages\Debugger\Visualizers``. Adapt the path to your VS2022 installation.
+
 ## Q1 / 2023
 ## Using Objects from glTF files
 

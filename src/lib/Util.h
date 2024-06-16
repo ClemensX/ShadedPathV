@@ -22,6 +22,14 @@ namespace Colors {
 class Util
 {
 public:
+    // draw simple image formats
+
+    // draw ppm image (usually screenshots)
+    static void drawPPM(std::string filename, const char* imagedata, uint64_t width, uint64_t height, uint64_t rowPitch, bool colorSwizzle);
+
+    // draw 32 bit float heightmap image
+    void drawHeightmap(std::vector<glm::vec3> &points);
+
     // if you construct a skybox you need to be sure the edges of the view cube are still within far plane.
     // this calculates the maximum (half) cube edge size you can use (see CubeShader)
     static float getMaxCubeViewDistanceFromFarPlane(float f) {
@@ -155,7 +163,11 @@ public:
 // https://en.wikipedia.org/wiki/Diamond-square_algorithm
 class Spatial2D {
 public:
-    Spatial2D(int N2plus1);
+    Spatial2D() {};
+    Spatial2D(int N2plus1); // TODO rewrite to be re-usable for any size
+
+    // reset all datastructures to new size
+    void resetSize(int N2plus1); 
 
     // total number of elements
     int size() {

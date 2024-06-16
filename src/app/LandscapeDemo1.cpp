@@ -118,6 +118,7 @@ void LandscapeDemo::init() {
     engine.textureStore.loadTexture("shadedpath_logo.ktx2", "logo");
     unsigned int texIndexTree = engine.textureStore.getTexture("tree")->index;
     unsigned int texIndexLogo = engine.textureStore.getTexture("logo")->index;
+    // set texture index for billboards
     unsigned int texIndex = texIndexTree;
     // add some lines:
     float aspectRatio = engine.getAspect();

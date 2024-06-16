@@ -129,20 +129,27 @@ glm::quat MathHelper::LookAt(glm::vec3 direction, glm::vec3 desiredUp)
 
 Spatial2D::Spatial2D(int N2plus1)
 {
+    resetSize(N2plus1);
+}
+
+void Spatial2D::resetSize(int N2plus1) {
     // make sure we have a side length of form 2 * n + 1:
     double s = log2((double)(N2plus1 - 1));
     int n = (int)s;
-    int n2 = 2 << (n-1);
+    int n2 = 2 << (n - 1);
     if (n2 != (N2plus1 - 1)) {
         throw std::out_of_range("Spatial2D needs side length initializer of the form (2 ^ N) + 1");
     }
-    sidePoints = N2plus1;
-    h = new float [N2plus1 * N2plus1];
+    if (sidePoints != N2plus1) {
+        h = new float[N2plus1 * N2plus1];
+        sidePoints = N2plus1;
+    }
     for (int i = 0; i < N2plus1 * N2plus1; i++) {
         h[i] = NAN;
     }
     heightmap_size = N2plus1 * N2plus1;
 }
+
 
 int Spatial2D::index(int x, int y)
 {
@@ -411,4 +418,60 @@ float Spatial2D::getHeightSave(int center_x, int center_y, int half)
     }
     float height = h[index(center_x, center_y)];
     return height;
+}
+
+void Util::drawPPM(std::string filename, const char* imagedata, uint64_t width, uint64_t height, uint64_t rowPitch, bool colorSwizzle)
+{
+    std::ofstream file(filename, std::ios::out | std::ios::binary);
+    // ppm header
+    file << "P6\n" << width << "\n" << height << "\n" << 255 << "\n";
+
+    // ppm binary pixel data
+    for (int32_t y = 0; y < height; y++) {
+        unsigned int* row = (unsigned int*)imagedata;
+        for (int32_t x = 0; x < width; x++) {
+            if (colorSwizzle) {
+                file.write((char*)row + 2, 1);
+                file.write((char*)row + 1, 1);
+                file.write((char*)row, 1);
+            }
+            else {
+                file.write((char*)row, 3);
+            }
+            row++;
+        }
+        imagedata += rowPitch;
+    }
+    file.close();
+
+}
+
+void Util::drawHeightmap(std::vector<glm::vec3>& points)
+{
+    static int imageCounter = 0;
+    stringstream name;
+    name << "out_heightmap_" << setw(2) << setfill('0') << imageCounter++ << ".raw";
+    //auto filename = engine.files.findFile(name.str(), FileCategory::TEXTURE, false, true); // we rather use current directory, maybe reconsider later
+    auto filename = name.str();
+    if (!engine->files.checkFileForWrite(filename)) {
+        Log("Could not write image dump file: " << filename << endl);
+        return;
+    }
+    Log("Heightmap: write " << points.size() << " points" << endl);
+    // the height values in the heightmap are in absolute world coordinates already -  we don't need to adapt them
+    // Open a file in binary mode
+    std::ofstream file(filename, std::ios::out | std::ios::binary);
+    if (!file) {
+        return;
+    }
+
+    // Write the heightmap data to the file
+    for (const glm::vec3& point : points) {
+        file.write(reinterpret_cast<const char*>(&point.y), sizeof(float));
+    }
+
+    // Close the file
+    file.close();
+
+    Log("written 32-bit float RAW heightmap file: " << engine->files.absoluteFilePath(filename).c_str() << endl);
 }

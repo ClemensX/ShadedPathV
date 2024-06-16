@@ -19,7 +19,8 @@ private:
     CameraPositioner_AutoMove* autoMovePositioner;
     InputState input;
     World world;
-    Spatial2D* heightmap = nullptr;
+    Spatial2D heightmap;
+    void writeHeightmapToRawFile();
     // generation parameters set from UI:
     struct Parameters {
         int n;

@@ -117,7 +117,7 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
             parameters.generate = false;
             //Log("Generate thread " << tr.frameIndex << endl);
             int n2plus1 = (int)(pow(2, parameters.n) + 1);
-            Spatial2D heightmap(n2plus1);
+            heightmap.resetSize(n2plus1);
             int lastPos = n2plus1 - 1;
             // down left and right corner
             heightmap.setHeight(0, 0, parameters.h_bl);
@@ -136,8 +136,6 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
             //Log("num points: " << plist.size() << endl);
             engine.shaders.lineShader.addPermament(lines, tr);
         }
-        //engine.shaders.lineShader.addOneTime(lines, tr);
-        //engine.shaders.lineShader.handleUpdatedResources(tr);
     }
 
     LineShader::UniformBufferObject lubo{};
@@ -183,6 +181,8 @@ void LandscapeGenerator::handleInput(InputState& inputState)
         auto action = inputState.action;
         auto mods = inputState.mods;
         const bool press = action != GLFW_RELEASE;
+        if (key == GLFW_KEY_H && press)
+			writeHeightmapToRawFile();
         if (key == GLFW_KEY_P && press)
 			shaders.backBufferImageDumpNextFrame();
         if (key == GLFW_KEY_W) {
@@ -247,6 +247,7 @@ void LandscapeGenerator::buildCustomUI()
         "g generate new seed\n" 
         "+ next Generation\n"
         "- previous Generation\n"
+        "h write heightmap to file (VK_FORMAT_R32_SFLOAT)\n"
         "p dump image";
     static Parameters localp = initialParameters;
     if (parameters.paramsChangedOutsideUI) {
@@ -322,3 +323,10 @@ void LandscapeGenerator::buildCustomUI()
     }
     ImGui::SameLine(); HelpMarker(helpText.c_str());
 };
+
+void LandscapeGenerator::writeHeightmapToRawFile()
+{
+    vector<glm::vec3> points;
+    heightmap.getPoints(points);
+    engine.util.drawHeightmap(points);
+}

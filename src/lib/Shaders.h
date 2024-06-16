@@ -168,7 +168,7 @@ private:
 	void initiateShader_BackBufferImageDumpSingle(ThreadResources& res);
 	ShadedPathEngine& engine;
 
-	unsigned int imageCouter = 0;
+	unsigned int imageCounter = 0;
 	bool enabledAllImageDump = false;
 	bool enabledImageDumpForNextFrame = false;
 };
