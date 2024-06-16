@@ -1,5 +1,6 @@
 #version 460 
 #extension GL_EXT_debug_printf:enable
+#extension GL_EXT_nonuniform_qualifier : require
 #extension GL_KHR_vulkan_glsl:enable
 
 layout(binding = 0) uniform UniformBufferObject {
@@ -21,8 +22,48 @@ layout(location = 3) out float outWidth;
 layout(location = 4) out float outHeight;
 layout(location = 5) out uint outIndex;
 
+layout(set = 1, binding = 0) uniform sampler2D global_textures[];
+
 void main()
 {
+	// heightmap start
+    //outColor = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord);
+    uint texIndex = 4;
+    vec2 fragTexCoord = inPosition.xz;
+    float z = 0.5;
+    fragTexCoord = vec2(0.0, z);
+    float value0 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+    fragTexCoord = vec2(0.1, z);
+    float value1 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+    fragTexCoord = vec2(0.2, z);
+    float value2 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+    fragTexCoord = vec2(0.3, z);
+    float value3 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+    fragTexCoord = vec2(0.4, z);
+    float value4 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+    fragTexCoord = vec2(0.5, z);
+    float value5 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+    fragTexCoord = vec2(0.6, z);
+    float value6 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+    fragTexCoord = vec2(0.7, z);
+    float value7 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+    fragTexCoord = vec2(0.8, z);
+    float value8 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+    fragTexCoord = vec2(0.9, z);
+    float value9 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+    fragTexCoord = vec2(1.0, z);
+    float value10 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+    //debugPrintfEXT("float from R32_SFLOAT texture: %f %f %f %f %f %f %f %f %f %f %f \n", value0, value1, value2, value3, value4, value5, value6, value7, value8, value9, value10);
+
+    // currently just use constant expressions: we have world xz from -1024 to 1024
+    float mappedx = (inPosition.x + 1024.0) / 2048.0;
+    float mappedz = (inPosition.z + 1024.0) / 2048.0;
+    fragTexCoord = vec2(mappedx, mappedz);
+    float newHeight = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+    vec4 inP = inPosition;
+    inP.y = newHeight;
+
+    // heightmap end
     outType = inType;
     outQuat = inDirection;
     outWidth = inWidth;
@@ -30,12 +71,15 @@ void main()
     outIndex = inIndex;
     //gl_Position = ubo.proj * ubo.view * vec4(inPosition, 1.0);
     if (inType == 0) {
-        gl_Position = ubo.view * vec4(inPosition.xyz, 1.0);
+        gl_Position = ubo.view * vec4(inP.xyz, 1.0);
     } else if (inType == 1) {
        //debugPrintfEXT("bb vert.quat w x y z is %f %f %f %f\n", inDirection.w, inDirection.x, inDirection.y, inDirection.z);
-       gl_Position = vec4(inPosition.xyz, 1.0);
+       gl_Position = vec4(inP.xyz, 1.0);
     }
     //debugPrintfEXT("bb ubo.model 0 0 is %f\n", ubo.model[0][0]);
+    if (inP.x < -1023) {
+		//debugPrintfEXT("bb inPos x y z %f %f %f\n", inPosition.x, inPosition.y, inPosition.z);
+	}
     //debugPrintfEXT("bb inPos x y z %f %f %f\n", inPosition.x, inPosition.y, inPosition.z);
     //debugPrintfEXT("bb inDir x y z %f %f %f\n", inDirection.x, inDirection.y, inDirection.z);
     //debugPrintfEXT("bb w h type %f %f %d\n", inWidth, inHeight, inType);

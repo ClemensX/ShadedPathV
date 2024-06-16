@@ -8,3 +8,6 @@
 #gltf-transform metalrough .\simple_grass_chunks.glb grass_pbr.glb
 #gltf-transform uastc .\grass_pbr.glb grass.glb --level 2 --zstd 1 --verbose
 toktx --genmipmap --uastc 3 --zcmp 18 --verbose --t2 ../data/texture/shadedpath_logo.ktx2 ../datainput/texture/shadedpath_logo2.png
+#toktx --uastc 3 --zcmp 18 --verbose --t2 ../data/texture/shadedpath_logo.ktx2 ../datainput/texture/shadedpath_logo2.png
+ktx create --format R32_SFLOAT --raw --width 3 --height 3 ./heightmap_9_points.raw ./height.ktx2
+ktx create --format R32_SFLOAT --raw --width 1025 --height 1025 ./heightmap_2mill_points.raw ./heightbig.ktx2

@@ -90,7 +90,7 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 			Error("Could not upload texture to GPU ktxTexture2_VkUploadEx");
 		}
 		if (texture->vulkanTexture.levelCount < 2) {
-			Error("Cannot load texture without mipmaps");
+			//Error("Cannot load texture without mipmaps");
 		}
 		// create image view and sampler:
 		if (kTexture->isCubemap) {

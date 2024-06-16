@@ -1,3 +1,6 @@
+Debug Printf:
+Don't forget to enalble in Configurator as VK_LAYER_KHRONOS_validation preset
+
 bing ai:
 To enable `GL_EXT_nonuniform_qualifier` using MoltenVK, you can follow the steps below:
 

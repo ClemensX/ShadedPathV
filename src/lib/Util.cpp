@@ -467,7 +467,9 @@ void Util::drawHeightmap(std::vector<glm::vec3>& points)
 
     // Write the heightmap data to the file
     for (const glm::vec3& point : points) {
-        file.write(reinterpret_cast<const char*>(&point.y), sizeof(float));
+        float height = point.y;
+        file.write(reinterpret_cast<const char*>(&height), sizeof(float));
+        //Log(" height: " << height << endl);
     }
 
     // Close the file

@@ -29,9 +29,9 @@ void LandscapeDemo::run()
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 960;//480;// 960;//1800;// 800;//3700; // 2500
+        int win_width = 2500;//480;// 960;//1800;// 800;//3700; // 2500
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Landscape Demo");
-        camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 2000.0f));
+        camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f));
 
         engine.setFramesInFlight(2);
         engine.registerApp(this);
@@ -85,8 +85,8 @@ void LandscapeDemo::addRandomBillboards(vector<BillboardDef>& billboards, World 
     //unsigned long total_billboards = 50000000; // close to 4GB on GPU
     //unsigned long total_billboards = 1000000;
     //unsigned long total_billboards = 500000;
-    //unsigned long total_billboards = 200000;
-    unsigned long total_billboards = 5000;
+    unsigned long total_billboards = 200000;
+    //unsigned long total_billboards = 5000;
     //unsigned long total_billboards = 12;
     unsigned long billboards_per_texture = total_billboards / 12;
 
@@ -116,10 +116,13 @@ void LandscapeDemo::init() {
     engine.textureStore.loadTexture("debug.ktx", "2dTexture");
     engine.textureStore.loadTexture("eucalyptus.ktx2", "tree");
     engine.textureStore.loadTexture("shadedpath_logo.ktx2", "logo");
+    engine.textureStore.loadTexture("heightbig.ktx2", "heightmap");
     unsigned int texIndexTree = engine.textureStore.getTexture("tree")->index;
     unsigned int texIndexLogo = engine.textureStore.getTexture("logo")->index;
+    unsigned int texIndexHeightmap = engine.textureStore.getTexture("heightmap")->index;
     // set texture index for billboards
     unsigned int texIndex = texIndexTree;
+    //unsigned int texIndex = texIndexHeightmap;
     // add some lines:
     float aspectRatio = engine.getAspect();
 
