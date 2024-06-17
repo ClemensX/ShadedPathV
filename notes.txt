@@ -27,3 +27,29 @@ addCurrentCommandBuffer
 reuseUpdateElement?
 
 ug.addRenderPassAndDrawCommands(tr, &ug.commandBuffer, ug.vertexBufferLocal);
+
+Heightmap: write 9 points
+ height: 0
+ height: -41.0657
+ height: 0
+ height: -189.178
+ height: -199.499
+ height: 56.9964
+ height: 0
+ height: -32.4961
+ height: 0
+
+max:36.7
+
+paths removed: 
+C:\dev\vulkan\vcpkg
+C:\dev\vulkan\libraries\vulkan\Bin
+C:\dev\vulkan\libraries\ktx\bin
+
+new install with vcpkg auto installing (some) dependencies:
+do:
+https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-powershell
+then:
+build as usual, e.g.:
+# cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=C:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake
+# cmake --build ./build
