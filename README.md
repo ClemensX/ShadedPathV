@@ -13,6 +13,19 @@ Some features:
 - Sound support for ogg vorbis: Both background music and spatial sound attached to objects
 - Upload of GPU resources in a background thread for stutter free rendering
 
+**Table of content:**
+- [Current State](#toc-state)
+- [Blog](#toc-blog)
+- [Setup](#toc-setup)
+- [ToDo](#toc-todo)
+- [Stereo Mode](#toc-stereo)
+- [Formats](#toc-formats)
+- [Thread Model](#toc-threads)
+- [Coordinate System](#toc-coords)
+- [Misc](#toc-misc)
+
+<a id="toc-state"></a>
+
 ## Current State (Q2 / 2024)
 
 ## Screenshots
@@ -54,6 +67,8 @@ If all goes well you will find the built app here: ``.build/src/app/Debug``
 
 Make sure to copy https://github.com/g-truc/glm/blob/master/util/glm.natvis to your local machine. This will enable you to see glm vectors in the debugger properly.
 You can use this folder ``C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\Common7\Packages\Debugger\Visualizers``. Adapt the path to your VS2022 installation.
+
+<a id="toc-blog"></a>
 
 ## Q1 / 2023
 ## Using Objects from glTF files
@@ -183,18 +198,23 @@ Red lines show the world size of 2 square km. Lines are drawn every 1m. White cr
 ![Same scene with camera moved back](images/view002.PNG)
 Same scene with camera moved back. You see lines resembling floor level and ceiling (380 m apart). The textures are so small that they should use highest or 2nd highest mip level with 1x1 or 2x2 image size.
 
+<a id="toc-setup"></a>
+
 ## Dev Setup and Library usage
 Prerequisites that need to installed before dev setup:
 * C++ 20 supported by CMake (VisualStudio 2022, gcc, clang,...)
 * Vulkan SDK https://vulkan.lunarg.com/
 * git
+* cmake
 
 Install ShadedPathV to empty folder ```sp```:
 ```
-cd <folder containing sp>
-git clone https://github.com/ClemensX/ShadedPathV.git sp
+cd sp
+git clone https://github.com/ClemensX/ShadedPathV.git
+```
 
-install vcpkg (if not already installed):
+install vcpkg (for more details see https://learn.microsoft.com/en-us/vcpkg/get_started/get-started):
+```
 git clone https://github.com/microsoft/vcpkg.git
 cd vcpkg
 ./bootstrap-vcpkg.sh or bootstrap-vcpkg.bat
@@ -206,22 +226,16 @@ export VCPKG_ROOT=/path/to/vcpkg
 export PATH=$VCPKG_ROOT:$PATH
 ```
 
-To install dependencies call vcpkg from its folder:
+The remaining dependencies should be auto-installed during the first build step. To build from within ShadedPathV folder: (TODO add openxr to dependencies)
 ```
-vcpkg --allow-unsupported install
-vcpkg install glfw3
-vcpkg install ktx[tools,vulkan]
-vcpkg install glm
-vcpkg install openxr-loader[vulkan]
+cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=C:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake
+cmake --build ./build
 ```
 
-all libraries should be installed and found (glfw and ktx)
+Now you also can just open VS2022. The solution file is in the ``build`` folder
 
-Visual Studio 2022:
+You may want to add GLSL support to Visual Studio 2022. E.g. this:
 * Daniel Scherzers GLSL Visual Studio integration: https://marketplace.visualstudio.com/items?itemName=DanielScherzer.GLSL2022
-
-copy ktx.dll to executable path:
-* vulkan\ShadedPathV\ShadedPathV\x64\Debug\ktx.dll
 
 * **OpenXR**: install NuGet package OpenXR.Loader for all three projects in solution. If not found during compile or not displayed correctly: uninstall via NuGet Package Manager, then re-install
 
@@ -238,6 +252,8 @@ Use Khronos OpenXR sdk directly for VS 2022:
  * loader lib and pdb file will be here: \OpenXR-SDK\build\win64\src\loader\Debug
  * include folder here: \OpenXR-SDK\include\openxr, copy to libraries\openxr\openxr
  * for ShadedPathVTest and ShadedPathV add library path similar to include directory
+
+<a id="toc-todo"></a>
 
 ## TODO
 Things finished and things to do. Both very small and very large things, just as they come to my mind. 
@@ -279,6 +295,8 @@ Things finished and things to do. Both very small and very large things, just as
 - [ ] Demos
 - [ ] Games
 
+<a id="toc-stereo"></a>
+
 ## Stereo Mode
 
 Activate stereo mode from client with one of these:
@@ -291,6 +309,8 @@ Stereo mode will enable all shaders to draw twice, for left and right eye. All i
 * VkFramebuffer ThreadResources.framebufferLine2 (for right eye)
 
 Only left eye will be shown in presentation window unless double view is activated with **engine.enableStereoPresentation()**
+
+<a id="toc-formats"></a>
 
 ## Formats
 
@@ -311,6 +331,8 @@ To decide formats to use we can run the engine in presentation mode and get a li
 | **1** | **VK_PRESENT_MODE_MAILBOX_KHR** | 
 | 2 | VK_PRESENT_MODE_FIFO_KHR | 
 | 3 | VK_PRESENT_MODE_FIFO_RELAXED_KHR | 
+
+<a id="toc-threads"></a>
 
 ### Thread Model
 
@@ -345,6 +367,8 @@ To decide formats to use we can run the engine in presentation mode and get a li
 |                                                 |                  | renderThreadContinue->pop() |
 |                                                 | vkQueueSubmit(inFlightFence) | |
 
+<a id="toc-coords"></a>
+
 ## Coordinate Systems
 ### Right Handed Coordinate System
 
@@ -362,6 +386,8 @@ The OpenXR runtime must interpret the swapchain images in a clip space of positi
 ![Device Coordinates](DeviceCoordinates.drawio.svg)
 
 This means right handed with x (-1 to 1) to the right, y (-1 to 1) top to bottom and z (0 to 1) into the screen. See app **DeviceCoordApp** for details.
+
+<a id="toc-misc"></a>
 
 ## Issues
 
