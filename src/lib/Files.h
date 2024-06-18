@@ -35,7 +35,6 @@ public:
 	std::string absoluteFilePath(std::string filename);
 	void readFile(PakEntry* pakEntry, std::vector<std::byte>& buffer, FileCategory cat);
 	PakEntry* findFileInPak(std::string filename);
-	static void logThreadInfo(std::string info);
 private:
 	// initiate pak files before any other file operation. Called from findAssetFolder()
 	void initPakFiles();

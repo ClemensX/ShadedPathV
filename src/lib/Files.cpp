@@ -13,10 +13,22 @@ using namespace std;
 void Files::findFxFolder()
 {
 	filesystem::path current = filesystem::current_path();
+
 	string fx_test_filename = "line.vert.spv";
 
 	// first look at CD:
 	current = filesystem::current_path() / "shader.bin";
+
+	// if we are executing a test we might have to adapt the fx path
+	auto sep = std::filesystem::path::preferred_separator;
+	std::string spp(1, sep); // Convert separator to string
+	string testPath = "build" + spp + "src" + spp + "test" + spp + "Debug";
+	if (current.string().find(testPath) != string::npos) {
+		string appPath = "build" + spp + "src" + spp + "app";
+		string changedPath = current.string().replace(current.string().find(testPath), testPath.length(), appPath);
+		current = filesystem::path(changedPath);
+	}
+
 	filesystem::path to_check = current / fx_test_filename;
 	Log("Looking for shader files: " << to_check << endl);
 	if (filesystem::exists(to_check)) {
@@ -254,3 +266,4 @@ void Files::initPakFiles()
 		Log(" pak file entry: " << p.second.name.c_str() << endl);
 	}
 }
+

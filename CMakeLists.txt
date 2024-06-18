@@ -35,6 +35,8 @@ include(cmake/dependencies.cmake)
 
 add_subdirectory(src/lib)
 add_subdirectory(src/app)
+# comment next line to disable building the tests
+# if included, my_test will be built - run test cases in VS 2022 TestExplorer or on command line by executing my_test from it's folder
 add_subdirectory(src/test)
 
 # Not typically needed if there is a parent project
