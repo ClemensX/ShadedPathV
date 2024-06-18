@@ -62,6 +62,9 @@ void ShadedPathEngine::setFramesInFlight(int n) {
     if (initialized) Error("Configuration after intialization not allowed");
     framesInFlight = n;
     threadResources.resize(framesInFlight);
+    for (auto& threadRes : threadResources) {
+        //threadRes. = empty;
+    }
 }
 
 void ShadedPathEngine::setFrameCountLimit(long max) {
