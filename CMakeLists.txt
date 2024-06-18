@@ -35,6 +35,7 @@ include(cmake/dependencies.cmake)
 
 add_subdirectory(src/lib)
 add_subdirectory(src/app)
+add_subdirectory(src/test)
 
 # Not typically needed if there is a parent project
 if(PROJECT_IS_TOP_LEVEL)

@@ -13,6 +13,10 @@
       "version>=": "0.9.9.8"
     },
     {
+      "name": "gtest",
+      "version>=": "1.14.0#1"
+    },
+    {
       "name": "glfw3",
       "version>=": "3.4"
     }

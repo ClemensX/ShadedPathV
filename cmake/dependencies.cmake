@@ -19,6 +19,7 @@ find_package(ktx 4.3 CONFIG REQUIRED)
 find_path(KTX_INC ktx.h REQUIRED)
 message(STATUS "ktx headers = ${KTX_INC}")
 find_package(glm CONFIG REQUIRED)
+find_package(GTest CONFIG REQUIRED)
 
 # check glsl compiler is found:
 if(NOT Vulkan_glslc_FOUND)
