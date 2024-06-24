@@ -2,10 +2,13 @@
 cmake_minimum_required(VERSION 3.27)
 project(ShadedPathV VERSION 0.1.0 LANGUAGES C CXX)
 enable_testing()
-# local options excluded in git, useful entries:
+# local options excluded in git, useful entries below
+# should not be necessary for regular vulkan device,
+# but for small graphics like Intel Iris Xe
 # add_definitions(-DUSE_SMALL_GRAPHICS)
 # add_definitions(-DOVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT)
-include(cmake/local_options.cmake)
+# add_definitions(-DALLOW_USING_NON_TRANSFER_ONLY_QUEUE)
+  include(cmake/local_options.cmake)
 if(MSVC)
   message(STATUS "UNICODE chars enabled for MSVC")
   add_definitions(-DUNICODE -D_UNICODE)
@@ -13,8 +16,6 @@ if(MSVC)
   # comment next line to get deprecation errors:
   add_compile_options(/wd4996)
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=deprecated")
-  add_definitions(-DALLOW_USING_NON_TRANSFER_ONLY_QUEUE)
-  # comment for regular vulkan device, uncomment for small graphics like Intel Iris Xe
 elseif(APPLE)
   add_definitions(-DALLOW_USING_NON_TRANSFER_ONLY_QUEUE)
   add_compile_options(-Wall -Wextra -Werror -Wno-error=unused-variable -Wno-error=unused-function
