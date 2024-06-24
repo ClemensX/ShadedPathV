@@ -52,4 +52,5 @@ https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-pow
 then:
 build as usual, e.g.:
 # cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=C:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake
+# cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=C:\dev\cpp\vcpkg\scripts\buildsystems\vcpkg.cmake
 # cmake --build ./build
