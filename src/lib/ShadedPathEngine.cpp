@@ -4,6 +4,9 @@ using namespace std;
 
 thread_local bool ShadedPathEngine::isUpdateThread_ = false; // static
 
+// singleton intance watcher
+bool Singleton::instanceCreated = false;
+
 void ShadedPathEngine::init(string appname)
 {
     this->appname = appname;

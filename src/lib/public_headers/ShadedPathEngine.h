@@ -13,6 +13,31 @@ public:
     virtual void buildCustomUI() {};
 };
 
+class Singleton
+{
+public:
+    Singleton()
+    {
+        if (instanceCreated)
+        {
+            Error("You can only run one engine per process.\nFor tests you may want to run single tests via VS TestExplorer or configure in test.main()");
+        }
+        instanceCreated = true;
+        // Initialization code here
+    }
+
+    // Prevent copy and assignment
+    Singleton(Singleton const&) = delete;
+    void operator=(Singleton const&) = delete;
+
+    static bool isInstanceCreated() {
+        return instanceCreated;
+    }
+
+private:
+    static bool instanceCreated;
+};
+
 // Engine contains options and aggregates GlobalRendering, Presentation, Shaders, ThreadResources
 // who do the vulkan work
 class ShadedPathEngine
@@ -199,6 +224,7 @@ public:
     // Wait until engine threads have ended rendering.
     void waitUntilShutdown();
 
+    Singleton singleton; // check that only one engine is running - maybe relax later
     GlobalRendering global;
 	GlobalUpdate globalUpdate;
     Presentation presentation;
