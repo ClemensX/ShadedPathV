@@ -49,7 +49,11 @@ void GlobalRendering::initAfterPresentation()
 
 void GlobalRendering::shutdown()
 {
-    vkDestroySampler(device, textureSampler, nullptr);
+    for (auto& sam : textureSampler) {
+        if (sam != nullptr) {
+            vkDestroySampler(device, sam, nullptr);
+        }
+    }
     vkDestroySemaphore(device, singleTimeCommandsSemaphore, nullptr);
     vkDestroyCommandPool(device, commandPool, nullptr);
     vkDestroyCommandPool(device, commandPoolTransfer, nullptr);
@@ -710,8 +714,21 @@ void GlobalRendering::createTextureSampler()
     samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
     //samplerInfo.minLod = 6.0f;
     //samplerInfo.maxLod = 6.0f;
-    if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
-        Error("failed to create texture sampler!");
+    if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler[(int)TextureType::TEXTURE_TYPE_MIPMAP_IMAGE]) != VK_SUCCESS) {
+        Error("failed to create texture sampler TEXTURE_TYPE_MIPMAP_IMAGE!");
+    }
+
+    // change for heightmaps:
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE; // makes border color irrelevant
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.maxLod = 0.0f;
+    samplerInfo.anisotropyEnable = VK_FALSE;
+    samplerInfo.magFilter = VK_FILTER_NEAREST; // this: do not interpolate heightmap values
+    samplerInfo.minFilter = VK_FILTER_NEAREST;
+
+    if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler[(int)TextureType::TEXTURE_TYPE_HEIGHT]) != VK_SUCCESS) {
+        Error("failed to create texture sampler TEXTURE_TYPE_HEIGHT!");
     }
 }
 

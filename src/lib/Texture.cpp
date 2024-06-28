@@ -32,10 +32,11 @@ TextureInfo* TextureStore::getTexture(string id)
 	return ret;
 }
 
-void TextureStore::loadTexture(string filename, string id)
+void TextureStore::loadTexture(string filename, string id, TextureType type)
 {
 	vector<byte> file_buffer;
 	TextureInfo *texture = createTextureSlot(id);
+	texture->type = type;
 
 	// find texture file, look in pak file first:
 	PakEntry *pakFileEntry = nullptr;
@@ -89,8 +90,14 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 			Log("ERROR: in ktxTexture2_VkUploadEx " << ktxresult);
 			Error("Could not upload texture to GPU ktxTexture2_VkUploadEx");
 		}
-		if (texture->vulkanTexture.levelCount < 2) {
-			//Error("Cannot load texture without mipmaps");
+		if (texture->type == TextureType::TEXTURE_TYPE_MIPMAP_IMAGE && texture->vulkanTexture.levelCount < 2) {
+			stringstream s;
+			s << "Cannot load TEXTURE_TYPE_MIPMAP_IMAGE texture without mipmaps " << texture->filename << endl;
+			Error(s.str());
+		} else if (texture->type == TextureType::TEXTURE_TYPE_HEIGHT && texture->vulkanTexture.levelCount > 1) {
+			stringstream s;
+			s << "Cannot load TEXTURE_TYPE_HEIGHT texture with mipmaps " << texture->filename << endl;
+			Error(s.str());
 		}
 		// create image view and sampler:
 		if (kTexture->isCubemap) {

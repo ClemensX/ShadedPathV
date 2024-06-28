@@ -137,7 +137,7 @@ public:
 	VkInstance vkInstance = nullptr;
 	VkQueue graphicsQueue = nullptr;
 	VkQueue transferQueue = nullptr;
-	VkSampler textureSampler = nullptr;
+	VkSampler textureSampler[(int)TextureType::TEXTURE_TYPE_COUNT];
 	VkPhysicalDeviceProperties2 physicalDeviceProperties;
 	VkSemaphore singleTimeCommandsSemaphore = nullptr;
 	// create command pool for use outside rendering threads
