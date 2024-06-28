@@ -231,9 +231,8 @@ void Shaders::executeBufferImageDump(ThreadResources& tr)
 	// Crazy way to check if source is BGR and dest is RGB. As we already know that we could also simply set colorSwizzle to true...
 	std::vector<VkFormat> formatsBGR = { VK_FORMAT_B8G8R8A8_SRGB, VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_B8G8R8A8_SNORM };
 	const bool colorSwizzle = !(std::find(formatsBGR.begin(), formatsBGR.end(), VK_FORMAT_R8G8B8A8_UNORM) != formatsBGR.end());
-	Util::drawPPM(filename, tr.imagedata, imageCopyRegion.extent.width, imageCopyRegion.extent.height,
+	engine.util.writePPM(filename, tr.imagedata, imageCopyRegion.extent.width, imageCopyRegion.extent.height,
 		tr.subResourceLayout.rowPitch, colorSwizzle);
-	Log("written image dump file: " << engine.files.absoluteFilePath(filename).c_str() << endl);
 }
 
 void Shaders::queueSubmit(ThreadResources& tr)

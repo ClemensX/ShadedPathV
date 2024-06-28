@@ -116,7 +116,8 @@ void LandscapeDemo::init() {
     engine.textureStore.loadTexture("debug.ktx", "2dTexture");
     engine.textureStore.loadTexture("eucalyptus.ktx2", "tree");
     engine.textureStore.loadTexture("shadedpath_logo.ktx2", "logo");
-    engine.textureStore.loadTexture("heightbig.ktx2", "heightmap");
+    //engine.textureStore.loadTexture("heightbig.ktx2", "heightmap");
+    engine.textureStore.loadTexture("height.ktx2", "heightmap");
     unsigned int texIndexTree = engine.textureStore.getTexture("tree")->index;
     unsigned int texIndexLogo = engine.textureStore.getTexture("logo")->index;
     unsigned int texIndexHeightmap = engine.textureStore.getTexture("heightmap")->index;

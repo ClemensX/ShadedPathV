@@ -328,5 +328,5 @@ void LandscapeGenerator::writeHeightmapToRawFile()
 {
     vector<glm::vec3> points;
     heightmap.getPoints(points);
-    engine.util.drawHeightmap(points);
+    engine.util.writeHeightmapRaw(points);
 }

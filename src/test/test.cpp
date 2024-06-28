@@ -107,9 +107,42 @@ TEST(Engine, Headless) {
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::Small);
         engine.setFramesInFlight(2);
         engine.setThreadModeSingle();
-        engine.registerApp((ShadedPathApplication*)& testApp);
+        engine.registerApp((ShadedPathApplication*)&testApp);
         engine.init("Test");
         engine.textureStore.generateBRDFLUT();
+        engine.shaders.addShader(engine.shaders.simpleShader);
+        engine.shaders.initActiveShaders();
+
+        engine.prepareDrawing();
+        engine.drawFrame();
+    }
+    Log("Test end. (Should appear after destructor log)\n");
+}
+
+TEST(Engine, DumpTexture) {
+    {
+        static ShadedPathEngine engine;
+        class TestApp : ShadedPathApplication
+        {
+        public:
+            void drawFrame(ThreadResources& tr) override {
+                engine.shaders.submitFrame(tr);
+            };
+            void handleInput(InputState& inputState) override {
+            };
+        };
+        TestApp testApp;
+        ShaderState shaderState;
+        engine.files.findAssetFolder("data");
+        engine.setFrameCountLimit(10);
+        engine.setBackBufferResolution(ShadedPathEngine::Resolution::Small);
+        engine.setFramesInFlight(2);
+        engine.setThreadModeSingle();
+        engine.registerApp((ShadedPathApplication*)&testApp);
+        engine.init("Test");
+        engine.textureStore.generateBRDFLUT();
+        engine.textureStore.loadTexture("height.ktx2", "heightmap");
+        unsigned int texIndexHeightmap = engine.textureStore.getTexture("heightmap")->index;
         engine.shaders.addShader(engine.shaders.simpleShader);
         engine.shaders.initActiveShaders();
 

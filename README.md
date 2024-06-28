@@ -32,6 +32,21 @@ Some features:
 
 We always had the option to run the engine in screenshot mode, where every frame will be stored in the file system after rendering. This mode is mostly useful for automated tests. Now we added an option to store the next rendered single frame. The screenshot is taken from backbuffer, not from the output window, so it will be in the resolution of the backbuffer. See *LandacapeGenerator* app for details.
 
+## Creating Heightmaps
+
+Creating heightmaps requires 2 steps:
+
+* Create a raw file with rectangular height data in world coordinates
+* Convert the raw file to a ktx2 texture
+
+You can use the LandscapeGenerator app to create heightmaps: just press **h** to store
+a heightmap with the current pixel size. See the log to find the place where the file was written. Of course you can use any tool you like as long as you end up with a recangular raw file with 32-bit float values in world coordinates.
+
+After that convert the raw file to ktx2 with a command like this:
+```
+ktx create --format R32_SFLOAT --raw --width 1025 --height 1025 ./heightmap.raw ./heightmap.ktx2
+```
+
 ## Landscape generation with Diamond-square algorithm
 
 We needed a way to generate landscapes and decided to implement the diamond-square algorithm. This is shown in the app *LandscapeGenerator*. It also utilizes the new background GPU uploading mechanism. Otherwise there would be stuttering because e.g. uploading 2 million lines to GPU memory takes longer than drawing a frame. Uploading is done in the background and only after it is finished the render threads switch to the new resource set.

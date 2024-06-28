@@ -58,6 +58,8 @@ void main()
     // currently just use constant expressions: we have world xz from -1024 to 1024
     float mappedx = (inPosition.x + 1024.0) / 2048.0;
     float mappedz = (inPosition.z + 1024.0) / 2048.0;
+    //if (mappedx < 0.01)
+    //debugPrintfEXT("mapped x and z: %f %f\n", mappedx, mappedz);
     fragTexCoord = vec2(mappedx, mappedz);
     float newHeight = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
     vec4 inP = inPosition;

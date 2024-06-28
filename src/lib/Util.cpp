@@ -420,7 +420,7 @@ float Spatial2D::getHeightSave(int center_x, int center_y, int half)
     return height;
 }
 
-void Util::drawPPM(std::string filename, const char* imagedata, uint64_t width, uint64_t height, uint64_t rowPitch, bool colorSwizzle)
+void Util::writePPM(std::string filename, const char* imagedata, uint64_t width, uint64_t height, uint64_t rowPitch, bool colorSwizzle)
 {
     std::ofstream file(filename, std::ios::out | std::ios::binary);
     // ppm header
@@ -444,9 +444,10 @@ void Util::drawPPM(std::string filename, const char* imagedata, uint64_t width, 
     }
     file.close();
 
+    Log("written image dump file (PPM format): " << engine->files.absoluteFilePath(filename).c_str() << endl);
 }
 
-void Util::drawHeightmap(std::vector<glm::vec3>& points)
+void Util::writeHeightmapRaw(std::vector<glm::vec3>& points)
 {
     static int imageCounter = 0;
     stringstream name;
@@ -457,7 +458,13 @@ void Util::drawHeightmap(std::vector<glm::vec3>& points)
         Log("Could not write image dump file: " << filename << endl);
         return;
     }
-    Log("Heightmap: write " << points.size() << " points" << endl);
+    // check that we have points that form a square
+    double squareRoot = sqrt(points.size());
+    int roundedSquareRoot = static_cast<int>(round(squareRoot));
+    if (roundedSquareRoot * roundedSquareRoot != points.size()) {
+        Error("Heightmap: points do not form a square");
+    }
+    //Log("Heightmap: write " << points.size() << " points" << endl);
     // the height values in the heightmap are in absolute world coordinates already -  we don't need to adapt them
     // Open a file in binary mode
     std::ofstream file(filename, std::ios::out | std::ios::binary);
@@ -475,5 +482,5 @@ void Util::drawHeightmap(std::vector<glm::vec3>& points)
     // Close the file
     file.close();
 
-    Log("written 32-bit float RAW heightmap file: " << engine->files.absoluteFilePath(filename).c_str() << endl);
+    Log("written 32-bit float RAW heightmap file with ( " << roundedSquareRoot << " x " << roundedSquareRoot << " ) points: " << engine->files.absoluteFilePath(filename).c_str() << endl);
 }
