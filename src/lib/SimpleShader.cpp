@@ -80,7 +80,7 @@ void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// empty for now...
 
 	// pipeline layout
-	resources.createPipelineLayout(&str.pipelineLayout);
+	resources.createPipelineLayout(&str.pipelineLayout, this);
 
 	// depth stencil
 	auto depthStencil = createStandardDepthStencil();

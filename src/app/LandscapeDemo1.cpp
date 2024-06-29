@@ -150,6 +150,7 @@ void LandscapeDemo::init() {
     addRandomBillboards(billboards, world, texIndex, aspectRatio);
 
     engine.shaders.billboardShader.add(billboards);
+    engine.shaders.billboardShader.setWorld(&world);
 
     // Grid with 1m squares, floor on -10m, ceiling on 372m
     //Grid* grid = world.createWorldGrid(1.0f, 0.0f);

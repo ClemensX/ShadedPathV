@@ -14,7 +14,7 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 
 	// descriptor set layout
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, 3);
-	resources.createPipelineLayout(&pipelineLayout);
+	resources.createPipelineLayout(&pipelineLayout, this);
 
 	int fl = engine.getFramesInFlight();
 	for (int i = 0; i < fl; i++) {

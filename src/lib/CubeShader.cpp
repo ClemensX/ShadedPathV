@@ -68,7 +68,7 @@ void CubeShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// empty for now...
 
 	// pipeline layout
-	resources.createPipelineLayout(&str.pipelineLayout);
+	resources.createPipelineLayout(&str.pipelineLayout, this);
 	//const std::vector<VkDescriptorSetLayout> setLayouts = {
 	//		descriptorSetLayout
 	//};

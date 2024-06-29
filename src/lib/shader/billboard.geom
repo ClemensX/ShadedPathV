@@ -1,6 +1,5 @@
 #version 460
 #extension GL_EXT_debug_printf:enable
-#extension GL_KHR_vulkan_glsl:enable
 
 layout (points) in;
 layout( triangle_strip, max_vertices = 4 ) out;

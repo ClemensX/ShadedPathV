@@ -22,7 +22,7 @@ public:
 	// create Grid in x (width) and z (depth) direction, linesmode means create simple long lines, otherwise create vertex/index vectors
 	void createGridXZ(Grid& grid, bool linesmode = true);
 	Grid* createWorldGrid(float lineGap, float verticalAdjust = 0.0f);
-	void setWorldSize(float x, float y, float z) { sizex = x; sizey = y; sizez = z; };
+	void setWorldSize(float x, float y, float z) { sizex = x; sizey = y; sizez = z; if (x != z) Error("World size needs to be square in x and z"); };
 	// randomly generate one location within the defined world coords
 	glm::vec3 getRandomPos();
 	// randomly generate one location within the defined world coords with a given minimum height

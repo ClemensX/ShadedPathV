@@ -18,6 +18,9 @@ void BillboardShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 
 	// descriptor
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);
+
+	// push constants
+	pushConstantRanges.push_back(billboardPushConstantRange);
 }
 
 void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
@@ -75,8 +78,8 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// empty for now...
 
 	// pipeline layout
-	resources.createPipelineLayout(&str.pipelineLayout);
-	//createPipelineLayout(&str.pipelineLayout);
+
+	resources.createPipelineLayout(&str.pipelineLayout, this);
 
 	// depth stencil
 	auto depthStencil = createStandardDepthStencil();
@@ -184,6 +187,9 @@ void BillboardShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadRe
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet2, 0, nullptr);
 	}
 
+	BillboardPushConstants pushConstants;
+	pushConstants.worldSizeOneEdge = getWorld()->getWorldSize().x;
+	vkCmdPushConstants(commandBuffer, str.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(BillboardPushConstants), &pushConstants);
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(billboards.size()), 1, 0, 0);
 }
 

@@ -359,7 +359,7 @@ void VulkanResources::updateDescriptorSets(ThreadResources& tr)
 
 // create pipeline layout and store in parameter.
 // auto add set layout for global texture array if needed
-void VulkanResources::createPipelineLayout(VkPipelineLayout* pipelineLayout, VkDescriptorSetLayout additionalLayout, size_t additionalLayoutPos) {
+void VulkanResources::createPipelineLayout(VkPipelineLayout* pipelineLayout, ShaderBase* shaderBase, VkDescriptorSetLayout additionalLayout, size_t additionalLayoutPos) {
     vector<VkDescriptorSetLayout> sets;
     sets.push_back(layout);
     if (additionalLayout != nullptr) {
@@ -375,6 +375,10 @@ void VulkanResources::createPipelineLayout(VkPipelineLayout* pipelineLayout, VkD
     pipelineLayoutInfo.pSetLayouts = &sets[0];
     pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
     pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+    if (shaderBase->pushConstantRanges.size() > 0) {
+        pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(shaderBase->pushConstantRanges.size());
+        pipelineLayoutInfo.pPushConstantRanges = shaderBase->pushConstantRanges.data();
+    }
 
     if (vkCreatePipelineLayout(engine->global.device, &pipelineLayoutInfo, nullptr, pipelineLayout) != VK_SUCCESS) {
         Error("failed to create pipeline layout!");

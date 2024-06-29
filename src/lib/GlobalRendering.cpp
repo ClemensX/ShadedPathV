@@ -944,5 +944,6 @@ void GlobalRendering::logDeviceLimits()
     Log("minMemoryMapAlignment " << physicalDeviceProperties.properties.limits.minMemoryMapAlignment << endl);
     Log("minUniformBufferOffsetAlignment " << physicalDeviceProperties.properties.limits.minUniformBufferOffsetAlignment << endl);
     Log("maxDescriptorSetSampledImages " << physicalDeviceProperties.properties.limits.maxDescriptorSetSampledImages << endl);
+    Log("maxPushConstantsSize " << physicalDeviceProperties.properties.limits.maxPushConstantsSize << endl);
     // maxDescriptorSetSampledImages
 }

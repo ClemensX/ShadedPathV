@@ -87,7 +87,7 @@ public:
 	// set after init and possibly before each frame
 	void updateDescriptorSets(ThreadResources& tr);
 	// create pipeline layout and store in parameter.
-	void createPipelineLayout(VkPipelineLayout* pipelineLayout, VkDescriptorSetLayout additionalLayout = nullptr, size_t additionalLayoutPos = 0);
+	void createPipelineLayout(VkPipelineLayout* pipelineLayout, ShaderBase* shaderBase, VkDescriptorSetLayout additionalLayout = nullptr, size_t additionalLayoutPos = 0);
 
 	// signal use of geom shader for MVP buffer
 	void addGeometryShaderStageToMVPBuffer() {

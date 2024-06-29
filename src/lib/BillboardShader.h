@@ -15,6 +15,17 @@ struct BillboardDef {
 	//TextureID tex;
 };
 
+// make sure to match the push_constant layout in the shader
+struct BillboardPushConstants {
+    float worldSizeOneEdge = 0.0f; // world size in meters, used for both dimensions (x and z)
+};
+
+const VkPushConstantRange billboardPushConstantRange = {
+    VK_SHADER_STAGE_VERTEX_BIT, // stageFlags
+    0, // offset
+    sizeof(BillboardPushConstants) // size
+};
+
 // per frame resources for this effect
 struct BillboardFrameData {
 public:

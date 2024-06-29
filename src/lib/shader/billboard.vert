@@ -1,7 +1,6 @@
 #version 460 
 #extension GL_EXT_debug_printf:enable
 #extension GL_EXT_nonuniform_qualifier : require
-#extension GL_KHR_vulkan_glsl:enable
 
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
@@ -23,6 +22,11 @@ layout(location = 4) out float outHeight;
 layout(location = 5) out uint outIndex;
 
 layout(set = 1, binding = 0) uniform sampler2D global_textures[];
+
+// sync with BillboardPushConstants in BillboardShader.h
+layout(push_constant) uniform BillboardPushConstants {
+	float worldSizeOneEdge; // world size in meters, used for both dimensions (x and z)
+} push;
 
 void main()
 {
@@ -56,8 +60,13 @@ void main()
     //debugPrintfEXT("float from R32_SFLOAT texture: %f %f %f %f %f %f %f %f %f %f %f \n", value0, value1, value2, value3, value4, value5, value6, value7, value8, value9, value10);
 
     // currently just use constant expressions: we have world xz from -1024 to 1024
-    float mappedx = (inPosition.x + 1024.0) / 2048.0;
-    float mappedz = (inPosition.z + 1024.0) / 2048.0;
+    //float mappedx = (inPosition.x + 1024.0) / 2048.0;
+    //debugPrintfEXT("pushed world size: %f\n", push.worldSizeOneEdge);
+    float ws = push.worldSizeOneEdge;
+    float wsHalf = ws / 2.0;
+    // map world xz to (0.0 .. 1.0)
+    float mappedx = (inPosition.x + wsHalf) / ws;
+    float mappedz = (inPosition.z + wsHalf) / ws;
     //if (mappedx < 0.01)
     //debugPrintfEXT("mapped x and z: %f %f\n", mappedx, mappedz);
     fragTexCoord = vec2(mappedx, mappedz);

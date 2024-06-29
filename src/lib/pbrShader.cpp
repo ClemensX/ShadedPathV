@@ -94,7 +94,7 @@ void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	// empty for now...
 
 	// pipeline layout
-	resources.createPipelineLayout(&str.pipelineLayout);
+	resources.createPipelineLayout(&str.pipelineLayout, this);
 	//resources.createPipelineLayout(&str.pipelineLayout, descriptorSetLayoutForEachMesh, 1);
 
 	// depth stencil

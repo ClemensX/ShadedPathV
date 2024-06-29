@@ -52,5 +52,12 @@ https://learn.microsoft.com/en-us/vcpkg/get_started/get-started?pivots=shell-pow
 then:
 build as usual, e.g.:
 # cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=C:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake
-# cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=C:\dev\cpp\vcpkg\scripts\buildsystems\vcpkg.cmake
+## cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=C:\dev\cpp\vcpkg\scripts\buildsystems\vcpkg.cmake
 # cmake --build ./build
+
+todo:
+
+make heightmap usage in billboard shader truly dynamic
+terrain:
+  from world: create vertex and index buffers with texture coords
+  in shader: use heightmap for y

@@ -250,7 +250,8 @@ cmake --build ./build
 Now you also can just open VS2022. The solution file is in the ``build`` folder
 
 You may want to add GLSL support to Visual Studio 2022. E.g. this:
-* Daniel Scherzers GLSL Visual Studio integration: https://marketplace.visualstudio.com/items?itemName=DanielScherzer.GLSL2022
+* Daniel Scherzers GLSL Visual Studio integration: https://marketplace.visualstudio.com/items?itemName=DanielScherzer.GLSL2022.
+* Set path  to glslangValidator in VS Tools -> Options -> GLSL language integration -> External compiler. e.g. ``C:\dev\vulkan\libraries\vulkan\Bin\glslangValidator.exe``. Also, set -V as Arguments to enable Vulkan mode.
 
 * **OpenXR**: install NuGet package OpenXR.Loader for all three projects in solution. If not found during compile or not displayed correctly: uninstall via NuGet Package Manager, then re-install
 

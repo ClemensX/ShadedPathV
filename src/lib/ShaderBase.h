@@ -155,7 +155,15 @@ public:
 		return lastShader;
 	}
 
-//protected:
+	void setWorld(World* world) {
+		this->world = world;
+	}
+
+	World* getWorld() {
+		return world;
+	}
+
+	//protected:
 	// signal if this shader is in use, set during init()
 	bool enabled = false;
 	bool lastShader = false;
@@ -167,7 +175,7 @@ public:
 
 	VkDescriptorSetLayout descriptorSetLayout = nullptr;
 	VkDescriptorPool descriptorPool = nullptr;
-
+	std::vector<VkPushConstantRange> pushConstantRanges;
 
 	// util methods to simplify shader creation
 	VkPipelineVertexInputStateCreateInfo createVertexInputCreateInfo(VkVertexInputBindingDescription* vertexInputBinding, const VkVertexInputAttributeDescription* vertexInputAttributes, size_t attributes_size) {
@@ -278,6 +286,7 @@ public:
 private:
 	GlobalResourceState resourceSetA = GlobalResourceState::INACTIVE;
 	GlobalResourceState resourceSetB = GlobalResourceState::INACTIVE;
+	World* world = nullptr;
 
 public:
 	// allow access to updateArray without knowing the derived type
