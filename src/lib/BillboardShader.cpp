@@ -189,6 +189,8 @@ void BillboardShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadRe
 
 	BillboardPushConstants pushConstants;
 	pushConstants.worldSizeOneEdge = engine->getWorld()->getWorldSize().x;
+	pushConstants.heightmapTextureIndex = heightmapTextureIndex;
+	if (heightmapTextureIndex < 0) Error("BillboardShader: app did not set heightmapTextureIndex");
 	vkCmdPushConstants(commandBuffer, str.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(BillboardPushConstants), &pushConstants);
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(billboards.size()), 1, 0, 0);
 }

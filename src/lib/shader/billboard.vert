@@ -26,38 +26,39 @@ layout(set = 1, binding = 0) uniform sampler2D global_textures[];
 // sync with BillboardPushConstants in BillboardShader.h
 layout(push_constant) uniform BillboardPushConstants {
 	float worldSizeOneEdge; // world size in meters, used for both dimensions (x and z)
+    int heightmapTextureIndex;
 } push;
 
 void main()
 {
 	// heightmap start
     //outColor = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord);
-    uint texIndex = 4;
+    uint texIndex = push.heightmapTextureIndex;
     vec2 fragTexCoord = inPosition.xz;
-    float z = 0.5;
-    fragTexCoord = vec2(0.0, z);
-    float value0 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
-    fragTexCoord = vec2(0.1, z);
-    float value1 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
-    fragTexCoord = vec2(0.2, z);
-    float value2 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
-    fragTexCoord = vec2(0.3, z);
-    float value3 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
-    fragTexCoord = vec2(0.4, z);
-    float value4 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
-    fragTexCoord = vec2(0.5, z);
-    float value5 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
-    fragTexCoord = vec2(0.6, z);
-    float value6 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
-    fragTexCoord = vec2(0.7, z);
-    float value7 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
-    fragTexCoord = vec2(0.8, z);
-    float value8 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
-    fragTexCoord = vec2(0.9, z);
-    float value9 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
-    fragTexCoord = vec2(1.0, z);
-    float value10 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
-    //debugPrintfEXT("float from R32_SFLOAT texture: %f %f %f %f %f %f %f %f %f %f %f \n", value0, value1, value2, value3, value4, value5, value6, value7, value8, value9, value10);
+//    float z = 0.5;
+//    fragTexCoord = vec2(0.0, z);
+//    float value0 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+//    fragTexCoord = vec2(0.1, z);
+//    float value1 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+//    fragTexCoord = vec2(0.2, z);
+//    float value2 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+//    fragTexCoord = vec2(0.3, z);
+//    float value3 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+//    fragTexCoord = vec2(0.4, z);
+//    float value4 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+//    fragTexCoord = vec2(0.5, z);
+//    float value5 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+//    fragTexCoord = vec2(0.6, z);
+//    float value6 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+//    fragTexCoord = vec2(0.7, z);
+//    float value7 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+//    fragTexCoord = vec2(0.8, z);
+//    float value8 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+//    fragTexCoord = vec2(0.9, z);
+//    float value9 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+//    fragTexCoord = vec2(1.0, z);
+//    float value10 = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
+//    //debugPrintfEXT("float from R32_SFLOAT texture: %f %f %f %f %f %f %f %f %f %f %f \n", value0, value1, value2, value3, value4, value5, value6, value7, value8, value9, value10);
 
     // currently just use constant expressions: we have world xz from -1024 to 1024
     //float mappedx = (inPosition.x + 1024.0) / 2048.0;

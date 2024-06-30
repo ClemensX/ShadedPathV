@@ -270,6 +270,7 @@ inline std::string Fmt(const char* fmt, ...) {
 #include "pbrShader.h"
 #include "CubeShader.h"
 #include "BillboardShader.h"
+#include "TerrainShader.h"
 #include "gltf.h"
 #include "Object.h"
 #include "Sound.h"

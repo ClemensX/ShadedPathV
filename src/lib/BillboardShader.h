@@ -18,6 +18,7 @@ struct BillboardDef {
 // make sure to match the push_constant layout in the shader
 struct BillboardPushConstants {
     float worldSizeOneEdge = 0.0f; // world size in meters, used for both dimensions (x and z)
+	int heightmapTextureIndex;
 };
 
 const VkPushConstantRange billboardPushConstantRange = {
@@ -109,6 +110,16 @@ public:
 	// initial upload of all added billboards - only valid before first render
 	void initialUpload();
 
+	// Getter for heightmapTextureIndex
+	int getHeightmapTextureIndex() const {
+		return heightmapTextureIndex;
+	}
+
+	// Setter for heightmapTextureIndex
+	void setHeightmapTextureIndex(int index) {
+		heightmapTextureIndex = index;
+	}
+
 	// per frame update of UBO / MVP
 	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
 	// calc verstices around origin needed to display billboard (used e.g. for debugging)
@@ -130,6 +141,7 @@ private:
 	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;
 	VkShaderModule geomShaderModule = nullptr;
+	int heightmapTextureIndex = -1;
 
 	// util methods
 public:

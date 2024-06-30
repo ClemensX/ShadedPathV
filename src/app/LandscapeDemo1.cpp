@@ -49,6 +49,7 @@ void LandscapeDemo::run()
             .addShader(shaders.clearShader)
             //.addShader(shaders.cubeShader)  // enable to render central cube with debug texture
             .addShader(shaders.billboardShader)
+            .addShader(shaders.terrainShader)
             .addShader(shaders.lineShader)  // enable to see zero cross and billboard debug lines
             .addShader(shaders.pbrShader)
             ;
@@ -123,6 +124,7 @@ void LandscapeDemo::init() {
     unsigned int texIndexTree = engine.textureStore.getTexture("tree")->index;
     unsigned int texIndexLogo = engine.textureStore.getTexture("logo")->index;
     unsigned int texIndexHeightmap = engine.textureStore.getTexture("heightmap")->index;
+    shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
     // set texture index for billboards
     unsigned int texIndex = texIndexTree;
     //unsigned int texIndex = texIndexHeightmap;

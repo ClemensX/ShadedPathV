@@ -46,9 +46,10 @@ function(compile_glsl run_target_name)
         #set(out_file ${CMAKE_CURRENT_BINARY_DIR}/${in_file}.spv)
             # Run glslc if we can find it
             message(STATUS "command: Vulkan::glslc in: ${in_file} -o out: ${out_file}")
+            # -g option is debug info
             add_custom_command(
                 OUTPUT ${out_file}
-                COMMAND Vulkan::glslc ${in_file} -o ${out_file}
+                COMMAND Vulkan::glslc -g ${in_file} -o ${out_file}
                 DEPENDS ${in_file}
             )
         list(APPEND glsl_output_files ${out_file})

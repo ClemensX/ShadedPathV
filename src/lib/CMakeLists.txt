@@ -3,6 +3,7 @@ add_library(shadedpath
   gltf.cpp
   CubeShader.cpp
   BillboardShader.cpp
+  TerrainShader.cpp
   UIShader.cpp
   UI.cpp
   ClearShader.cpp

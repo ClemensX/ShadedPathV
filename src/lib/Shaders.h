@@ -109,6 +109,7 @@ public:
 	PBRShader pbrShader;
 	CubeShader cubeShader;
 	BillboardShader billboardShader;
+	TerrainShader terrainShader;
 
 	// submit command buffers for current frame
 	void submitFrame(ThreadResources& tr);
