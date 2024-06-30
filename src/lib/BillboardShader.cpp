@@ -188,7 +188,7 @@ void BillboardShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadRe
 	}
 
 	BillboardPushConstants pushConstants;
-	pushConstants.worldSizeOneEdge = getWorld()->getWorldSize().x;
+	pushConstants.worldSizeOneEdge = engine->getWorld()->getWorldSize().x;
 	vkCmdPushConstants(commandBuffer, str.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(BillboardPushConstants), &pushConstants);
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(billboards.size()), 1, 0, 0);
 }

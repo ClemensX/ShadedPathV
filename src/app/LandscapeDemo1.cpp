@@ -108,6 +108,8 @@ void LandscapeDemo::addRandomBillboards(vector<BillboardDef>& billboards, World 
 void LandscapeDemo::init() {
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
+    engine.setWorld(&world);
+
     //world.setWorldSize(10.0f, 382.0f, 10.0f);
 
     // load skybox cube texture
@@ -150,7 +152,6 @@ void LandscapeDemo::init() {
     addRandomBillboards(billboards, world, texIndex, aspectRatio);
 
     engine.shaders.billboardShader.add(billboards);
-    engine.shaders.billboardShader.setWorld(&world);
 
     // Grid with 1m squares, floor on -10m, ceiling on 372m
     //Grid* grid = world.createWorldGrid(1.0f, 0.0f);

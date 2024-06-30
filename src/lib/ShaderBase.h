@@ -155,14 +155,6 @@ public:
 		return lastShader;
 	}
 
-	void setWorld(World* world) {
-		this->world = world;
-	}
-
-	World* getWorld() {
-		return world;
-	}
-
 	//protected:
 	// signal if this shader is in use, set during init()
 	bool enabled = false;
@@ -286,7 +278,6 @@ public:
 private:
 	GlobalResourceState resourceSetA = GlobalResourceState::INACTIVE;
 	GlobalResourceState resourceSetB = GlobalResourceState::INACTIVE;
-	World* world = nullptr;
 
 public:
 	// allow access to updateArray without knowing the derived type

@@ -164,6 +164,16 @@ public:
         return soundEnabled;
     }
 
+    // application should set this in init() for any shader that needs world info
+    void setWorld(World* world) {
+        this->world = world;
+    }
+
+    // if app did not set world, we return nullptr
+    World* getWorld() {
+        return world;
+    }
+
     ThreadInfo mainThreadInfo;
 
     // limit number of rendered frames - cannot be used together with presentation enabled
@@ -285,6 +295,7 @@ private:
     bool meshShaderEnabled = false;
     bool soundEnabled = false;
     bool singleQueueMode = false;
+    World* world = nullptr;
     // backbuffer size:
     VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);
     // check if backbuffer and window have same aspect - warning if not
