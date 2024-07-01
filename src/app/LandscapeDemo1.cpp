@@ -47,7 +47,7 @@ void LandscapeDemo::run()
         shaders
             .addShader(shaders.uiShader)
             .addShader(shaders.clearShader)
-            //.addShader(shaders.cubeShader)  // enable to render central cube with debug texture
+            .addShader(shaders.cubeShader)  // enable to render central cube with debug texture
             .addShader(shaders.billboardShader)
             .addShader(shaders.terrainShader)
             .addShader(shaders.lineShader)  // enable to see zero cross and billboard debug lines
@@ -114,13 +114,13 @@ void LandscapeDemo::init() {
     //world.setWorldSize(10.0f, 382.0f, 10.0f);
 
     // load skybox cube texture
-    //engine.textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
+    engine.textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
     //engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
     engine.textureStore.loadTexture("debug.ktx", "2dTexture");
     engine.textureStore.loadTexture("eucalyptus.ktx2", "tree");
     engine.textureStore.loadTexture("shadedpath_logo.ktx2", "logo");
-    //engine.textureStore.loadTexture("heightbig.ktx2", "heightmap");
-    engine.textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT);
+    engine.textureStore.loadTexture("heightbig.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT);
+    //engine.textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT);
     unsigned int texIndexTree = engine.textureStore.getTexture("tree")->index;
     unsigned int texIndexLogo = engine.textureStore.getTexture("logo")->index;
     unsigned int texIndexHeightmap = engine.textureStore.getTexture("heightmap")->index;
@@ -181,9 +181,15 @@ void LandscapeDemo::init() {
     engine.shaders.lineShader.addFixedGlobalLines(lines);
 
     // select texture by uncommenting:
-    engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
-    engine.shaders.cubeShader.setFarPlane(1.0f); // cube around center
-    engine.shaders.cubeShader.setSkybox("2dTextureCube");
+    if (isSkybox) {
+        engine.shaders.cubeShader.setSkybox("skyboxTexture");
+        engine.shaders.cubeShader.setFarPlane(2000.0f);
+    } else {
+        engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
+        engine.shaders.cubeShader.setFarPlane(1.0f); // cube around center
+        engine.shaders.cubeShader.setSkybox("2dTextureCube");
+    }
+
 
     //engine.shaders.lineShader.initialUpload();
     //engine.shaders.pbrShader.initialUpload();
@@ -231,11 +237,13 @@ void LandscapeDemo::updatePerFrame(ThreadResources& tr)
     CubeShader::UniformBufferObject cubo{};
     cubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     cubo.view = camera->getViewMatrixAtCameraPos();
-    cubo.view = lubo.view; // uncomment to have stationary cube, not centered at camera
+    if (!isSkybox) {
+        cubo.view = lubo.view;
+    }
     cubo.proj = lubo.proj;
     auto cubo2 = cubo;
     cubo2.view = cubo.view;
-    engine.shaders.cubeShader.uploadToGPU(tr, cubo, cubo2, true);
+    engine.shaders.cubeShader.uploadToGPU(tr, cubo, cubo2, !isSkybox);
  
     // billboards
     BillboardShader::UniformBufferObject bubo{};
