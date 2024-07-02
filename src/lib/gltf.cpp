@@ -58,6 +58,7 @@ bool LoadImageDataKTX(Image* image, const int image_idx, std::string* err,
 	userData->engine->textureStore.createVulkanTextureFromKTKTexture(kTexture, texture);
 	userData->collection->textureInfos[image_idx] = texture;
 	//userData->engine->textureStore.destroyKTXIntermediate(kTexture);
+	ktxTexture_Destroy(kTexture);
 	return true;
 }
 

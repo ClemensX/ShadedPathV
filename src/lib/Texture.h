@@ -6,20 +6,49 @@ class Util;
 struct MeshInfo;
 
 enum class TextureType : int {
-    TEXTURE_TYPE_MIPMAP_IMAGE = 0,
-    TEXTURE_TYPE_DIFFUSE = 1,
-    TEXTURE_TYPE_SPECULAR = 2,
-    TEXTURE_TYPE_NORMAL = 3,
-    TEXTURE_TYPE_HEIGHT = 4,
-    TEXTURE_TYPE_AMBIENT_OCCLUSION = 5,
-    TEXTURE_TYPE_EMISSIVE = 6,
-    TEXTURE_TYPE_BRDF_LUT = 7,
-    TEXTURE_TYPE_CUBEMAP = 8,
-    TEXTURE_TYPE_IRRADIANCE = 9,
-    TEXTURE_TYPE_PREFILTER = 10,
-    TEXTURE_TYPE_LUT = 11,
-    TEXTURE_TYPE_COUNT = 12 // always last, to be used as array size
+	TEXTURE_TYPE_MIPMAP_IMAGE = 0,
+	TEXTURE_TYPE_DIFFUSE = 1,
+	TEXTURE_TYPE_SPECULAR = 2,
+	TEXTURE_TYPE_NORMAL = 3,
+	TEXTURE_TYPE_HEIGHT = 4,
+	TEXTURE_TYPE_AMBIENT_OCCLUSION = 5,
+	TEXTURE_TYPE_EMISSIVE = 6,
+	TEXTURE_TYPE_BRDF_LUT = 7,
+	TEXTURE_TYPE_CUBEMAP = 8,
+	TEXTURE_TYPE_IRRADIANCE = 9,
+	TEXTURE_TYPE_PREFILTER = 10,
+	TEXTURE_TYPE_LUT = 11,
+	TEXTURE_TYPE_COUNT = 12 // always last, to be used as array size
 };
+
+enum class TextureFlags : unsigned int {
+	NONE = 0,
+	KEEP_DATA_BUFFER = 1 << 0 // 1
+//	REPEAT = 1 << 1,  // 2
+//	MIRROR = 1 << 2   // 4
+};
+
+// Enable bitwise operations on the enum class
+inline TextureFlags operator|(TextureFlags a, TextureFlags b) {
+	return static_cast<TextureFlags>(static_cast<unsigned int>(a) | static_cast<unsigned int>(b));
+}
+
+inline TextureFlags operator&(TextureFlags a, TextureFlags b) {
+	return static_cast<TextureFlags>(static_cast<unsigned int>(a) & static_cast<unsigned int>(b));
+}
+
+inline TextureFlags& operator|=(TextureFlags& a, TextureFlags b) {
+	return a = a | b;
+}
+
+inline TextureFlags& operator&=(TextureFlags& a, TextureFlags b) {
+	return a = a & b;
+}
+
+// Check if a flag is set
+inline bool hasFlag(TextureFlags value, TextureFlags flag) {
+	return (value & flag) == flag;
+}
 
 struct TextureInfo
 {
@@ -35,6 +64,7 @@ struct TextureInfo
 	bool isKtxCreated = true;
 	uint32_t index = 0; // index used for shaders to access the right texture in the global texture array
 	TextureType type = TextureType::TEXTURE_TYPE_MIPMAP_IMAGE;
+	std::vector<std::byte> raw_buffer;
 };
 typedef ::TextureInfo* TextureID;
 
@@ -56,7 +86,7 @@ public:
 	// texture id for brdf lookup table:
 	std::string BRDFLUT_TEXTURE_ID = "brdflut";
 	// load texture upload to GPU, textures are referenced via id string
-	void loadTexture(std::string filename, std::string id, TextureType type = TextureType::TEXTURE_TYPE_MIPMAP_IMAGE);
+	void loadTexture(std::string filename, std::string id, TextureType type = TextureType::TEXTURE_TYPE_MIPMAP_IMAGE, TextureFlags flags = TextureFlags::NONE);
 	::TextureInfo* getTexture(std::string id);
 	// create texture slot for named texture
 	::TextureInfo* createTextureSlot(std::string id);

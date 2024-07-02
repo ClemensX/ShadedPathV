@@ -32,7 +32,7 @@ TextureInfo* TextureStore::getTexture(string id)
 	return ret;
 }
 
-void TextureStore::loadTexture(string filename, string id, TextureType type)
+void TextureStore::loadTexture(string filename, string id, TextureType type, TextureFlags flags)
 {
 	vector<byte> file_buffer;
 	TextureInfo *texture = createTextureSlot(id);
@@ -55,11 +55,28 @@ void TextureStore::loadTexture(string filename, string id, TextureType type)
 	ktxTexture* kTexture;
 	createKTXFromMemory((const ktx_uint8_t*)file_buffer.data(), static_cast<int>(file_buffer.size()), &kTexture);
 	createVulkanTextureFromKTKTexture(kTexture, texture);
+	if (hasFlag(flags, TextureFlags::KEEP_DATA_BUFFER)) {
+		assert(kTexture->numLevels == 1);
+		assert(texture->vulkanTexture.imageFormat == VK_FORMAT_R32_SFLOAT);
+		// store raw buffer for later use
+		int level = 0; int layer = 0; int faceSlice = 0; ktx_size_t offset; KTX_error_code result;
+		result = ktxTexture_GetImageOffset(kTexture, level, layer, faceSlice, &offset);
+		void* data = ktxTexture_GetData(kTexture) + offset;
+		auto size = ktxTexture_GetImageSize(kTexture, level);
+		assert(size == texture->vulkanTexture.width * texture->vulkanTexture.height * sizeof(float));
+		texture->raw_buffer.insert(texture->raw_buffer.end(), (std::byte*)data, (std::byte*)data + size);
+		Log("size: " << size << endl);
+		float *floatData = (float*)texture->raw_buffer.data();
+		for (int i = 0; i < size / 4; i++) {
+			Log("floatData: " << floatData[i] << endl);
+		}
+	}
+	ktxTexture_Destroy(kTexture);
 }
 
 void TextureStore::createKTXFromMemory(const unsigned char* data, int size, ktxTexture** ktxTexAdr)
 {
-	auto ktxresult = ktxTexture_CreateFromMemory((const ktx_uint8_t*)data, size, KTX_TEXTURE_CREATE_NO_FLAGS, ktxTexAdr);
+	auto ktxresult = ktxTexture_CreateFromMemory((const ktx_uint8_t*)data, size, KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, ktxTexAdr);
 	if (ktxresult != KTX_SUCCESS) {
 		Log("ERROR: in ktxTexture_CreateFromMemory " << ktxresult);
 		Error("Could not create texture from memory");
@@ -120,7 +137,6 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 		texture->imageView = engine->global.createImageView(texture->vulkanTexture.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
 		texture->available = true;
 	}
-	ktxTexture_Destroy(kTexture);
 }
 
 TextureInfo* TextureStore::createTextureSlot(string textureName)

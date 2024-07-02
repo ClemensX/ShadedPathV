@@ -113,14 +113,14 @@ void LandscapeDemo::init() {
 
     //world.setWorldSize(10.0f, 382.0f, 10.0f);
 
+    //engine.textureStore.loadTexture("heightbig.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT);
+    engine.textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
     // load skybox cube texture
     engine.textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
     //engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
     engine.textureStore.loadTexture("debug.ktx", "2dTexture");
     engine.textureStore.loadTexture("eucalyptus.ktx2", "tree");
     engine.textureStore.loadTexture("shadedpath_logo.ktx2", "logo");
-    engine.textureStore.loadTexture("heightbig.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT);
-    //engine.textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT);
     unsigned int texIndexTree = engine.textureStore.getTexture("tree")->index;
     unsigned int texIndexLogo = engine.textureStore.getTexture("logo")->index;
     unsigned int texIndexHeightmap = engine.textureStore.getTexture("heightmap")->index;

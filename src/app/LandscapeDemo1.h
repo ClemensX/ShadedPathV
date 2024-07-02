@@ -18,5 +18,5 @@ private:
     InputState input;
     World world;
     Spatial2D* heightmap = nullptr;
-    bool isSkybox = false; // set to false to have center cube instead of skybox
+    bool isSkybox = true; // set to false to have center cube instead of skybox
 };
