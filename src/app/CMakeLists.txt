@@ -20,6 +20,7 @@ add_executable(app
   DeviceCoordApp.cpp
   GeneratedTexturesApp.cpp
   gltfObjectsApp.cpp
+  gltfTerrainApp.cpp
   LandscapeDemo1.cpp
   LandscapeGenerator.cpp
   LineApp.cpp

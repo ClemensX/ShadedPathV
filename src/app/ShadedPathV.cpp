@@ -6,6 +6,7 @@
 #include "DeviceCoordApp.h"
 #include "LineApp.h"
 #include "gltfObjectsApp.h"
+#include "gltfTerrainApp.h"
 #include "GeneratedTexturesApp.h"
 #include "BillboardDemo.h"
 #include "LandscapeDemo1.h"
@@ -17,9 +18,10 @@ int main()
     //LineApp app; // ok
     //DeviceCoordApp app; // ok
     //gltfObjectsApp app; // ok
+    gltfTerrainApp app; // ok
     //GeneratedTexturesApp app; // ok
     //BillboardDemo app; // ok
-    LandscapeDemo app; // ok
+    //LandscapeDemo app; // ok
     //LandscapeGenerator app; // ok
     app.run();
 }

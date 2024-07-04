@@ -36,3 +36,4 @@ build
 .DS_Store
 local_options.cmake
 .vs
+vcpkg_installed

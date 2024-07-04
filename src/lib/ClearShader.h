@@ -18,12 +18,15 @@ public:
     virtual void createCommandBuffer(ThreadResources& tr) override;
     virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
     virtual void destroyThreadResources(ThreadResources& tr) override;
-
+    // override default black clear color
+    void setClearColor(glm::vec4 color) { clearColor = color; };
+    glm::vec4 getClearColor() { return clearColor; };
 
     virtual ~ClearShader() override;
 
 private:
     std::vector<ClearSubShader> clearSubShaders;
+    glm::vec4 clearColor = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f); // default black
 };
 
 class ClearSubShader

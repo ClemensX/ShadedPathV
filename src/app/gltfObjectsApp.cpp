@@ -88,12 +88,14 @@ void gltfObjectsApp::init() {
     // loading objects:
     //engine.meshStore.loadMesh("WaterBottle.glb", "WaterBottle");
     //engine.meshStore.loadMesh("bottle2.glb", "WaterBottle");
+    //engine.meshStore.loadMesh("t01_cmp.glb", "world");
     engine.meshStore.loadMesh("grass.glb", "Grass");
     engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
     //auto o = engine.meshStore.getMesh("Knife");
     // add bottle and knife to the scene:
     engine.objectStore.createGroup("ground_group");
     bottle = engine.objectStore.addObject("ground_group", "Grass.7", vec3(0.0f, 0.0f, 0.0f));
+    //bottle = engine.objectStore.addObject("ground_group", "world", vec3(0.0f, 0.0f, 0.0f));
     engine.objectStore.createGroup("knife_group");
     engine.objectStore.addObject("knife_group", "Knife", vec3(0.3f, 0.0f, 0.0f));
     //engine.objectStore.addObject("knife_group", "WaterBottle", vec3(0.3f, 0.0f, 0.0f));
