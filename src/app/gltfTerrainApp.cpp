@@ -70,9 +70,10 @@ void gltfTerrainApp::run()
 void gltfTerrainApp::init() {
     // add some lines:
     float aspectRatio = engine.getAspect();
-    engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
-    engine.objectStore.createGroup("knife_group");
-    engine.objectStore.addObject("knife_group", "Knife", vec3(0.3f, 0.0f, 0.0f));
+    //engine.meshStore.loadMesh("terrain_cmp.glb", "WorldBaseTerrain");
+    engine.meshStore.loadMesh("terrain_orig/Terrain_Mesh_0_0.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    engine.objectStore.createGroup("terrain_group");
+    engine.objectStore.addObject("terrain_group", "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
@@ -105,7 +106,8 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
 
     // pbr
     PBRShader::UniformBufferObject pubo{};
-    mat4 modeltransform = glm::mat4(1.0f); //glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    //mat4 modeltransform = glm::mat4(1.0f); //glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    mat4 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     pubo.model = modeltransform;
     pubo.view = camera->getViewMatrix();
     pubo.proj = camera->getProjectionNDC();

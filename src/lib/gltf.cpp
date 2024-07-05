@@ -298,8 +298,8 @@ void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
 	for (auto& mat : model.materials) {
 		auto pbrbaseColorIndex = mat.pbrMetallicRoughness.baseColorTexture.index;
 		//Log("pbr base Color index: " << pbrbaseColorIndex << endl);
-		if (pbrbaseColorIndex < 0) {
-			s << "gltf file seems to have wrong format: " << coll->filename << ". try gltf-transform metalrough infile outfile" << endl;
+		if (pbrbaseColorIndex < 0 && coll->type != MeshType::MESH_TYPE_NO_TEXTURES) {
+			s << "gltf baseColorTexture not found: " << coll->filename << ". try gltf-transform metalrough infile outfile, or mark mesh as MESH_TYPE_NO_TEXTURES to load without textures" << endl;
 			Error(s.str());
 		}
 		if (mat.doubleSided != true) {

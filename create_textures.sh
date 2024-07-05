@@ -20,4 +20,5 @@ export PATH="$PATH:/c/tools/vcpkg/packages/ktx_x64-windows/tools/ktx"
 # recreate raw heightmap: C:\tools\vcpkg\packages\ktx_x64-windows\tools\ktx\ktx extract --raw .\height.ktx2 - >out.raw
 # gltf-transform metalrough ../data/mesh/terrain/Terrain_Mesh_0_0.gltf ../data/mesh/terrain/terrain.gltf
 #gltf-transform metalrough ../data/mesh/terrain/Terrain_Mesh_0_0.gltf ../data/mesh/terrain/terrain.gltf
-gltf-transform uastc ../data/mesh/t01.glb ../data/mesh/t01_cmp.glb --level 4 --zstd 18 --verbose
+#gltf-transform uastc ../data/mesh/t01.glb ../data/mesh/t01_cmp.glb --level 4 --zstd 18 --verbose
+gltf-transform uastc ../data/mesh/terrain.glb ../data/mesh/terrain_cmp.glb --level 4 --zstd 18 --verbose

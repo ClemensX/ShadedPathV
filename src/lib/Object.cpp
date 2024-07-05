@@ -45,13 +45,14 @@ MeshInfo* MeshStore::initMeshInfo(MeshCollection* coll, std::string id)
 	// add MeshInfo to global and collecion mesh lists
 	initialObject.id = id;
 	initialObject.collection = coll;
+	initialObject.type = coll->type;
 	meshes[id] = initialObject;
 	MeshInfo* mi = &meshes[id];
 	coll->meshInfos.push_back(mi);
 	return mi;
 }
 
-MeshCollection* MeshStore::loadMeshFile(string filename, string id, vector<byte>& fileBuffer)
+MeshCollection* MeshStore::loadMeshFile(string filename, string id, vector<byte>& fileBuffer, MeshType type)
 {
 	if (getMesh(id) != nullptr) {
 		Error("Cannot store 2 meshes with same ID in MeshStore.");
@@ -66,7 +67,7 @@ MeshCollection* MeshStore::loadMeshFile(string filename, string id, vector<byte>
 	initialCollection.id = id;
 	meshCollections.push_back(initialCollection);
 	MeshCollection* collection = &meshCollections.back();
-
+	collection->type = type;
 	MeshInfo* mi = initMeshInfo(collection, id);
 
 	// find texture file, look in pak file first:
@@ -90,7 +91,7 @@ MeshCollection* MeshStore::loadMeshFile(string filename, string id, vector<byte>
 void MeshStore::loadMeshWireframe(string filename, string id, vector<LineDef> &lines)
 {
 	vector<byte> file_buffer;
-	MeshCollection* coll = loadMeshFile(filename, id, file_buffer);
+	MeshCollection* coll = loadMeshFile(filename, id, file_buffer, MeshType::MESH_TYPE_INVALID);
 	MeshInfo* obj = coll->meshInfos[0];
 	string fileAndPath = coll->filename;
 	vector<PBRShader::Vertex> vertices;
@@ -118,10 +119,10 @@ void MeshStore::loadMeshWireframe(string filename, string id, vector<LineDef> &l
 	obj->available = true;
 }
 
-void MeshStore::loadMesh(string filename, string id)
+void MeshStore::loadMesh(string filename, string id, MeshType type)
 {
 	vector<byte> file_buffer;
-	MeshCollection* coll = loadMeshFile(filename, id, file_buffer);
+	MeshCollection* coll = loadMeshFile(filename, id, file_buffer, type);
 	string fileAndPath = coll->filename;
 	gltf.load((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), coll, fileAndPath);
 	coll->available = true;

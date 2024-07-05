@@ -143,6 +143,9 @@ void PBRShader::prefillTextureIndexes(ThreadResources& tr)
 	auto& objs = engine->objectStore.getSortedList();
 	for (auto obj : objs) {
 		//Log(" WorldObject texture count: " << obj->mesh->textureInfos.size() << endl);
+		if (obj->mesh->type == MeshType::MESH_TYPE_NO_TEXTURES) {
+            continue;
+        }
 		uint32_t idx = obj->mesh->baseColorTexture->index;
 		PBRShader::DynamicUniformBufferObject* buf = engine->shaders.pbrShader.getAccessToModel(tr, obj->objectNum);
 		buf->indexes.baseColor = idx;
