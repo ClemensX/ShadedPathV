@@ -14,6 +14,9 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	// descriptor
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);
 	alignedDynamicUniformBufferSize = global->calcConstantBufferSize(sizeof(DynamicUniformBufferObject));
+
+	// push constants
+	pushConstantRanges.push_back(pbrPushConstantRange);
 }
 
 void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
@@ -234,6 +237,9 @@ void PBRShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResource
 	else {
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet2, 1, &dynamicOffset);
 	}
+	pbrPushConstants pushConstants;
+	pushConstants.mode = obj->mesh->type == MeshType::MESH_TYPE_NO_TEXTURES ? 1 : 0;
+	vkCmdPushConstants(commandBuffer, str.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pbrPushConstants), &pushConstants);
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);
 }
 

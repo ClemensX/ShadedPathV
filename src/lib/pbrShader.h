@@ -3,6 +3,17 @@
 struct MeshInfo;
 class WorldObject;
 
+// make sure to match the push_constant layout in the shader
+struct pbrPushConstants {
+	unsigned int mode; // 0: standard pbr metallicRoughness, 1: pre-light vertices with color in vertex structure
+};
+
+const VkPushConstantRange pbrPushConstantRange = {
+	VK_SHADER_STAGE_VERTEX_BIT, // stageFlags
+	0, // offset
+	sizeof(pbrPushConstants) // size
+};
+
 // pbr shader draws objects read from glTF files with PBR lighing
 class PBRShader : public ShaderBase {
 public:
@@ -20,6 +31,7 @@ public:
 		glm::vec3 pos;
 		//glm::vec3 normal;
 		glm::vec2 uv0;
+		glm::vec4 color;
 		//glm::vec2 uv1;
 		//glm::vec4 joint0;
 		//glm::vec4 weight0;
@@ -48,8 +60,8 @@ public:
 		return bindingDescription;
 	}
 	// get static std::array of attribute desciptions, make sure to copy to local array, otherwise you get dangling pointers!
-	static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions() {
-		std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+	static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
+		std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
 		// layout(location = 0) in vec3 inPosition;
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
@@ -60,6 +72,12 @@ public:
 		attributeDescriptions[1].location = 1;
 		attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
 		attributeDescriptions[1].offset = offsetof(Vertex, uv0);
+		// layout(location = 2) in vec4 inColor0;
+		attributeDescriptions[2].binding = 0;
+		attributeDescriptions[2].location = 2;
+		attributeDescriptions[2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		attributeDescriptions[2].offset = offsetof(Vertex, color);
+
 
 		return attributeDescriptions;
 	}

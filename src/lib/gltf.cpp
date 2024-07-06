@@ -197,6 +197,29 @@ void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, vector<PBRShader
 			Log("Verts loaded: " << verts.size() << endl);
 			Log("Indices loaded: " << indexBuffer.size() << endl);
 			assert(indexBuffer.size() % 3 == 0); // triangles?
+
+			// load color info:
+			if (mesh->type == MeshType::MESH_TYPE_NO_TEXTURES) {
+				auto position = primitive.attributes.find("COLOR_0");
+				const tinygltf::Accessor& posAccessor = model.accessors[position->second];
+				const tinygltf::BufferView& posView = model.bufferViews[posAccessor.bufferView];
+				bufferPos = reinterpret_cast<const float*>(&(model.buffers[posView.buffer].data[posAccessor.byteOffset + posView.byteOffset]));
+				posMin = glm::vec3(posAccessor.minValues[0], posAccessor.minValues[1], posAccessor.minValues[2]);
+				posMax = glm::vec3(posAccessor.maxValues[0], posAccessor.maxValues[1], posAccessor.maxValues[2]);
+				vertexCount = static_cast<uint32_t>(posAccessor.count);
+				auto str = posAccessor.ByteStride(posView);
+				//Log("stride " << str << endl);
+				posByteStride = posAccessor.ByteStride(posView) / sizeof(float);
+				Log("COLOR posByteStride " << posByteStride << endl);
+				for (size_t v = 0; v < posAccessor.count; v++) {
+					size_t pos = v * posByteStride;
+					PBRShader::Vertex vert;
+					glm::vec4 col = glm::vec4(bufferPos[pos], bufferPos[pos + 1], bufferPos[pos + 2], bufferPos[pos + 3]);
+					//Log("color " << col.x << " " << col.y << " " << col.z << " " << col.w << endl);
+					//verts.push_back(vert2);
+					//Log("vert " << vert.x << endl);
+				}
+			}
 		}
 		//if (primitive.indices > -1) {
 		//}

@@ -9,6 +9,7 @@ layout(binding = 0) uniform UniformBufferObject {
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inTexCoord0;
+layout(location = 2) in vec4 inColor0;
 
 struct PBRTextureIndexes {
   uint baseColor;
@@ -24,8 +25,20 @@ layout (binding = 1) uniform UboInstance {
 layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec2 fragTexCoord;
 layout(location = 2) out PBRTextureIndexes textureIndexes;
+layout(location = 3) out vec4 fragColor0;
+layout(location = 4) out uint mode_out;
+
+// sync with pbrPushConstants in pbrShader.h
+layout(push_constant) uniform pbrPushConstants {
+    uint mode; // 0: standard pbr metallicRoughness, 1: pre-light vertices with color in vertex structure
+} push;
 
 void main() {
+    mode_out = push.mode;
+    if (push.mode == 1) {
+		fragColor0 = vec4(0, 1, 0, 1);
+	}
+    //debugPrintfEXT("pbr render mode: %d\n", push.mode);
     //debugPrintfEXT("PBR:[0,0] [3,0] %f %f %f\n", uboInstance.model[0][0], uboInstance.model[3][0], uboInstance.model[0][2]);
     //debugPrintfEXT("PBR dynamic model matrix: %f %f %f\n", uboInstance.model[0][0], uboInstance.model[0][1], uboInstance.model[0][2]);
     //debugPrintfEXT("                        : %f %f %f\n", uboInstance.model[3][0], uboInstance.model[3][1], uboInstance.model[3][2]);
