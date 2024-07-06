@@ -36,7 +36,9 @@ layout(push_constant) uniform pbrPushConstants {
 void main() {
     mode_out = push.mode;
     if (push.mode == 1) {
-		fragColor0 = vec4(0, 1, 0, 1);
+        //debugPrintfEXT("PBR vert color: %f %f %f %f\n", inColor0.x, inColor0.y, inColor0.z, inColor0.w);
+		//fragColor0 = vec4(0, 1, 0, 1);
+        fragColor0 = inColor0;
 	}
     //debugPrintfEXT("pbr render mode: %d\n", push.mode);
     //debugPrintfEXT("PBR:[0,0] [3,0] %f %f %f\n", uboInstance.model[0][0], uboInstance.model[3][0], uboInstance.model[0][2]);

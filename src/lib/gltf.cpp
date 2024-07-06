@@ -202,6 +202,7 @@ void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, vector<PBRShader
 			if (mesh->type == MeshType::MESH_TYPE_NO_TEXTURES) {
 				auto position = primitive.attributes.find("COLOR_0");
 				const tinygltf::Accessor& posAccessor = model.accessors[position->second];
+				assert(posAccessor.count == verts.size());
 				const tinygltf::BufferView& posView = model.bufferViews[posAccessor.bufferView];
 				bufferPos = reinterpret_cast<const float*>(&(model.buffers[posView.buffer].data[posAccessor.byteOffset + posView.byteOffset]));
 				posMin = glm::vec3(posAccessor.minValues[0], posAccessor.minValues[1], posAccessor.minValues[2]);
@@ -215,6 +216,7 @@ void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, vector<PBRShader
 					size_t pos = v * posByteStride;
 					PBRShader::Vertex vert;
 					glm::vec4 col = glm::vec4(bufferPos[pos], bufferPos[pos + 1], bufferPos[pos + 2], bufferPos[pos + 3]);
+					verts[v].color = col;
 					//Log("color " << col.x << " " << col.y << " " << col.z << " " << col.w << endl);
 					//verts.push_back(vert2);
 					//Log("vert " << vert.x << endl);

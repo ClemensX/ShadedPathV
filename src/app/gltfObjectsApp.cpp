@@ -91,6 +91,8 @@ void gltfObjectsApp::init() {
     //engine.meshStore.loadMesh("t01_cmp.glb", "world");
     engine.meshStore.loadMesh("grass.glb", "Grass");
     engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
+    //engine.meshStore.loadMesh("terrain_orig/Terrain_Mesh_0_0.gltf", "Knife", MeshType::MESH_TYPE_NO_TEXTURES);
+
     //auto o = engine.meshStore.getMesh("Knife");
     // add bottle and knife to the scene:
     engine.objectStore.createGroup("ground_group");
