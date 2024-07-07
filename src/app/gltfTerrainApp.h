@@ -8,6 +8,8 @@ public:
     void run();
     void drawFrame(ThreadResources& tr) override;
     void handleInput(InputState& inputState) override;
+    void buildCustomUI() override;
+
 private:
     bool enableLines = false;
     ShadedPathEngine engine;
@@ -18,5 +20,7 @@ private:
     InputState input;
     World world;
     WorldObject *worldObject = nullptr;
+    unsigned long uiVerticesTotal = 0;
+    unsigned long uiVerticesSqrt = 0;
 };
 

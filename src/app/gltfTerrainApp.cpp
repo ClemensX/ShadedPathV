@@ -43,6 +43,7 @@ void gltfTerrainApp::run()
         engine.textureStore.generateBRDFLUT();
         // add shaders used in this app
         shaders
+            .addShader(shaders.uiShader)
             .addShader(shaders.clearShader)
             .addShader(shaders.pbrShader)
             ;
@@ -72,6 +73,7 @@ void gltfTerrainApp::init() {
     float aspectRatio = engine.getAspect();
     //engine.meshStore.loadMesh("terrain_cmp.glb", "WorldBaseTerrain");
     engine.meshStore.loadMesh("terrain_orig/Terrain_Mesh_0_0.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    //engine.meshStore.loadMesh("terrain_vh/Project_Mesh_1_1.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     engine.objectStore.createGroup("terrain_group");
     engine.objectStore.addObject("terrain_group", "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
 
@@ -125,9 +127,9 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
             // test overwriting default textures used:
             //buf->indexes.baseColor = 0; // set basecolor to brdflut texture
             modeltransform = wo->mesh->baseTransform;
-
-        }
-        else {
+            uiVerticesTotal = wo->mesh->vertices.size();
+            uiVerticesSqrt = (unsigned long)sqrt(uiVerticesTotal);
+        } else {
             modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.2f, 0.0f, 0.0f));
         }
         // test model transforms:
@@ -180,3 +182,23 @@ void gltfTerrainApp::handleInput(InputState& inputState)
             positioner->setUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
     }
 }
+
+void gltfTerrainApp::buildCustomUI()
+{
+    static string helpText =
+        "g generate new seed\n"
+        "+ next Generation\n"
+        "- previous Generation\n"
+        "h write heightmap to file (VK_FORMAT_R32_SFLOAT)\n"
+        "p dump image";
+    ImGui::Separator();
+    int sizeX = world.getWorldSize().x;
+    ImGui::Text("World size [m]: %d * %d", sizeX, sizeX);
+    ImGui::Separator();
+    double time = ThemedTimer::getInstance()->getLatestTiming(TIMER_PART_GLOBAL_UPDATE);
+    ImGui::Text("Terrain vertices total: %d , ( %d * %d)", uiVerticesTotal, uiVerticesSqrt, uiVerticesSqrt);
+    ImGui::Separator();
+    float resolution = (float)sizeX / (float)uiVerticesSqrt;
+    ImGui::Text("Terrain resolution: %f [m]", resolution);
+    ImGui::Separator();
+};

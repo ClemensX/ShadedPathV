@@ -84,7 +84,7 @@ void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 
 	// rasterizer
 	auto rasterizer = createStandardRasterizer();
-	rasterizer.cullMode = VK_CULL_MODE_NONE;
+	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;//VK_CULL_MODE_NONE;
 
 	// multisampling
 	auto multisampling = createStandardMultisampling();
