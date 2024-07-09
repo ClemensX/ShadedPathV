@@ -32,6 +32,8 @@ public:
 		glm::vec3 s(sizex, sizey, sizez);
 		return s;
 	}
+	// transform terrain object to match world size and position
+	void transformToWorld(WorldObject* obj);
 private:
 	// world size in absolute units around origin, e.g. x is from -x to x
 	float sizex = 0.0f, sizey = 0.0f, sizez = 0.0f;

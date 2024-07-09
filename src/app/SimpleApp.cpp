@@ -97,8 +97,7 @@ void SimpleApp::init() {
     // Grid with 1m squares, floor on -10m, ceiling on 372m
     Grid *grid = world.createWorldGrid(1.0f, -10.0f);
     engine.shaders.lineShader.addFixedGlobalLines(grid->lines);
-
-    //engine.shaders.lineShader.initialUpload();
+    engine.shaders.lineShader.uploadFixedGlobalLines();
 }
 
 void SimpleApp::drawFrame(ThreadResources& tr) {

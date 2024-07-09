@@ -90,3 +90,38 @@ vec3 World::getRandomPos(float minHeight) {
 	float y = MathHelper::RandF(minHeight, sizey);
 	return vec3(x, y, z);
 }
+
+void World::transformToWorld(WorldObject* terrain)
+{
+	if (sizex == 0.0f || sizey == 0.0f || sizez == 0.0f) {
+        Error("World::transformToWorld: world size not set");
+    }
+	// compare terrain->mesh->baseTransform to identity matrix
+	glm::mat4 identity(1.0f);
+	if (terrain->mesh->baseTransform != identity) {
+        Error("World::transformToWorld: terrain baseTransform not identity matrix");
+    }
+
+	// current terrain size:
+	BoundingBox box;
+	terrain->getBoundingBox(box);
+	Log(" old terrain size: " << box.max.x - box.min.x << " " << box.max.y - box.min.y << " " << box.max.z - box.min.z << std::endl);
+	float factor = sizex / (box.max.x - box.min.x);
+	int factorRounded = (int)round(factor);
+	if (abs((float)factorRounded - factor) > 0.1f) {
+        Error("World::transformToWorld: terrain size not a multiple of world size");
+    }
+	// scale terrain to world size:
+	glm::vec3 scaleVec(factor);
+	glm::mat4 transform(1.0);
+	transform = glm::scale(transform, scaleVec);
+
+	// move terrain to world center:
+	glm::vec3 center = (box.min + box.max) / 2.0f;
+	center.y = 0.0f;
+	glm::vec3 worldCenter(0.0f, 0.0f, 0.0f);
+	glm::vec3 moveVec = worldCenter - center;
+	transform = glm::translate(transform, moveVec);
+
+	terrain->mesh->baseTransform = transform;
+}

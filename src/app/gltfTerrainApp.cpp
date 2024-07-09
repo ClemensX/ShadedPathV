@@ -10,7 +10,7 @@ void gltfTerrainApp::run()
     {
         // camera initialization
         CameraPositioner_FirstPerson positioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        positioner.setMaxSpeed(5.0f);
+        positioner.setMaxSpeed(15.0f);
         Camera camera;
         camera.changePositioner(positioner);
         this->camera = &camera;
@@ -28,14 +28,14 @@ void gltfTerrainApp::run()
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 1800;//480;// 960;//1800;// 800;//3700; // 2500;
+        int win_width = 2500;//480;// 960;//1800;// 800;//3700; // 2500;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF terrain");
-        camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
+        camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f));
 
         engine.setFramesInFlight(2);
         engine.registerApp(this);
         //engine.enableSound();
-        engine.setThreadModeSingle();
+        //engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("gltfTerrain");
@@ -69,20 +69,29 @@ void gltfTerrainApp::run()
 }
 
 void gltfTerrainApp::init() {
-    // add some lines:
     float aspectRatio = engine.getAspect();
-    //engine.meshStore.loadMesh("terrain_cmp.glb", "WorldBaseTerrain");
-    engine.meshStore.loadMesh("terrain_orig/Terrain_Mesh_0_0.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
-    //engine.meshStore.loadMesh("terrain_vh/Project_Mesh_1_1.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
-    engine.objectStore.createGroup("terrain_group");
-    engine.objectStore.addObject("terrain_group", "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
-    // Grid with 1m squares, floor on -10m, ceiling on 372m
 
-    engine.shaders.clearShader.setClearColor(vec4(0.6f, 0.6f, 0.6f, 1.0f));
+    //engine.meshStore.loadMesh("terrain_cmp.glb", "WorldBaseTerrain");
+    //engine.meshStore.loadMesh("terrain_orig/Terrain_Mesh_0_0.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    //engine.meshStore.loadMesh("terrain_vh/Project_Mesh_1_1.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    //engine.meshStore.loadMesh("terrain2k/Project_Mesh_2m.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    engine.meshStore.loadMesh("terrain2k/Project_Mesh_0.5.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    engine.objectStore.createGroup("terrain_group");
+    auto terrain = engine.objectStore.addObject("terrain_group", "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
+    world.transformToWorld(terrain);
+
+    engine.shaders.clearShader.setClearColor(vec4(0.1f, 0.1f, 0.9f, 1.0f));
     engine.shaders.pbrShader.initialUpload();
+    if (enableLines) {
+        // Grid with 1m squares, floor on -10m, ceiling on 372m
+        //Grid* grid = world.createWorldGrid(1.0f, -10.0f);
+        Grid* grid = world.createWorldGrid(1.0f, 0.0f);
+        engine.shaders.lineShader.addFixedGlobalLines(grid->lines);
+        engine.shaders.lineShader.uploadFixedGlobalLines();
+    }
 }
 
 void gltfTerrainApp::drawFrame(ThreadResources& tr) {
@@ -105,7 +114,14 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
     double deltaSeconds = seconds - old_seconds;
     positioner->update(deltaSeconds, input.pos, input.pressedLeft);
     old_seconds = seconds;
-
+    // lines
+    if (enableLines) {
+        LineShader::UniformBufferObject lubo{};
+        lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+        lubo.view = camera->getViewMatrix();
+        lubo.proj = camera->getProjectionNDC();
+        engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo);
+    }
     // pbr
     PBRShader::UniformBufferObject pubo{};
     //mat4 modeltransform = glm::mat4(1.0f); //glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));

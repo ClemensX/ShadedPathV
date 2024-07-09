@@ -130,7 +130,6 @@ public:
 	int maxListeningDistance; // disable sound if farther away than this
 	// no longer used - see Sound.h //int soundListIndex;  // index into audibleWorldObjects, used to get the 3d sound settings for this object, see Sound.h
 
-	float scale;
 	bool drawBoundingBox;
 	bool drawNormals;
 	UINT objectNum; // must be unique for all objects
@@ -154,8 +153,6 @@ public:
 	// add loaded object to scene
 	// remember returned ptr for single object access
 	WorldObject* addObject(std::string groupname, std::string id, glm::vec3 pos);
-	// TODO seems unused - remove
-	void addObject(WorldObject& w, std::string id, glm::vec3 pos);
 	// obbject groups: give fast access to specific objects (e.g. all worm NPCs)
 	void createGroup(std::string groupname);
 	const std::vector<std::unique_ptr<WorldObject>>* getGroup(std::string groupname);

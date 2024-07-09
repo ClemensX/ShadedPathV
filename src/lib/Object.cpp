@@ -169,7 +169,6 @@ MeshStore::~MeshStore()
 }
 
 WorldObject::WorldObject() {
-	scale = 1.0f;
 	drawBoundingBox = false;
 	drawNormals = false;
 	objectNum = count++;
@@ -184,6 +183,25 @@ vec3& WorldObject::pos() {
 
 vec3& WorldObject::rot() {
 	return _rot;
+}
+
+void WorldObject::getBoundingBox(BoundingBox& box)
+{
+	if (boundingBoxAlreadySet) {
+		box = boundingBox;
+		return;
+	}
+	// iterate through vertices and find min/max:
+	for (auto & v : mesh->vertices) {
+        if (v.pos.x < box.min.x) box.min.x = v.pos.x;
+        if (v.pos.y < box.min.y) box.min.y = v.pos.y;
+        if (v.pos.z < box.min.z) box.min.z = v.pos.z;
+        if (v.pos.x > box.max.x) box.max.x = v.pos.x;
+        if (v.pos.y > box.max.y) box.max.y = v.pos.y;
+        if (v.pos.z > box.max.z) box.max.z = v.pos.z;
+    }
+	boundingBox = box;
+	boundingBoxAlreadySet = true;
 }
 
 void WorldObjectStore::createGroup(string groupname) {
@@ -210,10 +228,6 @@ WorldObject* WorldObjectStore::addObject(string groupname, string id, vec3 pos) 
 	WorldObject* w = grp[grp.size() - 1].get();
 	addObjectPrivate(w, id, pos);
 	return w;
-}
-
-void WorldObjectStore::addObject(WorldObject& w, string id, vec3 pos) {
-	addObjectPrivate(&w, id, pos);
 }
 
 void WorldObjectStore::addObjectPrivate(WorldObject* w, string id, vec3 pos) {
