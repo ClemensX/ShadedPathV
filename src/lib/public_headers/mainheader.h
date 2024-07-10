@@ -290,7 +290,8 @@ inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* ori
 #define CHECK_XRCMD(cmd) CheckXrResult(instance, cmd, #cmd, FILE_AND_LINE);
 #define CHECK_XRRESULT(res, cmdStr) CheckXrResult(res, cmdStr, FILE_AND_LINE);
 
-
+#include "DebugOutput.h"
+#include "OpenXRDebugUtils.h"
 #endif
 
 // engine headers

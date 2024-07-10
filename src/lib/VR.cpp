@@ -15,7 +15,8 @@ void VR::init()
     if (!engine.isVR()) return;
 	uint32_t instanceExtensionCount;
 	const char* layerName = nullptr;
-	auto xrResult = xrEnumerateInstanceExtensionProperties(layerName, 0, &instanceExtensionCount, nullptr);
+    XR_TUT_LOG("OpenXR Tutorial Chapter 2");
+    auto xrResult = xrEnumerateInstanceExtensionProperties(layerName, 0, &instanceExtensionCount, nullptr);
 	if (XR_FAILED(xrResult)) {
 		enabled = false;
 		Log("OpenXR intialization failed - running without VR, reverting to Stereo mode" << endl);

@@ -35,6 +35,7 @@ public:
 	// threaded frame generation
 	void frameBegin(ThreadResources& tr);
 	void frameEnd(ThreadResources& tr);
+	DebugOutput debugOutput;  // This redirects std::cerr and std::cout to the IDE's output or Android Studio's logcat.
 private:
 	ShadedPathEngine& engine;
 	XrInstance instance = nullptr;
