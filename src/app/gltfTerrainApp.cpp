@@ -18,8 +18,8 @@ void gltfTerrainApp::run()
         engine.enableKeyEvents();
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
-        //engine.enableVR();
-        //engine.enableStereo();
+        engine.enableVR();
+        engine.enableStereo();
         engine.enableStereoPresentation();
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);

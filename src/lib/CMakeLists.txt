@@ -1,4 +1,4 @@
-add_library(shadedpath
+set (SOURCES
   VulkanResources.cpp
   gltf.cpp
   CubeShader.cpp
@@ -33,6 +33,10 @@ add_library(shadedpath
   ShadedPathEngine.cpp
   World.cpp
 )
+if (OPENXR_INC)
+  list(APPEND SOURCES VR.cpp)
+endif()
+add_library(shadedpath ${SOURCES})
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 
 #message(STATUS "current includes")
@@ -50,6 +54,9 @@ target_link_libraries(shadedpath
     Vulkan::Vulkan
     KTX::ktx
   )
+#if (OPENXR_INC)
+#target_link_libraries(shadedpath openxr_loaderd)
+#endif()
 if(APPLE)
   #target_compile_options(shadedpath PUBLIC -Wreturn-type)
 endif()

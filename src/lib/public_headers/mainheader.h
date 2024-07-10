@@ -250,6 +250,49 @@ inline std::string Fmt(const char* fmt, ...) {
         }                                    \
     }
 
+#if defined(OPENXR_AVAILABLE)
+// convert error code to string:
+inline std::optional<std::string> xr_to_string(XrInstance instance, XrResult res) {
+	if (instance == nullptr) {
+		return std::nullopt;
+	}
+	else {
+		char buffer[XR_MAX_RESULT_STRING_SIZE];
+		auto r = xrResultToString(instance, res, buffer);
+		if (XR_SUCCESS == r) {
+			return std::string(buffer);
+		}
+		else {
+			return std::nullopt;
+		}
+	}
+}
+
+[[noreturn]] inline void ThrowXrResult(XrInstance instance, XrResult res, const char* originator = nullptr, const char* sourceLocation = nullptr) {
+	std::optional<std::string> resString = xr_to_string(instance, res);
+	if (resString == std::nullopt) {
+		Throw(Fmt("XrResult failure [%s]", std::to_string(res).c_str()), originator, sourceLocation);
+	}
+	else {
+		Throw(Fmt("XrResult failure [%s]", resString.value().c_str()), originator, sourceLocation);
+	}
+}
+
+inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* originator = nullptr, const char* sourceLocation = nullptr) {
+	if (XR_FAILED(res)) {
+		ThrowXrResult(instance, res, originator, sourceLocation);
+	}
+
+	return res;
+}
+
+#define THROW_XR(xr, cmd) ThrowXrResult(xr, cmd, FILE_AND_LINE);
+#define CHECK_XRCMD(cmd) CheckXrResult(instance, cmd, #cmd, FILE_AND_LINE);
+#define CHECK_XRRESULT(res, cmdStr) CheckXrResult(res, cmdStr, FILE_AND_LINE);
+
+
+#endif
+
 // engine headers
 
 #include "Files.h"

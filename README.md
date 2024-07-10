@@ -257,7 +257,13 @@ You may want to add GLSL support to Visual Studio 2022. E.g. this:
 
 
 Use Khronos OpenXR sdk directly for VS 2022:
- * clone https://github.com/KhronosGroup/OpenXR-SDK.git
+ * clone in parent of ShadedPathV folder, so that you have this folder structure:
+ ```
+ parent/
+├── ShadedPathV/
+└── OpenXR-SDK/
+ ```
+ * git clone https://github.com/KhronosGroup/OpenXR-SDK.git
  * in cmd: 
  ```
  mkdir build\win64
@@ -266,19 +272,20 @@ Use Khronos OpenXR sdk directly for VS 2022:
  ```
  * open solution in VS 2022 at OpenXR-SDK\build\win64\OPENXR.sln and build
  * loader lib and pdb file will be here: \OpenXR-SDK\build\win64\src\loader\Debug
- * include folder here: \OpenXR-SDK\include\openxr, copy to libraries\openxr\openxr
- * for ShadedPathVTest and ShadedPathV add library path similar to include directory
-
+ * include folder here: \OpenXR-SDK\include\openxr
+ * both include files and lib should be found by the cmake build, if not take a look at ``dependencies.cmake``
+ 
 <a id="toc-todo"></a>
 
 ## TODO
 Things finished and things to do. Both very small and very large things, just as they come to my mind. 
 
+- [ ] add *Release* version to the current *Debug* config in cmake
 - [ ] BRDFLUT_TEXTURE cannot be used as cube map (all black). probably needs format conversion
 - [x] Cube maps (needed for PBR environment maps)
 - [ ] Environment maps
-- [ ] Bug: billboard and possibly line shader cannot be last shader in app added (Validation Warning)
-- [ ] Bug: LineApp not running (problem with wireframe loading)
+- [x] Bug: billboard and possibly line shader cannot be last shader in app added (Validation Warning)
+- [x] Bug: LineApp not running (problem with wireframe loading)
 - [ ] Rest of PBR stages
 - [x] PBR Shader (simple: only base texture display, no lighting)
 - [x] PBR object loading from glTF files (vertices with pos and text coord, textures)
@@ -289,7 +296,6 @@ Things finished and things to do. Both very small and very large things, just as
 - [x] adapt backbuffer image size during rendering to window size
 - [x] fix renderThreadContinue->wait() not waiting correctly (atomic_flag not suitable)
 - [x] fix no shutdown for > 1 render threads
-- [x] add *Release* version to the current *Debug* config in VS
 - [x] TextureStore to read and organize KTX textures
 - [x] Include *Dear ImGui* with standard Demo UI
 - [x] UI: FPS Counter
@@ -301,10 +307,10 @@ Things finished and things to do. Both very small and very large things, just as
 - [x] check for vulkan profile support: VP_KHR_roadmap_2022 level 1 (requires Feb 2022 drivers, only checked for nvdia)
 - [ ] Switch to V 1.3 API and get rid of framebuffer and renderpasses
 - [ ] LineText Shader with coordinate system display and dynamic text
-- [ ] finalize thread architecture
+- [x] finalize thread architecture
 - [ ] optimze thread performance
 - [ ] vr view
-- [ ] asset loading (library)
+- [x] asset loading (library)
 - [ ] Shaders
 - [ ] vr controllers
 - [ ] animation
