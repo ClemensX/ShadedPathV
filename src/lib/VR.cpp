@@ -155,13 +155,13 @@ void VR::createInstanceInternal() {
     strcpy(createInfo.applicationInfo.applicationName, engine.appname.c_str());
     strcpy(createInfo.applicationInfo.engineName, engine.engineName.c_str());
     createInfo.applicationInfo.engineVersion = engine.engineVersionInt;
-    createInfo.applicationInfo.apiVersion = XR_CURRENT_API_VERSION;
-    try {
-        CHECK_XRCMD(xrCreateInstance(&createInfo, &instance));
-    }
-    catch (exception e) {
+    createInfo.applicationInfo.apiVersion = XR_API_VERSION_1_0;//XR_CURRENT_API_VERSION;
+
+    auto xrResult = xrCreateInstance(&createInfo, &instance);
+    if (XR_FAILED(xrResult)) {
         enabled = false;
-        Log("OpenXR instance creation failed - running without VR" << endl);
+        Log("Failed to create Instance. Make sure your VR runtime and headset are working properly. Running without VR" << endl);
+        engine.enableVR(false);
         return;
     }
     Log("OpenXR instance created successfully!" << endl);
@@ -177,6 +177,13 @@ void VR::createSystem()
     Log("VR running on " << xrProp.systemName << " vendor id " << xrProp.vendorId << endl);
     
     // max swapchain image sizes: xrProp.graphicsProperties.maxSwapchainImageHeight and ...Width
+    XrInstanceProperties instanceProperties{ XR_TYPE_INSTANCE_PROPERTIES };
+    OPENXR_CHECK(xrGetInstanceProperties(instance, &instanceProperties), "Failed to get InstanceProperties.");
+
+    XR_TUT_LOG("OpenXR Runtime: " << instanceProperties.runtimeName << " - "
+        << XR_VERSION_MAJOR(instanceProperties.runtimeVersion) << "."
+        << XR_VERSION_MINOR(instanceProperties.runtimeVersion) << "."
+        << XR_VERSION_PATCH(instanceProperties.runtimeVersion));
 }
 
 void VR::createSession()
@@ -232,12 +239,12 @@ void VR::createSession()
         configViews.data()));
     xrConfigViews = configViews;
     // Set the primary view configuration for the session.
-    XrSessionBeginInfo beginInfo = { XR_TYPE_SESSION_BEGIN_INFO };
-    beginInfo.primaryViewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
-    CHECK_XRCMD(xrBeginSession(session, &beginInfo));
+    //XrSessionBeginInfo beginInfo = { XR_TYPE_SESSION_BEGIN_INFO };
+    //beginInfo.primaryViewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+    //CHECK_XRCMD(xrBeginSession(session, &beginInfo));
 
-    // Allocate a buffer according to viewCount.
-    //std::vector<XrView> views(viewCount, { XR_TYPE_VIEW });
+    //// Allocate a buffer according to viewCount.
+    ////std::vector<XrView> views(viewCount, { XR_TYPE_VIEW });
     createSpace();
 }
 
@@ -251,6 +258,98 @@ void VR::createSpace()
         THROW_XR(instance, res);
     }
     Log("XR ground bounds: " << bounds.width << " " << bounds.height << endl);
+    XrReferenceSpaceCreateInfo referenceSpaceCI{ XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
+    referenceSpaceCI.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_LOCAL;
+    referenceSpaceCI.poseInReferenceSpace = { {0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f} };
+    OPENXR_CHECK(xrCreateReferenceSpace(session, &referenceSpaceCI, &localSpace), "Failed to create ReferenceSpace.");
+}
+
+void VR::pollEvent()
+{
+    if (!engine.isVR()) return;
+    // Poll OpenXR for a new event.
+    XrEventDataBuffer eventData{ XR_TYPE_EVENT_DATA_BUFFER };
+    auto XrPollEvents = [&]() -> bool {
+        eventData = { XR_TYPE_EVENT_DATA_BUFFER };
+        return xrPollEvent(instance, &eventData) == XR_SUCCESS;
+        };
+
+    while (XrPollEvents()) {
+        switch (eventData.type) {
+            // Log the number of lost events from the runtime.
+        case XR_TYPE_EVENT_DATA_EVENTS_LOST: {
+            XrEventDataEventsLost* eventsLost = reinterpret_cast<XrEventDataEventsLost*>(&eventData);
+            XR_TUT_LOG("OPENXR: Events Lost: " << eventsLost->lostEventCount);
+            break;
+        }
+                                           // Log that an instance loss is pending and shutdown the application.
+        case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: {
+            XrEventDataInstanceLossPending* instanceLossPending = reinterpret_cast<XrEventDataInstanceLossPending*>(&eventData);
+            XR_TUT_LOG("OPENXR: Instance Loss Pending at: " << instanceLossPending->lossTime);
+            sessionRunning = false;
+            applicationRunning = false;
+            break;
+        }
+                                                     // Log that the interaction profile has changed.
+        case XR_TYPE_EVENT_DATA_INTERACTION_PROFILE_CHANGED: {
+            XrEventDataInteractionProfileChanged* interactionProfileChanged = reinterpret_cast<XrEventDataInteractionProfileChanged*>(&eventData);
+            XR_TUT_LOG("OPENXR: Interaction Profile changed for Session: " << interactionProfileChanged->session);
+            if (interactionProfileChanged->session != session) {
+                XR_TUT_LOG("XrEventDataInteractionProfileChanged for unknown Session");
+                break;
+            }
+            break;
+        }
+                                                           // Log that there's a reference space change pending.
+        case XR_TYPE_EVENT_DATA_REFERENCE_SPACE_CHANGE_PENDING: {
+            XrEventDataReferenceSpaceChangePending* referenceSpaceChangePending = reinterpret_cast<XrEventDataReferenceSpaceChangePending*>(&eventData);
+            XR_TUT_LOG("OPENXR: Reference Space Change pending for Session: " << referenceSpaceChangePending->session);
+            if (referenceSpaceChangePending->session != session) {
+                XR_TUT_LOG("XrEventDataReferenceSpaceChangePending for unknown Session");
+                break;
+            }
+            break;
+        }
+                                                              // Session State changes:
+        case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: {
+            XrEventDataSessionStateChanged* sessionStateChanged = reinterpret_cast<XrEventDataSessionStateChanged*>(&eventData);
+            if (sessionStateChanged->session != session) {
+                XR_TUT_LOG("XrEventDataSessionStateChanged for unknown Session");
+                break;
+            }
+
+            if (sessionStateChanged->state == XR_SESSION_STATE_READY) {
+                // SessionState is ready. Begin the XrSession using the XrViewConfigurationType.
+                XrSessionBeginInfo sessionBeginInfo{ XR_TYPE_SESSION_BEGIN_INFO };
+                sessionBeginInfo.primaryViewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+                OPENXR_CHECK(xrBeginSession(session, &sessionBeginInfo), "Failed to begin Session.");
+                sessionRunning = true;
+            }
+            if (sessionStateChanged->state == XR_SESSION_STATE_STOPPING) {
+                // SessionState is stopping. End the XrSession.
+                OPENXR_CHECK(xrEndSession(session), "Failed to end Session.");
+                sessionRunning = false;
+            }
+            if (sessionStateChanged->state == XR_SESSION_STATE_EXITING) {
+                // SessionState is exiting. Exit the application.
+                sessionRunning = false;
+                applicationRunning = false;
+            }
+            if (sessionStateChanged->state == XR_SESSION_STATE_LOSS_PENDING) {
+                // SessionState is loss pending. Exit the application.
+                // It's possible to try a reestablish an XrInstance and XrSession, but we will simply exit here.
+                sessionRunning = false;
+                applicationRunning = false;
+            }
+            // Store state for reference across the application.
+            sessionState = sessionStateChanged->state;
+            break;
+        }
+        default: {
+            break;
+        }
+        }
+    }
 }
 
 void VR::frameBegin(ThreadResources& tr)
@@ -263,42 +362,71 @@ void VR::frameBegin(ThreadResources& tr)
     XrFrameBeginInfo frameBeginInfo{ XR_TYPE_FRAME_BEGIN_INFO };
     CHECK_XRCMD(xrBeginFrame(session, &frameBeginInfo));
 
-    XrCompositionLayerProjectionView projViews[2] = { /*...*/ };
-    XrCompositionLayerProjection layerProj{ XR_TYPE_COMPOSITION_LAYER_PROJECTION };
+    // Variables for rendering and layer composition.
+    bool rendered = false;
+    RenderLayerInfo renderLayerInfo;
+    renderLayerInfo.predictedDisplayTime = tr.frameState.predictedDisplayTime;
 
-    if (tr.frameState.shouldRender) {
-        XrViewLocateInfo viewLocateInfo{ XR_TYPE_VIEW_LOCATE_INFO };
-        viewLocateInfo.displayTime = tr.frameState.predictedDisplayTime;
-        viewLocateInfo.space = sceneSpace;
-
-        XrViewState viewState{ XR_TYPE_VIEW_STATE };
-        XrView views[2] = { {XR_TYPE_VIEW}, {XR_TYPE_VIEW} };
-        uint32_t viewCountOutput;
-        CHECK_XRCMD(xrLocateViews(session, &viewLocateInfo, &viewState, static_cast<uint32_t>(xrConfigViews.size()), &viewCountOutput, views));
-
-        // ...
-        // Use viewState and frameState for scene render, and fill in projViews[2]
-        // ...
-
-        // Assemble composition layers structure
-        layerProj.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
-        layerProj.space = sceneSpace;
-        layerProj.viewCount = 2;
-        layerProj.views = projViews;
-        tr.layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&layerProj));
+    // Check that the session is active and that we should render.
+    bool sessionActive = (sessionState == XR_SESSION_STATE_SYNCHRONIZED || sessionState == XR_SESSION_STATE_VISIBLE || sessionState == XR_SESSION_STATE_FOCUSED);
+    if (sessionActive && tr.frameState.shouldRender) {
+        // Render the stereo image and associate one of swapchain images with the XrCompositionLayerProjection structure.
+        rendered = RenderLayer(renderLayerInfo);
+        if (rendered) {
+            renderLayerInfo.layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&renderLayerInfo.layerProjection));
+        }
     }
+
+    // Tell OpenXR that we are finished with this frame; specifying its display time, environment blending and layers.
+    XrFrameEndInfo frameEndInfo{ XR_TYPE_FRAME_END_INFO };
+    frameEndInfo.displayTime = tr.frameState.predictedDisplayTime;
+    frameEndInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+    frameEndInfo.layerCount = static_cast<uint32_t>(renderLayerInfo.layers.size());
+    frameEndInfo.layers = renderLayerInfo.layers.data();
+    OPENXR_CHECK(xrEndFrame(session, &frameEndInfo), "Failed to end the XR Frame.");
+
+    //XrCompositionLayerProjectionView projViews[2] = { /*...*/ };
+    //XrCompositionLayerProjection layerProj{ XR_TYPE_COMPOSITION_LAYER_PROJECTION };
+
+    //if (tr.frameState.shouldRender) {
+    //    XrViewLocateInfo viewLocateInfo{ XR_TYPE_VIEW_LOCATE_INFO };
+    //    viewLocateInfo.displayTime = tr.frameState.predictedDisplayTime;
+    //    viewLocateInfo.space = localSpace;
+    //    viewLocateInfo.viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+
+    //    XrViewState viewState{ XR_TYPE_VIEW_STATE };
+    //    XrView views[2] = { {XR_TYPE_VIEW}, {XR_TYPE_VIEW} };
+    //    uint32_t viewCountOutput;
+    //    CHECK_XRCMD(xrLocateViews(session, &viewLocateInfo, &viewState, static_cast<uint32_t>(xrConfigViews.size()), &viewCountOutput, views));
+
+    //    // ...
+    //    // Use viewState and frameState for scene render, and fill in projViews[2]
+    //    // ...
+
+    //    // Assemble composition layers structure
+    //    layerProj.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
+    //    layerProj.space = localSpace;
+    //    layerProj.viewCount = 2;
+    //    layerProj.views = projViews;
+    //    tr.layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&layerProj));
+    //}
 }
 
 void VR::frameEnd(ThreadResources& tr)
 {
-    // End frame and submit layers, even if layers is empty due to shouldRender = false
-    XrFrameEndInfo frameEndInfo{ XR_TYPE_FRAME_END_INFO };
-    frameEndInfo.displayTime = tr.frameState.predictedDisplayTime;
-    frameEndInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
-    frameEndInfo.layerCount = (uint32_t)tr.layers.size();
-    frameEndInfo.layers = tr.layers.data();
-    CHECK_XRCMD(xrEndFrame(session, &frameEndInfo));
-    tr.layers.clear();
+    //// End frame and submit layers, even if layers is empty due to shouldRender = false
+    //XrFrameEndInfo frameEndInfo{ XR_TYPE_FRAME_END_INFO };
+    //frameEndInfo.displayTime = tr.frameState.predictedDisplayTime;
+    //frameEndInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+    //frameEndInfo.layerCount = (uint32_t)tr.layers.size();
+    //frameEndInfo.layers = tr.layers.data();
+    //CHECK_XRCMD(xrEndFrame(session, &frameEndInfo));
+    //tr.layers.clear();
+}
+
+bool VR::RenderLayer(RenderLayerInfo& layerInfo)
+{
+    return false;
 }
 
 void VR::endSession()

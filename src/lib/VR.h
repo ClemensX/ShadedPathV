@@ -23,7 +23,11 @@ public:
 	bool enabled = false;
 
 	// extensions: XR_KHR_vulkan_enable2, XR_EXT_hand_tracking
-	const std::vector<std::string> REQUIRED_XR_EXTENSIONS { "XR_KHR_vulkan_enable2", "XR_EXT_hand_tracking" };
+#   if defined(_DEBUG)
+	const std::vector<std::string> REQUIRED_XR_EXTENSIONS { "XR_KHR_vulkan_enable2", "XR_EXT_hand_tracking", "XR_EXT_debug_utils"};
+#   else
+	const std::vector<std::string> REQUIRED_XR_EXTENSIONS{ "XR_KHR_vulkan_enable2", "XR_EXT_hand_tracking" };
+#   endif
 
 	// Transferred from Sample Code:
 	void logLayersAndExtensions();
@@ -33,6 +37,7 @@ public:
 	}
 
 	// threaded frame generation
+	void pollEvent();
 	void frameBegin(ThreadResources& tr);
 	void frameEnd(ThreadResources& tr);
 	DebugOutput debugOutput;  // This redirects std::cerr and std::cout to the IDE's output or Android Studio's logcat.
@@ -42,13 +47,24 @@ private:
 	XrSystemId systemId;
 	XrSystemProperties xrProp{};
 	XrSession session = nullptr;
-	XrSpace sceneSpace = nullptr;
+	XrSessionState sessionState = XR_SESSION_STATE_UNKNOWN;
+	bool sessionRunning = false;
+	bool applicationRunning = false;
+	//XrSpace sceneSpace = nullptr;
+	XrSpace localSpace = nullptr;
 	std::vector<XrViewConfigurationView> xrConfigViews;
 
 	// init calls
 	void createSystem();
 	void endSession();
 	void createSpace();
+	struct RenderLayerInfo {
+		XrTime predictedDisplayTime;
+		std::vector<XrCompositionLayerBaseHeader*> layers;
+		XrCompositionLayerProjection layerProjection = { XR_TYPE_COMPOSITION_LAYER_PROJECTION };
+		std::vector<XrCompositionLayerProjectionView> layerProjectionViews;
+	};
+	bool RenderLayer(RenderLayerInfo& layerInfo);
 
 };
 #else

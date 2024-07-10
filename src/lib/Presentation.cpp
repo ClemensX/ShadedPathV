@@ -460,6 +460,7 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     }
 
     if (engine.isVR()) {
+        engine.vr.pollEvent();
         engine.vr.frameBegin(tr);
         engine.vr.frameEnd(tr);
     }
