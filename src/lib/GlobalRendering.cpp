@@ -505,7 +505,7 @@ void GlobalRendering::createLogicalDevice()
         engine.presentation.createPresentQueue(indices.presentFamily.value());
     }
     if (engine.isVR()) {
-        engine.vr.createSession();
+        engine.vr.create();
     }
 }
 

@@ -186,6 +186,14 @@ void VR::createSystem()
         << XR_VERSION_PATCH(instanceProperties.runtimeVersion));
 }
 
+void VR::create()
+{
+    createSession();
+    createSpace();
+    GetViewConfigurationViews();
+    CreateSwapchains();
+}
+
 void VR::createSession()
 {
 
@@ -203,41 +211,41 @@ void VR::createSession()
     CHECK_XRCMD(xrCreateSession(instance, &sessionInfo, &session));
 
 
-    // Enumerate the view configurations paths.
-    uint32_t configurationCount;
-    CHECK_XRCMD(xrEnumerateViewConfigurations(instance, systemId, 0, &configurationCount, nullptr));
+    //// Enumerate the view configurations paths.
+    //uint32_t configurationCount;
+    //CHECK_XRCMD(xrEnumerateViewConfigurations(instance, systemId, 0, &configurationCount, nullptr));
 
-    std::vector<XrViewConfigurationType> configurationTypes(configurationCount);
-    CHECK_XRCMD(xrEnumerateViewConfigurations(instance, systemId, configurationCount, &configurationCount, configurationTypes.data()));
+    //std::vector<XrViewConfigurationType> configurationTypes(configurationCount);
+    //CHECK_XRCMD(xrEnumerateViewConfigurations(instance, systemId, configurationCount, &configurationCount, configurationTypes.data()));
 
-    bool configFound = false;
-    for (uint32_t i = 0; i < configurationCount; ++i)
-    {
-        if (configurationTypes[i] == XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO)
-        {
-            configFound = true;
-            break;  // Pick the first supported, i.e. preferred, view configuration.
-        }
-    }
+    //bool configFound = false;
+    //for (uint32_t i = 0; i < configurationCount; ++i)
+    //{
+    //    if (configurationTypes[i] == XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO)
+    //    {
+    //        configFound = true;
+    //        break;  // Pick the first supported, i.e. preferred, view configuration.
+    //    }
+    //}
 
-    if (!configFound)
-        return;   // Cannot support any view configuration of this system.
+    //if (!configFound)
+    //    return;   // Cannot support any view configuration of this system.
 
-    // Get detailed information of each view element.
-    uint32_t viewCount;
-    CHECK_XRCMD(xrEnumerateViewConfigurationViews(instance, systemId,
-        XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
-        0,
-        &viewCount,
-        nullptr));
+    //// Get detailed information of each view element.
+    //uint32_t viewCount;
+    //CHECK_XRCMD(xrEnumerateViewConfigurationViews(instance, systemId,
+    //    XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
+    //    0,
+    //    &viewCount,
+    //    nullptr));
 
-    std::vector<XrViewConfigurationView> configViews(viewCount, { XR_TYPE_VIEW_CONFIGURATION_VIEW });
-    CHECK_XRCMD(xrEnumerateViewConfigurationViews(instance, systemId,
-        XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
-        viewCount,
-        &viewCount,
-        configViews.data()));
-    xrConfigViews = configViews;
+    //std::vector<XrViewConfigurationView> configViews(viewCount, { XR_TYPE_VIEW_CONFIGURATION_VIEW });
+    //CHECK_XRCMD(xrEnumerateViewConfigurationViews(instance, systemId,
+    //    XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
+    //    viewCount,
+    //    &viewCount,
+    //    configViews.data()));
+    //xrConfigViews = configViews;
     // Set the primary view configuration for the session.
     //XrSessionBeginInfo beginInfo = { XR_TYPE_SESSION_BEGIN_INFO };
     //beginInfo.primaryViewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
@@ -245,7 +253,6 @@ void VR::createSession()
 
     //// Allocate a buffer according to viewCount.
     ////std::vector<XrView> views(viewCount, { XR_TYPE_VIEW });
-    createSpace();
 }
 
 void VR::createSpace()
@@ -255,14 +262,114 @@ void VR::createSpace()
     XrExtent2Df bounds;
     auto res = xrGetReferenceSpaceBoundsRect(session, XR_REFERENCE_SPACE_TYPE_STAGE, &bounds);
     if (res != XR_SUCCESS) {
-        THROW_XR(instance, res);
+        Log("WARNING XR ground bounds not available. Can happen if HMD is not visible." << endl);
+    } else {
+        Log("XR ground bounds: " << bounds.width << " " << bounds.height << endl);
     }
-    Log("XR ground bounds: " << bounds.width << " " << bounds.height << endl);
     XrReferenceSpaceCreateInfo referenceSpaceCI{ XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
     referenceSpaceCI.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_LOCAL;
     referenceSpaceCI.poseInReferenceSpace = { {0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f} };
     OPENXR_CHECK(xrCreateReferenceSpace(session, &referenceSpaceCI, &localSpace), "Failed to create ReferenceSpace.");
 }
+
+void VR::GetViewConfigurationViews()
+{
+    // Gets the View Configuration Types. The first call gets the count of the array that will be returned. The next call fills out the array.
+    uint32_t viewConfigurationCount = 0;
+    OPENXR_CHECK(xrEnumerateViewConfigurations(instance, systemId, 0, &viewConfigurationCount, nullptr), "Failed to enumerate View Configurations.");
+    m_viewConfigurations.resize(viewConfigurationCount);
+    OPENXR_CHECK(xrEnumerateViewConfigurations(instance, systemId, viewConfigurationCount, &viewConfigurationCount, m_viewConfigurations.data()), "Failed to enumerate View Configurations.");
+
+    // Pick the first application supported View Configuration Type con supported by the hardware.
+    for (const XrViewConfigurationType& viewConfiguration : m_applicationViewConfigurations) {
+        if (std::find(m_viewConfigurations.begin(), m_viewConfigurations.end(), viewConfiguration) != m_viewConfigurations.end()) {
+            m_viewConfiguration = viewConfiguration;
+            break;
+        }
+    }
+    if (m_viewConfiguration == XR_VIEW_CONFIGURATION_TYPE_MAX_ENUM) {
+        std::cerr << "Failed to find a view configuration type. Defaulting to XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO." << std::endl;
+        m_viewConfiguration = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+    }
+
+    // Gets the View Configuration Views. The first call gets the count of the array that will be returned. The next call fills out the array.
+    uint32_t viewConfigurationViewCount = 0;
+    OPENXR_CHECK(xrEnumerateViewConfigurationViews(instance, systemId, m_viewConfiguration, 0, &viewConfigurationViewCount, nullptr), "Failed to enumerate ViewConfiguration Views.");
+    m_viewConfigurationViews.resize(viewConfigurationViewCount, { XR_TYPE_VIEW_CONFIGURATION_VIEW });
+    OPENXR_CHECK(xrEnumerateViewConfigurationViews(instance, systemId, m_viewConfiguration, viewConfigurationViewCount, &viewConfigurationViewCount, m_viewConfigurationViews.data()), "Failed to enumerate ViewConfiguration Views.");
+}
+
+int64_t VR::selectColorSwapchainFormat(std::vector<int64_t> formats)
+{
+    for (int64_t format : formats) {
+        if (format == GlobalRendering::ImageFormat) {
+            return format;
+        }
+    }
+    Error("OpenXR failed to find a supported color swapchain format.");
+}
+
+int64_t VR::selectDepthSwapchainFormat(std::vector<int64_t> formats)
+{
+    for (int64_t format : formats) {
+        if (format == GlobalRendering::depthFormat) {
+            return format;
+        }
+    }
+    Error("OpenXR failed to find a supported depth swapchain format.");
+}
+
+void VR::CreateSwapchains()
+{
+    // Get the supported swapchain formats as an array of int64_t and ordered by runtime preference.
+    uint32_t formatCount = 0;
+    OPENXR_CHECK(xrEnumerateSwapchainFormats(session, 0, &formatCount, nullptr), "Failed to enumerate Swapchain Formats");
+    std::vector<int64_t> formats(formatCount);
+    OPENXR_CHECK(xrEnumerateSwapchainFormats(session, formatCount, &formatCount, formats.data()), "Failed to enumerate Swapchain Formats");
+    int64_t swapchainColorFormat = selectColorSwapchainFormat(formats);
+    int64_t swapchainDepthFormat = selectDepthSwapchainFormat(formats);
+    //Resize the SwapchainInfo to match the number of view in the View Configuration.
+    m_colorSwapchainInfos.resize(m_viewConfigurationViews.size());
+    m_depthSwapchainInfos.resize(m_viewConfigurationViews.size());
+    for (size_t i = 0; i < m_viewConfigurationViews.size(); i++) {
+        SwapchainInfo& colorSwapchainInfo = m_colorSwapchainInfos[i];
+        SwapchainInfo& depthSwapchainInfo = m_depthSwapchainInfos[i];
+
+        // Fill out an XrSwapchainCreateInfo structure and create an XrSwapchain.
+        // Color.
+        XrSwapchainCreateInfo swapchainCI{ XR_TYPE_SWAPCHAIN_CREATE_INFO };
+        swapchainCI.createFlags = 0;
+        swapchainCI.usageFlags = XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
+        swapchainCI.format = swapchainColorFormat;
+        swapchainCI.sampleCount = m_viewConfigurationViews[i].recommendedSwapchainSampleCount;  // Use the recommended values from the XrViewConfigurationView.
+        swapchainCI.width = m_viewConfigurationViews[i].recommendedImageRectWidth;
+        swapchainCI.height = m_viewConfigurationViews[i].recommendedImageRectHeight;
+        swapchainCI.faceCount = 1;
+        swapchainCI.arraySize = 1;
+        swapchainCI.mipCount = 1;
+        OPENXR_CHECK(xrCreateSwapchain(session, &swapchainCI, &colorSwapchainInfo.swapchain), "Failed to create Color Swapchain");
+        colorSwapchainInfo.swapchainFormat = swapchainCI.format;  // Save the swapchain format for later use.
+
+        // Depth.
+        swapchainCI.createFlags = 0;
+        swapchainCI.usageFlags = XR_SWAPCHAIN_USAGE_SAMPLED_BIT | XR_SWAPCHAIN_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        swapchainCI.format = swapchainDepthFormat;
+        swapchainCI.sampleCount = m_viewConfigurationViews[i].recommendedSwapchainSampleCount;  // Use the recommended values from the XrViewConfigurationView.
+        swapchainCI.width = m_viewConfigurationViews[i].recommendedImageRectWidth;
+        swapchainCI.height = m_viewConfigurationViews[i].recommendedImageRectHeight;
+        swapchainCI.faceCount = 1;
+        swapchainCI.arraySize = 1;
+        swapchainCI.mipCount = 1;
+        OPENXR_CHECK(xrCreateSwapchain(session, &swapchainCI, &depthSwapchainInfo.swapchain), "Failed to create Depth Swapchain");
+        depthSwapchainInfo.swapchainFormat = swapchainCI.format;  // Save the swapchain format for later use.
+    }
+}
+
+void VR::DestroySwapchains()
+{
+
+}
+
 
 void VR::pollEvent()
 {
@@ -321,7 +428,7 @@ void VR::pollEvent()
             if (sessionStateChanged->state == XR_SESSION_STATE_READY) {
                 // SessionState is ready. Begin the XrSession using the XrViewConfigurationType.
                 XrSessionBeginInfo sessionBeginInfo{ XR_TYPE_SESSION_BEGIN_INFO };
-                sessionBeginInfo.primaryViewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
+                sessionBeginInfo.primaryViewConfigurationType = m_viewConfiguration;
                 OPENXR_CHECK(xrBeginSession(session, &sessionBeginInfo), "Failed to begin Session.");
                 sessionRunning = true;
             }
@@ -431,6 +538,7 @@ bool VR::RenderLayer(RenderLayerInfo& layerInfo)
 
 void VR::endSession()
 {
+    DestroySwapchains();
     CHECK_XRCMD(xrDestroySession(session));
 }
 

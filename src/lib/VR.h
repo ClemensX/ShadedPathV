@@ -16,8 +16,8 @@ public:
 	void initVulkanEnable2(VkInstanceCreateInfo &instInfo);
 	// create logical devive via XR_KHR_vulkan_enable2 extension
 	void initVulkanCreateDevice(VkDeviceCreateInfo& createInfo);
-	// create XR Session
-	void createSession();
+	// create XR stuff
+	void create();
 
 	// if false we run without VR
 	bool enabled = false;
@@ -53,11 +53,28 @@ private:
 	//XrSpace sceneSpace = nullptr;
 	XrSpace localSpace = nullptr;
 	std::vector<XrViewConfigurationView> xrConfigViews;
+	std::vector<XrViewConfigurationType> m_applicationViewConfigurations = { XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_MONO };
+	std::vector<XrViewConfigurationType> m_viewConfigurations;
+	XrViewConfigurationType m_viewConfiguration = XR_VIEW_CONFIGURATION_TYPE_MAX_ENUM;
+	std::vector<XrViewConfigurationView> m_viewConfigurationViews;
 
+	struct SwapchainInfo {
+		XrSwapchain swapchain = XR_NULL_HANDLE;
+		int64_t swapchainFormat = 0;
+		std::vector<void*> imageViews;
+	};
+	std::vector<SwapchainInfo> m_colorSwapchainInfos = {};
+	std::vector<SwapchainInfo> m_depthSwapchainInfos = {};
 	// init calls
 	void createSystem();
+	void createSession();
 	void endSession();
 	void createSpace();
+	void GetViewConfigurationViews();
+	void CreateSwapchains();
+	int64_t selectColorSwapchainFormat(std::vector<int64_t> formats);
+	int64_t selectDepthSwapchainFormat(std::vector<int64_t> formats);
+	void DestroySwapchains();
 	struct RenderLayerInfo {
 		XrTime predictedDisplayTime;
 		std::vector<XrCompositionLayerBaseHeader*> layers;

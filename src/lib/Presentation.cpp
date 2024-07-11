@@ -175,7 +175,7 @@ SwapChainSupportDetails Presentation::querySwapChainSupport(VkPhysicalDevice dev
 VkSurfaceFormatKHR Presentation::chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats, bool listmode) {
     for (const auto& availableFormat : availableFormats) {
         if (listmode) {
-            Log("swap chain possible format: " << availableFormat.format << " color Space: " << availableFormat.colorSpace << endl);
+            Log("swapchain possible format: " << availableFormat.format << " color Space: " << availableFormat.colorSpace << endl);
         }
         else {
             if (availableFormat.format == GlobalRendering::ImageFormat && availableFormat.colorSpace == GlobalRendering::ImageColorSpace) {
@@ -184,7 +184,7 @@ VkSurfaceFormatKHR Presentation::chooseSwapSurfaceFormat(const std::vector<VkSur
         }
     }
     if (listmode) return availableFormats[0];
-    Error("could not find right swap chain format");
+    Error("could not find right swapchain format");
     return availableFormats[0];
 }
 
@@ -192,7 +192,7 @@ VkSurfaceFormatKHR Presentation::chooseSwapSurfaceFormat(const std::vector<VkSur
 VkPresentModeKHR Presentation::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes, bool listmode) {
     for (const auto& availablePresentMode : availablePresentModes) {
         if (listmode) {
-            Log("swap chain possible present mode: " << availablePresentMode << endl);
+            Log("swapchain possible present mode: " << availablePresentMode << endl);
         }
         else {
             if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
@@ -233,9 +233,10 @@ void Presentation::createSwapChain() {
     VkPresentModeKHR presentMode = chooseSwapPresentMode(swapChainSupport.presentModes, true);
     // select preferred mode
     surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
+    Log("swapchain format selected: " << surfaceFormat.format << endl);
     presentMode = chooseSwapPresentMode(swapChainSupport.presentModes);
     VkExtent2D extent = chooseSwapExtent(swapChainSupport.capabilities);
-    Log("swap chain min max images: " << swapChainSupport.capabilities.minImageCount << " " << swapChainSupport.capabilities.maxImageCount << endl);
+    Log("swapchain min max images: " << swapChainSupport.capabilities.minImageCount << " " << swapChainSupport.capabilities.maxImageCount << endl);
     imageCount = swapChainSupport.capabilities.minImageCount + 1;
     if (swapChainSupport.capabilities.maxImageCount > 0 && imageCount > swapChainSupport.capabilities.maxImageCount) {
         imageCount = swapChainSupport.capabilities.maxImageCount;
