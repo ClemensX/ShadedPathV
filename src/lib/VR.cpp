@@ -188,9 +188,13 @@ void VR::createSystem()
 
 void VR::create()
 {
-    createSession();
-    createSpace();
+    if (!engine.isVR()) return;
     GetViewConfigurationViews();
+    GetEnvironmentBlendModes();
+
+    createSession();
+    CreateReferenceSpace();
+
     CreateSwapchains();
 }
 
@@ -255,23 +259,6 @@ void VR::createSession()
     ////std::vector<XrView> views(viewCount, { XR_TYPE_VIEW });
 }
 
-void VR::createSpace()
-{
-    // check if ground based bounds are available
-    // Valve Index: At least one base must be connected and visible in SteamVR, HMD may be inactive
-    XrExtent2Df bounds;
-    auto res = xrGetReferenceSpaceBoundsRect(session, XR_REFERENCE_SPACE_TYPE_STAGE, &bounds);
-    if (res != XR_SUCCESS) {
-        Log("WARNING XR ground bounds not available. Can happen if HMD is not visible." << endl);
-    } else {
-        Log("XR ground bounds: " << bounds.width << " " << bounds.height << endl);
-    }
-    XrReferenceSpaceCreateInfo referenceSpaceCI{ XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
-    referenceSpaceCI.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_LOCAL;
-    referenceSpaceCI.poseInReferenceSpace = { {0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f} };
-    OPENXR_CHECK(xrCreateReferenceSpace(session, &referenceSpaceCI, &localSpace), "Failed to create ReferenceSpace.");
-}
-
 void VR::GetViewConfigurationViews()
 {
     // Gets the View Configuration Types. The first call gets the count of the array that will be returned. The next call fills out the array.
@@ -307,6 +294,7 @@ int64_t VR::selectColorSwapchainFormat(std::vector<int64_t> formats)
         }
     }
     Error("OpenXR failed to find a supported color swapchain format.");
+    return 0; // keep compiler happy
 }
 
 int64_t VR::selectDepthSwapchainFormat(std::vector<int64_t> formats)
@@ -317,6 +305,7 @@ int64_t VR::selectDepthSwapchainFormat(std::vector<int64_t> formats)
         }
     }
     Error("OpenXR failed to find a supported depth swapchain format.");
+    return 0; // keep compiler happy
 }
 
 XrSwapchainImageBaseHeader* VR::AllocateSwapchainImageData(XrSwapchain swapchain, VR::SwapchainType type, uint32_t count) {
@@ -400,6 +389,67 @@ void VR::CreateSwapchains()
         }
     }
 }
+
+void VR::GetEnvironmentBlendModes()
+{
+    // Retrieves the available blend modes. The first call gets the count of the array that will be returned. The next call fills out the array.
+    uint32_t environmentBlendModeCount = 0;
+    OPENXR_CHECK(xrEnumerateEnvironmentBlendModes(instance, systemId, m_viewConfiguration, 0, &environmentBlendModeCount, nullptr), "Failed to enumerate EnvironmentBlend Modes.");
+    m_environmentBlendModes.resize(environmentBlendModeCount);
+    OPENXR_CHECK(xrEnumerateEnvironmentBlendModes(instance, systemId, m_viewConfiguration, environmentBlendModeCount, &environmentBlendModeCount, m_environmentBlendModes.data()), "Failed to enumerate EnvironmentBlend Modes.");
+
+    // Pick the first application supported blend mode supported by the hardware.
+    for (const XrEnvironmentBlendMode& environmentBlendMode : m_applicationEnvironmentBlendModes) {
+        if (std::find(m_environmentBlendModes.begin(), m_environmentBlendModes.end(), environmentBlendMode) != m_environmentBlendModes.end()) {
+            m_environmentBlendMode = environmentBlendMode;
+            break;
+        }
+    }
+    if (m_environmentBlendMode == XR_ENVIRONMENT_BLEND_MODE_MAX_ENUM) {
+        Log("WARNING: Failed to find a compatible blend mode. Defaulting to XR_ENVIRONMENT_BLEND_MODE_OPAQUE.");
+        m_environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+    }
+}
+
+void VR::CreateReferenceSpace()
+{
+    // check if ground based bounds are available
+    // Valve Index: At least one base must be connected and visible in SteamVR, HMD may be inactive
+    XrExtent2Df bounds;
+    auto res = xrGetReferenceSpaceBoundsRect(session, XR_REFERENCE_SPACE_TYPE_STAGE, &bounds);
+    if (res != XR_SUCCESS) {
+        Log("WARNING XR ground bounds not available. Can happen if HMD is not visible." << endl);
+    }
+    else {
+        Log("XR ground bounds: " << bounds.width << " " << bounds.height << endl);
+    }
+    XrReferenceSpaceCreateInfo referenceSpaceCI{ XR_TYPE_REFERENCE_SPACE_CREATE_INFO };
+    referenceSpaceCI.referenceSpaceType = XR_REFERENCE_SPACE_TYPE_LOCAL;
+    referenceSpaceCI.poseInReferenceSpace = { {0.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f} };
+    OPENXR_CHECK(xrCreateReferenceSpace(session, &referenceSpaceCI, &m_localSpace), "Failed to create ReferenceSpace.");
+}
+
+void VR::DestroyReferenceSpace()
+{
+    // Destroy the reference XrSpace.
+    OPENXR_CHECK(xrDestroySpace(m_localSpace), "Failed to destroy Space.")
+}
+
+void VR::DestroySession()
+{
+
+}
+
+void VR::DestroyDebugMessenger()
+{
+
+}
+
+void VR::DestroyInstance()
+{
+
+}
+
 
 void VR::DestroySwapchains()
 {
@@ -536,6 +586,7 @@ void VR::frameBegin(ThreadResources& tr)
     bool sessionActive = (sessionState == XR_SESSION_STATE_SYNCHRONIZED || sessionState == XR_SESSION_STATE_VISIBLE || sessionState == XR_SESSION_STATE_FOCUSED);
     if (sessionActive && tr.frameState.shouldRender) {
         // Render the stereo image and associate one of swapchain images with the XrCompositionLayerProjection structure.
+        renderLayerInfo.tr = &tr;
         rendered = RenderLayer(renderLayerInfo);
         if (rendered) {
             renderLayerInfo.layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&renderLayerInfo.layerProjection));
@@ -589,14 +640,130 @@ void VR::frameEnd(ThreadResources& tr)
     //tr.layers.clear();
 }
 
-bool VR::RenderLayer(RenderLayerInfo& layerInfo)
+bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
 {
-    return false;
+    // Locate the views from the view configuration within the (reference) space at the display time.
+    std::vector<XrView> views(m_viewConfigurationViews.size(), { XR_TYPE_VIEW });
+
+    XrViewState viewState{ XR_TYPE_VIEW_STATE };  // Will contain information on whether the position and/or orientation is valid and/or tracked.
+    XrViewLocateInfo viewLocateInfo{ XR_TYPE_VIEW_LOCATE_INFO };
+    viewLocateInfo.viewConfigurationType = m_viewConfiguration;
+    viewLocateInfo.displayTime = renderLayerInfo.predictedDisplayTime;
+    viewLocateInfo.space = m_localSpace;
+    uint32_t viewCount = 0;
+    XrResult result = xrLocateViews(session, &viewLocateInfo, &viewState, static_cast<uint32_t>(views.size()), &viewCount, views.data());
+    if (result != XR_SUCCESS) {
+        XR_TUT_LOG("Failed to locate Views.");
+        return false;
+    }
+
+    // Resize the layer projection views to match the view count. The layer projection views are used in the layer projection.
+    renderLayerInfo.layerProjectionViews.resize(viewCount, { XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW });
+
+    // Per view in the view configuration:
+    for (uint32_t i = 0; i < viewCount; i++) {
+        SwapchainInfo& colorSwapchainInfo = m_colorSwapchainInfos[i];
+        SwapchainInfo& depthSwapchainInfo = m_depthSwapchainInfos[i];
+
+        // Acquire and wait for an image from the swapchains.
+        // Get the image index of an image in the swapchains.
+        // The timeout is infinite.
+        uint32_t colorImageIndex = 0;
+        uint32_t depthImageIndex = 0;
+        XrSwapchainImageAcquireInfo acquireInfo{ XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO };
+        OPENXR_CHECK(xrAcquireSwapchainImage(colorSwapchainInfo.swapchain, &acquireInfo, &colorImageIndex), "Failed to acquire Image from the Color Swapchian");
+        OPENXR_CHECK(xrAcquireSwapchainImage(depthSwapchainInfo.swapchain, &acquireInfo, &depthImageIndex), "Failed to acquire Image from the Depth Swapchian");
+
+        XrSwapchainImageWaitInfo waitInfo = { XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO };
+        waitInfo.timeout = XR_INFINITE_DURATION;
+        OPENXR_CHECK(xrWaitSwapchainImage(colorSwapchainInfo.swapchain, &waitInfo), "Failed to wait for Image from the Color Swapchain");
+        OPENXR_CHECK(xrWaitSwapchainImage(depthSwapchainInfo.swapchain, &waitInfo), "Failed to wait for Image from the Depth Swapchain");
+
+        // Get the width and height and construct the viewport and scissors.
+        const uint32_t& width = m_viewConfigurationViews[i].recommendedImageRectWidth;
+        const uint32_t& height = m_viewConfigurationViews[i].recommendedImageRectHeight;
+        //GraphicsAPI::Viewport viewport = { 0.0f, 0.0f, (float)width, (float)height, 0.0f, 1.0f };
+        //GraphicsAPI::Rect2D scissor = { {(int32_t)0, (int32_t)0}, {width, height} };
+        float nearZ = 0.05f;
+        float farZ = 100.0f;
+
+        // Fill out the XrCompositionLayerProjectionView structure specifying the pose and fov from the view.
+        // This also associates the swapchain image with this layer projection view.
+        renderLayerInfo.layerProjectionViews[i] = { XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW };
+        renderLayerInfo.layerProjectionViews[i].pose = views[i].pose;
+        renderLayerInfo.layerProjectionViews[i].fov = views[i].fov;
+        renderLayerInfo.layerProjectionViews[i].subImage.swapchain = colorSwapchainInfo.swapchain;
+        renderLayerInfo.layerProjectionViews[i].subImage.imageRect.offset.x = 0;
+        renderLayerInfo.layerProjectionViews[i].subImage.imageRect.offset.y = 0;
+        renderLayerInfo.layerProjectionViews[i].subImage.imageRect.extent.width = static_cast<int32_t>(width);
+        renderLayerInfo.layerProjectionViews[i].subImage.imageRect.extent.height = static_cast<int32_t>(height);
+        renderLayerInfo.layerProjectionViews[i].subImage.imageArrayIndex = 0;  // Useful for multiview rendering.
+
+        // Rendering code to clear the color and depth image views.
+        //m_graphicsAPI->BeginRendering();
+
+        if (m_environmentBlendMode == XR_ENVIRONMENT_BLEND_MODE_OPAQUE) {
+            // VR mode use a background color.
+            //m_graphicsAPI->ClearColor(colorSwapchainInfo.imageViews[colorImageIndex], 0.17f, 0.17f, 0.17f, 1.00f);
+        }
+        else {
+            // In AR mode make the background color black.
+            //m_graphicsAPI->ClearColor(colorSwapchainInfo.imageViews[colorImageIndex], 0.00f, 0.00f, 0.00f, 1.00f);
+        }
+        VkOffset3D blitSizeSrc;
+        blitSizeSrc.x = engine.getBackBufferExtent().width;
+        blitSizeSrc.y = engine.getBackBufferExtent().height;
+        blitSizeSrc.z = 1;
+        VkOffset3D blitSizeDst;
+        blitSizeDst.x = engine.win_width;
+        if (engine.isStereoPresentation()) {
+            blitSizeDst.x = engine.win_width / 2;
+        }
+        blitSizeDst.y = engine.win_height;
+        blitSizeDst.z = 1;
+        VkImageBlit imageBlitRegion{};
+        imageBlitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageBlitRegion.srcSubresource.layerCount = 1;
+        imageBlitRegion.srcOffsets[1] = blitSizeSrc;
+        imageBlitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        imageBlitRegion.dstSubresource.layerCount = 1;
+        imageBlitRegion.dstOffsets[1] = blitSizeDst;
+        auto tr = renderLayerInfo.tr;
+        vkCmdBlitImage(
+            tr->commandBufferPresentBack,
+            //tr.colorAttachment2.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, TODO
+            tr->colorAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            GetSwapchainImage(colorSwapchainInfo.swapchain, i), /*this->swapChainImages[imageIndex],*/ VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1, &imageBlitRegion,
+            VK_FILTER_LINEAR
+        );
+        //m_graphicsAPI->ClearDepth(depthSwapchainInfo.imageViews[depthImageIndex], 1.0f);
+
+        //m_graphicsAPI->EndRendering();
+
+        // Give the swapchain image back to OpenXR, allowing the compositor to use the image.
+        XrSwapchainImageReleaseInfo releaseInfo{ XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO };
+        OPENXR_CHECK(xrReleaseSwapchainImage(colorSwapchainInfo.swapchain, &releaseInfo), "Failed to release Image back to the Color Swapchain");
+        OPENXR_CHECK(xrReleaseSwapchainImage(depthSwapchainInfo.swapchain, &releaseInfo), "Failed to release Image back to the Depth Swapchain");
+    }
+
+    // Fill out the XrCompositionLayerProjection structure for usage with xrEndFrame().
+    renderLayerInfo.layerProjection.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT | XR_COMPOSITION_LAYER_CORRECT_CHROMATIC_ABERRATION_BIT;
+    renderLayerInfo.layerProjection.space = m_localSpace;
+    renderLayerInfo.layerProjection.viewCount = static_cast<uint32_t>(renderLayerInfo.layerProjectionViews.size());
+    renderLayerInfo.layerProjection.views = renderLayerInfo.layerProjectionViews.data();
+
+    return true;
 }
 
 void VR::endSession()
 {
     DestroySwapchains();
+    DestroyReferenceSpace();
+    DestroySession();
+
+    DestroyDebugMessenger();
+    DestroyInstance();
     CHECK_XRCMD(xrDestroySession(session));
 }
 

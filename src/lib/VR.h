@@ -55,7 +55,6 @@ private:
 	bool sessionRunning = false;
 	bool applicationRunning = false;
 	//XrSpace sceneSpace = nullptr;
-	XrSpace localSpace = nullptr;
 	std::vector<XrViewConfigurationView> xrConfigViews;
 	std::vector<XrViewConfigurationType> m_applicationViewConfigurations = { XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_MONO };
 	std::vector<XrViewConfigurationType> m_viewConfigurations;
@@ -71,11 +70,25 @@ private:
 	std::vector<SwapchainInfo> m_depthSwapchainInfos = {};
 	std::unordered_map<XrSwapchain, std::pair<SwapchainType, std::vector<XrSwapchainImageVulkanKHR>>> swapchainImagesMap{};
 	std::unordered_map<VkImage, VkImageLayout> imageStates;
+	std::vector<XrEnvironmentBlendMode> m_applicationEnvironmentBlendModes = { XR_ENVIRONMENT_BLEND_MODE_OPAQUE, XR_ENVIRONMENT_BLEND_MODE_ADDITIVE };
+	std::vector<XrEnvironmentBlendMode> m_environmentBlendModes = {};
+	XrEnvironmentBlendMode m_environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_MAX_ENUM;
+
+	XrSpace m_localSpace = XR_NULL_HANDLE;
+	struct RenderLayerInfo {
+		XrTime predictedDisplayTime;
+		std::vector<XrCompositionLayerBaseHeader*> layers;
+		XrCompositionLayerProjection layerProjection = { XR_TYPE_COMPOSITION_LAYER_PROJECTION };
+		std::vector<XrCompositionLayerProjectionView> layerProjectionViews;
+		ThreadResources* tr = nullptr;
+	};
+	bool RenderLayer(RenderLayerInfo& layerInfo);
 	// init calls
 	void createSystem();
+	void GetEnvironmentBlendModes();
+	void CreateReferenceSpace();
 	void createSession();
 	void endSession();
-	void createSpace();
 	void GetViewConfigurationViews();
 	void CreateSwapchains();
 	int64_t selectColorSwapchainFormat(std::vector<int64_t> formats);
@@ -83,13 +96,10 @@ private:
 	XrSwapchainImageBaseHeader* AllocateSwapchainImageData(XrSwapchain swapchain, VR::SwapchainType type, uint32_t count);
 	VkImage GetSwapchainImage(XrSwapchain swapchain, uint32_t index);
 	void DestroySwapchains();
-	struct RenderLayerInfo {
-		XrTime predictedDisplayTime;
-		std::vector<XrCompositionLayerBaseHeader*> layers;
-		XrCompositionLayerProjection layerProjection = { XR_TYPE_COMPOSITION_LAYER_PROJECTION };
-		std::vector<XrCompositionLayerProjectionView> layerProjectionViews;
-	};
-	bool RenderLayer(RenderLayerInfo& layerInfo);
+	void DestroyReferenceSpace();
+	void DestroySession();
+	void DestroyDebugMessenger();
+	void DestroyInstance();
 
 };
 #else
