@@ -41,6 +41,10 @@ public:
 	void frameBegin(ThreadResources& tr);
 	void frameEnd(ThreadResources& tr);
 	DebugOutput debugOutput;  // This redirects std::cerr and std::cout to the IDE's output or Android Studio's logcat.
+	enum class SwapchainType : uint8_t {
+		COLOR,
+		DEPTH
+	};
 private:
 	ShadedPathEngine& engine;
 	XrInstance instance = nullptr;
@@ -61,10 +65,12 @@ private:
 	struct SwapchainInfo {
 		XrSwapchain swapchain = XR_NULL_HANDLE;
 		int64_t swapchainFormat = 0;
-		std::vector<void*> imageViews;
+		std::vector<VkImageView> imageViews;
 	};
 	std::vector<SwapchainInfo> m_colorSwapchainInfos = {};
 	std::vector<SwapchainInfo> m_depthSwapchainInfos = {};
+	std::unordered_map<XrSwapchain, std::pair<SwapchainType, std::vector<XrSwapchainImageVulkanKHR>>> swapchainImagesMap{};
+	std::unordered_map<VkImage, VkImageLayout> imageStates;
 	// init calls
 	void createSystem();
 	void createSession();
@@ -74,6 +80,8 @@ private:
 	void CreateSwapchains();
 	int64_t selectColorSwapchainFormat(std::vector<int64_t> formats);
 	int64_t selectDepthSwapchainFormat(std::vector<int64_t> formats);
+	XrSwapchainImageBaseHeader* AllocateSwapchainImageData(XrSwapchain swapchain, VR::SwapchainType type, uint32_t count);
+	VkImage GetSwapchainImage(XrSwapchain swapchain, uint32_t index);
 	void DestroySwapchains();
 	struct RenderLayerInfo {
 		XrTime predictedDisplayTime;

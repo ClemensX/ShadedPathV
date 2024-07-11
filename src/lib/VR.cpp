@@ -319,6 +319,19 @@ int64_t VR::selectDepthSwapchainFormat(std::vector<int64_t> formats)
     Error("OpenXR failed to find a supported depth swapchain format.");
 }
 
+XrSwapchainImageBaseHeader* VR::AllocateSwapchainImageData(XrSwapchain swapchain, VR::SwapchainType type, uint32_t count) {
+    swapchainImagesMap[swapchain].first = type;
+    swapchainImagesMap[swapchain].second.resize(count, { XR_TYPE_SWAPCHAIN_IMAGE_VULKAN_KHR });
+    return reinterpret_cast<XrSwapchainImageBaseHeader*>(swapchainImagesMap[swapchain].second.data());
+}
+
+VkImage VR::GetSwapchainImage(XrSwapchain swapchain, uint32_t index) {
+    VkImage image = swapchainImagesMap[swapchain].second[index].image;
+    VkImageLayout layout = swapchainImagesMap[swapchain].first == VR::SwapchainType::COLOR ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    imageStates[image] = layout;
+    return image;
+}
+
 void VR::CreateSwapchains()
 {
     // Get the supported swapchain formats as an array of int64_t and ordered by runtime preference.
@@ -362,12 +375,57 @@ void VR::CreateSwapchains()
         swapchainCI.mipCount = 1;
         OPENXR_CHECK(xrCreateSwapchain(session, &swapchainCI, &depthSwapchainInfo.swapchain), "Failed to create Depth Swapchain");
         depthSwapchainInfo.swapchainFormat = swapchainCI.format;  // Save the swapchain format for later use.
+
+        // Get the number of images in the color/depth swapchain and allocate Swapchain image data via GraphicsAPI to store the returned array.
+        uint32_t colorSwapchainImageCount = 0;
+        OPENXR_CHECK(xrEnumerateSwapchainImages(colorSwapchainInfo.swapchain, 0, &colorSwapchainImageCount, nullptr), "Failed to enumerate Color Swapchain Images.");
+        XrSwapchainImageBaseHeader* colorSwapchainImages = AllocateSwapchainImageData(colorSwapchainInfo.swapchain, VR::SwapchainType::COLOR, colorSwapchainImageCount);
+        OPENXR_CHECK(xrEnumerateSwapchainImages(colorSwapchainInfo.swapchain, colorSwapchainImageCount, &colorSwapchainImageCount, colorSwapchainImages), "Failed to enumerate Color Swapchain Images.");
+
+        uint32_t depthSwapchainImageCount = 0;
+        OPENXR_CHECK(xrEnumerateSwapchainImages(depthSwapchainInfo.swapchain, 0, &depthSwapchainImageCount, nullptr), "Failed to enumerate Depth Swapchain Images.");
+        XrSwapchainImageBaseHeader* depthSwapchainImages = AllocateSwapchainImageData(depthSwapchainInfo.swapchain, VR::SwapchainType::DEPTH, depthSwapchainImageCount);
+        OPENXR_CHECK(xrEnumerateSwapchainImages(depthSwapchainInfo.swapchain, depthSwapchainImageCount, &depthSwapchainImageCount, depthSwapchainImages), "Failed to enumerate Depth Swapchain Images.");
+
+        // Per image in the swapchains, fill out a GraphicsAPI::ImageViewCreateInfo structure and create a color/depth image view.
+        for (uint32_t j = 0; j < colorSwapchainImageCount; j++) {
+            auto image = GetSwapchainImage(colorSwapchainInfo.swapchain, j);
+            auto v = engine.global.createImageView(image, (VkFormat)colorSwapchainInfo.swapchainFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+            colorSwapchainInfo.imageViews.push_back(v);
+        }
+        for (uint32_t j = 0; j < depthSwapchainImageCount; j++) {
+            auto image = GetSwapchainImage(depthSwapchainInfo.swapchain, j);
+            auto v = engine.global.createImageView(image, (VkFormat)depthSwapchainInfo.swapchainFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+            depthSwapchainInfo.imageViews.push_back(v);
+        }
     }
 }
 
 void VR::DestroySwapchains()
 {
+    // Per view in the view configuration:
+    for (size_t i = 0; i < m_viewConfigurationViews.size(); i++) {
+        SwapchainInfo& colorSwapchainInfo = m_colorSwapchainInfos[i];
+        SwapchainInfo& depthSwapchainInfo = m_depthSwapchainInfos[i];
 
+        // Destroy the color and depth image views from GraphicsAPI.
+        for (VkImageView& imageView : colorSwapchainInfo.imageViews) {
+            vkDestroyImageView(engine.global.device, imageView, nullptr);
+        }
+        for (VkImageView& imageView : depthSwapchainInfo.imageViews) {
+            vkDestroyImageView(engine.global.device, imageView, nullptr);
+        }
+
+        // Free the Swapchain Image Data.
+        swapchainImagesMap[colorSwapchainInfo.swapchain].second.clear();
+        swapchainImagesMap[depthSwapchainInfo.swapchain].second.clear();
+        swapchainImagesMap.erase(colorSwapchainInfo.swapchain);
+        swapchainImagesMap.erase(depthSwapchainInfo.swapchain);
+
+        // Destroy the swapchains.
+        OPENXR_CHECK(xrDestroySwapchain(colorSwapchainInfo.swapchain), "Failed to destroy Color Swapchain");
+        OPENXR_CHECK(xrDestroySwapchain(depthSwapchainInfo.swapchain), "Failed to destroy Depth Swapchain");
+    }
 }
 
 
