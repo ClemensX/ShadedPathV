@@ -378,14 +378,30 @@ void VR::CreateSwapchains()
 
         // Per image in the swapchains, fill out a GraphicsAPI::ImageViewCreateInfo structure and create a color/depth image view.
         for (uint32_t j = 0; j < colorSwapchainImageCount; j++) {
-            auto image = GetSwapchainImage(colorSwapchainInfo.swapchain, j);
-            auto v = engine.global.createImageView(image, (VkFormat)colorSwapchainInfo.swapchainFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
-            colorSwapchainInfo.imageViews.push_back(v);
+            VR::ImageViewCreateInfo imageViewCI;
+            imageViewCI.image = GetSwapchainImage(colorSwapchainInfo.swapchain, j);
+            imageViewCI.type = VR::ImageViewCreateInfo::Type::RTV;
+            imageViewCI.view = VR::ImageViewCreateInfo::View::TYPE_2D;
+            imageViewCI.format = colorSwapchainInfo.swapchainFormat;
+            imageViewCI.aspect = VR::ImageViewCreateInfo::Aspect::COLOR_BIT;
+            imageViewCI.baseMipLevel = 0;
+            imageViewCI.levelCount = 1;
+            imageViewCI.baseArrayLayer = 0;
+            imageViewCI.layerCount = 1;
+            colorSwapchainInfo.imageViews.push_back(CreateImageView(imageViewCI));
         }
         for (uint32_t j = 0; j < depthSwapchainImageCount; j++) {
-            auto image = GetSwapchainImage(depthSwapchainInfo.swapchain, j);
-            auto v = engine.global.createImageView(image, (VkFormat)depthSwapchainInfo.swapchainFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
-            depthSwapchainInfo.imageViews.push_back(v);
+            VR::ImageViewCreateInfo imageViewCI;
+            imageViewCI.image = GetSwapchainImage(depthSwapchainInfo.swapchain, j);
+            imageViewCI.type = VR::ImageViewCreateInfo::Type::DSV;
+            imageViewCI.view = VR::ImageViewCreateInfo::View::TYPE_2D;
+            imageViewCI.format = depthSwapchainInfo.swapchainFormat;
+            imageViewCI.aspect = VR::ImageViewCreateInfo::Aspect::DEPTH_BIT;
+            imageViewCI.baseMipLevel = 0;
+            imageViewCI.levelCount = 1;
+            imageViewCI.baseArrayLayer = 0;
+            imageViewCI.layerCount = 1;
+            depthSwapchainInfo.imageViews.push_back(CreateImageView(imageViewCI));
         }
     }
 }
@@ -701,7 +717,7 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
 
         // Rendering code to clear the color and depth image views.
         //m_graphicsAPI->BeginRendering();
-
+        ClearColor(renderLayerInfo.tr->commandBufferPresentBack, colorSwapchainInfo.imageViews[colorImageIndex], 0.17f, 0.77f, 0.17f, 1.00f);
         if (m_environmentBlendMode == XR_ENVIRONMENT_BLEND_MODE_OPAQUE) {
             // VR mode use a background color.
             //m_graphicsAPI->ClearColor(colorSwapchainInfo.imageViews[colorImageIndex], 0.17f, 0.17f, 0.17f, 1.00f);
@@ -710,33 +726,35 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
             // In AR mode make the background color black.
             //m_graphicsAPI->ClearColor(colorSwapchainInfo.imageViews[colorImageIndex], 0.00f, 0.00f, 0.00f, 1.00f);
         }
-        VkOffset3D blitSizeSrc;
-        blitSizeSrc.x = engine.getBackBufferExtent().width;
-        blitSizeSrc.y = engine.getBackBufferExtent().height;
-        blitSizeSrc.z = 1;
-        VkOffset3D blitSizeDst;
-        blitSizeDst.x = engine.win_width;
-        if (engine.isStereoPresentation()) {
-            blitSizeDst.x = engine.win_width / 2;
+        if (false) {
+            VkOffset3D blitSizeSrc;
+            blitSizeSrc.x = engine.getBackBufferExtent().width;
+            blitSizeSrc.y = engine.getBackBufferExtent().height;
+            blitSizeSrc.z = 1;
+            VkOffset3D blitSizeDst;
+            blitSizeDst.x = engine.win_width;
+            if (engine.isStereoPresentation()) {
+                blitSizeDst.x = engine.win_width / 2;
+            }
+            blitSizeDst.y = engine.win_height;
+            blitSizeDst.z = 1;
+            VkImageBlit imageBlitRegion{};
+            imageBlitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageBlitRegion.srcSubresource.layerCount = 1;
+            imageBlitRegion.srcOffsets[1] = blitSizeSrc;
+            imageBlitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageBlitRegion.dstSubresource.layerCount = 1;
+            imageBlitRegion.dstOffsets[1] = blitSizeDst;
+            auto tr = renderLayerInfo.tr;
+            vkCmdBlitImage(
+                tr->commandBufferPresentBack,
+                //tr.colorAttachment2.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, TODO
+                tr->colorAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                GetSwapchainImage(colorSwapchainInfo.swapchain, i), /*this->swapChainImages[imageIndex],*/ VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1, &imageBlitRegion,
+                VK_FILTER_LINEAR
+            );
         }
-        blitSizeDst.y = engine.win_height;
-        blitSizeDst.z = 1;
-        VkImageBlit imageBlitRegion{};
-        imageBlitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        imageBlitRegion.srcSubresource.layerCount = 1;
-        imageBlitRegion.srcOffsets[1] = blitSizeSrc;
-        imageBlitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        imageBlitRegion.dstSubresource.layerCount = 1;
-        imageBlitRegion.dstOffsets[1] = blitSizeDst;
-        auto tr = renderLayerInfo.tr;
-        vkCmdBlitImage(
-            tr->commandBufferPresentBack,
-            //tr.colorAttachment2.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, TODO
-            tr->colorAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-            GetSwapchainImage(colorSwapchainInfo.swapchain, i), /*this->swapChainImages[imageIndex],*/ VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            1, &imageBlitRegion,
-            VK_FILTER_LINEAR
-        );
         //m_graphicsAPI->ClearDepth(depthSwapchainInfo.imageViews[depthImageIndex], 1.0f);
 
         //m_graphicsAPI->EndRendering();
@@ -776,4 +794,72 @@ VR::~VR()
         Log("OpenXR instance destroyed" << endl);
     }
 
+}
+
+// helper - maybe remove later
+void VR::ClearColor(VkCommandBuffer cmdBuffer,  VkImageView imageView, float r, float g, float b, float a) {
+    const VR::ImageViewCreateInfo& imageViewCI = imageViewResources[(VkImageView)imageView];
+
+    VkClearColorValue clearColor;
+    clearColor.float32[0] = r;
+    clearColor.float32[1] = g;
+    clearColor.float32[2] = b;
+    clearColor.float32[3] = a;
+
+    VkImageSubresourceRange range;
+    range.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    range.baseMipLevel = imageViewCI.baseMipLevel;
+    range.levelCount = imageViewCI.levelCount;
+    range.baseArrayLayer = imageViewCI.baseArrayLayer;
+    range.layerCount = imageViewCI.layerCount;
+
+    VkImage vkImage = (VkImage)(imageViewCI.image);
+
+    VkImageMemoryBarrier imageBarrier;
+    imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    imageBarrier.pNext = nullptr;
+    imageBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    imageBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    imageBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    imageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imageBarrier.image = vkImage;
+    imageBarrier.subresourceRange = range;
+    vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, VkDependencyFlagBits(0), 0, nullptr, 0, nullptr, 1, &imageBarrier);
+
+    vkCmdClearColorImage(cmdBuffer, vkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &clearColor, 1, &range);
+
+    imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    imageBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+    imageBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    imageBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    imageBarrier.image = vkImage;
+    imageBarrier.subresourceRange = range;
+    vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VkDependencyFlagBits(0), 0, nullptr, 0, nullptr, 1, &imageBarrier);
+}
+
+VkImageView VR::CreateImageView(const ImageViewCreateInfo& imageViewCI) {
+    VkImageView imageView{};
+    VkImageViewCreateInfo vkImageViewCI;
+    vkImageViewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    vkImageViewCI.pNext = nullptr;
+    vkImageViewCI.flags = 0;
+    vkImageViewCI.image = (VkImage)imageViewCI.image;
+    vkImageViewCI.viewType = VkImageViewType(imageViewCI.view);
+    vkImageViewCI.format = (VkFormat)imageViewCI.format;
+    vkImageViewCI.components = { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A };
+    vkImageViewCI.subresourceRange.aspectMask = VkImageAspectFlagBits(imageViewCI.aspect);
+    vkImageViewCI.subresourceRange.baseMipLevel = imageViewCI.baseMipLevel;
+    vkImageViewCI.subresourceRange.levelCount = imageViewCI.levelCount;
+    vkImageViewCI.subresourceRange.baseArrayLayer = imageViewCI.baseArrayLayer;
+    vkImageViewCI.subresourceRange.layerCount = imageViewCI.layerCount;
+    if (vkCreateImageView(engine.global.device, &vkImageViewCI, nullptr, &imageView) != VK_SUCCESS) {
+        Error("failed to create texture image view!");
+    }
+
+    imageViewResources[imageView] = imageViewCI;
+    return imageView;
 }

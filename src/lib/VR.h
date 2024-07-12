@@ -100,7 +100,37 @@ private:
 	void DestroySession();
 	void DestroyDebugMessenger();
 	void DestroyInstance();
-
+	void ClearColor(VkCommandBuffer cmdBuffer, VkImageView imageView, float r, float g, float b, float a);
+	struct ImageViewCreateInfo {
+		void* image;
+		enum class Type : uint8_t {
+			RTV,
+			DSV,
+			SRV,
+			UAV
+		} type;
+		enum class View : uint8_t {
+			TYPE_1D,
+			TYPE_2D,
+			TYPE_3D,
+			TYPE_CUBE,
+			TYPE_1D_ARRAY,
+			TYPE_2D_ARRAY,
+			TYPE_CUBE_ARRAY,
+		} view;
+		int64_t format;
+		enum class Aspect : uint8_t {
+			COLOR_BIT = 0x01,
+			DEPTH_BIT = 0x02,
+			STENCIL_BIT = 0x04
+		} aspect;
+		uint32_t baseMipLevel;
+		uint32_t levelCount;
+		uint32_t baseArrayLayer;
+		uint32_t layerCount;
+	};
+	std::unordered_map<VkImageView, ImageViewCreateInfo> imageViewResources;
+	VkImageView CreateImageView(const ImageViewCreateInfo& imageViewCI);
 };
 #else
 class VR
