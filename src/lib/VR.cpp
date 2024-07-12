@@ -726,17 +726,14 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
             // In AR mode make the background color black.
             //m_graphicsAPI->ClearColor(colorSwapchainInfo.imageViews[colorImageIndex], 0.00f, 0.00f, 0.00f, 1.00f);
         }
-        if (false) {
+        if (true) {
             VkOffset3D blitSizeSrc;
             blitSizeSrc.x = engine.getBackBufferExtent().width;
             blitSizeSrc.y = engine.getBackBufferExtent().height;
             blitSizeSrc.z = 1;
             VkOffset3D blitSizeDst;
-            blitSizeDst.x = engine.win_width;
-            if (engine.isStereoPresentation()) {
-                blitSizeDst.x = engine.win_width / 2;
-            }
-            blitSizeDst.y = engine.win_height;
+            blitSizeDst.x = width;
+            blitSizeDst.y = height;
             blitSizeDst.z = 1;
             VkImageBlit imageBlitRegion{};
             imageBlitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -750,7 +747,7 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
                 tr->commandBufferPresentBack,
                 //tr.colorAttachment2.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, TODO
                 tr->colorAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                GetSwapchainImage(colorSwapchainInfo.swapchain, i), /*this->swapChainImages[imageIndex],*/ VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                GetSwapchainImage(colorSwapchainInfo.swapchain, colorImageIndex), /*this->swapChainImages[imageIndex],*/ VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 1, &imageBlitRegion,
                 VK_FILTER_LINEAR
             );
