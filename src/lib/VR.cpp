@@ -717,7 +717,7 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
 
         // Rendering code to clear the color and depth image views.
         //m_graphicsAPI->BeginRendering();
-        ClearColor(renderLayerInfo.tr->commandBufferPresentBack, colorSwapchainInfo.imageViews[colorImageIndex], 0.17f, 0.77f, 0.17f, 1.00f);
+        ClearColor(renderLayerInfo.tr->commandBufferPresentBack, colorSwapchainInfo.imageViews[colorImageIndex], 0.17f, 0.77f, 0.17f, 1.00f); // green
         if (m_environmentBlendMode == XR_ENVIRONMENT_BLEND_MODE_OPAQUE) {
             // VR mode use a background color.
             //m_graphicsAPI->ClearColor(colorSwapchainInfo.imageViews[colorImageIndex], 0.17f, 0.17f, 0.17f, 1.00f);
@@ -743,14 +743,30 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
             imageBlitRegion.dstSubresource.layerCount = 1;
             imageBlitRegion.dstOffsets[1] = blitSizeDst;
             auto tr = renderLayerInfo.tr;
+            // i == 0 is left eye. colorImageIndex is the swapchain image index we are currently working on
+            auto srcImage = i == 0 ? tr->colorAttachment.image : tr->colorAttachment2.image;
+            auto destImage = GetSwapchainImage(colorSwapchainInfo.swapchain, colorImageIndex);
+            //Log("Blitting from " << srcImage << " to image " << destImage << endl);
+            VkImageMemoryBarrier imageBarrier;
+            imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            imageBarrier.pNext = nullptr;
+            imageBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            imageBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+            imageBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            imageBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            imageBarrier.image = destImage;
+            imageBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+            vkCmdPipelineBarrier(tr->commandBufferPresentBack, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VkDependencyFlagBits(0), 0, nullptr, 0, nullptr, 1, &imageBarrier);
             vkCmdBlitImage(
                 tr->commandBufferPresentBack,
-                //tr.colorAttachment2.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, TODO
-                tr->colorAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                GetSwapchainImage(colorSwapchainInfo.swapchain, colorImageIndex), /*this->swapChainImages[imageIndex],*/ VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                destImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 1, &imageBlitRegion,
                 VK_FILTER_LINEAR
             );
+            //vkCmdPipelineBarrier(tr->commandBufferPresentBack, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VkDependencyFlagBits(0), 0, nullptr, 0, nullptr, 1, &imageBarrier);
         }
         //m_graphicsAPI->ClearDepth(depthSwapchainInfo.imageViews[depthImageIndex], 1.0f);
 
