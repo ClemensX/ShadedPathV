@@ -420,10 +420,10 @@ This means right handed with x (-1 to 1) to the right, y (-1 to 1) top to bottom
 
 ```C:\dev\vulkan>C:\dev\vulkan\libraries\vulkan\Bin\gfxrecon-replay.exe --paused gfxrecon_capture_frames_100_through_105_20211116T131643.gfxr```
 
-### Integrate Renderdoc
-* Download renderdoc
-* Add this extension https://github.com/baldurk/renderdoc-contrib/tree/main/baldurk/whereismydraw
-* See what it tells you
+### Integrate RenderDoc
+* Download/install renderdoc
+* Optionally add this extension https://github.com/baldurk/renderdoc-contrib/tree/main/baldurk/whereismydraw
+* Use ``engine.setFixedPhysicalDeviceIndex(0)`` in app. Needed because RenderDoc and Vulkan Profiles (vpGetPhysicalDeviceProfileSupport()) do not work together. Reasons unknown. Using this setting disables the physical device capabilities checks.
 
 ### glTF Model Handling
 
