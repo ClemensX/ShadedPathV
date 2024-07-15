@@ -158,6 +158,7 @@ std::vector<const char*> GlobalRendering::getRequiredExtensions() {
 
 void GlobalRendering::pickPhysicalDevice(bool listmode)
 {
+    //Log("picking physical device listmode: " << listmode << endl);
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(vkInstance, &deviceCount, nullptr);
     if (deviceCount == 0) {
@@ -165,26 +166,57 @@ void GlobalRendering::pickPhysicalDevice(bool listmode)
     }
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(vkInstance, &deviceCount, devices.data());
+    if (engine.getFixedPhysicalDeviceIndex() >= 0) {
+        if (listmode) {
+            Log("Cannot list physical devices if a fixed device is selected" << endl);
+            return;
+        }
+        assert(engine.getFixedPhysicalDeviceIndex() < devices.size());
+        physicalDevice = devices[engine.getFixedPhysicalDeviceIndex()];
+        assignGlobals(physicalDevice);
+        return;
+    }
     for (const auto& device : devices) {
+        Log("found physical device: " << device << endl);
         if (isDeviceSuitable(device, listmode)) {
             // check for same device (phys device may have been initialized by OpenXR
             if (physicalDevice != nullptr) {
                 if (physicalDevice != device) {
                     Error("Physical Device selected does not match pre-selected device from OpenXR");
                 } else {
-                    // all is fine - er already have our phys device
+                    // all is fine - we already have our phys device
                     return;
                 }
             }
             physicalDevice = device;
             break;
         }
+        if (!listmode) Log("   device not suitable" << endl);
     }
     if (listmode)
         return;
     if (physicalDevice == VK_NULL_HANDLE) {
         Error("failed to find a suitable GPU!");
     }
+    assignGlobals(physicalDevice);
+}
+
+void GlobalRendering::assignGlobals(VkPhysicalDevice device)
+{
+    VkPhysicalDeviceProperties deviceProperties;
+    VkPhysicalDeviceFeatures deviceFeatures;
+    vkGetPhysicalDeviceProperties(device, &deviceProperties);
+    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+    // query extension details (mesh shader)
+    VkPhysicalDeviceMeshShaderPropertiesEXT meshProperties = {};
+    meshProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
+    meshProperties.pNext = nullptr;
+    VkPhysicalDeviceProperties2 deviceProperties2 = {};
+    deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    deviceProperties2.pNext = &meshProperties;
+    vkGetPhysicalDeviceProperties2(device, &deviceProperties2);
+    physicalDeviceProperties = deviceProperties2;
+    familyIndices = findQueueFamilies(device);
 }
 
 bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
@@ -264,6 +296,7 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
         Log("Device does not support enough texture slots in descriptors" << endl);
         return false;
     }
+    if (!extensionsSupported) Log("WARNING required extensions are not supported. Maybe problem with vpGetPhysicalDeviceProfileSupport().\nConsider disabling physical device checking by setFixedPhysicalDeviceIndex(0)" << endl);
     return familyIndices.isComplete(engine.presentation.enabled) && extensionsSupported && swapChainAdequate && deviceFeatures.samplerAnisotropy && deviceFeatures.textureCompressionBC;
 }
 
@@ -374,13 +407,11 @@ uint32_t GlobalRendering::findMemoryTypeIndex(uint32_t typeBits, VkMemoryPropert
 
 void GlobalRendering::createLogicalDevice()
 {
-    QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
-
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value() };
-    uniqueQueueFamilies.insert({ indices.transferFamily.value() });
+    std::set<uint32_t> uniqueQueueFamilies = { familyIndices.graphicsFamily.value() };
+    uniqueQueueFamilies.insert({ familyIndices.transferFamily.value() });
     if (engine.presentation.enabled) {
-        uniqueQueueFamilies.insert({ indices.presentFamily.value() });
+        uniqueQueueFamilies.insert({ familyIndices.presentFamily.value() });
     }
 
     float queuePriority[] = {1.0f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f};
@@ -466,6 +497,15 @@ void GlobalRendering::createLogicalDevice()
     createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
     createInfo.ppEnabledExtensionNames = deviceExtensions.data();
     createInfo.enabledLayerCount = 0; // no longer used - validation layers handled in kvInstance
+    if (false) {
+        VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
+        bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+        bufferDeviceAddressFeatures.pNext = (void*)createInfo.pNext;
+        createInfo.pNext = &bufferDeviceAddressFeatures;
+        bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
+        bufferDeviceAddressFeatures.bufferDeviceAddressCaptureReplay = VK_TRUE;
+        bufferDeviceAddressFeatures.bufferDeviceAddressMultiDevice = VK_TRUE;
+    }
     if (USE_PROFILE_DYN_RENDERING) {
         VpDeviceCreateInfo vpCreateInfo{};
         vpCreateInfo.pCreateInfo = &createInfo;
@@ -491,9 +531,9 @@ void GlobalRendering::createLogicalDevice()
         }
     }
 
-    vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
+    vkGetDeviceQueue(device, familyIndices.graphicsFamily.value(), 0, &graphicsQueue);
     engine.util.debugNameObject((uint64_t)graphicsQueue, VK_OBJECT_TYPE_QUEUE, "MAIN GRAPHICS QUEUE");
-    vkGetDeviceQueue(device, indices.transferFamily.value(), 0, &transferQueue);
+    vkGetDeviceQueue(device, familyIndices.transferFamily.value(), 0, &transferQueue);
     engine.util.debugNameObject((uint64_t)transferQueue, VK_OBJECT_TYPE_QUEUE, "TRANSFER QUEUE");
     // we normally rely on 2 different queues for multithreading (mainly global updates and render threads)
     // enable single queue rendering with a warning
@@ -502,7 +542,7 @@ void GlobalRendering::createLogicalDevice()
         Log("WARNING: Your device does only offer a single queue. Expect severe performance penalties\n");
     }
     if (engine.presentation.enabled) {
-        engine.presentation.createPresentQueue(indices.presentFamily.value());
+        engine.presentation.createPresentQueue(familyIndices.presentFamily.value());
     }
     if (engine.isVR()) {
         engine.vr.create();
@@ -530,7 +570,7 @@ bool GlobalRendering::checkDeviceExtensionSupport(VkPhysicalDevice phys_device, 
         return false;
     }
     else if (supported != VK_TRUE) {
-        // profile is not supported at the device level
+        Log("Vulkan profile not supported: " << profile.profileName << std::endl);
         return false;
     }
     return true;

@@ -173,6 +173,7 @@ public:
     }
 private:
 	std::vector<const char*> deviceExtensions = {
+		//VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME
 		//VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
 		//VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
 		// debug_utils is only an instance extension
@@ -187,6 +188,7 @@ private:
 	std::vector<const char*> getRequiredExtensions();
 
 	// devices
+	void assignGlobals(VkPhysicalDevice phys);
 	void pickPhysicalDevice(bool listmode = false);
 	// list or select physical devices
 	bool isDeviceSuitable(VkPhysicalDevice device, bool listmode = false);

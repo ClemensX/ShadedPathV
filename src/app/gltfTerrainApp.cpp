@@ -10,17 +10,22 @@ void gltfTerrainApp::run()
     {
         // camera initialization
         CameraPositioner_FirstPerson positioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        CameraPositioner_HMD myhmdPositioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        hmdPositioner = &myhmdPositioner;
         positioner.setMaxSpeed(15.0f);
-        Camera camera;
+        Camera camera(&engine);
+        hmdPositioner->setCamera(&camera);
         camera.changePositioner(positioner);
+        //camera.changePositioner(*hmdPositioner);
         this->camera = &camera;
         this->positioner = &positioner;
         engine.enableKeyEvents();
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
-        engine.enableVR();
+        //engine.enableVR();
         engine.enableStereo();
         engine.enableStereoPresentation();
+        engine.setFixedPhysicalDeviceIndex(0); // needed for Renderdoc
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
@@ -34,8 +39,11 @@ void gltfTerrainApp::run()
 
         engine.setFramesInFlight(2);
         engine.registerApp(this);
+        if (engine.isVR()) {
+            engine.vr.SetPositioner(hmdPositioner);
+        }
         //engine.enableSound();
-        //engine.setThreadModeSingle();
+        engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("gltfTerrain");
@@ -43,10 +51,10 @@ void gltfTerrainApp::run()
         engine.textureStore.generateBRDFLUT();
         // add shaders used in this app
         shaders
-            .addShader(shaders.uiShader)
             .addShader(shaders.clearShader)
             .addShader(shaders.pbrShader)
             ;
+        if (enableUI) shaders.addShader(shaders.uiShader);
         if (enableLines) shaders.addShader(shaders.lineShader);
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         shaders.initActiveShaders();
@@ -124,12 +132,25 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
     }
     // pbr
     PBRShader::UniformBufferObject pubo{};
+    PBRShader::UniformBufferObject pubo2{};
     //mat4 modeltransform = glm::mat4(1.0f); //glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     mat4 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    pubo.model = modeltransform;
-    pubo.view = camera->getViewMatrix();
-    pubo.proj = camera->getProjectionNDC();
-    auto pubo2 = pubo;
+    if (engine.isVR()) {
+        pubo.model = modeltransform;
+        pubo.view = hmdPositioner->getViewMatrixLeft();
+        pubo.proj = hmdPositioner->getProjectionLeft();
+        pubo2.model = modeltransform;
+        pubo2.view = hmdPositioner->getViewMatrixRight();
+        pubo2.proj = hmdPositioner->getProjectionRight();
+    }
+    else {
+        pubo.model = modeltransform;
+        pubo.view = camera->getViewMatrix();
+        pubo.proj = camera->getProjectionNDC();
+        pubo2.model = modeltransform;
+        pubo2.view = camera->getViewMatrix();
+        pubo2.proj = camera->getProjectionNDC();
+    }
     engine.shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
     // change individual objects position:
     //auto grp = engine.objectStore.getGroup("knife_group");

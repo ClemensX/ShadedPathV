@@ -12,7 +12,7 @@ void LandscapeGenerator::run()
         CameraPositioner_FirstPerson positioner(glm::vec3(241.638f, 732.069f, 2261.37f), glm::vec3(-0.108512f, -0.289912f, -0.950882f), glm::vec3(0.0f, 1.0f, 0.0f));
         positioner.setMaxSpeed(25.0f);
         CameraPositioner_AutoMove autoMovePositioner(glm::vec3(1500.0f, 700.069f, 500.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 10.0f);
-        Camera camera;
+        Camera camera(&engine);
         camera.changePositioner(positioner);
         //Camera camera(autoMovePositioner);
         this->camera = &camera;

@@ -616,44 +616,16 @@ void VR::frameBegin(ThreadResources& tr)
     frameEndInfo.layerCount = static_cast<uint32_t>(renderLayerInfo.layers.size());
     frameEndInfo.layers = renderLayerInfo.layers.data();
     OPENXR_CHECK(xrEndFrame(session, &frameEndInfo), "Failed to end the XR Frame.");
-
-    //XrCompositionLayerProjectionView projViews[2] = { /*...*/ };
-    //XrCompositionLayerProjection layerProj{ XR_TYPE_COMPOSITION_LAYER_PROJECTION };
-
-    //if (tr.frameState.shouldRender) {
-    //    XrViewLocateInfo viewLocateInfo{ XR_TYPE_VIEW_LOCATE_INFO };
-    //    viewLocateInfo.displayTime = tr.frameState.predictedDisplayTime;
-    //    viewLocateInfo.space = localSpace;
-    //    viewLocateInfo.viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO;
-
-    //    XrViewState viewState{ XR_TYPE_VIEW_STATE };
-    //    XrView views[2] = { {XR_TYPE_VIEW}, {XR_TYPE_VIEW} };
-    //    uint32_t viewCountOutput;
-    //    CHECK_XRCMD(xrLocateViews(session, &viewLocateInfo, &viewState, static_cast<uint32_t>(xrConfigViews.size()), &viewCountOutput, views));
-
-    //    // ...
-    //    // Use viewState and frameState for scene render, and fill in projViews[2]
-    //    // ...
-
-    //    // Assemble composition layers structure
-    //    layerProj.layerFlags = XR_COMPOSITION_LAYER_BLEND_TEXTURE_SOURCE_ALPHA_BIT;
-    //    layerProj.space = localSpace;
-    //    layerProj.viewCount = 2;
-    //    layerProj.views = projViews;
-    //    tr.layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&layerProj));
-    //}
 }
 
 void VR::frameEnd(ThreadResources& tr)
 {
-    //// End frame and submit layers, even if layers is empty due to shouldRender = false
-    //XrFrameEndInfo frameEndInfo{ XR_TYPE_FRAME_END_INFO };
-    //frameEndInfo.displayTime = tr.frameState.predictedDisplayTime;
-    //frameEndInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
-    //frameEndInfo.layerCount = (uint32_t)tr.layers.size();
-    //frameEndInfo.layers = tr.layers.data();
-    //CHECK_XRCMD(xrEndFrame(session, &frameEndInfo));
-    //tr.layers.clear();
+}
+
+void xr2glm(const XrMatrix4x4f &xr, glm::mat4& matglm)
+{
+    glm::mat4 *ptr = (glm::mat4*)&xr;
+    matglm = *ptr;
 }
 
 bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
@@ -701,7 +673,7 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
         //GraphicsAPI::Viewport viewport = { 0.0f, 0.0f, (float)width, (float)height, 0.0f, 1.0f };
         //GraphicsAPI::Rect2D scissor = { {(int32_t)0, (int32_t)0}, {width, height} };
         float nearZ = 0.05f;
-        float farZ = 100.0f;
+        float farZ = 4000.0f;
 
         // Fill out the XrCompositionLayerProjectionView structure specifying the pose and fov from the view.
         // This also associates the swapchain image with this layer projection view.
@@ -714,6 +686,32 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
         renderLayerInfo.layerProjectionViews[i].subImage.imageRect.extent.width = static_cast<int32_t>(width);
         renderLayerInfo.layerProjectionViews[i].subImage.imageRect.extent.height = static_cast<int32_t>(height);
         renderLayerInfo.layerProjectionViews[i].subImage.imageArrayIndex = 0;  // Useful for multiview rendering.
+        //Log("View " << i << " pose " << views[i].pose.position.x << " " << views[i].pose.position.y << " " << views[i].pose.position.z << endl);
+        auto pose = views[i].pose;
+        glm::vec3 pos(pose.position.x, pose.position.y+20, pose.position.z);
+        //glm::quat ori(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
+
+        ////glm::quat ori(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
+        //glm::quat ori(pose.orientation.w, -pose.orientation.x, -pose.orientation.y, -pose.orientation.z);
+        glm::quat ori(-pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
+
+        //glm::quat ori(pose.orientation.w, pose.orientation.x, pose.orientation.z, pose.orientation.y);
+        //glm::quat ori(pose.orientation.w, pose.orientation.y, pose.orientation.x, pose.orientation.z);
+        //glm::quat ori(pose.orientation.w, pose.orientation.y, pose.orientation.z, pose.orientation.x);
+        //glm::quat ori(pose.orientation.w, pose.orientation.z, pose.orientation.x, pose.orientation.y);
+        //glm::quat ori(pose.orientation.w, pose.orientation.z, pose.orientation.y, pose.orientation.x);
+        XrMatrix4x4f proj;
+        XrMatrix4x4f_CreateProjectionFov(&proj, VULKAN, views[i].fov, nearZ, farZ);
+        XrMatrix4x4f toView;
+        XrVector3f scale1m{ 1.0f, 1.0f, 1.0f };
+        glm::mat4 projglm;
+        glm::mat4 viewglm;
+        XrMatrix4x4f_CreateTranslationRotationScale(&toView, &views[i].pose.position, &views[i].pose.orientation, &scale1m);
+        if (/**/true /*i == 0*/) {
+            xr2glm(proj, projglm);
+            xr2glm(toView, viewglm);
+            positioner->update(i, pos, ori, projglm, viewglm);
+        }
 
         // Rendering code to clear the color and depth image views.
         //m_graphicsAPI->BeginRendering();

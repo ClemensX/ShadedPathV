@@ -61,3 +61,7 @@ make heightmap usage in billboard shader truly dynamic
 terrain:
   from world: create vertex and index buffers with texture coords
   in shader: use heightmap for y
+
+debug terrain HMD display:
+proj l / r
+0.7 0 -0.18  0.7 0 0.18

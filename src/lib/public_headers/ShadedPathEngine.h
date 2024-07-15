@@ -202,6 +202,13 @@ public:
         this->maxTextures = maxTextures;
     }
 
+    void setFixedPhysicalDeviceIndex(int i) {
+        fixedPhysicalDeviceIndex = i;
+    }
+
+    int getFixedPhysicalDeviceIndex() {
+        return fixedPhysicalDeviceIndex;
+    }
     // initialize Vulkan and other libraries, also internal lists and instances
     // no config methods after calling init
     void init(std::string appname);
@@ -295,6 +302,7 @@ private:
     bool meshShaderEnabled = false;
     bool soundEnabled = false;
     bool singleQueueMode = false;
+    int fixedPhysicalDeviceIndex = -1;
     World* world = nullptr;
     // backbuffer size:
     VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);

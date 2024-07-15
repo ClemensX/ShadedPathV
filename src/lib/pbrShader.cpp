@@ -239,6 +239,7 @@ void PBRShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResource
 	}
 	pbrPushConstants pushConstants;
 	pushConstants.mode = obj->mesh->type == MeshType::MESH_TYPE_NO_TEXTURES ? 1 : 0;
+	//if (isRightEye) pushConstants.mode = 2;
 	vkCmdPushConstants(commandBuffer, str.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pbrPushConstants), &pushConstants);
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);
 }
@@ -247,10 +248,15 @@ void PBRShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unifo
 	auto& str = tr.pbrResources; // shortcut to pbr resources
 	// copy ubo to GPU:
 	void* data;
-	vkMapMemory(device, str.uniformBufferMemory, 0, sizeof(ubo), 0, &data);
-	memcpy(data, &ubo, sizeof(ubo));
-	vkUnmapMemory(device, str.uniformBufferMemory);
-	if (engine->isStereo()) {
+	//memcpy(&ubo2.proj, &ubo.proj, sizeof(ubo.proj)); // left wrong, right ok if commented
+	if (true) {
+		ubo.model[0][0] = -1.0f;
+		vkMapMemory(device, str.uniformBufferMemory, 0, sizeof(ubo), 0, &data);
+		memcpy(data, &ubo, sizeof(ubo));
+		vkUnmapMemory(device, str.uniformBufferMemory);
+	}
+	if (engine->isStereo() && true) {
+		ubo2.model[0][0] = 1.0f;
 		vkMapMemory(device, str.uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
 		memcpy(data, &ubo2, sizeof(ubo2));
 		vkUnmapMemory(device, str.uniformBufferMemory2);

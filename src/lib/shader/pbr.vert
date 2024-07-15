@@ -40,6 +40,17 @@ void main() {
 		//fragColor0 = vec4(0, 1, 0, 1);
         fragColor0 = inColor0;
 	}
+    float val = ubo.model[0][0];
+    if (val < 0.0 ) { // left
+        fragColor0 = vec4(1, 0, 0, 1);
+        mode_out = 1;
+		//debugPrintfEXT("pbr render proj: %f\n", val);
+	} else if (val == 0.0) {
+        fragColor0 = vec4(0, 0, 1, 1);
+    } else {
+        fragColor0 = vec4(0, 1, 0, 1);
+    }
+    //fragColor0 = inColor0;
     //debugPrintfEXT("pbr render mode: %d\n", push.mode);
     //debugPrintfEXT("PBR:[0,0] [3,0] %f %f %f\n", uboInstance.model[0][0], uboInstance.model[3][0], uboInstance.model[0][2]);
     //debugPrintfEXT("PBR dynamic model matrix: %f %f %f\n", uboInstance.model[0][0], uboInstance.model[0][1], uboInstance.model[0][2]);

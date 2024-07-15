@@ -1,6 +1,16 @@
 #pragma once
 #if defined(OPENXR_AVAILABLE)
 // OpenXR VR implementation, see https://github.com/KhronosGroup/OpenXR-SDK-Source.git
+enum GraphicsAPI_Type : uint8_t {
+	UNKNOWN,
+	D3D11,
+	D3D12,
+	OPENGL,
+	OPENGL_ES,
+	VULKAN
+};
+// include xr linear algebra for XrVector and XrMatrix classes.
+#include "xr_linear_algebra.h"
 class VR
 {
 public:
@@ -45,6 +55,15 @@ public:
 		COLOR,
 		DEPTH
 	};
+	// Getter for positioner
+	CameraPositioner_HMD* GetPositioner() const {
+		return positioner;
+	}
+
+	// Setter for positioner
+	void SetPositioner(CameraPositioner_HMD* newPositioner) {
+		positioner = newPositioner;
+	}
 private:
 	ShadedPathEngine& engine;
 	XrInstance instance = nullptr;
@@ -131,6 +150,7 @@ private:
 	};
 	std::unordered_map<VkImageView, ImageViewCreateInfo> imageViewResources;
 	VkImageView CreateImageView(const ImageViewCreateInfo& imageViewCI);
+	CameraPositioner_HMD* positioner = nullptr;
 };
 #else
 class VR

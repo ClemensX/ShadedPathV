@@ -12,11 +12,13 @@ public:
 
 private:
     bool enableLines = false;
+    bool enableUI = false;
     ShadedPathEngine engine;
     Shaders& shaders = engine.shaders;
     void updatePerFrame(ThreadResources& tr);
     Camera* camera;
     CameraPositioner_FirstPerson* positioner;
+    CameraPositioner_HMD* hmdPositioner;
     InputState input;
     World world;
     WorldObject *worldObject = nullptr;
