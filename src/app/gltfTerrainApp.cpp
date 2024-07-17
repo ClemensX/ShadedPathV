@@ -22,7 +22,7 @@ void gltfTerrainApp::run()
         engine.enableKeyEvents();
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
-        //engine.enableVR();
+        engine.enableVR();
         engine.enableStereo();
         engine.enableStereoPresentation();
         engine.setFixedPhysicalDeviceIndex(0); // needed for Renderdoc
@@ -151,7 +151,7 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
         pubo2.model = modeltransform;
         pubo2.view = camera->getViewMatrix();
         pubo2.proj = camera->getProjectionNDC();
-        pubo2.model[0][0] = -1.0f;
+        //pubo2.model[0][0] = -1.0f;
     }
     engine.shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
     // change individual objects position:
