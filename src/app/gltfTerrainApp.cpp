@@ -43,7 +43,7 @@ void gltfTerrainApp::run()
             engine.vr.SetPositioner(hmdPositioner);
         }
         //engine.enableSound();
-        engine.setThreadModeSingle();
+        //engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("gltfTerrain");
@@ -165,18 +165,17 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
             modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(-0.1f, 0.0f, 0.0f));
             // test overwriting default textures used:
             //buf->indexes.baseColor = 0; // set basecolor to brdflut texture
-            modeltransform = wo->mesh->baseTransform;
             uiVerticesTotal = wo->mesh->vertices.size();
             uiVerticesSqrt = (unsigned long)sqrt(uiVerticesTotal);
+            // scale to 400%:
+            //modeltransform = scale(mat4(1.0f), vec3(4.01f, 4.01f, 4.01f));
+            // scale from gltf:
+            modeltransform = wo->mesh->baseTransform;
         } else {
             modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.2f, 0.0f, 0.0f));
         }
         // test model transforms:
         if (wo->mesh->id.starts_with("Grass")) {
-            // scale to 1%:
-            //modeltransform = scale(mat4(1.0f), vec3(0.01f, 0.01f, 0.01f));
-            // scale from gltf:
-            modeltransform = wo->mesh->baseTransform;
         }
         buf->model = modeltransform;
         if (engine.isDedicatedRenderUpdateThread(tr)) {

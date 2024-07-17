@@ -587,7 +587,8 @@ void VR::frameBegin(ThreadResources& tr)
 {
     // Wait for a new frame.
     XrFrameWaitInfo frameWaitInfo{ XR_TYPE_FRAME_WAIT_INFO };
-    CHECK_XRCMD(xrWaitFrame(session, &frameWaitInfo, &tr.frameState));
+    CHECK_XRCMD(xrWaitFrame(session, &frameWaitInfo, &frameState));
+    Log("Frame wait " << frameState.predictedDisplayTime << endl);
 
     // Begin frame immediately before GPU work
     XrFrameBeginInfo frameBeginInfo{ XR_TYPE_FRAME_BEGIN_INFO };
@@ -596,11 +597,11 @@ void VR::frameBegin(ThreadResources& tr)
     // Variables for rendering and layer composition.
     bool rendered = false;
     RenderLayerInfo renderLayerInfo;
-    renderLayerInfo.predictedDisplayTime = tr.frameState.predictedDisplayTime;
+    renderLayerInfo.predictedDisplayTime = frameState.predictedDisplayTime;
 
     // Check that the session is active and that we should render.
     bool sessionActive = (sessionState == XR_SESSION_STATE_SYNCHRONIZED || sessionState == XR_SESSION_STATE_VISIBLE || sessionState == XR_SESSION_STATE_FOCUSED);
-    if (sessionActive && tr.frameState.shouldRender) {
+    if (sessionActive && frameState.shouldRender) {
         // Render the stereo image and associate one of swapchain images with the XrCompositionLayerProjection structure.
         renderLayerInfo.tr = &tr;
         rendered = RenderLayer(renderLayerInfo);
@@ -611,7 +612,7 @@ void VR::frameBegin(ThreadResources& tr)
 
     // Tell OpenXR that we are finished with this frame; specifying its display time, environment blending and layers.
     XrFrameEndInfo frameEndInfo{ XR_TYPE_FRAME_END_INFO };
-    frameEndInfo.displayTime = tr.frameState.predictedDisplayTime;
+    frameEndInfo.displayTime = frameState.predictedDisplayTime;
     frameEndInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
     frameEndInfo.layerCount = static_cast<uint32_t>(renderLayerInfo.layers.size());
     frameEndInfo.layers = renderLayerInfo.layers.data();

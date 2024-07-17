@@ -85,8 +85,8 @@ public:
 
 	// VR
 #   if defined(OPENXR_AVAILABLE)	
-	  XrFrameState frameState{ XR_TYPE_FRAME_STATE };
-	  std::vector<XrCompositionLayerBaseHeader*> layers;
+	  //XrFrameState frameState{ XR_TYPE_FRAME_STATE };
+	  //std::vector<XrCompositionLayerBaseHeader*> layers;
 #   endif
 
 	// Debugging

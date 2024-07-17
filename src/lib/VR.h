@@ -151,6 +151,7 @@ private:
 	std::unordered_map<VkImageView, ImageViewCreateInfo> imageViewResources;
 	VkImageView CreateImageView(const ImageViewCreateInfo& imageViewCI);
 	CameraPositioner_HMD* positioner = nullptr;
+	XrFrameState frameState{ XR_TYPE_FRAME_STATE };
 };
 #else
 class VR
