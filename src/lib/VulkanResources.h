@@ -47,6 +47,7 @@ struct VulkanHandoverResources {
 	VkImageView imageView = nullptr;
 	VkBuffer dynBuffer = nullptr;
 	VkDeviceSize dynBufferSize = 0L;
+	std::string debugBaseName = "no_name_given";
 };
 
 

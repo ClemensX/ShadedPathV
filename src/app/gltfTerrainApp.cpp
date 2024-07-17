@@ -147,9 +147,11 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
         pubo.model = modeltransform;
         pubo.view = camera->getViewMatrix();
         pubo.proj = camera->getProjectionNDC();
+        //pubo.model[0][0] = -1.0f;    
         pubo2.model = modeltransform;
         pubo2.view = camera->getViewMatrix();
         pubo2.proj = camera->getProjectionNDC();
+        pubo2.model[0][0] = -1.0f;
     }
     engine.shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
     // change individual objects position:

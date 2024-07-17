@@ -157,10 +157,14 @@ void VulkanResources::createThreadResources(VulkanHandoverResources& hdv)
     if ( res != VK_SUCCESS) {
         Error("failed to allocate descriptor sets!");
     }
+    string dname = hdv.debugBaseName + " Descriptor Set 1";
+    engine->util.debugNameObjectDescriptorSet(*hdv.descriptorSet, dname.c_str());
     if (engine->isStereo()) {
         if (vkAllocateDescriptorSets(engine->global.device, &allocInfo, hdv.descriptorSet2) != VK_SUCCESS) {
             Error("failed to allocate descriptor sets!");
         }
+        string dname = hdv.debugBaseName + " Descriptor Set 1";
+        engine->util.debugNameObjectDescriptorSet(*hdv.descriptorSet2, dname.c_str());
     }
 
     for (auto& d : def) {
@@ -201,8 +205,12 @@ void VulkanResources::addThreadResourcesForElement(VulkanResourceElement el, Vul
         descSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         descSet.descriptorCount = 1;
         descSet.pBufferInfo = &bufferInfos[bufferInfos.size() - 1];
+        if (engine->isStereo()) {
+            descSet.pBufferInfo = &bufferInfos[bufferInfos.size() - 2];
+        }
         descriptorSets.push_back(descSet);
         if (engine->isStereo()) {
+            descSet.pBufferInfo = &bufferInfos[bufferInfos.size() - 1];
             descSet.dstSet = *hdv.descriptorSet2;
             descriptorSets.push_back(descSet);
         }

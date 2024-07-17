@@ -35,20 +35,25 @@ layout(push_constant) uniform pbrPushConstants {
 
 void main() {
     mode_out = push.mode;
+//    fragColor0 = vec4(1, 0, 0, 1);
+    mode_out = 1;
+//    gl_Position = ubo.proj * ubo.view * uboInstance.model * vec4(inPosition, 1.0);
+//    return;
     if (push.mode == 1) {
         //debugPrintfEXT("PBR vert color: %f %f %f %f\n", inColor0.x, inColor0.y, inColor0.z, inColor0.w);
 		//fragColor0 = vec4(0, 1, 0, 1);
-        fragColor0 = inColor0;
+        //fragColor0 = inColor0;
 	}
     float val = ubo.model[0][0];
     if (val < 0.0 ) { // left
         fragColor0 = vec4(1, 0, 0, 1);
-        mode_out = 1;
-		//debugPrintfEXT("pbr render proj: %f\n", val);
+		//debugPrintfEXT("smaller\n");
 	} else if (val == 0.0) {
         fragColor0 = vec4(0, 0, 1, 1);
+		debugPrintfEXT("equal\n");
     } else {
         fragColor0 = vec4(0, 1, 0, 1);
+		debugPrintfEXT("bigger\n");
     }
     //fragColor0 = inColor0;
     //debugPrintfEXT("pbr render mode: %d\n", push.mode);

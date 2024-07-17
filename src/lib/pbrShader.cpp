@@ -58,6 +58,7 @@ void PBRShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	handover.descriptorSet2 = &str.descriptorSet2;
 	handover.dynBuffer = str.dynamicUniformBuffer;
 	handover.dynBufferSize = sizeof(DynamicUniformBufferObject);
+	handover.debugBaseName = engine->util.createDebugName("ThreadResources.pbrShader", tr);
 	resources.createThreadResources(handover);
 
 	//createDescriptorSets(tr);
@@ -232,15 +233,17 @@ void PBRShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResource
 	uint32_t objId = obj->objectNum;
 	uint32_t dynamicOffset = static_cast<uint32_t>(objId * alignedDynamicUniformBufferSize);
 	if (!isRightEye) {
+		// left eye
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet, 1, &dynamicOffset);
-	}
-	else {
+	} else {
+		// right eye
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet2, 1, &dynamicOffset);
 	}
 	pbrPushConstants pushConstants;
 	pushConstants.mode = obj->mesh->type == MeshType::MESH_TYPE_NO_TEXTURES ? 1 : 0;
 	//if (isRightEye) pushConstants.mode = 2;
 	vkCmdPushConstants(commandBuffer, str.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pbrPushConstants), &pushConstants);
+	//if (isRightEye) vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);
 }
 
@@ -250,13 +253,11 @@ void PBRShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unifo
 	void* data;
 	//memcpy(&ubo2.proj, &ubo.proj, sizeof(ubo.proj)); // left wrong, right ok if commented
 	if (true) {
-		ubo.model[0][0] = -1.0f;
 		vkMapMemory(device, str.uniformBufferMemory, 0, sizeof(ubo), 0, &data);
 		memcpy(data, &ubo, sizeof(ubo));
 		vkUnmapMemory(device, str.uniformBufferMemory);
 	}
 	if (engine->isStereo() && true) {
-		ubo2.model[0][0] = 1.0f;
 		vkMapMemory(device, str.uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
 		memcpy(data, &ubo2, sizeof(ubo2));
 		vkUnmapMemory(device, str.uniformBufferMemory2);
