@@ -583,22 +583,28 @@ void VR::pollEvent()
     }
 }
 
-void VR::frameBegin(ThreadResources& tr)
+#define XR_MILLISECONDS_TO_NANOSECONDS(ms) ((ms) * 1000000LL)
+
+void VR::frameBegin()
 {
     // Wait for a new frame.
     XrFrameWaitInfo frameWaitInfo{ XR_TYPE_FRAME_WAIT_INFO };
     CHECK_XRCMD(xrWaitFrame(session, &frameWaitInfo, &frameState));
-    Log("Frame wait " << frameState.predictedDisplayTime << endl);
+    //Log("Frame wait " << frameState.predictedDisplayTime << endl);
+    frameState.predictedDisplayTime = frameState.predictedDisplayTime + XR_MILLISECONDS_TO_NANOSECONDS(2);
 
     // Begin frame immediately before GPU work
     XrFrameBeginInfo frameBeginInfo{ XR_TYPE_FRAME_BEGIN_INFO };
     CHECK_XRCMD(xrBeginFrame(session, &frameBeginInfo));
+    RenderLayerInfo newRenderLayerInfo{};
+    renderLayerInfo = newRenderLayerInfo;
+    renderLayerInfo.predictedDisplayTime = frameState.predictedDisplayTime;
+}
 
+void VR::frameEnd(ThreadResources& tr)
+{
     // Variables for rendering and layer composition.
     bool rendered = false;
-    RenderLayerInfo renderLayerInfo;
-    renderLayerInfo.predictedDisplayTime = frameState.predictedDisplayTime;
-
     // Check that the session is active and that we should render.
     bool sessionActive = (sessionState == XR_SESSION_STATE_SYNCHRONIZED || sessionState == XR_SESSION_STATE_VISIBLE || sessionState == XR_SESSION_STATE_FOCUSED);
     if (sessionActive && frameState.shouldRender) {
@@ -617,10 +623,6 @@ void VR::frameBegin(ThreadResources& tr)
     frameEndInfo.layerCount = static_cast<uint32_t>(renderLayerInfo.layers.size());
     frameEndInfo.layers = renderLayerInfo.layers.data();
     OPENXR_CHECK(xrEndFrame(session, &frameEndInfo), "Failed to end the XR Frame.");
-}
-
-void VR::frameEnd(ThreadResources& tr)
-{
 }
 
 void xr2glm(const XrMatrix4x4f &xr, glm::mat4& matglm)
@@ -689,7 +691,7 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
         renderLayerInfo.layerProjectionViews[i].subImage.imageArrayIndex = 0;  // Useful for multiview rendering.
         //Log("View " << i << " pose " << views[i].pose.position.x << " " << views[i].pose.position.y << " " << views[i].pose.position.z << endl);
         auto pose = views[i].pose;
-        glm::vec3 pos(pose.position.x, pose.position.y+20, pose.position.z);
+        glm::vec3 pos(pose.position.x, pose.position.y, pose.position.z);
         //glm::quat ori(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
 
         ////glm::quat ori(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
@@ -708,6 +710,8 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
         glm::mat4 projglm;
         glm::mat4 viewglm;
         XrMatrix4x4f_CreateTranslationRotationScale(&toView, &views[i].pose.position, &views[i].pose.orientation, &scale1m);
+        XrMatrix4x4f view;
+        //XrMatrix4x4f_InvertRigidBody(&view, &toView);
         if (/**/true /*i == 0*/) {
             xr2glm(proj, projglm);
             xr2glm(toView, viewglm);

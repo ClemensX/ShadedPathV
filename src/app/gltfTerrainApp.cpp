@@ -10,13 +10,17 @@ void gltfTerrainApp::run()
     {
         // camera initialization
         CameraPositioner_FirstPerson positioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        CameraPositioner_HMD myhmdPositioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        CameraPositioner_HMD myhmdPositioner(glm::vec3(0.0f, 20.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         hmdPositioner = &myhmdPositioner;
         positioner.setMaxSpeed(15.0f);
         Camera camera(&engine);
         hmdPositioner->setCamera(&camera);
-        camera.changePositioner(positioner);
-        //camera.changePositioner(*hmdPositioner);
+        //camera.changePositioner(positioner);
+        camera.changePositioner(*hmdPositioner);
+        auto p = hmdPositioner->getPosition();
+        hmdPositioner->setPosition(glm::vec3(900.0f, p.y, 1.0f));
+        p = hmdPositioner->getPosition();
+        Log("HMD position: " << p.x << " / " << p.y << " / " << p.z << endl);
         this->camera = &camera;
         this->positioner = &positioner;
         engine.enableKeyEvents();

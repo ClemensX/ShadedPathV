@@ -48,7 +48,7 @@ public:
 
 	// threaded frame generation
 	void pollEvent();
-	void frameBegin(ThreadResources& tr);
+	void frameBegin();
 	void frameEnd(ThreadResources& tr);
 	DebugOutput debugOutput;  // This redirects std::cerr and std::cout to the IDE's output or Android Studio's logcat.
 	enum class SwapchainType : uint8_t {
@@ -152,6 +152,7 @@ private:
 	VkImageView CreateImageView(const ImageViewCreateInfo& imageViewCI);
 	CameraPositioner_HMD* positioner = nullptr;
 	XrFrameState frameState{ XR_TYPE_FRAME_STATE };
+	RenderLayerInfo renderLayerInfo;
 };
 #else
 class VR
@@ -174,7 +175,7 @@ class VR
 	void createInstanceInternal(){};
 
 	// threaded frame generation
-	void frameBegin(ThreadResources& tr){};
+	void frameBegin(){};
 	void frameEnd(ThreadResources& tr){};
 	private:
 		ShadedPathEngine& engine;

@@ -334,6 +334,14 @@ void Presentation::initBackBufferPresentation()
     }
 }
 
+void Presentation::beginPresentFrame()
+{
+    if (engine.isVR()) {
+        engine.vr.pollEvent();
+        engine.vr.frameBegin();
+    }
+}
+
 void Presentation::presentBackBufferImage(ThreadResources& tr)
 {
     if (!enabled) return;
@@ -434,6 +442,10 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     imageBlitRegion.dstSubresource.layerCount = 1;
     imageBlitRegion.dstOffsets[1] = blitSizeDst;
 
+    if (engine.isVR()) {
+        engine.vr.frameEnd(tr);
+    }
+
     vkCmdBlitImage(
         tr.commandBufferPresentBack,
         //tr.colorAttachment2.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, TODO
@@ -458,12 +470,6 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
             1, &imageBlitRegion,
             VK_FILTER_LINEAR
         );
-    }
-
-    if (engine.isVR()) {
-        engine.vr.pollEvent();
-        engine.vr.frameBegin(tr);
-        engine.vr.frameEnd(tr);
     }
 
     VkImageMemoryBarrier dstBarrier2{};

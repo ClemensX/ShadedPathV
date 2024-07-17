@@ -266,6 +266,7 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
     LogF("run QueueSubmit start " << endl);
     //pipeline_instance->setRunning(true);
     while (engine_instance->isShutdown() == false) {
+        engine_instance->presentation.beginPresentFrame();
         auto v = engine_instance->queue.pop();
         if (v == nullptr) {
             LogF("engine shutdown" << endl);

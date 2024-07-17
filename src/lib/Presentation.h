@@ -43,6 +43,8 @@ public:
 	// prepare command buffer for copy of back buffer to swap chain images
 	void initBackBufferPresentation();
 	void initBackBufferPresentationSingle(ThreadResources &res);
+	// Thread independent preparations, e.g. OpenXR beginFrame()
+	void beginPresentFrame();
 	// perform the copy and display the image in app window
 	void presentBackBufferImage(ThreadResources& tr);
 

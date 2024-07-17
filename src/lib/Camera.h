@@ -330,17 +330,20 @@ public:
 		//cameraPosition.z = pos.z + add;
 		//camera->saveProjection(proj);
 		//viewMatrix = view;
-
-		const glm::mat4 t = glm::translate(glm::mat4(1.0f), -pos);
+		auto finalPos = cameraPosition + pos;
+		const glm::mat4 t = glm::translate(glm::mat4(1.0f), -finalPos);
 		const glm::mat4 r = glm::mat4_cast(normori);
-		auto v = r * t;
+		auto v = r * t; // ok, but slurs
+		//auto viewProj = proj * view;
 		if (viewNum == 0) {
 			viewMatrixLeft = v;
 			projectionLeft = proj;
+			//viewMatrixLeft = view;
 		}
 		else {
 			viewMatrixRight = v;
 			projectionRight = proj;
+			//viewMatrixRight = view;
 		}
 	}
 
