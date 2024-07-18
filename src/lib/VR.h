@@ -100,8 +100,15 @@ private:
 		XrCompositionLayerProjection layerProjection = { XR_TYPE_COMPOSITION_LAYER_PROJECTION };
 		std::vector<XrCompositionLayerProjectionView> layerProjectionViews;
 		ThreadResources* tr = nullptr;
+		uint32_t viewCount = 0;
+		uint32_t width = 0;
+		uint32_t height = 0;
+		uint32_t colorImageIndex = 0;
+		bool renderStarted = false;	
+		//XrSwapchain colorSwapchain = XR_NULL_HANDLE;
 	};
-	bool RenderLayer(RenderLayerInfo& layerInfo);
+	bool RenderLayerPrepare(RenderLayerInfo& layerInfo);
+	bool RenderLayerCopyRenderedImage(RenderLayerInfo& layerInfo);
 	// init calls
 	void createSystem();
 	void GetEnvironmentBlendModes();

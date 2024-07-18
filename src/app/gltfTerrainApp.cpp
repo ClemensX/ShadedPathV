@@ -48,7 +48,7 @@ void gltfTerrainApp::run()
             engine.vr.SetPositioner(hmdPositioner);
         }
         //engine.enableSound();
-        //engine.setThreadModeSingle();
+        engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("gltfTerrain");
@@ -125,6 +125,7 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
         return;
     }
     double deltaSeconds = seconds - old_seconds;
+    engine.presentation.beginPresentFrame();
     positioner->update(deltaSeconds, input.pos, input.pressedLeft);
     old_seconds = seconds;
     // lines

@@ -608,22 +608,26 @@ void VR::frameBegin()
     RenderLayerInfo newRenderLayerInfo{};
     renderLayerInfo = newRenderLayerInfo;
     renderLayerInfo.predictedDisplayTime = frameState.predictedDisplayTime;
-}
-
-void VR::frameEnd(ThreadResources& tr)
-{
     // Variables for rendering and layer composition.
     bool rendered = false;
     // Check that the session is active and that we should render.
     bool sessionActive = (sessionState == XR_SESSION_STATE_SYNCHRONIZED || sessionState == XR_SESSION_STATE_VISIBLE || sessionState == XR_SESSION_STATE_FOCUSED);
     if (sessionActive && frameState.shouldRender) {
         // Render the stereo image and associate one of swapchain images with the XrCompositionLayerProjection structure.
-        renderLayerInfo.tr = &tr;
-        rendered = RenderLayer(renderLayerInfo);
+        renderLayerInfo.renderStarted = RenderLayerPrepare(renderLayerInfo);
+    }
+}
+
+void VR::frameEnd(ThreadResources& tr)
+{
+    renderLayerInfo.tr = &tr;
+    if (renderLayerInfo.renderStarted) {
+        bool rendered = RenderLayerCopyRenderedImage(renderLayerInfo);
         if (rendered) {
             renderLayerInfo.layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&renderLayerInfo.layerProjection));
         }
     }
+    renderLayerInfo.renderStarted = false;
 
     // Tell OpenXR that we are finished with this frame; specifying its display time, environment blending and layers.
     XrFrameEndInfo frameEndInfo{ XR_TYPE_FRAME_END_INFO };
@@ -640,7 +644,7 @@ void xr2glm(const XrMatrix4x4f &xr, glm::mat4& matglm)
     matglm = *ptr;
 }
 
-bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
+bool VR::RenderLayerPrepare(RenderLayerInfo& renderLayerInfo)
 {
     // Locate the views from the view configuration within the (reference) space at the display time.
     std::vector<XrView> views(m_viewConfigurationViews.size(), { XR_TYPE_VIEW });
@@ -656,7 +660,7 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
         XR_TUT_LOG("Failed to locate Views.");
         return false;
     }
-
+    renderLayerInfo.viewCount = viewCount;  
     // Resize the layer projection views to match the view count. The layer projection views are used in the layer projection.
     renderLayerInfo.layerProjectionViews.resize(viewCount, { XR_TYPE_COMPOSITION_LAYER_PROJECTION_VIEW });
 
@@ -673,6 +677,8 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
         XrSwapchainImageAcquireInfo acquireInfo{ XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO };
         OPENXR_CHECK(xrAcquireSwapchainImage(colorSwapchainInfo.swapchain, &acquireInfo, &colorImageIndex), "Failed to acquire Image from the Color Swapchian");
         //OPENXR_CHECK(xrAcquireSwapchainImage(depthSwapchainInfo.swapchain, &acquireInfo, &depthImageIndex), "Failed to acquire Image from the Depth Swapchian");
+        renderLayerInfo.colorImageIndex = colorImageIndex;
+        //renderLayerInfo.colorSwapchain = colorSwapchainInfo.swapchain;
 
         XrSwapchainImageWaitInfo waitInfo = { XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO };
         waitInfo.timeout = XR_INFINITE_DURATION;
@@ -682,6 +688,8 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
         // Get the width and height and construct the viewport and scissors.
         const uint32_t& width = m_viewConfigurationViews[i].recommendedImageRectWidth;
         const uint32_t& height = m_viewConfigurationViews[i].recommendedImageRectHeight;
+        renderLayerInfo.width = width;
+        renderLayerInfo.height = height;
         //GraphicsAPI::Viewport viewport = { 0.0f, 0.0f, (float)width, (float)height, 0.0f, 1.0f };
         //GraphicsAPI::Rect2D scissor = { {(int32_t)0, (int32_t)0}, {width, height} };
         float nearZ = 0.05f;
@@ -730,6 +738,16 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
             positioner->update(i, pos, ori, projglm, viewglm);
         }
 
+    }
+    return true;
+}
+
+bool VR::RenderLayerCopyRenderedImage(RenderLayerInfo& renderLayerInfo)
+{
+    for (uint32_t i = 0; i < renderLayerInfo.viewCount; i++) {
+        SwapchainInfo& colorSwapchainInfo = m_colorSwapchainInfos[i];
+        SwapchainInfo& depthSwapchainInfo = m_depthSwapchainInfos[i];
+
         // Rendering code to clear the color and depth image views.
         //m_graphicsAPI->BeginRendering();
         //ClearColor(renderLayerInfo.tr->commandBufferPresentBack, colorSwapchainInfo.imageViews[colorImageIndex], 0.17f, 0.77f, 0.17f, 1.00f); // green
@@ -747,8 +765,8 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
             blitSizeSrc.y = engine.getBackBufferExtent().height;
             blitSizeSrc.z = 1;
             VkOffset3D blitSizeDst;
-            blitSizeDst.x = width;
-            blitSizeDst.y = height;
+            blitSizeDst.x = renderLayerInfo.width;
+            blitSizeDst.y = renderLayerInfo.height;
             blitSizeDst.z = 1;
             VkImageBlit imageBlitRegion{};
             imageBlitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -760,7 +778,7 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
             auto tr = renderLayerInfo.tr;
             // i == 0 is left eye. colorImageIndex is the swapchain image index we are currently working on
             auto srcImage = i == 0 ? tr->colorAttachment.image : tr->colorAttachment2.image;
-            auto destImage = GetSwapchainImage(colorSwapchainInfo.swapchain, colorImageIndex);
+            auto destImage = GetSwapchainImage(colorSwapchainInfo.swapchain, renderLayerInfo.colorImageIndex);
             //Log("Blitting from " << srcImage << " to image " << destImage << endl);
             VkImageMemoryBarrier imageBarrier;
             imageBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
