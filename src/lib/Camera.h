@@ -338,12 +338,12 @@ public:
 		if (viewNum == 0) {
 			viewMatrixLeft = v;
 			projectionLeft = proj;
-			//viewMatrixLeft = view;
+			viewMatrixLeft = view;
 		}
 		else {
 			viewMatrixRight = v;
 			projectionRight = proj;
-			//viewMatrixRight = view;
+			viewMatrixRight = view;
 		}
 	}
 

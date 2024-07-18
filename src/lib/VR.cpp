@@ -706,6 +706,8 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
         ////glm::quat ori(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
         //glm::quat ori(pose.orientation.w, -pose.orientation.x, -pose.orientation.y, -pose.orientation.z);
         glm::quat ori(-pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
+        glm::quat convertedQuat(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
+        ori = convertedQuat;
 
         //glm::quat ori(pose.orientation.w, pose.orientation.x, pose.orientation.z, pose.orientation.y);
         //glm::quat ori(pose.orientation.w, pose.orientation.y, pose.orientation.x, pose.orientation.z);
@@ -720,10 +722,11 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
         glm::mat4 viewglm;
         XrMatrix4x4f_CreateTranslationRotationScale(&toView, &views[i].pose.position, &views[i].pose.orientation, &scale1m);
         XrMatrix4x4f view;
-        //XrMatrix4x4f_InvertRigidBody(&view, &toView);
+        XrMatrix4x4f_InvertRigidBody(&view, &toView);
         if (/**/true /*i == 0*/) {
             xr2glm(proj, projglm);
-            xr2glm(toView, viewglm);
+            //xr2glm(toView, viewglm);
+            xr2glm(view, viewglm);
             positioner->update(i, pos, ori, projglm, viewglm);
         }
 
