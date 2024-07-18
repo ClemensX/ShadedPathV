@@ -70,7 +70,7 @@ public:
 
     virtual ~ShadedPathEngine();
 
-    enum class Resolution { FourK, TwoK, OneK, DeviceDefault, Small };
+    enum class Resolution { HMDIndex, FourK, TwoK, OneK, DeviceDefault, Small };
 
     void registerApp(ShadedPathApplication* app) {
         this->app = app;

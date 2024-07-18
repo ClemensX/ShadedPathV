@@ -35,7 +35,8 @@ void gltfTerrainApp::run()
         engine.files.findAssetFolder("data");
         engine.setMaxTextures(50);
         //engine.setFrameCountLimit(1000);
-        engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
+        engine.setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
+        //engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
         int win_width = 800;//480;// 960;//1800;// 800;//3700; // 2500;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF terrain");

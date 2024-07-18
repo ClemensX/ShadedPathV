@@ -176,8 +176,10 @@ void ShadedPathEngine::setBackBufferResolution(VkExtent2D e)
 VkExtent2D ShadedPathEngine::getExtentForResolution(ShadedPathEngine::Resolution res)
 {
     switch (res) {
+    case Resolution::HMDIndex:
+        return { 2468, 2740 };
     case Resolution::FourK:
-        return {3840, 2160};
+        return { 3840, 2160 };
     case Resolution::TwoK:
         return {1920, 1080};
     case Resolution::OneK:

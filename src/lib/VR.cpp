@@ -349,6 +349,13 @@ void VR::CreateSwapchains()
         swapchainCI.faceCount = 1;
         swapchainCI.arraySize = 1;
         swapchainCI.mipCount = 1;
+        // check for same aspect of render backbuffer and VR target:
+        auto exBackbuffer = engine.getBackBufferExtent();
+        float aspectBackbuffer = (float)exBackbuffer.width / (float)exBackbuffer.height;
+        float aspectHMD = (float)swapchainCI.width / (float)swapchainCI.height;
+        if (aspectBackbuffer != aspectHMD) {
+            Error("Aspect ratio of render backbuffer and VR target are different. This may cause distortion.");
+        }
         OPENXR_CHECK(xrCreateSwapchain(session, &swapchainCI, &colorSwapchainInfo.swapchain), "Failed to create Color Swapchain");
         colorSwapchainInfo.swapchainFormat = swapchainCI.format;  // Save the swapchain format for later use.
 
@@ -591,7 +598,9 @@ void VR::frameBegin()
     XrFrameWaitInfo frameWaitInfo{ XR_TYPE_FRAME_WAIT_INFO };
     CHECK_XRCMD(xrWaitFrame(session, &frameWaitInfo, &frameState));
     //Log("Frame wait " << frameState.predictedDisplayTime << endl);
-    frameState.predictedDisplayTime = frameState.predictedDisplayTime + XR_MILLISECONDS_TO_NANOSECONDS(2);
+    //frameState.predictedDisplayTime = frameState.predictedDisplayTime + XR_MILLISECONDS_TO_NANOSECONDS(2);
+    frameState.predictedDisplayPeriod /= 2;
+    //Log("Predicted Display Time: " << frameState.predictedDisplayTime << " length: " << frameState.predictedDisplayPeriod << endl);
 
     // Begin frame immediately before GPU work
     XrFrameBeginInfo frameBeginInfo{ XR_TYPE_FRAME_BEGIN_INFO };
@@ -663,12 +672,12 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
         uint32_t depthImageIndex = 0;
         XrSwapchainImageAcquireInfo acquireInfo{ XR_TYPE_SWAPCHAIN_IMAGE_ACQUIRE_INFO };
         OPENXR_CHECK(xrAcquireSwapchainImage(colorSwapchainInfo.swapchain, &acquireInfo, &colorImageIndex), "Failed to acquire Image from the Color Swapchian");
-        OPENXR_CHECK(xrAcquireSwapchainImage(depthSwapchainInfo.swapchain, &acquireInfo, &depthImageIndex), "Failed to acquire Image from the Depth Swapchian");
+        //OPENXR_CHECK(xrAcquireSwapchainImage(depthSwapchainInfo.swapchain, &acquireInfo, &depthImageIndex), "Failed to acquire Image from the Depth Swapchian");
 
         XrSwapchainImageWaitInfo waitInfo = { XR_TYPE_SWAPCHAIN_IMAGE_WAIT_INFO };
         waitInfo.timeout = XR_INFINITE_DURATION;
         OPENXR_CHECK(xrWaitSwapchainImage(colorSwapchainInfo.swapchain, &waitInfo), "Failed to wait for Image from the Color Swapchain");
-        OPENXR_CHECK(xrWaitSwapchainImage(depthSwapchainInfo.swapchain, &waitInfo), "Failed to wait for Image from the Depth Swapchain");
+        //OPENXR_CHECK(xrWaitSwapchainImage(depthSwapchainInfo.swapchain, &waitInfo), "Failed to wait for Image from the Depth Swapchain");
 
         // Get the width and height and construct the viewport and scissors.
         const uint32_t& width = m_viewConfigurationViews[i].recommendedImageRectWidth;
@@ -720,7 +729,7 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
 
         // Rendering code to clear the color and depth image views.
         //m_graphicsAPI->BeginRendering();
-        ClearColor(renderLayerInfo.tr->commandBufferPresentBack, colorSwapchainInfo.imageViews[colorImageIndex], 0.17f, 0.77f, 0.17f, 1.00f); // green
+        //ClearColor(renderLayerInfo.tr->commandBufferPresentBack, colorSwapchainInfo.imageViews[colorImageIndex], 0.17f, 0.77f, 0.17f, 1.00f); // green
         if (m_environmentBlendMode == XR_ENVIRONMENT_BLEND_MODE_OPAQUE) {
             // VR mode use a background color.
             //m_graphicsAPI->ClearColor(colorSwapchainInfo.imageViews[colorImageIndex], 0.17f, 0.17f, 0.17f, 1.00f);
@@ -778,7 +787,7 @@ bool VR::RenderLayer(RenderLayerInfo& renderLayerInfo)
         // Give the swapchain image back to OpenXR, allowing the compositor to use the image.
         XrSwapchainImageReleaseInfo releaseInfo{ XR_TYPE_SWAPCHAIN_IMAGE_RELEASE_INFO };
         OPENXR_CHECK(xrReleaseSwapchainImage(colorSwapchainInfo.swapchain, &releaseInfo), "Failed to release Image back to the Color Swapchain");
-        OPENXR_CHECK(xrReleaseSwapchainImage(depthSwapchainInfo.swapchain, &releaseInfo), "Failed to release Image back to the Depth Swapchain");
+        //OPENXR_CHECK(xrReleaseSwapchainImage(depthSwapchainInfo.swapchain, &releaseInfo), "Failed to release Image back to the Depth Swapchain");
     }
 
     // Fill out the XrCompositionLayerProjection structure for usage with xrEndFrame().
