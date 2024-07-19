@@ -444,7 +444,7 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     imageBlitRegion.dstOffsets[1] = blitSizeDst;
 
     if (engine.isVR()) {
-        engine.vr.frameEnd(tr);
+        engine.vr.frameCopy(tr);
     }
 
     if (!simplify) {
@@ -510,6 +510,9 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     LogCondF(LOG_FENCE, "queue thread submit present fence " << hex << ThreadInfo::thread_osid() << endl);
     if (vkQueueSubmit(engine.global.graphicsQueue, 1, &submitInfo, tr.presentFence) != VK_SUCCESS) {
         Error("failed to submit draw command buffer!");
+    }
+    if (engine.isVR()) {
+        engine.vr.frameEnd(tr);
     }
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;

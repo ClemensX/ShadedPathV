@@ -601,8 +601,8 @@ void VR::frameBegin()
     CHECK_XRCMD(xrWaitFrame(session, &frameWaitInfo, &frameState));
     //ThemedTimer::getInstance()->stop(TIMER_PART_OPENXR);
     //Log("Frame wait " << frameState.predictedDisplayTime << endl);
-    //frameState.predictedDisplayTime = frameState.predictedDisplayTime + XR_MILLISECONDS_TO_NANOSECONDS(2);
-    frameState.predictedDisplayPeriod /= 2;
+    //frameState.predictedDisplayTime = frameState.predictedDisplayTime + XR_MILLISECONDS_TO_NANOSECONDS(4);
+    //frameState.predictedDisplayPeriod /= 2;
     //Log("Predicted Display Time: " << frameState.predictedDisplayTime << " length: " << frameState.predictedDisplayPeriod << endl);
 
     // Begin frame immediately before GPU work
@@ -621,7 +621,7 @@ void VR::frameBegin()
     }
 }
 
-void VR::frameEnd(ThreadResources& tr)
+void VR::frameCopy(ThreadResources& tr)
 {
     renderLayerInfo.tr = &tr;
     if (renderLayerInfo.renderStarted) {
@@ -631,6 +631,11 @@ void VR::frameEnd(ThreadResources& tr)
         }
     }
     renderLayerInfo.renderStarted = false;
+}
+
+void VR::frameEnd(ThreadResources& tr)
+{
+    renderLayerInfo.tr = &tr;
 
     // Tell OpenXR that we are finished with this frame; specifying its display time, environment blending and layers.
     XrFrameEndInfo frameEndInfo{ XR_TYPE_FRAME_END_INFO };

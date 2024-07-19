@@ -65,3 +65,34 @@ terrain:
 debug terrain HMD display:
 proj l / r
 0.7 0 -0.18  0.7 0 0.18
+
+rec HMD size:
+ 2468 2740
+
+
+ timings:
+ 259682464733100 length: 8333333
+Predicted Display Time: 473062500 length: 8333333
+Predicted Display Time: 481402200 length: 8333333
+Predicted Display Time: 489699600 length: 8333333
+Predicted Display Time: 498032600 length: 8333333
+Predicted Display Time: 506367500 length: 8333333
+Predicted Display Time: 514700400 length: 8333333
+Predicted Display Time: 523028000 length: 8333333
+Predicted Display Time: 531363800 length: 8333333
+Predicted Display Time: 539728700 length: 8333333
+Predicted Display Time: 548028500 length: 8333333 8000000
+Predicted Display Time: 556387900 length: 8333333 8
+Predicted Display Time: 564691500 length: 8333333 9
+Predicted Display Time: 573023500 length: 8333333 8
+Predicted Display Time: 581357100 length: 8333333 8
+Predicted Display Time: 589718100 length: 8333333 
+Predicted Display Time: 25968259
+
+xr tut:
+MVP = VP * M
+VP = P * V
+
+--> MVP = P * V * M
+shader:
+gl_Position = MVP * vec4_in
