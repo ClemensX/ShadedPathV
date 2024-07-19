@@ -16,6 +16,7 @@ void ShadedPathEngine::init(string appname)
     ThemedTimer::getInstance()->create(TIMER_INPUT_THREAD, 1000);
     ThemedTimer::getInstance()->create(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT, 1000);
     ThemedTimer::getInstance()->create(TIMER_PART_GLOBAL_UPDATE, 1000);
+    ThemedTimer::getInstance()->create(TIMER_PART_OPENXR, 1000);
     ThemedTimer::getInstance()->create(TIMER_PART_BUFFER_COPY, 10);
     mainThreadInfo.name = "Main Thread";
     mainThreadInfo.category = ThreadCategory::MainThread;
@@ -425,4 +426,5 @@ ShadedPathEngine::~ShadedPathEngine()
     ThemedTimer::getInstance()->logInfo(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
     ThemedTimer::getInstance()->logInfo(TIMER_PART_BUFFER_COPY);
     ThemedTimer::getInstance()->logInfo(TIMER_PART_GLOBAL_UPDATE);
+    ThemedTimer::getInstance()->logInfo(TIMER_PART_OPENXR);
 }

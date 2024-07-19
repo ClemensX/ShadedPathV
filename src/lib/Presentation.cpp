@@ -345,6 +345,7 @@ void Presentation::beginPresentFrame()
 void Presentation::presentBackBufferImage(ThreadResources& tr)
 {
     if (!enabled) return;
+    bool simplify = false;
     // select the right thread resources
     auto& device = engine.global.device;
     auto& global = engine.global;
@@ -391,7 +392,7 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     }
 
     // UI code
-    engine.shaders.uiShader.draw(tr);
+    if (!simplify) engine.shaders.uiShader.draw(tr);
 
     // Transition destination image to transfer destination layout
     VkImageMemoryBarrier dstBarrier{};
@@ -446,32 +447,35 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
         engine.vr.frameEnd(tr);
     }
 
-    vkCmdBlitImage(
-        tr.commandBufferPresentBack,
-        //tr.colorAttachment2.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, TODO
-        tr.colorAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-        this->swapChainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        1, &imageBlitRegion,
-        VK_FILTER_LINEAR
-        );
-
-    if (engine.isStereoPresentation()) {
-        VkOffset3D blitPosDst;
-        blitPosDst.x = engine.win_width / 2;
-        blitPosDst.y = 0;
-        blitPosDst.z = 0;
-        imageBlitRegion.dstOffsets[0] = blitPosDst;
-        blitSizeDst.x = engine.win_width;
-        imageBlitRegion.dstOffsets[1] = blitSizeDst;
+    if (!simplify) {
         vkCmdBlitImage(
             tr.commandBufferPresentBack,
-            tr.colorAttachment2.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            //tr.colorAttachment2.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, TODO
+            tr.colorAttachment.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
             this->swapChainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             1, &imageBlitRegion,
             VK_FILTER_LINEAR
         );
-    }
 
+        if (engine.isStereoPresentation()) {
+            VkOffset3D blitPosDst;
+            blitPosDst.x = engine.win_width / 2;
+            blitPosDst.y = 0;
+            blitPosDst.z = 0;
+            imageBlitRegion.dstOffsets[0] = blitPosDst;
+            blitSizeDst.x = engine.win_width;
+            imageBlitRegion.dstOffsets[1] = blitSizeDst;
+            vkCmdBlitImage(
+                tr.commandBufferPresentBack,
+                tr.colorAttachment2.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                this->swapChainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1, &imageBlitRegion,
+                VK_FILTER_LINEAR
+            );
+        }
+
+
+    }
     VkImageMemoryBarrier dstBarrier2{};
     dstBarrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     dstBarrier2.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;

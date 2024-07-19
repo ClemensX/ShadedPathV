@@ -10,8 +10,15 @@ void LineApp::run()
     {
         // camera initialization
         CameraPositioner_FirstPerson positioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        CameraPositioner_HMD myhmdPositioner(glm::vec3(0.0f, 20.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        hmdPositioner = &myhmdPositioner;
+        positioner.setMaxSpeed(15.0f);
         Camera camera(&engine);
+        //hmdPositioner->setCamera(&camera);
         camera.changePositioner(positioner);
+        //camera.changePositioner(*hmdPositioner);
+        //Camera camera(&engine);
+        //camera.changePositioner(positioner);
         this->camera = &camera;
         this->positioner = &positioner;
         engine.enableKeyEvents();
@@ -21,11 +28,13 @@ void LineApp::run()
         //engine.enableVR();
         //engine.enableStereo();
         //engine.enableStereoPresentation();
+        engine.setFixedPhysicalDeviceIndex(0); // needed for Renderdoc
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
         //engine.setFrameCountLimit(1000);
-        engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
+        engine.setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
+        //engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
         int win_width = 960;// 960;//1800;// 800;//3700;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Vulkan Simple Line App");

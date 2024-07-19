@@ -1,5 +1,5 @@
 #version 460
-#extension GL_EXT_debug_printf : enable
+#extension GL_EXT_debug_printf : disable
 
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;

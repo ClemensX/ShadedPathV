@@ -234,7 +234,8 @@ void LineShader::triggerUpdateThread() {
 void LineShader::resourceSwitch(GlobalResourceSet set)
 {
 	if (set == GlobalResourceSet::SET_A) {
-		LogCond(LOG_GLOBAL_UPDATE, "LineShader::resourceSwitch() to SET_A" << endl;)
+		//LogCond(LOG_GLOBAL_UPDATE, "LineShader::resourceSwitch() to SET_A" << endl;)
+		//Log(LOG_GLOBAL_UPDATE, "LineShader::resourceSwitch() to SET_A" << endl;)
 	}
 	else Error("not implemented");
 }

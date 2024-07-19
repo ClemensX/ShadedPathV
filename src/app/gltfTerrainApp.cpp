@@ -148,6 +148,7 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
         pubo2.model = modeltransform;
         pubo2.view = hmdPositioner->getViewMatrixRight();
         pubo2.proj = hmdPositioner->getProjectionRight();
+        //Log("VR mode back image num" << tr.frameNum << endl)
     }
     else {
         pubo.model = modeltransform;

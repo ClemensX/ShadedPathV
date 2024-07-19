@@ -48,9 +48,10 @@ function(compile_glsl run_target_name)
             # Run glslc if we can find it
             message(STATUS "command: Vulkan::glslc in: ${in_file} -o out: ${out_file}")
             # -g option is debug info
+            # -O option is optimization
             add_custom_command(
                 OUTPUT ${out_file}
-                COMMAND Vulkan::glslc -g ${in_file} -o ${out_file}
+                COMMAND Vulkan::glslc -O ${in_file} -o ${out_file}
                 DEPENDS ${in_file}
             )
         list(APPEND glsl_output_files ${out_file})

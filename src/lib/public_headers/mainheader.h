@@ -21,6 +21,7 @@
 #define TIMER_PART_BACKBUFFER_COPY_AND_PRESENT "PartPresentBackBuffer"
 #define TIMER_PART_BUFFER_COPY "PartBufferCopy"
 #define TIMER_PART_GLOBAL_UPDATE "PartGlobalUpdate"
+#define TIMER_PART_OPENXR "PartOpenXR"
 
 // Windows headers
 

@@ -173,6 +173,7 @@ void VR::createSystem()
     sysGetInfo.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
     //sysGetInfo.formFactor = XR_FORM_FACTOR_HANDHELD_DISPLAY; // force XR error to see if error system is working
     CHECK_XRCMD(xrGetSystem(instance, &sysGetInfo, &systemId));
+    xrProp.type = XR_TYPE_SYSTEM_PROPERTIES;
     CHECK_XRCMD(xrGetSystemProperties(instance, systemId, &xrProp));
     Log("VR running on " << xrProp.systemName << " vendor id " << xrProp.vendorId << endl);
     
@@ -596,7 +597,9 @@ void VR::frameBegin()
 {
     // Wait for a new frame.
     XrFrameWaitInfo frameWaitInfo{ XR_TYPE_FRAME_WAIT_INFO };
+    ThemedTimer::getInstance()->start(TIMER_PART_OPENXR);
     CHECK_XRCMD(xrWaitFrame(session, &frameWaitInfo, &frameState));
+    //ThemedTimer::getInstance()->stop(TIMER_PART_OPENXR);
     //Log("Frame wait " << frameState.predictedDisplayTime << endl);
     //frameState.predictedDisplayTime = frameState.predictedDisplayTime + XR_MILLISECONDS_TO_NANOSECONDS(2);
     frameState.predictedDisplayPeriod /= 2;
@@ -636,6 +639,7 @@ void VR::frameEnd(ThreadResources& tr)
     frameEndInfo.layerCount = static_cast<uint32_t>(renderLayerInfo.layers.size());
     frameEndInfo.layers = renderLayerInfo.layers.data();
     OPENXR_CHECK(xrEndFrame(session, &frameEndInfo), "Failed to end the XR Frame.");
+    ThemedTimer::getInstance()->stop(TIMER_PART_OPENXR);
 }
 
 void xr2glm(const XrMatrix4x4f &xr, glm::mat4& matglm)
@@ -722,13 +726,17 @@ bool VR::RenderLayerPrepare(RenderLayerInfo& renderLayerInfo)
         //glm::quat ori(pose.orientation.w, pose.orientation.y, pose.orientation.z, pose.orientation.x);
         //glm::quat ori(pose.orientation.w, pose.orientation.z, pose.orientation.x, pose.orientation.y);
         //glm::quat ori(pose.orientation.w, pose.orientation.z, pose.orientation.y, pose.orientation.x);
+        auto p = positioner->getPosition();
+        pose.position.x += p.x;
+        pose.position.y += p.y;
+        pose.position.z += p.z;
         XrMatrix4x4f proj;
         XrMatrix4x4f_CreateProjectionFov(&proj, VULKAN, views[i].fov, nearZ, farZ);
         XrMatrix4x4f toView;
         XrVector3f scale1m{ 1.0f, 1.0f, 1.0f };
         glm::mat4 projglm;
         glm::mat4 viewglm;
-        XrMatrix4x4f_CreateTranslationRotationScale(&toView, &views[i].pose.position, &views[i].pose.orientation, &scale1m);
+        XrMatrix4x4f_CreateTranslationRotationScale(&toView, &pose.position, &views[i].pose.orientation, &scale1m);
         XrMatrix4x4f view;
         XrMatrix4x4f_InvertRigidBody(&view, &toView);
         if (/**/true /*i == 0*/) {
@@ -736,6 +744,7 @@ bool VR::RenderLayerPrepare(RenderLayerInfo& renderLayerInfo)
             //xr2glm(toView, viewglm);
             xr2glm(view, viewglm);
             positioner->update(i, pos, ori, projglm, viewglm);
+            //Log("VR mode view " << viewglm[0][0] << endl)
         }
 
     }
@@ -776,6 +785,7 @@ bool VR::RenderLayerCopyRenderedImage(RenderLayerInfo& renderLayerInfo)
             imageBlitRegion.dstSubresource.layerCount = 1;
             imageBlitRegion.dstOffsets[1] = blitSizeDst;
             auto tr = renderLayerInfo.tr;
+            //Log("VR mode blit back image num " << tr->frameNum << " swap idx " << renderLayerInfo.colorImageIndex << endl)
             // i == 0 is left eye. colorImageIndex is the swapchain image index we are currently working on
             auto srcImage = i == 0 ? tr->colorAttachment.image : tr->colorAttachment2.image;
             auto destImage = GetSwapchainImage(colorSwapchainInfo.swapchain, renderLayerInfo.colorImageIndex);
