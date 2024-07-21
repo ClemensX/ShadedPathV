@@ -35,8 +35,8 @@ void gltfObjectsApp::run()
 
         engine.setFramesInFlight(2);
         engine.registerApp(this);
-        //engine.enableSound();
-        engine.setThreadModeSingle();
+        engine.enableSound();
+        //engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("gltfObjects");
