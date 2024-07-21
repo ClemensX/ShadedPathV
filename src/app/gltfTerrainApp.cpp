@@ -48,7 +48,7 @@ void gltfTerrainApp::run()
             engine.vr.SetPositioner(hmdPositioner);
         }
         //engine.enableSound();
-        engine.setThreadModeSingle();
+        //engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("gltfTerrain");
@@ -125,7 +125,7 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
         return;
     }
     double deltaSeconds = seconds - old_seconds;
-    engine.presentation.beginPresentFrame();
+    //engine.presentation.beginPresentFrame();
     positioner->update(deltaSeconds, input.pos, input.pressedLeft);
     old_seconds = seconds;
     // lines
@@ -142,13 +142,15 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
     //mat4 modeltransform = glm::mat4(1.0f); //glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     mat4 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     if (engine.isVR()) {
-        pubo.model = modeltransform;
-        pubo.view = hmdPositioner->getViewMatrixLeft();
-        pubo.proj = hmdPositioner->getProjectionLeft();
-        pubo2.model = modeltransform;
-        pubo2.view = hmdPositioner->getViewMatrixRight();
-        pubo2.proj = hmdPositioner->getProjectionRight();
-        //Log("VR mode back image num" << tr.frameNum << endl)
+        if (true || engine.vr.shouldRender(tr)) {
+            pubo.model = modeltransform;
+            pubo.view = hmdPositioner->getViewMatrixLeft();
+            pubo.proj = hmdPositioner->getProjectionLeft();
+            pubo2.model = modeltransform;
+            pubo2.view = hmdPositioner->getViewMatrixRight();
+            pubo2.proj = hmdPositioner->getProjectionRight();
+            //Log("VR mode back image num" << tr.frameNum << endl)
+        }
     }
     else {
         pubo.model = modeltransform;

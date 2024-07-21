@@ -1,4 +1,14 @@
 #pragma once
+
+enum class XRRenderState : int {
+	NONE,
+	WAITFRAME_BEGINFRAME,
+	SHOULD_RENDER,
+	RENDERED,
+	SKIPPING,  // skipping XR rendering: XR is not yet initialized or rendering currently not possible
+	NOT_RENDERED
+};
+
 #if defined(OPENXR_AVAILABLE)
 // OpenXR VR implementation, see https://github.com/KhronosGroup/OpenXR-SDK-Source.git
 enum GraphicsAPI_Type : uint8_t {
@@ -48,9 +58,15 @@ public:
 
 	// threaded frame generation
 	void pollEvent();
-	void frameBegin();
+	void frameWait(); // called by queue submit thread
+	void frameBegin(ThreadResources& tr);
 	void frameCopy(ThreadResources& tr);
 	void frameEnd(ThreadResources& tr);
+	bool shouldRender(ThreadResources& tr);
+	// check if this thread has the right to render an XR frame
+	bool aquireRenderTicket(ThreadResources& tr);
+	void releaseRenderTicket(ThreadResources& tr);
+	void getProjectionAndViewFromXR(int eye, glm::mat4& projection, glm::mat4& view);
 	DebugOutput debugOutput;  // This redirects std::cerr and std::cout to the IDE's output or Android Studio's logcat.
 	enum class SwapchainType : uint8_t {
 		COLOR,
@@ -105,9 +121,10 @@ private:
 		uint32_t width = 0;
 		uint32_t height = 0;
 		uint32_t colorImageIndex = 0;
-		bool renderStarted = false;	
+		XRRenderState renderState = XRRenderState::NONE;
 		//XrSwapchain colorSwapchain = XR_NULL_HANDLE;
 	};
+	XRRenderState xr_global_renderState = XRRenderState::SKIPPING; // global state in addition to state in render threads
 	bool RenderLayerPrepare(RenderLayerInfo& layerInfo);
 	bool RenderLayerCopyRenderedImage(RenderLayerInfo& layerInfo);
 	// init calls

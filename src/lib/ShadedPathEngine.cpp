@@ -149,6 +149,9 @@ void ShadedPathEngine::drawFrame(ThreadResources& tr)
     if (app == nullptr) {
         Error("No app configured. Call ShadedPathEngine::registerApp(ShadedPathApplication* app)");
     }
+    //if (isVR()) {
+    //    vr.frameBegin(tr);
+    //}
     app->drawFrame(tr);
     shaders.executeBufferImageDump(tr);
 }
@@ -290,6 +293,7 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
         //Log("rel time: " << engine_instance->gameTime.getRealTimeDelta() << endl);
         ThemedTimer::getInstance()->stop(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
         ThemedTimer::getInstance()->add(TIMER_PRESENT_FRAME);
+        engine_instance->presentation.beginPresentFrame();
         // tell render thread to continue:
         //v->renderThreadContinue->test_and_set();
         //v->renderThreadContinue->notify_one();

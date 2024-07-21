@@ -592,59 +592,169 @@ void VR::pollEvent()
 }
 
 #define XR_MILLISECONDS_TO_NANOSECONDS(ms) ((ms) * 1000000LL)
-
-void VR::frameBegin()
-{
-    // Wait for a new frame.
-    XrFrameWaitInfo frameWaitInfo{ XR_TYPE_FRAME_WAIT_INFO };
-    ThemedTimer::getInstance()->start(TIMER_PART_OPENXR);
-    CHECK_XRCMD(xrWaitFrame(session, &frameWaitInfo, &frameState));
-    //ThemedTimer::getInstance()->stop(TIMER_PART_OPENXR);
-    //Log("Frame wait " << frameState.predictedDisplayTime << endl);
-    //frameState.predictedDisplayTime = frameState.predictedDisplayTime + XR_MILLISECONDS_TO_NANOSECONDS(4);
-    //frameState.predictedDisplayPeriod /= 2;
-    //Log("Predicted Display Time: " << frameState.predictedDisplayTime << " length: " << frameState.predictedDisplayPeriod << endl);
-
-    // Begin frame immediately before GPU work
-    XrFrameBeginInfo frameBeginInfo{ XR_TYPE_FRAME_BEGIN_INFO };
-    CHECK_XRCMD(xrBeginFrame(session, &frameBeginInfo));
-    RenderLayerInfo newRenderLayerInfo{};
-    renderLayerInfo = newRenderLayerInfo;
-    renderLayerInfo.predictedDisplayTime = frameState.predictedDisplayTime;
-    // Variables for rendering and layer composition.
-    bool rendered = false;
-    // Check that the session is active and that we should render.
-    bool sessionActive = (sessionState == XR_SESSION_STATE_SYNCHRONIZED || sessionState == XR_SESSION_STATE_VISIBLE || sessionState == XR_SESSION_STATE_FOCUSED);
-    if (sessionActive && frameState.shouldRender) {
-        // Render the stereo image and associate one of swapchain images with the XrCompositionLayerProjection structure.
-        renderLayerInfo.renderStarted = RenderLayerPrepare(renderLayerInfo);
+void VR::frameWait() {
+    if (xr_global_renderState == XRRenderState::SKIPPING) {
+        Log("VR mode frameWait in state SKIPPING" << endl);
+        // Wait for a new frame.
+        XrFrameWaitInfo frameWaitInfo{ XR_TYPE_FRAME_WAIT_INFO };
+        ThemedTimer::getInstance()->start(TIMER_PART_OPENXR);
+        CHECK_XRCMD(xrWaitFrame(session, &frameWaitInfo, &frameState));
+        Log("VR mode frameWait swap idx " << renderLayerInfo.colorImageIndex << endl);
+        xr_global_renderState = XRRenderState::WAITFRAME_BEGINFRAME;
+        //ThemedTimer::getInstance()->stop(TIMER_PART_OPENXR);
+        //Log("Frame wait " << frameState.predictedDisplayTime << endl);
+        //frameState.predictedDisplayTime = frameState.predictedDisplayTime + XR_MILLISECONDS_TO_NANOSECONDS(4);
+        //frameState.predictedDisplayPeriod /= 2;
+        //Log("Predicted Display Time: " << frameState.predictedDisplayTime << " length: " << frameState.predictedDisplayPeriod << endl);
+    } else if (xr_global_renderState == XRRenderState::WAITFRAME_BEGINFRAME) {
+        Log("VR mode frameWait in state WAITFRAME_BEGINFRAME" << endl);
+        //xr_global_renderState = XRRenderState::FRAME_BEGIN;
+    } else {
+        Log("VR mode frameWait in another state" << endl);
     }
+}
+
+bool VR::aquireRenderTicket(ThreadResources& tr)
+{
+    if (xr_global_renderState == XRRenderState::WAITFRAME_BEGINFRAME) {
+        if (tr.frameIndex == 0) {
+            xr_global_renderState = XRRenderState::SHOULD_RENDER;
+            return true;
+        }
+    }
+    return false;
+}
+
+void VR::releaseRenderTicket(ThreadResources& tr)
+{
+    assert(xr_global_renderState == XRRenderState::SHOULD_RENDER);
+    xr_global_renderState = XRRenderState::SKIPPING;
+}
+
+void VR::frameBegin(ThreadResources& tr)
+{
+    if (xr_global_renderState != XRRenderState::WAITFRAME_BEGINFRAME) {
+        Log("VR mode frameBegin no wait frame called frame index " << tr.frameIndex << endl);
+        return;
+    }
+    if (tr.xr_renderState == XRRenderState::SKIPPING && aquireRenderTicket(tr)) {
+        Log("VR mode frameBegin START frame index " << tr.frameIndex << endl);
+        tr.xr_renderState = XRRenderState::WAITFRAME_BEGINFRAME;
+        // Begin frame immediately before GPU work
+        XrFrameBeginInfo frameBeginInfo{ XR_TYPE_FRAME_BEGIN_INFO };
+        CHECK_XRCMD(xrBeginFrame(session, &frameBeginInfo));
+        RenderLayerInfo newRenderLayerInfo{};
+        renderLayerInfo = newRenderLayerInfo;
+        renderLayerInfo.predictedDisplayTime = frameState.predictedDisplayTime;
+        // Variables for rendering and layer composition.
+        bool rendered = false;
+        // Check that the session is active and that we should render.
+        bool sessionActive = (sessionState == XR_SESSION_STATE_SYNCHRONIZED || sessionState == XR_SESSION_STATE_VISIBLE || sessionState == XR_SESSION_STATE_FOCUSED);
+        if (sessionActive && frameState.shouldRender) {
+            // Render the stereo image and associate one of swapchain images with the XrCompositionLayerProjection structure.
+            Log("VR mode frameBegin session active frame index " << tr.frameIndex << endl);
+            bool rendered = RenderLayerPrepare(renderLayerInfo);
+            if (rendered) {
+                tr.xr_renderState = XRRenderState::SHOULD_RENDER;
+            }
+            else {
+                tr.xr_renderState = XRRenderState::NOT_RENDERED;
+            }
+        }
+        else {
+            Log("VR mode frameBegin NO RENDER frame index " << tr.frameIndex << endl);
+            tr.xr_renderState = XRRenderState::NOT_RENDERED;
+        }
+        return;
+    }
+
 }
 
 void VR::frameCopy(ThreadResources& tr)
 {
-    renderLayerInfo.tr = &tr;
-    if (renderLayerInfo.renderStarted) {
-        bool rendered = RenderLayerCopyRenderedImage(renderLayerInfo);
-        if (rendered) {
-            renderLayerInfo.layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&renderLayerInfo.layerProjection));
-        }
+    if (tr.xr_renderState == XRRenderState::SKIPPING) {
+        Log("VR mode frameCopy skipping frame index " << tr.frameIndex <<  endl);
+        return;
     }
-    renderLayerInfo.renderStarted = false;
+    //if (renderLayerInfo.renderState != XRRenderState::WAITFRAME_BEGINFRAME && renderLayerInfo.renderState != XRRenderState::SHOULD_RENDER) {
+    //    Log("VR mode frameBegin render state not WAIT / BEGIN / should render" << endl);
+    //    return;
+    //}
+    renderLayerInfo.tr = &tr;
+    if (tr.xr_renderState == XRRenderState::SHOULD_RENDER) {
+        Log("VR mode frameCopy image index " << tr.frameIndex << " swap idx " << renderLayerInfo.colorImageIndex << endl);
+        RenderLayerCopyRenderedImage(renderLayerInfo);
+        renderLayerInfo.layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&renderLayerInfo.layerProjection));
+        tr.xr_renderState = XRRenderState::RENDERED;
+        return;
+    }
+    Log("strange" << endl);
 }
 
 void VR::frameEnd(ThreadResources& tr)
 {
+    if (tr.xr_renderState == XRRenderState::SKIPPING) {
+        Log("VR mode frameEnd skipping frame index " << tr.frameIndex << endl);
+        return;
+    }
+    if (tr.xr_renderState == XRRenderState::NOT_RENDERED || tr.xr_renderState == XRRenderState::RENDERED) {
+        Log("VR mode frameEnd not rendered frame index " << tr.frameIndex << endl);
+        // Tell OpenXR that we are finished with this frame; specifying its display time, environment blending and layers.
+        XrFrameEndInfo frameEndInfo{ XR_TYPE_FRAME_END_INFO };
+        frameEndInfo.displayTime = frameState.predictedDisplayTime; // TODO check: changed? (via another xr wait call)
+        frameEndInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
+        frameEndInfo.layerCount = static_cast<uint32_t>(renderLayerInfo.layers.size());
+        frameEndInfo.layers = renderLayerInfo.layers.data();
+        OPENXR_CHECK(xrEndFrame(session, &frameEndInfo), "Failed to end the XR Frame.");
+        ThemedTimer::getInstance()->stop(TIMER_PART_OPENXR);
+        renderLayerInfo.renderState = XRRenderState::NONE;
+        tr.xr_renderState = XRRenderState::SKIPPING;
+        releaseRenderTicket(tr);
+        return;
+    }
+    Log("VR mode frameEnd image index " << tr.frameIndex << " swap idx " << renderLayerInfo.colorImageIndex << endl);
     renderLayerInfo.tr = &tr;
 
-    // Tell OpenXR that we are finished with this frame; specifying its display time, environment blending and layers.
-    XrFrameEndInfo frameEndInfo{ XR_TYPE_FRAME_END_INFO };
-    frameEndInfo.displayTime = frameState.predictedDisplayTime;
-    frameEndInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
-    frameEndInfo.layerCount = static_cast<uint32_t>(renderLayerInfo.layers.size());
-    frameEndInfo.layers = renderLayerInfo.layers.data();
-    OPENXR_CHECK(xrEndFrame(session, &frameEndInfo), "Failed to end the XR Frame.");
-    ThemedTimer::getInstance()->stop(TIMER_PART_OPENXR);
+}
+
+bool VR::shouldRender(ThreadResources& tr) {
+    if (xr_global_renderState == XRRenderState::SKIPPING || tr.xr_renderState == XRRenderState::SKIPPING) {
+        return false;
+    }
+    return true;
+}
+
+void VR::getProjectionAndViewFromXR(int eye, glm::mat4& projection, glm::mat4& view)
+{
+    float nearZ = 0.05f;
+    float farZ = 4000.0f;
+
+    //auto pose = frameState.;
+    //glm::vec3 pos(pose.position.x, pose.position.y, pose.position.z);
+    //glm::quat ori(-pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
+    //glm::quat convertedQuat(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
+    //ori = convertedQuat;
+
+    //auto p = positioner->getPosition();
+    //pose.position.x += p.x;
+    //pose.position.y += p.y;
+    //pose.position.z += p.z;
+    //XrMatrix4x4f proj;
+    //XrMatrix4x4f_CreateProjectionFov(&proj, VULKAN, views[i].fov, nearZ, farZ);
+    //XrMatrix4x4f toView;
+    //XrVector3f scale1m{ 1.0f, 1.0f, 1.0f };
+    //glm::mat4 projglm;
+    //glm::mat4 viewglm;
+    //XrMatrix4x4f_CreateTranslationRotationScale(&toView, &pose.position, &views[i].pose.orientation, &scale1m);
+    //XrMatrix4x4f view;
+    //XrMatrix4x4f_InvertRigidBody(&view, &toView);
+    //if (/**/true /*i == 0*/) {
+    //    xr2glm(proj, projglm);
+    //    //xr2glm(toView, viewglm);
+    //    xr2glm(view, viewglm);
+    //    positioner->update(i, pos, ori, projglm, viewglm);
+    //    //Log("VR mode view " << viewglm[0][0] << endl)
+    //}
 }
 
 void xr2glm(const XrMatrix4x4f &xr, glm::mat4& matglm)
@@ -790,7 +900,7 @@ bool VR::RenderLayerCopyRenderedImage(RenderLayerInfo& renderLayerInfo)
             imageBlitRegion.dstSubresource.layerCount = 1;
             imageBlitRegion.dstOffsets[1] = blitSizeDst;
             auto tr = renderLayerInfo.tr;
-            //Log("VR mode blit back image num " << tr->frameNum << " swap idx " << renderLayerInfo.colorImageIndex << endl)
+            Log("VR mode blit back image index " << tr->frameIndex << " swap idx " << renderLayerInfo.colorImageIndex << endl)
             // i == 0 is left eye. colorImageIndex is the swapchain image index we are currently working on
             auto srcImage = i == 0 ? tr->colorAttachment.image : tr->colorAttachment2.image;
             auto destImage = GetSwapchainImage(colorSwapchainInfo.swapchain, renderLayerInfo.colorImageIndex);

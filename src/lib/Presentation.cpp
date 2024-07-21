@@ -338,7 +338,7 @@ void Presentation::beginPresentFrame()
 {
     if (engine.isVR()) {
         engine.vr.pollEvent();
-        engine.vr.frameBegin();
+        engine.vr.frameWait();
     }
 }
 
@@ -373,6 +373,9 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
         Error("cannot aquire next image KHR");
     }
 
+    if (engine.isVR()) {
+        engine.vr.frameBegin(tr);
+    }
     //VkCommandBufferAllocateInfo allocInfo{};
     //allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     //allocInfo.commandPool = res.commandPool;

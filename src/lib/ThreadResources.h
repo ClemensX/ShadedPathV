@@ -88,6 +88,7 @@ public:
 	  //XrFrameState frameState{ XR_TYPE_FRAME_STATE };
 	  //std::vector<XrCompositionLayerBaseHeader*> layers;
 #   endif
+	XRRenderState xr_renderState = XRRenderState::SKIPPING;
 
 	// Debugging
 	std::string commandBufferDebugName;
