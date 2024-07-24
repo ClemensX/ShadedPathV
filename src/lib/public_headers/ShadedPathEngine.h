@@ -240,6 +240,9 @@ public:
     void shutdown();
     // Wait until engine threads have ended rendering.
     void waitUntilShutdown();
+    // queue_submit thread will be waked by all render threads once before and once after frame rendering
+    void queueSubmitThreadPreFrame(ThreadResources& tr);
+    void queueSubmitThreadPostFrame(ThreadResources& tr);
 
     Singleton singleton; // check that only one engine is running - maybe relax later
     GlobalRendering global;
@@ -324,6 +327,7 @@ private:
     void startUpdateThread();
     // start the processing thread in the background and return immediately. May only be called once
     static void runDrawFrame(ShadedPathEngine* engine_instance, ThreadResources* tr);
+    // event loop for queue_submit thread
     static void runQueueSubmit(ShadedPathEngine* engine_instance);
     static void runUpdateThread(ShadedPathEngine* engine_instance);
     std::atomic<bool> shutdown_mode = false;

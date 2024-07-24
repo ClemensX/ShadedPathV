@@ -64,6 +64,7 @@ public:
 	// frame management
 	long frameNum = -1;
 	long frameIndex = -1;
+	bool isPreFrame = true; // record if we are in pre frame stage or post frame stage
 	std::vector<VkSubmitInfo> submitinfos;
 	std::vector<VkCommandBuffer> activeCommandBuffers;
 	VkFence presentFence = nullptr;
@@ -71,6 +72,7 @@ public:
 	VkPipelineStageFlags waitStages[2];
 #define	THREAD_RESOURCES_MAX_COMMAND_BUFFERS 10
 	VkCommandBuffer commandBuffers[THREAD_RESOURCES_MAX_COMMAND_BUFFERS];
+	bool discardFrame = false;
 
 	// depth buffer
 	VkImage depthImage;

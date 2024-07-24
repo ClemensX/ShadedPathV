@@ -257,14 +257,40 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance, ThreadRes
             break;
         }
         // draw next frame
+        if (true) {
+            tr->isPreFrame = true;
+            Log("render thread awoken PreFrame index: " << tr->frameIndex << endl);
+            engine_instance->queue.push(tr);
+            o = tr->renderThreadContinueQueue.pop();
+            if (!o) {
+                break;
+            }
+            Log("render thread awoken drawFrame index: " << tr->frameIndex << endl);
+        }
         engine_instance->drawFrame(*tr);
         engine_instance->globalUpdate.doSyncedDrawingThreadMaintenance();
+        tr->isPreFrame = false;
         engine_instance->queue.push(tr);
         LogCondF(LOG_QUEUE, "pushed frame: " << tr->frameNum << endl);
 
     }
     LogCondF(LOG_QUEUE, "run DrawFrame end " << tr->frameIndex << endl);
     tr->threadFinished = true;
+}
+
+void ShadedPathEngine::queueSubmitThreadPreFrame(ThreadResources& tr)
+{
+    Log("engine received pre frame index: " << tr.frameIndex << endl);
+}
+
+void ShadedPathEngine::queueSubmitThreadPostFrame(ThreadResources& tr)
+{
+    LogCondF(LOG_QUEUE, "engine received frame: " << tr.frameNum << endl);
+    shaders.queueSubmit(tr);
+    // if we are pop()ed by drawing thread we can be sure to own the thread until presentFence is signalled,
+    // we still have to wait for inFlightFence to make sure rendering has ended
+    ThemedTimer::getInstance()->start(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
+    presentation.presentBackBufferImage(tr); // TODO: test discarding out-of-sync frames
 }
 
 void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
@@ -278,25 +304,24 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
             LogF("engine shutdown" << endl);
             break;
         }
-        LogCondF(LOG_QUEUE, "engine received frame: " << v->frameNum << endl);
-        engine_instance->shaders.queueSubmit(*v);
-        // if we are pop()ed by drawing thread we can be sure to own the thread until presentFence is signalled,
-        // we still have to wait for inFlightFence to make sure rendering has ended
-        ThemedTimer::getInstance()->start(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
-        engine_instance->presentation.presentBackBufferImage(*v); // TODO: test discarding out-of-sync frames
-        if (v->frameNum != engine_instance->frameNum) {
-            LogF("Frames async: drawing:" << v->frameNum << " present: " << engine_instance->frameNum << endl);
-            //Error("Frames out of sync");
+        if (true && v->isPreFrame) {
+            engine_instance->queueSubmitThreadPreFrame(*v);
+        } else {
+            engine_instance->queueSubmitThreadPostFrame(*v);
+            if (v->frameNum != engine_instance->frameNum) {
+                LogF("Frames async: drawing:" << v->frameNum << " present: " << engine_instance->frameNum << endl);
+                //Error("Frames out of sync");
+            }
+            engine_instance->advanceFrameCountersAfterPresentation();
+            //this_thread::sleep_for(chrono::milliseconds(5000));
+            //Log("rel time: " << engine_instance->gameTime.getRealTimeDelta() << endl);
+            ThemedTimer::getInstance()->stop(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
+            ThemedTimer::getInstance()->add(TIMER_PRESENT_FRAME);
+            engine_instance->presentation.beginPresentFrame();
+            // tell render thread to continue:
+            //v->renderThreadContinue->test_and_set();
+            //v->renderThreadContinue->notify_one();
         }
-        engine_instance->advanceFrameCountersAfterPresentation();
-        //this_thread::sleep_for(chrono::milliseconds(5000));
-        //Log("rel time: " << engine_instance->gameTime.getRealTimeDelta() << endl);
-        ThemedTimer::getInstance()->stop(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
-        ThemedTimer::getInstance()->add(TIMER_PRESENT_FRAME);
-        engine_instance->presentation.beginPresentFrame();
-        // tell render thread to continue:
-        //v->renderThreadContinue->test_and_set();
-        //v->renderThreadContinue->notify_one();
         v->renderThreadContinueQueue.push(0);
     }
     //engine_instance->setRunning(false);

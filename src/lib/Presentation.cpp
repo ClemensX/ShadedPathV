@@ -346,6 +346,11 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
 {
     if (!enabled) return;
     bool simplify = false;
+    if (tr.discardFrame) {
+        Log("Discard frame\n");
+        tr.discardFrame = false;
+        return;
+    }
     // select the right thread resources
     auto& device = engine.global.device;
     auto& global = engine.global;
