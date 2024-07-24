@@ -156,6 +156,10 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
         tr.discardFrame = true;
         return;
     }
+    //if (tr.frameIndex == 0) {
+    //    tr.discardFrame = true;
+    //    return;
+    //}
     double deltaSeconds = seconds - old_seconds;
     positioner->update(deltaSeconds, input.pos, input.pressedLeft);
     old_seconds = seconds;

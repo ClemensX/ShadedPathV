@@ -140,6 +140,10 @@ void ShadedPathEngine::drawFrame(ThreadResources& tr)
     assert(oldNum < tr.frameNum);
     // wait for fence signal
     if (LOG_GLOBAL_UPDATE) threads.log_current_thread();
+    if (tr.discardFrame) {
+        //LogCondF(LOG_QUEUE, "discarding frame " << tr.frameNum << endl);
+        return;
+    }
     LogCondF(LOG_QUEUE, "wait drawFrame() present fence image index " << tr.frameIndex << endl);
     LogCondF(LOG_FENCE, "render thread wait present fence " << hex << ThreadInfo::thread_osid() << endl);
     vkWaitForFences(global.device, 1, &tr.presentFence, VK_TRUE, UINT64_MAX);
@@ -305,22 +309,26 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
             break;
         }
         if (true && v->isPreFrame) {
-            engine_instance->queueSubmitThreadPreFrame(*v);
-        } else {
-            engine_instance->queueSubmitThreadPostFrame(*v);
-            if (v->frameNum != engine_instance->frameNum) {
-                LogF("Frames async: drawing:" << v->frameNum << " present: " << engine_instance->frameNum << endl);
-                //Error("Frames out of sync");
+            if (!v->discardFrame) {
+                engine_instance->queueSubmitThreadPreFrame(*v);
             }
-            engine_instance->advanceFrameCountersAfterPresentation();
-            //this_thread::sleep_for(chrono::milliseconds(5000));
-            //Log("rel time: " << engine_instance->gameTime.getRealTimeDelta() << endl);
-            ThemedTimer::getInstance()->stop(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
-            ThemedTimer::getInstance()->add(TIMER_PRESENT_FRAME);
-            engine_instance->presentation.beginPresentFrame();
-            // tell render thread to continue:
-            //v->renderThreadContinue->test_and_set();
-            //v->renderThreadContinue->notify_one();
+        } else {
+            if (!v->discardFrame) {
+                engine_instance->queueSubmitThreadPostFrame(*v);
+                if (v->frameNum != engine_instance->frameNum) {
+                    LogF("Frames async: drawing:" << v->frameNum << " present: " << engine_instance->frameNum << endl);
+                    //Error("Frames out of sync");
+                }
+                engine_instance->advanceFrameCountersAfterPresentation();
+                //this_thread::sleep_for(chrono::milliseconds(5000));
+                //Log("rel time: " << engine_instance->gameTime.getRealTimeDelta() << endl);
+                ThemedTimer::getInstance()->stop(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
+                ThemedTimer::getInstance()->add(TIMER_PRESENT_FRAME);
+                engine_instance->presentation.beginPresentFrame();
+                // tell render thread to continue:
+                //v->renderThreadContinue->test_and_set();
+                //v->renderThreadContinue->notify_one();
+            }
         }
         v->renderThreadContinueQueue.push(0);
     }
