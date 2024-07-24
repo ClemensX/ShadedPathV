@@ -263,13 +263,17 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance, ThreadRes
         // draw next frame
         if (true) {
             tr->isPreFrame = true;
-            Log("render thread awoken PreFrame index: " << tr->frameIndex << endl);
+            if (engine_instance->renderThreadDebugLog) {
+                Log("render thread PreFrame index: " << tr->frameIndex << endl);
+            }
             engine_instance->queue.push(tr);
             o = tr->renderThreadContinueQueue.pop();
             if (!o) {
                 break;
             }
-            Log("render thread awoken drawFrame index: " << tr->frameIndex << endl);
+            if (engine_instance->renderThreadDebugLog) {
+                Log("render thread awoken drawFrame index: " << tr->frameIndex << endl);
+            }
         }
         engine_instance->drawFrame(*tr);
         engine_instance->globalUpdate.doSyncedDrawingThreadMaintenance();
@@ -284,12 +288,16 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance, ThreadRes
 
 void ShadedPathEngine::queueSubmitThreadPreFrame(ThreadResources& tr)
 {
-    Log("engine received pre frame index: " << tr.frameIndex << endl);
+    if (renderThreadDebugLog) {
+        Log("engine received pre frame index: " << tr.frameIndex << endl);
+    }
 }
 
 void ShadedPathEngine::queueSubmitThreadPostFrame(ThreadResources& tr)
 {
-    LogCondF(LOG_QUEUE, "engine received frame: " << tr.frameNum << endl);
+    if (renderThreadDebugLog) {
+        LogCondF(LOG_QUEUE, "engine received frame: " << tr.frameNum << endl);
+    }
     shaders.queueSubmit(tr);
     // if we are pop()ed by drawing thread we can be sure to own the thread until presentFence is signalled,
     // we still have to wait for inFlightFence to make sure rendering has ended

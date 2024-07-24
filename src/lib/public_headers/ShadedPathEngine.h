@@ -282,7 +282,7 @@ public:
 	}
 
     void log_current_thread();
-
+    bool renderThreadDebugLog = false;
 private:
     thread_local static bool isUpdateThread_;
     ThreadGroup& getThreadGroup() {

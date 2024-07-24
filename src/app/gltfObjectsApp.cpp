@@ -146,16 +146,16 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
     double seconds = engine.gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
-        return;
+        //return;
     }
     if (old_seconds > seconds) {
         Log("INVERTED TIME" << endl);
         return;
     }
-    if (tr.frameIndex == 1) {
-        tr.discardFrame = true;
-        return;
-    }
+    //if (tr.frameIndex == 1) {
+    //    tr.discardFrame = true;
+    //    return;
+    //}
     //if (tr.frameIndex == 0) {
     //    tr.discardFrame = true;
     //    return;
