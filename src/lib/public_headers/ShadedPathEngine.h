@@ -288,6 +288,7 @@ private:
     ThreadGroup& getThreadGroup() {
         return threads;
     }
+    mutable std::mutex queueSubmitMutex;
     State state = INIT;
     float backBufferAspect = 1.0f;
     long limitFrameCount = 0;

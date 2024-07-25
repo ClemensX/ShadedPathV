@@ -310,6 +310,7 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
     LogF("run QueueSubmit start " << endl);
     //pipeline_instance->setRunning(true);
     while (engine_instance->isShutdown() == false) {
+        //std::unique_lock<std::mutex> lock(engine_instance->queueSubmitMutex);
         //engine_instance->presentation.beginPresentFrame();
         auto v = engine_instance->queue.pop();
         if (v == nullptr) {
