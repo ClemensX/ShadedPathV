@@ -666,6 +666,9 @@ void VR::frameBegin(ThreadResources& tr)
             tr.xr_renderState = XRRenderState::NOT_RENDERED;
         }
         return;
+    } else {
+        // no render ticket: skip this frame
+        tr.discardFrame = true;
     }
 
 }
