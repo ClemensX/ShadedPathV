@@ -118,10 +118,12 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
     double seconds = engine.gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
+        tr.discardFrame = true;
         return;
     }
     if (old_seconds > seconds) {
         Log("INVERTED TIME" << endl);
+        tr.discardFrame = true;
         return;
     }
     double deltaSeconds = seconds - old_seconds;
