@@ -17,8 +17,8 @@ int main()
     //SimpleApp app; // ok
     //LineApp app; // ok
     //DeviceCoordApp app; // ok
-    gltfObjectsApp app; // ok
-    //gltfTerrainApp app; // ok
+    //gltfObjectsApp app; // ok
+    gltfTerrainApp app; // ok
     //GeneratedTexturesApp app; // ok
     //BillboardDemo app; // ok
     //LandscapeDemo app; // ok

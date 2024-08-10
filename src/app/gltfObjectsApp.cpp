@@ -18,7 +18,7 @@ void gltfObjectsApp::run()
         engine.enableKeyEvents();
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
-        //engine.enableVR();
+        engine.enableVR();
         //engine.enableStereo();
         engine.enableStereoPresentation();
         // engine configuration
