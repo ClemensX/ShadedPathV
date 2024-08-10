@@ -141,6 +141,7 @@ void ShadedPathEngine::drawFrame(ThreadResources& tr)
     // wait for fence signal
     if (LOG_GLOBAL_UPDATE) threads.log_current_thread();
     if (tr.discardFrame) {
+        //tr.discardFrame = false;
         //LogCondF(LOG_QUEUE, "discarding frame " << tr.frameNum << endl);
         return;
     }

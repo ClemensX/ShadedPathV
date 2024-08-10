@@ -35,7 +35,7 @@ void gltfObjectsApp::run()
 
         engine.setFramesInFlight(2);
         engine.registerApp(this);
-        engine.enableSound();
+        //engine.enableSound();
         //engine.setThreadModeSingle();
 
         // engine initialization
@@ -152,10 +152,10 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
         Log("INVERTED TIME" << endl);
         return;
     }
-    //if (tr.frameIndex == 1) {
-    //    tr.discardFrame = true;
-    //    return;
-    //}
+    if (tr.frameIndex == 1) {
+        tr.discardFrame = true;
+        return;
+    }
     //if (tr.frameIndex == 0) {
     //    tr.discardFrame = true;
     //    return;
