@@ -379,7 +379,7 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     }
 
     if (engine.isVR()) {
-        engine.vr.frameBegin(tr);
+        //engine.vr.frameBegin(tr);
     }
     //VkCommandBufferAllocateInfo allocInfo{};
     //allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;

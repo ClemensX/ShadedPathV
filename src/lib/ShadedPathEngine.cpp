@@ -116,7 +116,10 @@ void ShadedPathEngine::drawFrame()
     if (threadModeSingle) {
         ThemedTimer::getInstance()->add(TIMER_DRAW_FRAME);
         auto& tr = threadResources[currentFrameIndex];
+        //presentation.beginPresentFrame();
+        queueSubmitThreadPreFrame(tr);
         drawFrame(tr);
+        queueSubmitThreadPostFrame(tr);
         globalUpdate.doSyncedDrawingThreadMaintenance();
         shaders.queueSubmit(tr);
         presentation.presentBackBufferImage(tr);

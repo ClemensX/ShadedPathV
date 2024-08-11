@@ -594,12 +594,13 @@ void VR::pollEvent()
 #define XR_MILLISECONDS_TO_NANOSECONDS(ms) ((ms) * 1000000LL)
 void VR::frameWait() {
     if (xr_global_renderState == XRRenderState::SKIPPING) {
-        Log("VR mode frameWait in state SKIPPING" << endl);
+        //Log("VR mode frameWait in state SKIPPING" << endl);
         // Wait for a new frame.
         XrFrameWaitInfo frameWaitInfo{ XR_TYPE_FRAME_WAIT_INFO };
         ThemedTimer::getInstance()->start(TIMER_PART_OPENXR);
         CHECK_XRCMD(xrWaitFrame(session, &frameWaitInfo, &frameState));
-        Log("VR mode frameWait swap idx " << renderLayerInfo.colorImageIndex << endl);
+        //Log("VR mode frameWait swap idx " << renderLayerInfo.colorImageIndex << endl);
+        Log("Frame wait disp time = " << frameState.predictedDisplayTime << endl);
         xr_global_renderState = XRRenderState::WAITFRAME_BEGINFRAME;
         //ThemedTimer::getInstance()->stop(TIMER_PART_OPENXR);
         //Log("Frame wait " << frameState.predictedDisplayTime << endl);
@@ -617,10 +618,10 @@ void VR::frameWait() {
 bool VR::aquireRenderTicket(ThreadResources& tr)
 {
     if (xr_global_renderState == XRRenderState::WAITFRAME_BEGINFRAME) {
-        //if (tr.frameIndex == 0) {
+        if (tr.frameIndex == 1) {
             xr_global_renderState = XRRenderState::SHOULD_RENDER;
             return true;
-        //}
+        }
     }
     return false;
 }
@@ -638,6 +639,7 @@ void VR::frameBegin(ThreadResources& tr)
         return;
     }
     if (tr.xr_renderState == XRRenderState::SKIPPING && aquireRenderTicket(tr)) {
+        //assert(tr.frameIndex == 1);
         Log("VR mode frameBegin START frame index " << tr.frameIndex << endl);
         tr.xr_renderState = XRRenderState::WAITFRAME_BEGINFRAME;
         // Begin frame immediately before GPU work
@@ -701,7 +703,7 @@ void VR::frameEnd(ThreadResources& tr)
         return;
     }
     if (tr.xr_renderState == XRRenderState::NOT_RENDERED || tr.xr_renderState == XRRenderState::RENDERED) {
-        Log("VR mode frameEnd not rendered frame index " << tr.frameIndex << endl);
+        if (tr.xr_renderState == XRRenderState::NOT_RENDERED) Log("VR mode frameEnd not rendered frame index " << tr.frameIndex << endl);
         // Tell OpenXR that we are finished with this frame; specifying its display time, environment blending and layers.
         XrFrameEndInfo frameEndInfo{ XR_TYPE_FRAME_END_INFO };
         frameEndInfo.displayTime = frameState.predictedDisplayTime; // TODO check: changed? (via another xr wait call)
@@ -709,13 +711,14 @@ void VR::frameEnd(ThreadResources& tr)
         frameEndInfo.layerCount = static_cast<uint32_t>(renderLayerInfo.layers.size());
         frameEndInfo.layers = renderLayerInfo.layers.data();
         OPENXR_CHECK(xrEndFrame(session, &frameEndInfo), "Failed to end the XR Frame.");
+        Log("VR mode frameEnd frame index " << tr.frameIndex << " disp time " << frameState.predictedDisplayTime << endl);
         ThemedTimer::getInstance()->stop(TIMER_PART_OPENXR);
         renderLayerInfo.renderState = XRRenderState::NONE;
         tr.xr_renderState = XRRenderState::SKIPPING;
         releaseRenderTicket(tr);
         return;
     }
-    Log("VR mode frameEnd image index " << tr.frameIndex << " swap idx " << renderLayerInfo.colorImageIndex << endl);
+    //Log("VR mode frameEnd image index " << tr.frameIndex << " swap idx " << renderLayerInfo.colorImageIndex << endl);
     renderLayerInfo.tr = &tr;
 
 }
