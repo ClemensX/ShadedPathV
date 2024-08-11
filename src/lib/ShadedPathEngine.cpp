@@ -295,6 +295,8 @@ void ShadedPathEngine::queueSubmitThreadPreFrame(ThreadResources& tr)
     if (renderThreadDebugLog) {
         Log("engine received pre frame index: " << tr.frameIndex << endl);
     }
+    presentation.beginPresentFrame();
+    vr.frameBegin(tr);
 }
 
 void ShadedPathEngine::queueSubmitThreadPostFrame(ThreadResources& tr)

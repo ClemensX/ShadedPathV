@@ -618,10 +618,10 @@ void VR::frameWait() {
 bool VR::aquireRenderTicket(ThreadResources& tr)
 {
     if (xr_global_renderState == XRRenderState::WAITFRAME_BEGINFRAME) {
-        if (tr.frameIndex == 1) {
+        //if (tr.frameIndex == 1) {
             xr_global_renderState = XRRenderState::SHOULD_RENDER;
             return true;
-        }
+        //}
     }
     return false;
 }
