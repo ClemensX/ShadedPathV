@@ -600,7 +600,7 @@ void VR::frameWait() {
         ThemedTimer::getInstance()->start(TIMER_PART_OPENXR);
         CHECK_XRCMD(xrWaitFrame(session, &frameWaitInfo, &frameState));
         //Log("VR mode frameWait swap idx " << renderLayerInfo.colorImageIndex << endl);
-        Log("Frame wait disp time = " << frameState.predictedDisplayTime << endl);
+        if (THREAD_LOG) Log("Frame wait disp time = " << frameState.predictedDisplayTime << endl);
         xr_global_renderState = XRRenderState::WAITFRAME_BEGINFRAME;
         //ThemedTimer::getInstance()->stop(TIMER_PART_OPENXR);
         //Log("Frame wait " << frameState.predictedDisplayTime << endl);
@@ -608,10 +608,10 @@ void VR::frameWait() {
         //frameState.predictedDisplayPeriod /= 2;
         //Log("Predicted Display Time: " << frameState.predictedDisplayTime << " length: " << frameState.predictedDisplayPeriod << endl);
     } else if (xr_global_renderState == XRRenderState::WAITFRAME_BEGINFRAME) {
-        Log("VR mode frameWait in state WAITFRAME_BEGINFRAME" << endl);
+        if (THREAD_LOG) Log("VR mode frameWait in state WAITFRAME_BEGINFRAME" << endl);
         //xr_global_renderState = XRRenderState::FRAME_BEGIN;
     } else {
-        Log("VR mode frameWait in another state" << endl);
+        if (THREAD_LOG) Log("VR mode frameWait in another state" << endl);
     }
 }
 
@@ -635,12 +635,12 @@ void VR::releaseRenderTicket(ThreadResources& tr)
 void VR::frameBegin(ThreadResources& tr)
 {
     if (xr_global_renderState != XRRenderState::WAITFRAME_BEGINFRAME) {
-        Log("VR mode frameBegin no wait frame called frame index " << tr.frameIndex << endl);
+        if (THREAD_LOG) Log("VR mode frameBegin no wait frame called frame index " << tr.frameIndex << endl);
         return;
     }
     if (tr.xr_renderState == XRRenderState::SKIPPING && aquireRenderTicket(tr)) {
         //assert(tr.frameIndex == 1);
-        Log("VR mode frameBegin START frame index " << tr.frameIndex << endl);
+        if (THREAD_LOG) Log("VR mode frameBegin START frame index " << tr.frameIndex << endl);
         tr.xr_renderState = XRRenderState::WAITFRAME_BEGINFRAME;
         // Begin frame immediately before GPU work
         XrFrameBeginInfo frameBeginInfo{ XR_TYPE_FRAME_BEGIN_INFO };
@@ -654,7 +654,7 @@ void VR::frameBegin(ThreadResources& tr)
         bool sessionActive = (sessionState == XR_SESSION_STATE_SYNCHRONIZED || sessionState == XR_SESSION_STATE_VISIBLE || sessionState == XR_SESSION_STATE_FOCUSED);
         if (sessionActive && frameState.shouldRender) {
             // Render the stereo image and associate one of swapchain images with the XrCompositionLayerProjection structure.
-            Log("VR mode frameBegin session active frame index " << tr.frameIndex << endl);
+            if (THREAD_LOG) Log("VR mode frameBegin session active frame index " << tr.frameIndex << endl);
             bool rendered = RenderLayerPrepare(renderLayerInfo);
             if (rendered) {
                 tr.xr_renderState = XRRenderState::SHOULD_RENDER;
@@ -664,7 +664,7 @@ void VR::frameBegin(ThreadResources& tr)
             }
         }
         else {
-            Log("VR mode frameBegin NO RENDER frame index " << tr.frameIndex << endl);
+            if (THREAD_LOG) Log("VR mode frameBegin NO RENDER frame index " << tr.frameIndex << endl);
             tr.xr_renderState = XRRenderState::NOT_RENDERED;
         }
         return;
@@ -678,7 +678,7 @@ void VR::frameBegin(ThreadResources& tr)
 void VR::frameCopy(ThreadResources& tr)
 {
     if (tr.xr_renderState == XRRenderState::SKIPPING) {
-        Log("VR mode frameCopy skipping frame index " << tr.frameIndex <<  endl);
+        if (THREAD_LOG) Log("VR mode frameCopy skipping frame index " << tr.frameIndex <<  endl);
         return;
     }
     //if (renderLayerInfo.renderState != XRRenderState::WAITFRAME_BEGINFRAME && renderLayerInfo.renderState != XRRenderState::SHOULD_RENDER) {
@@ -687,7 +687,7 @@ void VR::frameCopy(ThreadResources& tr)
     //}
     renderLayerInfo.tr = &tr;
     if (tr.xr_renderState == XRRenderState::SHOULD_RENDER) {
-        Log("VR mode frameCopy image index " << tr.frameIndex << " swap idx " << renderLayerInfo.colorImageIndex << endl);
+        if (THREAD_LOG) Log("VR mode frameCopy image index " << tr.frameIndex << " swap idx " << renderLayerInfo.colorImageIndex << endl);
         RenderLayerCopyRenderedImage(renderLayerInfo);
         renderLayerInfo.layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&renderLayerInfo.layerProjection));
         tr.xr_renderState = XRRenderState::RENDERED;
@@ -699,7 +699,7 @@ void VR::frameCopy(ThreadResources& tr)
 void VR::frameEnd(ThreadResources& tr)
 {
     if (tr.xr_renderState == XRRenderState::SKIPPING) {
-        Log("VR mode frameEnd skipping frame index " << tr.frameIndex << endl);
+        if (THREAD_LOG) Log("VR mode frameEnd skipping frame index " << tr.frameIndex << endl);
         return;
     }
     if (tr.xr_renderState == XRRenderState::NOT_RENDERED || tr.xr_renderState == XRRenderState::RENDERED) {
@@ -711,7 +711,7 @@ void VR::frameEnd(ThreadResources& tr)
         frameEndInfo.layerCount = static_cast<uint32_t>(renderLayerInfo.layers.size());
         frameEndInfo.layers = renderLayerInfo.layers.data();
         OPENXR_CHECK(xrEndFrame(session, &frameEndInfo), "Failed to end the XR Frame.");
-        Log("VR mode frameEnd frame index " << tr.frameIndex << " disp time " << frameState.predictedDisplayTime << endl);
+        if (THREAD_LOG) Log("VR mode frameEnd frame index " << tr.frameIndex << " disp time " << frameState.predictedDisplayTime << endl);
         ThemedTimer::getInstance()->stop(TIMER_PART_OPENXR);
         renderLayerInfo.renderState = XRRenderState::NONE;
         tr.xr_renderState = XRRenderState::SKIPPING;
@@ -906,7 +906,7 @@ bool VR::RenderLayerCopyRenderedImage(RenderLayerInfo& renderLayerInfo)
             imageBlitRegion.dstSubresource.layerCount = 1;
             imageBlitRegion.dstOffsets[1] = blitSizeDst;
             auto tr = renderLayerInfo.tr;
-            Log("VR mode blit back image index " << tr->frameIndex << " swap idx " << renderLayerInfo.colorImageIndex << endl)
+            if (THREAD_LOG) Log("VR mode blit back image index " << tr->frameIndex << " swap idx " << renderLayerInfo.colorImageIndex << endl)
             // i == 0 is left eye. colorImageIndex is the swapchain image index we are currently working on
             auto srcImage = i == 0 ? tr->colorAttachment.image : tr->colorAttachment2.image;
             auto destImage = GetSwapchainImage(colorSwapchainInfo.swapchain, renderLayerInfo.colorImageIndex);
