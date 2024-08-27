@@ -339,7 +339,6 @@ void Presentation::beginPresentFrame(ThreadResources& tr)
     if (engine.isVR()) {
         engine.vr.pollEvent();
         engine.vr.frameWait();
-        engine.vr.frameBegin(tr);
     }
 }
 

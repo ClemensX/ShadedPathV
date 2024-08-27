@@ -124,7 +124,7 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
         return;
     }
     double deltaSeconds = seconds - old_seconds;
-    engine.presentation.beginPresentFrame(tr);
+    //engine.presentation.beginPresentFrame(tr);
     //engine.vr.frameBegin(tr);
     positioner->update(deltaSeconds, input.pos, input.pressedLeft);
     old_seconds = seconds;
