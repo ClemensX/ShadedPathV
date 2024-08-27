@@ -116,6 +116,7 @@ void ShadedPathEngine::drawFrame()
     if (threadModeSingle) {
         ThemedTimer::getInstance()->add(TIMER_DRAW_FRAME);
         auto& tr = threadResources[currentFrameIndex];
+        //queueSubmitThreadPreFrame(tr);
         drawFrame(tr);
         globalUpdate.doSyncedDrawingThreadMaintenance();
         shaders.queueSubmit(tr);
