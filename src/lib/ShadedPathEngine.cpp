@@ -265,7 +265,7 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance, ThreadRes
             break;
         }
         // draw next frame
-        if (true) {
+        if (false) {
             tr->isPreFrame = true;
             if (engine_instance->renderThreadDebugLog) {
                 Log("render thread PreFrame index: " << tr->frameIndex << endl);

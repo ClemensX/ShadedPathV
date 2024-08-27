@@ -90,7 +90,7 @@ private:
 	XrSessionState sessionState = XR_SESSION_STATE_UNKNOWN;
 	bool sessionRunning = false;
 	bool applicationRunning = false;
-    bool THREAD_LOG = true; // log thread and frame info
+    bool THREAD_LOG = false; // log thread and frame info
 	//XrSpace sceneSpace = nullptr;
 	std::vector<XrViewConfigurationView> xrConfigViews;
 	std::vector<XrViewConfigurationType> m_applicationViewConfigurations = { XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_MONO };
@@ -125,6 +125,9 @@ private:
 		XRRenderState renderState = XRRenderState::NONE;
 		//XrSwapchain colorSwapchain = XR_NULL_HANDLE;
 	};
+	XrTime lastPredictedDisplayTime = 0; // from xrWaitFrame
+	XrTime currentWorkingIndex = -1; // currrent render thread working on this VR frame
+    float lastXVal = -200.0f;
 	XRRenderState xr_global_renderState = XRRenderState::SKIPPING; // global state in addition to state in render threads
 	bool RenderLayerPrepare(RenderLayerInfo& layerInfo);
 	bool RenderLayerCopyRenderedImage(RenderLayerInfo& layerInfo);

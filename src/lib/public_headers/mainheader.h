@@ -142,7 +142,7 @@ inline void LogFile(const char* s) {
     std::string str = s1768.str(); \
     std::wstring wstr(str.begin(), str.end()); \
     std::wstringstream wss(wstr); \
-    OutputDebugString(wss.str().c_str()); \
+    /**/OutputDebugString(wss.str().c_str());/**/ \
     LogFile(str.c_str()); \
 }
 #elif defined(__APPLE__)

@@ -617,7 +617,7 @@ void VR::frameWait() {
 
 bool VR::aquireRenderTicket(ThreadResources& tr)
 {
-    if (xr_global_renderState == XRRenderState::WAITFRAME_BEGINFRAME) {
+    if (xr_global_renderState == XRRenderState::WAITFRAME_BEGINFRAME ) {
         //if (tr.frameIndex == 1) {
             xr_global_renderState = XRRenderState::SHOULD_RENDER;
             return true;
@@ -628,17 +628,19 @@ bool VR::aquireRenderTicket(ThreadResources& tr)
 
 void VR::releaseRenderTicket(ThreadResources& tr)
 {
+    //if (engine.threadModeSingle) return;
     assert(xr_global_renderState == XRRenderState::SHOULD_RENDER);
     xr_global_renderState = XRRenderState::SKIPPING;
 }
 
 void VR::frameBegin(ThreadResources& tr)
 {
-    if (xr_global_renderState != XRRenderState::WAITFRAME_BEGINFRAME) {
+    bool threadModeSingle = engine.threadModeSingle;
+    if (xr_global_renderState != XRRenderState::WAITFRAME_BEGINFRAME && !threadModeSingle) {
         if (THREAD_LOG) Log("VR mode frameBegin no wait frame called frame index " << tr.frameIndex << endl);
         return;
     }
-    if (tr.xr_renderState == XRRenderState::SKIPPING && aquireRenderTicket(tr)) {
+    if ((tr.xr_renderState == XRRenderState::SKIPPING && aquireRenderTicket(tr))) {
         //assert(tr.frameIndex == 1);
         if (THREAD_LOG) Log("VR mode frameBegin START frame index " << tr.frameIndex << endl);
         tr.xr_renderState = XRRenderState::WAITFRAME_BEGINFRAME;
@@ -648,6 +650,8 @@ void VR::frameBegin(ThreadResources& tr)
         RenderLayerInfo newRenderLayerInfo{};
         renderLayerInfo = newRenderLayerInfo;
         renderLayerInfo.predictedDisplayTime = frameState.predictedDisplayTime;
+        lastPredictedDisplayTime = frameState.predictedDisplayTime;
+        currentWorkingIndex = tr.frameIndex;
         // Variables for rendering and layer composition.
         bool rendered = false;
         // Check that the session is active and that we should render.
@@ -677,6 +681,7 @@ void VR::frameBegin(ThreadResources& tr)
 
 void VR::frameCopy(ThreadResources& tr)
 {
+    bool threadModeSingle = engine.threadModeSingle;
     if (tr.xr_renderState == XRRenderState::SKIPPING) {
         if (THREAD_LOG) Log("VR mode frameCopy skipping frame index " << tr.frameIndex <<  endl);
         return;
@@ -686,7 +691,7 @@ void VR::frameCopy(ThreadResources& tr)
     //    return;
     //}
     renderLayerInfo.tr = &tr;
-    if (tr.xr_renderState == XRRenderState::SHOULD_RENDER) {
+    if (tr.xr_renderState == XRRenderState::SHOULD_RENDER ) {
         if (THREAD_LOG) Log("VR mode frameCopy image index " << tr.frameIndex << " swap idx " << renderLayerInfo.colorImageIndex << endl);
         RenderLayerCopyRenderedImage(renderLayerInfo);
         renderLayerInfo.layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&renderLayerInfo.layerProjection));
@@ -698,6 +703,7 @@ void VR::frameCopy(ThreadResources& tr)
 
 void VR::frameEnd(ThreadResources& tr)
 {
+    bool threadModeSingle = engine.threadModeSingle;
     if (tr.xr_renderState == XRRenderState::SKIPPING) {
         if (THREAD_LOG) Log("VR mode frameEnd skipping frame index " << tr.frameIndex << endl);
         return;
@@ -705,6 +711,13 @@ void VR::frameEnd(ThreadResources& tr)
     if (tr.xr_renderState == XRRenderState::NOT_RENDERED || tr.xr_renderState == XRRenderState::RENDERED) {
         if (tr.xr_renderState == XRRenderState::NOT_RENDERED) Log("VR mode frameEnd not rendered frame index " << tr.frameIndex << endl);
         // Tell OpenXR that we are finished with this frame; specifying its display time, environment blending and layers.
+        if (lastPredictedDisplayTime != frameState.predictedDisplayTime) {
+            Log("VR mode xrEndFrame out of sync predicted display time mismatch " << lastPredictedDisplayTime << " != " << frameState.predictedDisplayTime << endl);
+            Error("VR mode xrEndFrame out of sync");
+        }
+        if (currentWorkingIndex != tr.frameIndex) {
+            Error("VR mode out of sync: frame rendering is not the same that called xrWait()");
+        }
         XrFrameEndInfo frameEndInfo{ XR_TYPE_FRAME_END_INFO };
         frameEndInfo.displayTime = frameState.predictedDisplayTime; // TODO check: changed? (via another xr wait call)
         frameEndInfo.environmentBlendMode = XR_ENVIRONMENT_BLEND_MODE_OPAQUE;
@@ -716,6 +729,7 @@ void VR::frameEnd(ThreadResources& tr)
         renderLayerInfo.renderState = XRRenderState::NONE;
         tr.xr_renderState = XRRenderState::SKIPPING;
         releaseRenderTicket(tr);
+        //if (tr.frameNum > 500) exit(0);
         return;
     }
     //Log("VR mode frameEnd image index " << tr.frameIndex << " swap idx " << renderLayerInfo.colorImageIndex << endl);
@@ -724,6 +738,7 @@ void VR::frameEnd(ThreadResources& tr)
 }
 
 bool VR::shouldRender(ThreadResources& tr) {
+    //if (engine.threadModeSingle) return true;
     if (xr_global_renderState == XRRenderState::SKIPPING || tr.xr_renderState == XRRenderState::SKIPPING) {
         return false;
     }
@@ -831,7 +846,12 @@ bool VR::RenderLayerPrepare(RenderLayerInfo& renderLayerInfo)
         renderLayerInfo.layerProjectionViews[i].subImage.imageRect.extent.width = static_cast<int32_t>(width);
         renderLayerInfo.layerProjectionViews[i].subImage.imageRect.extent.height = static_cast<int32_t>(height);
         renderLayerInfo.layerProjectionViews[i].subImage.imageArrayIndex = 0;  // Useful for multiview rendering.
-        //Log("View " << i << " pose " << views[i].pose.position.x << " " << views[i].pose.position.y << " " << views[i].pose.position.z << endl);
+        if (views[0].pose.position.x < lastXVal) {
+            //Log("reverse " );
+            //Log("View " << i << " pose " << views[i].pose.position.x << " " << views[i].pose.position.y << " " << views[i].pose.position.z << endl);
+            //DebugBreak();
+        }
+        lastXVal = views[0].pose.position.x;
         auto pose = views[i].pose;
         glm::vec3 pos(pose.position.x, pose.position.y, pose.position.z);
         //glm::quat ori(pose.orientation.w, pose.orientation.x, pose.orientation.y, pose.orientation.z);
