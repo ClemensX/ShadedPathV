@@ -44,7 +44,7 @@ public:
 	void initBackBufferPresentation();
 	void initBackBufferPresentationSingle(ThreadResources &res);
 	// Thread independent preparations, e.g. OpenXR beginFrame()
-	void beginPresentFrame();
+	void beginPresentFrame(ThreadResources& tr);
 	// perform the copy and display the image in app window
 	void presentBackBufferImage(ThreadResources& tr);
 

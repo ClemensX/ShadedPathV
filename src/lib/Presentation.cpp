@@ -334,11 +334,11 @@ void Presentation::initBackBufferPresentation()
     }
 }
 
-void Presentation::beginPresentFrame()
+void Presentation::beginPresentFrame(ThreadResources& tr)
 {
     if (engine.isVR()) {
         engine.vr.pollEvent();
-        engine.vr.frameBegin();
+        engine.vr.frameBegin(tr);
     }
 }
 

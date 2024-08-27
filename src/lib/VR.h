@@ -48,7 +48,7 @@ public:
 
 	// threaded frame generation
 	void pollEvent();
-	void frameBegin();
+	void frameBegin(ThreadResources& tr);
 	void frameCopy(ThreadResources& tr);
 	void frameEnd(ThreadResources& tr);
 	DebugOutput debugOutput;  // This redirects std::cerr and std::cout to the IDE's output or Android Studio's logcat.

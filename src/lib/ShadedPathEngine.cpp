@@ -264,6 +264,27 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance, ThreadRes
     tr->threadFinished = true;
 }
 
+void ShadedPathEngine::queueSubmitThreadPreFrame(ThreadResources& tr)
+{
+    if (renderThreadDebugLog) {
+        Log("engine received pre frame index: " << tr.frameIndex << endl);
+    }
+    presentation.beginPresentFrame(tr);
+    vr.frameBegin(tr);
+}
+
+void ShadedPathEngine::queueSubmitThreadPostFrame(ThreadResources& tr)
+{
+    if (renderThreadDebugLog) {
+        LogCondF(LOG_QUEUE, "engine received frame: " << tr.frameNum << endl);
+    }
+    shaders.queueSubmit(tr);
+    // if we are pop()ed by drawing thread we can be sure to own the thread until presentFence is signalled,
+    // we still have to wait for inFlightFence to make sure rendering has ended
+    ThemedTimer::getInstance()->start(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
+    presentation.presentBackBufferImage(tr); // TODO: test discarding out-of-sync frames
+}
+
 void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
 {
     LogF("run QueueSubmit start " << endl);

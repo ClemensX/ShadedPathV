@@ -240,6 +240,9 @@ public:
     void shutdown();
     // Wait until engine threads have ended rendering.
     void waitUntilShutdown();
+    // TODO describe
+    void queueSubmitThreadPreFrame(ThreadResources& tr);
+    void queueSubmitThreadPostFrame(ThreadResources& tr);
 
     Singleton singleton; // check that only one engine is running - maybe relax later
     GlobalRendering global;
@@ -279,6 +282,7 @@ public:
 	}
 
     void log_current_thread();
+    bool renderThreadDebugLog = false;
 
 private:
     thread_local static bool isUpdateThread_;

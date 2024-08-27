@@ -87,11 +87,8 @@ void gltfTerrainApp::init() {
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
 
-    //engine.meshStore.loadMesh("terrain_cmp.glb", "WorldBaseTerrain");
-    //engine.meshStore.loadMesh("terrain_orig/Terrain_Mesh_0_0.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
-    //engine.meshStore.loadMesh("terrain_vh/Project_Mesh_1_1.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
-    engine.meshStore.loadMesh("terrain2k/Project_Mesh_2m.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
-    //engine.meshStore.loadMesh("terrain2k/Project_Mesh_0.5.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    //engine.meshStore.loadMesh("terrain2k/Project_Mesh_2m.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    engine.meshStore.loadMesh("terrain2k/Project_Mesh_0.5.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     engine.objectStore.createGroup("terrain_group");
     auto terrain = engine.objectStore.addObject("terrain_group", "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
     world.transformToWorld(terrain);
@@ -118,14 +115,17 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
     double seconds = engine.gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
+        //tr.discardFrame = true;
         return;
     }
     if (old_seconds > seconds) {
         Log("INVERTED TIME" << endl);
+        //tr.discardFrame = true;
         return;
     }
     double deltaSeconds = seconds - old_seconds;
-    engine.presentation.beginPresentFrame();
+    engine.presentation.beginPresentFrame(tr);
+    //engine.vr.frameBegin(tr);
     positioner->update(deltaSeconds, input.pos, input.pressedLeft);
     old_seconds = seconds;
     // lines
@@ -178,7 +178,8 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
             //modeltransform = scale(mat4(1.0f), vec3(4.01f, 4.01f, 4.01f));
             // scale from gltf:
             modeltransform = wo->mesh->baseTransform;
-        } else {
+        }
+        else {
             modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.2f, 0.0f, 0.0f));
         }
         // test model transforms:

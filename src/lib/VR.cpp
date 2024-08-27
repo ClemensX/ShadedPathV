@@ -593,7 +593,7 @@ void VR::pollEvent()
 
 #define XR_MILLISECONDS_TO_NANOSECONDS(ms) ((ms) * 1000000LL)
 
-void VR::frameBegin()
+void VR::frameBegin(ThreadResources& tr)
 {
     // Wait for a new frame.
     XrFrameWaitInfo frameWaitInfo{ XR_TYPE_FRAME_WAIT_INFO };
