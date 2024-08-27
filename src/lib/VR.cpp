@@ -592,13 +592,63 @@ void VR::pollEvent()
 }
 
 #define XR_MILLISECONDS_TO_NANOSECONDS(ms) ((ms) * 1000000LL)
-
-void VR::frameBegin(ThreadResources& tr)
-{
-    // Wait for a new frame.
+void VR::frameWait() {
     XrFrameWaitInfo frameWaitInfo{ XR_TYPE_FRAME_WAIT_INFO };
     ThemedTimer::getInstance()->start(TIMER_PART_OPENXR);
     CHECK_XRCMD(xrWaitFrame(session, &frameWaitInfo, &frameState));
+    //Log("VR mode frameWait swap idx " << renderLayerInfo.colorImageIndex << endl);
+    if (THREAD_LOG) Log("Frame wait disp time = " << frameState.predictedDisplayTime << endl);
+}
+
+/*void VR::frameBegin(ThreadResources& tr)
+{
+    bool threadModeSingle = engine.threadModeSingle;
+    if (xr_global_renderState != XRRenderState::WAITFRAME_BEGINFRAME && !threadModeSingle) {
+        if (THREAD_LOG) Log("VR mode frameBegin no wait frame called frame index " << tr.frameIndex << endl);
+        return;
+    }
+    if ((tr.xr_renderState == XRRenderState::SKIPPING && aquireRenderTicket(tr))) {
+        //assert(tr.frameIndex == 1);
+        if (THREAD_LOG) Log("VR mode frameBegin START frame index " << tr.frameIndex << endl);
+        tr.xr_renderState = XRRenderState::WAITFRAME_BEGINFRAME;
+        // Begin frame immediately before GPU work
+        XrFrameBeginInfo frameBeginInfo{ XR_TYPE_FRAME_BEGIN_INFO };
+        CHECK_XRCMD(xrBeginFrame(session, &frameBeginInfo));
+        RenderLayerInfo newRenderLayerInfo{};
+        renderLayerInfo = newRenderLayerInfo;
+        renderLayerInfo.predictedDisplayTime = frameState.predictedDisplayTime;
+        lastPredictedDisplayTime = frameState.predictedDisplayTime;
+        currentWorkingIndex = tr.frameIndex;
+        // Variables for rendering and layer composition.
+        bool rendered = false;
+        // Check that the session is active and that we should render.
+        bool sessionActive = (sessionState == XR_SESSION_STATE_SYNCHRONIZED || sessionState == XR_SESSION_STATE_VISIBLE || sessionState == XR_SESSION_STATE_FOCUSED);
+        if (sessionActive && frameState.shouldRender) {
+            // Render the stereo image and associate one of swapchain images with the XrCompositionLayerProjection structure.
+            if (THREAD_LOG) Log("VR mode frameBegin session active frame index " << tr.frameIndex << endl);
+            bool rendered = RenderLayerPrepare(renderLayerInfo);
+            if (rendered) {
+                tr.xr_renderState = XRRenderState::SHOULD_RENDER;
+            }
+            else {
+                tr.xr_renderState = XRRenderState::NOT_RENDERED;
+            }
+        }
+        else {
+            if (THREAD_LOG) Log("VR mode frameBegin NO RENDER frame index " << tr.frameIndex << endl);
+            tr.xr_renderState = XRRenderState::NOT_RENDERED;
+        }
+        return;
+    }
+    else {
+        // no render ticket: skip this frame
+        tr.discardFrame = true;
+    }
+
+}*/
+
+void VR::frameBegin(ThreadResources& tr)
+{
     //ThemedTimer::getInstance()->stop(TIMER_PART_OPENXR);
     //Log("Frame wait " << frameState.predictedDisplayTime << endl);
     //frameState.predictedDisplayTime = frameState.predictedDisplayTime + XR_MILLISECONDS_TO_NANOSECONDS(4);

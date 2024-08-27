@@ -48,6 +48,7 @@ public:
 
 	// threaded frame generation
 	void pollEvent();
+    void frameWait();
 	void frameBegin(ThreadResources& tr);
 	void frameCopy(ThreadResources& tr);
 	void frameEnd(ThreadResources& tr);
@@ -74,6 +75,7 @@ private:
 	XrSessionState sessionState = XR_SESSION_STATE_UNKNOWN;
 	bool sessionRunning = false;
 	bool applicationRunning = false;
+	bool THREAD_LOG = false; // log thread and frame info
 	//XrSpace sceneSpace = nullptr;
 	std::vector<XrViewConfigurationView> xrConfigViews;
 	std::vector<XrViewConfigurationType> m_applicationViewConfigurations = { XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO, XR_VIEW_CONFIGURATION_TYPE_PRIMARY_MONO };
