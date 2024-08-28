@@ -249,6 +249,9 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance, ThreadRes
     GlobalResourceSet set;
     bool doSwitch;
     ShaderBase* shaderInstance = nullptr;
+    //if (tr->frameIndex > 0) {
+    //    this_thread::sleep_for(chrono::seconds(3));
+    //}
     while (engine_instance->isShutdown() == false) {
         // wait until queue submit thread issued all present commands
         // tr->renderThreadContinue->wait(false);
@@ -257,6 +260,7 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance, ThreadRes
             break;
         }
         // draw next frame
+        engine_instance->queueSubmitThreadPreFrame(*tr);
         engine_instance->drawFrame(*tr);
         engine_instance->globalUpdate.doSyncedDrawingThreadMaintenance();
         engine_instance->queue.push(tr);
@@ -350,6 +354,9 @@ void ShadedPathEngine::startRenderThreads()
     if (!initialized) {
         Error("cannot start render threads: pipeline not initialized\n");
         return;
+    }
+    if (framesInFlight > 1 && isVR()) {
+        Error("cannot start render threads: VR mode not supported with multiple render threads. Use engine.setFramesInFlight(1)\n");
     }
     //if (consumer == nullptr) {
     //    Error("cannot start render threads: no frame consumer specified\n");

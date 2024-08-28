@@ -42,13 +42,15 @@ void gltfTerrainApp::run()
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF terrain");
         camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f));
 
-        engine.setFramesInFlight(2);
         engine.registerApp(this);
         if (engine.isVR()) {
             engine.vr.SetPositioner(hmdPositioner);
+            engine.setFramesInFlight(1);
+        } else {
+            engine.setFramesInFlight(2);
         }
         //engine.enableSound();
-        engine.setThreadModeSingle();
+        //engine.setThreadModeSingle();
 
         // engine initialization
         engine.init("gltfTerrain");
