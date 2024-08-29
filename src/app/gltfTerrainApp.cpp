@@ -8,6 +8,7 @@ void gltfTerrainApp::run()
 {
     Log("gltfTerrainApp started" << endl);
     {
+        bool vr = true;
         // camera initialization
         CameraPositioner_FirstPerson positioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         CameraPositioner_HMD myhmdPositioner(glm::vec3(0.0f, 20.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -15,10 +16,14 @@ void gltfTerrainApp::run()
         positioner.setMaxSpeed(15.0f);
         Camera camera(&engine);
         hmdPositioner->setCamera(&camera);
-        //camera.changePositioner(positioner);
-        camera.changePositioner(*hmdPositioner);
+        if (vr) {
+            camera.changePositioner(*hmdPositioner);
+        } else {
+            camera.changePositioner(positioner);
+        }
         auto p = hmdPositioner->getPosition();
-        hmdPositioner->setPosition(glm::vec3(900.0f, p.y, 1.0f));
+        //hmdPositioner->setPosition(glm::vec3(900.0f, p.y, 1.0f));
+        hmdPositioner->setPosition(glm::vec3(900.0f, 20.0f, 1.0f));
         p = hmdPositioner->getPosition();
         Log("HMD position: " << p.x << " / " << p.y << " / " << p.z << endl);
         this->camera = &camera;
@@ -26,7 +31,7 @@ void gltfTerrainApp::run()
         engine.enableKeyEvents();
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
-        engine.enableVR();
+        if (vr) engine.enableVR();
         engine.enableStereo();
         engine.enableStereoPresentation();
         engine.setFixedPhysicalDeviceIndex(0); // needed for Renderdoc
@@ -54,6 +59,10 @@ void gltfTerrainApp::run()
 
         // engine initialization
         engine.init("gltfTerrain");
+        // even if we wanted VR initialization may have failed, fallback to non-VR
+        if (!engine.isVR()) {
+            camera.changePositioner(positioner);
+        }
 
         engine.textureStore.generateBRDFLUT();
         // add shaders used in this app
@@ -92,8 +101,12 @@ void gltfTerrainApp::init() {
     //engine.meshStore.loadMesh("terrain2k/Project_Mesh_2m.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     engine.meshStore.loadMesh("terrain2k/Project_Mesh_0.5.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     engine.objectStore.createGroup("terrain_group");
+    engine.objectStore.createGroup("knife_group");
+    engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
     auto terrain = engine.objectStore.addObject("terrain_group", "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
+    engine.objectStore.addObject("knife_group", "Knife", vec3(900.0f, 20.0f, 0.3f));
     world.transformToWorld(terrain);
+    auto p = hmdPositioner->getPosition();
 
     engine.shaders.clearShader.setClearColor(vec4(0.1f, 0.1f, 0.9f, 1.0f));
     engine.shaders.pbrShader.initialUpload();
@@ -171,6 +184,7 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
         PBRShader::DynamicUniformBufferObject* buf = engine.shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
         mat4 modeltransform;
         if (wo->objectNum == 0) {
+            //terrain
             modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(-0.1f, 0.0f, 0.0f));
             // test overwriting default textures used:
             //buf->indexes.baseColor = 0; // set basecolor to brdflut texture
@@ -182,7 +196,10 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
             modeltransform = wo->mesh->baseTransform;
         }
         else {
-            modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.2f, 0.0f, 0.0f));
+            // knife
+            auto pos = wo->pos();
+            modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
+            //modeltransform = wo->mesh->baseTransform;
         }
         // test model transforms:
         if (wo->mesh->id.starts_with("Grass")) {

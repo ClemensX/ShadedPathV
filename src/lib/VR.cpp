@@ -37,6 +37,7 @@ void VR::init()
 
 void VR::initVulkanEnable2(VkInstanceCreateInfo &instInfo)
 {
+    if (!enabled) return;
     // xrCreateSession: failed to call xr*GetGraphicsRequirements before xrCreateSession
     XrGraphicsRequirementsVulkan2KHR graphicsRequirements{ XR_TYPE_GRAPHICS_REQUIREMENTS_VULKAN2_KHR };
     PFN_xrGetVulkanGraphicsRequirements2KHR pfnGetVulkanGraphicsRequirements2KHR = nullptr;
@@ -72,6 +73,7 @@ void VR::initVulkanEnable2(VkInstanceCreateInfo &instInfo)
 
 void VR::initVulkanCreateDevice(VkDeviceCreateInfo& vkCreateInfo)
 {
+    if (!enabled) return;
     VkResult err;
     PFN_xrCreateVulkanDeviceKHR pfnCreateVulkanDeviceKHR = nullptr;
     CHECK_XRCMD(xrGetInstanceProcAddr(instance, "xrCreateVulkanDeviceKHR",
@@ -89,7 +91,7 @@ void VR::initVulkanCreateDevice(VkDeviceCreateInfo& vkCreateInfo)
 }
 
 void VR::logLayersAndExtensions() {
-    if (!engine.isVR()) return;
+    if (!enabled) return;
     // Write out extension properties for a given layer.
     const auto logExtensions = [this](const char* layerName, int indent = 0) {
         uint32_t instanceExtensionCount;
@@ -135,7 +137,7 @@ void VR::logLayersAndExtensions() {
 }
 
 void VR::createInstanceInternal() {
-    if (!engine.isVR()) return;
+    if (!enabled) return;
     CHECK(instance == XR_NULL_HANDLE);
 
     // Create union of extensions required by platform and graphics plugins.
@@ -169,6 +171,7 @@ void VR::createInstanceInternal() {
 
 void VR::createSystem()
 {
+    if (!enabled) return;
     XrSystemGetInfo sysGetInfo{ .type = XR_TYPE_SYSTEM_GET_INFO };
     sysGetInfo.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
     //sysGetInfo.formFactor = XR_FORM_FACTOR_HANDHELD_DISPLAY; // force XR error to see if error system is working
@@ -189,7 +192,7 @@ void VR::createSystem()
 
 void VR::create()
 {
-    if (!engine.isVR()) return;
+    if (!enabled) return;
     GetViewConfigurationViews();
     GetEnvironmentBlendModes();
 
@@ -505,7 +508,7 @@ void VR::DestroySwapchains()
 
 void VR::pollEvent()
 {
-    if (!engine.isVR()) return;
+    if (!enabled) return;
     // Poll OpenXR for a new event.
     XrEventDataBuffer eventData{ XR_TYPE_EVENT_DATA_BUFFER };
     auto XrPollEvents = [&]() -> bool {
@@ -593,6 +596,7 @@ void VR::pollEvent()
 
 #define XR_MILLISECONDS_TO_NANOSECONDS(ms) ((ms) * 1000000LL)
 void VR::frameWait() {
+    if (!enabled) return;
     XrFrameWaitInfo frameWaitInfo{ XR_TYPE_FRAME_WAIT_INFO };
     ThemedTimer::getInstance()->start(TIMER_PART_OPENXR);
     CHECK_XRCMD(xrWaitFrame(session, &frameWaitInfo, &frameState));
@@ -649,6 +653,7 @@ void VR::frameWait() {
 
 void VR::frameBegin(ThreadResources& tr)
 {
+    if (!enabled) return;
     //ThemedTimer::getInstance()->stop(TIMER_PART_OPENXR);
     //Log("Frame wait " << frameState.predictedDisplayTime << endl);
     //frameState.predictedDisplayTime = frameState.predictedDisplayTime + XR_MILLISECONDS_TO_NANOSECONDS(4);
@@ -673,6 +678,7 @@ void VR::frameBegin(ThreadResources& tr)
 
 void VR::frameCopy(ThreadResources& tr)
 {
+    if (!enabled) return;
     renderLayerInfo.tr = &tr;
     if (renderLayerInfo.renderStarted) {
         bool rendered = RenderLayerCopyRenderedImage(renderLayerInfo);
@@ -685,6 +691,7 @@ void VR::frameCopy(ThreadResources& tr)
 
 void VR::frameEnd(ThreadResources& tr)
 {
+    if (!enabled) return;
     renderLayerInfo.tr = &tr;
 
     // Tell OpenXR that we are finished with this frame; specifying its display time, environment blending and layers.
@@ -898,7 +905,7 @@ void VR::endSession()
 
 VR::~VR()
 {
-    if (!engine.isVR()) return;
+    if (!enabled) return;
     endSession();
     if (instance != XR_NULL_HANDLE) {
         xrDestroyInstance(instance);
