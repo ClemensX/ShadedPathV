@@ -20,8 +20,8 @@ public:
 	virtual glm::vec3 getPosition() const = 0;
 	virtual glm::vec3 getLookAt() const = 0;
     void calcMovement(Movement& mv, glm::quat orientation, glm::vec3& moveSpeed,
-		float acceleration_,	float damping_,	float maxSpeed_, float fastCoef_, double deltaSeconds, bool VRMode = false) {
-		const glm::mat4 v = glm::mat4_cast(orientation);
+			float acceleration_,	float damping_,	float maxSpeed_, float fastCoef_, double deltaSeconds, bool VRMode = false) {
+			const glm::mat4 v = glm::mat4_cast(orientation);
 		glm::vec3 forward = -glm::vec3(v[0][2], v[1][2], v[2][2]);
 		glm::vec3 right = glm::vec3(v[0][0], v[1][0], v[2][0]);
 		glm::vec3 up = glm::cross(right, forward);
@@ -31,9 +31,11 @@ public:
 			// Rotate the default forward direction by the orientation quaternion
 			glm::vec3 lookAtDirection = orientation * defaultForward;
             float moveLength = 0.001f; // 1 cm per input key recognition
-            glm::vec3 add = (moveLength / glm::length(lookAtDirection)) * lookAtDirection;
-            forward = add;
-            //moveSpeed = add;
+            forward = (moveLength / glm::length(lookAtDirection)) * lookAtDirection;
+			glm::vec3 defaultRight(1.0f, 0.0f, 0.0f);
+            glm::vec3 rightDirection = orientation * defaultRight;
+			right = (moveLength / glm::length(rightDirection)) * rightDirection;
+			//moveSpeed = add;
 			//return;
 		}
 

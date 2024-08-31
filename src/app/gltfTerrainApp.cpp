@@ -241,20 +241,34 @@ void gltfTerrainApp::handleInput(InputState& inputState)
             positioner->movement.forward_ = press;
             hmdPositioner->movement.forward_ = press;
         }
-        if (key == GLFW_KEY_S)
+        if (key == GLFW_KEY_S) {
             positioner->movement.backward_ = press;
-        if (key == GLFW_KEY_A)
+            hmdPositioner->movement.backward_ = press;
+        }
+        if (key == GLFW_KEY_A) {
             positioner->movement.left_ = press;
-        if (key == GLFW_KEY_D)
+            hmdPositioner->movement.left_ = press;
+        }
+        if (key == GLFW_KEY_D) {
             positioner->movement.right_ = press;
-        if (key == GLFW_KEY_1)
+            hmdPositioner->movement.right_ = press;
+        }
+        if (key == GLFW_KEY_1) {
             positioner->movement.up_ = press;
-        if (key == GLFW_KEY_2)
+            hmdPositioner->movement.up_ = press;
+        }
+        if (key == GLFW_KEY_2) {
             positioner->movement.down_ = press;
-        if (mods & GLFW_MOD_SHIFT)
+            hmdPositioner->movement.down_ = press;
+        }
+        if (mods & GLFW_MOD_SHIFT) {
             positioner->movement.fastSpeed_ = press;
-        if (key == GLFW_KEY_SPACE)
+            hmdPositioner->movement.fastSpeed_ = press;
+        }
+        if (key == GLFW_KEY_SPACE) {
             positioner->setUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
+            //hmdPositioner->movement.backward_ = press;
+        }
     }
 }
 
