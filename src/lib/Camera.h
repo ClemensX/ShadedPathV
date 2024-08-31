@@ -1,5 +1,15 @@
 #pragma once
 
+struct Movement {
+	bool forward_ = false;
+	bool backward_ = false;
+	bool left_ = false;
+	bool right_ = false;
+	bool up_ = false;
+	bool down_ = false;
+	bool fastSpeed_ = false;
+};
+
 class CameraPositionerInterface {
 public:
 	virtual ~CameraPositionerInterface() = default;
@@ -9,6 +19,43 @@ public:
 	virtual glm::mat4 getViewMatrixAtCameraPos() const = 0;
 	virtual glm::vec3 getPosition() const = 0;
 	virtual glm::vec3 getLookAt() const = 0;
+    void calcMovement(Movement& mv, glm::quat orientation, glm::vec3& moveSpeed,
+		float acceleration_,	float damping_,	float maxSpeed_, float fastCoef_, double deltaSeconds, bool VRMode = false) {
+		const glm::mat4 v = glm::mat4_cast(orientation);
+		glm::vec3 forward = -glm::vec3(v[0][2], v[1][2], v[2][2]);
+		glm::vec3 right = glm::vec3(v[0][0], v[1][0], v[2][0]);
+		glm::vec3 up = glm::cross(right, forward);
+		if (VRMode) {
+			// Default forward direction in OpenGL (negative Z-axis)
+			glm::vec3 defaultForward(0.0f, 0.0f, -1.0f);
+			// Rotate the default forward direction by the orientation quaternion
+			glm::vec3 lookAtDirection = orientation * defaultForward;
+            float moveLength = 0.001f; // 1 cm per input key recognition
+            glm::vec3 add = (moveLength / glm::length(lookAtDirection)) * lookAtDirection;
+            forward = add;
+            //moveSpeed = add;
+			//return;
+		}
+
+		glm::vec3 accel(0.0f);
+		if (mv.forward_) accel += forward;
+		if (mv.backward_) accel -= forward;
+		if (mv.left_) accel -= right;
+		if (mv.right_) accel += right;
+		if (mv.up_) accel += up;
+		if (mv.down_) accel -= up;
+		if (mv.fastSpeed_) accel *= fastCoef_;
+
+		if (accel == glm::vec3(0)) {
+			moveSpeed -= moveSpeed * std::min((1.0f / damping_) * static_cast<float>(deltaSeconds), 1.0f);
+		}
+		else {
+			moveSpeed += accel * acceleration_ * static_cast<float>(deltaSeconds);
+			const float maxSpeed = mv.fastSpeed_ ? maxSpeed_ * fastCoef_ : maxSpeed_;
+			if (glm::length(moveSpeed) > maxSpeed)
+				moveSpeed = glm::normalize(moveSpeed) * maxSpeed;
+		}
+	}
 };
 
 class  Camera {
@@ -70,20 +117,12 @@ class CameraPositioner_FirstPerson final :
 	public CameraPositionerInterface
 {
 public:
-	struct Movement {
-		bool forward_ = false;
-		bool backward_ = false;
-		bool left_ = false;
-		bool right_ = false;
-		bool up_ = false;
-		bool down_ = false;
-		bool fastSpeed_ = false;
-	} movement;
 	float mouseSpeed_ = 4.0f;
 	float acceleration_ = 150.0f;
 	float damping_ = 0.2f;
 	float maxSpeed_ = 10.0f;
 	float fastCoef_ = 10.0f;
+    Movement movement;
 
 private:
 	glm::vec2 mousePos = glm::vec2(0);
@@ -105,29 +144,7 @@ public:
 		}
 		this->mousePos = mousePos;
 
-		const glm::mat4 v = glm::mat4_cast(cameraOrientation);
-		const glm::vec3 forward = -glm::vec3(v[0][2], v[1][2], v[2][2]);
-		const glm::vec3 right = glm::vec3(v[0][0], v[1][0], v[2][0]);
-		const glm::vec3 up = glm::cross(right, forward);
-
-		glm::vec3 accel(0.0f);
-		if (movement.forward_) accel += forward;
-		if (movement.backward_) accel -= forward;
-		if (movement.left_) accel -= right;
-		if (movement.right_) accel += right;
-		if (movement.up_) accel += up;
-		if (movement.down_) accel -= up;
-		if (movement.fastSpeed_) accel *= fastCoef_;
-
-		if (accel == glm::vec3(0)) {
-			moveSpeed -= moveSpeed * std::min((1.0f / damping_) * static_cast<float>(deltaSeconds), 1.0f);
-		}
-		else {
-			moveSpeed += accel * acceleration_ * static_cast<float>(deltaSeconds);
-			const float maxSpeed = movement.fastSpeed_ ? maxSpeed_ * fastCoef_ : maxSpeed_;
-			if (glm::length(moveSpeed) > maxSpeed)
-				moveSpeed = glm::normalize(moveSpeed) * maxSpeed;
-		}
+        calcMovement(movement, cameraOrientation, moveSpeed, acceleration_, damping_, maxSpeed_, fastCoef_, deltaSeconds);
 		cameraPosition += moveSpeed * static_cast<float>(deltaSeconds);
 	}
 
@@ -180,15 +197,7 @@ class CameraPositioner_AutoMove final :
 	public CameraPositionerInterface
 {
 public:
-	struct Movement {
-		bool forward_ = false;
-		bool backward_ = false;
-		bool left_ = false;
-		bool right_ = false;
-		bool up_ = false;
-		bool down_ = false;
-		bool fastSpeed_ = false;
-	} movement;
+	Movement movement;
 	float mouseSpeed_ = 4.0f;
 	float acceleration_ = 150.0f;
 	float damping_ = 0.2f;
@@ -286,15 +295,7 @@ class CameraPositioner_HMD final :
 	public CameraPositionerInterface
 {
 public:
-	struct Movement {
-		bool forward_ = false;
-		bool backward_ = false;
-		bool left_ = false;
-		bool right_ = false;
-		bool up_ = false;
-		bool down_ = false;
-		bool fastSpeed_ = false;
-	} movement;
+	struct Movement movement;
 	float mouseSpeed_ = 4.0f;
 	float acceleration_ = 150.0f;
 	float damping_ = 0.2f;
@@ -311,6 +312,7 @@ private:
 	glm::mat4 viewMatrixRight = glm::mat4(1.0f);
 	glm::mat4 projectionLeft = glm::mat4(1.0f);
 	glm::mat4 projectionRight = glm::mat4(1.0f);
+    double deltaSeconds = 0.0;
 public:
 	CameraPositioner_HMD() = default;
 	CameraPositioner_HMD(const glm::vec3& pos, const glm::vec3& target, const glm::vec3& up)
@@ -321,11 +323,22 @@ public:
         camera = c;
     }
 
+    void updateDeltaSeconds(double deltaSeconds) {
+        this->deltaSeconds = deltaSeconds;
+	}
+
 	void update(int viewNum, glm::vec3 pos, glm::quat ori, glm::mat4 proj, glm::mat4 view) {
 		static float add = 0.0f;
 		add += 0.1f;
 		//Log("HMD update" << std::endl);
 		auto normori = glm::normalize(ori);
+		calcMovement(movement, normori, moveSpeed, acceleration_, damping_, maxSpeed_, fastCoef_, deltaSeconds, true);
+		cameraPosition += moveSpeed;// *static_cast<float>(deltaSeconds);
+		//moveSpeed.x = -moveSpeed.x;
+		//moveSpeed.y = -moveSpeed.y;
+		//moveSpeed.z = -moveSpeed.z;
+		//Log("add " << moveSpeed.x << " " << moveSpeed.y << " " << moveSpeed.z << std::endl);
+
 		//cameraPosition = pos;
 		//cameraPosition.z = pos.z + add;
 		//camera->saveProjection(proj);

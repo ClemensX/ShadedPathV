@@ -142,6 +142,7 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
     //engine.presentation.beginPresentFrame(tr);
     //engine.vr.frameBegin(tr);
     positioner->update(deltaSeconds, input.pos, input.pressedLeft);
+    hmdPositioner->updateDeltaSeconds(deltaSeconds);
     old_seconds = seconds;
     // lines
     if (enableLines) {
@@ -229,8 +230,10 @@ void gltfTerrainApp::handleInput(InputState& inputState)
         auto action = inputState.action;
         auto mods = inputState.mods;
         const bool press = action != GLFW_RELEASE;
-        if (key == GLFW_KEY_W)
+        if (key == GLFW_KEY_W) {
             positioner->movement.forward_ = press;
+            hmdPositioner->movement.forward_ = press;
+        }
         if (key == GLFW_KEY_S)
             positioner->movement.backward_ = press;
         if (key == GLFW_KEY_A)
