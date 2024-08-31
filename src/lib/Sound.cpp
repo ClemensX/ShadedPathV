@@ -226,6 +226,15 @@ void Sound::playSound(std::string id, SoundCategory category, float volume, uint
 	//ThrowIfFailed(hr);
 }
 
+void Sound::setSoundRolloff(std::string id, float rolloff)
+{
+	assert(sounds.count(id) > 0);
+	SoundDef* sound = &sounds[id];
+	ma_sound_set_rolloff(sound->masound, rolloff);
+	float rlf = ma_sound_get_rolloff(sound->masound);
+	Log("Sound rolloff " << rlf << std::endl);
+}
+
 void Sound::lowBackgroundMusicVolume(bool volumeDown) {
 	//SoundDef *sound = &sounds[id];
 	if (volumeDown) {

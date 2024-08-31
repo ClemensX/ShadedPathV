@@ -54,7 +54,7 @@ void gltfTerrainApp::run()
         } else {
             engine.setFramesInFlight(2);
         }
-        //engine.enableSound();
+        engine.enableSound();
         //engine.setThreadModeSingle();
 
         // engine initialization
@@ -104,7 +104,7 @@ void gltfTerrainApp::init() {
     engine.objectStore.createGroup("knife_group");
     engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
     auto terrain = engine.objectStore.addObject("terrain_group", "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
-    engine.objectStore.addObject("knife_group", "Knife", vec3(900.0f, 20.0f, 0.3f));
+    auto knife = engine.objectStore.addObject("knife_group", "Knife", vec3(900.0f, 20.0f, 0.3f));
     world.transformToWorld(terrain);
     auto p = hmdPositioner->getPosition();
 
@@ -117,6 +117,13 @@ void gltfTerrainApp::init() {
         engine.shaders.lineShader.addFixedGlobalLines(grid->lines);
         engine.shaders.lineShader.uploadFixedGlobalLines();
     }
+    // load and play music
+    engine.sound.openSoundFile("power.ogg", "BACKGROUND_MUSIC", true);
+    //engine.sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 1.0f, 6000);
+    // add sound to object
+    engine.sound.addWorldObject(knife);
+    engine.sound.changeSound(knife, "BACKGROUND_MUSIC");
+    engine.sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
 }
 
 void gltfTerrainApp::drawFrame(ThreadResources& tr) {

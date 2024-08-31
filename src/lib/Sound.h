@@ -42,6 +42,8 @@ public:
 	void openSoundFile(std::string soundFileName, std::string id, bool loop = false);
 	// play sound with possible delay (in ms) and volume
 	void playSound(std::string id, SoundCategory category = EFFECT, float volume = 1.0f, uint32_t delayMS = 0);
+    // set rolloff to modify how sound fades with distance. default value is 1.0f
+    void setSoundRolloff(std::string id, float rolloff);
 	void lowBackgroundMusicVolume(bool volumeDown = true);
 	void changeSound(WorldObject* wo, std::string soundId);
 };

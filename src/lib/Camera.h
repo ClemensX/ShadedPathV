@@ -313,6 +313,7 @@ private:
 	glm::mat4 projectionLeft = glm::mat4(1.0f);
 	glm::mat4 projectionRight = glm::mat4(1.0f);
     double deltaSeconds = 0.0;
+	glm::quat lastOrientation = glm::vec3(1.0f);
 public:
 	CameraPositioner_HMD() = default;
 	CameraPositioner_HMD(const glm::vec3& pos, const glm::vec3& target, const glm::vec3& up)
@@ -332,6 +333,7 @@ public:
 		add += 0.1f;
 		//Log("HMD update" << std::endl);
 		auto normori = glm::normalize(ori);
+		lastOrientation = normori;
 		calcMovement(movement, normori, moveSpeed, acceleration_, damping_, maxSpeed_, fastCoef_, deltaSeconds, true);
 		cameraPosition += moveSpeed;// *static_cast<float>(deltaSeconds);
 		//moveSpeed.x = -moveSpeed.x;
@@ -390,8 +392,10 @@ public:
 	}
 
 	virtual glm::vec3 getLookAt() const override {
-		const glm::mat4 view = getViewMatrix();
-		const glm::vec3 dir = -glm::vec3(view[0][2], view[1][2], view[2][2]);
+		// Default forward direction in OpenGL (negative Z-axis)
+		glm::vec3 defaultForward(0.0f, 0.0f, -1.0f);
+		// Rotate the default forward direction by the orientation quaternion
+		glm::vec3 dir = lastOrientation * defaultForward;
 		//Log("LookAt x y z   " << dir.x << " " << dir.y << " " << dir.z << std::endl);
 		return dir;
 	}
