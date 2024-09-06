@@ -160,10 +160,11 @@ void VulkanResources::createThreadResources(VulkanHandoverResources& hdv)
     string dname = hdv.debugBaseName + " Descriptor Set 1";
     engine->util.debugNameObjectDescriptorSet(*hdv.descriptorSet, dname.c_str());
     if (engine->isStereo()) {
+        if (hdv.descriptorSet2 == nullptr) Error("Shader did not initialize needed Thread Resources: descriptorSet 2 is missing");
         if (vkAllocateDescriptorSets(engine->global.device, &allocInfo, hdv.descriptorSet2) != VK_SUCCESS) {
             Error("failed to allocate descriptor sets!");
         }
-        string dname = hdv.debugBaseName + " Descriptor Set 1";
+        string dname = hdv.debugBaseName + " Descriptor Set 2";
         engine->util.debugNameObjectDescriptorSet(*hdv.descriptorSet2, dname.c_str());
     }
 

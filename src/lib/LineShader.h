@@ -235,12 +235,16 @@ public:
 	VkCommandBuffer commandBuffer = nullptr;
 	VkPipeline graphicsPipeline = nullptr;
 	VkFramebuffer framebuffer = nullptr;
+	VkFramebuffer framebuffer2 = nullptr;
 	VkRenderPass renderPass = nullptr;
 	VkDescriptorSet descriptorSet = nullptr;
+	VkDescriptorSet descriptorSet2 = nullptr;
 	// MVP buffer
 	VkBuffer uniformBuffer = nullptr;
+	VkBuffer uniformBuffer2 = nullptr;
 	// MVP buffer device memory
 	VkDeviceMemory uniformBufferMemory = nullptr;
+	VkDeviceMemory uniformBufferMemory2 = nullptr;
 	// additional per frame resources
 	std::vector<LineShader::Vertex> vertices;
 	size_t drawCount = 0; // set number of draw calls for this sub shader, also used as indicator if this is active

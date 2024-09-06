@@ -284,16 +284,29 @@ void LineSubShader::init(LineShader* parent, std::string debugName) {
 
 void LineSubShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
-	VulkanHandoverResources handover;
 	// MVP uniform buffer
 	lineShader->createUniformBuffer(uniformBuffer, sizeof(LineShader::UniformBufferObject),
 		uniformBufferMemory);
+	engine->util.debugNameObjectBuffer(uniformBuffer, "Line UBO 1");
+	engine->util.debugNameObjectDeviceMmeory(uniformBufferMemory, "Line Memory 1");
+	if (engine->isStereo()) {
+		lineShader->createUniformBuffer(uniformBuffer2, sizeof(LineShader::UniformBufferObject), uniformBufferMemory2);
+		engine->util.debugNameObjectBuffer(uniformBuffer2, "Line UBO 2");
+		engine->util.debugNameObjectDeviceMmeory(uniformBufferMemory2, "Line Memory 2");
+	}
+	VulkanHandoverResources handover;
 	handover.mvpBuffer = uniformBuffer;
+	handover.mvpBuffer2 = uniformBuffer2;
 	handover.mvpSize = sizeof(LineShader::UniformBufferObject);
+	handover.imageView = nullptr;
 	handover.descriptorSet = &descriptorSet;
+	handover.descriptorSet2 = &descriptorSet2;
+	handover.dynBuffer = nullptr;
+	handover.dynBufferSize = 0;
+	handover.debugBaseName = engine->util.createDebugName("ThreadResources.lineShader", tr);
 	vulkanResources->createThreadResources(handover);
 
-	lineShader->createRenderPassAndFramebuffer(tr, shaderState, renderPass, framebuffer, framebuffer);
+	lineShader->createRenderPassAndFramebuffer(tr, shaderState, renderPass, framebuffer, framebuffer2);
 
 	// create shader stage
 	auto vertShaderStageInfo = lineShader->engine->shaders.createVertexShaderCreateInfo(vertShaderModule);
@@ -463,9 +476,12 @@ void LineShader::createUpdateSet(GlobalUpdateElement& el)
 void LineSubShader::destroy() {
 	vkDestroyPipeline(*device, graphicsPipeline, nullptr);
 	vkDestroyFramebuffer(*device, framebuffer, nullptr);
+	vkDestroyFramebuffer(*device, framebuffer2, nullptr);
 	vkDestroyRenderPass(*device, renderPass, nullptr);
 	vkDestroyBuffer(*device, uniformBuffer, nullptr);
+	vkDestroyBuffer(*device, uniformBuffer2, nullptr);
 	vkFreeMemory(*device, uniformBufferMemory, nullptr);
+	vkFreeMemory(*device, uniformBufferMemory2, nullptr);
 	vkDestroyBuffer(*device, vertexBufferLocal, nullptr);
 	vkFreeMemory(*device, vertexBufferMemoryLocal, nullptr);
 }

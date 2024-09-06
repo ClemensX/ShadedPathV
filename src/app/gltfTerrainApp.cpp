@@ -8,7 +8,6 @@ void gltfTerrainApp::run()
 {
     Log("gltfTerrainApp started" << endl);
     {
-        bool vr = true;
         // camera initialization
         CameraPositioner_FirstPerson positioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         CameraPositioner_HMD myhmdPositioner(glm::vec3(0.0f, 20.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -31,7 +30,9 @@ void gltfTerrainApp::run()
         engine.enableKeyEvents();
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
-        if (vr) engine.enableVR();
+        if (vr) {
+            engine.enableVR();
+        }
         engine.enableStereo();
         engine.enableStereoPresentation();
         engine.setFixedPhysicalDeviceIndex(0); // needed for Renderdoc
@@ -54,7 +55,7 @@ void gltfTerrainApp::run()
         } else {
             engine.setFramesInFlight(2);
         }
-        engine.enableSound();
+        //engine.enableSound();
         //engine.setThreadModeSingle();
 
         // engine initialization
@@ -98,8 +99,8 @@ void gltfTerrainApp::init() {
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
 
-    //engine.meshStore.loadMesh("terrain2k/Project_Mesh_2m.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
-    engine.meshStore.loadMesh("terrain2k/Project_Mesh_0.5.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    engine.meshStore.loadMesh("terrain2k/Project_Mesh_2m.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    //engine.meshStore.loadMesh("terrain2k/Project_Mesh_0.5.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     engine.objectStore.createGroup("terrain_group");
     engine.objectStore.createGroup("knife_group");
     engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
@@ -154,10 +155,25 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
     // lines
     if (enableLines) {
         LineShader::UniformBufferObject lubo{};
-        lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-        lubo.view = camera->getViewMatrix();
-        lubo.proj = camera->getProjectionNDC();
-        engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo);
+        LineShader::UniformBufferObject lubo2{};
+        //////
+        if (engine.isVR()) {
+            lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+            lubo.view = hmdPositioner->getViewMatrixLeft();
+            lubo.proj = hmdPositioner->getProjectionLeft();
+            lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+            lubo2.view = hmdPositioner->getViewMatrixRight();
+            lubo2.proj = hmdPositioner->getProjectionRight();
+            //Log("VR mode back image num" << tr.frameNum << endl)
+        } else {
+            lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+            lubo.view = camera->getViewMatrix();
+            lubo.proj = camera->getProjectionNDC();
+            lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+            lubo2.view = camera->getViewMatrix();
+            lubo2.proj = camera->getProjectionNDC();
+        }
+        engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
     }
     // pbr
     PBRShader::UniformBufferObject pubo{};
@@ -172,8 +188,7 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
         pubo2.view = hmdPositioner->getViewMatrixRight();
         pubo2.proj = hmdPositioner->getProjectionRight();
         //Log("VR mode back image num" << tr.frameNum << endl)
-    }
-    else {
+    } else {
         pubo.model = modeltransform;
         pubo.view = camera->getViewMatrix();
         pubo.proj = camera->getProjectionNDC();
