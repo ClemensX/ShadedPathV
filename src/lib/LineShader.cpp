@@ -197,9 +197,9 @@ void LineShader::assertUpdateThread() {
 void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
 	if (!enabled) return;
 	LineSubShader& sub = globalLineSubShaders[tr.threadResourcesIndex];
-	sub.uploadToGPU(tr, ubo);
+	sub.uploadToGPU(tr, ubo, ubo2);
 	LineSubShader& pf = perFrameLineSubShaders[tr.threadResourcesIndex];
-	pf.uploadToGPU(tr, ubo);
+	pf.uploadToGPU(tr, ubo, ubo2);
 	// copy added lines to GPU:
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * LineShader::MAX_DYNAMIC_LINES;
 	if (pf.drawCount > 0) {
@@ -221,7 +221,7 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 	}
 	// if we have an active update set, we need to upload its MVP matrix to GPU
 	if (tr.currentGlobalUpdateElement != nullptr) {
-			ug.uploadToGPU(tr, ubo);
+			ug.uploadToGPU(tr, ubo, ubo2);
 	}
 }
 
@@ -415,12 +415,12 @@ void LineSubShader::addRenderPassAndDrawCommands(ThreadResources& tr, VkCommandB
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	recordDrawCommand(commandBuffer, tr, vertexBuffer);
 	vkCmdEndRenderPass(commandBuffer);
-	//if (engine->isStereo()) {
-	//	renderPassInfo.framebuffer = trl.framebuffer2;
-	//	vkCmdBeginRenderPass(trl.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	//	recordDrawCommand(trl.commandBuffer, tr, vertexBuffer, true);
-	//	vkCmdEndRenderPass(trl.commandBuffer);
-	//}
+	if (engine->isStereo()) {
+		renderPassInfo.framebuffer = framebuffer2;
+		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		recordDrawCommand(commandBuffer, tr, vertexBuffer, true);
+		vkCmdEndRenderPass(commandBuffer);
+	}
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
 		Error("failed to record triangle command buffer!");
 	}
@@ -445,14 +445,14 @@ void LineSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadReso
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lineShader->pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 	}
 	else {
-		//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lineShader->pipelineLayout, 0, 1, &trl.descriptorSet2, 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lineShader->pipelineLayout, 0, 1, &descriptorSet2, 0, nullptr);
 	}
 
 	//vkCmdDraw(commandBuffer, static_cast<uint32_t>(lineShader->lines.size() * 2), 1, 0, 0);
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(drawCount), 1, 0, 0);
 }
 
-void LineSubShader::uploadToGPU(ThreadResources& tr, LineShader::UniformBufferObject& ubo) {
+void LineSubShader::uploadToGPU(ThreadResources& tr, LineShader::UniformBufferObject& ubo, LineShader::UniformBufferObject& ubo2) {
 	if (drawCount == 0) return;
 	// copy ubo to GPU:
 	auto& device = lineShader->device;
@@ -461,11 +461,11 @@ void LineSubShader::uploadToGPU(ThreadResources& tr, LineShader::UniformBufferOb
 	vkMapMemory(device, uniformBufferMemory, 0, sizeof(ubo), 0, &data);
 	memcpy(data, &ubo, sizeof(ubo));
 	vkUnmapMemory(device, uniformBufferMemory);
-	//if (engine->isStereo()) {
-	//	vkMapMemory(device, trl.uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
-	//	memcpy(data, &ubo2, sizeof(ubo2));
-	//	vkUnmapMemory(device, trl.uniformBufferMemory2);
-	//}
+	if (engine->isStereo()) {
+		vkMapMemory(device, uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
+		memcpy(data, &ubo2, sizeof(ubo2));
+		vkUnmapMemory(device, uniformBufferMemory2);
+	}
 
 }
 

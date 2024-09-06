@@ -13,7 +13,7 @@ public:
 private:
     bool enableLines = true;
     bool enableUI = false;
-    bool vr = false;
+    bool vr = true;
     ShadedPathEngine engine;
     Shaders& shaders = engine.shaders;
     void updatePerFrame(ThreadResources& tr);

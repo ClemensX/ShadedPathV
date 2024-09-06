@@ -227,7 +227,7 @@ public:
 	void createGlobalCommandBufferAndRenderPass(ThreadResources& tr);
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
 	// per frame update of UBO / MVP
-	void uploadToGPU(ThreadResources& tr, LineShader::UniformBufferObject& ubo);
+	void uploadToGPU(ThreadResources& tr, LineShader::UniformBufferObject& ubo, LineShader::UniformBufferObject& ubo2);
 
 	void destroy();
 
