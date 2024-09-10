@@ -13,6 +13,7 @@ protected:
     bool enableUI = false;
     bool vr = false;
     Camera* camera = nullptr;
+    Camera camera2;
     CameraPositioner_FirstPerson fpPositioner;
     CameraPositioner_HMD hmdPositioner;
     InputState input;
@@ -28,8 +29,34 @@ protected:
     CameraPositioner_HMD* getHMDCameraPositioner() {
         return &hmdPositioner;
     }
+    void initCamera(ShadedPathEngine& engine) {
+        camera2.setEngine(&engine);
+        getHMDCameraPositioner()->setCamera(&camera2);
+        if (vr) {
+            camera2.changePositioner(hmdPositioner);
+        }
+        else {
+            camera2.changePositioner(fpPositioner);
+        }
+        this->camera = &camera2;
+    }
 	// provide input handling for regular first person and HMD cameras
     void handleInput(InputState& inputState);
+    void applyViewProjection(glm::mat4& view1, glm::mat4& proj1, glm::mat4& view2, glm::mat4& proj2) {
+        if (camera->getEngine()->isVR()) {
+            view1 = hmdPositioner.getViewMatrixLeft();
+            proj1 = hmdPositioner.getProjectionLeft();
+            view2 = hmdPositioner.getViewMatrixRight();
+            proj2 = hmdPositioner.getProjectionRight();
+            //Log("VR mode back image num" << tr.frameNum << endl)
+        } else {
+            view1 = camera->getViewMatrix();
+            proj1 = camera->getProjectionNDC();
+            view2 = camera->getViewMatrix();
+            proj2 = camera->getProjectionNDC();
+
+        }
+    }
 private:
 };
 

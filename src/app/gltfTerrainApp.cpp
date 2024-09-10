@@ -13,19 +13,13 @@ void gltfTerrainApp::run()
         createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         createHMDCameraPositioner(glm::vec3(0.0f, 20.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         getFirstPersonCameraPositioner()->setMaxSpeed(15.0f);
-        Camera camera(&engine);
-        getHMDCameraPositioner()->setCamera(&camera);
-        if (vr) {
-            camera.changePositioner(hmdPositioner);
-        } else {
-            camera.changePositioner(fpPositioner);
-        }
+        initCamera(engine);
         auto p = getHMDCameraPositioner()->getPosition();
         //hmdPositioner->setPosition(glm::vec3(900.0f, p.y, 1.0f));
         getHMDCameraPositioner()->setPosition(glm::vec3(900.0f, 20.0f, 1.0f));
         p = getHMDCameraPositioner()->getPosition();
         Log("HMD position: " << p.x << " / " << p.y << " / " << p.z << endl);
-        this->camera = &camera;
+        //this->camera = &camera;
         engine.enableKeyEvents();
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
@@ -45,7 +39,7 @@ void gltfTerrainApp::run()
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
         int win_width = 800;//480;// 960;//1800;// 800;//3700; // 2500;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF terrain");
-        camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f));
+        camera->saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f));
 
         engine.registerApp(this);
         if (engine.isVR()) {
@@ -61,7 +55,7 @@ void gltfTerrainApp::run()
         engine.init("gltfTerrain");
         // even if we wanted VR initialization may have failed, fallback to non-VR
         if (!engine.isVR()) {
-            camera.changePositioner(fpPositioner);
+            camera->changePositioner(fpPositioner);
         }
 
         engine.textureStore.generateBRDFLUT();
@@ -155,48 +149,18 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
     if (enableLines) {
         LineShader::UniformBufferObject lubo{};
         LineShader::UniformBufferObject lubo2{};
-        //////
-        if (engine.isVR()) {
-            lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-            lubo.view = hmdPositioner.getViewMatrixLeft();
-            lubo.proj = hmdPositioner.getProjectionLeft();
-            lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-            lubo2.view = hmdPositioner.getViewMatrixRight();
-            lubo2.proj = hmdPositioner.getProjectionRight();
-            //Log("VR mode back image num" << tr.frameNum << endl)
-        } else {
-            lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-            lubo.view = camera->getViewMatrix();
-            lubo.proj = camera->getProjectionNDC();
-            lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-            lubo2.view = camera->getViewMatrix();
-            lubo2.proj = camera->getProjectionNDC();
-        }
+        lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+        lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+        applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
         engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
     }
     // pbr
     PBRShader::UniformBufferObject pubo{};
     PBRShader::UniformBufferObject pubo2{};
-    //mat4 modeltransform = glm::mat4(1.0f); //glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     mat4 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    if (engine.isVR()) {
-        pubo.model = modeltransform;
-        pubo.view = hmdPositioner.getViewMatrixLeft();
-        pubo.proj = hmdPositioner.getProjectionLeft();
-        pubo2.model = modeltransform;
-        pubo2.view = hmdPositioner.getViewMatrixRight();
-        pubo2.proj = hmdPositioner.getProjectionRight();
-        //Log("VR mode back image num" << tr.frameNum << endl)
-    } else {
-        pubo.model = modeltransform;
-        pubo.view = camera->getViewMatrix();
-        pubo.proj = camera->getProjectionNDC();
-        //pubo.model[0][0] = -1.0f;    
-        pubo2.model = modeltransform;
-        pubo2.view = camera->getViewMatrix();
-        pubo2.proj = camera->getProjectionNDC();
-        //pubo2.model[0][0] = -1.0f;
-    }
+    pubo.model = modeltransform;
+    pubo2.model = modeltransform;
+    applyViewProjection(pubo.view, pubo.proj, pubo2.view, pubo2.proj);
     engine.shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
     // change individual objects position:
     //auto grp = engine.objectStore.getGroup("knife_group");

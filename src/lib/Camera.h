@@ -62,8 +62,19 @@ public:
 
 class  Camera {
 public:
-	Camera(ShadedPathEngine* engine_){
-	engine = engine_;
+	Camera(ShadedPathEngine* engine_) {
+		engine = engine_;
+	}
+
+	Camera() {
+	}
+
+	void setEngine(ShadedPathEngine* engine_) {
+		engine = engine_;
+	}
+
+	ShadedPathEngine* getEngine() {
+        return engine;
 	}
 
 	void changePositioner(CameraPositionerInterface& positioner_) {
