@@ -1,4 +1,5 @@
 #include "mainheader.h"
+#include "AppSupport.h"
 #include "gltfTerrainApp.h"
 
 using namespace std;
@@ -9,24 +10,22 @@ void gltfTerrainApp::run()
     Log("gltfTerrainApp started" << endl);
     {
         // camera initialization
-        CameraPositioner_FirstPerson positioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        CameraPositioner_HMD myhmdPositioner(glm::vec3(0.0f, 20.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        hmdPositioner = &myhmdPositioner;
-        positioner.setMaxSpeed(15.0f);
+        createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        createHMDCameraPositioner(glm::vec3(0.0f, 20.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        getFirstPersonCameraPositioner()->setMaxSpeed(15.0f);
         Camera camera(&engine);
-        hmdPositioner->setCamera(&camera);
+        getHMDCameraPositioner()->setCamera(&camera);
         if (vr) {
-            camera.changePositioner(*hmdPositioner);
+            camera.changePositioner(hmdPositioner);
         } else {
-            camera.changePositioner(positioner);
+            camera.changePositioner(fpPositioner);
         }
-        auto p = hmdPositioner->getPosition();
+        auto p = getHMDCameraPositioner()->getPosition();
         //hmdPositioner->setPosition(glm::vec3(900.0f, p.y, 1.0f));
-        hmdPositioner->setPosition(glm::vec3(900.0f, 20.0f, 1.0f));
-        p = hmdPositioner->getPosition();
+        getHMDCameraPositioner()->setPosition(glm::vec3(900.0f, 20.0f, 1.0f));
+        p = getHMDCameraPositioner()->getPosition();
         Log("HMD position: " << p.x << " / " << p.y << " / " << p.z << endl);
         this->camera = &camera;
-        this->positioner = &positioner;
         engine.enableKeyEvents();
         engine.enableMousButtonEvents();
         engine.enableMouseMoveEvents();
@@ -50,7 +49,7 @@ void gltfTerrainApp::run()
 
         engine.registerApp(this);
         if (engine.isVR()) {
-            engine.vr.SetPositioner(hmdPositioner);
+            engine.vr.SetPositioner(getHMDCameraPositioner());
             engine.setFramesInFlight(1);
         } else {
             engine.setFramesInFlight(2);
@@ -62,7 +61,7 @@ void gltfTerrainApp::run()
         engine.init("gltfTerrain");
         // even if we wanted VR initialization may have failed, fallback to non-VR
         if (!engine.isVR()) {
-            camera.changePositioner(positioner);
+            camera.changePositioner(fpPositioner);
         }
 
         engine.textureStore.generateBRDFLUT();
@@ -107,7 +106,7 @@ void gltfTerrainApp::init() {
     auto terrain = engine.objectStore.addObject("terrain_group", "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
     auto knife = engine.objectStore.addObject("knife_group", "Knife", vec3(900.0f, 20.0f, 0.3f));
     world.transformToWorld(terrain);
-    auto p = hmdPositioner->getPosition();
+    auto p = hmdPositioner.getPosition();
 
     engine.shaders.clearShader.setClearColor(vec4(0.1f, 0.1f, 0.9f, 1.0f));
     engine.shaders.pbrShader.initialUpload();
@@ -149,8 +148,8 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
     double deltaSeconds = seconds - old_seconds;
     //engine.presentation.beginPresentFrame(tr);
     //engine.vr.frameBegin(tr);
-    positioner->update(deltaSeconds, input.pos, input.pressedLeft);
-    hmdPositioner->updateDeltaSeconds(deltaSeconds);
+    fpPositioner.update(deltaSeconds, input.pos, input.pressedLeft);
+    hmdPositioner.updateDeltaSeconds(deltaSeconds);
     old_seconds = seconds;
     // lines
     if (enableLines) {
@@ -159,11 +158,11 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
         //////
         if (engine.isVR()) {
             lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-            lubo.view = hmdPositioner->getViewMatrixLeft();
-            lubo.proj = hmdPositioner->getProjectionLeft();
+            lubo.view = hmdPositioner.getViewMatrixLeft();
+            lubo.proj = hmdPositioner.getProjectionLeft();
             lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-            lubo2.view = hmdPositioner->getViewMatrixRight();
-            lubo2.proj = hmdPositioner->getProjectionRight();
+            lubo2.view = hmdPositioner.getViewMatrixRight();
+            lubo2.proj = hmdPositioner.getProjectionRight();
             //Log("VR mode back image num" << tr.frameNum << endl)
         } else {
             lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
@@ -182,11 +181,11 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
     mat4 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     if (engine.isVR()) {
         pubo.model = modeltransform;
-        pubo.view = hmdPositioner->getViewMatrixLeft();
-        pubo.proj = hmdPositioner->getProjectionLeft();
+        pubo.view = hmdPositioner.getViewMatrixLeft();
+        pubo.proj = hmdPositioner.getProjectionLeft();
         pubo2.model = modeltransform;
-        pubo2.view = hmdPositioner->getViewMatrixRight();
-        pubo2.proj = hmdPositioner->getProjectionRight();
+        pubo2.view = hmdPositioner.getViewMatrixRight();
+        pubo2.proj = hmdPositioner.getProjectionRight();
         //Log("VR mode back image num" << tr.frameNum << endl)
     } else {
         pubo.model = modeltransform;
@@ -236,55 +235,8 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
 
 void gltfTerrainApp::handleInput(InputState& inputState)
 {
-    if (inputState.mouseButtonEvent) {
-        //Log("mouse button pressed (left/right): " << inputState.pressedLeft << " / " << inputState.pressedRight << endl);
-        input.pressedLeft = inputState.pressedLeft;
-        input.pressedRight = inputState.pressedRight;
-    }
-    if (inputState.mouseMoveEvent) {
-        //Log("mouse pos (x/y): " << inputState.pos.x << " / " << inputState.pos.y << endl);
-        input.pos.x = inputState.pos.x;
-        input.pos.y = inputState.pos.y;
-    }
-    if (inputState.keyEvent) {
-        //Log("key pressed: " << inputState.key << endl);
-        auto key = inputState.key;
-        auto action = inputState.action;
-        auto mods = inputState.mods;
-        const bool press = action != GLFW_RELEASE;
-        if (key == GLFW_KEY_W) {
-            positioner->movement.forward_ = press;
-            hmdPositioner->movement.forward_ = press;
-        }
-        if (key == GLFW_KEY_S) {
-            positioner->movement.backward_ = press;
-            hmdPositioner->movement.backward_ = press;
-        }
-        if (key == GLFW_KEY_A) {
-            positioner->movement.left_ = press;
-            hmdPositioner->movement.left_ = press;
-        }
-        if (key == GLFW_KEY_D) {
-            positioner->movement.right_ = press;
-            hmdPositioner->movement.right_ = press;
-        }
-        if (key == GLFW_KEY_1) {
-            positioner->movement.up_ = press;
-            hmdPositioner->movement.up_ = press;
-        }
-        if (key == GLFW_KEY_2) {
-            positioner->movement.down_ = press;
-            hmdPositioner->movement.down_ = press;
-        }
-        if (mods & GLFW_MOD_SHIFT) {
-            positioner->movement.fastSpeed_ = press;
-            hmdPositioner->movement.fastSpeed_ = press;
-        }
-        if (key == GLFW_KEY_SPACE) {
-            positioner->setUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
-            //hmdPositioner->movement.backward_ = press;
-        }
-    }
+    AppSupport::handleInput(inputState);
+    return;
 }
 
 void gltfTerrainApp::buildCustomUI()

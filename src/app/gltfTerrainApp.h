@@ -1,7 +1,7 @@
 #pragma once
 
 // example for loading and rendering gltf models
-class gltfTerrainApp : ShadedPathApplication
+class gltfTerrainApp : ShadedPathApplication, public AppSupport
 {
 public:
     void init();
@@ -11,16 +11,9 @@ public:
     void buildCustomUI() override;
 
 private:
-    bool enableLines = true;
-    bool enableUI = false;
-    bool vr = true;
     ShadedPathEngine engine;
     Shaders& shaders = engine.shaders;
     void updatePerFrame(ThreadResources& tr);
-    Camera* camera;
-    CameraPositioner_FirstPerson* positioner;
-    CameraPositioner_HMD* hmdPositioner;
-    InputState input;
     World world;
     WorldObject *worldObject = nullptr;
     unsigned long uiVerticesTotal = 0;
