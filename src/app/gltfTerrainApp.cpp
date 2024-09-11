@@ -109,10 +109,8 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
         return;
     }
     double deltaSeconds = seconds - old_seconds;
-    //engine.presentation.beginPresentFrame(tr);
-    //engine.vr.frameBegin(tr);
-    fpPositioner.update(deltaSeconds, input.pos, input.pressedLeft);
-    hmdPositioner.updateDeltaSeconds(deltaSeconds);
+
+    updateCameraPositioners(deltaSeconds);
     old_seconds = seconds;
     // lines
     if (enableLines) {
@@ -167,7 +165,6 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
 void gltfTerrainApp::handleInput(InputState& inputState)
 {
     AppSupport::handleInput(inputState);
-    return;
 }
 
 void gltfTerrainApp::buildCustomUI()

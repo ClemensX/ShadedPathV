@@ -97,11 +97,6 @@ void LineShader::createCommandBuffer(ThreadResources& tr)
 }
 
 void LineShader::addCurrentCommandBuffer(ThreadResources& tr) {
-	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
-	if (ug.active) {
-		tr.activeCommandBuffers.push_back(ug.commandBuffer);
-	}
-
 	auto& perFrameSubShader = perFrameLineSubShaders[tr.threadResourcesIndex];
 	if (perFrameSubShader.drawCount != 0) {
 		tr.activeCommandBuffers.push_back(perFrameSubShader.commandBuffer);
@@ -110,6 +105,11 @@ void LineShader::addCurrentCommandBuffer(ThreadResources& tr) {
 	if (globalSubShader.drawCount != 0) {
 		tr.activeCommandBuffers.push_back(globalSubShader.commandBuffer);
 	}
+	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
+	if (ug.active) {
+		tr.activeCommandBuffers.push_back(ug.commandBuffer);
+	}
+
 };
 
 void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)

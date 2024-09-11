@@ -13,8 +13,8 @@ protected:
     bool enableUI = false;
     bool vr = false;
     bool stereo = true;
-    bool enableSound = true;
-    bool singleThreadMode = false;
+    bool enableSound = false;
+    bool singleThreadMode = true;
     Camera* camera = nullptr;
     Camera camera2;
     CameraPositioner_FirstPerson fpPositioner;
@@ -47,6 +47,11 @@ protected:
         }
         this->camera = &camera2;
     }
+    void updateCameraPositioners(double deltaSeconds) {
+        fpPositioner.update(deltaSeconds, input.pos, input.pressedLeft);
+        hmdPositioner.updateDeltaSeconds(deltaSeconds);
+    }
+
 	// provide input handling for regular first person and HMD cameras
     void handleInput(InputState& inputState);
     void applyViewProjection(glm::mat4& view1, glm::mat4& proj1, glm::mat4& view2, glm::mat4& proj2) {
@@ -71,8 +76,10 @@ protected:
         if (vr) {
             engine->enableVR();
         }
-        engine->enableStereo();
-        engine->enableStereoPresentation();
+        if (stereo) {
+            engine->enableStereo();
+            engine->enableStereoPresentation();
+        }
         engine->setFixedPhysicalDeviceIndex(0); // needed for Renderdoc
     }
     void initEngine(std::string name) {
@@ -109,6 +116,10 @@ protected:
         if (enableSound && engine->isDedicatedRenderUpdateThread(tr)) {
             engine->sound.Update(camera);
         }
+    }
+    void logCameraPosition() {
+        auto p = camera->getPosition();
+        Log("Camera position: " << p.x << " / " << p.y << " / " << p.z << std::endl);
     }
 private:
 };

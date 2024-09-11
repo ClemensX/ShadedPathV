@@ -1,7 +1,7 @@
 #pragma once
 
 // siple app only rendering lines with LineShader
-class LineApp : ShadedPathApplication
+class LineApp : ShadedPathApplication, public AppSupport
 {
 public:
     void init();
@@ -12,10 +12,6 @@ private:
     ShadedPathEngine engine;
     Shaders& shaders = engine.shaders;
     void updatePerFrame(ThreadResources& tr);
-    Camera* camera;
-    CameraPositioner_FirstPerson* positioner;
-    CameraPositioner_HMD* hmdPositioner;
-    InputState input;
     World world;
 
     // implent square formed of lines

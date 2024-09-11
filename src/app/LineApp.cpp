@@ -1,4 +1,5 @@
 #include "mainheader.h"
+#include "AppSupport.h"
 #include "LineApp.h"
 
 using namespace std;
@@ -8,28 +9,14 @@ void LineApp::run()
 {
     Log("SimpleApp started" << endl);
     {
+        setEngine(engine);
         // camera initialization
-        CameraPositioner_FirstPerson positioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        CameraPositioner_HMD myhmdPositioner(glm::vec3(0.0f, 20.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        hmdPositioner = &myhmdPositioner;
-        positioner.setMaxSpeed(15.0f);
-        Camera camera(&engine);
-        //hmdPositioner->setCamera(&camera);
-        camera.changePositioner(positioner);
-        //camera.changePositioner(*hmdPositioner);
-        //Camera camera(&engine);
-        //camera.changePositioner(positioner);
-        this->camera = &camera;
-        this->positioner = &positioner;
-        engine.enableKeyEvents();
-        engine.enableMousButtonEvents();
-        engine.enableMouseMoveEvents();
-        //engine.enableMeshShader();
-        //engine.enableVR();
-        //engine.enableStereo();
-        //engine.enableStereoPresentation();
-        engine.setFixedPhysicalDeviceIndex(0); // needed for Renderdoc
+        createFirstPersonCameraPositioner(glm::vec3(-0.36f, 0.0f, 2.340f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        createHMDCameraPositioner(glm::vec3(-0.38f, 0.10f, 0.82f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        getFirstPersonCameraPositioner()->setMaxSpeed(15.0f);
+        initCamera();
         // engine configuration
+        enableEventsAndModes();
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
         //engine.setFrameCountLimit(1000);
@@ -38,14 +25,10 @@ void LineApp::run()
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
         int win_width = 960;// 960;//1800;// 800;//3700;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Vulkan Simple Line App");
-        camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
+        camera->saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
 
-        engine.setFramesInFlight(2);
         engine.registerApp(this);
-        //engine.setThreadModeSingle();
-
-        // engine initialization
-        engine.init("LineApp");
+        initEngine("LineApp");
 
         // add shaders used in this app
         shaders
@@ -57,17 +40,7 @@ void LineApp::run()
 
         // init app rendering:
         init();
-
-        // some shaders may need additional preparation
-        engine.prepareDrawing();
-
-
-        // rendering
-        while (!engine.shouldClose()) {
-            engine.pollEvents();
-            engine.drawFrame();
-        }
-        engine.waitUntilShutdown();
+        eventLoop();
     }
     Log("LineApp ended" << endl);
 }
@@ -125,19 +98,15 @@ void LineApp::updatePerFrame(ThreadResources& tr)
         return;
     }
     double deltaSeconds = seconds - old_seconds;
-    positioner->update(deltaSeconds, input.pos, input.pressedLeft);
+    updateCameraPositioners(deltaSeconds);
     old_seconds = seconds;
 
     // lines
     LineShader::UniformBufferObject lubo{};
+    LineShader::UniformBufferObject lubo2{};
     lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-    lubo.view = camera->getViewMatrix();
-    lubo.proj = camera->getProjectionNDC();
-
-    // TODO hack 2nd view
-    mat4 v2 = translate(lubo.view, vec3(0.3f, 0.0f, 0.0f));
-    auto lubo2 = lubo;
-    lubo2.view = v2;
+    lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
 
     // dynamic lines:
     float aspectRatio = engine.getAspect();
@@ -151,41 +120,46 @@ void LineApp::updatePerFrame(ThreadResources& tr)
         { glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
         { glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) }
     };
-    plus += 0.001f;
-    vector<LineDef> lines;
+    if (vr) plus += 0.0001f;
+    else plus += 0.00001f;
+    //plus = 0.021f;
+    vector<LineDef> oneTimelines;
     // add all intializer objects to vector:
     engine.shaders.lineShader.clearLocalLines(tr);
-    for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
-    //increaseLineStack(lines);
-    engine.shaders.lineShader.addOneTime(lines, tr);
+    for_each(begin(myLines), end(myLines), [&oneTimelines](LineDef l) {oneTimelines.push_back(l); });
+    engine.shaders.lineShader.addOneTime(oneTimelines, tr);
     engine.shaders.lineShader.prepareAddLines(tr);
 
+    vector<LineDef> permlines;
     bool doSingleUpdate = false; // debug: enable single permanent update
     if (doSingleUpdate) {
         if (tr.frameNum == 11) {
             // single update
-            increaseLineStack(lines);
-            engine.shaders.lineShader.addPermament(lines, tr);
+            increaseLineStack(permlines);
+            engine.shaders.lineShader.addPermament(permlines, tr);
         }
         if (tr.frameNum == 100) {
             // single update
-            increaseLineStack(lines);
-            engine.shaders.lineShader.addPermament(lines, tr);
+            increaseLineStack(permlines);
+            engine.shaders.lineShader.addPermament(permlines, tr);
         }
         if (tr.frameNum == 200) {
             // single update
-            increaseLineStack(lines);
-            engine.shaders.lineShader.addPermament(lines, tr);
+            increaseLineStack(permlines);
+            engine.shaders.lineShader.addPermament(permlines, tr);
         }
     } else {
         if ((tr.frameNum + 9) % 10 == 0) {
             // global update
-            increaseLineStack(lines);
-            engine.shaders.lineShader.addPermament(lines, tr);
+            increaseLineStack(permlines);
+            engine.shaders.lineShader.addPermament(permlines, tr);
         }
     }
 
     engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
+    
+    //logCameraPosition();
+    //this_thread::sleep_for(chrono::milliseconds(300));
 }
 
 void LineApp::increaseLineStack(std::vector<LineDef>& lines)
@@ -214,37 +188,5 @@ void LineApp::increaseLineStack(std::vector<LineDef>& lines)
 
 void LineApp::handleInput(InputState& inputState)
 {
-    if (inputState.mouseButtonEvent) {
-        //Log("mouse button pressed (left/right): " << inputState.pressedLeft << " / " << inputState.pressedRight << endl);
-        input.pressedLeft = inputState.pressedLeft;
-        input.pressedRight = inputState.pressedRight;
-    }
-    if (inputState.mouseMoveEvent) {
-        //Log("mouse pos (x/y): " << inputState.pos.x << " / " << inputState.pos.y << endl);
-        input.pos.x = inputState.pos.x;
-        input.pos.y = inputState.pos.y;
-    }
-    if (inputState.keyEvent) {
-        //Log("key pressed: " << inputState.key << endl);
-        auto key = inputState.key;
-        auto action = inputState.action;
-        auto mods = inputState.mods;
-        const bool press = action != GLFW_RELEASE;
-        if (key == GLFW_KEY_W)
-            positioner->movement.forward_ = press;
-        if (key == GLFW_KEY_S)
-            positioner->movement.backward_ = press;
-        if (key == GLFW_KEY_A)
-            positioner->movement.left_ = press;
-        if (key == GLFW_KEY_D)
-            positioner->movement.right_ = press;
-        if (key == GLFW_KEY_1)
-            positioner->movement.up_ = press;
-        if (key == GLFW_KEY_2)
-            positioner->movement.down_ = press;
-        if (mods & GLFW_MOD_SHIFT)
-            positioner->movement.fastSpeed_ = press;
-        if (key == GLFW_KEY_SPACE)
-            positioner->setUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
-    }
+    AppSupport::handleInput(inputState);
 }
