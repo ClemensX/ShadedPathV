@@ -117,13 +117,19 @@ void SimpleShader::finishInitialization(ShadedPathEngine& engine, ShaderState& s
 {
 }
 
-void SimpleShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo) {
+void SimpleShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
 	if (!enabled) Error("Shader disabled. Calling methods on it is not allowed.");
-    // copy ubo to GPU:
+	auto& str = tr.simpleResources; // shortcut to simple shader resources
+	// copy ubo to GPU:
     void* data;
-    vkMapMemory(device, tr.simpleResources.uniformBufferMemory, 0, sizeof(ubo), 0, &data);
-    memcpy(data, &ubo, sizeof(ubo));
-    vkUnmapMemory(device, tr.simpleResources.uniformBufferMemory);
+	vkMapMemory(device, str.uniformBufferMemory, 0, sizeof(ubo), 0, &data);
+	memcpy(data, &ubo, sizeof(ubo));
+	vkUnmapMemory(device, str.uniformBufferMemory);
+	if (engine->isStereo() && true) {
+		vkMapMemory(device, str.uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
+		memcpy(data, &ubo2, sizeof(ubo2));
+		vkUnmapMemory(device, str.uniformBufferMemory2);
+	}
 }
 
 void SimpleShader::createCommandBuffer(ThreadResources& tr)
@@ -164,6 +170,12 @@ void SimpleShader::createCommandBuffer(ThreadResources& tr)
 	vkCmdBeginRenderPass(str.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	recordDrawCommand(str.commandBuffer, tr, vertexBufferTriangle, indexBufferTriangle);
 	vkCmdEndRenderPass(str.commandBuffer);
+	if (engine->isStereo()) {
+		renderPassInfo.framebuffer = str.framebuffer2;
+		vkCmdBeginRenderPass(str.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		recordDrawCommand(str.commandBuffer, tr, vertexBufferTriangle, indexBufferTriangle, true);
+		vkCmdEndRenderPass(str.commandBuffer);
+	}
 	if (vkEndCommandBuffer(str.commandBuffer) != VK_SUCCESS) {
 		Error("failed to record triangle command buffer!");
 	}
@@ -174,7 +186,7 @@ void SimpleShader::addCurrentCommandBuffer(ThreadResources& tr) {
 };
 
 
-void SimpleShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, VkBuffer indexBuffer)
+void SimpleShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, VkBuffer indexBuffer, bool isRightEye)
 {
 	auto& str = tr.simpleResources; //shortcut to shader thread resources
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.graphicsPipeline);
@@ -184,7 +196,13 @@ void SimpleShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResou
 	vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
 	// bind descriptor sets:
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet, 0, nullptr);
+	if (!isRightEye) {
+		// left eye
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet, 0, nullptr);
+	} else {
+		// right eye
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet2, 1, nullptr);
+	}
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
 
 	//vkCmdDraw(commandBuffer, static_cast<uint32_t>(simpleShader.vertices.size()), 1, 0, 0);

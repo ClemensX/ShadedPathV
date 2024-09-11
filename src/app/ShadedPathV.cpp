@@ -17,7 +17,7 @@ int main()
     Log("ShadedPathV app\n");
     //LandscapeDemo app; // vr ok
     //LineApp app; // vr ok
-    SimpleApp app; //
+    SimpleApp app; // vr ok (some stuttering - will not be investigated)
     //DeviceCoordApp app; // vr not supported
     //gltfObjectsApp app; //
     //gltfTerrainApp app; //

@@ -14,7 +14,7 @@ protected:
     bool vr = true;
     bool stereo = true;
     bool enableSound = false;
-    bool singleThreadMode = true;
+    bool singleThreadMode = false;
     Camera* camera = nullptr;
     Camera camera2;
     CameraPositioner_FirstPerson fpPositioner;

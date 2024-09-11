@@ -93,7 +93,7 @@ public:
 
 
     // update per frame data
-    void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo);
+    void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2);
     // set up shader
     virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
     virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) override;
@@ -108,7 +108,7 @@ public:
     virtual ~SimpleShader() override;
 
     // pre-record draw commands (one time call)
-    void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, VkBuffer indexBuffer);
+    void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, VkBuffer indexBuffer, bool isRightEye = false);
     
     TextureInfo* texture = nullptr;
 

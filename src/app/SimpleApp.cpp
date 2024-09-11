@@ -36,7 +36,7 @@ void SimpleApp::run()
         engine.textureStore.generateBRDFLUT();
         // add shaders used in this app
         shaders
-            //.addShader(shaders.uiShader)
+            .addShader(shaders.uiShader)
             .addShader(shaders.clearShader)
             .addShader(shaders.lineShader)
             .addShader(shaders.simpleShader)
@@ -115,12 +115,15 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
     if (downmode) objectPos = b - objectPos;
     else objectPos = a + objectPos;
     //Log(" " << cam << " " << downmode <<  " " << rel_time << endl);
-    float cpos = 14.3f;
-    glm::vec3 camPos(cpos, cpos, cpos);
-    // either moving:
-    //glm::vec3 objectPosV(objectPos, objectPos, objectPos);
-    // or stationary:
-    glm::vec3 objectPosV(0.0f, 0.0f, 0.0f);
+    bool moving = false;
+    glm::vec3 objectPosV;
+    if (moving) {
+        // either moving:
+        objectPosV = glm::vec3(objectPos, objectPos, objectPos);
+    } else {
+        // or stationary:
+        objectPosV = glm::vec3(0.0f, 0.0f, 0.0f);
+    }
 
     glm::mat4 rot = glm::rotate(glm::mat4(1.0f), (float)((seconds * 1.0f) * glm::radians(90.0f)), glm::vec3(0.0f, 0.0f, 1.0f));
     glm::mat4 trans = glm::translate(glm::mat4(1.0f), objectPosV);
@@ -131,7 +134,7 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
     applyViewProjection(ubo.view, ubo.proj, ubo2.view, ubo2.proj);
 
     // copy ubo to GPU:
-    engine.shaders.simpleShader.uploadToGPU(tr, ubo);
+    engine.shaders.simpleShader.uploadToGPU(tr, ubo, ubo2);
 
     // lines
     LineShader::UniformBufferObject lubo{};
