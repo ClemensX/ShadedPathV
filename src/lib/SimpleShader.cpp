@@ -32,14 +32,19 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 
 void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 {
-	VulkanHandoverResources handover;
 	auto& str = tr.simpleResources; //shortcut to shader thread resources
 	// MVP uniform buffer
 	createUniformBuffer(str.uniformBuffer, sizeof(UniformBufferObject), str.uniformBufferMemory);
+	if (engine->isStereo()) {
+		createUniformBuffer(str.uniformBuffer2, sizeof(UniformBufferObject), str.uniformBufferMemory2);
+	}
+	VulkanHandoverResources handover;
 	handover.mvpBuffer = str.uniformBuffer;
+	handover.mvpBuffer2 = str.uniformBuffer2;
 	handover.mvpSize = sizeof(UniformBufferObject);
 	handover.imageView = texture->imageView;
 	handover.descriptorSet = &str.descriptorSet;
+	handover.descriptorSet2 = &str.descriptorSet2;
 	resources.createThreadResources(handover);
 	createRenderPassAndFramebuffer(tr, shaderState, str.renderPass, str.framebuffer, str.framebuffer2);
 

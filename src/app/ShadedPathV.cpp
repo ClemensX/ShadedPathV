@@ -15,14 +15,14 @@
 int main()
 {
     Log("ShadedPathV app\n");
-    //SimpleApp app; // ok
-    LineApp app; // ok
-    //DeviceCoordApp app; // ok
-    //gltfObjectsApp app; // ok
-    //gltfTerrainApp app; // ok
-    //GeneratedTexturesApp app; // ok
-    //BillboardDemo app; // ok
-    //LandscapeDemo app; // ok
-    //LandscapeGenerator app; // ok
+    //LandscapeDemo app; // vr ok
+    //LineApp app; // vr ok
+    SimpleApp app; //
+    //DeviceCoordApp app; // vr not supported
+    //gltfObjectsApp app; //
+    //gltfTerrainApp app; //
+    //GeneratedTexturesApp app; //
+    //BillboardDemo app; //
+    //LandscapeGenerator app; //
     app.run();
 }

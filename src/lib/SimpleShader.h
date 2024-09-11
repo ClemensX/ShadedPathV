@@ -5,8 +5,11 @@ struct SimpleThreadResources : ShaderThreadResources {
     VkRenderPass renderPass = nullptr;
     VkCommandBuffer commandBuffer = nullptr;
     VkBuffer uniformBuffer = nullptr;
+    VkBuffer uniformBuffer2 = nullptr;
     VkDeviceMemory uniformBufferMemory = nullptr;
+    VkDeviceMemory uniformBufferMemory2 = nullptr;
     VkDescriptorSet descriptorSet = nullptr;
+    VkDescriptorSet descriptorSet2 = nullptr;
     VkFramebuffer framebuffer = nullptr;
     VkFramebuffer framebuffer2 = nullptr;
 };
