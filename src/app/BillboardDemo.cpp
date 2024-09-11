@@ -101,6 +101,7 @@ void BillboardDemo::addRandomBillboards(vector<BillboardDef>& billboards, World 
 void BillboardDemo::init() {
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
+    engine.setWorld(&world);
     //world.setWorldSize(10.0f, 382.0f, 10.0f);
 
     // load skybox cube texture

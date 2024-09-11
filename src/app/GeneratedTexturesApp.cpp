@@ -199,6 +199,7 @@ void GeneratedTexturesApp::init() {
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
+    engine.setWorld(&world);
     // Grid with 1m squares, floor on -10m, ceiling on 372m
 
     // select texture by uncommenting:
