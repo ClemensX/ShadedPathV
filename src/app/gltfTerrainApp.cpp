@@ -9,27 +9,19 @@ void gltfTerrainApp::run()
 {
     Log("gltfTerrainApp started" << endl);
     {
+        setEngine(engine);
         // camera initialization
         createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         createHMDCameraPositioner(glm::vec3(0.0f, 20.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         getFirstPersonCameraPositioner()->setMaxSpeed(15.0f);
-        initCamera(engine);
+        initCamera();
         auto p = getHMDCameraPositioner()->getPosition();
         //hmdPositioner->setPosition(glm::vec3(900.0f, p.y, 1.0f));
         getHMDCameraPositioner()->setPosition(glm::vec3(900.0f, 20.0f, 1.0f));
         p = getHMDCameraPositioner()->getPosition();
         Log("HMD position: " << p.x << " / " << p.y << " / " << p.z << endl);
-        //this->camera = &camera;
-        engine.enableKeyEvents();
-        engine.enableMousButtonEvents();
-        engine.enableMouseMoveEvents();
-        if (vr) {
-            engine.enableVR();
-        }
-        engine.enableStereo();
-        engine.enableStereoPresentation();
-        engine.setFixedPhysicalDeviceIndex(0); // needed for Renderdoc
         // engine configuration
+        enableEventsAndModes();
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
         engine.setMaxTextures(50);
@@ -42,23 +34,10 @@ void gltfTerrainApp::run()
         camera->saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f));
 
         engine.registerApp(this);
-        if (engine.isVR()) {
-            engine.vr.SetPositioner(getHMDCameraPositioner());
-            engine.setFramesInFlight(1);
-        } else {
-            engine.setFramesInFlight(2);
-        }
-        //engine.enableSound();
-        //engine.setThreadModeSingle();
-
-        // engine initialization
-        engine.init("gltfTerrain");
-        // even if we wanted VR initialization may have failed, fallback to non-VR
-        if (!engine.isVR()) {
-            camera->changePositioner(fpPositioner);
-        }
+        initEngine("gltfTerrain");
 
         engine.textureStore.generateBRDFLUT();
+
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
@@ -71,17 +50,7 @@ void gltfTerrainApp::run()
 
         // init app rendering:
         init();
-
-        // some shaders may need additional preparation
-        engine.prepareDrawing();
-
-
-        // rendering
-        while (!engine.shouldClose()) {
-            engine.pollEvents();
-            engine.drawFrame();
-        }
-        engine.waitUntilShutdown();
+        eventLoop();
     }
     Log("gltfTerrainApp ended" << endl);
 }
@@ -191,10 +160,8 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
         if (wo->mesh->id.starts_with("Grass")) {
         }
         buf->model = modeltransform;
-        if (engine.isDedicatedRenderUpdateThread(tr)) {
-            engine.sound.Update(camera);
-        }
     }
+    postUpdatePerFrame(tr);
 }
 
 void gltfTerrainApp::handleInput(InputState& inputState)
