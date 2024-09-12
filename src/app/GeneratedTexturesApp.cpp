@@ -25,7 +25,7 @@ void GeneratedTexturesApp::run()
         // engine configuration
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
-        engine.setMaxTextures(10);
+        engine.setMaxTextures(20);
         //engine.setFrameCountLimit(1000);
         engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
@@ -188,6 +188,10 @@ void GeneratedTexturesApp::init() {
     engine.objectStore.addObject("knife_group", "Knife", vec3(0.3f, 0.0f, 0.0f));
     //engine.objectStore.addObject("knife_group", "WaterBottle", vec3(0.3f, 0.0f, 0.0f));
     //Log("Object loaded: " << o->id.c_str() << endl);
+
+    engine.textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
+    unsigned int texIndexHeightmap = engine.textureStore.getTexture("heightmap")->index;
+    shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
 
 
     // add all intializer objects to vector:

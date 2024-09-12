@@ -19,10 +19,10 @@ int main()
     //LineApp app; // vr ok
     //SimpleApp app; // vr ok (some stuttering - will not be investigated)
     //DeviceCoordApp app; // vr not supported
-    BillboardDemo app; // vr ok (w/o cube shader)
+    //BillboardDemo app; // vr ok
+    //GeneratedTexturesApp app; // TODO: does not work even in 2D
+    gltfObjectsApp app; // vr ok (skybox needs fixing: camera moves out of box)
     //LandscapeDemo app; //
-    //gltfObjectsApp app; //
-    //GeneratedTexturesApp app; //
     //LandscapeGenerator app; //
     app.run();
 }

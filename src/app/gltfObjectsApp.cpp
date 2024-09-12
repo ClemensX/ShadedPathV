@@ -1,4 +1,5 @@
 #include "mainheader.h"
+#include "AppSupport.h"
 #include "gltfObjectsApp.h"
 
 using namespace std;
@@ -8,38 +9,27 @@ void gltfObjectsApp::run()
 {
     Log("gltfObjectsApp started" << endl);
     {
+        setEngine(engine);
         // camera initialization
-        CameraPositioner_FirstPerson positioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        positioner.setMaxSpeed(0.1f);
-        Camera camera(&engine);
-        camera.changePositioner(positioner);
-        this->camera = &camera;
-        this->positioner = &positioner;
-        engine.enableKeyEvents();
-        engine.enableMousButtonEvents();
-        engine.enableMouseMoveEvents();
-        //engine.enableVR();
-        //engine.enableStereo();
-        engine.enableStereoPresentation();
+        createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        createHMDCameraPositioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        getFirstPersonCameraPositioner()->setMaxSpeed(0.1f);
+        initCamera();
         // engine configuration
+        enableEventsAndModes();
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
         engine.setMaxTextures(50);
         //engine.setFrameCountLimit(1000);
-        engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
+        engine.setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
         int win_width = 1800;//480;// 960;//1800;// 800;//3700; // 2500;
         //engine.enablePresentation(win_width, (int)(win_width / 3.55f), "Render glTF objects");
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF objects");
-        camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
+        camera->saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
 
-        engine.setFramesInFlight(2);
         engine.registerApp(this);
-        engine.enableSound();
-        engine.setThreadModeSingle();
-
-        // engine initialization
-        engine.init("gltfObjects");
+        initEngine("gltfObjects");
 
         engine.textureStore.generateBRDFLUT();
         // add shaders used in this app
@@ -54,17 +44,7 @@ void gltfObjectsApp::run()
 
         // init app rendering:
         init();
-
-        // some shaders may need additional preparation
-        engine.prepareDrawing();
-
-
-        // rendering
-        while (!engine.shouldClose()) {
-            engine.pollEvents();
-            engine.drawFrame();
-        }
-        engine.waitUntilShutdown();
+        eventLoop();
     }
     Log("gltfObjectsApp ended" << endl);
 }
@@ -153,19 +133,17 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
         return;
     }
     double deltaSeconds = seconds - old_seconds;
-    positioner->update(deltaSeconds, input.pos, input.pressedLeft);
+    updateCameraPositioners(deltaSeconds);
     old_seconds = seconds;
 
     // lines
     LineShader::UniformBufferObject lubo{};
+    LineShader::UniformBufferObject lubo2{};
     lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-    lubo.view = camera->getViewMatrix();
-    lubo.proj = camera->getProjectionNDC();
-
-    // TODO hack 2nd view
-    mat4 v2 = translate(lubo.view, vec3(0.3f, 0.0f, 0.0f));
-    auto lubo2 = lubo;
-    lubo2.view = v2;
+    lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    // we still need to call prepareAddLines() even if we didn't actually add some
+    engine.shaders.lineShader.prepareAddLines(tr);
+    applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
 
     // dynamic lines:
     static float plus = 0.0f;
@@ -190,22 +168,20 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
     }
     // cube
     CubeShader::UniformBufferObject cubo{};
+    CubeShader::UniformBufferObject cubo2{};
     cubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-    cubo.view = camera->getViewMatrixAtCameraPos();
-    //cubo.view = lubo.view; // uncomment to have stationary cube, not centered at camera
-    cubo.proj = lubo.proj;
-    auto cubo2 = cubo;
-    cubo2.view = cubo.view;
+    cubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    applyViewProjection(cubo.view, cubo.proj, cubo2.view, cubo2.proj);
+    // TODO apply this to HMD (prevent camera movin out of skybox): cubo.view = camera->getViewMatrixAtCameraPos();
     engine.shaders.cubeShader.uploadToGPU(tr, cubo, cubo2);
- 
+
     // pbr
     PBRShader::UniformBufferObject pubo{};
+    PBRShader::UniformBufferObject pubo2{};
     mat4 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     pubo.model = modeltransform;
-    pubo.view = lubo.view;
-    pubo.proj = lubo.proj;
-    auto pubo2 = pubo;
-    pubo2.view = lubo2.view;
+    pubo2.model = modeltransform;
+    applyViewProjection(pubo.view, pubo.proj, pubo2.view, pubo2.proj);
     engine.shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
     // change individual objects position:
     //auto grp = engine.objectStore.getGroup("knife_group");
@@ -239,45 +215,11 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
             modeltransform = wo->mesh->baseTransform;
         }
         buf->model = modeltransform;
-        if (engine.isDedicatedRenderUpdateThread(tr)) {
-            engine.sound.Update(camera);
-        }
     }
+    postUpdatePerFrame(tr);
 }
 
 void gltfObjectsApp::handleInput(InputState& inputState)
 {
-    if (inputState.mouseButtonEvent) {
-        //Log("mouse button pressed (left/right): " << inputState.pressedLeft << " / " << inputState.pressedRight << endl);
-        input.pressedLeft = inputState.pressedLeft;
-        input.pressedRight = inputState.pressedRight;
-    }
-    if (inputState.mouseMoveEvent) {
-        //Log("mouse pos (x/y): " << inputState.pos.x << " / " << inputState.pos.y << endl);
-        input.pos.x = inputState.pos.x;
-        input.pos.y = inputState.pos.y;
-    }
-    if (inputState.keyEvent) {
-        //Log("key pressed: " << inputState.key << endl);
-        auto key = inputState.key;
-        auto action = inputState.action;
-        auto mods = inputState.mods;
-        const bool press = action != GLFW_RELEASE;
-        if (key == GLFW_KEY_W)
-            positioner->movement.forward_ = press;
-        if (key == GLFW_KEY_S)
-            positioner->movement.backward_ = press;
-        if (key == GLFW_KEY_A)
-            positioner->movement.left_ = press;
-        if (key == GLFW_KEY_D)
-            positioner->movement.right_ = press;
-        if (key == GLFW_KEY_1)
-            positioner->movement.up_ = press;
-        if (key == GLFW_KEY_2)
-            positioner->movement.down_ = press;
-        if (mods & GLFW_MOD_SHIFT)
-            positioner->movement.fastSpeed_ = press;
-        if (key == GLFW_KEY_SPACE)
-            positioner->setUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
-    }
+    AppSupport::handleInput(inputState);
 }
