@@ -182,21 +182,22 @@ void BillboardDemo::updatePerFrame(ThreadResources& tr)
 
     // cube
     CubeShader::UniformBufferObject cubo{};
+    CubeShader::UniformBufferObject cubo2{};
     cubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-    cubo.view = camera->getViewMatrixAtCameraPos();
+    cubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    applyViewProjection(cubo.view, cubo.proj, cubo2.view, cubo2.proj);
     cubo.view = lubo.view; // uncomment to have stationary cube, not centered at camera
     cubo.proj = lubo.proj;
-    auto cubo2 = cubo;
-    cubo2.view = cubo.view;
+    cubo2.view = lubo2.view; // uncomment to have stationary cube, not centered at camera
+    cubo2.proj = lubo2.proj;
     engine.shaders.cubeShader.uploadToGPU(tr, cubo, cubo2, true);
  
     // billboards
     BillboardShader::UniformBufferObject bubo{};
+    BillboardShader::UniformBufferObject bubo2{};
     bubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-    bubo.view = lubo.view;
-    bubo.proj = lubo.proj;
-    auto bubo2 = bubo;
-    bubo2.view = lubo2.view;
+    bubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    applyViewProjection(bubo.view, bubo.proj, bubo2.view, bubo2.proj);
     engine.shaders.billboardShader.uploadToGPU(tr, bubo, bubo2);
     //Util::printMatrix(bubo.proj);
 }

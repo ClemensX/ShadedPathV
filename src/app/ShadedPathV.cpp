@@ -19,8 +19,8 @@ int main()
     //LineApp app; // vr ok
     //SimpleApp app; // vr ok (some stuttering - will not be investigated)
     //DeviceCoordApp app; // vr not supported
+    BillboardDemo app; // vr ok (w/o cube shader)
     //LandscapeDemo app; //
-    BillboardDemo app; //
     //gltfObjectsApp app; //
     //GeneratedTexturesApp app; //
     //LandscapeGenerator app; //
