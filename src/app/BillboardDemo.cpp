@@ -36,7 +36,7 @@ void BillboardDemo::run()
         shaders
             .addShader(shaders.uiShader)
             .addShader(shaders.clearShader)
-            //.addShader(shaders.cubeShader)  // enable to render central cube with debug texture
+            .addShader(shaders.cubeShader)  // enable to render central cube with debug texture
             .addShader(shaders.billboardShader)
             .addShader(shaders.lineShader)  // enable to see zero cross and billboard debug lines
             //.addShader(shaders.pbrShader)
@@ -89,7 +89,8 @@ void BillboardDemo::init() {
     engine.textureStore.loadTexture("debug.ktx", "2dTexture");
     engine.textureStore.loadTexture("eucalyptus.ktx2", "tree");
     engine.textureStore.loadTexture("shadedpath_logo.ktx2", "logo");
-    engine.textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
+    //engine.textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
+    engine.textureStore.loadTexture("heightbig.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT);
     unsigned int texIndexTree = engine.textureStore.getTexture("tree")->index;
     unsigned int texIndexLogo = engine.textureStore.getTexture("logo")->index;
     unsigned int texIndex = texIndexTree;
@@ -186,10 +187,11 @@ void BillboardDemo::updatePerFrame(ThreadResources& tr)
     cubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     cubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     applyViewProjection(cubo.view, cubo.proj, cubo2.view, cubo2.proj);
-    cubo.view = lubo.view; // uncomment to have stationary cube, not centered at camera
-    cubo.proj = lubo.proj;
-    cubo2.view = lubo2.view; // uncomment to have stationary cube, not centered at camera
-    cubo2.proj = lubo2.proj;
+    //cubo.view = camera->getViewMatrixAtCameraPos();
+    //cubo.view = lubo.view; // uncomment to have stationary cube, not centered at camera
+    //cubo.proj = lubo.proj;
+    //cubo2.view = lubo2.view; // uncomment to have stationary cube, not centered at camera
+    //cubo2.proj = lubo2.proj;
     engine.shaders.cubeShader.uploadToGPU(tr, cubo, cubo2, true);
  
     // billboards
