@@ -1,4 +1,5 @@
 #include "mainheader.h"
+#include "AppSupport.h"
 #include "BillboardDemo.h"
 
 using namespace std;
@@ -8,38 +9,26 @@ void BillboardDemo::run()
 {
     Log("BillboardDemo started" << endl);
     {
+        setEngine(engine);
         // camera initialization
-        CameraPositioner_FirstPerson positioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        positioner.setMaxSpeed(5.0f);
-        Camera camera(&engine);
-        camera.changePositioner(positioner);
-        this->camera = &camera;
-        this->positioner = &positioner;
-        engine.enableKeyEvents();
-        engine.enableMousButtonEvents();
-        engine.enableMouseMoveEvents();
-        //engine.enableMeshShader();
-        //engine.enableVR();
-        //engine.enableStereo();
-        engine.enableStereoPresentation();
+        createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        createHMDCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        getFirstPersonCameraPositioner()->setMaxSpeed(5.0f);
+        initCamera();
         // engine configuration
+        enableEventsAndModes();
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
         engine.setMaxTextures(10);
         //engine.setFrameCountLimit(1000);
-        engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
+        engine.setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 2500;//480;// 960;//1800;// 800;//3700; // 2500
+        int win_width = 960;//480;// 960;//1800;// 800;//3700; // 2500
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Billboard Demo");
-        camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 2000.0f));
+        camera->saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 2000.0f));
 
-        engine.setFramesInFlight(2);
         engine.registerApp(this);
-        //engine.enableSound();
-        //engine.setThreadModeSingle();
-
-        // engine initialization
-        engine.init("BillboardDemo");
+        initEngine("BillboardDemo");
 
         engine.textureStore.generateBRDFLUT();
         //this_thread::sleep_for(chrono::milliseconds(3000));
@@ -57,17 +46,7 @@ void BillboardDemo::run()
 
         // init app rendering:
         init();
-
-        // some shaders may need additional preparation
-        engine.prepareDrawing();
-
-
-        // rendering
-        while (!engine.shouldClose()) {
-            engine.pollEvents();
-            engine.drawFrame();
-        }
-        engine.waitUntilShutdown();
+        eventLoop();
     }
     Log("BillboardDemo ended" << endl);
 }
@@ -110,9 +89,12 @@ void BillboardDemo::init() {
     engine.textureStore.loadTexture("debug.ktx", "2dTexture");
     engine.textureStore.loadTexture("eucalyptus.ktx2", "tree");
     engine.textureStore.loadTexture("shadedpath_logo.ktx2", "logo");
+    engine.textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
     unsigned int texIndexTree = engine.textureStore.getTexture("tree")->index;
     unsigned int texIndexLogo = engine.textureStore.getTexture("logo")->index;
     unsigned int texIndex = texIndexTree;
+    unsigned int texIndexHeightmap = engine.textureStore.getTexture("heightmap")->index;
+    shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
     // add some lines:
     float aspectRatio = engine.getAspect();
     float plus = 0.0f;
@@ -185,22 +167,17 @@ void BillboardDemo::updatePerFrame(ThreadResources& tr)
         return;
     }
     double deltaSeconds = seconds - old_seconds;
-    positioner->update(deltaSeconds, input.pos, input.pressedLeft);
+    updateCameraPositioners(deltaSeconds);
     old_seconds = seconds;
 
     // lines
     LineShader::UniformBufferObject lubo{};
+    LineShader::UniformBufferObject lubo2{};
     lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-    lubo.view = camera->getViewMatrix();
-    lubo.proj = camera->getProjectionNDC();
-    // we stiull need to call prepareAddLines() even if we didn't actually add some
+    lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    // we still need to call prepareAddLines() even if we didn't actually add some
     engine.shaders.lineShader.prepareAddLines(tr);
-
-    // TODO hack 2nd view
-    mat4 v2 = translate(lubo.view, vec3(0.3f, 0.0f, 0.0f));
-    auto lubo2 = lubo;
-    lubo2.view = v2;
-
+    applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
     engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
 
     // cube
@@ -226,37 +203,5 @@ void BillboardDemo::updatePerFrame(ThreadResources& tr)
 
 void BillboardDemo::handleInput(InputState& inputState)
 {
-    if (inputState.mouseButtonEvent) {
-        //Log("mouse button pressed (left/right): " << inputState.pressedLeft << " / " << inputState.pressedRight << endl);
-        input.pressedLeft = inputState.pressedLeft;
-        input.pressedRight = inputState.pressedRight;
-    }
-    if (inputState.mouseMoveEvent) {
-        //Log("mouse pos (x/y): " << inputState.pos.x << " / " << inputState.pos.y << endl);
-        input.pos.x = inputState.pos.x;
-        input.pos.y = inputState.pos.y;
-    }
-    if (inputState.keyEvent) {
-        //Log("key pressed: " << inputState.key << endl);
-        auto key = inputState.key;
-        auto action = inputState.action;
-        auto mods = inputState.mods;
-        const bool press = action != GLFW_RELEASE;
-        if (key == GLFW_KEY_W)
-            positioner->movement.forward_ = press;
-        if (key == GLFW_KEY_S)
-            positioner->movement.backward_ = press;
-        if (key == GLFW_KEY_A)
-            positioner->movement.left_ = press;
-        if (key == GLFW_KEY_D)
-            positioner->movement.right_ = press;
-        if (key == GLFW_KEY_1)
-            positioner->movement.up_ = press;
-        if (key == GLFW_KEY_2)
-            positioner->movement.down_ = press;
-        if (mods & GLFW_MOD_SHIFT)
-            positioner->movement.fastSpeed_ = press;
-        if (key == GLFW_KEY_SPACE)
-            positioner->setUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
-    }
+    AppSupport::handleInput(inputState);
 }

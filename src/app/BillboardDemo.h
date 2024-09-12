@@ -1,7 +1,7 @@
 #pragma once
 
 // generate billboards to teview mass rendering
-class BillboardDemo : ShadedPathApplication
+class BillboardDemo : ShadedPathApplication, public AppSupport
 {
 public:
     void init();
@@ -13,8 +13,5 @@ private:
     ShadedPathEngine engine;
     Shaders& shaders = engine.shaders;
     void updatePerFrame(ThreadResources& tr);
-    Camera* camera;
-    CameraPositioner_FirstPerson* positioner;
-    InputState input;
     World world;
 };
