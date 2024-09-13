@@ -21,8 +21,8 @@ int main()
     //DeviceCoordApp app; // vr not supported
     //BillboardDemo app; // vr ok
     //GeneratedTexturesApp app; // TODO: does not even work in 2D
-    gltfObjectsApp app; // vr ok, also skybox
-    //LandscapeDemo app; //
+    //gltfObjectsApp app; // vr ok, also skybox
+    LandscapeDemo app; // vr ok
     //LandscapeGenerator app; //
     app.run();
 }

@@ -1,4 +1,5 @@
 #pragma once
+// TODO: currently not in use!!!!
 // TerrainShader - draw terrain using heightmaps and textures
 // stages: VertexShader --> TessellationControlShader (optional) --> TessellationEvaluationShader (optional) --> GeometryShader (optional) --> FragmentShader
 // This is a basic structure. Implement tessellation or geometry shaders as needed for your terrain rendering technique.

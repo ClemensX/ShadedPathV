@@ -1,4 +1,5 @@
 #include "mainheader.h"
+#include "AppSupport.h"
 #include "LandscapeDemo1.h"
 
 using namespace std;
@@ -8,49 +9,35 @@ void LandscapeDemo::run()
 {
     Log("LandscapeDemo started" << endl);
     {
+        setEngine(engine);
         // camera initialization
-        CameraPositioner_FirstPerson positioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        positioner.setMaxSpeed(5.0f);
-        Camera camera(&engine);
-        camera.changePositioner(positioner);
-        this->camera = &camera;
-        this->positioner = &positioner;
-        engine.enableKeyEvents();
-        engine.enableMousButtonEvents();
-        engine.enableMouseMoveEvents();
-        //engine.enableMeshShader();
-        //engine.enableVR();
-        //engine.enableStereo();
-        engine.enableStereoPresentation();
+        createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        createHMDCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        getFirstPersonCameraPositioner()->setMaxSpeed(5.0f);
+        initCamera();
         // engine configuration
+        enableEventsAndModes();
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
         engine.setMaxTextures(20);
         //engine.setFrameCountLimit(1000);
-        engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
-        //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
+        setHighBackbufferResolution();
         int win_width = 960;//480;// 960;//1800;// 800;//3700; // 2500
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Landscape Demo");
         //camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f));
-        camera.saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f);
+        camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f);
 
-        engine.setFramesInFlight(2);
         engine.registerApp(this);
-        //engine.enableSound();
-        //engine.setThreadModeSingle();
-
-        // engine initialization
-        engine.init("LandscapeDemo");
+        initEngine("LandscapeDemo");
 
         engine.textureStore.generateBRDFLUT();
-        //this_thread::sleep_for(chrono::milliseconds(3000));
         // add shaders used in this app
         shaders
             .addShader(shaders.uiShader)
             .addShader(shaders.clearShader)
             .addShader(shaders.cubeShader)  // enable to render central cube with debug texture
             .addShader(shaders.billboardShader)
-            .addShader(shaders.terrainShader)
+            //.addShader(shaders.terrainShader)
             .addShader(shaders.lineShader)  // enable to see zero cross and billboard debug lines
             .addShader(shaders.pbrShader)
             ;
@@ -61,17 +48,7 @@ void LandscapeDemo::run()
 
         // init app rendering:
         init();
-
-        // some shaders may need additional preparation
-        engine.prepareDrawing();
-
-
-        // rendering
-        while (!engine.shouldClose()) {
-            engine.pollEvents();
-            engine.drawFrame();
-        }
-        engine.waitUntilShutdown();
+        eventLoop();
     }
     Log("LandscapeDemo ended" << endl);
 }
@@ -114,8 +91,8 @@ void LandscapeDemo::init() {
 
     //world.setWorldSize(10.0f, 382.0f, 10.0f);
 
-    //engine.textureStore.loadTexture("heightbig.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT);
-    engine.textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
+    engine.textureStore.loadTexture("heightbig.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT);
+    //engine.textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
     // load skybox cube texture
     engine.textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
     //engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
@@ -216,82 +193,45 @@ void LandscapeDemo::updatePerFrame(ThreadResources& tr)
         return;
     }
     double deltaSeconds = seconds - old_seconds;
-    positioner->update(deltaSeconds, input.pos, input.pressedLeft);
+    updateCameraPositioners(deltaSeconds);
     old_seconds = seconds;
 
     // lines
     LineShader::UniformBufferObject lubo{};
+    LineShader::UniformBufferObject lubo2{};
     lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-    lubo.view = camera->getViewMatrix();
-    lubo.proj = camera->getProjectionNDC();
+    lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     // we still need to call prepareAddLines() even if we didn't actually add some
     engine.shaders.lineShader.prepareAddLines(tr);
-
-    // TODO hack 2nd view
-    mat4 v2 = translate(lubo.view, vec3(0.3f, 0.0f, 0.0f));
-    auto lubo2 = lubo;
-    lubo2.view = v2;
-
+    applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
     engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
 
     // cube
     CubeShader::UniformBufferObject cubo{};
+    CubeShader::UniformBufferObject cubo2{};
     cubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-    cubo.view = camera->getViewMatrixAtCameraPos();
-    if (!isSkybox) {
-        cubo.view = lubo.view;
+    cubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    applyViewProjection(cubo.view, cubo.proj, cubo2.view, cubo2.proj);
+    if (isSkybox) {
+        cubo.view = camera->getViewMatrixAtCameraPos();
+        cubo2.view = camera->getViewMatrixAtCameraPos();
     }
-    cubo.proj = lubo.proj;
-    auto cubo2 = cubo;
-    cubo2.view = cubo.view;
-    engine.shaders.cubeShader.uploadToGPU(tr, cubo, cubo2, !isSkybox);
- 
+    // reset view matrix to camera orientation without using camera position (prevent camera movin out of skybox)
+    engine.shaders.cubeShader.uploadToGPU(tr, cubo, cubo2);
+
     // billboards
     BillboardShader::UniformBufferObject bubo{};
+    BillboardShader::UniformBufferObject bubo2{};
     bubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-    bubo.view = lubo.view;
-    bubo.proj = lubo.proj;
-    auto bubo2 = bubo;
-    bubo2.view = lubo2.view;
+    bubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    applyViewProjection(bubo.view, bubo.proj, bubo2.view, bubo2.proj);
     engine.shaders.billboardShader.uploadToGPU(tr, bubo, bubo2);
     //Util::printMatrix(bubo.proj);
+
+    postUpdatePerFrame(tr);
 }
 
 void LandscapeDemo::handleInput(InputState& inputState)
 {
-    if (inputState.mouseButtonEvent) {
-        //Log("mouse button pressed (left/right): " << inputState.pressedLeft << " / " << inputState.pressedRight << endl);
-        input.pressedLeft = inputState.pressedLeft;
-        input.pressedRight = inputState.pressedRight;
-    }
-    if (inputState.mouseMoveEvent) {
-        //Log("mouse pos (x/y): " << inputState.pos.x << " / " << inputState.pos.y << endl);
-        input.pos.x = inputState.pos.x;
-        input.pos.y = inputState.pos.y;
-    }
-    if (inputState.keyEvent) {
-        //Log("key pressed: " << inputState.key << endl);
-        auto key = inputState.key;
-        auto action = inputState.action;
-        auto mods = inputState.mods;
-        const bool press = action != GLFW_RELEASE;
-        if (key == GLFW_KEY_P && press)
-            shaders.backBufferImageDumpNextFrame();
-        if (key == GLFW_KEY_W)
-            positioner->movement.forward_ = press;
-        if (key == GLFW_KEY_S)
-            positioner->movement.backward_ = press;
-        if (key == GLFW_KEY_A)
-            positioner->movement.left_ = press;
-        if (key == GLFW_KEY_D)
-            positioner->movement.right_ = press;
-        if (key == GLFW_KEY_1)
-            positioner->movement.up_ = press;
-        if (key == GLFW_KEY_2)
-            positioner->movement.down_ = press;
-        if (mods & GLFW_MOD_SHIFT)
-            positioner->movement.fastSpeed_ = press;
-        if (key == GLFW_KEY_SPACE)
-            positioner->setUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
-    }
+    AppSupport::handleInput(inputState);
 }

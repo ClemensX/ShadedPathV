@@ -140,6 +140,13 @@ protected:
             return &fpProjection;
         }
     }
+    void setHighBackbufferResolution() {
+        if (vr) {
+            engine->setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
+        } else {
+            engine->setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
+        }
+    }
 private:
     // fixed projection matrix for first person camera
     glm::mat4 fpProjection = glm::mat4(1.0f); // identity matrix
