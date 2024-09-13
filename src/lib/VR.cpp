@@ -795,17 +795,24 @@ bool VR::RenderLayerPrepare(RenderLayerInfo& renderLayerInfo)
         XrMatrix4x4f proj;
         XrMatrix4x4f_CreateProjectionFov(&proj, VULKAN, views[i].fov, nearZ, farZ);
         XrMatrix4x4f toView;
+        XrMatrix4x4f toViewCam;
         XrVector3f scale1m{ 1.0f, 1.0f, 1.0f };
         glm::mat4 projglm;
         glm::mat4 viewglm;
+        glm::mat4 viewglmCam;
+        XrVector3f origin(0.0f, 0.0f, 0.0f);
         XrMatrix4x4f_CreateTranslationRotationScale(&toView, &pose.position, &views[i].pose.orientation, &scale1m);
+        XrMatrix4x4f_CreateTranslationRotationScale(&toViewCam, &origin, &views[i].pose.orientation, &scale1m);
         XrMatrix4x4f view;
+        XrMatrix4x4f viewCam;
         XrMatrix4x4f_InvertRigidBody(&view, &toView);
+        XrMatrix4x4f_InvertRigidBody(&viewCam, &toViewCam);
         if (/**/true /*i == 0*/) {
             xr2glm(proj, projglm);
             //xr2glm(toView, viewglm);
             xr2glm(view, viewglm);
-            positioner->update(i, pos, ori, projglm, viewglm);
+            xr2glm(viewCam, viewglmCam);
+            positioner->update(i, pos, ori, projglm, viewglm, viewglmCam);
             //Log("VR mode view " << viewglm[0][0] << endl)
         }
 

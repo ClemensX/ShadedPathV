@@ -172,7 +172,9 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
     cubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     cubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     applyViewProjection(cubo.view, cubo.proj, cubo2.view, cubo2.proj);
-    // TODO apply this to HMD (prevent camera movin out of skybox): cubo.view = camera->getViewMatrixAtCameraPos();
+    // reset view matrix to camera orientation without using camera position (prevent camera movin out of skybox)
+    cubo.view = camera->getViewMatrixAtCameraPos();
+    cubo2.view = camera->getViewMatrixAtCameraPos();
     engine.shaders.cubeShader.uploadToGPU(tr, cubo, cubo2);
 
     // pbr

@@ -327,6 +327,7 @@ private:
 	glm::mat4 projectionRight = glm::mat4(1.0f);
     double deltaSeconds = 0.0;
 	glm::quat lastOrientation = glm::vec3(1.0f);
+    glm::mat4 lastCameraViewMatrix = glm::mat4(1.0f);
 public:
 	CameraPositioner_HMD() = default;
 	CameraPositioner_HMD(const glm::vec3& pos, const glm::vec3& target, const glm::vec3& up)
@@ -341,37 +342,33 @@ public:
         this->deltaSeconds = deltaSeconds;
 	}
 
-	void update(int viewNum, glm::vec3 pos, glm::quat ori, glm::mat4 proj, glm::mat4 view) {
-		static float add = 0.0f;
-		add += 0.1f;
+	void update(int viewNum, glm::vec3 pos, glm::quat ori, glm::mat4 proj, glm::mat4 view, glm::mat4 viewCam) {
 		//Log("HMD update" << std::endl);
+        //static glm::quat lastOriLeft = glm::vec3(1.0f);
 		auto normori = glm::normalize(ori);
-		lastOrientation = normori;
+		lastOrientation = ori;
+        lastCameraViewMatrix = viewCam;
 		calcMovement(movement, normori, moveSpeed, acceleration_, damping_, maxSpeed_, fastCoef_, deltaSeconds, true);
 		cameraPosition += moveSpeed;// *static_cast<float>(deltaSeconds);
-		//moveSpeed.x = -moveSpeed.x;
-		//moveSpeed.y = -moveSpeed.y;
-		//moveSpeed.z = -moveSpeed.z;
-		//Log("add " << moveSpeed.x << " " << moveSpeed.y << " " << moveSpeed.z << std::endl);
-
-		//cameraPosition = pos;
-		//cameraPosition.z = pos.z + add;
-		//camera->saveProjection(proj);
-		//viewMatrix = view;
 		auto finalPos = cameraPosition + pos;
 		const glm::mat4 t = glm::translate(glm::mat4(1.0f), -finalPos);
 		const glm::mat4 r = glm::mat4_cast(normori);
 		auto v = r * t; // ok, but slurs
-		//auto viewProj = proj * view;
 		if (viewNum == 0) {
 			viewMatrixLeft = v;
 			projectionLeft = proj;
 			viewMatrixLeft = view;
+			//if (v != view) {
+			//    Log("view matrix differs" << std::endl);
+			//}
 		}
 		else {
 			viewMatrixRight = v;
 			projectionRight = proj;
 			viewMatrixRight = view;
+            //if (normori == lastOriLeft) {
+            //    Log("different eye ori" << std::endl);
+            //}
 		}
 	}
 
@@ -394,9 +391,12 @@ public:
 		return projectionRight;
 	}
 
+    // get view matrix at camera position, independent of camera movement
+	// orientation is the same for both eyes
+    // so we can simply cast the quaternion to the view matrix
 	virtual glm::mat4 getViewMatrixAtCameraPos() const override {
-		Error("Not implemented");
-		const glm::mat4 r = glm::mat4_cast(cameraOrientation);
+		//const glm::mat4 r = glm::mat4_cast(lastOrientation);
+		const glm::mat4 r = lastCameraViewMatrix;
 		return r;
 	}
 
@@ -404,6 +404,9 @@ public:
 		return cameraPosition;
 	}
 
+    // look at vector is the same for both eyes
+	// uses orientation gotten from last update()
+    // TODO: currently only used in sound positioning, check other uses, maybe needs change in Canera::Update()
 	virtual glm::vec3 getLookAt() const override {
 		// Default forward direction in OpenGL (negative Z-axis)
 		glm::vec3 defaultForward(0.0f, 0.0f, -1.0f);
