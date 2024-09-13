@@ -57,6 +57,7 @@ public:
 		COLOR,
 		DEPTH
 	};
+
 	// Getter for positioner
 	CameraPositioner_HMD* GetPositioner() const {
 		return positioner;

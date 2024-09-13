@@ -97,18 +97,30 @@ public:
 		return positioner->getLookAt();
 	}
 
-	// save projection matrix in normal screen space (y up)
-	void saveProjection(glm::mat4 p) {
-		if (true/*!engine.isVR()*/) {
-			p[1][1] *= -1.0f; // TODO recheck in VR mode
-		}
-		projection = p;
+	// save parameters needed for creating perspective matrix. 
+    // in VR mode fov (fovy and aspect) are irrelevant, because they are read from the HMD
+	// at perspective creation time
+	void saveProjectionParams(float fovy, float aspect, float nearZ, float farZ) {
+        this->fovy = fovy;
+        this->aspect = aspect;
+        this->nearZ = nearZ;
+        this->farZ = farZ;
 	}
+
+	// get parameters needed for creating perspective matrix. 
+	// in VR mode fov (fovy and aspect) are irrelevant, because they are read from the HMD
+	// at perspective creation time
+	void getProjectionParams(float& fovy, float& aspect, float& nearZ, float& farZ) {
+        fovy = this->fovy;
+        aspect = this->aspect;
+        nearZ = this->nearZ;
+        farZ = this->farZ;
+    }
 
 	// get adjusted projection matrix for Vulkan Normalized Device Coordinates (flip y)
 	// use this for projection matrix in shaders
 	glm::mat4 getProjectionNDC() {
-		//Error("Not implemented");	
+		Error("Not implemented");	
 		return projection;
 	}
 
@@ -119,9 +131,18 @@ public:
 		Log(" camera pos (" << p.x << "," << p.y << "," << p.z << ") look at (" << l.x << "," << l.y << "," << l.z << ")" << std::endl);
 	}
 private:
+	//// save projection matrix in normal screen space (y up)
+	//void saveProjection(glm::mat4 p) {
+	//	if (true/*!engine.isVR()*/) {
+	//		p[1][1] *= -1.0f; // TODO recheck in VR mode
+	//	}
+	//	projection = p;
+	//}
+
 	CameraPositionerInterface* positioner = nullptr;
 	glm::mat4 projection = glm::mat4(1.0f);
 	ShadedPathEngine* engine = nullptr;
+	float fovy, aspect, nearZ, farZ;
 };
 
 // standard first person camera, should be used for most rendering.
@@ -334,8 +355,13 @@ public:
 		: cameraPosition(pos)
 		, cameraOrientation(glm::lookAt(pos, target, up))
 	{}
+	
 	void setCamera(Camera* c) {
         camera = c;
+    }
+
+    Camera* getCamera() {
+        return camera;
     }
 
     void updateDeltaSeconds(double deltaSeconds) {

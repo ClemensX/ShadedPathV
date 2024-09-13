@@ -26,7 +26,7 @@ void gltfObjectsApp::run()
         int win_width = 1800;//480;// 960;//1800;// 800;//3700; // 2500;
         //engine.enablePresentation(win_width, (int)(win_width / 3.55f), "Render glTF objects");
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF objects");
-        camera->saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f));
+        camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f);
 
         engine.registerApp(this);
         initEngine("gltfObjects");

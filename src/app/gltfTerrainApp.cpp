@@ -31,7 +31,7 @@ void gltfTerrainApp::run()
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
         int win_width = 800;//480;// 960;//1800;// 800;//3700; // 2500;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF terrain");
-        camera->saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f));
+        camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f);
 
         engine.registerApp(this);
         initEngine("gltfTerrain");

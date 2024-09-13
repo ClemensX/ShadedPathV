@@ -13,7 +13,7 @@ protected:
     bool enableUI = false;
     bool vr = true;
     bool stereo = false;
-    bool enableSound = true;
+    bool enableSound = false;
     bool singleThreadMode = false;
     Camera* camera = nullptr;
     Camera camera2;
@@ -63,9 +63,9 @@ protected:
             //Log("VR mode back image num" << tr.frameNum << endl)
         } else {
             view1 = camera->getViewMatrix();
-            proj1 = camera->getProjectionNDC();
+            proj1 = *getProjection();
             view2 = camera->getViewMatrix();
-            proj2 = camera->getProjectionNDC();
+            proj2 = *getProjection();
 
         }
     }
@@ -121,7 +121,29 @@ protected:
         auto p = camera->getPosition();
         Log("Camera position: " << p.x << " / " << p.y << " / " << p.z << std::endl);
     }
+
+    glm::mat4* getProjection() {
+        if (!engine->isVR()) {
+            if (fpProjectionInitialized)
+                return &fpProjection;
+            else {
+                // create fixed perspective matrix for first person camera
+                float fovy, aspect, nearz, farz;
+                camera->getProjectionParams(fovy, aspect, nearz, farz);
+                fpProjection = glm::perspective(fovy, aspect, nearz, farz);
+                fpProjection[1][1] *= -1.0f; // flip y axis
+                fpProjectionInitialized = true;
+                return &fpProjection;
+            }
+        } else {
+            Error("not implemented");
+            return &fpProjection;
+        }
+    }
 private:
+    // fixed projection matrix for first person camera
+    glm::mat4 fpProjection = glm::mat4(1.0f); // identity matrix
+    bool fpProjectionInitialized = false;
 };
 
 #endif // APPSUPPORT_H
