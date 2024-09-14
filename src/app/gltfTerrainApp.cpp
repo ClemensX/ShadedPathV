@@ -26,9 +26,7 @@ void gltfTerrainApp::run()
         engine.files.findAssetFolder("data");
         engine.setMaxTextures(50);
         //engine.setFrameCountLimit(1000);
-        engine.setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
-        //engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
-        //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
+        setHighBackbufferResolution();
         int win_width = 800;//480;// 960;//1800;// 800;//3700; // 2500;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF terrain");
         camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f);
@@ -61,8 +59,8 @@ void gltfTerrainApp::init() {
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
 
-    engine.meshStore.loadMesh("terrain2k/Project_Mesh_2m.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
-    //engine.meshStore.loadMesh("terrain2k/Project_Mesh_0.5.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    //engine.meshStore.loadMesh("terrain2k/Project_Mesh_2m.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    engine.meshStore.loadMesh("terrain2k/Project_Mesh_0.5.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     engine.objectStore.createGroup("terrain_group");
     engine.objectStore.createGroup("knife_group");
     engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");

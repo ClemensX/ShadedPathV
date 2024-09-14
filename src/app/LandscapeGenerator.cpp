@@ -1,4 +1,5 @@
 #include "mainheader.h"
+#include "AppSupport.h"
 #include "LandscapeGenerator.h"
 
 using namespace std;
@@ -8,44 +9,30 @@ void LandscapeGenerator::run()
 {
     Log("LandscapeGenerator started" << endl);
     {
-        // camera initialization camera pos (241.638,732.069,2261.37) look at (-0.108512,-0.289912,-0.950882)
-        CameraPositioner_FirstPerson positioner(glm::vec3(241.638f, 732.069f, 2261.37f), glm::vec3(-0.108512f, -0.289912f, -0.950882f), glm::vec3(0.0f, 1.0f, 0.0f));
-        positioner.setMaxSpeed(25.0f);
+        setEngine(engine);
+        // camera initialization
+        createFirstPersonCameraPositioner(glm::vec3(241.638f, 732.069f, 2261.37f), glm::vec3(-0.108512f, -0.289912f, -0.950882f), glm::vec3(0.0f, 1.0f, 0.0f));
+        createHMDCameraPositioner(glm::vec3(241.638f, 732.069f, 2261.37f), glm::vec3(-0.108512f, -0.289912f, -0.950882f), glm::vec3(0.0f, 1.0f, 0.0f));
         CameraPositioner_AutoMove autoMovePositioner(glm::vec3(1500.0f, 700.069f, 500.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 10.0f);
-        Camera camera(&engine);
-        camera.changePositioner(positioner);
-        //Camera camera(autoMovePositioner);
-        this->camera = &camera;
-        this->positioner = &positioner;
         this->autoMovePositioner = &autoMovePositioner;
-        engine.enableKeyEvents();
-        engine.enableMousButtonEvents();
-        engine.enableMouseMoveEvents();
-        //engine.enableVR();
-        //engine.enableStereo();
-        engine.enableStereoPresentation();
+        getFirstPersonCameraPositioner()->setMaxSpeed(25.0f);
+        initCamera();
         // engine configuration
+        enableEventsAndModes();
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
         engine.setMaxTextures(20);
-        //engine.setFrameCountLimit(1000);
-        engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
-        //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
+        setHighBackbufferResolution();
         int win_width = 800;//480;// 960;//1800;// 800;//3700; // 2500
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Landscape Generator (Diamond Square Algorithm)");
         //camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f));
-        camera.saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f);
+        camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f);
 
-        engine.setFramesInFlight(2);
         engine.registerApp(this);
-        //engine.enableSound();
-        //engine.setThreadModeSingle();
-
-        // engine initialization
-        engine.init("LandscapeGenerator");
+        initEngine("LandscapeGenerator");
 
         engine.textureStore.generateBRDFLUT();
-        //this_thread::sleep_for(chrono::milliseconds(3000));
+
         // add shaders used in this app
         shaders
             .addShader(shaders.uiShader)
@@ -58,17 +45,7 @@ void LandscapeGenerator::run()
 
         // init app rendering:
         init();
-
-        // some shaders may need additional preparation
-        engine.prepareDrawing();
-
-
-        // rendering
-        while (!engine.shouldClose()) {
-            engine.pollEvents();
-            engine.drawFrame();
-        }
-        engine.waitUntilShutdown();
+        eventLoop();
     }
     Log("LandscapeGenerator ended" << endl);
 }
@@ -105,7 +82,7 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
     if (useAutoCamera) {
 		autoMovePositioner->update(deltaSeconds);
 	} else {
-		positioner->update(deltaSeconds, input.pos, input.pressedLeft);
+        updateCameraPositioners(deltaSeconds);
 	}
     old_seconds = seconds;
 
@@ -139,19 +116,27 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
         }
     }
 
+    //LineShader::UniformBufferObject lubo{};
+    //lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    ////if (tr.frameNum % 100 == 0) camera->log();
+    //lubo.view = camera->getViewMatrix();
+    //lubo.proj = camera->getProjectionNDC();
+    //// we still need to call prepareAddLines() even if we didn't actually add some
+    //engine.shaders.lineShader.prepareAddLines(tr);
+
+    //// TODO hack 2nd view
+    //mat4 v2 = translate(lubo.view, vec3(0.3f, 0.0f, 0.0f));
+    //auto lubo2 = lubo;
+    //lubo2.view = v2;
+
+    //engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
+    // lines
     LineShader::UniformBufferObject lubo{};
+    LineShader::UniformBufferObject lubo2{};
     lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
-    //if (tr.frameNum % 100 == 0) camera->log();
-    lubo.view = camera->getViewMatrix();
-    lubo.proj = camera->getProjectionNDC();
-    // we still need to call prepareAddLines() even if we didn't actually add some
+    lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
     engine.shaders.lineShader.prepareAddLines(tr);
-
-    // TODO hack 2nd view
-    mat4 v2 = translate(lubo.view, vec3(0.3f, 0.0f, 0.0f));
-    auto lubo2 = lubo;
-    lubo2.view = v2;
-
     engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
 }
 
@@ -163,9 +148,15 @@ void LandscapeGenerator::handleInput(InputState& inputState)
         if (useAutoCamera) {
             camera->changePositioner(*autoMovePositioner);
         } else {
-            camera->changePositioner(*positioner);
+            if (vr) {
+                camera->changePositioner(*getHMDCameraPositioner());
+            } else {
+                camera->changePositioner(*getFirstPersonCameraPositioner());
+            }
         }
     }
+    auto fpPositioner = getFirstPersonCameraPositioner();
+    auto hmdPositioner = getHMDCameraPositioner();
     if (inputState.mouseButtonEvent) {
         //Log("mouse button pressed (left/right): " << inputState.pressedLeft << " / " << inputState.pressedRight << endl);
         input.pressedLeft = inputState.pressedLeft;
@@ -187,29 +178,39 @@ void LandscapeGenerator::handleInput(InputState& inputState)
         if (key == GLFW_KEY_P && press)
 			shaders.backBufferImageDumpNextFrame();
         if (key == GLFW_KEY_W) {
-            positioner->movement.forward_ = press;
+            fpPositioner->movement.forward_ = press;
+            hmdPositioner->movement.forward_ = press;
             autoMovePositioner->movement.up_ = press;
         }
         if (key == GLFW_KEY_S) {
-            positioner->movement.backward_ = press;
+            fpPositioner->movement.backward_ = press;
+            hmdPositioner->movement.backward_ = press;
             autoMovePositioner->movement.down_ = press;
         }
-        if (key == GLFW_KEY_A)
-            positioner->movement.left_ = press;
-        if (key == GLFW_KEY_D)
-            positioner->movement.right_ = press;
+        if (key == GLFW_KEY_A) {
+            fpPositioner->movement.left_ = press;
+            hmdPositioner->movement.left_ = press;
+        }
+        if (key == GLFW_KEY_D) {
+            fpPositioner->movement.right_ = press;
+            hmdPositioner->movement.right_ = press;
+        }
         if (key == GLFW_KEY_1) {
-            positioner->movement.up_ = press;
+            fpPositioner->movement.up_ = press;
+            hmdPositioner->movement.up_ = press;
             autoMovePositioner->movement.up_ = press;
         }
         if (key == GLFW_KEY_2) {
-            positioner->movement.down_ = press;
+            fpPositioner->movement.down_ = press;
+            hmdPositioner->movement.down_ = press;
             autoMovePositioner->movement.down_ = press;
         }
-        if (mods & GLFW_MOD_SHIFT)
-            positioner->movement.fastSpeed_ = press;
+        if (mods & GLFW_MOD_SHIFT) {
+            fpPositioner->movement.fastSpeed_ = press;
+            hmdPositioner->movement.fastSpeed_ = press;
+        }
         if (key == GLFW_KEY_SPACE)
-            positioner->setUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
+            fpPositioner->setUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
         const char* kname = glfwGetKeyName(inputState.key, inputState.scancode);
         if (kname != NULL) {
             //Log("key == " << key << " " << kname << endl);
@@ -256,21 +257,25 @@ void LandscapeGenerator::buildCustomUI()
         parameters.generate = true;
         localp = parameters;
     }
-    ImGui::Separator();
-    ImGui::Text("Line count: %d", lines.size());
-    ImGui::Separator();
-    double time = ThemedTimer::getInstance()->getLatestTiming(TIMER_PART_GLOBAL_UPDATE);
-    ImGui::Text("Last GPU Upload Time: %.1f ms", time / 1000.0f);
-    ImGui::Separator();
-    ImGui::Checkbox("Auto Moving Camera", &useAutoCameraCheckbox);
+    if (!vr) {
+        ImGui::Separator();
+        ImGui::Text("Line count: %d", lines.size());
+        ImGui::Separator();
+        double time = ThemedTimer::getInstance()->getLatestTiming(TIMER_PART_GLOBAL_UPDATE);
+        ImGui::Text("Last GPU Upload Time: %.1f ms", time / 1000.0f);
+        ImGui::Separator();
+        ImGui::Checkbox("Auto Moving Camera", &useAutoCameraCheckbox);
+    }
     if (ImGui::CollapsingHeader("Params"))
     {
-        ImGui::SameLine(); HelpMarker(helpText.c_str());
-        ImGui::Separator();
-        ImGui::Text("Diamond Square Parameters");
-        ImGui::PushItemWidth(120);
-        ImGui::InputInt("N", &localp.n);
-        ImGui::SameLine();
+        if (!vr) {
+            ImGui::SameLine(); HelpMarker(helpText.c_str());
+            ImGui::Separator();
+            ImGui::Text("Diamond Square Parameters");
+            ImGui::PushItemWidth(120);
+            ImGui::InputInt("N", &localp.n);
+            ImGui::SameLine();
+        }
         int n2plus1 = 0;
         if (2 < localp.n && localp.n < 14) {
             n2plus1 = (int)(pow(2, localp.n) + 1);
@@ -279,27 +284,29 @@ void LandscapeGenerator::buildCustomUI()
             n2plus1 = 0;
         }
 
-        ImGui::Text("pixel width: %d", n2plus1);
-        ImGui::SameLine();
-        ImGui::InputFloat("Dampening", &localp.dampening, 0.01f, 0.1f, "%.3f");
-        ImGui::SameLine();
-        ImGui::InputFloat("Magnitude", &localp.magnitude, 1.00f, 10.0f, "%.1f");
-        //seed = parameters.seed;
-        ImGui::SameLine();
-        ImGui::InputInt("Seed", &localp.seed, 1, 10);
+        if (!vr) {
+            ImGui::Text("pixel width: %d", n2plus1);
+            ImGui::SameLine();
+            ImGui::InputFloat("Dampening", &localp.dampening, 0.01f, 0.1f, "%.3f");
+            ImGui::SameLine();
+            ImGui::InputFloat("Magnitude", &localp.magnitude, 1.00f, 10.0f, "%.1f");
+            //seed = parameters.seed;
+            ImGui::SameLine();
+            ImGui::InputInt("Seed", &localp.seed, 1, 10);
 
-        ImGui::Text("Start hight for corners:");
-        ImGui::SameLine();
-        ImGui::InputFloat("Top L", &localp.h_tl, 1.0f, 10.0f, "%.3f");
-        ImGui::SameLine();
-        ImGui::InputFloat("Top R", &localp.h_tr, 1.0f, 10.0f, "%.3f");
-        ImGui::SameLine();
-        ImGui::InputFloat("Bottom L", &localp.h_bl, 1.0f, 10.0f, "%.3f");
-        ImGui::SameLine();
-        ImGui::InputFloat("Buttom R", &localp.h_br, 1.0f, 10.0f, "%.3f");
+            ImGui::Text("Start hight for corners:");
+            ImGui::SameLine();
+            ImGui::InputFloat("Top L", &localp.h_tl, 1.0f, 10.0f, "%.3f");
+            ImGui::SameLine();
+            ImGui::InputFloat("Top R", &localp.h_tr, 1.0f, 10.0f, "%.3f");
+            ImGui::SameLine();
+            ImGui::InputFloat("Bottom L", &localp.h_bl, 1.0f, 10.0f, "%.3f");
+            ImGui::SameLine();
+            ImGui::InputFloat("Buttom R", &localp.h_br, 1.0f, 10.0f, "%.3f");
 
-        ImGui::InputInt("Iterations", &localp.generations);
-        ImGui::SameLine();
+            ImGui::InputInt("Iterations", &localp.generations);
+            ImGui::SameLine();
+        }
         static int clicked = 0;
         if (ImGui::Button("Generate")) {
             clicked++;

@@ -22,7 +22,7 @@ int main()
     //BillboardDemo app; // vr ok
     //GeneratedTexturesApp app; // TODO: does not even work in 2D
     //gltfObjectsApp app; // vr ok, also skybox
-    LandscapeDemo app; // vr ok
-    //LandscapeGenerator app; //
+    //LandscapeDemo app; // vr ok
+    LandscapeGenerator app; // vr ok with limited support
     app.run();
 }

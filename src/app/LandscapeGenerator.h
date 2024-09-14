@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ShadedPathEngine.h"
-// generate billboards to teview mass rendering
-class LandscapeGenerator : ShadedPathApplication
+// generate a landscape using Spatial2D::diamondSquare()
+class LandscapeGenerator : ShadedPathApplication, public AppSupport
 {
 public:
     void init();
@@ -14,8 +14,6 @@ private:
     ShadedPathEngine engine;
     Shaders& shaders = engine.shaders;
     void updatePerFrame(ThreadResources& tr);
-    Camera* camera;
-    CameraPositioner_FirstPerson* positioner;
     CameraPositioner_AutoMove* autoMovePositioner;
     InputState input;
     World world;

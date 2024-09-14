@@ -12,7 +12,7 @@ protected:
     bool enableLines = true;
     bool enableUI = false;
     bool vr = true;
-    bool stereo = false;
+    bool stereo = true;
     bool enableSound = false;
     bool singleThreadMode = false;
     Camera* camera = nullptr;
