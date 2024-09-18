@@ -6,21 +6,17 @@ struct Grid {
 	int widthCells; // number of cells to separate along x axis
 	int depthCells; // number of cells to separate along z axis
 	// store grid line endpoints in world coords, each pair of endpoints denotes one grid line to draw
-	//vector<XMFLOAT4> zLineEndpoints; // parallel to z axis
-	//vector<XMFLOAT4> xLineEndpoints; // parallel to x axis
-	// lines mode:
 	std::vector<LineDef> lines;
-	// triangle mode with vertices and indexes:
-	std::vector<glm::vec3> vertices;
-	std::vector<glm::vec2> tex;  //texture coords, stretch texture over entire area
-	std::vector<UINT> indexes;
+    float lineGap; // distance between lines
 };
 
 class World
 {
 public:
-	// create Grid in x (width) and z (depth) direction, linesmode means create simple long lines, otherwise create vertex/index vectors
-	void createGridXZ(Grid& grid, bool linesmode = true);
+	// create Line Grid in x (width) and z (depth) direction
+	void createGridXZ(Grid& grid);
+    // create horizontal grid with lines. lineGap is the distance between lines, verticalAdjust is the height of the grid.
+    // the outermost lines are always at the world border, while inner ones are placed at lineGap distance beginning at world center (0x 0z).
 	Grid* createWorldGrid(float lineGap, float verticalAdjust = 0.0f);
 	void setWorldSize(float x, float y, float z) { sizex = x; sizey = y; sizez = z; if (x != z) Error("World size needs to be square in x and z"); };
 	// randomly generate one location within the defined world coords

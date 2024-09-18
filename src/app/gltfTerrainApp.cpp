@@ -57,10 +57,12 @@ void gltfTerrainApp::init() {
     float aspectRatio = engine.getAspect();
 
     // 2 square km world size
-    world.setWorldSize(2048.0f, 382.0f, 2048.0f);
+    //world.setWorldSize(2048.0f, 382.0f, 2048.0f);
+    world.setWorldSize(1024.0f, 382.0f, 1024.0f);
 
     //engine.meshStore.loadMesh("terrain2k/Project_Mesh_2m.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
-    engine.meshStore.loadMesh("terrain2k/Project_Mesh_0.5.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    //engine.meshStore.loadMesh("terrain2k/Project_Mesh_0.5.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    engine.meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     engine.objectStore.createGroup("terrain_group");
     engine.objectStore.createGroup("knife_group");
     engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
@@ -74,7 +76,7 @@ void gltfTerrainApp::init() {
     if (enableLines) {
         // Grid with 1m squares, floor on -10m, ceiling on 372m
         //Grid* grid = world.createWorldGrid(1.0f, -10.0f);
-        Grid* grid = world.createWorldGrid(1.0f, 0.0f);
+        Grid* grid = world.createWorldGrid(100.0f, 0.0f);
         engine.shaders.lineShader.addFixedGlobalLines(grid->lines);
         engine.shaders.lineShader.uploadFixedGlobalLines();
     }

@@ -15,7 +15,7 @@
 int main()
 {
     Log("ShadedPathV app\n");
-    //gltfTerrainApp app; // vr ok
+    gltfTerrainApp app; // vr ok
     //LineApp app; // vr ok
     //SimpleApp app; // vr ok (some stuttering - will not be investigated)
     //DeviceCoordApp app; // vr not supported
@@ -23,6 +23,6 @@ int main()
     //GeneratedTexturesApp app; // TODO: does not even work in 2D
     //gltfObjectsApp app; // vr ok, also skybox
     //LandscapeDemo app; // vr ok
-    LandscapeGenerator app; // vr ok with limited support
+    //LandscapeGenerator app; // vr ok with limited support
     app.run();
 }
