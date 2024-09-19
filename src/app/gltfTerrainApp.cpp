@@ -12,12 +12,12 @@ void gltfTerrainApp::run()
         setEngine(engine);
         // camera initialization
         createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        createHMDCameraPositioner(glm::vec3(0.0f, 20.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        createHMDCameraPositioner(glm::vec3(0.0f, 70.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         getFirstPersonCameraPositioner()->setMaxSpeed(15.0f);
         initCamera();
         auto p = getHMDCameraPositioner()->getPosition();
         //hmdPositioner->setPosition(glm::vec3(900.0f, p.y, 1.0f));
-        getHMDCameraPositioner()->setPosition(glm::vec3(900.0f, 20.0f, 1.0f));
+        getHMDCameraPositioner()->setPosition(glm::vec3(5.38f, 58.90f, 5.30f));
         p = getHMDCameraPositioner()->getPosition();
         Log("HMD position: " << p.x << " / " << p.y << " / " << p.z << endl);
         // engine configuration
@@ -29,7 +29,8 @@ void gltfTerrainApp::run()
         setHighBackbufferResolution();
         int win_width = 800;//480;// 960;//1800;// 800;//3700; // 2500;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF terrain");
-        camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f);
+        //camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f);
+        camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.10f, 2000.0f);
 
         engine.registerApp(this);
         initEngine("gltfTerrain");
@@ -65,9 +66,22 @@ void gltfTerrainApp::init() {
     engine.meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     engine.objectStore.createGroup("terrain_group");
     engine.objectStore.createGroup("knife_group");
+    engine.objectStore.createGroup("box_group");
     engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
+    engine.meshStore.loadMesh("box1_cmp.glb", "Box1");
+    engine.meshStore.loadMesh("box10_cmp.glb", "Box10");
+    engine.meshStore.loadMesh("box100_cmp.glb", "Box100");
+    engine.meshStore.loadMesh("bottle2.glb", "WaterBottle");
+
     auto terrain = engine.objectStore.addObject("terrain_group", "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
-    auto knife = engine.objectStore.addObject("knife_group", "Knife", vec3(900.0f, 20.0f, 0.3f));
+    //auto knife = engine.objectStore.addObject("knife_group", "Knife", vec3(900.0f, 20.0f, 0.3f));
+    auto knife = engine.objectStore.addObject("knife_group", "Knife", vec3(5.47332f, 58.312f, 3.9));
+    knife->rot().x = 3.14159f / 2;
+    knife->rot().y = -3.14159f / 4;
+    auto bottle = engine.objectStore.addObject("knife_group", "WaterBottle", vec3(5.77332f, 58.43f, 3.6));
+    auto box1 = engine.objectStore.addObject("box_group", "Box1", vec3(5.57332f, 57.3f, 3.70005));
+    auto box10 = engine.objectStore.addObject("box_group", "Box10", vec3(-5.57332f, 57.3f, 3.70005));
+    auto box100 = engine.objectStore.addObject("box_group", "Box100", vec3(120.57332f, 57.3f, 3.70005));
     world.transformToWorld(terrain);
     auto p = hmdPositioner.getPosition();
 
@@ -147,11 +161,20 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
             //modeltransform = scale(mat4(1.0f), vec3(4.01f, 4.01f, 4.01f));
             // scale from gltf:
             modeltransform = wo->mesh->baseTransform;
+
         }
         else {
             // knife
             auto pos = wo->pos();
-            modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
+            auto rot = wo->rot();
+            glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), rot.x, glm::vec3(1.0f, 0.0f, 0.0f));
+            glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), rot.y, glm::vec3(0.0f, 1.0f, 0.0f));
+            glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), rot.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+            glm::mat4 rotationMatrix = rotationZ * rotationY * rotationX;
+
+            modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z)) * rotationMatrix;
+            //modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
             //modeltransform = wo->mesh->baseTransform;
         }
         // test model transforms:
