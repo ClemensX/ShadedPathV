@@ -427,7 +427,7 @@ public:
 	}
 
 	virtual glm::vec3 getPosition() const override {
-        Log("HMD getPosition " << cameraPosition.x << " " << cameraPosition.y << " " << cameraPosition.z << " " << std::endl);
+        //Log("HMD getPosition " << cameraPosition.x << " " << cameraPosition.y << " " << cameraPosition.z << " " << std::endl);
 		return cameraPosition;
 	}
 

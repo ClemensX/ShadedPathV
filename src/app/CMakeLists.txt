@@ -26,6 +26,7 @@ add_executable(app
   LandscapeGenerator.cpp
   LineApp.cpp
   SimpleApp.cpp
+  Incoming.cpp
 
   ShadedPathV.cpp
   ${VULKAN_SHADERS}

@@ -52,6 +52,5 @@ endif()
 
 # call chain:
 # cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=~/dev/cpp/vcpkg/scripts/buildsystems/vcpkg.cmake
-# cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=c:\dev\vulkan\vcpkg\scripts\buildsystems\vcpkg.cmake
 # cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=C:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake
 # cmake --build ./build

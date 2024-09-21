@@ -11,11 +11,13 @@
 #include "GeneratedTexturesApp.h"
 #include "BillboardDemo.h"
 #include "LandscapeDemo1.h"
+#include "incoming.h"
 
 int main()
 {
     Log("ShadedPathV app\n");
-    gltfTerrainApp app; // vr ok
+    Incoming app;
+    //gltfTerrainApp app; // vr ok
     //LineApp app; // vr ok
     //SimpleApp app; // vr ok (some stuttering - will not be investigated)
     //DeviceCoordApp app; // vr not supported
