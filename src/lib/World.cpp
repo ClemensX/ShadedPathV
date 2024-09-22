@@ -160,7 +160,10 @@ float World::getHeightmapValue(float x, float z)
         float halfWorld = sizex / 2.0f;
         // convert to positive x z values
 		x = x + halfWorld;
-		z = z + halfWorld;
+		z = (2.0f * z);
+
+		//z = -512.0f + (2.0f * z);
+		//z = z + halfWorld;
 		// reverse coords
 		x = sizex - x;
 		z = sizex - z;
