@@ -64,7 +64,7 @@ void TextureStore::loadTexture(string filename, string id, TextureType type, Tex
 		void* data = ktxTexture_GetData(kTexture) + offset;
 		auto size = ktxTexture_GetImageSize(kTexture, level);
 		assert(size == texture->vulkanTexture.width * texture->vulkanTexture.height * sizeof(float));
-		texture->raw_buffer.insert(texture->raw_buffer.end(), (std::byte*)data, (std::byte*)data + size);
+		//texture->raw_buffer.insert(texture->raw_buffer.end(), (std::byte*)data, (std::byte*)data + size);
 		Log("size: " << size << endl);
 		float* floatData = (float*)data;
 		texture->float_buffer.insert(texture->float_buffer.end(), floatData, floatData + (size / sizeof(float)));
@@ -72,6 +72,7 @@ void TextureStore::loadTexture(string filename, string id, TextureType type, Tex
 		//for (int i = 0; i < size / 4; i++) {
 		//	Log("floatData: " << floatData[i] << endl);
 		//}
+        texture->flags = flags;
 	}
 	ktxTexture_Destroy(kTexture);
 }

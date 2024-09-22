@@ -21,9 +21,14 @@ enum class TextureType : int {
 	TEXTURE_TYPE_COUNT = 12 // always last, to be used as array size
 };
 
+// Texture flags, used to set special properties for textures
+// values can be or-ed together, always use hasFlag() to check if a flag is set
 enum class TextureFlags : unsigned int {
 	NONE = 0,
-	KEEP_DATA_BUFFER = 1 << 0 // 1
+	// keep buffer to access heightmap from CPU
+	KEEP_DATA_BUFFER = 1 << 0, // 1
+    // first float in height map is for point(xmax, zmax), 2nd for point(xmax-1, zmax), and so on
+    ORIENTATION_RAW_START_WITH_XMAX_ZMAX = 1 << 1, // 2
 //	REPEAT = 1 << 1,  // 2
 //	MIRROR = 1 << 2   // 4
 };
@@ -64,8 +69,11 @@ struct TextureInfo
 	bool isKtxCreated = true;
 	uint32_t index = 0; // index used for shaders to access the right texture in the global texture array
 	TextureType type = TextureType::TEXTURE_TYPE_MIPMAP_IMAGE;
-	std::vector<std::byte> raw_buffer;
 	std::vector<float> float_buffer;
+    TextureFlags flags = TextureFlags::NONE;
+    bool hasFlag(TextureFlags flag) {
+        return ::hasFlag(flags, flag);
+    }
 };
 typedef ::TextureInfo* TextureID;
 

@@ -143,6 +143,33 @@ void World::transformToWorld(WorldObject* terrain)
 	glm::vec3 worldCenter(0.0f, 0.0f, 0.0f);
 	glm::vec3 moveVec = worldCenter - center;
 	transform = glm::translate(transform, moveVec);
-
 	terrain->mesh->baseTransform = transform;
+}
+
+void World::setHeightmap(TextureID heightmap)
+{
+	this->heightmap = heightmap;
+	// heightmap size calculations:
+	textureScaleFactor = sizex / (heightmap->vulkanTexture.width);
+    Log("World heightmap has value every " << textureScaleFactor << " m" << std::endl);
+}
+
+float World::getHeightmapValue(float x, float z)
+{
+	if (heightmap->hasFlag(TextureFlags::ORIENTATION_RAW_START_WITH_XMAX_ZMAX)) {
+        float halfWorld = sizex / 2.0f;
+        // convert to positive x z values
+		x = x + halfWorld;
+		z = z + halfWorld;
+		// reverse coords
+		x = sizex - x;
+		z = sizex - z;
+		// scale to tex index
+		int texX = x / textureScaleFactor;
+		int texZ = z / textureScaleFactor;
+		return heightmap->float_buffer[texX + texZ * 1024.0f];
+	} else {
+		Error("World::getHeightmapValue: heightmap orientation not implemented");
+	}
+	return 0.0f;
 }

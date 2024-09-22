@@ -30,9 +30,13 @@ public:
 	}
 	// transform terrain object to match world size and position
 	void transformToWorld(WorldObject* obj);
+	void setHeightmap(TextureID heightmap);
+    float getHeightmapValue(float x, float z);
 private:
 	// world size in absolute units around origin, e.g. x is from -x to x
 	float sizex = 0.0f, sizey = 0.0f, sizez = 0.0f;
 	Grid grid;
+    TextureID heightmap = nullptr;
+    float textureScaleFactor = 1.0f; // heightmap may be more or less detailed than world size
 };
 

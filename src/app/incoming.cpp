@@ -95,8 +95,10 @@ void Incoming::init() {
     auto p = hmdPositioner.getPosition();
 
     // heightmap
-    engine.textureStore.loadTexture("valley_height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
+    engine.textureStore.loadTexture("valley_height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT,
+        TextureFlags::KEEP_DATA_BUFFER | TextureFlags::ORIENTATION_RAW_START_WITH_XMAX_ZMAX);
     auto texHeightmap = engine.textureStore.getTexture("heightmap");
+    world.setHeightmap(texHeightmap);
     unsigned int texIndexHeightmap = texHeightmap->index;
     //shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
 
@@ -114,10 +116,24 @@ void Incoming::init() {
         Grid* grid = world.createWorldGrid(100.0f, 0.0f);
         // draw one line of heightmap data:
         for (int i = 0; i < 1020; i++) {
-            float x = 512 - (i * 0.5f);
-            float z = 512.0f;
-            vec3 p1 = vec3(x, texHeightmap->float_buffer[i], z);
-            vec3 p2 = vec3(x-0.5f, texHeightmap->float_buffer[i + 1], z);
+            //float x = 512 - (i * 0.5f);
+            //float z = 512.0f;
+            //vec3 p1 = vec3(x, texHeightmap->float_buffer[i], z);
+            //vec3 p2 = vec3(x-0.5f, texHeightmap->float_buffer[i + 1], z);
+            //x = 512;
+            //z = 512;
+            //p1.y = world.getHeightmapValue(x-(i*0.5f), z);
+            //p2.y = world.getHeightmapValue(x-(i*0.5f) -0.5f, z);
+            //grid->lines.push_back(LineDef(p1, p2, vec4(1.0f, 1.0f, 1.0f, 1.0f)));
+            float v = -512.0f + (i /** 0.5f*/);
+            float w = 512.0f - 1.0f;
+            //w = -512.0f;
+            vec3 p1 = vec3(v, 0.0f, w);
+            vec3 p2 = vec3(v + 0.5f, 0.0f, w);
+            //vec3 p1 = vec3(0.0f, 0.0f, v);
+            //vec3 p2 = vec3(0.0f , 0.0f, v + 0.5f);
+            p1.y = world.getHeightmapValue(v, w);
+            p2.y = world.getHeightmapValue(v+0.5, w);
             grid->lines.push_back(LineDef(p1, p2, vec4(1.0f, 1.0f, 1.0f, 1.0f)));
         }
         engine.shaders.lineShader.addFixedGlobalLines(grid->lines);
@@ -154,6 +170,8 @@ void Incoming::updatePerFrame(ThreadResources& tr)
     double deltaSeconds = seconds - old_seconds;
 
     updateCameraPositioners(deltaSeconds);
+    //logCameraPosition();
+
     old_seconds = seconds;
     // lines
     if (enableLines) {
