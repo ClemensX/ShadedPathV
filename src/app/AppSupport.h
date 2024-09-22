@@ -9,7 +9,7 @@
 class AppSupport
 {
 protected:
-    bool enableLines = false;
+    bool enableLines = true;
     bool enableUI = false;
     bool vr = false;
     bool stereo = false;

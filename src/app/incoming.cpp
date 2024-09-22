@@ -94,6 +94,12 @@ void Incoming::init() {
     world.transformToWorld(terrain);
     auto p = hmdPositioner.getPosition();
 
+    // heightmap
+    engine.textureStore.loadTexture("valley_height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
+    auto texHeightmap = engine.textureStore.getTexture("heightmap");
+    unsigned int texIndexHeightmap = texHeightmap->index;
+    //shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
+
     // skybox
     engine.textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
     engine.shaders.cubeShader.setSkybox("skyboxTexture");
@@ -106,6 +112,14 @@ void Incoming::init() {
         // Grid with 1m squares, floor on -10m, ceiling on 372m
         //Grid* grid = world.createWorldGrid(1.0f, -10.0f);
         Grid* grid = world.createWorldGrid(100.0f, 0.0f);
+        // draw one line of heightmap data:
+        for (int i = 0; i < 1020; i++) {
+            float x = 512 - (i * 0.5f);
+            float z = 512.0f;
+            vec3 p1 = vec3(x, texHeightmap->float_buffer[i], z);
+            vec3 p2 = vec3(x-0.5f, texHeightmap->float_buffer[i + 1], z);
+            grid->lines.push_back(LineDef(p1, p2, vec4(1.0f, 1.0f, 1.0f, 1.0f)));
+        }
         engine.shaders.lineShader.addFixedGlobalLines(grid->lines);
         engine.shaders.lineShader.uploadFixedGlobalLines();
     }

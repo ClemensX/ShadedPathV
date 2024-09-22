@@ -65,6 +65,7 @@ struct TextureInfo
 	uint32_t index = 0; // index used for shaders to access the right texture in the global texture array
 	TextureType type = TextureType::TEXTURE_TYPE_MIPMAP_IMAGE;
 	std::vector<std::byte> raw_buffer;
+	std::vector<float> float_buffer;
 };
 typedef ::TextureInfo* TextureID;
 
