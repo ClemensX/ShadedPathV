@@ -185,6 +185,10 @@ vec3& WorldObject::rot() {
 	return _rot;
 }
 
+vec3& WorldObject::scale() {
+	return _scale;
+}
+
 void WorldObject::getBoundingBox(BoundingBox& box)
 {
 	if (boundingBoxAlreadySet) {

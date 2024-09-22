@@ -139,7 +139,7 @@ void World::transformToWorld(WorldObject* terrain)
 
 	// move terrain to world center:
 	glm::vec3 center = (box.min + box.max) / 2.0f;
-	center.y = 0.0f;
+	center.y = 0;// -1000.0f;
 	glm::vec3 worldCenter(0.0f, 0.0f, 0.0f);
 	glm::vec3 moveVec = worldCenter - center;
 	transform = glm::translate(transform, moveVec);

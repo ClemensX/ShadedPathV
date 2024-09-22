@@ -11,7 +11,7 @@ void Incoming::run()
     {
         setEngine(engine);
         // camera initialization
-        createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        createFirstPersonCameraPositioner(glm::vec3(5.38f, 58.90f, 5.30f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         createHMDCameraPositioner(glm::vec3(0.0f, 70.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         getFirstPersonCameraPositioner()->setMaxSpeed(15.0f);
         initCamera();
@@ -27,7 +27,7 @@ void Incoming::run()
         engine.setMaxTextures(50);
         //engine.setFrameCountLimit(1000);
         setHighBackbufferResolution();
-        int win_width = 800;//480;// 960;//1800;// 800;//3700; // 2500;
+        int win_width = 1800;//480;// 960;//1800;// 800;//3700; // 2500;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Incoming");
         //camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f);
         camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.10f, 2000.0f);
@@ -40,6 +40,7 @@ void Incoming::run()
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
+            .addShader(shaders.cubeShader)
             .addShader(shaders.pbrShader)
             ;
         if (enableUI) shaders.addShader(shaders.uiShader);
@@ -72,18 +73,32 @@ void Incoming::init() {
     engine.meshStore.loadMesh("box10_cmp.glb", "Box10");
     engine.meshStore.loadMesh("box100_cmp.glb", "Box100");
     engine.meshStore.loadMesh("bottle2.glb", "WaterBottle");
+    // 
+    engine.meshStore.loadMesh("cyberpunk_pistol_cmp.glb", "Gun");
 
     auto terrain = engine.objectStore.addObject("terrain_group", "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
     //auto knife = engine.objectStore.addObject("knife_group", "Knife", vec3(900.0f, 20.0f, 0.3f));
     auto knife = engine.objectStore.addObject("knife_group", "Knife", vec3(5.47332f, 58.312f, 3.9));
     knife->rot().x = 3.14159f / 2;
     knife->rot().y = -3.14159f / 4;
+    auto gun = engine.objectStore.addObject("knife_group", "Gun", vec3(4.97f, 57.39f, 3.9));
+    gun->scale() = vec3(0.03f, 0.03f, 0.03f);
+    gun->rot().x = 4.8f;
+    gun->rot().y = 6.4;
+    gun->rot().z = 7.4f;
+    worldObject = gun;
     auto bottle = engine.objectStore.addObject("knife_group", "WaterBottle", vec3(5.77332f, 58.43f, 3.6));
     auto box1 = engine.objectStore.addObject("box_group", "Box1", vec3(5.57332f, 57.3f, 3.70005));
     auto box10 = engine.objectStore.addObject("box_group", "Box10", vec3(-5.57332f, 57.3f, 3.70005));
     auto box100 = engine.objectStore.addObject("box_group", "Box100", vec3(120.57332f, 57.3f, 3.70005));
     world.transformToWorld(terrain);
     auto p = hmdPositioner.getPosition();
+
+    // skybox
+    engine.textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
+    engine.shaders.cubeShader.setSkybox("skyboxTexture");
+    engine.shaders.cubeShader.setFarPlane(2000.0f);
+
 
     engine.shaders.clearShader.setClearColor(vec4(0.1f, 0.1f, 0.9f, 1.0f));
     engine.shaders.pbrShader.initialUpload();
@@ -135,6 +150,16 @@ void Incoming::updatePerFrame(ThreadResources& tr)
         applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
         engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
     }
+    // cube
+    CubeShader::UniformBufferObject cubo{};
+    CubeShader::UniformBufferObject cubo2{};
+    cubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    cubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    applyViewProjection(cubo.view, cubo.proj, cubo2.view, cubo2.proj);
+    // reset view matrix to camera orientation without using camera position (prevent camera movin out of skybox)
+    cubo.view = camera->getViewMatrixAtCameraPos();
+    cubo2.view = camera->getViewMatrixAtCameraPos();
+    engine.shaders.cubeShader.uploadToGPU(tr, cubo, cubo2);
     // pbr
     PBRShader::UniformBufferObject pubo{};
     PBRShader::UniformBufferObject pubo2{};
@@ -164,16 +189,18 @@ void Incoming::updatePerFrame(ThreadResources& tr)
 
         }
         else {
-            // knife
+            // all other objects
             auto pos = wo->pos();
             auto rot = wo->rot();
+            auto scale = wo->scale();
             glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), rot.x, glm::vec3(1.0f, 0.0f, 0.0f));
             glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), rot.y, glm::vec3(0.0f, 1.0f, 0.0f));
             glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), rot.z, glm::vec3(0.0f, 0.0f, 1.0f));
 
             glm::mat4 rotationMatrix = rotationZ * rotationY * rotationX;
-
-            modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z)) * rotationMatrix;
+            glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
+            glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
+            modeltransform =  trans * scaled * rotationMatrix;
             //modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
             //modeltransform = wo->mesh->baseTransform;
         }
@@ -188,6 +215,35 @@ void Incoming::updatePerFrame(ThreadResources& tr)
 void Incoming::handleInput(InputState& inputState)
 {
     AppSupport::handleInput(inputState);
+    if (inputState.keyEvent) {
+        //Log("key pressed: " << inputState.key << endl);
+        auto key = inputState.key;
+        auto action = inputState.action;
+        auto mods = inputState.mods;
+        const bool press = action != GLFW_RELEASE;
+        if (key == GLFW_KEY_X) {
+            worldObject->rot().x += 0.1f / 4;
+            Log("rot x " << worldObject->rot().x << endl);
+        }
+        if (key == GLFW_KEY_Y) {
+            worldObject->rot().y += 0.1f / 4;
+            Log("rot y " << worldObject->rot().y << endl);
+        }
+        if (key == GLFW_KEY_Z) {
+            worldObject->rot().z += 0.1f / 4;
+            Log("rot z " << worldObject->rot().z << endl);
+        }
+        if (key == GLFW_KEY_D) {
+        }
+        if (key == GLFW_KEY_1) {
+        }
+        if (key == GLFW_KEY_2) {
+        }
+        if (mods & GLFW_MOD_SHIFT) {
+        }
+        if (key == GLFW_KEY_SPACE) {
+        }
+    }
 }
 
 void Incoming::buildCustomUI()

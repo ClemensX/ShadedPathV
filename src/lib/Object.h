@@ -108,6 +108,7 @@ public:
 	virtual ~WorldObject();
 	glm::vec3& pos();
 	glm::vec3& rot();
+    glm::vec3& scale();
 	MeshInfo* mesh = nullptr;
 	float alpha = 1.0f;
 	bool disableSkinning = false; // set to true for animated object to use as static meshes
@@ -136,6 +137,7 @@ public:
 private:
 	glm::vec3 _pos;
 	glm::vec3 _rot;
+    glm::vec3 _scale = glm::vec3(1.0f, 1.0f, 1.0f);
 	glm::vec3 bboxVertexMin = glm::vec3(FLT_MAX, FLT_MAX, FLT_MAX);
 	glm::vec3 bboxVertexMax = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 	bool boundingBoxAlreadySet = false;

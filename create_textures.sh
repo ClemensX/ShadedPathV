@@ -25,5 +25,8 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #gltf-transform uastc ../data/mesh/terrain.glb ../data/mesh/terrain_cmp.glb --level 4 --zstd 18 --verbose
 # cmp means compressed :-)
 #gltf-transform uastc ../data/mesh/box1.glb ../data/mesh/box1_cmp.glb --level 4 --zstd 18 --verbose
-gltf-transform uastc ../data/mesh/box10.glb ../data/mesh/box10_cmp.glb --level 4 --zstd 18 --verbose
-gltf-transform uastc ../data/mesh/box100.glb ../data/mesh/box100_cmp.glb --level 4 --zstd 18 --verbose
+#gltf-transform uastc ../data/mesh/box10.glb ../data/mesh/box10_cmp.glb --level 4 --zstd 18 --verbose
+#gltf-transform uastc ../data/mesh/box100.glb ../data/mesh/box100_cmp.glb --level 4 --zstd 18 --verbose
+gltf-transform uastc ../data/mesh/cyberpunk_pistol.glb ../data/mesh/cyberpunk_pistol_cmp.glb --level 4 --zstd 18 --verbose
+#cd ../data/raw
+#toktx --genmipmap --uastc 3 --zcmp 18 --verbose --t2 --cubemap cube_sky.ktx2 px.png nx.png py.png ny.png pz.png nz.png
