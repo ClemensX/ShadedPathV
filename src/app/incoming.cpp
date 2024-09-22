@@ -126,14 +126,14 @@ void Incoming::init() {
             //p2.y = world.getHeightmapValue(x-(i*0.5f) -0.5f, z);
             //grid->lines.push_back(LineDef(p1, p2, vec4(1.0f, 1.0f, 1.0f, 1.0f)));
             float v = -512.0f + (i /** 0.5f*/);
-            float w = 512.0f - 1.0f;
+            float w = 512.0f - 500.0f;
             //w = -512.0f;
-            vec3 p1 = vec3(v, 0.0f, w);
-            vec3 p2 = vec3(v + 0.5f, 0.0f, w);
+            vec3 p1 = vec3(v, 0.0f, w+250.0f);
+            vec3 p2 = vec3(v + 0.5f, 0.0f, w + 250.0f);
             //vec3 p1 = vec3(0.0f, 0.0f, v);
             //vec3 p2 = vec3(0.0f , 0.0f, v + 0.5f);
-            p1.y = world.getHeightmapValue(v, w);
-            p2.y = world.getHeightmapValue(v+0.5, w);
+            p1.y = world.getHeightmapValue(v, w) + 1.0f;
+            p2.y = world.getHeightmapValue(v+0.5, w) + 1.0f;
             grid->lines.push_back(LineDef(p1, p2, vec4(1.0f, 1.0f, 1.0f, 1.0f)));
         }
         engine.shaders.lineShader.addFixedGlobalLines(grid->lines);
