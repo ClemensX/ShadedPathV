@@ -98,6 +98,34 @@ Grid* World::createWorldGrid(float lineGap, float verticalAdjust) {
 	createGridXZ(grid);
 	grid.center.y = high;
 	createGridXZ(grid);
+    // connect corners:
+	LineDef line;
+	line.color = Colors::Silver;
+	float xstart = grid.center.x - grid.width / 2;
+	float xend = grid.center.x + grid.width / 2;
+	float zstart = grid.center.z - grid.depth / 2;
+	float zend = grid.center.z + grid.depth / 2;
+	vec3 p1(xstart, low, zstart);
+	vec3 p2(xstart, high, zstart);
+	line.start = p1;
+	line.end = p2;
+	grid.lines.push_back(line);
+	p1 = vec3(xend, low, zstart);
+	p2 = vec3(xend, high, zstart);
+	line.start = p1;
+	line.end = p2;
+	grid.lines.push_back(line);
+	p1 = vec3(xend, low, zend);
+	p2 = vec3(xend, high, zend);
+	line.start = p1;
+	line.end = p2;
+	grid.lines.push_back(line);
+	p1 = vec3(xstart, low, zend);
+	p2 = vec3(xstart, high, zend);
+	line.start = p1;
+	line.end = p2;
+	grid.lines.push_back(line);
+
 	return &grid;
 }
 
@@ -154,23 +182,30 @@ void World::setHeightmap(TextureID heightmap)
     Log("World heightmap has value every " << textureScaleFactor << " m" << std::endl);
 }
 
-float World::getHeightmapValue(float x, float z)
+float World::getHeightmapValue(float xp, float zp)
 {
-	if (heightmap->hasFlag(TextureFlags::ORIENTATION_RAW_START_WITH_XMAX_ZMAX)) {
-        float halfWorld = sizex / 2.0f;
-        // convert to positive x z values
-		x = x + halfWorld;
-		z = (2.0f * z);
+    // check that we are within world borders:
+    if (xp < minxz || xp > maxxz || zp < minxz || zp > maxxz) {
+        Error("World::getHeightmapValue: coordinates out of world borders");
+    }
 
-		//z = -512.0f + (2.0f * z);
-		//z = z + halfWorld;
-		// reverse coords
-		x = sizex - x;
-		z = sizex - z;
-		// scale to tex index
-		int texX = x / textureScaleFactor;
-		int texZ = z / textureScaleFactor;
-		return heightmap->float_buffer[texX + texZ * 1024.0f];
+    // move world coords to positive range:
+    float halfWorldSize = sizex / 2.0f;
+	float x = xp + halfWorldSize;
+	float z = zp + halfWorldSize;
+
+    // scale world coords to texture coords:
+    x /= textureScaleFactor;
+    z /= textureScaleFactor;
+
+    size_t index = (size_t)(z * heightmap->vulkanTexture.width + x);
+	if (index < 0 || index >= heightmap->float_buffer.size()) {
+		Error("World::getHeightmapValue: index out of range");
+	}
+	// convert world coords to texture coords:
+	if (heightmap->hasFlag(TextureFlags::ORIENTATION_RAW_START_WITH_XMAX_ZMAX)) {
+        size_t i = heightmap->float_buffer.size() - index - 1;
+		return heightmap->float_buffer[i];
 	} else {
 		Error("World::getHeightmapValue: heightmap orientation not implemented");
 	}
