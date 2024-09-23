@@ -279,14 +279,30 @@ const vector<WorldObject*>& WorldObjectStore::getSortedList()
 void WorldObject::addVerticesToLineList(std::vector<LineDef>& lines, glm::vec3 offset, float sizeFactor)
 {
 	LineDef l;
-	for (long i = 0; i < mesh->vertices.size() - 1; i++) {
+	for (long i = 0; i < mesh->indices.size(); i += 3) {
 		l.color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
-		auto& v1 = mesh->vertices[i];
-		auto& v2 = mesh->vertices[i+1];
+		// triangle is v[0], v[1], v[2]
+		auto& v0 = mesh->vertices[mesh->indices[i + 0]];
+		auto& v1 = mesh->vertices[mesh->indices[i + 1]];
+		auto& v2 = mesh->vertices[mesh->indices[i + 2]];
+		l.start = v0.pos * sizeFactor + offset;
+		l.end = v1.pos * sizeFactor + offset;
+		lines.push_back(l);
 		l.start = v1.pos * sizeFactor + offset;
 		l.end = v2.pos * sizeFactor + offset;
 		lines.push_back(l);
+		l.start = v2.pos * sizeFactor + offset;
+		l.end = v0.pos * sizeFactor + offset;
+		lines.push_back(l);
 	}
+	//for (long i = 0; i < mesh->vertices.size() - 1; i++) {
+	//	l.color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
+	//	auto& v1 = mesh->vertices[i];
+	//	auto& v2 = mesh->vertices[i+1];
+	//	l.start = v1.pos * sizeFactor + offset;
+	//	l.end = v2.pos * sizeFactor + offset;
+	//	lines.push_back(l);
+	//}
 }
 
 
