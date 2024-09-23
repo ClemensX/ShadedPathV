@@ -111,6 +111,16 @@ void Incoming::init() {
     engine.shaders.clearShader.setClearColor(vec4(0.1f, 0.1f, 0.9f, 1.0f));
     engine.shaders.pbrShader.initialUpload();
     if (enableLines) {
+        // loading objects
+        // TODO currently wireframe rendering is bugged
+        if (true) {
+            vector<LineDef> lines;
+            terrain->addVerticesToLineList(lines, vec3(-512.0f, 0.0f, -512.0f));
+            //auto verticesCount = terrain->mesh->vertices.size();
+            //Log("vertices count: " << verticesCount << endl);
+            engine.shaders.lineShader.addFixedGlobalLines(lines);
+        }
+
         // Grid with 1m squares, floor on -10m, ceiling on 372m
         //Grid* grid = world.createWorldGrid(1.0f, -10.0f);
         Grid* grid = world.createWorldGrid(100.0f, 0.0f);

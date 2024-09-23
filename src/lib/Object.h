@@ -134,6 +134,7 @@ public:
 	bool drawBoundingBox;
 	bool drawNormals;
 	UINT objectNum; // must be unique for all objects
+    void addVerticesToLineList(std::vector<LineDef>& lines, glm::vec3 offset, float sizeFactor = 1.0f);
 private:
 	glm::vec3 _pos;
 	glm::vec3 _rot;

@@ -275,4 +275,19 @@ const vector<WorldObject*>& WorldObjectStore::getSortedList()
 	return sortedList;
 }
 
+
+void WorldObject::addVerticesToLineList(std::vector<LineDef>& lines, glm::vec3 offset, float sizeFactor)
+{
+	LineDef l;
+	for (long i = 0; i < mesh->vertices.size() - 1; i++) {
+		l.color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
+		auto& v1 = mesh->vertices[i];
+		auto& v2 = mesh->vertices[i+1];
+		l.start = v1.pos * sizeFactor + offset;
+		l.end = v2.pos * sizeFactor + offset;
+		lines.push_back(l);
+	}
+}
+
+
 atomic<UINT> WorldObject::count;
