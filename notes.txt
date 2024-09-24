@@ -97,3 +97,9 @@ VP = P * V
 shader:
 gl_Position = MVP * vec4_in
 
+heightmap bug:
+19.0037,57.1018,18.9831
+terrain:
+531.0037, ,530.9831 ---> 531.259 530.759 --> 57.0852
+heightmap: 
+(19,19) ---> 57.0568

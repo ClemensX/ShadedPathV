@@ -56,6 +56,7 @@ void Incoming::run()
 }
 
 void Incoming::init() {
+    bool terrainOnly = true; // disable all other objects
     float aspectRatio = engine.getAspect();
 
     // 2 square km world size
@@ -66,31 +67,35 @@ void Incoming::init() {
     //engine.meshStore.loadMesh("terrain2k/Project_Mesh_0.5.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     engine.meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     engine.objectStore.createGroup("terrain_group");
-    engine.objectStore.createGroup("knife_group");
-    engine.objectStore.createGroup("box_group");
-    engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
-    engine.meshStore.loadMesh("box1_cmp.glb", "Box1");
-    engine.meshStore.loadMesh("box10_cmp.glb", "Box10");
-    engine.meshStore.loadMesh("box100_cmp.glb", "Box100");
-    engine.meshStore.loadMesh("bottle2.glb", "WaterBottle");
-    // 
-    engine.meshStore.loadMesh("cyberpunk_pistol_cmp.glb", "Gun");
+    if (!terrainOnly) {
+        engine.objectStore.createGroup("knife_group");
+        engine.objectStore.createGroup("box_group");
+        engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
+        engine.meshStore.loadMesh("box1_cmp.glb", "Box1");
+        engine.meshStore.loadMesh("box10_cmp.glb", "Box10");
+        engine.meshStore.loadMesh("box100_cmp.glb", "Box100");
+        engine.meshStore.loadMesh("bottle2.glb", "WaterBottle");
+        engine.meshStore.loadMesh("cyberpunk_pistol_cmp.glb", "Gun");
+    }
 
     auto terrain = engine.objectStore.addObject("terrain_group", "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
-    //auto knife = engine.objectStore.addObject("knife_group", "Knife", vec3(900.0f, 20.0f, 0.3f));
-    auto knife = engine.objectStore.addObject("knife_group", "Knife", vec3(5.47332f, 58.312f, 3.9));
-    knife->rot().x = 3.14159f / 2;
-    knife->rot().y = -3.14159f / 4;
-    auto gun = engine.objectStore.addObject("knife_group", "Gun", vec3(4.97f, 57.39f, 3.9));
-    gun->scale() = vec3(0.03f, 0.03f, 0.03f);
-    gun->rot().x = 4.8f;
-    gun->rot().y = 6.4;
-    gun->rot().z = 7.4f;
-    worldObject = gun;
-    auto bottle = engine.objectStore.addObject("knife_group", "WaterBottle", vec3(5.77332f, 58.43f, 3.6));
-    auto box1 = engine.objectStore.addObject("box_group", "Box1", vec3(5.57332f, 57.3f, 3.70005));
-    auto box10 = engine.objectStore.addObject("box_group", "Box10", vec3(-5.57332f, 57.3f, 3.70005));
-    auto box100 = engine.objectStore.addObject("box_group", "Box100", vec3(120.57332f, 57.3f, 3.70005));
+    WorldObject* knife = nullptr;
+    if (!terrainOnly) {
+        //auto knife = engine.objectStore.addObject("knife_group", "Knife", vec3(900.0f, 20.0f, 0.3f));
+        knife = engine.objectStore.addObject("knife_group", "Knife", vec3(5.47332f, 58.312f, 3.9));
+        knife->rot().x = 3.14159f / 2;
+        knife->rot().y = -3.14159f / 4;
+        auto gun = engine.objectStore.addObject("knife_group", "Gun", vec3(4.97f, 57.39f, 3.9));
+        gun->scale() = vec3(0.03f, 0.03f, 0.03f);
+        gun->rot().x = 4.8f;
+        gun->rot().y = 6.4;
+        gun->rot().z = 7.4f;
+        worldObject = gun;
+        auto bottle = engine.objectStore.addObject("knife_group", "WaterBottle", vec3(5.77332f, 58.43f, 3.6));
+        auto box1 = engine.objectStore.addObject("box_group", "Box1", vec3(5.57332f, 57.3f, 3.70005));
+        auto box10 = engine.objectStore.addObject("box_group", "Box10", vec3(-5.57332f, 57.3f, 3.70005));
+        auto box100 = engine.objectStore.addObject("box_group", "Box100", vec3(120.57332f, 57.3f, 3.70005));
+    }
     world.transformToWorld(terrain);
     auto p = hmdPositioner.getPosition();
 
@@ -111,9 +116,7 @@ void Incoming::init() {
     engine.shaders.clearShader.setClearColor(vec4(0.1f, 0.1f, 0.9f, 1.0f));
     engine.shaders.pbrShader.initialUpload();
     if (enableLines) {
-        // loading objects
-        // TODO currently wireframe rendering is bugged
-        if (true) {
+        if (false) {
             vector<LineDef> lines;
             terrain->addVerticesToLineList(lines, vec3(-512.0f, 0.0f, -512.0f));
             //auto verticesCount = terrain->mesh->vertices.size();
@@ -135,6 +138,8 @@ void Incoming::init() {
             //p2.y = world.getHeightmapValue(w, w) + 0.25f;
             p2.y = world.getHeightmapValue(v, v) + 0.25f;
             grid->lines.push_back(LineDef(p1, p2, vec4(1.0f, 1.0f, 1.0f, 1.0f)));
+            //auto bug = world.getHeightmapValue(19.0f, 19.0f);
+            //Log("bug: " << bug << endl);
         }
         engine.shaders.lineShader.addFixedGlobalLines(grid->lines);
         engine.shaders.lineShader.uploadFixedGlobalLines();
@@ -142,10 +147,13 @@ void Incoming::init() {
     // load and play music
     engine.sound.openSoundFile("power.ogg", "BACKGROUND_MUSIC", true);
     //engine.sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 1.0f, 6000);
+
     // add sound to object
-    engine.sound.addWorldObject(knife);
-    engine.sound.changeSound(knife, "BACKGROUND_MUSIC");
-    engine.sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
+    if (enableSound) {
+        engine.sound.addWorldObject(knife);
+        engine.sound.changeSound(knife, "BACKGROUND_MUSIC");
+        engine.sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
+    }
 }
 
 void Incoming::drawFrame(ThreadResources& tr) {
@@ -170,6 +178,7 @@ void Incoming::updatePerFrame(ThreadResources& tr)
     double deltaSeconds = seconds - old_seconds;
 
     updateCameraPositioners(deltaSeconds);
+    //if (tr.frameNum % 100 == 0) camera->log();
     //logCameraPosition();
 
     old_seconds = seconds;

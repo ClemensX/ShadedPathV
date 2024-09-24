@@ -11,7 +11,7 @@ class AppSupport
 protected:
     bool enableLines = true;
     bool enableUI = false;
-    bool vr = true;
+    bool vr = false;
     bool stereo = false;
     bool enableSound = false;
     bool singleThreadMode = false;

@@ -206,11 +206,11 @@ float World::getHeightmapValue(float xp, float zp)
 	}
     if (index < minIndex) {
         minIndex = index;
-        Log("minIndex: " << minIndex << std::endl);
+        //Log("minIndex: " << minIndex << std::endl);
     }
     if (index > maxIndex) {
         maxIndex = index;
-        Log("maxIndex: " << maxIndex << std::endl);
+        //Log("maxIndex: " << maxIndex << std::endl);
     }
 	// convert world coords to texture coords:
 	if (heightmap->hasFlag(TextureFlags::ORIENTATION_RAW_START_WITH_XMAX_ZMAX)) {
