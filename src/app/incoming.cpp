@@ -104,6 +104,7 @@ void Incoming::init() {
         TextureFlags::KEEP_DATA_BUFFER | TextureFlags::ORIENTATION_RAW_START_WITH_XMAX_ZMAX);
     auto texHeightmap = engine.textureStore.getTexture("heightmap");
     world.setHeightmap(texHeightmap);
+    world.ultimateHeightmapCalculation(terrain);
     unsigned int texIndexHeightmap = texHeightmap->index;
     //shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
 

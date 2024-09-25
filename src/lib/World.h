@@ -10,6 +10,17 @@ struct Grid {
     float lineGap; // distance between lines
 };
 
+struct UltimateHeightmapInfo {
+	size_t numTriangles;
+	size_t numSquares;
+	size_t squaresPerLine;
+	std::vector<glm::vec3> ultimaHeight;
+	// sorted set of x grid coords
+	std::set<float> sortedSetX;
+	// sorted set of z grid coords
+	std::set<float> sortedSetZ;
+};
+
 class World
 {
 public:
@@ -37,6 +48,11 @@ public:
 	void transformToWorld(WorldObject* obj);
 	void setHeightmap(TextureID heightmap);
     float getHeightmapValue(float x, float z);
+
+    // ultimate heightmap: perfect heightmap directly from terrain data, but uses much CPU memory
+	void ultimateHeightmapCalculation(WorldObject* terrain);
+	glm::vec3 calculateBarycentricCoordinates(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c);
+	float interpolateY(const glm::vec3& p, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2);
 private:
 	// world size in absolute units around origin, e.g. x is from -x to x
 	float sizex = 0.0f, sizey = 0.0f, sizez = 0.0f;
@@ -44,5 +60,7 @@ private:
 	Grid grid;
     TextureID heightmap = nullptr;
     float textureScaleFactor = 1.0f; // heightmap may be more or less detailed than world size
+    UltimateHeightmapInfo ultHeightInfo;
+
 };
 

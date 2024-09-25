@@ -221,3 +221,112 @@ float World::getHeightmapValue(float xp, float zp)
 	}
 	return 0.0f;
 }
+
+// ultimate heightmap value getter, returns heightmap value at given world coordinates
+
+// Function to calculate the barycentric coordinates
+glm::vec3 World::calculateBarycentricCoordinates(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c) {
+	glm::vec3 v0 = b - a;
+	glm::vec3 v1 = c - a;
+	glm::vec3 v2 = p - a;
+	float d00 = glm::dot(v0, v0);
+	float d01 = glm::dot(v0, v1);
+	float d11 = glm::dot(v1, v1);
+	float d20 = glm::dot(v2, v0);
+	float d21 = glm::dot(v2, v1);
+	float denom = d00 * d11 - d01 * d01;
+	float v = (d11 * d20 - d01 * d21) / denom;
+	float w = (d00 * d21 - d01 * d20) / denom;
+	float u = 1.0f - v - w;
+	return glm::vec3(u, v, w);
+}
+
+// Function to interpolate the y value
+float World::interpolateY(const glm::vec3& p, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2) {
+	glm::vec3 baryCoords = calculateBarycentricCoordinates(p, v0, v1, v2);
+	return baryCoords.x * v0.y + baryCoords.y * v1.y + baryCoords.z * v2.y;
+}
+
+void World::ultimateHeightmapCalculation(WorldObject* terrain)
+{
+	size_t indexCount = terrain->mesh->indices.size();
+    assert(indexCount % 3 == 0);
+	ultHeightInfo.numTriangles = indexCount / 3;
+	ultHeightInfo.numSquares = ultHeightInfo.numTriangles / 2;
+	ultHeightInfo.squaresPerLine = sqrt(ultHeightInfo.numSquares);
+    assert((ultHeightInfo.squaresPerLine * ultHeightInfo.squaresPerLine) * 2 * 3 == indexCount);
+
+	// we calc barycentric coordinates for each triangle
+    ultHeightInfo.ultimaHeight.resize(ultHeightInfo.numTriangles);
+    Log("ultimate heightmap size (bytes): " << ultHeightInfo.numTriangles * sizeof(glm::vec3) << std::endl);
+	std::set<unsigned int> sortedIndices;
+    // iterate over all triangles in mesh data and prepare barycentric coordinates calculation
+    for (size_t i = 0; i < ultHeightInfo.numTriangles; i += 3) {
+        glm::vec3 v0 = terrain->mesh->vertices[terrain->mesh->indices[i]].pos;
+        glm::vec3 v1 = terrain->mesh->vertices[terrain->mesh->indices[i + 1]].pos;
+        glm::vec3 v2 = terrain->mesh->vertices[terrain->mesh->indices[i + 2]].pos;
+		sortedIndices.insert(terrain->mesh->indices[i]);
+		sortedIndices.insert(terrain->mesh->indices[i+1]);
+		sortedIndices.insert(terrain->mesh->indices[i+2]);
+		ultHeightInfo.sortedSetX.insert(v0.x);
+		ultHeightInfo.sortedSetX.insert(v1.x);
+		ultHeightInfo.sortedSetX.insert(v2.x);
+		ultHeightInfo.sortedSetZ.insert(v0.z);
+		ultHeightInfo.sortedSetZ.insert(v1.z);
+		ultHeightInfo.sortedSetZ.insert(v2.z);
+        if (v0.z >= 900.0f) DebugBreak();
+		//glm::vec3 p = (v0 + vZ + v2) / 3.zf;
+        //ultHeightInfo.ultimaHeight[i] = p;
+        // we need to make sure we have triangle vertices x and z coords located on a grid, not all over the place
+	}
+	if (ultHeightInfo.sortedSetX.size() != ultHeightInfo.squaresPerLine + 1) {
+		Error("World::ultimateHeightmapCalculation: terrain data is not on grid");
+	}
+	if (ultHeightInfo.sortedSetZ.size() != ultHeightInfo.squaresPerLine + 1) {
+		Error("World::ultimateHeightmapCalculation: terrain data is not on grid");
+	}
+	// Iterate and print the elements of the set
+	//std::cout << "Sorted set elements: (" << ultHeightInfo.sortedSetX .size() << ")" << std::endl;
+	//for (const float& value : ultHeightInfo.sortedSetX) {
+	//	std::cout << value << " ";
+	//}
+	//std::cout << std::endl;
+}
+
+/*
+
+Triangle counting:
+world: 2048 * 2048 grid
+-------------------------------------------------------
+|\  8189 |\       |\       |                 |\       |
+| \      | \      | \      |                 | \      |
+|  \     |  \     |  \     |                 |  \     |
+|   \    |   \    |   \    |                 |   \    |
+|    \   |    \   |    \   |                 |    \   |
+|     \  |     \  |     \  |                 |     \  |
+|      \ |      \ |      \ |                 |      \ |
+| 8188  \|       \|       \|                 |       \|
+-------------------------------------------------------
+-------------------------------------------------------
+|\  4095 |\       |\       |                 |\       |
+| \      | \      | \      |                 | \      |
+|  \     |  \     |  \     |                 |  \     |
+|   \    |   \    |   \    |                 |   \    |
+|    \   |    \   |    \   |                 |    \   |
+|     \  |     \  |     \  |                 |     \  |
+|      \ |      \ |      \ |                 |      \ |
+| 4094  \|       \|       \|                 |       \|
+-------------------------------------------------------
+-------------------------------------------------------
+|\     1 |\ 3     |\ 5     |                 |\ 4093  |
+| \      | \      | \      |                 | \      |
+|  \     |  \     |  \     |                 |  \     |
+|   \    |   \    |   \    |                 |   \    |
+|    \   |    \   |    \   |                 |    \   |
+|     \  |     \  |     \  |                 |     \  |
+|      \ |      \ |      \ |                 |      \ |
+| 0     \| 2     \| 4     \|                 | 4092  \|
+-------------------------------------------------------
+
+
+*/
