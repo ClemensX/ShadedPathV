@@ -14,7 +14,6 @@ struct UltimateHeightmapInfo {
 	size_t numTriangles;
 	size_t numSquares;
 	size_t squaresPerLine;
-	std::vector<glm::vec3> ultimaHeight;
 	// sorted set of x grid coords
 	std::set<float> sortedSetX;
 	// sorted set of z grid coords
@@ -51,17 +50,28 @@ public:
 	// transform terrain object to match world size and position
 	void transformToWorld(WorldObject* obj);
 	void setHeightmap(TextureID heightmap);
-    float getHeightmapValueWC(float x, float z);
+    float getHeightmapValueWC(float x, float z); // TODO decprecated, get heightmap value in world coords from WC heightmap
+
+    // ultimate heightmap: perfect heightmap directly from terrain data
+
+    // prepare ultimate heightmap calculation from terrain object
+	// this MUST have been called before any call to getHeightmapValue()
+	void prepareUltimateHeightmap(WorldObject* terrain);
+
+    // any new terrain object should be checked at least once with this method.
+	// the call can then be omitted for productive use
+	void checkTerrainSuitableForHeightmap(WorldObject* terrain);
+
+    // get heightmap value in world coords from ultimate heightmap
+	// same precision as terrain data. Constant run time.
 	float getHeightmapValue(float x, float z);
 
-    // ultimate heightmap: perfect heightmap directly from terrain data, but uses much CPU memory
-	void ultimateHeightmapCalculation(WorldObject* terrain);
-	glm::vec3 calculateBarycentricCoordinates(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c);
-	float interpolateY(const glm::vec3& p, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2);
-	float interpolateY2(const glm::vec3& p, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2);
-	float getHightmapValue(UltimateHeightmapInfo& info, float x, float z);
+    // check if point is inside triangle, use with care: a point on or close to border line may erroneously return false
 	bool isPointInTriangle(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c);
 private:
+	glm::vec3 calculateBarycentricCoordinates(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c);
+	float interpolateY2(const glm::vec3& p, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2);
+	float getHeightmapValue(UltimateHeightmapInfo& info, float x, float z);
 	// world size in absolute units around origin, e.g. x is from -x to x
 	float sizex = 0.0f, sizey = 0.0f, sizez = 0.0f;
     float minxz = 0.0f, maxxz = 0.0f; // for easy coord range checking

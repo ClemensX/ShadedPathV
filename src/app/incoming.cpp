@@ -104,9 +104,10 @@ void Incoming::init() {
         TextureFlags::KEEP_DATA_BUFFER | TextureFlags::ORIENTATION_RAW_START_WITH_XMAX_ZMAX);
     auto texHeightmap = engine.textureStore.getTexture("heightmap");
     world.setHeightmap(texHeightmap);
-    world.ultimateHeightmapCalculation(terrain);
     unsigned int texIndexHeightmap = texHeightmap->index;
     //shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
+    //world.checkTerrainSuitableForHeightmap(terrain);
+    world.prepareUltimateHeightmap(terrain);
 
     // skybox
     engine.textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
@@ -117,7 +118,8 @@ void Incoming::init() {
     engine.shaders.clearShader.setClearColor(vec4(0.1f, 0.1f, 0.9f, 1.0f));
     engine.shaders.pbrShader.initialUpload();
     if (enableLines) {
-        if (true) {
+        // overlay terrain triangles with lines
+        if (false) {
             vector<LineDef> lines;
             terrain->addVerticesToLineList(lines, vec3(-512.0f, 0.0f, -512.0f));
             //auto verticesCount = terrain->mesh->vertices.size();

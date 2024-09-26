@@ -236,7 +236,7 @@ float World::getHeightmapValue(float xp, float zp)
 	float x = xp + halfWorldSize;
 	float z = zp + halfWorldSize;
 
-    return getHightmapValue(ultHeightInfo, x, z);
+    return getHeightmapValue(ultHeightInfo, x, z);
 }
 
 // Function to calculate the barycentric coordinates
@@ -254,12 +254,6 @@ glm::vec3 World::calculateBarycentricCoordinates(const glm::vec3& p, const glm::
 	float w = (d00 * d21 - d01 * d20) / denom;
 	float u = 1.0f - v - w;
 	return glm::vec3(u, v, w);
-}
-
-// Function to interpolate the y value
-float World::interpolateY(const glm::vec3& p, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2) {
-	glm::vec3 baryCoords = calculateBarycentricCoordinates(p, v0, v1, v2);
-	return baryCoords.x * v0.y + baryCoords.y * v1.y + baryCoords.z * v2.y;
 }
 
 size_t World::calcGridIndex(UltimateHeightmapInfo& info, float f)
@@ -340,7 +334,7 @@ size_t World::getTriangleIndex(UltimateHeightmapInfo& info, float x, float z)
 	}
 }
 
-float World::getHightmapValue(UltimateHeightmapInfo& info, float x, float z)
+float World::getHeightmapValue(UltimateHeightmapInfo& info, float x, float z)
 {
 	WorldObject* terrain = info.terrain;
 	size_t idx = getTriangleIndex(info, x, z);
@@ -349,11 +343,12 @@ float World::getHightmapValue(UltimateHeightmapInfo& info, float x, float z)
     vec3& v2 = terrain->mesh->vertices[terrain->mesh->indices[idx + 2]].pos;
     vec3 p(x, 0.0f, z);
     float h = interpolateY2(p, v0, v1, v2);
-	p.y = h;
-	bool isInside = isPointInTriangle(p, v0, v1, v2);
-    if (!isInside) {
-		//Log("is not Inside! " << std::endl);
-	}
+	//p.y = h;
+	//bool isInside = isPointInTriangle(p, v0, v1, v2);
+	//   if (!isInside) {
+	//	Log("is not Inside! " << std::endl);
+	//	isInside = isPointInTriangle(p, v0, v1, v2);
+	//}
 	return h;
 }
 
@@ -402,36 +397,28 @@ bool World::isPointInTriangle(const glm::vec3& p, const glm::vec3& a, const glm:
 		baryCoords.x <= 1.0f && baryCoords.y <= 1.0f && baryCoords.z <= 1.0f);
 }
 
-void World::ultimateHeightmapCalculation(WorldObject* terrain)
+void World::checkTerrainSuitableForHeightmap(WorldObject* terrain)
 {
 	size_t indexCount = terrain->mesh->indices.size();
-    assert(indexCount % 3 == 0);
+	assert(indexCount % 3 == 0);
+	UltimateHeightmapInfo ultHeightInfo;
 	ultHeightInfo.numTriangles = indexCount / 3;
 	ultHeightInfo.numSquares = ultHeightInfo.numTriangles / 2;
 	ultHeightInfo.squaresPerLine = sqrt(ultHeightInfo.numSquares);
-    assert((ultHeightInfo.squaresPerLine * ultHeightInfo.squaresPerLine) * 2 * 3 == indexCount);
+	assert((ultHeightInfo.squaresPerLine * ultHeightInfo.squaresPerLine) * 2 * 3 == indexCount);
 
-	// we calc barycentric coordinates for each triangle
-    ultHeightInfo.ultimaHeight.resize(ultHeightInfo.numTriangles);
-    Log("ultimate heightmap size (bytes): " << ultHeightInfo.numTriangles * sizeof(glm::vec3) << std::endl);
-	std::set<unsigned int> sortedIndices;
-    // iterate over all triangles in mesh data and prepare barycentric coordinates calculation
-    for (size_t i = 0; i < indexCount; i += 3) {
-        glm::vec3 v0 = terrain->mesh->vertices[terrain->mesh->indices[i]].pos;
-        glm::vec3 v1 = terrain->mesh->vertices[terrain->mesh->indices[i + 1]].pos;
-        glm::vec3 v2 = terrain->mesh->vertices[terrain->mesh->indices[i + 2]].pos;
-	 	//sortedIndices.insert(terrain->mesh->indices[i]);
-		//sortedIndices.insert(terrain->mesh->indices[i+1]);
-		//sortedIndices.insert(terrain->mesh->indices[i+2]);
+    // iterate over all triangles in mesh data to get all x and z coords used
+	// they have to be nearly equidistant (on a grid)
+	for (size_t i = 0; i < indexCount; i += 3) {
+		glm::vec3 v0 = terrain->mesh->vertices[terrain->mesh->indices[i]].pos;
+		glm::vec3 v1 = terrain->mesh->vertices[terrain->mesh->indices[i + 1]].pos;
+		glm::vec3 v2 = terrain->mesh->vertices[terrain->mesh->indices[i + 2]].pos;
 		ultHeightInfo.sortedSetX.insert(v0.x);
 		ultHeightInfo.sortedSetX.insert(v1.x);
 		ultHeightInfo.sortedSetX.insert(v2.x);
 		ultHeightInfo.sortedSetZ.insert(v0.z);
 		ultHeightInfo.sortedSetZ.insert(v1.z);
 		ultHeightInfo.sortedSetZ.insert(v2.z);
-		//glm::vec3 p = (v0 + vZ + v2) / 3.zf;
-        //ultHeightInfo.ultimaHeight[i] = p;
-        // we need to make sure we have triangle vertices x and z coords located on a grid, not all over the place
 	}
 	if (ultHeightInfo.sortedSetX.size() != ultHeightInfo.squaresPerLine + 1) {
 		Error("World::ultimateHeightmapCalculation: terrain data is not on grid");
@@ -439,29 +426,59 @@ void World::ultimateHeightmapCalculation(WorldObject* terrain)
 	if (ultHeightInfo.sortedSetZ.size() != ultHeightInfo.squaresPerLine + 1) {
 		Error("World::ultimateHeightmapCalculation: terrain data is not on grid");
 	}
-    auto it = ultHeightInfo.sortedSetX.lower_bound(300.0f);
-	size_t index = std::distance(ultHeightInfo.sortedSetX.begin(), it);
-    Log("index: " << index << std::endl);
-	it = ultHeightInfo.sortedSetX.begin();
+	auto it = ultHeightInfo.sortedSetX.begin();
 	float el0 = *it;
 	float el1 = *++it;
 	float fixedDiff = el1 - el0;
 	float last = std::numeric_limits<double>::quiet_NaN();
-    for (auto& value : ultHeightInfo.sortedSetX) {
-        if (!std::isnan(last)) {
-            float diff = value - last;
-            if (diff - fixedDiff > 0.00001f) {
-                Log("diff: " << diff << std::endl);
-            }
-        }
+	for (auto& value : ultHeightInfo.sortedSetX) {
+		if (!std::isnan(last)) {
+			float diff = value - last;
+			if (diff - fixedDiff > 0.001f) {
+				Log("diff: " << diff << std::endl);
+				Error("terrain unsuitable for heightmap creation: not equidistant coords");
+			}
+		}
 		last = value;
-        //Log("sortedSetX: " << value << std::endl);
-    }
-    // ensure same grid distances in X and Z
+	}
+	// ensure same grid distances in X and Z
 	std::set<float>::iterator itx, itz;
 	for (itx = ultHeightInfo.sortedSetX.begin(), itz = ultHeightInfo.sortedSetZ.begin();
 		itx != ultHeightInfo.sortedSetX.end() && itz != ultHeightInfo.sortedSetZ.end(); ++itx, ++itz) {
-		if (! (*itx == *itz)) Error("World::ultimateHeightmapCalculation: terrain data grid distances not the same in X and Z");
+		if (!(*itx == *itz)) Error("World::ultimateHeightmapCalculation: terrain data grid distances not the same in X and Z");
+	}
+	float lastEl = *ultHeightInfo.sortedSetX.rbegin();
+	//Log("last el " << lastEl << " dist calc: " << (lastEl / ultHeightInfo.sortedSetX.size()) << std::endl);
+	ultHeightInfo.maxXZ = lastEl;
+	ultHeightInfo.calcDist = lastEl / ultHeightInfo.sortedSetX.size();
+	ultHeightInfo.gridIndex.resize(ultHeightInfo.sortedSetX.size());
+	size_t i = 0;
+	for (auto& el : ultHeightInfo.sortedSetX) {
+		ultHeightInfo.gridIndex[i] = el;
+		i++;
+	}
+	ultHeightInfo.terrain = terrain;
+}
+
+void World::prepareUltimateHeightmap(WorldObject* terrain)
+{
+	size_t indexCount = terrain->mesh->indices.size();
+	ultHeightInfo.numTriangles = indexCount / 3;
+	ultHeightInfo.numSquares = ultHeightInfo.numTriangles / 2;
+	ultHeightInfo.squaresPerLine = sqrt(ultHeightInfo.numSquares);
+    size_t indicesPerLine = ultHeightInfo.squaresPerLine * 6;
+
+    // iterate over one line of triangles in mesh data to prepare the sorted set of x and z coords
+    for (size_t i = 0; i < indicesPerLine; i += 3) {
+        glm::vec3 v0 = terrain->mesh->vertices[terrain->mesh->indices[i]].pos;
+        glm::vec3 v1 = terrain->mesh->vertices[terrain->mesh->indices[i + 1]].pos;
+        glm::vec3 v2 = terrain->mesh->vertices[terrain->mesh->indices[i + 2]].pos;
+		ultHeightInfo.sortedSetX.insert(v0.x);
+		ultHeightInfo.sortedSetX.insert(v1.x);
+		ultHeightInfo.sortedSetX.insert(v2.x);
+	}
+	if (ultHeightInfo.sortedSetX.size() != ultHeightInfo.squaresPerLine + 1) {
+		Error("World::ultimateHeightmapCalculation: terrain data is not on grid");
 	}
     float lastEl = *ultHeightInfo.sortedSetX.rbegin();
     Log("last el " << lastEl << " dist calc: " << (lastEl / ultHeightInfo.sortedSetX.size()) << std::endl);
@@ -474,78 +491,4 @@ void World::ultimateHeightmapCalculation(WorldObject* terrain)
         i++;
     }
 	ultHeightInfo.terrain = terrain;
-	size_t xI = calcGridIndex(ultHeightInfo, 300.0f);
-	size_t zI = calcGridIndex(ultHeightInfo, 911.11f);
-	//Log("index: " << xI << std::endl);
-	size_t idx = getSquareIndex(ultHeightInfo, xI, zI);
-
-
-    float height = getHightmapValue(ultHeightInfo, 300.0f, 911.11f);
-    Log("height: " << height << std::endl);
-
-	// another test:
-	// Define the vertices of the triangle
-	glm::vec3 v0(0.0f, 1.0f, 0.0f);
-	glm::vec3 v1(1.0f, 2.0f, 0.0f);
-	glm::vec3 v2(0.0f, 3.0f, 1.0f);
-
-	// Define the point with known x and z values
-	glm::vec3 p(0.5f, 0.0f, 0.5f); // y value is unknown
-
-	// Calculate the y value
-	float y = interpolateY2(p, v0, v1, v2);
-
-	// Output the result
-	std::cout << "The y value is: " << y << std::endl;
-
-	p.y = y;
-    p.x = 0.500001f;
-    // Check if the point is inside the triangle
-    bool isInside = isPointInTriangle(p, v0, v1, v2);
-    Log("isInside: " << isInside << std::endl);
-
-	// Iterate and print the elements of the set
-	//std::cout << "Sorted set elements: (" << ultHeightInfo.sortedSetX .size() << ")" << std::endl;
-	//for (const float& value : ultHeightInfo.sortedSetX) {
-	//	std::cout << value << " ";
-	//}
-	//std::cout << std::endl;
 }
-
-/*
-
-Triangle counting:
-world: 2048 * 2048 grid
--------------------------------------------------------
-|\  8189 |\       |\       |                 |\       |
-| \      | \      | \      |                 | \      |
-|  \     |  \     |  \     |                 |  \     |
-|   \    |   \    |   \    |                 |   \    |
-|    \   |    \   |    \   |                 |    \   |
-|     \  |     \  |     \  |                 |     \  |
-|      \ |      \ |      \ |                 |      \ |
-| 8188  \|       \|       \|                 |       \|
--------------------------------------------------------
--------------------------------------------------------
-|\  4095 |\       |\       |                 |\       |
-| \      | \      | \      |                 | \      |
-|  \     |  \     |  \     |                 |  \     |
-|   \    |   \    |   \    |                 |   \    |
-|    \   |    \   |    \   |                 |    \   |
-|     \  |     \  |     \  |                 |     \  |
-|      \ |      \ |      \ |                 |      \ |
-| 4094  \|       \|       \|                 |       \|
--------------------------------------------------------
--------------------------------------------------------
-|\     1 |\ 3     |\ 5     |                 |\ 4093  |
-| \      | \      | \      |                 | \      |
-|  \     |  \     |  \     |                 |  \     |
-|   \    |   \    |   \    |                 |   \    |
-|    \   |    \   |    \   |                 |    \   |
-|     \  |     \  |     \  |                 |     \  |
-|      \ |      \ |      \ |                 |      \ |
-| 0     \| 2     \| 4     \|                 | 4092  \|
--------------------------------------------------------
-
-
-*/
