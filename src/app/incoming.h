@@ -9,6 +9,7 @@ public:
     void drawFrame(ThreadResources& tr) override;
     void handleInput(InputState& inputState) override;
     void buildCustomUI() override;
+    void addRandomHeightLines(std::vector<LineDef>& lines, World& world);
 
 private:
     ShadedPathEngine engine;

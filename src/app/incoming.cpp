@@ -55,6 +55,35 @@ void Incoming::run()
     Log("incoming ended" << endl);
 }
 
+void Incoming::addRandomHeightLines(vector<LineDef>& lines, World& world) {
+    LineDef b;
+    //unsigned long total_billboards = 50000000;
+    unsigned long total_billboards = 1000000;
+    //unsigned long total_billboards = 500000;
+    //unsigned long total_billboards = 200000;
+    //unsigned long total_billboards = 5000;
+    //unsigned long total_billboards = 12;
+
+    // create randomly positioned billboards for each vacXX texture we have:
+    for (unsigned long num = 0; num < total_billboards; num++) {
+        vec3 rnd = world.getRandomPos();
+        b.color = Colors::Silver;
+        float x = rnd.x;
+        if (x >= world.getWorldSize().x / 2.0f) x = world.getWorldSize().x / 2.0f - 0.01f;
+        float z = rnd.z;
+        if (z >= world.getWorldSize().z / 2.0f) z = world.getWorldSize().z / 2.0f - 0.01f;
+
+        b.start.x = x;
+        b.start.z = z;
+        b.end.x = x;
+        b.end.z = z;
+        float h = world.getHeightmapValue(x, z);
+        b.start.y = h;
+        b.end.y = h + 0.25f;
+        lines.push_back(b);
+    }
+}
+
 void Incoming::init() {
     bool terrainOnly = false; // disable all other objects
     float aspectRatio = engine.getAspect();
@@ -130,6 +159,7 @@ void Incoming::init() {
         // Grid with 1m squares, floor on -10m, ceiling on 372m
         //Grid* grid = world.createWorldGrid(1.0f, -10.0f);
         Grid* grid = world.createWorldGrid(100.0f, 0.0f);
+        addRandomHeightLines(grid->lines, world);
         // draw one line of heightmap data:
         for (int i = 0; i < world.getWorldSize().x*2; i++) {
             float v = -512.0f + (i * 0.5f);

@@ -261,6 +261,7 @@ size_t World::calcGridIndex(UltimateHeightmapInfo& info, float f)
 	size_t ret;
     size_t slot = (size_t)(f / info.calcDist);
 	if (slot == 0) return 0;
+    if (slot == info.gridIndex.size()) return slot - 1;
 	if (info.gridIndex[slot] <= f) ret = slot;
 	else if (info.gridIndex[slot-1] <= f) ret = slot-1;
 	if (ret < info.gridIndex.size() - 1) {
@@ -365,20 +366,8 @@ float World::interpolateY2(const glm::vec3& p, const glm::vec3& v0, const glm::v
 	float a8 = v0.y;
 	float a9 = v1.y;
 	float a10 = v2.y;
-/*
- var _x =   argument0 - argument2;
-   var _y =   argument1 - argument3;
-   var _e1x = argument4 - argument2;
-   var _e1y = argument5 - argument3;
-   var _e2x = argument6 - argument2;
-   var _e2y = argument7 - argument3;
-   var _id = 1 / (_e1x * _e2y - _e1y * _e2x);
-   var _x0 = _x *  _e2y * _id + _y * -_e2x * _id;
-   var _y0 = _x * -_e1y * _id + _y *  _e1x * _id;
-   return argument8 * (1-_x0-_y0) + argument9 * _x0 + argument10 * _y0;
-*/
 
-    float x = a0 - a2;
+	float x = a0 - a2;
     float y = a1 - a3;
     float e1x = a4 - a2;
     float e1y = a5 - a3;
