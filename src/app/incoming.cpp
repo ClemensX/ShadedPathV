@@ -117,7 +117,7 @@ void Incoming::init() {
     engine.shaders.clearShader.setClearColor(vec4(0.1f, 0.1f, 0.9f, 1.0f));
     engine.shaders.pbrShader.initialUpload();
     if (enableLines) {
-        if (false) {
+        if (true) {
             vector<LineDef> lines;
             terrain->addVerticesToLineList(lines, vec3(-512.0f, 0.0f, -512.0f));
             //auto verticesCount = terrain->mesh->vertices.size();

@@ -19,6 +19,10 @@ struct UltimateHeightmapInfo {
 	std::set<float> sortedSetX;
 	// sorted set of z grid coords
 	std::set<float> sortedSetZ;
+	float maxXZ; // biggest x and z coord
+	float calcDist; // calculated distance between grid lines
+	std::vector<float> gridIndex; // used to calc the right index for given x or z float.
+    WorldObject* terrain = nullptr;
 };
 
 class World
@@ -53,6 +57,9 @@ public:
 	void ultimateHeightmapCalculation(WorldObject* terrain);
 	glm::vec3 calculateBarycentricCoordinates(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c);
 	float interpolateY(const glm::vec3& p, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2);
+	float interpolateY2(const glm::vec3& p, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2);
+	float getHightmapValue(UltimateHeightmapInfo& info, float x, float z);
+	bool isPointInTriangle(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c);
 private:
 	// world size in absolute units around origin, e.g. x is from -x to x
 	float sizex = 0.0f, sizey = 0.0f, sizez = 0.0f;
@@ -61,6 +68,10 @@ private:
     TextureID heightmap = nullptr;
     float textureScaleFactor = 1.0f; // heightmap may be more or less detailed than world size
     UltimateHeightmapInfo ultHeightInfo;
-
+	size_t calcGridIndex(UltimateHeightmapInfo& info, float f);
+    // get index into vertices array for given x and z. returning the index of the vertex with lowest x and z values.
+    // the other three vertices of the triangle are then at index +1, +2 and +3
+	size_t getSquareIndex(UltimateHeightmapInfo& info, int x, int z);
+	size_t getTriangleIndex(UltimateHeightmapInfo& info, float x, float z);
 };
 

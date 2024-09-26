@@ -247,6 +247,144 @@ float World::interpolateY(const glm::vec3& p, const glm::vec3& v0, const glm::ve
 	return baryCoords.x * v0.y + baryCoords.y * v1.y + baryCoords.z * v2.y;
 }
 
+size_t World::calcGridIndex(UltimateHeightmapInfo& info, float f)
+{
+	size_t ret;
+    size_t slot = (size_t)(f / info.calcDist);
+	if (slot == 0) return 0;
+	if (info.gridIndex[slot] <= f) ret = slot;
+	else if (info.gridIndex[slot-1] <= f) ret = slot-1;
+	if (ret < info.gridIndex.size() - 1) {
+		assert(info.gridIndex[ret] <= f && info.gridIndex[ret + 1] > f);
+	}
+	return ret;
+}
+
+/*
+ we assume this order in indices vector:
+ first triangle: p0,p1,p2 
+ 2nd             p3,p4,p5
+        P4
+P1      P2 
+----------
+|\       |
+| \      |
+|  \     |
+|   \    |
+|    \   |
+|     \  |
+|      \ |
+|       \|
+----------
+P0      P5
+P3
+
+*/
+size_t World::getSquareIndex(UltimateHeightmapInfo& info, int x, int z)
+{
+    WorldObject* terrain = info.terrain;
+	if (false) {
+		vec3& v0 = terrain->mesh->vertices[terrain->mesh->indices[0]].pos;
+		vec3& v1 = terrain->mesh->vertices[terrain->mesh->indices[1]].pos;
+		vec3& v2 = terrain->mesh->vertices[terrain->mesh->indices[2]].pos;
+		vec3& v3 = terrain->mesh->vertices[terrain->mesh->indices[3]].pos;
+		vec3& v4 = terrain->mesh->vertices[terrain->mesh->indices[4]].pos;
+		vec3& v5 = terrain->mesh->vertices[terrain->mesh->indices[5]].pos;
+		// assert we have memory layout of z changing first, then x
+		assert(v0.x == v1.x && v1.z > v0.z);
+	}
+
+    size_t index = z * info.squaresPerLine + x;
+	index *= 6;
+	if (false) {
+		vec3& v0 = terrain->mesh->vertices[terrain->mesh->indices[index]].pos;
+		vec3& v1 = terrain->mesh->vertices[terrain->mesh->indices[index + 1]].pos;
+		vec3& v2 = terrain->mesh->vertices[terrain->mesh->indices[index + 2]].pos;
+		vec3& v3 = terrain->mesh->vertices[terrain->mesh->indices[index + 3]].pos;
+		vec3& v4 = terrain->mesh->vertices[terrain->mesh->indices[index + 4]].pos;
+		vec3& v5 = terrain->mesh->vertices[terrain->mesh->indices[index + 5]].pos;
+        Log("v0: " << v0.x << " " << v0.y << " " << v0.z << std::endl);
+	}
+	return index;
+}
+
+size_t World::getTriangleIndex(UltimateHeightmapInfo& info, float x, float z)
+{
+	WorldObject* terrain = info.terrain;
+	size_t xI = calcGridIndex(ultHeightInfo, x);
+	size_t zI = calcGridIndex(ultHeightInfo, z);
+	size_t idx = getSquareIndex(ultHeightInfo, xI, zI);
+
+	vec3& v0 = terrain->mesh->vertices[terrain->mesh->indices[idx]].pos;
+	// if slope > 1, we are in the upper triangle, otherwise in the lower one
+    float slope = (v0.z - z) / (v0.x - x);
+    if (slope >= 1.0f) {
+        return idx;
+	} else {
+		return idx + 3;
+	}
+}
+
+float World::getHightmapValue(UltimateHeightmapInfo& info, float x, float z)
+{
+	WorldObject* terrain = info.terrain;
+	size_t idx = getTriangleIndex(info, x, z);
+    vec3& v0 = terrain->mesh->vertices[terrain->mesh->indices[idx]].pos;
+    vec3& v1 = terrain->mesh->vertices[terrain->mesh->indices[idx + 1]].pos;
+    vec3& v2 = terrain->mesh->vertices[terrain->mesh->indices[idx + 2]].pos;
+    vec3 p(x, 0.0f, z);
+    float h = interpolateY2(p, v0, v1, v2);
+	p.y = h;
+	bool isInside = isPointInTriangle(p, v0, v1, v2);
+	Log("isInside: " << isInside << std::endl);
+	return h;
+}
+
+// Function to interpolate the y value
+float World::interpolateY2(const glm::vec3& p, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2) {
+	float a0 = p.x;
+	float a1 = p.z;
+	float a2 = v0.x;
+	float a3 = v0.z;
+	float a4 = v1.x;
+	float a5 = v1.z;
+	float a6 = v2.x;
+	float a7 = v2.z;
+	float a8 = v0.y;
+	float a9 = v1.y;
+	float a10 = v2.y;
+/*
+ var _x =   argument0 - argument2;
+   var _y =   argument1 - argument3;
+   var _e1x = argument4 - argument2;
+   var _e1y = argument5 - argument3;
+   var _e2x = argument6 - argument2;
+   var _e2y = argument7 - argument3;
+   var _id = 1 / (_e1x * _e2y - _e1y * _e2x);
+   var _x0 = _x *  _e2y * _id + _y * -_e2x * _id;
+   var _y0 = _x * -_e1y * _id + _y *  _e1x * _id;
+   return argument8 * (1-_x0-_y0) + argument9 * _x0 + argument10 * _y0;
+*/
+
+    float x = a0 - a2;
+    float y = a1 - a3;
+    float e1x = a4 - a2;
+    float e1y = a5 - a3;
+    float e2x = a6 - a2;
+    float e2y = a7 - a3;
+    float id = 1.0f / (e1x * e2y - e1y * e2x);
+    float x0 = x * e2y * id + y * -e2x * id;
+    float y0 = x * -e1y * id + y * e1x * id;
+    return a8 * (1 - x0 - y0) + a9 * x0 + a10 * y0;
+}
+
+// Function to check if a point is within a triangle
+bool World::isPointInTriangle(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c) {
+	glm::vec3 baryCoords = calculateBarycentricCoordinates(p, a, b, c);
+	return (baryCoords.x >= 0.0f && baryCoords.y >= 0.0f && baryCoords.z >= 0.0f &&
+		baryCoords.x <= 1.0f && baryCoords.y <= 1.0f && baryCoords.z <= 1.0f);
+}
+
 void World::ultimateHeightmapCalculation(WorldObject* terrain)
 {
 	size_t indexCount = terrain->mesh->indices.size();
@@ -261,20 +399,19 @@ void World::ultimateHeightmapCalculation(WorldObject* terrain)
     Log("ultimate heightmap size (bytes): " << ultHeightInfo.numTriangles * sizeof(glm::vec3) << std::endl);
 	std::set<unsigned int> sortedIndices;
     // iterate over all triangles in mesh data and prepare barycentric coordinates calculation
-    for (size_t i = 0; i < ultHeightInfo.numTriangles; i += 3) {
+    for (size_t i = 0; i < indexCount; i += 3) {
         glm::vec3 v0 = terrain->mesh->vertices[terrain->mesh->indices[i]].pos;
         glm::vec3 v1 = terrain->mesh->vertices[terrain->mesh->indices[i + 1]].pos;
         glm::vec3 v2 = terrain->mesh->vertices[terrain->mesh->indices[i + 2]].pos;
-		sortedIndices.insert(terrain->mesh->indices[i]);
-		sortedIndices.insert(terrain->mesh->indices[i+1]);
-		sortedIndices.insert(terrain->mesh->indices[i+2]);
+	 	//sortedIndices.insert(terrain->mesh->indices[i]);
+		//sortedIndices.insert(terrain->mesh->indices[i+1]);
+		//sortedIndices.insert(terrain->mesh->indices[i+2]);
 		ultHeightInfo.sortedSetX.insert(v0.x);
 		ultHeightInfo.sortedSetX.insert(v1.x);
 		ultHeightInfo.sortedSetX.insert(v2.x);
 		ultHeightInfo.sortedSetZ.insert(v0.z);
 		ultHeightInfo.sortedSetZ.insert(v1.z);
 		ultHeightInfo.sortedSetZ.insert(v2.z);
-        if (v0.z >= 900.0f) DebugBreak();
 		//glm::vec3 p = (v0 + vZ + v2) / 3.zf;
         //ultHeightInfo.ultimaHeight[i] = p;
         // we need to make sure we have triangle vertices x and z coords located on a grid, not all over the place
@@ -285,6 +422,71 @@ void World::ultimateHeightmapCalculation(WorldObject* terrain)
 	if (ultHeightInfo.sortedSetZ.size() != ultHeightInfo.squaresPerLine + 1) {
 		Error("World::ultimateHeightmapCalculation: terrain data is not on grid");
 	}
+    auto it = ultHeightInfo.sortedSetX.lower_bound(300.0f);
+	size_t index = std::distance(ultHeightInfo.sortedSetX.begin(), it);
+    Log("index: " << index << std::endl);
+	it = ultHeightInfo.sortedSetX.begin();
+	float el0 = *it;
+	float el1 = *++it;
+	float fixedDiff = el1 - el0;
+	float last = std::numeric_limits<double>::quiet_NaN();
+    for (auto& value : ultHeightInfo.sortedSetX) {
+        if (!std::isnan(last)) {
+            float diff = value - last;
+            if (diff - fixedDiff > 0.00001f) {
+                Log("diff: " << diff << std::endl);
+            }
+        }
+		last = value;
+        //Log("sortedSetX: " << value << std::endl);
+    }
+    // ensure same grid distances in X and Z
+	std::set<float>::iterator itx, itz;
+	for (itx = ultHeightInfo.sortedSetX.begin(), itz = ultHeightInfo.sortedSetZ.begin();
+		itx != ultHeightInfo.sortedSetX.end() && itz != ultHeightInfo.sortedSetZ.end(); ++itx, ++itz) {
+		if (! (*itx == *itz)) Error("World::ultimateHeightmapCalculation: terrain data grid distances not the same in X and Z");
+	}
+    float lastEl = *ultHeightInfo.sortedSetX.rbegin();
+    Log("last el " << lastEl << " dist calc: " << (lastEl / ultHeightInfo.sortedSetX.size()) << std::endl);
+	ultHeightInfo.maxXZ = lastEl;
+	ultHeightInfo.calcDist = lastEl / ultHeightInfo.sortedSetX.size();
+    ultHeightInfo.gridIndex.resize(ultHeightInfo.sortedSetX.size());
+    size_t i = 0;
+    for (auto& el : ultHeightInfo.sortedSetX) {
+        ultHeightInfo.gridIndex[i] = el;
+        i++;
+    }
+	ultHeightInfo.terrain = terrain;
+	size_t xI = calcGridIndex(ultHeightInfo, 300.0f);
+	size_t zI = calcGridIndex(ultHeightInfo, 911.11f);
+	//Log("index: " << xI << std::endl);
+	size_t idx = getSquareIndex(ultHeightInfo, xI, zI);
+
+
+    float height = getHightmapValue(ultHeightInfo, 300.0f, 911.11f);
+    Log("height: " << height << std::endl);
+
+	// another test:
+	// Define the vertices of the triangle
+	glm::vec3 v0(0.0f, 1.0f, 0.0f);
+	glm::vec3 v1(1.0f, 2.0f, 0.0f);
+	glm::vec3 v2(0.0f, 3.0f, 1.0f);
+
+	// Define the point with known x and z values
+	glm::vec3 p(0.5f, 0.0f, 0.5f); // y value is unknown
+
+	// Calculate the y value
+	float y = interpolateY2(p, v0, v1, v2);
+
+	// Output the result
+	std::cout << "The y value is: " << y << std::endl;
+
+	p.y = y;
+    p.x = 0.500001f;
+    // Check if the point is inside the triangle
+    bool isInside = isPointInTriangle(p, v0, v1, v2);
+    Log("isInside: " << isInside << std::endl);
+
 	// Iterate and print the elements of the set
 	//std::cout << "Sorted set elements: (" << ultHeightInfo.sortedSetX .size() << ")" << std::endl;
 	//for (const float& value : ultHeightInfo.sortedSetX) {
