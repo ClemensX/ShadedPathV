@@ -56,7 +56,7 @@ void Incoming::run()
 }
 
 void Incoming::init() {
-    bool terrainOnly = true; // disable all other objects
+    bool terrainOnly = false; // disable all other objects
     float aspectRatio = engine.getAspect();
 
     // 2 square km world size

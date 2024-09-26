@@ -182,13 +182,13 @@ void World::setHeightmap(TextureID heightmap)
     Log("World heightmap has value every " << textureScaleFactor << " m" << std::endl);
 }
 
-float World::getHeightmapValue(float xp, float zp)
+float World::getHeightmapValueWC(float xp, float zp)
 {
 	static size_t minIndex = heightmap->float_buffer.size() + 1000;
 	static size_t maxIndex = 0;
 	// check that we are within world borders:
     if (xp < minxz || xp > maxxz || zp < minxz || zp > maxxz) {
-        Error("World::getHeightmapValue: coordinates out of world borders");
+        Error("World::getHeightmapValueWC: coordinates out of world borders");
     }
 
     // move world coords to positive range:
@@ -202,7 +202,7 @@ float World::getHeightmapValue(float xp, float zp)
 
     size_t index = (size_t)(z * heightmap->vulkanTexture.width + x);
 	if (index < 0 || index >= heightmap->float_buffer.size()) {
-		Error("World::getHeightmapValue: index out of range");
+		Error("World::getHeightmapValueWC: index out of range");
 	}
     if (index < minIndex) {
         minIndex = index;
@@ -217,12 +217,27 @@ float World::getHeightmapValue(float xp, float zp)
         size_t i = heightmap->float_buffer.size() - index - 1;
 		return heightmap->float_buffer[i];
 	} else {
-		Error("World::getHeightmapValue: heightmap orientation not implemented");
+		Error("World::getHeightmapValueWC: heightmap orientation not implemented");
 	}
 	return 0.0f;
 }
 
 // ultimate heightmap value getter, returns heightmap value at given world coordinates
+
+float World::getHeightmapValue(float xp, float zp)
+{
+	// check that we are within world borders:
+	if (xp < minxz || xp > maxxz || zp < minxz || zp > maxxz) {
+		Error("World::getHeightmapValueWC: coordinates out of world borders");
+	}
+
+	// move world coords to positive range:
+	float halfWorldSize = sizex / 2.0f;
+	float x = xp + halfWorldSize;
+	float z = zp + halfWorldSize;
+
+    return getHightmapValue(ultHeightInfo, x, z);
+}
 
 // Function to calculate the barycentric coordinates
 glm::vec3 World::calculateBarycentricCoordinates(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c) {
@@ -336,7 +351,9 @@ float World::getHightmapValue(UltimateHeightmapInfo& info, float x, float z)
     float h = interpolateY2(p, v0, v1, v2);
 	p.y = h;
 	bool isInside = isPointInTriangle(p, v0, v1, v2);
-	Log("isInside: " << isInside << std::endl);
+    if (!isInside) {
+		//Log("is not Inside! " << std::endl);
+	}
 	return h;
 }
 

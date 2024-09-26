@@ -51,7 +51,8 @@ public:
 	// transform terrain object to match world size and position
 	void transformToWorld(WorldObject* obj);
 	void setHeightmap(TextureID heightmap);
-    float getHeightmapValue(float x, float z);
+    float getHeightmapValueWC(float x, float z);
+	float getHeightmapValue(float x, float z);
 
     // ultimate heightmap: perfect heightmap directly from terrain data, but uses much CPU memory
 	void ultimateHeightmapCalculation(WorldObject* terrain);
