@@ -58,20 +58,20 @@ void Incoming::run()
 void Incoming::addRandomHeightLines(vector<LineDef>& lines, World& world) {
     LineDef b;
     //unsigned long total_billboards = 50000000;
-    unsigned long total_billboards = 1000000;
+    //unsigned long total_billboards = 1000000;
     //unsigned long total_billboards = 500000;
     //unsigned long total_billboards = 200000;
     //unsigned long total_billboards = 5000;
-    //unsigned long total_billboards = 12;
+    unsigned long total_billboards = 12;
 
     // create randomly positioned billboards for each vacXX texture we have:
     for (unsigned long num = 0; num < total_billboards; num++) {
         vec3 rnd = world.getRandomPos();
         b.color = Colors::Silver;
         float x = rnd.x;
-        if (x >= world.getWorldSize().x / 2.0f) x = world.getWorldSize().x / 2.0f - 0.01f;
+        //if (x >= world.getWorldSize().x / 2.0f) x = world.getWorldSize().x / 2.0f - 0.01f;
         float z = rnd.z;
-        if (z >= world.getWorldSize().z / 2.0f) z = world.getWorldSize().z / 2.0f - 0.01f;
+        //if (z >= world.getWorldSize().z / 2.0f) z = world.getWorldSize().z / 2.0f - 0.01f;
 
         b.start.x = x;
         b.start.z = z;
@@ -94,7 +94,8 @@ void Incoming::init() {
 
     //engine.meshStore.loadMesh("terrain2k/Project_Mesh_2m.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     //engine.meshStore.loadMesh("terrain2k/Project_Mesh_0.5.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
-    engine.meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    //engine.meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    engine.meshStore.loadMesh("incoming/flat.glb", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     engine.objectStore.createGroup("terrain_group");
     if (!terrainOnly) {
         engine.objectStore.createGroup("knife_group");
@@ -129,7 +130,9 @@ void Incoming::init() {
     auto p = hmdPositioner.getPosition();
 
     // heightmap
-    engine.textureStore.loadTexture("valley_height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT,
+    //engine.textureStore.loadTexture("valley_height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT,
+    //    TextureFlags::KEEP_DATA_BUFFER | TextureFlags::ORIENTATION_RAW_START_WITH_XMAX_ZMAX);
+    engine.textureStore.loadTexture("flat.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT,
         TextureFlags::KEEP_DATA_BUFFER | TextureFlags::ORIENTATION_RAW_START_WITH_XMAX_ZMAX);
     auto texHeightmap = engine.textureStore.getTexture("heightmap");
     world.setHeightmap(texHeightmap);
@@ -167,9 +170,9 @@ void Incoming::init() {
             vec3 p1 = vec3(v, 0.0f, v);
             //vec3 p2 = vec3(w, 0.0f, w);
             vec3 p2 = vec3(v, 0.0f, v);
-            p1.y = world.getHeightmapValue(v, v);// +0.25f;
+            p1.y = world.getHeightmapValueWC(v, v);// +0.25f;
             //p2.y = world.getHeightmapValue(w, w) + 0.25f;
-            p2.y = world.getHeightmapValue(v, v) + 0.25f;
+            p2.y = world.getHeightmapValueWC(v, v) + 0.25f;
             grid->lines.push_back(LineDef(p1, p2, vec4(1.0f, 1.0f, 1.0f, 1.0f)));
             //auto bug = world.getHeightmapValue(19.0f, 19.0f);
             //Log("bug: " << bug << endl);

@@ -260,8 +260,8 @@ size_t World::calcGridIndex(UltimateHeightmapInfo& info, float f)
 {
 	size_t ret;
     size_t slot = (size_t)(f / info.calcDist);
-	if (slot == 0) return 0;
-    if (slot == info.gridIndex.size()) return slot - 1;
+	if (slot <= 0) return 0;
+    if (slot >= info.gridIndex.size()) return info.gridIndex.size()-2; // border case
 	if (info.gridIndex[slot] <= f) ret = slot;
 	else if (info.gridIndex[slot-1] <= f) ret = slot-1;
 	if (ret < info.gridIndex.size() - 1) {
@@ -480,4 +480,18 @@ void World::prepareUltimateHeightmap(WorldObject* terrain)
         i++;
     }
 	ultHeightInfo.terrain = terrain;
+
+	// test border cases:
+	bool testing = false;
+	if (testing) {
+		float h = getHeightmapValue(-200.0f, 512.0f);
+		h = getHeightmapValue(-512.0f, 512.0f);
+		h = getHeightmapValue(512.0f, -512.0f);
+		h = getHeightmapValue(512.0f, 512.0f);
+		h = getHeightmapValue(-512.0f, -512.0f);
+		h = getHeightmapValue(-200.0f, 500.0f);
+
+        float hwc = getHeightmapValueWC(-200.0f, 500.0f);
+		Log("hwc: " << hwc << std::endl);
+	}
 }
