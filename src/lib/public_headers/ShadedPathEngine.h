@@ -283,6 +283,7 @@ public:
 
     void log_current_thread();
     bool renderThreadDebugLog = false;
+    bool debugWindowPosition = false; // app window in right screen part
 
 private:
     thread_local static bool isUpdateThread_;

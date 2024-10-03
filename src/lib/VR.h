@@ -186,9 +186,23 @@ class VR
 	void createInstanceInternal(){};
 
 	// threaded frame generation
-	void frameBegin(){};
+	void pollEvent() {};
+	void frameWait() {};
+	void frameBegin(ThreadResources& tr) {};
+	void frameCopy(ThreadResources& tr) {};
 	void frameEnd(ThreadResources& tr){};
-	private:
+	// Getter for positioner
+	CameraPositioner_HMD* GetPositioner() const {
+		return positioner;
+	}
+
+	// Setter for positioner
+	void SetPositioner(CameraPositioner_HMD* newPositioner) {
+		positioner = newPositioner;
+	}
+	void create() {};
+private:
 		ShadedPathEngine& engine;
+		CameraPositioner_HMD* positioner = nullptr;
 };
 #endif

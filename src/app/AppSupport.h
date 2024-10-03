@@ -15,6 +15,7 @@ protected:
     bool stereo = false;
     bool enableSound = false;
     bool singleThreadMode = false;
+    bool debugWindowPosition = false; // if true try to open app window in right screen part
     Camera* camera = nullptr;
     Camera camera2;
     CameraPositioner_FirstPerson fpPositioner;
@@ -92,6 +93,7 @@ protected:
         }
         if (enableSound) engine->enableSound();
         if (singleThreadMode) engine->setThreadModeSingle();
+        if (debugWindowPosition) engine->debugWindowPosition = true;
 
         // engine initialization
         engine->init(name);

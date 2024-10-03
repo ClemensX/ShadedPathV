@@ -27,7 +27,7 @@ void Incoming::run()
         engine.setMaxTextures(50);
         //engine.setFrameCountLimit(1000);
         setHighBackbufferResolution();
-        int win_width = 1800;//480;// 960;//1800;// 800;//3700; // 2500;
+        int win_width = 800;//480;// 960;//1800;// 800;//3700; // 2500;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Incoming");
         //camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f);
         camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.10f, 2000.0f);

@@ -51,5 +51,16 @@ void AppSupport::handleInput(InputState& inputState)
             fpPositioner.setUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
             //hmdPositioner->movement.backward_ = press;
         }
+        if (key == GLFW_KEY_F && action == GLFW_RELEASE) {
+            if (fpPositioner.isModeFlying()) {
+                fpPositioner.setModeWalking();
+                hmdPositioner.setModeWalking();
+                Log("Camera set to walking mode.\n")
+            } else {
+                fpPositioner.setModeFlying();
+                hmdPositioner.setModeFlying();
+                Log("Camera set to flying mode.\n")
+            }
+        }
     }
 }
