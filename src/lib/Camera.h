@@ -1,5 +1,10 @@
 #pragma once
 
+enum class MovementType {
+	Flying,
+	Walking,
+	Falling
+};
 struct Movement {
 	bool forward_ = false;
 	bool backward_ = false;
@@ -8,13 +13,25 @@ struct Movement {
 	bool up_ = false;
 	bool down_ = false;
 	bool fastSpeed_ = false;
+	MovementType type = MovementType::Flying;
+	float camAboveGround = 1.65f;
+	const float kmh2ms = 1000.0f / 3600.0f; // 1 km/h == 1000m/h == 0.277 m/s
+	const float walkSpeedMS = 3.5f * kmh2ms;
+	const float runSpeedMS = 10.0f * kmh2ms;
 };
 
 class CameraPositionerInterface {
 public:
 	virtual ~CameraPositionerInterface() = default;
 	// copy
-	CameraPositionerInterface& operator=(const CameraPositionerInterface& other){
+	CameraPositionerInterface& operator=(const CameraPositionerInterface& other) {
+		// Guard self assignment
+		if (this == &other)
+			return *this;
+		// handle field copy
+		this->movement.type = other.movement.type;
+		this->movement.camAboveGround = other.movement.camAboveGround;
+
 		return *this;
 	}
 	// get view matrix to transform world coords to camera space
@@ -23,10 +40,10 @@ public:
 	virtual glm::mat4 getViewMatrixAtCameraPos() const = 0;
 	virtual glm::vec3 getPosition() const = 0;
 	virtual glm::vec3 getLookAt() const = 0;
-	void setModeFlying() { isFlying = true; isWalking = false; }
-	void setModeWalking() { isWalking = true; isFlying = false; }
-	bool isModeFlying() { return isFlying; }
-	bool isModeWalking() { return isWalking; }
+	void setModeFlying() { movement.type = MovementType::Flying; }
+	void setModeWalking() { movement.type = MovementType::Walking; }
+	bool isModeFlying() { return movement.type == MovementType::Flying; }
+	bool isModeWalking() { return movement.type == MovementType::Walking; }
 	void calcMovement(Movement& mv, glm::quat orientation, glm::vec3& moveSpeed,
 			float acceleration_,	float damping_,	float maxSpeed_, float fastCoef_, double deltaSeconds, bool VRMode = false) {
 			const glm::mat4 v = glm::mat4_cast(orientation);
@@ -66,13 +83,8 @@ public:
 				moveSpeed = glm::normalize(moveSpeed) * maxSpeed;
 		}
 	}
-private:
-	bool isFlying = true;
-	bool isWalking = false;
-	float camAboveGround = 1.65f;
-	const float kmh2ms = 1000.0f / 3600.0f; // 1 km/h == 1000m/h == 0.277 m/s
-	const float walkSpeedMS = 3.5f * kmh2ms;
-	const float runSpeedMS = 10.0f * kmh2ms;
+
+	Movement movement;
 };
 
 class  Camera {
@@ -171,7 +183,6 @@ public:
 	float damping_ = 0.2f;
 	float maxSpeed_ = 10.0f;
 	float fastCoef_ = 10.0f;
-    Movement movement;
 
 private:
 	glm::vec2 mousePos = glm::vec2(0);
@@ -246,7 +257,6 @@ class CameraPositioner_AutoMove final :
 	public CameraPositionerInterface
 {
 public:
-	Movement movement;
 	float mouseSpeed_ = 4.0f;
 	float acceleration_ = 150.0f;
 	float damping_ = 0.2f;
@@ -344,7 +354,6 @@ class CameraPositioner_HMD final :
 	public CameraPositionerInterface
 {
 public:
-	struct Movement movement;
 	float mouseSpeed_ = 4.0f;
 	float acceleration_ = 150.0f;
 	float damping_ = 0.2f;

@@ -27,6 +27,7 @@ protected:
     }
     void createFirstPersonCameraPositioner(const glm::vec3& pos, const glm::vec3& target, const glm::vec3& up) {
         fpPositioner = CameraPositioner_FirstPerson(pos, target, up);
+        //fpPositioner.camAboveGround = 0.1f;
     }
     void createHMDCameraPositioner(const glm::vec3& pos, const glm::vec3& target, const glm::vec3& up) {
         hmdPositioner = CameraPositioner_HMD(pos, target, up);
