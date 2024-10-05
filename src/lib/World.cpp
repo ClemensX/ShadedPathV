@@ -26,7 +26,7 @@ void World::createGridXZ(Grid& grid) {
 	line.color = Colors::Red;
 	for (int xcount = 0; xcount < xLineCount; xcount++) {
 		x = xstart + xcount * xdiff;
-		Log("world grid x: " << x << std::endl);
+		//Log("world grid x: " << x << std::endl);
 		vec3 p1(x, grid.center.y, zstart);
 		vec3 p2(x, grid.center.y, zend);
 		line.start = p1;
@@ -494,4 +494,13 @@ void World::prepareUltimateHeightmap(WorldObject* terrain)
         float hwc = getHeightmapValueWC(-200.0f, 500.0f);
 		Log("hwc: " << hwc << std::endl);
 	}
+}
+
+// Path
+
+void Path::init(World* world, WorldObject* terrain, UltimateHeightmapInfo* hinfo)
+{
+	this->world = world;
+	this->terrain = terrain;
+	this->hinfo = hinfo;
 }

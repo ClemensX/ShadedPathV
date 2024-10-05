@@ -11,13 +11,15 @@ void Incoming::run()
     {
         setEngine(engine);
         // camera initialization
-        createFirstPersonCameraPositioner(glm::vec3(5.38f, 58.90f, 5.30f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        createHMDCameraPositioner(glm::vec3(0.0f, 70.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        //vec3 camStart(5.38f, 58.90f, 5.30f);
+        vec3 camStart(5.38f, 458.90f, 5.30f);
+        createFirstPersonCameraPositioner(camStart, vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 1.0f, 0.0f));
+        createHMDCameraPositioner(camStart, vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 1.0f, 0.0f));
         getFirstPersonCameraPositioner()->setMaxSpeed(15.0f);
         initCamera();
         auto p = getHMDCameraPositioner()->getPosition();
         //hmdPositioner->setPosition(glm::vec3(900.0f, p.y, 1.0f));
-        getHMDCameraPositioner()->setPosition(glm::vec3(5.38f, 58.90f, 5.30f));
+        //getHMDCameraPositioner()->setPosition(glm::vec3(5.38f, 58.90f, 5.30f));
         p = getHMDCameraPositioner()->getPosition();
         Log("HMD position: " << p.x << " / " << p.y << " / " << p.z << endl);
         // engine configuration
@@ -85,7 +87,7 @@ void Incoming::addRandomHeightLines(vector<LineDef>& lines, World& world) {
 }
 
 void Incoming::init() {
-    bool terrainOnly = false; // disable all other objects
+    bool terrainOnly = true; // disable all other objects
     float aspectRatio = engine.getAspect();
 
     // 2 square km world size
@@ -140,6 +142,7 @@ void Incoming::init() {
     //shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
     //world.checkTerrainSuitableForHeightmap(terrain);
     world.prepareUltimateHeightmap(terrain);
+    world.paths.init(&world, terrain, nullptr); // TODO
 
     // skybox
     engine.textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");

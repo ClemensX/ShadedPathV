@@ -24,6 +24,19 @@ struct UltimateHeightmapInfo {
     WorldObject* terrain = nullptr;
 };
 
+// handle object movement: cameras and worldObjects
+class Path
+{
+public:
+	// we need the terrain, the world and some other details to be able to calc path movement
+	void init(World* world, WorldObject* terrain, UltimateHeightmapInfo* hinfo);
+private:
+	World* world = nullptr;
+	WorldObject* terrain = nullptr;
+	UltimateHeightmapInfo* hinfo = nullptr;
+};
+
+// handle world: terrain, heights, world size and grid
 class World
 {
 public:
@@ -68,6 +81,7 @@ public:
 
     // check if point is inside triangle, use with care: a point on or close to border line may erroneously return false
 	bool isPointInTriangle(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c);
+	Path paths;
 private:
 	glm::vec3 calculateBarycentricCoordinates(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c);
 	float interpolateY2(const glm::vec3& p, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2);
