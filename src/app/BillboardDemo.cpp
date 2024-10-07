@@ -34,13 +34,13 @@ void BillboardDemo::run()
         //this_thread::sleep_for(chrono::milliseconds(3000));
         // add shaders used in this app
         shaders
-            .addShader(shaders.uiShader)
             .addShader(shaders.clearShader)
             .addShader(shaders.cubeShader)  // enable to render central cube with debug texture
             .addShader(shaders.billboardShader)
             .addShader(shaders.lineShader)  // enable to see zero cross and billboard debug lines
             //.addShader(shaders.pbrShader)
             ;
+        if (enableUI) shaders.addShader(shaders.uiShader);
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         shaders.initActiveShaders();
 

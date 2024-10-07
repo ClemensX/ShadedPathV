@@ -15,7 +15,7 @@ protected:
     bool stereo = false;
     bool enableSound = false;
     bool singleThreadMode = false;
-    bool debugWindowPosition = false; // if true try to open app window in right screen part
+    bool debugWindowPosition = true; // if true try to open app window in right screen part
     Camera* camera = nullptr;
     Camera camera2;
     CameraPositioner_FirstPerson fpPositioner;

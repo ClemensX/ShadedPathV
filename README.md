@@ -26,7 +26,31 @@ Some features:
 
 <a id="toc-state"></a>
 
-## Current State (Q2 / 2024)
+## Current State (Q3 / 2024)
+
+## Using World Creator &copy; terrain
+
+We now can directly import gltf exports from world creator (https://www.world-creator.com/). This is for base terrain glTF and heightmap.
+
+There is also code to get terrain height directly from the terrain vertices in ultimate precision. (Meaning exact same precision as terrain itself.) It's a constant time algorithm based on finding the right terrain triangle for given x/z float value and interpolate to get the exact height within the triangle.
+
+![wc_scene_1](images/wc_scene1.png)
+
+![wc_scene_2](images/wc_scene2.png)
+
+
+
+## Helper classes for app development
+
+`` AppSupport `` class added which removes a lot of boilerplate code from applications. Mostly options and camera handling.
+
+## OpenXR Enablement
+
+All sample apps are now VR enabled through OpenXR.
+
+![billboards_vr](images/billboards_vr.png)
+
+## Q2 / 2024
 
 ## Screenshots
 
