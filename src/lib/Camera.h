@@ -18,6 +18,11 @@ struct Movement {
 	const float kmh2ms = 1000.0f / 3600.0f; // 1 km/h == 1000m/h == 0.277 m/s
 	const float walkSpeedMS = 3.5f * kmh2ms;
 	const float runSpeedMS = 10.0f * kmh2ms;
+    // movement vectors, depend on camera type
+	glm::vec3 forward;
+	glm::vec3 right;
+	glm::vec3 up;
+
 };
 
 class CameraPositionerInterface {
@@ -44,43 +49,31 @@ public:
 	void setModeWalking() { movement.type = MovementType::Walking; }
 	bool isModeFlying() { return movement.type == MovementType::Flying; }
 	bool isModeWalking() { return movement.type == MovementType::Walking; }
+    // each positioner needs to implement its own movement vector calculation: forward, right, up
+    virtual void calcMovementVectors(Movement& mv, glm::quat orientation) = 0;
+
 	void calcMovement(Movement& mv, glm::quat orientation, glm::vec3& moveSpeed,
 			float acceleration_,	float damping_,	float maxSpeed_, float fastCoef_, double deltaSeconds, bool VRMode = false) {
-			const glm::mat4 v = glm::mat4_cast(orientation);
-		glm::vec3 forward = -glm::vec3(v[0][2], v[1][2], v[2][2]);
-		glm::vec3 right = glm::vec3(v[0][0], v[1][0], v[2][0]);
-		glm::vec3 up = glm::cross(right, forward);
-		if (VRMode) {
-			// Default forward direction in OpenGL (negative Z-axis)
-			glm::vec3 defaultForward(0.0f, 0.0f, -1.0f);
-			// Rotate the default forward direction by the orientation quaternion
-			glm::vec3 lookAtDirection = orientation * defaultForward;
-            float moveLength = 0.001f; // 1 cm per input key recognition
-            forward = (moveLength / glm::length(lookAtDirection)) * lookAtDirection;
-			glm::vec3 defaultRight(1.0f, 0.0f, 0.0f);
-            glm::vec3 rightDirection = orientation * defaultRight;
-			right = (moveLength / glm::length(rightDirection)) * rightDirection;
-			//moveSpeed = add;
-			//return;
-		}
+        // used only for default flying mode - use Paths for all other modes
+		if (isModeFlying()) {
+			glm::vec3 accel(0.0f);
+			if (mv.forward_) accel += mv.forward;
+			if (mv.backward_) accel -= mv.forward;
+			if (mv.left_) accel -= mv.right;
+			if (mv.right_) accel += mv.right;
+			if (mv.up_) accel += mv.up;
+			if (mv.down_) accel -= mv.up;
+			if (mv.fastSpeed_) accel *= fastCoef_;
 
-		glm::vec3 accel(0.0f);
-		if (mv.forward_) accel += forward;
-		if (mv.backward_) accel -= forward;
-		if (mv.left_) accel -= right;
-		if (mv.right_) accel += right;
-		if (mv.up_) accel += up;
-		if (mv.down_) accel -= up;
-		if (mv.fastSpeed_) accel *= fastCoef_;
-
-		if (accel == glm::vec3(0)) {
-			moveSpeed -= moveSpeed * std::min((1.0f / damping_) * static_cast<float>(deltaSeconds), 1.0f);
-		}
-		else {
-			moveSpeed += accel * acceleration_ * static_cast<float>(deltaSeconds);
-			const float maxSpeed = mv.fastSpeed_ ? maxSpeed_ * fastCoef_ : maxSpeed_;
-			if (glm::length(moveSpeed) > maxSpeed)
-				moveSpeed = glm::normalize(moveSpeed) * maxSpeed;
+			if (accel == glm::vec3(0)) {
+				moveSpeed -= moveSpeed * std::min((1.0f / damping_) * static_cast<float>(deltaSeconds), 1.0f);
+			}
+			else {
+				moveSpeed += accel * acceleration_ * static_cast<float>(deltaSeconds);
+				const float maxSpeed = mv.fastSpeed_ ? maxSpeed_ * fastCoef_ : maxSpeed_;
+				if (glm::length(moveSpeed) > maxSpeed)
+					moveSpeed = glm::normalize(moveSpeed) * maxSpeed;
+			}
 		}
 	}
 
@@ -204,6 +197,7 @@ public:
 		}
 		this->mousePos = mousePos;
 
+		calcMovementVectors(movement, cameraOrientation);
         calcMovement(movement, cameraOrientation, moveSpeed, acceleration_, damping_, maxSpeed_, fastCoef_, deltaSeconds);
 		cameraPosition += moveSpeed * static_cast<float>(deltaSeconds);
 	}
@@ -250,6 +244,13 @@ public:
 	void resetMousePosition(const glm::vec2& p) {
 		mousePos = p;
 	};
+	
+	virtual void calcMovementVectors(Movement& mv, glm::quat orientation) override {
+		const glm::mat4 v = glm::mat4_cast(orientation);
+		mv.forward = -glm::vec3(v[0][2], v[1][2], v[2][2]);
+		mv.right = glm::vec3(v[0][0], v[1][0], v[2][0]);
+		mv.up = glm::cross(mv.right, mv.forward);
+	}
 };
 
 // move camera along a predefined path
@@ -347,6 +348,10 @@ public:
 	void resetMousePosition(const glm::vec2& p) {
 		mousePos = p;
 	};
+
+	// not needed for auto move camera
+	virtual void calcMovementVectors(Movement& mv, glm::quat orientation) override {
+	}
 };
 
 // camera controlled by HMD
@@ -398,6 +403,12 @@ public:
 		auto normori = glm::normalize(ori);
 		lastOrientation = ori;
         lastCameraViewMatrix = viewCam;
+        calcMovementVectors(movement, normori);
+        if (isModeFlying()) {
+			float moveLength = 0.001f; // 1 cm per input key recognition
+			movement.forward = (moveLength / glm::length(movement.forward)) * movement.forward;
+			movement.right = (moveLength / glm::length(movement.right)) * movement.right;
+		}
 		calcMovement(movement, normori, moveSpeed, acceleration_, damping_, maxSpeed_, fastCoef_, deltaSeconds, true);
 		cameraPosition += moveSpeed;// *static_cast<float>(deltaSeconds);
 		auto finalPos = cameraPosition + pos;
@@ -486,4 +497,17 @@ public:
 	void resetMousePosition(const glm::vec2& p) {
 		mousePos = p;
 	};
+
+	virtual void calcMovementVectors(Movement& mv, glm::quat orientation) override {
+		// Default forward direction in OpenGL (negative Z-axis)
+		glm::vec3 defaultForward(0.0f, 0.0f, -1.0f);
+		// Rotate the default forward direction by the orientation quaternion
+		glm::vec3 lookAtDirection = orientation * defaultForward;
+		mv.forward = lookAtDirection;
+		glm::vec3 defaultRight(1.0f, 0.0f, 0.0f);
+		glm::vec3 rightDirection = orientation * defaultRight;
+		mv.right = rightDirection;
+		mv.up = glm::cross(mv.right, mv.forward);
+	}
+
 };

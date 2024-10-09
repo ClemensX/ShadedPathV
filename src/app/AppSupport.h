@@ -22,6 +22,7 @@ protected:
     CameraPositioner_HMD hmdPositioner;
     InputState input;
     ShadedPathEngine* engine = nullptr;
+    bool activePositionerIsHMD = false;
     void setEngine(ShadedPathEngine& engine_) {
         engine = &engine_;
     }
@@ -43,21 +44,31 @@ protected:
         getHMDCameraPositioner()->setCamera(&camera2);
         if (vr) {
             camera2.changePositioner(hmdPositioner);
-        }
-        else {
+            activePositionerIsHMD = true;
+        } else {
             camera2.changePositioner(fpPositioner);
+            activePositionerIsHMD = false;
         }
         this->camera = &camera2;
     }
+    void initCamera(const glm::vec3& pos, const glm::vec3& target, const glm::vec3& up) {
+        createFirstPersonCameraPositioner(pos, target, up);
+        createHMDCameraPositioner(pos, target, up);
+        initCamera();
+    }
+
     void updateCameraPositioners(double deltaSeconds) {
-        fpPositioner.update(deltaSeconds, input.pos, input.pressedLeft);
-        hmdPositioner.updateDeltaSeconds(deltaSeconds);
+        if (activePositionerIsHMD) {
+            hmdPositioner.updateDeltaSeconds(deltaSeconds);
+        } else {
+            fpPositioner.update(deltaSeconds, input.pos, input.pressedLeft);
+        }
     }
 
 	// provide input handling for regular first person and HMD cameras
     void handleInput(InputState& inputState);
     void applyViewProjection(glm::mat4& view1, glm::mat4& proj1, glm::mat4& view2, glm::mat4& proj2) {
-        if (camera->getEngine()->isVR()) {
+        if (activePositionerIsHMD) {
             view1 = hmdPositioner.getViewMatrixLeft();
             proj1 = hmdPositioner.getProjectionLeft();
             view2 = hmdPositioner.getViewMatrixRight();
@@ -101,6 +112,7 @@ protected:
         // even if we wanted VR initialization may have failed, fallback to non-VR
         if (!engine->isVR()) {
             camera->changePositioner(fpPositioner);
+            activePositionerIsHMD = false;
         }
     }
     void eventLoop() {

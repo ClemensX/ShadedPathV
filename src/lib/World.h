@@ -82,6 +82,7 @@ public:
     // check if point is inside triangle, use with care: a point on or close to border line may erroneously return false
 	bool isPointInTriangle(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c);
 	Path paths;
+	UltimateHeightmapInfo ultHeightInfo;
 private:
 	glm::vec3 calculateBarycentricCoordinates(const glm::vec3& p, const glm::vec3& a, const glm::vec3& b, const glm::vec3& c);
 	float interpolateY2(const glm::vec3& p, const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2);
@@ -92,7 +93,6 @@ private:
 	Grid grid;
     TextureID heightmap = nullptr;
     float textureScaleFactor = 1.0f; // heightmap may be more or less detailed than world size
-    UltimateHeightmapInfo ultHeightInfo;
 	size_t calcGridIndex(UltimateHeightmapInfo& info, float f);
     // get index into vertices array for given x and z. returning the index of the vertex with lowest x and z values.
     // the other three vertices of the triangle are then at index +1, +2 and +3
