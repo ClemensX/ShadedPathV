@@ -13,5 +13,4 @@ private:
     ShadedPathEngine engine;
     Shaders& shaders = engine.shaders;
     void updatePerFrame(ThreadResources& tr);
-    World world;
 };

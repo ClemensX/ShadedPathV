@@ -16,7 +16,6 @@ private:
     void updatePerFrame(ThreadResources& tr);
     CameraPositioner_AutoMove* autoMovePositioner;
     InputState input;
-    World world;
     Spatial2D heightmap;
     void writeHeightmapToRawFile();
     // generation parameters set from UI:

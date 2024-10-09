@@ -74,6 +74,8 @@ public:
 				if (glm::length(moveSpeed) > maxSpeed)
 					moveSpeed = glm::normalize(moveSpeed) * maxSpeed;
 			}
+		} else {
+			
 		}
 	}
 

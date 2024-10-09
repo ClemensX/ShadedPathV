@@ -22,6 +22,7 @@ protected:
     CameraPositioner_HMD hmdPositioner;
     InputState input;
     ShadedPathEngine* engine = nullptr;
+    World world;
     bool activePositionerIsHMD = false;
     void setEngine(ShadedPathEngine& engine_) {
         engine = &engine_;
@@ -114,6 +115,7 @@ protected:
             camera->changePositioner(fpPositioner);
             activePositionerIsHMD = false;
         }
+        engine->setWorld(&world);
     }
     void eventLoop() {
         // some shaders may need additional preparation

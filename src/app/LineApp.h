@@ -12,7 +12,6 @@ private:
     ShadedPathEngine engine;
     Shaders& shaders = engine.shaders;
     void updatePerFrame(ThreadResources& tr);
-    World world;
 
     // implent square formed of lines
     // it is increased on every call by one more square slightly above the others

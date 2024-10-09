@@ -88,6 +88,7 @@ void Incoming::init() {
     // 2 square km world size
     //world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     world.setWorldSize(1024.0f, 382.0f, 1024.0f);
+    engine.setWorld(&world);
 
     //engine.meshStore.loadMesh("terrain2k/Project_Mesh_2m.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     //engine.meshStore.loadMesh("terrain2k/Project_Mesh_0.5.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);

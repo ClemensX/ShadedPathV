@@ -14,7 +14,6 @@ private:
     ShadedPathEngine engine;
     Shaders& shaders = engine.shaders;
     void updatePerFrame(ThreadResources& tr);
-    World world;
     WorldObject *worldObject = nullptr;
     unsigned long uiVerticesTotal = 0;
     unsigned long uiVerticesSqrt = 0;
