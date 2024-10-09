@@ -324,4 +324,6 @@ inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* ori
 #include "Shaders.h"
 #include "ThreadResources.h"
 #include "ShadedPathEngine.h"
+#include "structs.h"
+#include "Path.h"
 #include "World.h"

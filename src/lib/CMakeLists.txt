@@ -32,6 +32,7 @@ set (SOURCES
   Presentation.cpp
   ShadedPathEngine.cpp
   World.cpp
+  Path.cpp
 )
 if (OPENXR_INC)
   list(APPEND SOURCES VR.cpp)

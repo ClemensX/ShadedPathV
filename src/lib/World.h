@@ -1,41 +1,4 @@
 #pragma once
-struct Grid {
-	glm::vec4 center;
-	float width; // total width (along x axis) of grid in units
-	float depth; // total depth (along z axis) in units
-	int widthCells; // number of cells to separate along x axis
-	int depthCells; // number of cells to separate along z axis
-	// store grid line endpoints in world coords, each pair of endpoints denotes one grid line to draw
-	std::vector<LineDef> lines;
-    float lineGap; // distance between lines
-};
-
-struct UltimateHeightmapInfo {
-	size_t numTriangles;
-	size_t numSquares;
-	size_t squaresPerLine;
-	// sorted set of x grid coords
-	std::set<float> sortedSetX;
-	// sorted set of z grid coords
-	std::set<float> sortedSetZ;
-	float maxXZ; // biggest x and z coord
-	float calcDist; // calculated distance between grid lines
-	std::vector<float> gridIndex; // used to calc the right index for given x or z float.
-    WorldObject* terrain = nullptr;
-};
-
-// handle object movement: cameras and worldObjects
-class Path
-{
-public:
-	// we need the terrain, the world and some other details to be able to calc path movement
-	void init(World* world, WorldObject* terrain, UltimateHeightmapInfo* hinfo);
-    void updateCameraPosition(Camera* camera, Movement& mv);
-private:
-	World* world = nullptr;
-	WorldObject* terrain = nullptr;
-	UltimateHeightmapInfo* hinfo = nullptr;
-};
 
 // handle world: terrain, heights, world size and grid
 class World
