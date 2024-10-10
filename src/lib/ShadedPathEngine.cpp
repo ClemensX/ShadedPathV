@@ -6,6 +6,7 @@ thread_local bool ShadedPathEngine::isUpdateThread_ = false; // static
 
 // singleton intance watcher
 bool Singleton::instanceCreated = false;
+ShadedPathEngine* ShadedPathEngine::instance = nullptr;
 
 void ShadedPathEngine::init(string appname)
 {

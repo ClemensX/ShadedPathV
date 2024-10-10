@@ -33,6 +33,7 @@ set (SOURCES
   ShadedPathEngine.cpp
   World.cpp
   Path.cpp
+  Camera.cpp
 )
 if (OPENXR_INC)
   list(APPEND SOURCES VR.cpp)

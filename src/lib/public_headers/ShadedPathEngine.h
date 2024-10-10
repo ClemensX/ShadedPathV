@@ -57,6 +57,11 @@ public:
     {
         Log("Engine c'tor\n");
         files.findFxFolder();
+        instance = this;
+    }
+
+    static ShadedPathEngine* getInstance() {
+        return instance;
     }
     // engine state - may be read by apps
     enum State {
@@ -286,6 +291,7 @@ public:
     bool debugWindowPosition = false; // app window in right screen part
 
 private:
+    static ShadedPathEngine* instance;
     thread_local static bool isUpdateThread_;
     ThreadGroup& getThreadGroup() {
         return threads;
