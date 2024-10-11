@@ -29,6 +29,7 @@ void Path::updateCameraPosition(CameraPositionerInterface* camera, Movement& mv,
             if (heightAboveGround > 0) {
                 cam.y -= fallingDistance;
             } else {
+                // if for some reason we are under terrain we want to move up
                 cam.y += fallingDistance;
             }
         } else {
