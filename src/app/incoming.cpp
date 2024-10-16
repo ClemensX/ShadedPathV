@@ -12,7 +12,9 @@ void Incoming::run()
         setEngine(engine);
         // camera initialization
         //vec3 camStart(5.38f, 58.90f, 5.30f);
-        vec3 camStart(5.38f, -458.90f, 5.30f);
+        //vec3 camStart(-511.00f, 358.90f, -511.00f);
+        //vec3 camStart(5.38f, -458.90f, 5.30f);
+        vec3 camStart(0.00f, 358.90f, 0.00f);
         initCamera(camStart, vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 1.0f, 0.0f));
         getFirstPersonCameraPositioner()->setMaxSpeed(15.0f);
         auto p = getHMDCameraPositioner()->getPosition();

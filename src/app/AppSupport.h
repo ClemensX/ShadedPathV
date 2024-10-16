@@ -11,7 +11,7 @@ class AppSupport
 protected:
     bool enableLines = true;
     bool enableUI = false;
-    bool vr = false;
+    bool vr = true;
     bool stereo = false;
     bool enableSound = false;
     bool singleThreadMode = false;
@@ -59,6 +59,9 @@ protected:
     }
 
     void updateCameraPositioners(double deltaSeconds) {
+        static float bug_dist = 0.0f, bug_time = 0.0f;
+        bug_time += deltaSeconds;
+        //Log("bug time update per frame: " << bug_time << std::endl);
         if (activePositionerIsHMD) {
             hmdPositioner.updateDeltaSeconds(deltaSeconds);
         } else {

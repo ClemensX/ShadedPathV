@@ -61,12 +61,13 @@ void CameraPositioner_HMD::update(int viewNum, glm::vec3 pos, glm::quat ori, glm
 		float moveLength = 0.001f; // 1 cm per input key recognition
 		movement.forward = (moveLength / glm::length(movement.forward)) * movement.forward;
 		movement.right = (moveLength / glm::length(movement.right)) * movement.right;
-		calcMovement(movement, normori, moveSpeed, acceleration_, damping_, maxSpeed_, fastCoef_, deltaSeconds, true);
+		calcMovement(movement, normori, moveSpeed, acceleration_, damping_, maxSpeed_, fastCoef_, deltaSeconds/2.0f, true);
 		cameraPosition += moveSpeed;// *static_cast<float>(deltaSeconds);
 	}
 	else {
 		//Log("deltaSeconds: " << deltaSeconds << endl);
-		ShadedPathEngine::getInstance()->getWorld()->paths.updateCameraPosition(this, movement, deltaSeconds);
+        // adjust time delta because we are called twice per frame
+		ShadedPathEngine::getInstance()->getWorld()->paths.updateCameraPosition(this, movement, deltaSeconds/2.0f);
 	}
 	auto finalPos = cameraPosition + pos;
 	const glm::mat4 t = glm::translate(glm::mat4(1.0f), -finalPos);

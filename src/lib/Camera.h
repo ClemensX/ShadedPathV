@@ -1,5 +1,10 @@
 #pragma once
 
+enum class MovementWalkingSubtype {
+    NoGradient, // simply move with const horizontal speed
+    GradientTriangle, // move with gradient, i.e. move faster uphill, slower downhill, only current triangle will be looked at
+    GradientPath // move with gradient, i.e. move faster uphill, slower downhill, path is defined by a list of triangles
+};
 enum class MovementType {
 	Flying,
 	Walking,
@@ -20,12 +25,12 @@ struct Movement {
 	const float walkSpeedMS = 3.5f * kmh2ms;
 	const float runSpeedMS = 10.0f * kmh2ms;
     const float fallSpeedMS = 200.0f * kmh2ms; // only constant fall speed for now
-	const float fallHeight = 0.1f; // 10cm or more above ground means we are falling
+	const float fallHeight = 0.01f; // 1cm or more above ground means we are falling
     // movement vectors, depend on camera type
-	glm::vec3 forward;
-	glm::vec3 right;
-	glm::vec3 up;
-
+	glm::vec3 forward = glm::vec3();
+	glm::vec3 right = glm::vec3();
+	glm::vec3 up = glm::vec3();
+    MovementWalkingSubtype walkingSubtype = MovementWalkingSubtype::NoGradient;
 };
 
 class CameraPositionerInterface {
