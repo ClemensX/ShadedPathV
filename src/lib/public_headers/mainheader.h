@@ -327,3 +327,4 @@ inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* ori
 #include "structs.h"
 #include "Path.h"
 #include "World.h"
+#include "Game.h"

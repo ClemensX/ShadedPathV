@@ -15,8 +15,19 @@ private:
     ShadedPathEngine engine;
     Shaders& shaders = engine.shaders;
     void updatePerFrame(ThreadResources& tr);
-    WorldObject *worldObject = nullptr;
+    WorldObject* worldObject = nullptr;
+    WorldObject* gun = nullptr;
+    Game game;
     unsigned long uiVerticesTotal = 0;
     unsigned long uiVerticesSqrt = 0;
+
+    // game phases:
+    static const int PhaseIntro = 0;
+    static const int PhasePrepare = 1;
+    static const int PhasePhase1 = 2;
+    static const int PhasePhase2 = 3;
+    static const int PhasePhase3 = 4;
+    static const int PhaseEnd = 5;
+    static const int PhaseEndTitles = 6;
 };
 

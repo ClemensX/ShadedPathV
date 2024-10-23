@@ -32,11 +32,15 @@ void CameraPositionerInterface::calcMovement(Movement& mv, glm::quat orientation
 }
 
 void CameraPositioner_FirstPerson::update(double deltaSeconds,
-	const glm::vec2& mousePos, bool mousePressed) {
+	const glm::vec2& mousePos, bool mousePressed, bool alwaysUpright) {
 	if (mousePressed) {
 		const glm::vec2 delta = mousePos - this->mousePos;
 		const glm::quat deltaQuat = glm::quat(glm::vec3(mouseSpeed_ * delta.y, mouseSpeed_ * delta.x, 0.0f));
 		cameraOrientation = glm::normalize(deltaQuat * cameraOrientation);
+		if (alwaysUpright) {
+			setUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
+		}
+
 	}
 	this->mousePos = mousePos;
 

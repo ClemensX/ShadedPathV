@@ -6,16 +6,18 @@
 // Helper class to reduce redundancy in the ShadedPath apps.
 // move functionality from app code to this class if it is useful to more than one app.
 // Apps need to subclass this class to be able to use it.
+
 class AppSupport
 {
 protected:
     bool enableLines = true;
     bool enableUI = false;
-    bool vr = true;
+    bool vr = false;
     bool stereo = false;
     bool enableSound = false;
     bool singleThreadMode = false;
     bool debugWindowPosition = true; // if true try to open app window in right screen part
+    bool firstPersonCameraAlwayUpright = true;
     Camera* camera = nullptr;
     Camera camera2;
     CameraPositioner_FirstPerson fpPositioner;
@@ -65,7 +67,7 @@ protected:
         if (activePositionerIsHMD) {
             hmdPositioner.updateDeltaSeconds(deltaSeconds);
         } else {
-            fpPositioner.update(deltaSeconds, input.pos, input.pressedLeft);
+            fpPositioner.update(deltaSeconds, input.pos, input.pressedLeft, firstPersonCameraAlwayUpright);
         }
     }
 

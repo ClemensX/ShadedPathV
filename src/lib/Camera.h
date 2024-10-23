@@ -175,7 +175,7 @@ public:
 		: cameraPosition(pos)
 		, cameraOrientation(glm::lookAt(pos, target, up))
 	{}
-	void update(double deltaSeconds, const glm::vec2& mousePos, bool mousePressed);
+	void update(double deltaSeconds, const glm::vec2& mousePos, bool mousePressed, bool alwaysUpright = false);
 
 	virtual glm::mat4 getViewMatrix() const override {
 		const glm::mat4 t = glm::translate(glm::mat4(1.0f), -cameraPosition);

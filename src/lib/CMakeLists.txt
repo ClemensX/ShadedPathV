@@ -34,6 +34,7 @@ set (SOURCES
   World.cpp
   Path.cpp
   Camera.cpp
+  Game.cpp
 )
 if (OPENXR_INC)
   list(APPEND SOURCES VR.cpp)

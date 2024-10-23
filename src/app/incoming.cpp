@@ -11,10 +11,10 @@ void Incoming::run()
     {
         setEngine(engine);
         // camera initialization
-        //vec3 camStart(5.38f, 58.90f, 5.30f);
+        vec3 camStart(5.38f, 58.90f, 5.30f);
         //vec3 camStart(-511.00f, 358.90f, -511.00f);
         //vec3 camStart(5.38f, -458.90f, 5.30f);
-        vec3 camStart(0.00f, 358.90f, 0.00f);
+        //vec3 camStart(0.00f, 358.90f, 0.00f);
         initCamera(camStart, vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 1.0f, 0.0f));
         getFirstPersonCameraPositioner()->setMaxSpeed(15.0f);
         auto p = getHMDCameraPositioner()->getPosition();
@@ -84,7 +84,7 @@ void Incoming::addRandomHeightLines(vector<LineDef>& lines, World& world) {
 }
 
 void Incoming::init() {
-    bool terrainOnly = true; // disable all other objects
+    bool debugObjects = true; // disable all other objects
     float aspectRatio = engine.getAspect();
 
     // 2 square km world size
@@ -97,7 +97,7 @@ void Incoming::init() {
     engine.meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     //engine.meshStore.loadMesh("incoming/flat.glb", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     engine.objectStore.createGroup("terrain_group");
-    if (!terrainOnly) {
+    if (!debugObjects) {
         engine.objectStore.createGroup("knife_group");
         engine.objectStore.createGroup("box_group");
         engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
@@ -105,22 +105,23 @@ void Incoming::init() {
         engine.meshStore.loadMesh("box10_cmp.glb", "Box10");
         engine.meshStore.loadMesh("box100_cmp.glb", "Box100");
         engine.meshStore.loadMesh("bottle2.glb", "WaterBottle");
-        engine.meshStore.loadMesh("cyberpunk_pistol_cmp.glb", "Gun");
     }
 
     auto terrain = engine.objectStore.addObject("terrain_group", "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
-    WorldObject* knife = nullptr;
-    if (!terrainOnly) {
+    engine.objectStore.createGroup("weapon_group");
+    engine.meshStore.loadMesh("cyberpunk_pistol_cmp.glb", "Gun");
+    gun = engine.objectStore.addObject("weapon_group", "Gun", vec3(4.97f, 57.39f, 3.9));
+    gun->scale() = vec3(0.03f, 0.03f, 0.03f);
+    gun->rot().x = 4.8f;
+    gun->rot().y = 6.4;
+    gun->rot().z = 7.4f;
+    worldObject = gun;
+    if (!debugObjects) {
         //auto knife = engine.objectStore.addObject("knife_group", "Knife", vec3(900.0f, 20.0f, 0.3f));
+        WorldObject* knife = nullptr;
         knife = engine.objectStore.addObject("knife_group", "Knife", vec3(5.47332f, 58.312f, 3.9));
         knife->rot().x = 3.14159f / 2;
         knife->rot().y = -3.14159f / 4;
-        auto gun = engine.objectStore.addObject("knife_group", "Gun", vec3(4.97f, 57.39f, 3.9));
-        gun->scale() = vec3(0.03f, 0.03f, 0.03f);
-        gun->rot().x = 4.8f;
-        gun->rot().y = 6.4;
-        gun->rot().z = 7.4f;
-        worldObject = gun;
         auto bottle = engine.objectStore.addObject("knife_group", "WaterBottle", vec3(5.77332f, 58.43f, 3.6));
         auto box1 = engine.objectStore.addObject("box_group", "Box1", vec3(5.57332f, 57.3f, 3.70005));
         auto box10 = engine.objectStore.addObject("box_group", "Box10", vec3(-5.57332f, 57.3f, 3.70005));
@@ -141,6 +142,10 @@ void Incoming::init() {
     //world.checkTerrainSuitableForHeightmap(terrain);
     world.prepareUltimateHeightmap(terrain);
     world.paths.init(&world, terrain, &world.ultHeightInfo);
+    // switch to walking mode:
+    fpPositioner.setModeWalking();
+    hmdPositioner.setModeWalking();
+    Log("Camera set to walking mode.\n")
 
     // skybox
     engine.textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
@@ -187,10 +192,20 @@ void Incoming::init() {
 
     // add sound to object
     if (enableSound) {
-        engine.sound.addWorldObject(knife);
-        engine.sound.changeSound(knife, "BACKGROUND_MUSIC");
+        engine.sound.addWorldObject(gun);
+        engine.sound.changeSound(gun, "BACKGROUND_MUSIC");
         engine.sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
     }
+
+    game.addGamePhase(PhaseIntro, "Intro");
+    game.addGamePhase(PhasePrepare, "Pickup Weapon");
+    game.addGamePhase(PhasePhase1, "Phase One");
+    game.addGamePhase(PhasePhase2, "Phase Two");
+    game.addGamePhase(PhasePhase3, "Phase Three");
+    game.addGamePhase(PhaseEnd, "The End");
+    game.addGamePhase(PhaseEndTitles, "Titles");
+
+    game.setPhase(PhasePrepare);
 }
 
 void Incoming::drawFrame(ThreadResources& tr) {
@@ -292,12 +307,18 @@ void Incoming::updatePerFrame(ThreadResources& tr)
 
 void Incoming::handleInput(InputState& inputState)
 {
+    auto key = inputState.key;
+    auto action = inputState.action;
+    auto mods = inputState.mods;
+    // disable F key
+    if (inputState.keyEvent) {
+        if (key == GLFW_KEY_F && action == GLFW_RELEASE) {
+            return;
+        }
+    }
     AppSupport::handleInput(inputState);
     if (inputState.keyEvent) {
         //Log("key pressed: " << inputState.key << endl);
-        auto key = inputState.key;
-        auto action = inputState.action;
-        auto mods = inputState.mods;
         const bool press = action != GLFW_RELEASE;
         if (key == GLFW_KEY_X) {
             worldObject->rot().x += 0.1f / 4;
