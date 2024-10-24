@@ -17,6 +17,9 @@ private:
     void updatePerFrame(ThreadResources& tr);
     WorldObject* worldObject = nullptr;
     WorldObject* gun = nullptr;
+    bool holdWeapon = false;
+    float pickupDistance = 1.5f;
+    glm::vec3 r = glm::vec3();
     Game game;
     unsigned long uiVerticesTotal = 0;
     unsigned long uiVerticesSqrt = 0;

@@ -25,6 +25,11 @@ public:
         }
         Error("Game phase not found");
     }
+
+    bool isGamePhase(int p) {
+        return currentPhase->phase == p;
+    }
+
 private:
     std::vector<GamePhase> gamePhases;
     GamePhase* currentPhase;

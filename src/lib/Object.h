@@ -123,6 +123,9 @@ public:
 	void forceBoundingBox(BoundingBox box);
 	// get bounding box either from mesh data, or the one overridden by forceBoundingBox()
 	void getBoundingBox(BoundingBox& box);
+    // calc distance. Currently refers to object origin which might be incorrect in some cases, TODO implement distance to bounding box center
+    float distanceTo(glm::vec3 pos);
+
 	glm::vec3 objectStartPos;
 	// 3d sound 
 	bool stopped; // a running cue may temporarily stopped

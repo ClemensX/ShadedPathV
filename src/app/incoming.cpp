@@ -26,7 +26,7 @@ void Incoming::run()
         engine.setMaxTextures(50);
         //engine.setFrameCountLimit(1000);
         setHighBackbufferResolution();
-        int win_width = 800;//480;// 960;//1800;// 800;//3700; // 2500;
+        int win_width = 1800;//480;// 960;//1800;// 800;//3700; // 2500;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Incoming");
         //camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f);
         camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.10f, 2000.0f);
@@ -206,11 +206,32 @@ void Incoming::init() {
     game.addGamePhase(PhaseEndTitles, "Titles");
 
     game.setPhase(PhasePrepare);
+    // start with holding weapon
+    holdWeapon = true;
+    game.setPhase(PhasePhase1);
 }
 
 void Incoming::drawFrame(ThreadResources& tr) {
     updatePerFrame(tr);
     engine.shaders.submitFrame(tr);
+}
+
+
+void getAxisAngleFromQuaternion(const glm::quat& q, glm::vec3& axis, float& angle) {
+    // Ensure the quaternion is normalized
+    glm::quat normalizedQ = glm::normalize(q);
+
+    // Calculate the angle
+    angle = 2.0f * acos(normalizedQ.w);
+
+    // Calculate the axis
+    float s = sqrt(1.0f - normalizedQ.w * normalizedQ.w);
+    if (s < 0.001f) { // To avoid division by zero
+        axis = glm::vec3(1.0f, 0.0f, 0.0f); // Arbitrary axis
+    }
+    else {
+        axis = glm::vec3(normalizedQ.x / s, normalizedQ.y / s, normalizedQ.z / s);
+    }
 }
 
 void Incoming::updatePerFrame(ThreadResources& tr)
@@ -232,6 +253,10 @@ void Incoming::updatePerFrame(ThreadResources& tr)
     updateCameraPositioners(deltaSeconds);
     //if (tr.frameNum % 100 == 0) camera->log();
     //logCameraPosition();
+    if (holdWeapon) {
+        //gun->pos() = camera->getPosition() + vec3(0.1f, -0.2f, 0.0f);
+        //gun->rot() = camera->getLookAt() + r;//vec3(23.6748f-PI2, 17.6749f, 7.525f);
+    }
 
     old_seconds = seconds;
     // lines
@@ -298,10 +323,71 @@ void Incoming::updatePerFrame(ThreadResources& tr)
             //modeltransform = wo->mesh->baseTransform;
         }
         // test model transforms:
-        if (wo->mesh->id.starts_with("Grass")) {
+        if (wo->mesh->id.starts_with("Gun") && holdWeapon) {
+            //gun->pos() = camera->getPosition() + vec3(0.1f, -0.2f, 0.0f);
+            //Log("Gun model transform" << endl);
+            auto scale = wo->scale();
+            vec3 la = camera->getLookAt();
+            auto vm = camera->getViewMatrixAtCameraPos();
+            const glm::vec3 dir = -glm::vec3(vm[0][2], vm[1][2], vm[2][2]);
+            la = dir;
+            //la = la + r;
+            auto pos = camera->getPosition() + (normalize(la) * 1.5f) + vec3(0.1f, -0.2f, 0.0f);
+            glm::vec3 axis;
+            float angle;
+            auto* positioner = getFirstPersonCameraPositioner();
+            getAxisAngleFromQuaternion(positioner->getOrientation(), axis, angle);
+            la = axis;
+            glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), la.x, glm::vec3(1.0f, 0.0f, 0.0f));
+            glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), la.y, glm::vec3(0.0f, 1.0f, 0.0f));
+            glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), la.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+            glm::mat4 rotationMatrix = rotationZ * rotationY * rotationX;
+            //rotationMatrix = glm::mat4(glm::mat3(vm));
+            //rotationMatrix = mat4(1.0f);
+            glm::mat4 trans = glm::translate(glm::mat4(1.0f), pos);//vec3(0.1f, -0.2f, -0.5f));
+            glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
+            modeltransform = trans * scaled * rotationMatrix;
+
+            Movement mv;
+            quat ori = positioner->getOrientation();
+            positioner->calcMovementVectors(mv, ori);
+            if (true) {
+                vector<LineDef> oneTimelines;
+                // add all intializer objects to vector:
+                engine.shaders.lineShader.clearLocalLines(tr);
+                //for_each(begin(myLines), end(myLines), [&oneTimelines](LineDef l) {oneTimelines.push_back(l); });
+                LineDef l;
+                l.color = Colors::Red;
+                l.start = pos;
+                l.end = pos + mv.right;
+                oneTimelines.push_back(l);
+                l.color = Colors::Blue;
+                l.end = pos + mv.up;
+                oneTimelines.push_back(l);
+                l.color = Colors::Green;
+                l.end = pos + mv.forward;
+                oneTimelines.push_back(l);
+                engine.shaders.lineShader.addOneTime(oneTimelines, tr);
+                engine.shaders.lineShader.prepareAddLines(tr);
+                rotationMatrix = glm::mat3(mv.right, mv.up, mv.forward);
+                modeltransform = trans * scaled * rotationMatrix;
+            }
         }
         buf->model = modeltransform;
     }
+    // game Logic
+    if (game.isGamePhase(PhasePrepare)) {
+        // pickup weapon - check distance
+        float dist = gun->distanceTo(camera->getPosition());
+        //Log("Distance to weapon: " << dist << endl);
+        if ( dist < pickupDistance) {
+            Log("Picked up weapon" << endl);
+            holdWeapon = true;
+            game.setPhase(PhasePhase1);
+        }
+    }
+
     postUpdatePerFrame(tr);
 }
 
@@ -321,16 +407,22 @@ void Incoming::handleInput(InputState& inputState)
         //Log("key pressed: " << inputState.key << endl);
         const bool press = action != GLFW_RELEASE;
         if (key == GLFW_KEY_X) {
-            worldObject->rot().x += 0.1f / 4;
-            Log("rot x " << worldObject->rot().x << endl);
+            //worldObject->rot().x += 0.1f / 4;
+            //Log("rot x " << worldObject->rot().x << endl);
+            r.x += 0.1f / 4;
+            Log("rot x " << r.x << endl);
         }
         if (key == GLFW_KEY_Y) {
-            worldObject->rot().y += 0.1f / 4;
-            Log("rot y " << worldObject->rot().y << endl);
+            //worldObject->rot().y += 0.1f / 4;
+            //Log("rot y " << worldObject->rot().y << endl);
+            r.y += 0.1f / 4;
+            Log("rot y " << r.y << endl);
         }
         if (key == GLFW_KEY_Z) {
-            worldObject->rot().z += 0.1f / 4;
-            Log("rot z " << worldObject->rot().z << endl);
+            //worldObject->rot().z += 0.1f / 4;
+            //Log("rot z " << worldObject->rot().z << endl);
+            r.z += 0.1f / 4;
+            Log("rot z " << r.z << endl);
         }
         if (key == GLFW_KEY_D) {
         }

@@ -305,5 +305,8 @@ void WorldObject::addVerticesToLineList(std::vector<LineDef>& lines, glm::vec3 o
 	//}
 }
 
+float WorldObject::distanceTo(glm::vec3 pos) {
+    return glm::length(pos - _pos);
+}
 
 atomic<UINT> WorldObject::count;

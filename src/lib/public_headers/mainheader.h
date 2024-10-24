@@ -295,6 +295,12 @@ inline XrResult CheckXrResult(XrInstance instance, XrResult res, const char* ori
 #include "OpenXRDebugUtils.h"
 #endif
 
+// global const
+double static const PI = 3.14159265358979323846;
+double static const PI2 = PI * 2.0;
+double static const PI_half = PI / 2.0;
+double static const PI_quarter = PI / 4.0;
+
 // engine headers
 
 #include "Files.h"

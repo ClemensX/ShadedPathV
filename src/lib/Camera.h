@@ -54,6 +54,7 @@ public:
 	virtual glm::vec3 getPosition() const = 0;
 	virtual void setPosition(const glm::vec3& pos) = 0;
 	virtual glm::vec3 getLookAt() const = 0;
+	virtual glm::quat getOrientation() const = 0;
 	void setModeFlying() { movement.type = MovementType::Flying; }
 	void setModeWalking() { movement.type = MovementType::Walking; }
 	bool isModeFlying() { return movement.type == MovementType::Flying; }
@@ -177,6 +178,10 @@ public:
 	{}
 	void update(double deltaSeconds, const glm::vec2& mousePos, bool mousePressed, bool alwaysUpright = false);
 
+	virtual glm::quat getOrientation() const override {
+        return cameraOrientation;
+	}
+
 	virtual glm::mat4 getViewMatrix() const override {
 		const glm::mat4 t = glm::translate(glm::mat4(1.0f), -cameraPosition);
 		const glm::mat4 r = glm::mat4_cast(cameraOrientation);
@@ -281,6 +286,10 @@ public:
 		cameraOrientation = glm::lookAt(cameraPosition, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	}
 
+	virtual glm::quat getOrientation() const override {
+		return cameraOrientation;
+	}
+
 	virtual glm::mat4 getViewMatrix() const override {
 		const glm::mat4 t = glm::translate(glm::mat4(1.0f), -cameraPosition);
 		const glm::mat4 r = glm::mat4_cast(cameraOrientation);
@@ -373,6 +382,10 @@ public:
 	}
 
 	void update(int viewNum, glm::vec3 pos, glm::quat ori, glm::mat4 proj, glm::mat4 view, glm::mat4 viewCam);
+
+	virtual glm::quat getOrientation() const override {
+		return cameraOrientation;
+	}
 
 	virtual glm::mat4 getViewMatrix() const override {
 		Error("Not implemented");
