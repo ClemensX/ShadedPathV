@@ -51,6 +51,7 @@
 #include <array>
 #include <functional>
 #include <regex>
+#include <bitset>
 //using namespace std;
 
 // headers for used libraries

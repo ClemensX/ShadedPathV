@@ -147,7 +147,7 @@ void PBRShader::prefillTextureIndexes(ThreadResources& tr)
 	auto& objs = engine->objectStore.getSortedList();
 	for (auto obj : objs) {
 		//Log(" WorldObject texture count: " << obj->mesh->textureInfos.size() << endl);
-		if (obj->mesh->type == MeshType::MESH_TYPE_NO_TEXTURES) {
+		if (obj->mesh->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
             continue;
         }
 		uint32_t idx = obj->mesh->baseColorTexture->index;
@@ -240,7 +240,7 @@ void PBRShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResource
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet2, 1, &dynamicOffset);
 	}
 	pbrPushConstants pushConstants;
-	pushConstants.mode = obj->mesh->type == MeshType::MESH_TYPE_NO_TEXTURES ? 1 : 0;
+	pushConstants.mode = obj->mesh->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES) ? 1 : 0;
 	//if (isRightEye) pushConstants.mode = 2;
 	vkCmdPushConstants(commandBuffer, str.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pbrPushConstants), &pushConstants);
 	//if (isRightEye) vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);

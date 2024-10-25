@@ -3,24 +3,44 @@
 class Util;
 struct SoundDef;
 
-enum class MeshType : int {
+enum class MeshFlags : int {
 	MESH_TYPE_INVALID = 0,
 	MESH_TYPE_PBR = 1,
 	MESH_TYPE_SKINNED = 2,
-	MESH_TYPE_NO_TEXTURES = 3,
-	MESH_TYPE_COUNT = 3 // always last
+	MESH_TYPE_NO_TEXTURES = 4,
+    MESH_TYPE_FLIP_WINDING_ORDER = 8, // flip clockwise <-> counter-clockwise winding order
+	MESH_TYPE_COUNT = -1 // always last
+};
+
+class MeshFlagsCollection {
+private:
+	std::bitset<32> flags;
+
+public:
+	MeshFlagsCollection() : flags(0) {}
+
+	void setFlag(MeshFlags flag) {
+		flags.set(static_cast<size_t>(flag));
+	}
+
+	void clearFlag(MeshFlags flag) {
+		flags.reset(static_cast<size_t>(flag));
+	}
+
+	bool hasFlag(MeshFlags flag) const {
+		return flags.test(static_cast<size_t>(flag));
+	}
 };
 
 // all meshes loaded from one gltf file. Textures are maintained here, meshes are contained
-struct MeshCollection
-{
-	std::string id;
-	std::string filename;
-	bool available = false; // true if this object is ready for use in shader code
-	std::vector<ktxTexture*> textureParseInfo;
-	std::vector<::TextureInfo*> textureInfos; // we check for max size in 
-	std::vector<MeshInfo*> meshInfos;
-	MeshType type = MeshType::MESH_TYPE_INVALID;
+struct MeshCollection {
+        std::string id;
+        std::string filename;
+        bool available = false; // true if this object is ready for use in shader code
+        std::vector<ktxTexture*> textureParseInfo;
+        std::vector<::TextureInfo*> textureInfos;
+        std::vector<MeshInfo*> meshInfos;
+		MeshFlagsCollection flags;
 };
 
 // Describe a single loaded mesh. mesh IDs are unique, several Objects may be instantiated backed by the same mesh
@@ -28,7 +48,7 @@ struct MeshInfo
 {
 	std::string id;
 	bool available = false; // true if this object is ready for use in shader code
-	MeshType type = MeshType::MESH_TYPE_INVALID;
+	MeshFlagsCollection flags;
 
 	// gltf data: valid after object load, should be cleared after upload
 	std::vector<PBRShader::Vertex> vertices;
@@ -71,7 +91,7 @@ public:
 	// id == mesh[0]
 	// id.gltf_mesh_name == mesh with name == gltf_mesh_name
 	// id.2 == mesh[2]
-	void loadMesh(std::string filename, std::string id, MeshType type = MeshType::MESH_TYPE_PBR);
+	void loadMesh(std::string filename, std::string id, MeshFlagsCollection flags = MeshFlagsCollection());
 	// get sorted object list (sorted by type)
 	// meshes are only resorted if one was added in the meantime
 	const std::vector<MeshInfo*> &getSortedList();
@@ -83,7 +103,7 @@ public:
 
 	MeshInfo* getMesh(std::string id);
 private:
-	MeshCollection* loadMeshFile(std::string filename, std::string id, std::vector<std::byte> &fileBuffer, MeshType type);
+	MeshCollection* loadMeshFile(std::string filename, std::string id, std::vector<std::byte> &fileBuffer, MeshFlagsCollection flags);
 	std::unordered_map<std::string, MeshInfo> meshes;
 	std::vector<MeshCollection> meshCollections;
 	ShadedPathEngine* engine = nullptr;

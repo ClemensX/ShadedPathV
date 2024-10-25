@@ -197,9 +197,17 @@ void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, vector<PBRShader
 			Log("Verts loaded: " << verts.size() << endl);
 			Log("Indices loaded: " << indexBuffer.size() << endl);
 			assert(indexBuffer.size() % 3 == 0); // triangles?
+			if (mesh->flags.hasFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER)) {
+				// revert index buffer (flip clockwise/ant-clockwise)
+				for (size_t i = 0; i < indexBuffer.size(); i += 3) {
+					auto backup = indexBuffer[i];
+					indexBuffer[i] = indexBuffer[i + 2];
+					indexBuffer[i + 2] = backup;
+				}
+			}
 
 			// load color info:
-			if (mesh->type == MeshType::MESH_TYPE_NO_TEXTURES) {
+			if (mesh->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
 				auto position = primitive.attributes.find("COLOR_0");
 				const tinygltf::Accessor& posAccessor = model.accessors[position->second];
 				assert(posAccessor.count == verts.size());
@@ -323,7 +331,7 @@ void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
 	for (auto& mat : model.materials) {
 		auto pbrbaseColorIndex = mat.pbrMetallicRoughness.baseColorTexture.index;
 		//Log("pbr base Color index: " << pbrbaseColorIndex << endl);
-		if (pbrbaseColorIndex < 0 && coll->type != MeshType::MESH_TYPE_NO_TEXTURES) {
+		if (pbrbaseColorIndex < 0 && !coll->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
 			s << "gltf baseColorTexture not found: " << coll->filename << ". try gltf-transform metalrough infile outfile, or mark mesh as MESH_TYPE_NO_TEXTURES to load without textures" << endl;
 			Error(s.str());
 		}

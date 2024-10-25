@@ -94,7 +94,9 @@ void Incoming::init() {
 
     //engine.meshStore.loadMesh("terrain2k/Project_Mesh_2m.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     //engine.meshStore.loadMesh("terrain2k/Project_Mesh_0.5.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
-    engine.meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    MeshFlagsCollection noTextureFlags;
+    noTextureFlags.setFlag(MeshFlags::MESH_TYPE_NO_TEXTURES);
+    engine.meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", noTextureFlags);
     //engine.meshStore.loadMesh("incoming/flat.glb", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     engine.objectStore.createGroup("terrain_group");
     if (!debugObjects) {
@@ -109,7 +111,9 @@ void Incoming::init() {
 
     auto terrain = engine.objectStore.addObject("terrain_group", "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
     engine.objectStore.createGroup("weapon_group");
-    engine.meshStore.loadMesh("cyberpunk_pistol_cmp.glb", "Gun");
+    MeshFlagsCollection meshFlags;
+    meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
+    engine.meshStore.loadMesh("cyberpunk_pistol_cmp.glb", "Gun", meshFlags);
     gun = engine.objectStore.addObject("weapon_group", "Gun", vec3(4.97f, 57.39f, 3.9));
     gun->scale() = vec3(0.03f, 0.03f, 0.03f);
     gun->rot().x = 4.8f;
