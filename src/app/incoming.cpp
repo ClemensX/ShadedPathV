@@ -332,7 +332,7 @@ void Incoming::updatePerFrame(ThreadResources& tr)
             const glm::vec3 dir = -glm::vec3(vm[0][2], vm[1][2], vm[2][2]);
             la = dir;
             //la = la + r;
-            auto pos = camera->getPosition() + (normalize(la) * 1.5f) + vec3(0.1f, -0.2f, 0.0f);
+            auto pos = camera->getPosition() + (normalize(la) * 1.5f) /*+ vec3(0.1f, -0.2f, 0.0f)*/ ;
             glm::vec3 axis;
             float angle;
             auto* positioner = getFirstPersonCameraPositioner();
@@ -353,10 +353,12 @@ void Incoming::updatePerFrame(ThreadResources& tr)
             quat ori = positioner->getOrientation();
             positioner->calcMovementVectors(mv, ori);
             if (true) {
+                // reposition
+                pos = camera->getPosition() + mv.right * 0.1f +  mv.up * -0.2f + mv.forward * 0.5f;
+                // draw lines for up, right and forward vectors
                 vector<LineDef> oneTimelines;
                 // add all intializer objects to vector:
                 engine.shaders.lineShader.clearLocalLines(tr);
-                //for_each(begin(myLines), end(myLines), [&oneTimelines](LineDef l) {oneTimelines.push_back(l); });
                 LineDef l;
                 l.color = Colors::Red;
                 l.start = pos;
@@ -370,7 +372,18 @@ void Incoming::updatePerFrame(ThreadResources& tr)
                 oneTimelines.push_back(l);
                 engine.shaders.lineShader.addOneTime(oneTimelines, tr);
                 engine.shaders.lineShader.prepareAddLines(tr);
+
+                // recalc orientation
+                trans = glm::translate(glm::mat4(1.0f), pos);//vec3(0.1f, -0.2f, -0.5f));
+                mat4 turnweapon;
+                la = r; // vec3(2.0f, 3.0f, 1.0f);
+                glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), la.x, glm::vec3(1.0f, 0.0f, 0.0f));
+                glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), la.y, glm::vec3(0.0f, 1.0f, 0.0f));
+                glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), la.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+                turnweapon = rotationZ * rotationY * rotationX;
                 rotationMatrix = glm::mat3(mv.right, mv.up, mv.forward);
+                rotationMatrix = rotationMatrix * turnweapon;// *rotationMatrix;
                 modeltransform = trans * scaled * rotationMatrix;
             }
         }
