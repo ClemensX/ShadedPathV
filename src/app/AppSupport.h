@@ -10,11 +10,11 @@
 class AppSupport
 {
 protected:
-    bool enableLines = true;
+    bool enableLines = false;
     bool enableUI = false;
     bool vr = false;
     bool stereo = false;
-    bool enableSound = false;
+    bool enableSound = true;
     bool singleThreadMode = false;
     bool debugWindowPosition = true; // if true try to open app window in right screen part
     bool firstPersonCameraAlwayUpright = true;

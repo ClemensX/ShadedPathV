@@ -11,11 +11,11 @@ void Incoming::run()
     {
         setEngine(engine);
         // camera initialization
-        vec3 camStart(5.38f, 58.90f, 5.30f);
+        vec3 camStart(5.38f, 58.7576f, 5.30f);
         //vec3 camStart(-511.00f, 358.90f, -511.00f);
         //vec3 camStart(5.38f, -458.90f, 5.30f);
         //vec3 camStart(0.00f, 358.90f, 0.00f);
-        initCamera(camStart, vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 1.0f, 0.0f));
+        initCamera(camStart, vec3(0.0f, 50.0f, -100.0f), vec3(0.0f, 1.0f, 0.0f));
         getFirstPersonCameraPositioner()->setMaxSpeed(15.0f);
         auto p = getHMDCameraPositioner()->getPosition();
         Log("HMD position: " << p.x << " / " << p.y << " / " << p.z << endl);
@@ -84,7 +84,7 @@ void Incoming::addRandomHeightLines(vector<LineDef>& lines, World& world) {
 }
 
 void Incoming::init() {
-    bool debugObjects = true; // disable all other objects
+    bool debugObjects = false; // disable all other objects
     float aspectRatio = engine.getAspect();
 
     // 2 square km world size
@@ -99,7 +99,7 @@ void Incoming::init() {
     engine.meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", noTextureFlags);
     //engine.meshStore.loadMesh("incoming/flat.glb", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     engine.objectStore.createGroup("terrain_group");
-    if (!debugObjects) {
+    if (debugObjects) {
         engine.objectStore.createGroup("knife_group");
         engine.objectStore.createGroup("box_group");
         engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
@@ -114,13 +114,12 @@ void Incoming::init() {
     MeshFlagsCollection meshFlags;
     meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     engine.meshStore.loadMesh("cyberpunk_pistol_cmp.glb", "Gun", meshFlags);
-    gun = engine.objectStore.addObject("weapon_group", "Gun", vec3(4.97f, 57.39f, 3.9));
+    gun = engine.objectStore.addObject("weapon_group", "Gun", vec3(4.97f, 57.39f, -3.9));
     gun->scale() = vec3(0.03f, 0.03f, 0.03f);
-    gun->rot().x = 4.8f;
-    gun->rot().y = 6.4;
-    gun->rot().z = 7.4f;
+    //gun->rot() = vec3(4.8, 6.4, 7.4);
+    gun->rot() = vec3(0.1, 0.1, 0.1);
     worldObject = gun;
-    if (!debugObjects) {
+    if (debugObjects) {
         //auto knife = engine.objectStore.addObject("knife_group", "Knife", vec3(900.0f, 20.0f, 0.3f));
         WorldObject* knife = nullptr;
         knife = engine.objectStore.addObject("knife_group", "Knife", vec3(5.47332f, 58.312f, 3.9));
@@ -197,8 +196,8 @@ void Incoming::init() {
     // add sound to object
     if (enableSound) {
         engine.sound.addWorldObject(gun);
-        engine.sound.changeSound(gun, "BACKGROUND_MUSIC");
-        engine.sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
+        //engine.sound.changeSound(gun, "BACKGROUND_MUSIC");
+        //engine.sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
     }
 
     game.addGamePhase(PhaseIntro, "Intro");
@@ -211,8 +210,8 @@ void Incoming::init() {
 
     game.setPhase(PhasePrepare);
     // start with holding weapon
-    holdWeapon = true;
-    game.setPhase(PhasePhase1);
+    //holdWeapon = true;
+    //game.setPhase(PhasePhase1);
 }
 
 void Incoming::drawFrame(ThreadResources& tr) {
@@ -255,7 +254,7 @@ void Incoming::updatePerFrame(ThreadResources& tr)
     double deltaSeconds = seconds - old_seconds;
 
     updateCameraPositioners(deltaSeconds);
-    //if (tr.frameNum % 100 == 0) camera->log();
+    if (tr.frameNum % 100 == 0) camera->log();
     //logCameraPosition();
     if (holdWeapon) {
         //gun->pos() = camera->getPosition() + vec3(0.1f, -0.2f, 0.0f);
@@ -358,24 +357,25 @@ void Incoming::updatePerFrame(ThreadResources& tr)
             positioner->calcMovementVectors(mv, ori);
             if (true) {
                 // reposition
-                pos = camera->getPosition() + mv.right * 0.1f +  mv.up * -0.2f + mv.forward * 0.5f;
+                pos = camera->getPosition() + mv.right * 0.2f +  mv.up * -0.28f + mv.forward * 0.5f;
                 // draw lines for up, right and forward vectors
-                vector<LineDef> oneTimelines;
-                // add all intializer objects to vector:
-                engine.shaders.lineShader.clearLocalLines(tr);
-                LineDef l;
-                l.color = Colors::Red;
-                l.start = pos;
-                l.end = pos + mv.right;
-                oneTimelines.push_back(l);
-                l.color = Colors::Blue;
-                l.end = pos + mv.up;
-                oneTimelines.push_back(l);
-                l.color = Colors::Green;
-                l.end = pos + mv.forward;
-                oneTimelines.push_back(l);
-                engine.shaders.lineShader.addOneTime(oneTimelines, tr);
-                engine.shaders.lineShader.prepareAddLines(tr);
+                if (enableLines) {
+                    vector<LineDef> oneTimelines;
+                    engine.shaders.lineShader.clearLocalLines(tr);
+                    LineDef l;
+                    l.color = Colors::Red;
+                    l.start = pos;
+                    l.end = pos + mv.right;
+                    oneTimelines.push_back(l);
+                    l.color = Colors::Blue;
+                    l.end = pos + mv.up;
+                    oneTimelines.push_back(l);
+                    l.color = Colors::Green;
+                    l.end = pos + mv.forward;
+                    oneTimelines.push_back(l);
+                    engine.shaders.lineShader.addOneTime(oneTimelines, tr);
+                    engine.shaders.lineShader.prepareAddLines(tr);
+                }
 
                 // recalc orientation
                 trans = glm::translate(glm::mat4(1.0f), pos);//vec3(0.1f, -0.2f, -0.5f));
@@ -402,6 +402,8 @@ void Incoming::updatePerFrame(ThreadResources& tr)
             Log("Picked up weapon" << endl);
             holdWeapon = true;
             game.setPhase(PhasePhase1);
+            engine.sound.changeSound(gun, "BACKGROUND_MUSIC");
+            engine.sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
         }
     }
 
@@ -423,22 +425,30 @@ void Incoming::handleInput(InputState& inputState)
     if (inputState.keyEvent) {
         //Log("key pressed: " << inputState.key << endl);
         const bool press = action != GLFW_RELEASE;
+        float alterRadians = 0.1 / 4.0;
+        bool shift = mods & GLFW_MOD_SHIFT;
         if (key == GLFW_KEY_X) {
-            //worldObject->rot().x += 0.1f / 4;
-            //Log("rot x " << worldObject->rot().x << endl);
-            r.x += 0.1f / 4;
+            if (shift) {
+                r.x -= alterRadians;
+            } else {
+                r.x += alterRadians;
+            }
             Log("rot x " << r.x << endl);
         }
         if (key == GLFW_KEY_Y) {
-            //worldObject->rot().y += 0.1f / 4;
-            //Log("rot y " << worldObject->rot().y << endl);
-            r.y += 0.1f / 4;
+            if (shift) {
+                r.y -= alterRadians;
+            } else {
+                r.y += alterRadians;
+            }
             Log("rot y " << r.y << endl);
         }
         if (key == GLFW_KEY_Z) {
-            //worldObject->rot().z += 0.1f / 4;
-            //Log("rot z " << worldObject->rot().z << endl);
-            r.z += 0.1f / 4;
+            if (shift) {
+                r.z -= alterRadians;
+            } else {
+                r.z += alterRadians;
+            }
             Log("rot z " << r.z << endl);
         }
         if (key == GLFW_KEY_D) {
