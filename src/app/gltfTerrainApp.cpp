@@ -63,9 +63,7 @@ void gltfTerrainApp::init() {
 
     //engine.meshStore.loadMesh("terrain2k/Project_Mesh_2m.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     //engine.meshStore.loadMesh("terrain2k/Project_Mesh_0.5.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
-    MeshFlagsCollection noTextureFlags;
-    noTextureFlags.setFlag(MeshFlags::MESH_TYPE_NO_TEXTURES);
-    engine.meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", noTextureFlags);
+    engine.meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
     engine.objectStore.createGroup("terrain_group");
     engine.objectStore.createGroup("knife_group");
     engine.objectStore.createGroup("box_group");

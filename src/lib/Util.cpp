@@ -127,6 +127,23 @@ glm::quat MathHelper::LookAt(glm::vec3 direction, glm::vec3 desiredUp)
     return rot2 * rot1; // remember, in reverse order.
 }
 
+void MathHelper::getAxisAngleFromQuaternion(const glm::quat& q, glm::vec3& axis, float& angle) {
+    // Ensure the quaternion is normalized
+    glm::quat normalizedQ = glm::normalize(q);
+
+    // Calculate the angle
+    angle = 2.0f * acos(normalizedQ.w);
+
+    // Calculate the axis
+    float s = sqrt(1.0f - normalizedQ.w * normalizedQ.w);
+    if (s < 0.001f) { // To avoid division by zero
+        axis = glm::vec3(1.0f, 0.0f, 0.0f); // Arbitrary axis
+    }
+    else {
+        axis = glm::vec3(normalizedQ.x / s, normalizedQ.y / s, normalizedQ.z / s);
+    }
+}
+
 Spatial2D::Spatial2D(int N2plus1)
 {
     resetSize(N2plus1);

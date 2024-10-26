@@ -144,6 +144,9 @@ public:
     // Beware, the first parameter is a direction, not the target point !
     static glm::quat LookAt(glm::vec3 direction, glm::vec3 desiredUp);
 
+    // Extract the axis and angle of rotation from a given quaternion
+    static void getAxisAngleFromQuaternion(const glm::quat& q, glm::vec3& axis, float& angle);
+
     // Returns random float in [0, 1).
     static float RandF()
     {

@@ -74,6 +74,7 @@ void CameraPositioner_HMD::update(int viewNum, glm::vec3 pos, glm::quat ori, glm
 		ShadedPathEngine::getInstance()->getWorld()->paths.updateCameraPosition(this, movement, deltaSeconds/2.0f);
 	}
 	auto finalPos = cameraPosition + pos;
+    movement.lastFinalPosition = finalPos;
 	const glm::mat4 t = glm::translate(glm::mat4(1.0f), -finalPos);
 	const glm::mat4 r = glm::mat4_cast(normori);
 	auto v = r * t; // ok, but slurs
@@ -95,3 +96,30 @@ void CameraPositioner_HMD::update(int viewNum, glm::vec3 pos, glm::quat ori, glm
 	}
 }
 
+glm::mat4 CameraPositionerInterface::moveObjectToCameraSpace(WorldObject* wo, const glm::vec3& deltaPos, const glm::vec3& deltaOri, vec3* finalPosition, Movement* finalMovement) {
+	Movement mv;
+	quat ori = getOrientation();
+	calcMovementVectors(mv, ori);
+	// reposition
+	vec3 pos = getLastFinalPosition() + mv.right * deltaPos.x + mv.up * deltaPos.y + mv.forward * deltaPos.z;
+	if (finalPosition != nullptr) {
+		*finalPosition = pos;
+	}
+	if (finalMovement != nullptr) {
+		finalMovement->forward = mv.forward;
+		finalMovement->right = mv.right;
+		finalMovement->up = mv.up;
+		finalMovement->lastFinalPosition = movement.lastFinalPosition;
+	}
+	// recalc orientation
+	mat4 scaled = glm::scale(mat4(1.0f), wo->scale());
+	mat4 trans = glm::translate(glm::mat4(1.0f), pos);
+	glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), deltaOri.x, glm::vec3(1.0f, 0.0f, 0.0f));
+	glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), deltaOri.y, glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), deltaOri.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+	mat4 deltaRotation = rotationZ * rotationY * rotationX;
+	mat4 rotationMatrix = glm::mat3(mv.right, mv.up, mv.forward);
+	rotationMatrix = rotationMatrix * deltaRotation;
+	return trans * scaled * rotationMatrix;
+}

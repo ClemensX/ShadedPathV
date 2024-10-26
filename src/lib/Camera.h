@@ -1,5 +1,8 @@
 #pragma once
 
+// forward declarations
+class WorldObject;
+
 enum class MovementWalkingSubtype {
     NoGradient, // simply move with const horizontal speed
     GradientTriangle, // move with gradient, i.e. move faster uphill, slower downhill, only current triangle will be looked at
@@ -30,6 +33,7 @@ struct Movement {
 	glm::vec3 forward = glm::vec3();
 	glm::vec3 right = glm::vec3();
 	glm::vec3 up = glm::vec3();
+    glm::vec3 lastFinalPosition = glm::vec3(); // store last final position (e.g. camera + head movement)
     MovementWalkingSubtype walkingSubtype = MovementWalkingSubtype::NoGradient;
 };
 
@@ -52,6 +56,9 @@ public:
 	// get view matrix without camera movement. Think of skybox that needs to surround camera pos, but with lookAt
 	virtual glm::mat4 getViewMatrixAtCameraPos() const = 0;
 	virtual glm::vec3 getPosition() const = 0;
+	virtual glm::vec3 getLastFinalPosition() {
+        return getPosition();
+	};
 	virtual void setPosition(const glm::vec3& pos) = 0;
 	virtual glm::vec3 getLookAt() const = 0;
 	virtual glm::quat getOrientation() const = 0;
@@ -65,6 +72,9 @@ public:
 	void calcMovement(Movement& mv, glm::quat orientation, glm::vec3& moveSpeed,
 		float acceleration_, float damping_, float maxSpeed_, float fastCoef_, double deltaSeconds, bool VRMode = false);
 
+    // move object to fixed position relative to camera, applying the given position and orientation deltas.
+    // final position and right/up/forward vectors are returned if non-null parameters are given for position and movement
+	glm::mat4 moveObjectToCameraSpace(WorldObject* wo, const glm::vec3& deltaPos, const glm::vec3& deltaOri, glm::vec3* finalPosition = nullptr, Movement* finalMovement = nullptr);
 	Movement movement;
 };
 
@@ -384,7 +394,7 @@ public:
 	void update(int viewNum, glm::vec3 pos, glm::quat ori, glm::mat4 proj, glm::mat4 view, glm::mat4 viewCam);
 
 	virtual glm::quat getOrientation() const override {
-		return cameraOrientation;
+		return lastOrientation;//cameraOrientation;
 	}
 
 	virtual glm::mat4 getViewMatrix() const override {
@@ -420,7 +430,11 @@ public:
 		return cameraPosition;
 	}
 
-    // look at vector is the same for both eyes
+	virtual glm::vec3 getLastFinalPosition() override {
+		return movement.lastFinalPosition;
+	};
+
+	// look at vector is the same for both eyes
 	// uses orientation gotten from last update()
     // TODO: currently only used in sound positioning, check other uses, maybe needs change in Canera::Update()
 	virtual glm::vec3 getLookAt() const override {

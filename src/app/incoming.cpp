@@ -26,7 +26,7 @@ void Incoming::run()
         engine.setMaxTextures(50);
         //engine.setFrameCountLimit(1000);
         setHighBackbufferResolution();
-        int win_width = 1800;//480;// 960;//1800;// 800;//3700; // 2500;
+        int win_width = 800;//480;// 960;//1800;// 800;//3700; // 2500;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Incoming");
         //camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f);
         camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.10f, 2000.0f);
@@ -94,9 +94,7 @@ void Incoming::init() {
 
     //engine.meshStore.loadMesh("terrain2k/Project_Mesh_2m.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     //engine.meshStore.loadMesh("terrain2k/Project_Mesh_0.5.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
-    MeshFlagsCollection noTextureFlags;
-    noTextureFlags.setFlag(MeshFlags::MESH_TYPE_NO_TEXTURES);
-    engine.meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", noTextureFlags);
+    engine.meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
     //engine.meshStore.loadMesh("incoming/flat.glb", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
     engine.objectStore.createGroup("terrain_group");
     if (debugObjects) {
@@ -111,9 +109,7 @@ void Incoming::init() {
 
     auto terrain = engine.objectStore.addObject("terrain_group", "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
     engine.objectStore.createGroup("weapon_group");
-    MeshFlagsCollection meshFlags;
-    meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
-    engine.meshStore.loadMesh("cyberpunk_pistol_cmp.glb", "Gun", meshFlags);
+    engine.meshStore.loadMesh("cyberpunk_pistol_cmp.glb", "Gun", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
     gun = engine.objectStore.addObject("weapon_group", "Gun", vec3(4.97f, 57.39f, -3.9));
     gun->scale() = vec3(0.03f, 0.03f, 0.03f);
     //gun->rot() = vec3(4.8, 6.4, 7.4);
@@ -220,23 +216,6 @@ void Incoming::drawFrame(ThreadResources& tr) {
 }
 
 
-void getAxisAngleFromQuaternion(const glm::quat& q, glm::vec3& axis, float& angle) {
-    // Ensure the quaternion is normalized
-    glm::quat normalizedQ = glm::normalize(q);
-
-    // Calculate the angle
-    angle = 2.0f * acos(normalizedQ.w);
-
-    // Calculate the axis
-    float s = sqrt(1.0f - normalizedQ.w * normalizedQ.w);
-    if (s < 0.001f) { // To avoid division by zero
-        axis = glm::vec3(1.0f, 0.0f, 0.0f); // Arbitrary axis
-    }
-    else {
-        axis = glm::vec3(normalizedQ.x / s, normalizedQ.y / s, normalizedQ.z / s);
-    }
-}
-
 void Incoming::updatePerFrame(ThreadResources& tr)
 {
     static double old_seconds = 0.0f;
@@ -252,16 +231,11 @@ void Incoming::updatePerFrame(ThreadResources& tr)
         return;
     }
     double deltaSeconds = seconds - old_seconds;
+    old_seconds = seconds;
 
     updateCameraPositioners(deltaSeconds);
-    if (tr.frameNum % 100 == 0) camera->log();
-    //logCameraPosition();
-    if (holdWeapon) {
-        //gun->pos() = camera->getPosition() + vec3(0.1f, -0.2f, 0.0f);
-        //gun->rot() = camera->getLookAt() + r;//vec3(23.6748f-PI2, 17.6749f, 7.525f);
-    }
+    //if (tr.frameNum % 100 == 0) camera->log();
 
-    old_seconds = seconds;
     // lines
     if (enableLines) {
         LineShader::UniformBufferObject lubo{};
@@ -325,70 +299,36 @@ void Incoming::updatePerFrame(ThreadResources& tr)
             //modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
             //modeltransform = wo->mesh->baseTransform;
         }
-        // test model transforms:
+        // move gun to fixed position in camera space
         if (wo->mesh->id.starts_with("Gun") && holdWeapon) {
-            //gun->pos() = camera->getPosition() + vec3(0.1f, -0.2f, 0.0f);
-            //Log("Gun model transform" << endl);
-            auto scale = wo->scale();
-            vec3 la = camera->getLookAt();
-            auto vm = camera->getViewMatrixAtCameraPos();
-            const glm::vec3 dir = -glm::vec3(vm[0][2], vm[1][2], vm[2][2]);
-            la = dir;
-            //la = la + r;
-            auto pos = camera->getPosition() + (normalize(la) * 1.5f) /*+ vec3(0.1f, -0.2f, 0.0f)*/ ;
-            glm::vec3 axis;
-            float angle;
             auto* positioner = getFirstPersonCameraPositioner();
-            getAxisAngleFromQuaternion(positioner->getOrientation(), axis, angle);
-            la = axis;
-            glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), la.x, glm::vec3(1.0f, 0.0f, 0.0f));
-            glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), la.y, glm::vec3(0.0f, 1.0f, 0.0f));
-            glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), la.z, glm::vec3(0.0f, 0.0f, 1.0f));
-
-            glm::mat4 rotationMatrix = rotationZ * rotationY * rotationX;
-            //rotationMatrix = glm::mat4(glm::mat3(vm));
-            //rotationMatrix = mat4(1.0f);
-            glm::mat4 trans = glm::translate(glm::mat4(1.0f), pos);//vec3(0.1f, -0.2f, -0.5f));
-            glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
-            modeltransform = trans * scaled * rotationMatrix;
-
+            vec3 deltaPos(0.2f, -0.28f, 0.5f);
             Movement mv;
-            quat ori = positioner->getOrientation();
-            positioner->calcMovementVectors(mv, ori);
-            if (true) {
-                // reposition
-                pos = camera->getPosition() + mv.right * 0.2f +  mv.up * -0.28f + mv.forward * 0.5f;
-                // draw lines for up, right and forward vectors
-                if (enableLines) {
-                    vector<LineDef> oneTimelines;
-                    engine.shaders.lineShader.clearLocalLines(tr);
-                    LineDef l;
-                    l.color = Colors::Red;
-                    l.start = pos;
-                    l.end = pos + mv.right;
-                    oneTimelines.push_back(l);
-                    l.color = Colors::Blue;
-                    l.end = pos + mv.up;
-                    oneTimelines.push_back(l);
-                    l.color = Colors::Green;
-                    l.end = pos + mv.forward;
-                    oneTimelines.push_back(l);
-                    engine.shaders.lineShader.addOneTime(oneTimelines, tr);
-                    engine.shaders.lineShader.prepareAddLines(tr);
-                }
-
-                // recalc orientation
-                trans = glm::translate(glm::mat4(1.0f), pos);//vec3(0.1f, -0.2f, -0.5f));
-                mat4 turnweapon;
-                la = r; // vec3(2.0f, 3.0f, 1.0f);
-                glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), la.x, glm::vec3(1.0f, 0.0f, 0.0f));
-                glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), la.y, glm::vec3(0.0f, 1.0f, 0.0f));
-                glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), la.z, glm::vec3(0.0f, 0.0f, 1.0f));
-
-                turnweapon = rotationZ * rotationY * rotationX;
-                rotationMatrix = glm::mat3(mv.right, mv.up, mv.forward);
-                rotationMatrix = rotationMatrix * turnweapon;// *rotationMatrix;
-                modeltransform = trans * scaled * rotationMatrix;
+            vec3 finalPos;
+            modeltransform = positioner->moveObjectToCameraSpace(wo, deltaPos, r, &finalPos, &mv);
+            if (activePositionerIsHMD) {
+                // should update gun independently from camera, will be fixed until we have hand position from VR
+                auto* positioner = getHMDCameraPositioner();
+                modeltransform = positioner->moveObjectToCameraSpace(wo, deltaPos, r, &finalPos, &mv);
+            }
+            // draw lines for up, right and forward vectors
+            if (enableLines) {
+                vec3 pos = finalPos;
+                vector<LineDef> oneTimelines;
+                engine.shaders.lineShader.clearLocalLines(tr);
+                LineDef l;
+                l.color = Colors::Red;
+                l.start = pos;
+                l.end = pos + mv.right;
+                oneTimelines.push_back(l);
+                l.color = Colors::Blue;
+                l.end = pos + mv.up;
+                oneTimelines.push_back(l);
+                l.color = Colors::Green;
+                l.end = pos + mv.forward;
+                oneTimelines.push_back(l);
+                engine.shaders.lineShader.addOneTime(oneTimelines, tr);
+                engine.shaders.lineShader.prepareAddLines(tr);
             }
         }
         buf->model = modeltransform;

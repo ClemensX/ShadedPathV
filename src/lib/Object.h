@@ -18,6 +18,9 @@ private:
 
 public:
 	MeshFlagsCollection() : flags(0) {}
+	MeshFlagsCollection(MeshFlags flag) : flags(0) {
+        setFlag(flag);
+	}
 
 	void setFlag(MeshFlags flag) {
 		flags.set(static_cast<size_t>(flag));
