@@ -10,9 +10,9 @@
 class AppSupport
 {
 protected:
-    bool enableLines = true;
+    bool enableLines = false;
     bool enableUI = false;
-    bool vr = true;
+    bool vr = false;
     bool stereo = false;
     bool enableSound = true;
     bool singleThreadMode = false;

@@ -26,7 +26,7 @@ void Incoming::run()
         engine.setMaxTextures(50);
         //engine.setFrameCountLimit(1000);
         setHighBackbufferResolution();
-        int win_width = 800;//480;// 960;//1800;// 800;//3700; // 2500;
+        int win_width = 2500;//480;// 960;//1800;// 800;//3700; // 2500;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Incoming");
         //camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f);
         camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.10f, 2000.0f);
@@ -186,8 +186,11 @@ void Incoming::init() {
         engine.shaders.lineShader.uploadFixedGlobalLines();
     }
     // load and play music
-    engine.sound.openSoundFile("power.ogg", "BACKGROUND_MUSIC", true);
-    //engine.sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 1.0f, 6000);
+    engine.sound.openSoundFile("inc_background.ogg", "BACKGROUND_MUSIC", true);
+    engine.sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 0.8f, 100);
+    // load sound effects
+    engine.sound.openSoundFile("lock_and_load_big_gun.ogg", "LOAD_GUN");
+    engine.sound.openSoundFile("announce_under_attack.ogg", "ANNOUNCE_UNDER_ATTACK");
 
     // add sound to object
     if (enableSound) {
@@ -205,6 +208,8 @@ void Incoming::init() {
     game.addGamePhase(PhaseEndTitles, "Titles");
 
     game.setPhase(PhasePrepare);
+    engine.sound.playSound("ANNOUNCE_UNDER_ATTACK", SoundCategory::EFFECT, 200.0f, 4000);
+
     // start with holding weapon
     //holdWeapon = true;
     //game.setPhase(PhasePhase1);
@@ -342,8 +347,9 @@ void Incoming::updatePerFrame(ThreadResources& tr)
             Log("Picked up weapon" << endl);
             holdWeapon = true;
             game.setPhase(PhasePhase1);
-            engine.sound.changeSound(gun, "BACKGROUND_MUSIC");
-            engine.sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
+            engine.sound.playSound("LOAD_GUN", SoundCategory::EFFECT, 300.0f);
+            //engine.sound.changeSound(gun, "LOAD_GUN");
+            //engine.sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
         }
     }
 

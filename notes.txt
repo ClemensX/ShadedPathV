@@ -144,3 +144,10 @@ world: 2048 * 2048 grid
 
 gun tilt:
 xyz -0.35 1.5 -0.425
+
+11labs Voices
+
+Jessica
+Nicole
+
+

@@ -210,6 +210,7 @@ void Sound::playSound(std::string id, SoundCategory category, float volume, uint
 	if (category == MUSIC) {
 		ma_sound_set_spatialization_enabled(sound->masound, false);
 	}
+    ma_sound_set_volume(sound->masound, volume);
 	ma_sound_start(sound->masound);
 	//XAUDIO2_VOICE_SENDS *sendsList = category == MUSIC ? sfxSendsListMusic : sfxSendsListEffect;
 	//hr = xaudio2->CreateSourceVoice(&sound->voice, (WAVEFORMATEX*)&sound->wfx, 0, XAUDIO2_DEFAULT_FREQ_RATIO, nullptr, sendsList, nullptr);
