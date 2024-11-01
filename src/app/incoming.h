@@ -18,6 +18,7 @@ private:
     WorldObject* worldObject = nullptr;
     WorldObject* gun = nullptr;
     bool holdWeapon = false;
+    bool processGunshot = false;
     float pickupDistance = 2.3f;
     glm::vec3 r = glm::vec3(-0.35, 1.5, -0.425);
     Game game;

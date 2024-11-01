@@ -1,6 +1,9 @@
 #include "mainheader.h"
 #include "AppSupport.h"
 
+using namespace std;
+using namespace glm;
+
 void AppSupport::handleInput(InputState& inputState)
 {
     if (inputState.mouseButtonEvent) {
@@ -8,6 +11,8 @@ void AppSupport::handleInput(InputState& inputState)
         input.pressedLeft = inputState.pressedLeft;
         input.pressedRight = inputState.pressedRight;
     }
+    input.stillPressedLeft = inputState.stillPressedLeft;
+    input.stillPressedRight = inputState.stillPressedRight;
     if (inputState.mouseMoveEvent) {
         //Log("mouse pos (x/y): " << inputState.pos.x << " / " << inputState.pos.y << endl);
         input.pos.x = inputState.pos.x;

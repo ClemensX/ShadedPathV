@@ -67,7 +67,8 @@ protected:
         if (activePositionerIsHMD) {
             hmdPositioner.updateDeltaSeconds(deltaSeconds);
         } else {
-            fpPositioner.update(deltaSeconds, input.pos, input.pressedLeft, firstPersonCameraAlwayUpright);
+            bool followRightMousebutton = input.pressedRight || input.stillPressedRight;
+            fpPositioner.update(deltaSeconds, input.pos, followRightMousebutton, firstPersonCameraAlwayUpright);
         }
     }
 

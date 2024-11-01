@@ -123,6 +123,18 @@ void Presentation::callbackMouseButton(GLFWwindow* window, int button, int actio
         inputState.pressedRight = action == GLFW_PRESS;
         inputState.pressedLeft = false;
     }
+    inputState.stillPressedLeft = false;
+    inputState.stillPressedRight = false;
+    // Check if the left mouse button is still pressed
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+        //std::cout << "Left mouse button is still pressed." << std::endl;
+        inputState.stillPressedLeft = true;
+    }
+    // Check if the right mouse button is still pressed
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+        //std::cout << "Right mouse button is still pressed." << std::endl;
+        inputState.stillPressedRight = true;
+    }
     engine.app->handleInput(inputState);
 }
 

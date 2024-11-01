@@ -191,6 +191,7 @@ void Incoming::init() {
     // load sound effects
     engine.sound.openSoundFile("lock_and_load_big_gun.ogg", "LOAD_GUN");
     engine.sound.openSoundFile("announce_under_attack.ogg", "ANNOUNCE_UNDER_ATTACK");
+    engine.sound.openSoundFile("single_gun_shot_two.ogg", "SHOOT_GUN");
 
     // add sound to object
     if (enableSound) {
@@ -208,11 +209,14 @@ void Incoming::init() {
     game.addGamePhase(PhaseEndTitles, "Titles");
 
     game.setPhase(PhasePrepare);
-    engine.sound.playSound("ANNOUNCE_UNDER_ATTACK", SoundCategory::EFFECT, 200.0f, 4000);
 
     // start with holding weapon
     //holdWeapon = true;
     //game.setPhase(PhasePhase1);
+
+    if (game.isGamePhase(PhasePrepare)) {
+        engine.sound.playSound("ANNOUNCE_UNDER_ATTACK", SoundCategory::EFFECT, 200.0f, 4000);
+    }
 }
 
 void Incoming::drawFrame(ThreadResources& tr) {
@@ -352,6 +356,14 @@ void Incoming::updatePerFrame(ThreadResources& tr)
             //engine.sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
         }
     }
+    if (processGunshot) {
+        processGunshot = false;
+        if (game.isGamePhase(PhasePhase1)) {
+            //Log("Shot weapon" << endl);
+            engine.sound.playSound("SHOOT_GUN", SoundCategory::EFFECT, 300.0f);
+        }
+    }
+
 
     postUpdatePerFrame(tr);
 }
@@ -368,6 +380,10 @@ void Incoming::handleInput(InputState& inputState)
         }
     }
     AppSupport::handleInput(inputState);
+    if (inputState.mouseButtonEvent && inputState.pressedLeft) {
+        //Log("SHOOT!" << endl);
+        processGunshot = true;
+    }
     if (inputState.keyEvent) {
         //Log("key pressed: " << inputState.key << endl);
         const bool press = action != GLFW_RELEASE;

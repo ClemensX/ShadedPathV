@@ -200,6 +200,20 @@ void Sound::playSound(std::string id, SoundCategory category, float volume, uint
 	assert(sounds.count(id) > 0);
 	SoundDef *sound = &sounds[id];
 	sound->category = category;
+	// Check if the sound is already playing
+	if (ma_sound_is_playing(sound->masound)) {
+		// Seek to the beginning of the sound
+		ma_sound_seek_to_pcm_frame(sound->masound, 0);
+		return;
+
+		//ma_result result = ma_sound_stop(sound->masound);
+		//if (result != MA_SUCCESS) {
+		//	Log("Cannot stop sound, error code: " << result << std::endl);
+		//}
+		//else {
+		//	Log("sound stopped\n");
+		//}
+	}
 	if (sound->loop) {
 		ma_sound_set_looping(sound->masound, true);
 	}
@@ -211,7 +225,12 @@ void Sound::playSound(std::string id, SoundCategory category, float volume, uint
 		ma_sound_set_spatialization_enabled(sound->masound, false);
 	}
     ma_sound_set_volume(sound->masound, volume);
-	ma_sound_start(sound->masound);
+	ma_result result = ma_sound_start(sound->masound);
+	if (result != MA_SUCCESS) {
+		Log("Cannot play sound, error code: " << result << std::endl);
+	} else {
+		//Log("Playing sound " << id << std::endl);
+	}
 	//XAUDIO2_VOICE_SENDS *sendsList = category == MUSIC ? sfxSendsListMusic : sfxSendsListEffect;
 	//hr = xaudio2->CreateSourceVoice(&sound->voice, (WAVEFORMATEX*)&sound->wfx, 0, XAUDIO2_DEFAULT_FREQ_RATIO, nullptr, sendsList, nullptr);
 	//ThrowIfFailed(hr);
