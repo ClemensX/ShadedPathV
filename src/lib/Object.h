@@ -146,7 +146,9 @@ public:
 	void forceBoundingBox(BoundingBox box);
 	// get bounding box either from mesh data, or the one overridden by forceBoundingBox()
 	void getBoundingBox(BoundingBox& box);
-    // calc distance. Currently refers to object origin which might be incorrect in some cases, TODO implement distance to bounding box center
+	// calculate bounding box and add to line list. bounding box is in world coords of current object location/rotation/scale 
+	void drawBoundingBox(std::vector<LineDef>& boxes, glm::mat4 modelToWorld);
+	// calc distance. Currently refers to object origin which might be incorrect in some cases, TODO implement distance to bounding box center
     float distanceTo(glm::vec3 pos);
 
 	glm::vec3 objectStartPos;
@@ -157,7 +159,6 @@ public:
 	int maxListeningDistance; // disable sound if farther away than this
 	// no longer used - see Sound.h //int soundListIndex;  // index into audibleWorldObjects, used to get the 3d sound settings for this object, see Sound.h
 
-	bool drawBoundingBox;
 	bool drawNormals;
 	UINT objectNum; // must be unique for all objects
     void addVerticesToLineList(std::vector<LineDef>& lines, glm::vec3 offset, float sizeFactor = 1.0f);

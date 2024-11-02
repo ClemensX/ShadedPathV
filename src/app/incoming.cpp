@@ -84,7 +84,7 @@ void Incoming::addRandomHeightLines(vector<LineDef>& lines, World& world) {
 }
 
 void Incoming::init() {
-    bool debugObjects = false; // disable all other objects
+    bool debugObjects = true; // false to disable all helper objects
     float aspectRatio = engine.getAspect();
 
     // 2 square km world size
@@ -211,8 +211,8 @@ void Incoming::init() {
     game.setPhase(PhasePrepare);
 
     // start with holding weapon
-    //holdWeapon = true;
-    //game.setPhase(PhasePhase1);
+    holdWeapon = true;
+    game.setPhase(PhasePhase1);
 
     if (game.isGamePhase(PhasePrepare)) {
         engine.sound.playSound("ANNOUNCE_UNDER_ATTACK", SoundCategory::EFFECT, 200.0f, 4000);
@@ -253,6 +253,7 @@ void Incoming::updatePerFrame(ThreadResources& tr)
         lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
         applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
         engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
+        engine.shaders.lineShader.clearLocalLines(tr);
     }
     // cube
     CubeShader::UniformBufferObject cubo{};
@@ -274,6 +275,7 @@ void Incoming::updatePerFrame(ThreadResources& tr)
     engine.shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
     // change individual objects position:
     //auto grp = engine.objectStore.getGroup("knife_group");
+    vector<LineDef> boundingBoxes;
     for (auto& wo : engine.objectStore.getSortedList()) {
         //Log(" adapt object " << obj.get()->objectNum << endl);
         //WorldObject *wo = obj.get();
@@ -291,8 +293,7 @@ void Incoming::updatePerFrame(ThreadResources& tr)
             // scale from gltf:
             modeltransform = wo->mesh->baseTransform;
 
-        }
-        else {
+        } else {
             // all other objects
             auto pos = wo->pos();
             auto rot = wo->rot();
@@ -307,6 +308,9 @@ void Incoming::updatePerFrame(ThreadResources& tr)
             modeltransform =  trans * scaled * rotationMatrix;
             //modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
             //modeltransform = wo->mesh->baseTransform;
+            if (enableLines) {
+                wo->drawBoundingBox(boundingBoxes, modeltransform);
+            }
         }
         // move gun to fixed position in camera space
         if (wo->mesh->id.starts_with("Gun") && holdWeapon) {
@@ -324,7 +328,6 @@ void Incoming::updatePerFrame(ThreadResources& tr)
             if (enableLines) {
                 vec3 pos = finalPos;
                 vector<LineDef> oneTimelines;
-                engine.shaders.lineShader.clearLocalLines(tr);
                 LineDef l;
                 l.color = Colors::Red;
                 l.start = pos;
@@ -337,10 +340,13 @@ void Incoming::updatePerFrame(ThreadResources& tr)
                 l.end = pos + mv.forward;
                 oneTimelines.push_back(l);
                 engine.shaders.lineShader.addOneTime(oneTimelines, tr);
-                engine.shaders.lineShader.prepareAddLines(tr);
             }
         }
         buf->model = modeltransform;
+    }
+    if (enableLines) {
+        engine.shaders.lineShader.addOneTime(boundingBoxes, tr);
+        engine.shaders.lineShader.prepareAddLines(tr);
     }
     // game Logic
     if (game.isGamePhase(PhasePrepare)) {

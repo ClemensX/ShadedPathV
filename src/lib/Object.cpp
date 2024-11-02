@@ -170,7 +170,6 @@ MeshStore::~MeshStore()
 }
 
 WorldObject::WorldObject() {
-	drawBoundingBox = false;
 	drawNormals = false;
 	objectNum = count++;
 }
@@ -276,6 +275,70 @@ const vector<WorldObject*>& WorldObjectStore::getSortedList()
 	return sortedList;
 }
 
+void WorldObject::drawBoundingBox(std::vector<LineDef>& boxes, glm::mat4 modelToWorld)
+{
+    LineDef l;
+    l.color = Colors::Silver;
+    BoundingBox box;
+    getBoundingBox(box);
+    // 8 corners of bounding box:
+    // low y in first 4 corners, in clockwise order
+
+    vec3 corners[8] = {
+        vec3(box.min.x, box.min.y, box.min.z),
+        vec3(box.min.x, box.min.y, box.max.z),
+        vec3(box.max.x, box.min.y, box.max.z),
+        vec3(box.max.x, box.min.y, box.min.z),
+		vec3(box.min.x, box.max.y, box.min.z),
+		vec3(box.min.x, box.max.y, box.max.z),
+		vec3(box.max.x, box.max.y, box.max.z),
+        vec3(box.max.x, box.max.y, box.min.z)
+    };
+	// transform corners to world coords:
+	for (vec3& corner : corners) {
+		corner = vec3(modelToWorld * vec4(corner, 1.0f));
+	}
+    // draw cube from the eight corners:
+	// lower rect:
+	l.start = corners[0];
+	l.end = corners[1];
+	boxes.push_back(l);
+	l.start = corners[1];
+	l.end = corners[2];
+	boxes.push_back(l);
+	l.start = corners[2];
+	l.end = corners[3];
+	boxes.push_back(l);
+	l.start = corners[3];
+	l.end = corners[0];
+	boxes.push_back(l);
+    // upper rect:
+    l.start = corners[4];
+    l.end = corners[5];
+    boxes.push_back(l);
+    l.start = corners[5];
+    l.end = corners[6];
+    boxes.push_back(l);
+    l.start = corners[6];
+    l.end = corners[7];
+    boxes.push_back(l);
+    l.start = corners[7];
+    l.end = corners[4];
+    boxes.push_back(l);
+    // vertical lines:
+    l.start = corners[0];
+    l.end = corners[4];
+    boxes.push_back(l);
+    l.start = corners[1];
+    l.end = corners[5];
+    boxes.push_back(l);
+    l.start = corners[2];
+    l.end = corners[6];
+    boxes.push_back(l);
+    l.start = corners[3];
+    l.end = corners[7];
+    boxes.push_back(l);
+}
 
 void WorldObject::addVerticesToLineList(std::vector<LineDef>& lines, glm::vec3 offset, float sizeFactor)
 {
