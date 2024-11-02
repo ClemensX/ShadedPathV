@@ -123,6 +123,11 @@ public:
 	glm::vec3 max = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 };
 
+struct BoundingBoxCorners {
+	glm::vec3 corners[8];
+};
+
+
 // 
 class WorldObject {
 public:
@@ -146,11 +151,13 @@ public:
 	void forceBoundingBox(BoundingBox box);
 	// get bounding box either from mesh data, or the one overridden by forceBoundingBox()
 	void getBoundingBox(BoundingBox& box);
+	// calculate bounding box in world coords of current object location/rotation/scale 
+	void calculateBoundingBoxWorld(glm::mat4 modelToWorld);
 	// calculate bounding box and add to line list. bounding box is in world coords of current object location/rotation/scale 
-	void drawBoundingBox(std::vector<LineDef>& boxes, glm::mat4 modelToWorld);
+	void drawBoundingBox(std::vector<LineDef>& boxes, glm::mat4 modelToWorld, glm::vec4 color = Colors::Silver);
 	// calc distance. Currently refers to object origin which might be incorrect in some cases, TODO implement distance to bounding box center
     float distanceTo(glm::vec3 pos);
-
+    bool isLineIntersectingBoundingBox(const glm::vec3& lineStart, const glm::vec3& lineEnd);
 	glm::vec3 objectStartPos;
 	// 3d sound 
 	bool stopped; // a running cue may temporarily stopped
@@ -170,6 +177,10 @@ private:
 	glm::vec3 bboxVertexMax = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 	bool boundingBoxAlreadySet = false;
 	BoundingBox boundingBox;
+
+	// 8 corners of bounding box in world coords:
+	// low y in first 4 corners, in clockwise order
+	BoundingBoxCorners boundingBoxCorners;
 };
 
 // WorldObject Store is for displaying loaded objects from MeshStore within the game world

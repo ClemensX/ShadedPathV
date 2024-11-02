@@ -275,30 +275,32 @@ const vector<WorldObject*>& WorldObjectStore::getSortedList()
 	return sortedList;
 }
 
-void WorldObject::drawBoundingBox(std::vector<LineDef>& boxes, glm::mat4 modelToWorld)
+void WorldObject::calculateBoundingBoxWorld(glm::mat4 modelToWorld)
 {
-    LineDef l;
-    l.color = Colors::Silver;
-    BoundingBox box;
-    getBoundingBox(box);
-    // 8 corners of bounding box:
-    // low y in first 4 corners, in clockwise order
-
-    vec3 corners[8] = {
-        vec3(box.min.x, box.min.y, box.min.z),
-        vec3(box.min.x, box.min.y, box.max.z),
-        vec3(box.max.x, box.min.y, box.max.z),
-        vec3(box.max.x, box.min.y, box.min.z),
-		vec3(box.min.x, box.max.y, box.min.z),
-		vec3(box.min.x, box.max.y, box.max.z),
-		vec3(box.max.x, box.max.y, box.max.z),
-        vec3(box.max.x, box.max.y, box.min.z)
-    };
+	BoundingBox box;
+	getBoundingBox(box);
+    auto& corners = boundingBoxCorners.corners;
+	corners[0] = vec3(box.min.x, box.min.y, box.min.z);
+	corners[1] = vec3(box.min.x, box.min.y, box.max.z);
+	corners[2] = vec3(box.max.x, box.min.y, box.max.z);
+	corners[3] = vec3(box.max.x, box.min.y, box.min.z);
+	corners[4] = vec3(box.min.x, box.max.y, box.min.z);
+	corners[5] = vec3(box.min.x, box.max.y, box.max.z);
+	corners[6] = vec3(box.max.x, box.max.y, box.max.z);
+	corners[7] = vec3(box.max.x, box.max.y, box.min.z);
 	// transform corners to world coords:
 	for (vec3& corner : corners) {
 		corner = vec3(modelToWorld * vec4(corner, 1.0f));
 	}
+}
+
+void WorldObject::drawBoundingBox(std::vector<LineDef>& boxes, glm::mat4 modelToWorld, vec4 color)
+{
+    LineDef l;
+    l.color = color;
+    calculateBoundingBoxWorld(modelToWorld);
     // draw cube from the eight corners:
+	auto& corners = boundingBoxCorners.corners;
 	// lower rect:
 	l.start = corners[0];
 	l.end = corners[1];
@@ -367,6 +369,36 @@ void WorldObject::addVerticesToLineList(std::vector<LineDef>& lines, glm::vec3 o
 	//	l.end = v2.pos * sizeFactor + offset;
 	//	lines.push_back(l);
 	//}
+}
+
+bool WorldObject::isLineIntersectingBoundingBox(const vec3& lineStart, const vec3& lineEnd) {
+    const BoundingBoxCorners& box = boundingBoxCorners;
+	vec3 d = lineEnd - lineStart;
+	vec3 boxAxes[3] = {
+		box.corners[1] - box.corners[0],
+		box.corners[3] - box.corners[0],
+		box.corners[4] - box.corners[0]
+	};
+
+	for (int i = 0; i < 3; ++i) {
+		vec3 axis = normalize(boxAxes[i]);
+		float minBox = numeric_limits<float>::max();
+		float maxBox = numeric_limits<float>::lowest();
+		for (const vec3& corner : box.corners) {
+			float projection = dot(corner, axis);
+			minBox = glm::min(minBox, projection);
+			maxBox = glm::max(maxBox, projection);
+		}
+
+		float minLine = glm::min(dot(lineStart, axis), dot(lineEnd, axis));
+		float maxLine = glm::max(dot(lineStart, axis), dot(lineEnd, axis));
+
+		if (maxLine < minBox || minLine > maxBox) {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 float WorldObject::distanceTo(glm::vec3 pos) {

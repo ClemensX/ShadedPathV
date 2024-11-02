@@ -276,6 +276,7 @@ void Incoming::updatePerFrame(ThreadResources& tr)
     // change individual objects position:
     //auto grp = engine.objectStore.getGroup("knife_group");
     vector<LineDef> boundingBoxes;
+    static LineDef shootLine;
     for (auto& wo : engine.objectStore.getSortedList()) {
         //Log(" adapt object " << obj.get()->objectNum << endl);
         //WorldObject *wo = obj.get();
@@ -310,6 +311,9 @@ void Incoming::updatePerFrame(ThreadResources& tr)
             //modeltransform = wo->mesh->baseTransform;
             if (enableLines) {
                 wo->drawBoundingBox(boundingBoxes, modeltransform);
+                if (wo->isLineIntersectingBoundingBox(shootLine.start, shootLine.end)) {
+                    Log("Line intersects bounding box of " << wo->mesh->id << endl);
+                }
             }
         }
         // move gun to fixed position in camera space
@@ -339,6 +343,7 @@ void Incoming::updatePerFrame(ThreadResources& tr)
                 l.color = Colors::Green;
                 l.end = pos + mv.forward;
                 oneTimelines.push_back(l);
+                shootLine = l;
                 engine.shaders.lineShader.addOneTime(oneTimelines, tr);
             }
         }
