@@ -321,12 +321,8 @@ void Incoming::updatePerFrame(ThreadResources& tr)
             //modeltransform = wo->mesh->baseTransform;
             if (enableLines) {
                 if (enableIntersectTest) {
-                    vec3 axes[3];
                     wo->calculateBoundingBoxWorld(modeltransform);
-                    if (wo->isLineIntersectingBoundingBox(intersectTestLine.start, intersectTestLine.end, axes)) {
-                        if (wo->mesh->id.starts_with("Water")) {
-                            Util::drawBoxFromAxes(boundingBoxes, axes);
-                        }
+                    if (wo->isLineIntersectingBoundingBox(intersectTestLine.start, intersectTestLine.end)) {
                         Log("Line intersects bounding box of " << wo->mesh->id << endl);
                         wo->drawBoundingBox(boundingBoxes, modeltransform, Colors::Red);
                     }
@@ -490,7 +486,7 @@ void Incoming::handleKeyInputTurnWeapon(bool shift, int mods, int key) {
 }
 
 void Incoming::handleKeyInputIntersectTest(bool shift, int mods, int key) {
-    float step = 0.1 / 4.0;
+    float step = 0.1 / 12.0;
     vec3 pt = intersectTestModifyStartPoint ? intersectTestLine.start : intersectTestLine.end;
     if (key == GLFW_KEY_X) {
         if (shift) {

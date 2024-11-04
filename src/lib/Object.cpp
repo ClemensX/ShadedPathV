@@ -371,7 +371,7 @@ void WorldObject::addVerticesToLineList(std::vector<LineDef>& lines, glm::vec3 o
 	//}
 }
 
-bool WorldObject::isLineIntersectingBoundingBox(const vec3& lineStart, const vec3& lineEnd, glm::vec3* debugAxes) {
+bool WorldObject::isLineIntersectingBoundingBox(const vec3& lineStart, const vec3& lineEnd) {
     const BoundingBoxCorners& box = boundingBoxCorners;
 	vec3 d = lineEnd - lineStart;
 	vec3 boxAxes[3] = {
@@ -380,14 +380,16 @@ bool WorldObject::isLineIntersectingBoundingBox(const vec3& lineStart, const vec
 		box.corners[4] - box.corners[0]
 	};
 
-	if (debugAxes != nullptr) {
-        debugAxes[0] = boxAxes[0];
-        debugAxes[1] = boxAxes[1];
-        debugAxes[2] = boxAxes[2];
-	}
+	vec3 axes[6] = {
+		normalize(boxAxes[0]),
+		normalize(boxAxes[1]),
+		normalize(boxAxes[2]),
+		normalize(cross(d, boxAxes[0])),
+		normalize(cross(d, boxAxes[1])),
+		normalize(cross(d, boxAxes[2]))
+	};
 
-	for (int i = 0; i < 3; ++i) {
-		vec3 axis = normalize(boxAxes[i]);
+	for (const vec3& axis : axes) {
 		float minBox = numeric_limits<float>::max();
 		float maxBox = numeric_limits<float>::lowest();
 		for (const vec3& corner : box.corners) {
@@ -403,11 +405,12 @@ bool WorldObject::isLineIntersectingBoundingBox(const vec3& lineStart, const vec
 			return false;
 		}
 	}
-    // debug info if we have an intersection:
-    Log("Intersection detected with line " << lineStart.x << " " << lineStart .y << " " << lineStart.z << " --> " << lineEnd.x << " " << lineEnd.y << " " << lineEnd.z << endl);
-    Log("  axis 0: " << boxAxes[0].x << " " << boxAxes[0].y << " " << boxAxes[0].z << endl);
-    Log("  axis 1: " << boxAxes[1].x << " " << boxAxes[1].y << " " << boxAxes[1].z << endl);
-    Log("  axis 2: " << boxAxes[2].x << " " << boxAxes[2].y << " " << boxAxes[2].z << endl);
+
+	// debug info if we have an intersection:
+    //Log("Intersection detected with line " << lineStart.x << " " << lineStart .y << " " << lineStart.z << " --> " << lineEnd.x << " " << lineEnd.y << " " << lineEnd.z << endl);
+    //Log("  axis 0: " << boxAxes[0].x << " " << boxAxes[0].y << " " << boxAxes[0].z << endl);
+    //Log("  axis 1: " << boxAxes[1].x << " " << boxAxes[1].y << " " << boxAxes[1].z << endl);
+    //Log("  axis 2: " << boxAxes[2].x << " " << boxAxes[2].y << " " << boxAxes[2].z << endl);
 	return true;
 }
 
