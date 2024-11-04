@@ -35,6 +35,7 @@ public:
     static float getMaxCubeViewDistanceFromFarPlane(float f) {
         return sqrt((f * f) / 3.0f);
     }
+    static void drawBoxFromAxes(std::vector<LineDef>& boxes, glm::vec3* axes);
     static void printCStringList(std::vector<const char*>& exts) {
         for (uint32_t i = 0; i < exts.size(); i++) {
             Log("  " << exts[i] << std::endl);

@@ -24,6 +24,11 @@ private:
     Game game;
     unsigned long uiVerticesTotal = 0;
     unsigned long uiVerticesSqrt = 0;
+    void handleKeyInputTurnWeapon(bool shift, int mods, int key);
+    void handleKeyInputIntersectTest(bool shift, int mods, int key);
+    bool enableIntersectTest = true;
+    bool intersectTestModifyStartPoint = false;
+    LineDef intersectTestLine;
 
     // game phases:
     static const int PhaseIntro = 0;

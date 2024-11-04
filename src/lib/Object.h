@@ -157,7 +157,7 @@ public:
 	void drawBoundingBox(std::vector<LineDef>& boxes, glm::mat4 modelToWorld, glm::vec4 color = Colors::Silver);
 	// calc distance. Currently refers to object origin which might be incorrect in some cases, TODO implement distance to bounding box center
     float distanceTo(glm::vec3 pos);
-    bool isLineIntersectingBoundingBox(const glm::vec3& lineStart, const glm::vec3& lineEnd);
+    bool isLineIntersectingBoundingBox(const glm::vec3& lineStart, const glm::vec3& lineEnd, glm::vec3 *debugAxes = nullptr);
 	glm::vec3 objectStartPos;
 	// 3d sound 
 	bool stopped; // a running cue may temporarily stopped

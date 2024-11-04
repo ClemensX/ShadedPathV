@@ -501,3 +501,13 @@ void Util::writeHeightmapRaw(std::vector<glm::vec3>& points)
 
     Log("written 32-bit float RAW heightmap file with ( " << roundedSquareRoot << " x " << roundedSquareRoot << " ) points: " << engine->files.absoluteFilePath(filename).c_str() << endl);
 }
+
+void Util::drawBoxFromAxes(std::vector<LineDef>& boxes, vec3* axes)
+{
+    LineDef l;
+    l.color = Colors::LightSteelBlue;
+    // lower rect:
+    l.start = axes[0];
+    l.end = axes[1];
+    boxes.push_back(l);
+}

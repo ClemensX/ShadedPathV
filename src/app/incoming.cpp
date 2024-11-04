@@ -19,6 +19,11 @@ void Incoming::run()
         getFirstPersonCameraPositioner()->setMaxSpeed(15.0f);
         auto p = getHMDCameraPositioner()->getPosition();
         Log("HMD position: " << p.x << " / " << p.y << " / " << p.z << endl);
+        if (enableIntersectTest) {
+            intersectTestLine.color = Colors::Red;
+            intersectTestLine.start = camStart + vec3(0.5f, -0.3f, 0.0f);
+            intersectTestLine.end = camStart + vec3(0.5f, -0.3f, -1.0f);
+        }
         // engine configuration
         enableEventsAndModes();
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
@@ -254,6 +259,11 @@ void Incoming::updatePerFrame(ThreadResources& tr)
         applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
         engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
         engine.shaders.lineShader.clearLocalLines(tr);
+        if (enableIntersectTest) {
+            vector<LineDef> oneTimelines;
+            oneTimelines.push_back(intersectTestLine);
+            engine.shaders.lineShader.addOneTime(oneTimelines, tr);
+        }
     }
     // cube
     CubeShader::UniformBufferObject cubo{};
@@ -310,9 +320,21 @@ void Incoming::updatePerFrame(ThreadResources& tr)
             //modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
             //modeltransform = wo->mesh->baseTransform;
             if (enableLines) {
-                wo->drawBoundingBox(boundingBoxes, modeltransform);
-                if (wo->isLineIntersectingBoundingBox(shootLine.start, shootLine.end)) {
-                    Log("Line intersects bounding box of " << wo->mesh->id << endl);
+                if (enableIntersectTest) {
+                    vec3 axes[3];
+                    wo->calculateBoundingBoxWorld(modeltransform);
+                    if (wo->isLineIntersectingBoundingBox(intersectTestLine.start, intersectTestLine.end, axes)) {
+                        if (wo->mesh->id.starts_with("Water")) {
+                            Util::drawBoxFromAxes(boundingBoxes, axes);
+                        }
+                        Log("Line intersects bounding box of " << wo->mesh->id << endl);
+                        wo->drawBoundingBox(boundingBoxes, modeltransform, Colors::Red);
+                    }
+                } else {
+                    wo->drawBoundingBox(boundingBoxes, modeltransform);
+                    if (wo->isLineIntersectingBoundingBox(shootLine.start, shootLine.end)) {
+                        Log("Line intersects bounding box of " << wo->mesh->id << endl);
+                    }
                 }
             }
         }
@@ -329,7 +351,7 @@ void Incoming::updatePerFrame(ThreadResources& tr)
                 modeltransform = positioner->moveObjectToCameraSpace(wo, deltaPos, r, &finalPos, &mv);
             }
             // draw lines for up, right and forward vectors
-            if (enableLines) {
+            if (enableLines && false) {
                 vec3 pos = finalPos;
                 vector<LineDef> oneTimelines;
                 LineDef l;
@@ -400,40 +422,8 @@ void Incoming::handleInput(InputState& inputState)
         const bool press = action != GLFW_RELEASE;
         float alterRadians = 0.1 / 4.0;
         bool shift = mods & GLFW_MOD_SHIFT;
-        if (key == GLFW_KEY_X) {
-            if (shift) {
-                r.x -= alterRadians;
-            } else {
-                r.x += alterRadians;
-            }
-            Log("rot x " << r.x << endl);
-        }
-        if (key == GLFW_KEY_Y) {
-            if (shift) {
-                r.y -= alterRadians;
-            } else {
-                r.y += alterRadians;
-            }
-            Log("rot y " << r.y << endl);
-        }
-        if (key == GLFW_KEY_Z) {
-            if (shift) {
-                r.z -= alterRadians;
-            } else {
-                r.z += alterRadians;
-            }
-            Log("rot z " << r.z << endl);
-        }
-        if (key == GLFW_KEY_D) {
-        }
-        if (key == GLFW_KEY_1) {
-        }
-        if (key == GLFW_KEY_2) {
-        }
-        if (mods & GLFW_MOD_SHIFT) {
-        }
-        if (key == GLFW_KEY_SPACE) {
-        }
+        //handleKeyInputTurnWeapon(shift, mods, key);
+        handleKeyInputIntersectTest(shift, mods, key);
     }
 }
 
@@ -456,3 +446,98 @@ void Incoming::buildCustomUI()
     ImGui::Text("Terrain resolution: %f [m]", resolution);
     ImGui::Separator();
 };
+
+void Incoming::handleKeyInputTurnWeapon(bool shift, int mods, int key) {
+    float alterRadians = 0.1 / 4.0;
+    if (key == GLFW_KEY_X) {
+        if (shift) {
+            r.x -= alterRadians;
+        }
+        else {
+            r.x += alterRadians;
+        }
+        Log("rot x " << r.x << endl);
+    }
+    if (key == GLFW_KEY_Y) {
+        if (shift) {
+            r.y -= alterRadians;
+        }
+        else {
+            r.y += alterRadians;
+        }
+        Log("rot y " << r.y << endl);
+    }
+    if (key == GLFW_KEY_Z) {
+        if (shift) {
+            r.z -= alterRadians;
+        }
+        else {
+            r.z += alterRadians;
+        }
+        Log("rot z " << r.z << endl);
+    }
+    if (key == GLFW_KEY_D) {
+    }
+    if (key == GLFW_KEY_1) {
+    }
+    if (key == GLFW_KEY_2) {
+    }
+    if (mods & GLFW_MOD_SHIFT) {
+    }
+    if (key == GLFW_KEY_SPACE) {
+    }
+
+}
+
+void Incoming::handleKeyInputIntersectTest(bool shift, int mods, int key) {
+    float step = 0.1 / 4.0;
+    vec3 pt = intersectTestModifyStartPoint ? intersectTestLine.start : intersectTestLine.end;
+    if (key == GLFW_KEY_X) {
+        if (shift) {
+            pt.x -= step;
+        }
+        else {
+            pt.x += step;
+        }
+        Log("pt x " << pt.x << endl);
+    }
+    if (key == GLFW_KEY_Y) {
+        if (shift) {
+            pt.y -= step;
+        }
+        else {
+            pt.y += step;
+        }
+        Log("pt y " << pt.y << endl);
+    }
+    if (key == GLFW_KEY_Z) {
+        if (shift) {
+            pt.z -= step;
+        }
+        else {
+            pt.z += step;
+        }
+        Log("pt z " << pt.z << endl);
+    }
+    if (key == GLFW_KEY_D) {
+    }
+    if (key == GLFW_KEY_1) {
+        intersectTestModifyStartPoint = true;
+        Log("Modify start point" << endl);
+    }
+    if (key == GLFW_KEY_2) {
+        intersectTestModifyStartPoint = false;
+        Log("Modify end point" << endl);
+    }
+    if (mods & GLFW_MOD_SHIFT) {
+    }
+    if (key == GLFW_KEY_SPACE) {
+    }
+
+    if (intersectTestModifyStartPoint) {
+        intersectTestLine.start = pt;
+    } else {
+        intersectTestLine.end = pt;
+    }
+}
+

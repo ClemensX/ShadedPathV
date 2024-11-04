@@ -51,6 +51,21 @@ void Path::updateCameraPosition(CameraPositionerInterface* camera, Movement& mv,
             bug_time += deltaSeconds;
             //Log("cam x/z: " << cam.x << " / " << cam.z << " total dist time: " << bug_dist << " " << bug_time << endl);
         }
+        if (mv.backward_) {
+            // move backward in the direction we are looking
+            cam = moveNoGradient(cam, -mv.forward, mv.walkSpeedMS, deltaSeconds);
+            cam.y += mv.camAboveGround;
+        }
+        if (mv.left_) {
+            // move left in the direction we are looking
+            cam = moveNoGradient(cam, -mv.right, mv.walkSpeedMS, deltaSeconds);
+            cam.y += mv.camAboveGround;
+        }
+        if (mv.right_) {
+            // move right in the direction we are looking
+            cam = moveNoGradient(cam, mv.right, mv.walkSpeedMS, deltaSeconds);
+            cam.y += mv.camAboveGround;
+        }
         //Log("Walking" << endl);
     }
     camera->setPosition(cam);
