@@ -10,18 +10,20 @@
 #include "gltfTerrainApp.h"
 #include "GeneratedTexturesApp.h"
 #include "BillboardDemo.h"
+#include "TextureViewer.h"
 #include "LandscapeDemo1.h"
 #include "incoming.h"
 
 int main()
 {
     Log("ShadedPathV app\n");
-    Incoming app;
+    //Incoming app;
     //gltfTerrainApp app; // vr ok
     //LineApp app; // vr ok
     //SimpleApp app; // vr ok (some stuttering - will not be investigated)
     //DeviceCoordApp app; // vr not supported
     //BillboardDemo app; // vr ok
+    TextureViewer app; // vr ok
     //GeneratedTexturesApp app; // TODO: does not even work in 2D
     //gltfObjectsApp app; // vr ok, also skybox
     //LandscapeDemo app; // vr ok

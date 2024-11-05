@@ -1,13 +1,13 @@
 #include "mainheader.h"
 #include "AppSupport.h"
-#include "BillboardDemo.h"
+#include "TextureViewer.h"
 
 using namespace std;
 using namespace glm;
 
-void BillboardDemo::run()
+void TextureViewer::run()
 {
-    Log("BillboardDemo started" << endl);
+    Log("TextureViewer started" << endl);
     {
         setEngine(engine);
         // camera initialization
@@ -20,25 +20,21 @@ void BillboardDemo::run()
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
         engine.setMaxTextures(10);
-        //engine.setFrameCountLimit(1000);
         setHighBackbufferResolution();
-        //engine.setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
-        //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
         int win_width = 960;//480;// 960;//1800;// 800;//3700; // 2500
-        engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Billboard Demo");
+        engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Texture Viewer");
         camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 2000.0f);
 
         engine.registerApp(this);
-        initEngine("BillboardDemo");
+        initEngine("TextureViewer");
 
         engine.textureStore.generateBRDFLUT();
-        //this_thread::sleep_for(chrono::milliseconds(3000));
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
             .addShader(shaders.cubeShader)  // enable to render central cube with debug texture
             .addShader(shaders.billboardShader)
-            .addShader(shaders.lineShader)  // enable to see zero cross and billboard debug lines
+            //.addShader(shaders.lineShader)  // enable to see zero cross and billboard debug lines
             //.addShader(shaders.pbrShader)
             ;
         if (enableUI) shaders.addShader(shaders.uiShader);
@@ -49,10 +45,10 @@ void BillboardDemo::run()
         init();
         eventLoop();
     }
-    Log("BillboardDemo ended" << endl);
+    Log("TextureViewer ended" << endl);
 }
 
-void BillboardDemo::addRandomBillboards(vector<BillboardDef>& billboards, World &world, unsigned int textureIndex, float aspectRatio) {
+void TextureViewer::addRandomBillboards(vector<BillboardDef>& billboards, World &world, unsigned int textureIndex, float aspectRatio) {
     BillboardDef b;
     b.pos = vec4(0.0f, 4.05f, 0.0f, 0);
     b.dir = vec4(0.0f, 0.0f, 1.0f, 0.0f);
@@ -78,10 +74,9 @@ void BillboardDemo::addRandomBillboards(vector<BillboardDef>& billboards, World 
     }
 }
 
-void BillboardDemo::init() {
+void TextureViewer::init() {
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
-    //world.setWorldSize(10.0f, 382.0f, 10.0f);
 
     // load skybox cube texture
     //engine.textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
@@ -150,12 +145,12 @@ void BillboardDemo::init() {
     engine.shaders.billboardShader.initialUpload();
 }
 
-void BillboardDemo::drawFrame(ThreadResources& tr) {
+void TextureViewer::drawFrame(ThreadResources& tr) {
     updatePerFrame(tr);
     engine.shaders.submitFrame(tr);
 }
 
-void BillboardDemo::updatePerFrame(ThreadResources& tr)
+void TextureViewer::updatePerFrame(ThreadResources& tr)
 {
     static double old_seconds = 0.0f;
     double seconds = engine.gameTime.getTimeSeconds();
@@ -204,7 +199,7 @@ void BillboardDemo::updatePerFrame(ThreadResources& tr)
     //Util::printMatrix(bubo.proj);
 }
 
-void BillboardDemo::handleInput(InputState& inputState)
+void TextureViewer::handleInput(InputState& inputState)
 {
     AppSupport::handleInput(inputState);
 }

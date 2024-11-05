@@ -4,7 +4,7 @@
 // BRDFLUT (BRDF lookup table)
 // Irradiance cube map
 // Environment Cube map
-class GeneratedTexturesApp : ShadedPathApplication
+class GeneratedTexturesApp : ShadedPathApplication, public AppSupport
 {
 public:
     void init();
@@ -16,9 +16,9 @@ private:
     ShadedPathEngine engine;
     Shaders& shaders = engine.shaders;
     void updatePerFrame(ThreadResources& tr);
-    Camera* camera;
-    CameraPositioner_FirstPerson* positioner;
-    InputState input;
+    //Camera* camera;
+    //CameraPositioner_FirstPerson* positioner;
+    //InputState input;
     World world;
     WorldObject *knife1, *knife2;
 };

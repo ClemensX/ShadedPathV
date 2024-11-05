@@ -370,7 +370,7 @@ void glTF::collectBaseTransform(tinygltf::Model& model, MeshInfo* mesh)
 	int found = -1;
 	for (int i = 0; i < model.nodes.size(); i++) {
 		Node& node = model.nodes[i];
-		//Log("node " << node.name.c_str() << endl);
+		Log("node " << node.name.c_str() << endl);
 		if (node.mesh == mesh->gltfMeshIndex) {
 			if (found >= 0) {
 				// 2nd occurence not allowed
@@ -382,7 +382,8 @@ void glTF::collectBaseTransform(tinygltf::Model& model, MeshInfo* mesh)
 		// store children to check well formed strict tree:
 		for (int child : node.children) {
 			if (childrenMap.count(child) > 0) {
-				Error("Invalid node hierarchy found in gltf file");
+				//Error("Invalid node hierarchy found in gltf file");
+                Log("WARNING: Invalid node hierarchy found in gltf file" << endl);
 			} else {
 				childrenMap[child] = i;
 			}

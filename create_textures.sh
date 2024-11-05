@@ -31,4 +31,5 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #cd ../data/raw
 #toktx --genmipmap --uastc 3 --zcmp 18 --verbose --t2 --cubemap cube_sky.ktx2 px.png nx.png py.png ny.png pz.png nz.png
 #ktx create --format R32_SFLOAT --raw --width 2048 --height 2048 "../data/texture/valley03_Height Map_2048x2048_0_0.raw" ../data/texture/valley_height.ktx2
-ktx create --format R32_SFLOAT --raw --width 2048 --height 2048 "../WorldCreator/flat_Height Map_2048x2048_0_0.raw" ../data/texture/flat.ktx2
+#ktx create --format R32_SFLOAT --raw --width 2048 --height 2048 "../WorldCreator/flat_Height Map_2048x2048_0_0.raw" ../data/texture/flat.ktx2
+gltf-transform uastc ../data/rocks.glb ../data/mesh/rocks_cmp.glb --level 4 --zstd 18 --verbose

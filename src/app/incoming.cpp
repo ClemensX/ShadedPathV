@@ -89,7 +89,7 @@ void Incoming::addRandomHeightLines(vector<LineDef>& lines, World& world) {
 }
 
 void Incoming::init() {
-    bool debugObjects = true; // false to disable all helper objects
+    bool debugObjects = false; // false to disable all helper objects
     float aspectRatio = engine.getAspect();
 
     // 2 square km world size
@@ -112,7 +112,15 @@ void Incoming::init() {
         engine.meshStore.loadMesh("bottle2.glb", "WaterBottle");
     }
 
+    // terrain (has to be first object in world)
     auto terrain = engine.objectStore.addObject("terrain_group", "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
+
+    // rocks
+    engine.objectStore.createGroup("rocks_group");
+    engine.meshStore.loadMesh("rocks_cmp.glb", "Rocks");
+    engine.objectStore.addObject("rocks_group", "Rocks", vec3(4.97f, 57.39f, -3.9));
+
+    // weapon
     engine.objectStore.createGroup("weapon_group");
     engine.meshStore.loadMesh("cyberpunk_pistol_cmp.glb", "Gun", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
     gun = engine.objectStore.addObject("weapon_group", "Gun", vec3(4.97f, 57.39f, -3.9));
@@ -120,6 +128,7 @@ void Incoming::init() {
     //gun->rot() = vec3(4.8, 6.4, 7.4);
     gun->rot() = vec3(0.1, 0.1, 0.1);
     worldObject = gun;
+
     if (debugObjects) {
         //auto knife = engine.objectStore.addObject("knife_group", "Knife", vec3(900.0f, 20.0f, 0.3f));
         WorldObject* knife = nullptr;
