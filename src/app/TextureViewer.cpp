@@ -66,6 +66,10 @@ void TextureViewer::init() {
     unsigned int texIndex = texIndexTree;
     unsigned int texIndexHeightmap = engine.textureStore.getTexture("heightmap")->index;
     shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
+    // rocks
+    engine.objectStore.createGroup("rocks_group");
+    engine.meshStore.loadMesh("rocks_cmp.glb", "Rocks");
+
     // add some lines:
     //scale tree height to 10m
     float height = 10.0f;
