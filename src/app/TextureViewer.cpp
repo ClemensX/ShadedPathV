@@ -48,32 +48,6 @@ void TextureViewer::run()
     Log("TextureViewer ended" << endl);
 }
 
-void TextureViewer::addRandomBillboards(vector<BillboardDef>& billboards, World &world, unsigned int textureIndex, float aspectRatio) {
-    BillboardDef b;
-    b.pos = vec4(0.0f, 4.05f, 0.0f, 0);
-    b.dir = vec4(0.0f, 0.0f, 1.0f, 0.0f);
-    b.w = b.h = 10.0f;
-    b.w = b.h / aspectRatio;
-    b.type = 0;
-    b.textureIndex = textureIndex;
-    //unsigned long total_billboards = 50000000; // close to 4GB on GPU
-    //unsigned long total_billboards = 1000000;
-    //unsigned long total_billboards = 500000;
-    unsigned long total_billboards = 200000;
-    //unsigned long total_billboards = 5000;
-    //unsigned long total_billboards = 12;
-    unsigned long billboards_per_texture = total_billboards / 12;
-
-    // create randomly positioned billboards for each vacXX texture we have:
-    for (unsigned long num = 0; num < total_billboards; num++) {
-        vec3 rnd = world.getRandomPos();
-        b.pos.x = rnd.x;
-        //b.pos.y = rnd.y;
-        b.pos.z = rnd.z;
-        billboards.push_back(b);
-    }
-}
-
 void TextureViewer::init() {
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
@@ -92,18 +66,9 @@ void TextureViewer::init() {
     unsigned int texIndexHeightmap = engine.textureStore.getTexture("heightmap")->index;
     shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
     // add some lines:
-    float aspectRatio = engine.getAspect();
-    float plus = 0.0f;
-    LineDef myLines[] = {
-        // start, end, color
-        { glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) },
-        { glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { glm::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f) }
-    };
-    vector<LineDef> lines;
     //scale tree height to 10m
     float height = 10.0f;
-    float width = height /*/ aspectRatio*/;
+    float width = height;
     BillboardDef myBillboards[] = {
         { vec4(0.0f, 0.0f, 1.0f, 1.0f), // pos
           vec4(1.0f, 0.0f, 0.0f, 0.0f), // dir
@@ -121,15 +86,26 @@ void TextureViewer::init() {
         }
     };
     vector<BillboardDef> billboards;
-    for_each(begin(myBillboards), end(myBillboards), [&billboards](BillboardDef l) {billboards.push_back(l); });
-    //addRandomBillboards(billboards, world, texIndex, aspectRatio);
+    //for_each(begin(myBillboards), end(myBillboards), [&billboards](BillboardDef l) {billboards.push_back(l); });
+    auto& allTex = engine.textureStore.getTexturesMap();
+    vector<BillboardDef> billboardsToAdd;
+    for (auto& tex : allTex) {
+        auto& ti = tex.second;
+        if (ti.available) {
+            int i = textureNames.size();
+            BillboardDef b;
+            b.pos = vec4(0.0f + 10.2f * i, 0.0f, 1.0f, 1.0f);
+            b.dir = vec4(1.0f, 0.0f, 0.0f, 0.0f);
+            b.w = width;
+            b.h = height;
+            b.type = 2;
+            b.textureIndex = ti.index;
+            textureNames.push_back(ti.id.c_str());
+            billboards.push_back(b);
+        }
+    }
 
     engine.shaders.billboardShader.add(billboards);
-
-    // Grid with 1m squares, floor on -10m, ceiling on 372m
-    Grid* grid = world.createWorldGrid(1.0f, 0.0f);
-    //engine.shaders.lineShader.add(grid->lines);
-    engine.shaders.lineShader.addFixedGlobalLines(lines);
 
     // select texture by uncommenting:
     engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
