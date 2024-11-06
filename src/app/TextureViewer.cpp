@@ -20,6 +20,7 @@ void TextureViewer::run()
         engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine.files.findAssetFolder("data");
         engine.setMaxTextures(10);
+        //engine.setFixedPhysicalDeviceIndex(0);
         setHighBackbufferResolution();
         int win_width = 960;//480;// 960;//1800;// 800;//3700; // 2500
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Texture Viewer");
