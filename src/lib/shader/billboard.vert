@@ -12,7 +12,7 @@ layout(location = 0) in vec4 inPosition;
 layout(location = 1) in vec4 inDirection;
 layout(location = 2) in float inWidth;
 layout(location = 3) in float inHeight;
-layout(location = 4) in uint inType; // billboard type: 0 is towards camera, 1 is absolute inDirection
+layout(location = 4) in uint inType; // billboard type: 0 is towards camera, 1 is absolute inDirection, 2 abs w/o height adapt
 layout(location = 5) in uint inIndex; // global texture index
 
 layout(location = 1) out uint outType;
@@ -73,7 +73,8 @@ void main()
     fragTexCoord = vec2(mappedx, mappedz);
     float newHeight = texture(global_textures[nonuniformEXT(texIndex)], fragTexCoord).r;
     vec4 inP = inPosition;
-    inP.y = newHeight;
+    if (inType != 2)
+        inP.y = newHeight;
 
     // heightmap end
     outType = inType;
@@ -84,7 +85,7 @@ void main()
     //gl_Position = ubo.proj * ubo.view * vec4(inPosition, 1.0);
     if (inType == 0) {
         gl_Position = ubo.view * vec4(inP.xyz, 1.0);
-    } else if (inType == 1) {
+    } else if (inType == 1 || inType == 2) {
        //debugPrintfEXT("bb vert.quat w x y z is %f %f %f %f\n", inDirection.w, inDirection.x, inDirection.y, inDirection.z);
        gl_Position = vec4(inP.xyz, 1.0);
     }

@@ -103,26 +103,26 @@ void TextureViewer::init() {
     vector<LineDef> lines;
     //scale tree height to 10m
     float height = 10.0f;
-    float width = height / aspectRatio;
+    float width = height /*/ aspectRatio*/;
     BillboardDef myBillboards[] = {
-        { vec4(-0.1f, 4.05f, -0.1f, 1.0f), // pos
-          vec4(0.0f, 0.0f, 1.0f, 0.0f), // dir
+        { vec4(0.0f, 0.0f, 1.0f, 1.0f), // pos
+          vec4(1.0f, 0.0f, 0.0f, 0.0f), // dir
           width, // w
           height, // h
-          1,    // type
-          texIndex
+          2,    // type
+          0
         },
-        { vec4(-0.2f, 0.2f, 0.0f, 1.0f), // pos
-          vec4(0.3f, 0.1f, 0.0f, 0.0f), // dir
-          0.3f, // w
-          0.9f, // h
-          0,    // type
-          texIndex
+        { vec4(10.2f, 0.0f, 1.0f, 1.0f), // pos
+          vec4(1.0f, 0.0f, 0.0f, 0.0f), // dir
+          width, // w
+          height, // h
+          2,    // type
+          1
         }
     };
     vector<BillboardDef> billboards;
-    //for_each(begin(myBillboards), end(myBillboards), [&billboards](BillboardDef l) {billboards.push_back(l); });
-    addRandomBillboards(billboards, world, texIndex, aspectRatio);
+    for_each(begin(myBillboards), end(myBillboards), [&billboards](BillboardDef l) {billboards.push_back(l); });
+    //addRandomBillboards(billboards, world, texIndex, aspectRatio);
 
     engine.shaders.billboardShader.add(billboards);
 
@@ -182,11 +182,6 @@ void TextureViewer::updatePerFrame(ThreadResources& tr)
     cubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     cubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     applyViewProjection(cubo.view, cubo.proj, cubo2.view, cubo2.proj);
-    //cubo.view = camera->getViewMatrixAtCameraPos();
-    //cubo.view = lubo.view; // uncomment to have stationary cube, not centered at camera
-    //cubo.proj = lubo.proj;
-    //cubo2.view = lubo2.view; // uncomment to have stationary cube, not centered at camera
-    //cubo2.proj = lubo2.proj;
     engine.shaders.cubeShader.uploadToGPU(tr, cubo, cubo2, true);
  
     // billboards

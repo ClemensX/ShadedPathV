@@ -12,7 +12,7 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 proj;
 } ubo;
 
-layout(location = 1) in uint inTypes[]; // billboard type: 0 is towards camera, 1 is absolute inDirection
+layout(location = 1) in uint inTypes[]; // billboard type: 0 is towards camera, 1 is absolute inDirection, 2 is absolute w/o height adaption
 layout(location = 2) in vec4 inQuats[]; // quaternion for rotating vertices if type == 1
 layout(location = 3) in float inWidth[];
 layout(location = 4) in float inHeight[];
@@ -61,6 +61,7 @@ void main()
 
     vec4 v0, v1, v2, v3; // assemble vertex info here
     if (inType == 0) {
+        // auto adjust to face camera
         v0 = vec4(verts[0], 0) + inP;
         v1 = vec4(verts[1], 0) + inP;
         v2 = vec4(verts[2], 0) + inP;
@@ -82,7 +83,7 @@ void main()
         textureIndex = inIndex;
         EmitVertex();
         EndPrimitive();
-    } else if (inType == 1) {
+    } else if (inType == 1 || inType == 2) {
         //debugPrintfEXT("bb geom.quat w x y z is %f %f %f %f\n", quat.w, quat.x, quat.y, quat.z);
         v0 = vec4(verts[0], 0);
         v1 = vec4(verts[1], 0);
