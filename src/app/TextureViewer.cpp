@@ -174,3 +174,38 @@ void TextureViewer::handleInput(InputState& inputState)
 {
     AppSupport::handleInput(inputState);
 }
+
+static void HelpMarker(const char* desc)
+{
+    //ImGui::TextDisabled("(?)");
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(desc);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+}
+
+void TextureViewer::buildCustomUI()
+{
+    static string helpText =
+        "click to see texture names\n(leftmost on top)";
+    int n;
+    bool useAutoCameraCheckbox;
+    if (!vr) {
+        ImGui::Separator();
+        ImGui::Text("Texture count: %d", textureNames.size());
+    }
+    if (ImGui::CollapsingHeader("Texture Names"))
+    {
+        if (!vr) {
+            for (auto& t : textureNames) {
+                ImGui::Separator();
+                ImGui::Text(t.c_str());
+            }
+        }
+    }
+    ImGui::SameLine(); HelpMarker(helpText.c_str());
+};
