@@ -274,9 +274,27 @@ void glTF::prepareTextures(tinygltf::Model& model, MeshCollection* coll, int glt
 	// make sure textures are already loded
 	assert(coll->textureInfos.size() >= model.samplers.size());
 
+    // we have to parse gltf textures and look for KHR_texture_basisu extension,
+    // then set the source index of the texture accordingly
+	for (int i = 0; i < model.textures.size(); i++) {
+		auto& extMap = model.textures[i].extensions;
+		auto found = extMap.find("KHR_texture_basisu");
+		if (found != extMap.end()) {
+			if (found->second.Has("source")) {
+				int source = found->second.Get("source").Get<int>();
+				//Log("source " << source << endl);
+				model.textures[i].source = source;
+			}
+		}
+	}
+    // make sure we have a valid source index for all textures
+	for (int i = 0; i < model.textures.size(); i++) {
+		auto& extMap = model.textures[i].extensions;
+        assert(model.textures[i].source >= 0);
+	}
 	auto& primitive = model.meshes[gltfMeshIndex].primitives[0];
 	auto& mat = model.materials[primitive.material];
-	// assign textures to engine data:
+	// assign mesh textures to pre-loaded texture index:
 	auto baseColorTextureIndex = mat.pbrMetallicRoughness.baseColorTexture.index;
 	auto metallicRoughnessTextureIndex = mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
 	auto normalTextureIndex = mat.normalTexture.index;
@@ -286,23 +304,23 @@ void glTF::prepareTextures(tinygltf::Model& model, MeshCollection* coll, int glt
 	MeshInfo* mesh = coll->meshInfos[gltfMeshIndex];
 	// texture UV coords are likely the same, but we parse their mem location and stride for all textures anyway:
 	if (baseColorTextureIndex >= 0) {
-		mesh->baseColorTexture = coll->textureInfos[baseColorTextureIndex];
+		mesh->baseColorTexture = coll->textureInfos[model.textures[baseColorTextureIndex].source];
 		getTextureUVCoordinates(model, primitive, mesh->baseColorTexture, mat.pbrMetallicRoughness.baseColorTexture.texCoord);
 	}
 	if (metallicRoughnessTextureIndex >= 0) {
-		mesh->metallicRoughnessTexture = coll->textureInfos[metallicRoughnessTextureIndex];
+		mesh->metallicRoughnessTexture = coll->textureInfos[model.textures[metallicRoughnessTextureIndex].source];
 		getTextureUVCoordinates(model, primitive, mesh->metallicRoughnessTexture, mat.pbrMetallicRoughness.metallicRoughnessTexture.texCoord);
 	}
 	if (normalTextureIndex >= 0) {
-		mesh->normalTexture = coll->textureInfos[normalTextureIndex];
+		mesh->normalTexture = coll->textureInfos[model.textures[normalTextureIndex].source ];
 		getTextureUVCoordinates(model, primitive, mesh->normalTexture, mat.normalTexture.texCoord);
 	}
 	if (occlusionTextureIndex >= 0) {
-		mesh->occlusionTexture = coll->textureInfos[occlusionTextureIndex];
+		mesh->occlusionTexture = coll->textureInfos[model.textures[occlusionTextureIndex].source];
 		getTextureUVCoordinates(model, primitive, mesh->occlusionTexture, mat.occlusionTexture.texCoord);
 	}
 	if (emissiveTextureIndex >= 0) {
-		mesh->emissiveTexture = coll->textureInfos[emissiveTextureIndex];
+		mesh->emissiveTexture = coll->textureInfos[model.textures[emissiveTextureIndex].source];
 		getTextureUVCoordinates(model, primitive, mesh->occlusionTexture, mat.emissiveTexture.texCoord);
 	}
 
