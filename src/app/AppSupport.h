@@ -14,7 +14,7 @@ protected:
     bool enableUI = true;
     bool vr = false;
     bool stereo = false;
-    bool enableSound = false;
+    bool enableSound = true;
     bool singleThreadMode = false;
     bool debugWindowPosition = true; // if true try to open app window in right screen part
     bool firstPersonCameraAlwayUpright = true;

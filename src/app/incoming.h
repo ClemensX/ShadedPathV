@@ -4,12 +4,21 @@
 class Incoming : ShadedPathApplication, public AppSupport
 {
 public:
+    enum class RockWave { Cube };
+    struct RockInfo {
+        glm::vec3 pos;
+        glm::vec3 scale;
+        glm::vec3 rot;
+        std::string subName; // e.g. 'Rocks.3'
+    };
     void init();
     void run();
     void drawFrame(ThreadResources& tr) override;
     void handleInput(InputState& inputState) override;
     void buildCustomUI() override;
     void addRandomHeightLines(std::vector<LineDef>& lines, World& world);
+    void addRandomRockFormations(RockWave waveName, std::vector<WorldObject*>& rockList);
+    void addRandomRock(RockInfo ri, std::vector<WorldObject*>& rockList);
 
 private:
     ShadedPathEngine engine;
@@ -26,9 +35,10 @@ private:
     unsigned long uiVerticesSqrt = 0;
     void handleKeyInputTurnWeapon(bool shift, int mods, int key);
     void handleKeyInputIntersectTest(bool shift, int mods, int key);
-    bool enableIntersectTest = true;
+    bool enableIntersectTest = false;
     bool intersectTestModifyStartPoint = false;
     LineDef intersectTestLine;
+    std::vector<WorldObject*> rockObjects;
 
     // game phases:
     static const int PhaseIntro = 0;

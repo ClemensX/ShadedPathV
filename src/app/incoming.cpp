@@ -87,6 +87,44 @@ void Incoming::addRandomHeightLines(vector<LineDef>& lines, World& world) {
         lines.push_back(b);
     }
 }
+void Incoming::addRandomRock(RockInfo ri, std::vector<WorldObject*>& rockList)
+{
+
+    // Generate a random number between 0 and 9
+    int randomValue = rand() % 10;
+    string rockName = "Rocks." + to_string(randomValue);
+
+    WorldObject* rock = engine.objectStore.addObject("rocks_group", rockName, ri.pos);
+    rockList.push_back(rock);
+}
+
+void Incoming::addRandomRockFormations(RockWave waveName, std::vector<WorldObject*>& rockList)
+{
+    // define start pos, then add rocks to left, right and on top
+    vec3 pos(0.0f, 70.0f, -80.0);
+    float xDist = 20.0f;
+    float zDist = 20.0f;
+    float yDist = 20.0f;
+
+    // Seed the random number generator
+    std::srand(314); // any value will do - but we want to have same rand every time for consistent graphics
+
+    WorldObject* rock;
+    RockInfo ri;
+    int factorX, factorY, factorZ;
+    if (waveName == RockWave::Cube) {
+        // do 5x5x5 cube of rocks
+        factorX = factorY = factorZ = 1;
+        for (int x = -2; x <= 2; x++) {
+            for (int y = 0; y <= 4; y++) {
+                for (int z = -4; z <= 0; z++) {
+                    ri.pos = pos + vec3(x * xDist * factorX, y * yDist * factorY, z * zDist * factorZ);
+                    addRandomRock(ri, rockList);
+                }
+            }
+        }   
+    }
+}
 
 void Incoming::init() {
     bool debugObjects = false; // false to disable all helper objects
@@ -117,8 +155,10 @@ void Incoming::init() {
 
     // rocks
     engine.objectStore.createGroup("rocks_group");
-    engine.meshStore.loadMesh("rocks_cmp.glb", "Rocks");
-    engine.objectStore.addObject("rocks_group", "Rocks", vec3(4.97f, 57.39f, -3.9));
+    engine.meshStore.loadMesh("rocks_multi_cmp.glb", "Rocks");
+    //engine.objectStore.addObject("rocks_group", "Rocks.9", vec3(4.97f, 57.39f, -3.9));
+    //engine.objectStore.addObject("rocks_group", "Rocks.5", vec3(-4.97f, 67.39f, -3.9));
+    addRandomRockFormations(RockWave::Cube, rockObjects);
 
     // weapon
     engine.objectStore.createGroup("weapon_group");
@@ -225,8 +265,8 @@ void Incoming::init() {
     game.setPhase(PhasePrepare);
 
     // start with holding weapon
-    holdWeapon = true;
-    game.setPhase(PhasePhase1);
+    //holdWeapon = true;
+    //game.setPhase(PhasePhase1);
 
     if (game.isGamePhase(PhasePrepare)) {
         engine.sound.playSound("ANNOUNCE_UNDER_ATTACK", SoundCategory::EFFECT, 200.0f, 4000);
@@ -296,6 +336,7 @@ void Incoming::updatePerFrame(ThreadResources& tr)
     //auto grp = engine.objectStore.getGroup("knife_group");
     vector<LineDef> boundingBoxes;
     static LineDef shootLine;
+    vec3 finalGunPos;
     for (auto& wo : engine.objectStore.getSortedList()) {
         //Log(" adapt object " << obj.get()->objectNum << endl);
         //WorldObject *wo = obj.get();
@@ -314,6 +355,10 @@ void Incoming::updatePerFrame(ThreadResources& tr)
             modeltransform = wo->mesh->baseTransform;
 
         } else {
+            if (!wo->enabled) {
+                // OUCH! this is a hack to disable object rendering
+                wo->pos().y = -30000.0f;
+            }
             // all other objects
             auto pos = wo->pos();
             auto rot = wo->rot();
@@ -336,10 +381,15 @@ void Incoming::updatePerFrame(ThreadResources& tr)
                         wo->drawBoundingBox(boundingBoxes, modeltransform, Colors::Red);
                     }
                 } else {
-                    wo->drawBoundingBox(boundingBoxes, modeltransform);
-                    if (wo->isLineIntersectingBoundingBox(shootLine.start, shootLine.end)) {
-                        Log("Line intersects bounding box of " << wo->mesh->id << endl);
+                    wo->calculateBoundingBoxWorld(modeltransform);
+                    if (wo->drawNormals) {
+                        wo->drawBoundingBox(boundingBoxes, modeltransform, Colors::Red);
                     }
+                    //wo->drawBoundingBox(boundingBoxes, modeltransform);
+                    //if (wo->isLineIntersectingBoundingBox(shootLine.start, shootLine.end)) {
+                    //    //Log("Line intersects bounding box of " << wo->mesh->id << endl);
+                    //    wo->drawBoundingBox(boundingBoxes, modeltransform, Colors::Red);
+                    //}
                 }
             }
         }
@@ -348,16 +398,15 @@ void Incoming::updatePerFrame(ThreadResources& tr)
             auto* positioner = getFirstPersonCameraPositioner();
             vec3 deltaPos(0.2f, -0.28f, 0.5f);
             Movement mv;
-            vec3 finalPos;
-            modeltransform = positioner->moveObjectToCameraSpace(wo, deltaPos, r, &finalPos, &mv);
+            modeltransform = positioner->moveObjectToCameraSpace(wo, deltaPos, r, &finalGunPos, &mv);
             if (activePositionerIsHMD) {
                 // should update gun independently from camera, will be fixed until we have hand position from VR
                 auto* positioner = getHMDCameraPositioner();
-                modeltransform = positioner->moveObjectToCameraSpace(wo, deltaPos, r, &finalPos, &mv);
+                modeltransform = positioner->moveObjectToCameraSpace(wo, deltaPos, r, &finalGunPos, &mv);
             }
             // draw lines for up, right and forward vectors
-            if (enableLines && false) {
-                vec3 pos = finalPos;
+            if (enableLines && true) {
+                vec3 pos = finalGunPos;
                 vector<LineDef> oneTimelines;
                 LineDef l;
                 l.color = Colors::Red;
@@ -368,7 +417,8 @@ void Incoming::updatePerFrame(ThreadResources& tr)
                 l.end = pos + mv.up;
                 oneTimelines.push_back(l);
                 l.color = Colors::Green;
-                l.end = pos + mv.forward;
+                float forwardLength = length(mv.forward);
+                l.end = pos + mv.forward * (2000.0f / forwardLength);
                 oneTimelines.push_back(l);
                 shootLine = l;
                 engine.shaders.lineShader.addOneTime(oneTimelines, tr);
@@ -399,6 +449,24 @@ void Incoming::updatePerFrame(ThreadResources& tr)
         if (game.isGamePhase(PhasePhase1)) {
             //Log("Shot weapon" << endl);
             engine.sound.playSound("SHOOT_GUN", SoundCategory::EFFECT, 300.0f);
+            WorldObject* nearestShotObejct = nullptr;
+            float lastDistance = 1000000.0f;
+            for (auto& wo : rockObjects) {
+                if (wo-> enabled && wo->isLineIntersectingBoundingBox(shootLine.start, shootLine.end)) {
+                    float distGunRock = wo->distanceTo(finalGunPos);
+                    if ( distGunRock < lastDistance) {
+                        lastDistance = distGunRock;
+                        nearestShotObejct = wo;
+                    }
+                    //wo->enabled = false;
+                    //wo->drawNormals = true;
+                    //Log("rock destroyed " << wo->mesh->id << endl);
+                    //wo->drawBoundingBox(boundingBoxes, modeltransform, Colors::Red);
+                }
+            }
+            if (nearestShotObejct != nullptr) {
+                nearestShotObejct->enabled = false;
+            }
         }
     }
 

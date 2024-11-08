@@ -34,4 +34,5 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #ktx create --format R32_SFLOAT --raw --width 2048 --height 2048 "../WorldCreator/flat_Height Map_2048x2048_0_0.raw" ../data/texture/flat.ktx2
 #gltf-transform uastc ../data/rocks.glb ../data/mesh/rocks_cmp.glb --level 4 --zstd 18 --verbose
 #gltf-transform uastc ../data/rocks.gltf ../data/mesh/rocks_cmp.gltf --level 4 --zstd 18 --verbose
-gltf-transform uastc ../data/rocks.gltf ./test/rocks_cmp.gltf --level 1 --zstd 10 --verbose
+#gltf-transform uastc ../data/rocks.gltf ./test/rocks_cmp.gltf --level 1 --zstd 10 --verbose
+gltf-transform uastc ../data/rocks_multi.glb ../data/mesh/rocks_multi_cmp.glb --level 4 --zstd 18 --verbose
