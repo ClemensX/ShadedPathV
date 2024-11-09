@@ -459,4 +459,5 @@ ShadedPathEngine::~ShadedPathEngine()
     ThemedTimer::getInstance()->logInfo(TIMER_PART_BUFFER_COPY);
     ThemedTimer::getInstance()->logInfo(TIMER_PART_GLOBAL_UPDATE);
     ThemedTimer::getInstance()->logInfo(TIMER_PART_OPENXR);
+    instance = nullptr;
 }

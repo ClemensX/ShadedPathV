@@ -16,7 +16,9 @@ protected:
     bool stereo = false;
     bool enableSound = true;
     bool singleThreadMode = false;
-    bool debugWindowPosition = true; // if true try to open app window in right screen part
+    bool debugWindowPosition = false; // if true try to open app window in right screen part
+    bool enableRenderDoc = true;
+
     bool firstPersonCameraAlwayUpright = true;
     Camera* camera = nullptr;
     Camera camera2;
@@ -100,7 +102,9 @@ protected:
             engine->enableStereo();
             engine->enableStereoPresentation();
         }
-        engine->setFixedPhysicalDeviceIndex(0); // needed for Renderdoc
+        if (enableRenderDoc) {
+            engine->setFixedPhysicalDeviceIndex(0);
+        }
     }
     void initEngine(std::string name) {
         if (engine->isVR()) {

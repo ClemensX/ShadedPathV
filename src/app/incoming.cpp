@@ -26,7 +26,7 @@ void Incoming::run()
         engine.setMaxTextures(50);
         //engine.setFrameCountLimit(1000);
         setHighBackbufferResolution();
-        int win_width = 2500;//480;// 960;//1800;// 800;//3700; // 2500;
+        int win_width = 1800;//480;// 960;//1800;// 800;//3700; // 2500;
         engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Incoming");
         camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.10f, 2000.0f);
 
@@ -194,8 +194,8 @@ void Incoming::init() {
     game.setPhase(PhasePrepare);
 
     // start with holding weapon
-    holdWeapon = true;
-    game.setPhase(PhasePhase1);
+    //holdWeapon = true;
+    //game.setPhase(PhasePhase1);
 
     if (game.isGamePhase(PhasePrepare)) {
         engine.sound.playSound("ANNOUNCE_UNDER_ATTACK", SoundCategory::EFFECT, 200.0f, 4000);

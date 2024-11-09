@@ -26,6 +26,11 @@ public:
         // Initialization code here
     }
 
+    virtual ~Singleton()
+    {
+        instanceCreated = false;
+    }
+
     // Prevent copy and assignment
     Singleton(Singleton const&) = delete;
     void operator=(Singleton const&) = delete;

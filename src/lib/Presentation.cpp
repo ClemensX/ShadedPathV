@@ -35,9 +35,10 @@ void Presentation::initGLFW(bool handleKeyEvents, bool handleMouseMoveEevents, b
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
         window = glfwCreateWindow(engine.win_width, engine.win_height, engine.win_name, nullptr, nullptr);
-        if (engine.debugWindowPosition)
-		// Set window position to right half near the top of the screen
-        glfwSetWindowPos(window, desktopWidth/2, 30);
+        if (engine.debugWindowPosition) {
+            // Set window position to right half near the top of the screen
+            glfwSetWindowPos(window, desktopWidth / 2, 30);
+        }
         // validate requested window size:
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);

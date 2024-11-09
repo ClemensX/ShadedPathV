@@ -16,6 +16,15 @@
 
 int main()
 {
+    // TODO: investigate options to have multiple render apps.
+    //       in the end we want to have a single app that can switch between different render apps.
+    //       and it should use the sam glfw window...
+    //       start with copilot prompt: are the static members of my classes preventing me from using multiple instances of ShadedPathEngine?
+
+    //{
+    //    DeviceCoordApp app; // vr not supported
+    //    app.run();
+    //}
     Log("ShadedPathV app\n");
     Incoming app;
     //gltfTerrainApp app; // vr ok
