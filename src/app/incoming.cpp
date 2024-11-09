@@ -92,7 +92,7 @@ void Incoming::addRandomRockFormations(RockWave waveName, std::vector<WorldObjec
 }
 
 void Incoming::init() {
-    bool debugObjects = true; // false to disable all helper objects
+    bool debugObjects = false; // false to disable all helper objects
     float aspectRatio = engine.getAspect();
 
     // 2 square km world size
@@ -292,15 +292,14 @@ void Incoming::updatePerFrame(ThreadResources& tr)
             glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
             glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
             modeltransform =  trans * scaled * rotationMatrix;
+            wo->calculateBoundingBoxWorld(modeltransform);
             if (enableLines) {
                 if (enableIntersectTest) {
-                    wo->calculateBoundingBoxWorld(modeltransform);
                     if (wo->isLineIntersectingBoundingBox(intersectTestLine.start, intersectTestLine.end)) {
                         Log("Line intersects bounding box of " << wo->mesh->id << endl);
                         wo->drawBoundingBox(boundingBoxes, modeltransform, Colors::Red);
                     }
                 } else {
-                    wo->calculateBoundingBoxWorld(modeltransform);
                     if (wo->drawNormals) {
                         wo->drawBoundingBox(boundingBoxes, modeltransform, Colors::Red);
                     }
@@ -318,23 +317,25 @@ void Incoming::updatePerFrame(ThreadResources& tr)
                 auto* positioner = getHMDCameraPositioner();
                 modeltransform = positioner->moveObjectToCameraSpace(wo, deltaPos, r, &finalGunPos, &mv);
             }
-            // draw lines for up, right and forward vectors
-            if (enableLines && true) {
-                vec3 pos = finalGunPos;
+
+            // calc shoot line
+            vec3 pos = finalGunPos;
+            LineDef l;
+            l.start = pos;
+            float forwardLength = length(mv.forward);
+            l.end = pos + mv.forward * (2000.0f / forwardLength);
+            shootLine = l;
+            if (enableLines) {
+                // draw lines for up, right and forward vectors
                 vector<LineDef> oneTimelines;
-                LineDef l;
+                l.color = Colors::Green;
+                oneTimelines.push_back(l);
                 l.color = Colors::Red;
-                l.start = pos;
                 l.end = pos + mv.right;
                 oneTimelines.push_back(l);
                 l.color = Colors::Blue;
                 l.end = pos + mv.up;
                 oneTimelines.push_back(l);
-                l.color = Colors::Green;
-                float forwardLength = length(mv.forward);
-                l.end = pos + mv.forward * (2000.0f / forwardLength);
-                oneTimelines.push_back(l);
-                shootLine = l;
                 engine.shaders.lineShader.addOneTime(oneTimelines, tr);
             }
         }
