@@ -208,10 +208,11 @@ void WorldObject::getBoundingBox(BoundingBox& box)
 	boundingBoxAlreadySet = true;
 }
 
-void WorldObjectStore::createGroup(string groupname) {
+void WorldObjectStore::createGroup(string groupname, int groupId) {
 	if (groups.count(groupname) > 0) return;  // do not recreate groups
 											  //vector<WorldObject> *newGroup = groups[groupname];
 	const auto& newGroup = groups[groupname];
+    groupNames.add(groupname, groupId);
 	Log(" ---groups size " << groups.size() << endl);
 	Log(" ---newGroup vecor size " << newGroup.size() << endl);
 }
@@ -230,11 +231,12 @@ WorldObject* WorldObjectStore::addObject(string groupname, string id, vec3 pos) 
 	auto& grp = groups[groupname];
 	grp.push_back(unique_ptr<WorldObject>(new WorldObject()));
 	WorldObject* w = grp[grp.size() - 1].get();
-	addObjectPrivate(w, id, pos);
+    int grpId = groupNames.get(groupname);
+	addObjectPrivate(w, id, pos, grpId);
 	return w;
 }
 
-void WorldObjectStore::addObjectPrivate(WorldObject* w, string id, vec3 pos) {
+void WorldObjectStore::addObjectPrivate(WorldObject* w, string id, vec3 pos, int userGroupId) {
 	if (ok_meshid_long_format(id) == false) {
 		stringstream s;
 		s << "WorldObjectStore: trying to add object with wrong id format " << id << endl;
@@ -255,6 +257,7 @@ void WorldObjectStore::addObjectPrivate(WorldObject* w, string id, vec3 pos) {
 	w->objectStartPos = pos;
 	w->mesh = mesh;
 	w->alpha = 1.0f;
+    w->userGroupId = userGroupId;
 	numObjects++;
 }
 

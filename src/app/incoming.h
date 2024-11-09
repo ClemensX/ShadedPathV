@@ -11,12 +11,12 @@ public:
         glm::vec3 rot;
         std::string subName; // e.g. 'Rocks.3'
     };
+
     void init();
     void run();
     void drawFrame(ThreadResources& tr) override;
     void handleInput(InputState& inputState) override;
     void buildCustomUI() override;
-    void addRandomHeightLines(std::vector<LineDef>& lines, World& world);
     void addRandomRockFormations(RockWave waveName, std::vector<WorldObject*>& rockList);
     void addRandomRock(RockInfo ri, std::vector<WorldObject*>& rockList);
 
@@ -48,5 +48,15 @@ private:
     static const int PhasePhase3 = 4;
     static const int PhaseEnd = 5;
     static const int PhaseEndTitles = 6;
+
+    // object groups:
+    static const int GroupRocks = 0;
+    static const int GroupGun = 1;
+    static const int GroupTerrain = 2;
+    static const int GroupDebug = 3;
+    const char* GroupRocksName = "GroupRocks";
+    const char* GroupGunName = "GroupGun";
+    const char* GroupTerrainName = "GroupTerrain";
+    const char* GroupDebugName = "GroupDebug";
 };
 

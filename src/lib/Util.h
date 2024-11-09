@@ -228,3 +228,30 @@ public:
     }
 
 };
+
+class StringIntMap {
+public:
+    // Add a string-int pair to the map
+    void add(const std::string& key, int value) {
+        map[key] = value;
+    }
+
+    // Get the int value associated with a string
+    // Throws std::out_of_range if the key is not found
+    int get(const std::string& key) const {
+        return map.at(key);
+    }
+
+    // Check if a string is in the map
+    bool contains(const std::string& key) const {
+        return map.find(key) != map.end();
+    }
+
+    // Remove a string from the map
+    void remove(const std::string& key) {
+        map.erase(key);
+    }
+
+private:
+    std::unordered_map<std::string, int> map;
+};

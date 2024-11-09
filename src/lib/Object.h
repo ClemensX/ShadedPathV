@@ -170,6 +170,7 @@ public:
     bool enabled = true;
 	UINT objectNum; // must be unique for all objects
     void addVerticesToLineList(std::vector<LineDef>& lines, glm::vec3 offset, float sizeFactor = 1.0f);
+    int userGroupId = 0; // user defined group id, used to group objects for specific purposes and easily differentiate them in user code
 private:
 	glm::vec3 _pos;
 	glm::vec3 _rot;
@@ -195,15 +196,18 @@ public:
 	// add loaded object to scene
 	// remember returned ptr for single object access
 	WorldObject* addObject(std::string groupname, std::string id, glm::vec3 pos);
-	// obbject groups: give fast access to specific objects (e.g. all worm NPCs)
-	void createGroup(std::string groupname);
+	// obbject groups: give fast access to specific objects (e.g. all worm NPCs).
+	// an int defining the group type may be given, it will be stored in each object of that group.
+	// allows for grouping obejcts more easily in application code
+	void createGroup(std::string groupname, int groupId = 0);
 	const std::vector<std::unique_ptr<WorldObject>>* getGroup(std::string groupname);
 	// get sorted object list (sorted by type)
 	// meshes are only resorted if one was added in the meantime
 	const std::vector<WorldObject*>& getSortedList();
 private:
 	std::unordered_map<std::string, std::vector<std::unique_ptr<WorldObject>>> groups;
-	void addObjectPrivate(WorldObject* w, std::string id, glm::vec3 pos);
+	StringIntMap groupNames;
+	void addObjectPrivate(WorldObject* w, std::string id, glm::vec3 pos, int userGroupId);
 	MeshStore *meshStore;
 	std::vector<WorldObject*> sortedList;
 	UINT numObjects = 0;
