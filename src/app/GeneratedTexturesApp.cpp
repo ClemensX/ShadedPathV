@@ -17,34 +17,34 @@ void GeneratedTexturesApp::run()
         //camera.changePositioner(positioner);
         //this->camera = &camera;
         //this->positioner = &positioner;
-        engine.enableKeyEvents();
-        engine.enableMousButtonEvents();
-        engine.enableMouseMoveEvents();
-        //engine.enableMeshShader();
-        //engine.enableVR();
-        //engine.enableStereo();
-        engine.enableStereoPresentation();
+        engine->enableKeyEvents();
+        engine->enableMousButtonEvents();
+        engine->enableMouseMoveEvents();
+        //engine->enableMeshShader();
+        //engine->enableVR();
+        //engine->enableStereo();
+        engine->enableStereoPresentation();
         // engine configuration
-        engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
-        engine.files.findAssetFolder("data");
-        engine.setMaxTextures(20);
-        //engine.setFrameCountLimit(1000);
-        engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
-        //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
+        engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
+        engine->files.findAssetFolder("data");
+        engine->setMaxTextures(20);
+        //engine->setFrameCountLimit(1000);
+        engine->setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
+        //engine->setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
         int win_width = 960;//480;// 960;//1800;// 800;//3700; // 2500
-        engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Review generated Textures");
-        //camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 2000.0f));
-        camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 2000.0f);
+        engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Review generated Textures");
+        //camera.saveProjection(perspective(glm::radians(45.0f), engine->getAspect(), 0.01f, 2000.0f));
+        camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 2000.0f);
 
-        engine.setFramesInFlight(2);
-        engine.registerApp(this);
-        //engine.enableSound();
-        //engine.setThreadModeSingle();
+        engine->setFramesInFlight(2);
+        engine->registerApp(this);
+        //engine->enableSound();
+        //engine->setThreadModeSingle();
 
         // engine initialization
-        engine.init("gltfObjects");
+        engine->init("gltfObjects");
 
-        engine.textureStore.generateBRDFLUT();
+        engine->textureStore.generateBRDFLUT();
         //this_thread::sleep_for(chrono::milliseconds(3000));
         // add shaders used in this app
         shaders
@@ -62,15 +62,15 @@ void GeneratedTexturesApp::run()
         init();
 
         // some shaders may need additional preparation
-        engine.prepareDrawing();
+        engine->prepareDrawing();
 
 
         // rendering
-        while (!engine.shouldClose()) {
-            engine.pollEvents();
-            engine.drawFrame();
+        while (!engine->shouldClose()) {
+            engine->pollEvents();
+            engine->drawFrame();
         }
-        engine.waitUntilShutdown();
+        engine->waitUntilShutdown();
     }
     Log("LineApp ended" << endl);
 }
@@ -139,13 +139,13 @@ void createDebugLines(vector<LineDef>& lines, vector<BillboardDef>& billboards) 
 
 void GeneratedTexturesApp::init() {
     // load skybox cube texture
-    //engine.textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
-    //engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
-    engine.textureStore.loadTexture("debug.ktx", "2dTexture");
-    engine.textureStore.loadTexture("eucalyptus.ktx2", "tree");
-    unsigned int texIndex = engine.textureStore.getTexture("tree")->index;
+    //engine->textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
+    //engine->textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
+    engine->textureStore.loadTexture("debug.ktx", "2dTexture");
+    engine->textureStore.loadTexture("eucalyptus.ktx2", "tree");
+    unsigned int texIndex = engine->textureStore.getTexture("tree")->index;
     // add some lines:
-    float aspectRatio = engine.getAspect();
+    float aspectRatio = engine->getAspect();
     float plus = 0.0f;
     LineDef myLines[] = {
         // start, end, color
@@ -174,26 +174,26 @@ void GeneratedTexturesApp::init() {
     for_each(begin(myBillboards), end(myBillboards), [&billboards](BillboardDef l) {billboards.push_back(l); });
     createDebugLines(lines, billboards);
 
-    engine.shaders.billboardShader.add(billboards);
+    engine->shaders.billboardShader.add(billboards);
     // loading objects wireframe:
-    //engine.objectStore.loadObject("WaterBottle.glb", "WaterBottle", lines);
-    //engine.objectStore.loadMeshWireframe("small_knife_dagger/scene.gltf", "Knife", lines);
+    //engine->objectStore.loadObject("WaterBottle.glb", "WaterBottle", lines);
+    //engine->objectStore.loadMeshWireframe("small_knife_dagger/scene.gltf", "Knife", lines);
 
     // loading objects:
-    //engine.meshStore.loadMesh("WaterBottle.glb", "WaterBottle");
-    engine.meshStore.loadMesh("bottle2.glb", "WaterBottle");
-    engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
-    //auto o = engine.meshStore.getMesh("Knife");
+    //engine->meshStore.loadMesh("WaterBottle.glb", "WaterBottle");
+    engine->meshStore.loadMesh("bottle2.glb", "WaterBottle");
+    engine->meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
+    //auto o = engine->meshStore.getMesh("Knife");
     // add bottle and knife to the scene:
-    engine.objectStore.createGroup("bottle_group");
-    engine.objectStore.addObject("bottle_group", "WaterBottle", vec3(0.0f, 0.0f, 0.0f));
-    engine.objectStore.createGroup("knife_group");
-    engine.objectStore.addObject("knife_group", "Knife", vec3(0.3f, 0.0f, 0.0f));
-    //engine.objectStore.addObject("knife_group", "WaterBottle", vec3(0.3f, 0.0f, 0.0f));
+    engine->objectStore.createGroup("bottle_group");
+    engine->objectStore.addObject("bottle_group", "WaterBottle", vec3(0.0f, 0.0f, 0.0f));
+    engine->objectStore.createGroup("knife_group");
+    engine->objectStore.addObject("knife_group", "Knife", vec3(0.3f, 0.0f, 0.0f));
+    //engine->objectStore.addObject("knife_group", "WaterBottle", vec3(0.3f, 0.0f, 0.0f));
     //Log("Object loaded: " << o->id.c_str() << endl);
 
-    engine.textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
-    unsigned int texIndexHeightmap = engine.textureStore.getTexture("heightmap")->index;
+    engine->textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
+    unsigned int texIndexHeightmap = engine->textureStore.getTexture("heightmap")->index;
     shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
 
 
@@ -202,37 +202,37 @@ void GeneratedTexturesApp::init() {
     LineShader::addZeroCross(lines);
     //LineShader::addCross(lines, vec3(1.0f, 1.0f, 1.0f), vec4(1.0f, 1.0f, 0.0f, 1.0f));
 
-    engine.shaders.lineShader.addFixedGlobalLines(lines);
+    engine->shaders.lineShader.addFixedGlobalLines(lines);
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
-    engine.setWorld(&world);
+    engine->setWorld(&world);
     // Grid with 1m squares, floor on -10m, ceiling on 372m
 
     // select texture by uncommenting:
-    engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
-    //engine.global.createCubeMapFrom2dTexture("Knife1", "2dTextureCube");
-    //engine.global.createCubeMapFrom2dTexture("WaterBottle2", "2dTextureCube");
-    //engine.global.createCubeMapFrom2dTexture(engine.textureStore.BRDFLUT_TEXTURE_ID, "2dTextureCube"); // doesn't work (missing mipmaps? format?)
-    engine.shaders.cubeShader.setFarPlane(1.0f); // cube around center
-    engine.shaders.cubeShader.setSkybox("2dTextureCube");
+    engine->global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
+    //engine->global.createCubeMapFrom2dTexture("Knife1", "2dTextureCube");
+    //engine->global.createCubeMapFrom2dTexture("WaterBottle2", "2dTextureCube");
+    //engine->global.createCubeMapFrom2dTexture(engine->textureStore.BRDFLUT_TEXTURE_ID, "2dTextureCube"); // doesn't work (missing mipmaps? format?)
+    engine->shaders.cubeShader.setFarPlane(1.0f); // cube around center
+    engine->shaders.cubeShader.setSkybox("2dTextureCube");
 
-    //engine.shaders.lineShader.initialUpload();
-    engine.shaders.pbrShader.initialUpload();
-    //engine.shaders.cubeShader.initialUpload();
-    engine.shaders.billboardShader.initialUpload();
+    //engine->shaders.lineShader.initialUpload();
+    engine->shaders.pbrShader.initialUpload();
+    //engine->shaders.cubeShader.initialUpload();
+    engine->shaders.billboardShader.initialUpload();
     // last thing in init() should always be texture description creation
 }
 
 void GeneratedTexturesApp::drawFrame(ThreadResources& tr) {
     updatePerFrame(tr);
-    engine.shaders.submitFrame(tr);
+    engine->shaders.submitFrame(tr);
 }
 
 void GeneratedTexturesApp::updatePerFrame(ThreadResources& tr)
 {
     static double old_seconds = 0.0f;
-    double seconds = engine.gameTime.getTimeSeconds();
+    double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
         return;
@@ -258,8 +258,8 @@ void GeneratedTexturesApp::updatePerFrame(ThreadResources& tr)
     lubo2.view = v2;
 
     // dynamic lines:
-    engine.shaders.lineShader.clearLocalLines(tr);
-    float aspectRatio = engine.getAspect();
+    engine->shaders.lineShader.clearLocalLines(tr);
+    float aspectRatio = engine->getAspect();
     static float plus = 0.0f;
     LineDef myLines[] = {
         // start, end, color
@@ -271,12 +271,12 @@ void GeneratedTexturesApp::updatePerFrame(ThreadResources& tr)
     vector<LineDef> lines;
     // add all intializer objects to vector:
     for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
-    engine.shaders.lineShader.addOneTime(lines, tr);
+    engine->shaders.lineShader.addOneTime(lines, tr);
 
-    engine.shaders.lineShader.prepareAddLines(tr);
+    engine->shaders.lineShader.prepareAddLines(tr);
     //Log("lines proj" << endl);
     //Util::printMatrix(lubo.proj);
-    engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
+    engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
 
     // cube
     CubeShader::UniformBufferObject cubo{};
@@ -286,7 +286,7 @@ void GeneratedTexturesApp::updatePerFrame(ThreadResources& tr)
     cubo.proj = lubo.proj;
     auto cubo2 = cubo;
     cubo2.view = cubo.view;
-    engine.shaders.cubeShader.uploadToGPU(tr, cubo, cubo2, true);
+    engine->shaders.cubeShader.uploadToGPU(tr, cubo, cubo2, true);
  
     // pbr
     PBRShader::UniformBufferObject pubo{};
@@ -296,13 +296,13 @@ void GeneratedTexturesApp::updatePerFrame(ThreadResources& tr)
     pubo.proj = lubo.proj;
     auto pubo2 = pubo;
     pubo2.view = lubo2.view;
-    engine.shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
+    engine->shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
     // change individual objects position:
-    //auto grp = engine.objectStore.getGroup("knife_group");
-    for (auto& wo : engine.objectStore.getSortedList()) {
+    //auto grp = engine->objectStore.getGroup("knife_group");
+    for (auto& wo : engine->objectStore.getSortedList()) {
         //Log(" adapt object " << obj.get()->objectNum << endl);
         //WorldObject *wo = obj.get();
-        PBRShader::DynamicUniformBufferObject* buf = engine.shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
+        PBRShader::DynamicUniformBufferObject* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
         mat4 modeltransform;
         bool moveObjects = false;
         if (moveObjects) {
@@ -333,7 +333,7 @@ void GeneratedTexturesApp::updatePerFrame(ThreadResources& tr)
     bubo.proj = lubo.proj;
     auto bubo2 = bubo;
     bubo2.view = lubo2.view;
-    engine.shaders.billboardShader.uploadToGPU(tr, bubo, bubo2);
+    engine->shaders.billboardShader.uploadToGPU(tr, bubo, bubo2);
     //Util::printMatrix(bubo.proj);
 }
 

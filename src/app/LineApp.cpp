@@ -17,17 +17,17 @@ void LineApp::run()
         initCamera();
         // engine configuration
         enableEventsAndModes();
-        engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
-        engine.files.findAssetFolder("data");
-        //engine.setFrameCountLimit(1000);
-        engine.setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
-        //engine.setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
-        //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
+        engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
+        engine->files.findAssetFolder("data");
+        //engine->setFrameCountLimit(1000);
+        engine->setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
+        //engine->setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
+        //engine->setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
         int win_width = 960;// 960;//1800;// 800;//3700;
-        engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Vulkan Simple Line App");
-        camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.1f, 2000.0f);
+        engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Vulkan Simple Line App");
+        camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);
 
-        engine.registerApp(this);
+        engine->registerApp(this);
         initEngine("LineApp");
 
         // add shaders used in this app
@@ -47,7 +47,7 @@ void LineApp::run()
 
 void LineApp::init() {
     // add some lines:
-    float aspectRatio = engine.getAspect();
+    float aspectRatio = engine->getAspect();
     float plus = 0.0f;
     LineDef myLines[] = {
         // start, end, color
@@ -60,8 +60,8 @@ void LineApp::init() {
     // loading objects
     // TODO currently wireframe rendering is bugged
     if (false) {
-        engine.meshStore.loadMeshWireframe("WaterBottle.glb", "WaterBottle", lines);
-        auto o = engine.meshStore.getMesh("WaterBottle");
+        engine->meshStore.loadMeshWireframe("WaterBottle.glb", "WaterBottle", lines);
+        auto o = engine->meshStore.getMesh("WaterBottle");
         Log("Object loaded: " << o->id.c_str() << endl);
     }
 
@@ -71,24 +71,24 @@ void LineApp::init() {
     //LineShader::addZeroCross(lines);
     //LineShader::addCross(lines, vec3(1.0f, 1.0f, 1.0f), vec4(1.0f, 1.0f, 0.0f, 1.0f));
 
-    engine.shaders.lineShader.addFixedGlobalLines(lines);
+    engine->shaders.lineShader.addFixedGlobalLines(lines);
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     // Grid with 1m squares, floor on -10m, ceiling on 372m
 
-	engine.shaders.lineShader.uploadFixedGlobalLines();
+	engine->shaders.lineShader.uploadFixedGlobalLines();
 }
 
 void LineApp::drawFrame(ThreadResources& tr) {
     updatePerFrame(tr);
-    engine.shaders.submitFrame(tr);
+    engine->shaders.submitFrame(tr);
 }
 
 void LineApp::updatePerFrame(ThreadResources& tr)
 {
     static double old_seconds = 0.0f;
-    double seconds = engine.gameTime.getTimeSeconds();
+    double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
         return;
@@ -109,7 +109,7 @@ void LineApp::updatePerFrame(ThreadResources& tr)
     applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
 
     // dynamic lines:
-    float aspectRatio = engine.getAspect();
+    float aspectRatio = engine->getAspect();
     static float plus = 0.0f;
     LineDef myLines[] = {
         // start, end, color
@@ -125,10 +125,10 @@ void LineApp::updatePerFrame(ThreadResources& tr)
     //plus = 0.021f;
     vector<LineDef> oneTimelines;
     // add all intializer objects to vector:
-    engine.shaders.lineShader.clearLocalLines(tr);
+    engine->shaders.lineShader.clearLocalLines(tr);
     for_each(begin(myLines), end(myLines), [&oneTimelines](LineDef l) {oneTimelines.push_back(l); });
-    engine.shaders.lineShader.addOneTime(oneTimelines, tr);
-    engine.shaders.lineShader.prepareAddLines(tr);
+    engine->shaders.lineShader.addOneTime(oneTimelines, tr);
+    engine->shaders.lineShader.prepareAddLines(tr);
 
     vector<LineDef> permlines;
     bool doSingleUpdate = false; // debug: enable single permanent update
@@ -136,27 +136,27 @@ void LineApp::updatePerFrame(ThreadResources& tr)
         if (tr.frameNum == 11) {
             // single update
             increaseLineStack(permlines);
-            engine.shaders.lineShader.addPermament(permlines, tr);
+            engine->shaders.lineShader.addPermament(permlines, tr);
         }
         if (tr.frameNum == 100) {
             // single update
             increaseLineStack(permlines);
-            engine.shaders.lineShader.addPermament(permlines, tr);
+            engine->shaders.lineShader.addPermament(permlines, tr);
         }
         if (tr.frameNum == 200) {
             // single update
             increaseLineStack(permlines);
-            engine.shaders.lineShader.addPermament(permlines, tr);
+            engine->shaders.lineShader.addPermament(permlines, tr);
         }
     } else {
         if ((tr.frameNum + 9) % 10 == 0) {
             // global update
             increaseLineStack(permlines);
-            engine.shaders.lineShader.addPermament(permlines, tr);
+            engine->shaders.lineShader.addPermament(permlines, tr);
         }
     }
 
-    engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
+    engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
     
     //logCameraPosition();
     //this_thread::sleep_for(chrono::milliseconds(300));
@@ -167,7 +167,7 @@ void LineApp::increaseLineStack(std::vector<LineDef>& lines)
     currentLineStackCount++;
     auto col = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
     for (int i = 0; i < currentLineStackCount; i++) {
-        float fac = 0.001f * engine.getAspect() * i;
+        float fac = 0.001f * engine->getAspect() * i;
         auto a1 = glm::vec3(-0.25f, fac, -0.25f);
         auto a2 = glm::vec3( 0.25f, fac, -0.25f);
         auto a3 = glm::vec3( 0.25f, fac,  0.25f);

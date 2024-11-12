@@ -21,8 +21,6 @@ public:
     void addRandomRock(RockInfo ri, std::vector<WorldObject*>& rockList);
 
 private:
-    ShadedPathEngine engine;
-    Shaders& shaders = engine.shaders;
     void updatePerFrame(ThreadResources& tr);
     WorldObject* worldObject = nullptr;
     WorldObject* gun = nullptr;

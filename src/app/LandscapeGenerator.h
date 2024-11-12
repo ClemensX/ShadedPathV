@@ -11,8 +11,8 @@ public:
     void handleInput(InputState& inputState) override;
     void buildCustomUI() override;
 private:
-    ShadedPathEngine engine;
-    Shaders& shaders = engine.shaders;
+    ShadedPathEngine *engine;
+    Shaders& shaders = engine->shaders;
     void updatePerFrame(ThreadResources& tr);
     CameraPositioner_AutoMove* autoMovePositioner;
     InputState input;

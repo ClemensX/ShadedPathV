@@ -19,19 +19,19 @@ void LandscapeGenerator::run()
         initCamera();
         // engine configuration
         enableEventsAndModes();
-        engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
-        engine.files.findAssetFolder("data");
-        engine.setMaxTextures(20);
+        engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
+        engine->files.findAssetFolder("data");
+        engine->setMaxTextures(20);
         setHighBackbufferResolution();
         int win_width = 800;//480;// 960;//1800;// 800;//3700; // 2500
-        engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Landscape Generator (Diamond Square Algorithm)");
-        //camera.saveProjection(perspective(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f));
-        camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f);
+        engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Landscape Generator (Diamond Square Algorithm)");
+        //camera.saveProjection(perspective(glm::radians(45.0f), engine->getAspect(), 0.01f, 4300.0f));
+        camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 4300.0f);
 
-        engine.registerApp(this);
+        engine->registerApp(this);
         initEngine("LandscapeGenerator");
 
-        engine.textureStore.generateBRDFLUT();
+        engine->textureStore.generateBRDFLUT();
 
         // add shaders used in this app
         shaders
@@ -56,20 +56,20 @@ void LandscapeGenerator::init() {
     //world.setWorldSize(10.0f, 382.0f, 10.0f);
 
     // add some lines:
-    float aspectRatio = engine.getAspect();
+    float aspectRatio = engine->getAspect();
 
-    //engine.shaders.lineShader.initialUpload();
+    //engine->shaders.lineShader.initialUpload();
 }
 
 void LandscapeGenerator::drawFrame(ThreadResources& tr) {
     updatePerFrame(tr);
-    engine.shaders.submitFrame(tr);
+    engine->shaders.submitFrame(tr);
 }
 
 void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
 {
     static double old_seconds = 0.0f;
-    double seconds = engine.gameTime.getTimeSeconds();
+    double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
         return;
@@ -87,7 +87,7 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
     old_seconds = seconds;
 
     // lines
-    //engine.shaders.lineShader.clearLocalLines(tr);
+    //engine->shaders.lineShader.clearLocalLines(tr);
     {
         // thread protection needed
         if (parameters.generate && parameters.n > 0) {
@@ -108,11 +108,11 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
             lines.clear();
             heightmap.getLines(lines);
             heightmap.adaptLinesToWorld(lines, world);
-            //engine.shaders.lineShader.updateGlobal(lines);
+            //engine->shaders.lineShader.updateGlobal(lines);
             //vector<vec3> plist;
             //heightmap.getPoints(plist);
             //Log("num points: " << plist.size() << endl);
-            engine.shaders.lineShader.addPermament(lines, tr);
+            engine->shaders.lineShader.addPermament(lines, tr);
         }
     }
 
@@ -122,22 +122,22 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
     //lubo.view = camera->getViewMatrix();
     //lubo.proj = camera->getProjectionNDC();
     //// we still need to call prepareAddLines() even if we didn't actually add some
-    //engine.shaders.lineShader.prepareAddLines(tr);
+    //engine->shaders.lineShader.prepareAddLines(tr);
 
     //// TODO hack 2nd view
     //mat4 v2 = translate(lubo.view, vec3(0.3f, 0.0f, 0.0f));
     //auto lubo2 = lubo;
     //lubo2.view = v2;
 
-    //engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
+    //engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
     // lines
     LineShader::UniformBufferObject lubo{};
     LineShader::UniformBufferObject lubo2{};
     lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
-    engine.shaders.lineShader.prepareAddLines(tr);
-    engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
+    engine->shaders.lineShader.prepareAddLines(tr);
+    engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
 }
 
 void LandscapeGenerator::handleInput(InputState& inputState)
@@ -336,5 +336,5 @@ void LandscapeGenerator::writeHeightmapToRawFile()
 {
     vector<glm::vec3> points;
     heightmap.getPoints(points);
-    engine.util.writeHeightmapRaw(points);
+    engine->util.writeHeightmapRaw(points);
 }

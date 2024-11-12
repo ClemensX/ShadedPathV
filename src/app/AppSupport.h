@@ -7,7 +7,7 @@
 // move functionality from app code to this class if it is useful to more than one app.
 // Apps need to subclass this class to be able to use it.
 
-class AppSupport
+class AppSupport : public ShadedPathEngineParticipant
 {
 protected:
     bool enableLines = false;
@@ -25,12 +25,9 @@ protected:
     CameraPositioner_FirstPerson fpPositioner;
     CameraPositioner_HMD hmdPositioner;
     InputState input;
-    ShadedPathEngine* engine = nullptr;
     World world;
     bool activePositionerIsHMD = false;
-    void setEngine(ShadedPathEngine& engine_) {
-        engine = &engine_;
-    }
+
     void createFirstPersonCameraPositioner(const glm::vec3& pos, const glm::vec3& target, const glm::vec3& up) {
         fpPositioner = CameraPositioner_FirstPerson(pos, target, up);
         //fpPositioner.camAboveGround = 0.1f;

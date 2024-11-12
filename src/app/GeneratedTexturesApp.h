@@ -13,8 +13,8 @@ public:
     void handleInput(InputState& inputState) override;
 private:
     bool enableLines = false;
-    ShadedPathEngine engine;
-    Shaders& shaders = engine.shaders;
+    ShadedPathEngine *engine;
+    Shaders& shaders = engine->shaders;
     void updatePerFrame(ThreadResources& tr);
     //Camera* camera;
     //CameraPositioner_FirstPerson* positioner;

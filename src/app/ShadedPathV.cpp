@@ -26,6 +26,8 @@ int main()
     //    app.run();
     //}
     Log("ShadedPathV app\n");
+    ShadedPathEngineManager man;
+    ShadedPathEngine* engine = man.createEngine();
     Incoming app;
     //gltfTerrainApp app; // vr ok
     //LineApp app; // vr ok
@@ -37,5 +39,6 @@ int main()
     //gltfObjectsApp app; // vr ok, also skybox
     //LandscapeDemo app; // vr ok
     //LandscapeGenerator app; // vr ok with limited support
+    app.setEngine(engine);
     app.run();
 }

@@ -17,21 +17,21 @@ void BillboardDemo::run()
         initCamera();
         // engine configuration
         enableEventsAndModes();
-        engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
-        engine.files.findAssetFolder("data");
-        engine.setMaxTextures(10);
-        //engine.setFrameCountLimit(1000);
+        engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
+        engine->files.findAssetFolder("data");
+        engine->setMaxTextures(10);
+        //engine->setFrameCountLimit(1000);
         setHighBackbufferResolution();
-        //engine.setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
-        //engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
+        //engine->setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
+        //engine->setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
         int win_width = 960;//480;// 960;//1800;// 800;//3700; // 2500
-        engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Billboard Demo");
-        camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 2000.0f);
+        engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Billboard Demo");
+        camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 2000.0f);
 
-        engine.registerApp(this);
+        engine->registerApp(this);
         initEngine("BillboardDemo");
 
-        engine.textureStore.generateBRDFLUT();
+        engine->textureStore.generateBRDFLUT();
         //this_thread::sleep_for(chrono::milliseconds(3000));
         // add shaders used in this app
         shaders
@@ -84,20 +84,20 @@ void BillboardDemo::init() {
     //world.setWorldSize(10.0f, 382.0f, 10.0f);
 
     // load skybox cube texture
-    //engine.textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
-    //engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
-    engine.textureStore.loadTexture("debug.ktx", "2dTexture");
-    engine.textureStore.loadTexture("eucalyptus.ktx2", "tree");
-    engine.textureStore.loadTexture("shadedpath_logo.ktx2", "logo");
-    //engine.textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
-    engine.textureStore.loadTexture("heightbig.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT);
-    unsigned int texIndexTree = engine.textureStore.getTexture("tree")->index;
-    unsigned int texIndexLogo = engine.textureStore.getTexture("logo")->index;
+    //engine->textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
+    //engine->textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
+    engine->textureStore.loadTexture("debug.ktx", "2dTexture");
+    engine->textureStore.loadTexture("eucalyptus.ktx2", "tree");
+    engine->textureStore.loadTexture("shadedpath_logo.ktx2", "logo");
+    //engine->textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
+    engine->textureStore.loadTexture("heightbig.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT);
+    unsigned int texIndexTree = engine->textureStore.getTexture("tree")->index;
+    unsigned int texIndexLogo = engine->textureStore.getTexture("logo")->index;
     unsigned int texIndex = texIndexTree;
-    unsigned int texIndexHeightmap = engine.textureStore.getTexture("heightmap")->index;
+    unsigned int texIndexHeightmap = engine->textureStore.getTexture("heightmap")->index;
     shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
     // add some lines:
-    float aspectRatio = engine.getAspect();
+    float aspectRatio = engine->getAspect();
     float plus = 0.0f;
     LineDef myLines[] = {
         // start, end, color
@@ -129,36 +129,36 @@ void BillboardDemo::init() {
     //for_each(begin(myBillboards), end(myBillboards), [&billboards](BillboardDef l) {billboards.push_back(l); });
     addRandomBillboards(billboards, world, texIndex, aspectRatio);
 
-    engine.shaders.billboardShader.add(billboards);
+    engine->shaders.billboardShader.add(billboards);
 
     // Grid with 1m squares, floor on -10m, ceiling on 372m
     Grid* grid = world.createWorldGrid(1.0f, 0.0f);
-    //engine.shaders.lineShader.add(grid->lines);
-    engine.shaders.lineShader.addFixedGlobalLines(lines);
+    //engine->shaders.lineShader.add(grid->lines);
+    engine->shaders.lineShader.addFixedGlobalLines(lines);
 
     // select texture by uncommenting:
-    engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
-    //engine.global.createCubeMapFrom2dTexture("Knife1", "2dTextureCube");
-    //engine.global.createCubeMapFrom2dTexture("WaterBottle2", "2dTextureCube");
-    //engine.global.createCubeMapFrom2dTexture(engine.textureStore.BRDFLUT_TEXTURE_ID, "2dTextureCube"); // doesn't work (missing mipmaps? format?)
-    engine.shaders.cubeShader.setFarPlane(1.0f); // cube around center
-    engine.shaders.cubeShader.setSkybox("2dTextureCube");
+    engine->global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
+    //engine->global.createCubeMapFrom2dTexture("Knife1", "2dTextureCube");
+    //engine->global.createCubeMapFrom2dTexture("WaterBottle2", "2dTextureCube");
+    //engine->global.createCubeMapFrom2dTexture(engine->textureStore.BRDFLUT_TEXTURE_ID, "2dTextureCube"); // doesn't work (missing mipmaps? format?)
+    engine->shaders.cubeShader.setFarPlane(1.0f); // cube around center
+    engine->shaders.cubeShader.setSkybox("2dTextureCube");
 
-    //engine.shaders.lineShader.initialUpload();
-    //engine.shaders.pbrShader.initialUpload();
-    //engine.shaders.cubeShader.initialUpload();
-    engine.shaders.billboardShader.initialUpload();
+    //engine->shaders.lineShader.initialUpload();
+    //engine->shaders.pbrShader.initialUpload();
+    //engine->shaders.cubeShader.initialUpload();
+    engine->shaders.billboardShader.initialUpload();
 }
 
 void BillboardDemo::drawFrame(ThreadResources& tr) {
     updatePerFrame(tr);
-    engine.shaders.submitFrame(tr);
+    engine->shaders.submitFrame(tr);
 }
 
 void BillboardDemo::updatePerFrame(ThreadResources& tr)
 {
     static double old_seconds = 0.0f;
-    double seconds = engine.gameTime.getTimeSeconds();
+    double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
         return;
@@ -177,9 +177,9 @@ void BillboardDemo::updatePerFrame(ThreadResources& tr)
     lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     // we still need to call prepareAddLines() even if we didn't actually add some
-    engine.shaders.lineShader.prepareAddLines(tr);
+    engine->shaders.lineShader.prepareAddLines(tr);
     applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
-    engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
+    engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
 
     // cube
     CubeShader::UniformBufferObject cubo{};
@@ -192,7 +192,7 @@ void BillboardDemo::updatePerFrame(ThreadResources& tr)
     //cubo.proj = lubo.proj;
     //cubo2.view = lubo2.view; // uncomment to have stationary cube, not centered at camera
     //cubo2.proj = lubo2.proj;
-    engine.shaders.cubeShader.uploadToGPU(tr, cubo, cubo2, true);
+    engine->shaders.cubeShader.uploadToGPU(tr, cubo, cubo2, true);
  
     // billboards
     BillboardShader::UniformBufferObject bubo{};
@@ -200,7 +200,7 @@ void BillboardDemo::updatePerFrame(ThreadResources& tr)
     bubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     bubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     applyViewProjection(bubo.view, bubo.proj, bubo2.view, bubo2.proj);
-    engine.shaders.billboardShader.uploadToGPU(tr, bubo, bubo2);
+    engine->shaders.billboardShader.uploadToGPU(tr, bubo, bubo2);
     //Util::printMatrix(bubo.proj);
 }
 
