@@ -262,6 +262,9 @@ public:
     bool renderThreadDebugLog = false;
     bool debugWindowPosition = false; // app window in right screen part
 
+    // move static fields of the other classes here to enamble multi-engine support
+    int threadResourcesCount = 0;
+
 private:
     static ShadedPathEngine* instance;
     thread_local static bool isUpdateThread_;
@@ -325,19 +328,6 @@ private:
     std::atomic<long> nextFreeFrameNum = 0;
 
     friend class ShadedPathEngineManager;
-};
-
-// almost all classes need a reference to the engine
-class ShadedPathEngineParticipant
-{
-public:
-    void setEngine(ShadedPathEngine* link) {
-        engine = link;
-    };
-    ShadedPathEngine* getEngine() {
-        return engine;
-    }
-    ShadedPathEngine* engine = nullptr;
 };
 
 class ShadedPathEngineManager

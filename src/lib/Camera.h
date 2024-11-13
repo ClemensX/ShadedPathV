@@ -78,21 +78,13 @@ public:
 	Movement movement;
 };
 
-class  Camera {
+class  Camera : public ShadedPathEngineParticipant {
 public:
 	Camera(ShadedPathEngine* engine_) {
-		engine = engine_;
+        setEngine(engine_);
 	}
 
 	Camera() {
-	}
-
-	void setEngine(ShadedPathEngine* engine_) {
-		engine = engine_;
-	}
-
-	ShadedPathEngine* getEngine() {
-        return engine;
 	}
 
 	void changePositioner(CameraPositionerInterface& positioner_) {
@@ -159,7 +151,6 @@ private:
 
 	CameraPositionerInterface* positioner = nullptr;
 	glm::mat4 projection = glm::mat4(1.0f);
-	ShadedPathEngine* engine = nullptr;
 	float fovy, aspect, nearZ, farZ;
 };
 

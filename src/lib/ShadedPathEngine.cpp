@@ -64,9 +64,10 @@ void ShadedPathEngine::enableUI() {
 void ShadedPathEngine::setFramesInFlight(int n) {
     if (initialized) Error("Configuration after intialization not allowed");
     framesInFlight = n;
-    threadResources.resize(framesInFlight);
-    for (auto& threadRes : threadResources) {
-        //threadRes. = empty;
+    assert(threadResources.size() == 0); // only call once
+    threadResources.reserve(framesInFlight);
+    for (int i = 0; i < framesInFlight; i++) {
+        threadResources.emplace_back(this); // construct elements in place
     }
 }
 

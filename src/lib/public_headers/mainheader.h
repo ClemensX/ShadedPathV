@@ -304,6 +304,7 @@ double static const PI_quarter = PI / 4.0;
 
 // engine headers
 
+#include "EngineParticipant.h"
 #include "Files.h"
 #include "GameTime.h"
 #include "Util.h"
