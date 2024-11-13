@@ -9,7 +9,7 @@ void LandscapeGenerator::run()
 {
     Log("LandscapeGenerator started" << endl);
     {
-        setEngine(engine);
+        auto& shaders = engine->shaders;
         // camera initialization
         createFirstPersonCameraPositioner(glm::vec3(241.638f, 732.069f, 2261.37f), glm::vec3(-0.108512f, -0.289912f, -0.950882f), glm::vec3(0.0f, 1.0f, 0.0f));
         createHMDCameraPositioner(glm::vec3(241.638f, 732.069f, 2261.37f), glm::vec3(-0.108512f, -0.289912f, -0.950882f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -146,12 +146,12 @@ void LandscapeGenerator::handleInput(InputState& inputState)
         // switch camera type
         useAutoCamera = useAutoCameraCheckbox;
         if (useAutoCamera) {
-            camera->changePositioner(*autoMovePositioner);
+            camera->changePositioner(autoMovePositioner);
         } else {
             if (vr) {
-                camera->changePositioner(*getHMDCameraPositioner());
+                camera->changePositioner(getHMDCameraPositioner());
             } else {
-                camera->changePositioner(*getFirstPersonCameraPositioner());
+                camera->changePositioner(getFirstPersonCameraPositioner());
             }
         }
     }
@@ -176,7 +176,7 @@ void LandscapeGenerator::handleInput(InputState& inputState)
         if (key == GLFW_KEY_H && press)
 			writeHeightmapToRawFile();
         if (key == GLFW_KEY_P && press)
-			shaders.backBufferImageDumpNextFrame();
+			engine->shaders.backBufferImageDumpNextFrame();
         if (key == GLFW_KEY_W) {
             fpPositioner->movement.forward_ = press;
             hmdPositioner->movement.forward_ = press;

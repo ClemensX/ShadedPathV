@@ -11,12 +11,12 @@ void DeviceCoordApp::run()
     {
         auto& shaders = engine->shaders;
         // camera initialization
-        CameraPositioner_FirstPerson positioner(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        positioner_.init(engine, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        positioner = &positioner_;
         Camera camera;
         camera.setEngine(engine);
         camera.changePositioner(positioner);
         this->camera = &camera;
-        this->positioner = &positioner;
         engine->enableKeyEvents();
         engine->enableMousButtonEvents();
         engine->enableMouseMoveEvents();

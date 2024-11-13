@@ -4,8 +4,6 @@ using namespace std;
 
 thread_local bool ShadedPathEngine::isUpdateThread_ = false; // static
 
-ShadedPathEngine* ShadedPathEngine::instance = nullptr;
-
 void ShadedPathEngine::init(string appname)
 {
     this->appname = appname;
@@ -458,5 +456,4 @@ ShadedPathEngine::~ShadedPathEngine()
     ThemedTimer::getInstance()->logInfo(TIMER_PART_BUFFER_COPY);
     ThemedTimer::getInstance()->logInfo(TIMER_PART_GLOBAL_UPDATE);
     ThemedTimer::getInstance()->logInfo(TIMER_PART_OPENXR);
-    instance = nullptr;
 }

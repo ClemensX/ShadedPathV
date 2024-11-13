@@ -29,7 +29,6 @@ private:
     {
         Log("Engine c'tor\n");
         files.findFxFolder();
-        instance = this;
     }
 
 public:
@@ -39,9 +38,6 @@ public:
 
     virtual ~ShadedPathEngine();
 
-    static ShadedPathEngine* getInstance() {
-        return instance;
-    }
     // engine state - may be read by apps
     enum State {
         INIT,        // before any rendering, all file loading should be done here
@@ -266,7 +262,6 @@ public:
     int threadResourcesCount = 0;
 
 private:
-    static ShadedPathEngine* instance;
     thread_local static bool isUpdateThread_;
     ThreadGroup& getThreadGroup() {
         return threads;

@@ -10,7 +10,8 @@ public:
 private:
     void updatePerFrame(ThreadResources& tr);
     Camera* camera;
-    CameraPositioner_FirstPerson* positioner;
+    CameraPositioner_FirstPerson* positioner = nullptr;
+    CameraPositioner_FirstPerson positioner_;
     // mouse pos in device coords: [0..1]
     //glm::vec2 mouseDevicePos = glm::vec2(0.0f);
     InputState input;

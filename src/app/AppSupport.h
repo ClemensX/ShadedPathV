@@ -29,11 +29,11 @@ protected:
     bool activePositionerIsHMD = false;
 
     void createFirstPersonCameraPositioner(const glm::vec3& pos, const glm::vec3& target, const glm::vec3& up) {
-        fpPositioner = CameraPositioner_FirstPerson(pos, target, up);
+        fpPositioner.init(engine, pos, target, up);
         //fpPositioner.camAboveGround = 0.1f;
     }
     void createHMDCameraPositioner(const glm::vec3& pos, const glm::vec3& target, const glm::vec3& up) {
-        hmdPositioner = CameraPositioner_HMD(pos, target, up);
+        hmdPositioner.init(engine, pos, target, up);
     }
     CameraPositioner_FirstPerson* getFirstPersonCameraPositioner() {
         return &fpPositioner;
@@ -45,10 +45,10 @@ protected:
         camera2.setEngine(engine);
         getHMDCameraPositioner()->setCamera(&camera2);
         if (vr) {
-            camera2.changePositioner(hmdPositioner);
+            camera2.changePositioner(&hmdPositioner);
             activePositionerIsHMD = true;
         } else {
-            camera2.changePositioner(fpPositioner);
+            camera2.changePositioner(&fpPositioner);
             activePositionerIsHMD = false;
         }
         this->camera = &camera2;
@@ -119,7 +119,7 @@ protected:
         engine->init(name);
         // even if we wanted VR initialization may have failed, fallback to non-VR
         if (!engine->isVR()) {
-            camera->changePositioner(fpPositioner);
+            camera->changePositioner(&fpPositioner);
             activePositionerIsHMD = false;
         }
         engine->setWorld(&world);
