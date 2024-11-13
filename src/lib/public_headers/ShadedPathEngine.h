@@ -336,6 +336,19 @@ public:
         return engines.back().get();
     }
 
+    // delete engine instance by pointer
+    void deleteEngine(ShadedPathEngine* engine)
+    {
+        for (auto it = engines.begin(); it != engines.end(); ++it)
+        {
+            if (it->get() == engine)
+            {
+                engines.erase(it);
+                return;
+            }
+        }
+    }
+
     // Get an engine instance by index
     ShadedPathEngine* getEngine(size_t index)
     {

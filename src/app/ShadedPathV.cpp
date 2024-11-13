@@ -27,13 +27,14 @@ int main()
     //}
     Log("ShadedPathV app\n");
     ShadedPathEngineManager man;
-    ShadedPathEngine* engine = man.createEngine();
+    ShadedPathEngine* engine = nullptr;
     {
-        Incoming app;
+        engine = man.createEngine();
+        //Incoming app;
         //gltfTerrainApp app; // vr ok
         //LineApp app; // vr ok
         //SimpleApp app; // vr ok (some stuttering - will not be investigated)
-        //DeviceCoordApp app; // vr not supported
+        DeviceCoordApp app; // vr not supported
         //BillboardDemo app; // vr ok
         //TextureViewer app; // vr ok
         //GeneratedTexturesApp app; // TODO: does not even work in 2D
@@ -42,11 +43,20 @@ int main()
         //LandscapeGenerator app; // vr ok with limited support
         app.setEngine(engine);
         app.run();
+        man.deleteEngine(engine);
     }
-    //engine = man.createEngine();
-    //{
-    //    Incoming app;
-    //    app.setEngine(engine);
-    //    app.run();
-    //}
+    {
+        engine = man.createEngine();
+        Incoming app;
+        app.setEngine(engine);
+        app.run();
+        man.deleteEngine(engine);
+    }
+    {
+        engine = man.createEngine();
+        Incoming app;
+        app.setEngine(engine);
+        app.run();
+        man.deleteEngine(engine);
+    }
 }

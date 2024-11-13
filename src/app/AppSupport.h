@@ -11,12 +11,12 @@ class AppSupport : public EngineParticipant
 {
 protected:
     bool enableLines = false;
-    bool enableUI = false;
+    bool enableUI = true;
     bool vr = false;
     bool stereo = false;
     bool enableSound = true;
     bool singleThreadMode = false;
-    bool debugWindowPosition = false; // if true try to open app window in right screen part
+    bool debugWindowPosition = true; // if true try to open app window in right screen part
     bool enableRenderDoc = true;
 
     bool firstPersonCameraAlwayUpright = true;
