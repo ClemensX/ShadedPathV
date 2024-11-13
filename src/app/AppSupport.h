@@ -7,11 +7,11 @@
 // move functionality from app code to this class if it is useful to more than one app.
 // Apps need to subclass this class to be able to use it.
 
-class AppSupport : public ShadedPathEngineParticipant
+class AppSupport : public EngineParticipant
 {
 protected:
     bool enableLines = false;
-    bool enableUI = true;
+    bool enableUI = false;
     bool vr = false;
     bool stereo = false;
     bool enableSound = true;

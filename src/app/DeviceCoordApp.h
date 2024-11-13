@@ -1,6 +1,6 @@
 #pragma once
 // render some lines in device coordinates to visualize Vulkan Normalized Device Coordinates (NDC Coordinates)
-class DeviceCoordApp : ShadedPathApplication
+class DeviceCoordApp : ShadedPathApplication, public EngineParticipant
 {
 public:
     void init();
@@ -8,8 +8,6 @@ public:
     void drawFrame(ThreadResources& tr) override;
     void handleInput(InputState& inputState) override;
 private:
-    ShadedPathEngine engine;
-    Shaders& shaders = engine.shaders;
     void updatePerFrame(ThreadResources& tr);
     Camera* camera;
     CameraPositioner_FirstPerson* positioner;

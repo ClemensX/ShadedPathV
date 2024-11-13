@@ -3,7 +3,7 @@
 // forward
 class ShadedPathEngine;
 
-class ShadedPathEngineParticipant
+class EngineParticipant
 {
 public:
     void setEngine(ShadedPathEngine* link) {

@@ -15,7 +15,7 @@ struct ShaderState
 	bool isPresent = false;
 };
 
-class Shaders : public ShadedPathEngineParticipant
+class Shaders : public EngineParticipant
 {
 	class Config {
 	public:

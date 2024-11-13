@@ -144,7 +144,7 @@ TEST(Engine, DumpTexture) {
         engine->registerApp((ShadedPathApplication*)&testApp);
         engine->init("Test");
         engine->textureStore.generateBRDFLUT();
-        engine->textureStore.loadTexture("height.ktx2", "heightmap");
+        engine->textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
         unsigned int texIndexHeightmap = engine->textureStore.getTexture("heightmap")->index;
         engine->shaders.addShader(engine->shaders.simpleShader);
         engine->shaders.initActiveShaders();

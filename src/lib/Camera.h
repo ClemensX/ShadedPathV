@@ -78,7 +78,7 @@ public:
 	Movement movement;
 };
 
-class  Camera : public ShadedPathEngineParticipant {
+class  Camera : public EngineParticipant {
 public:
 	Camera(ShadedPathEngine* engine_) {
         setEngine(engine_);
