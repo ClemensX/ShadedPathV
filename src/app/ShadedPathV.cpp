@@ -34,9 +34,9 @@ int main()
         //gltfTerrainApp app; // vr ok
         //LineApp app; // vr ok
         //SimpleApp app; // vr ok (some stuttering - will not be investigated)
-        DeviceCoordApp app; // vr not supported
+        //DeviceCoordApp app; // vr not supported
         //BillboardDemo app; // vr ok
-        //TextureViewer app; // vr ok
+        TextureViewer app; // vr ok
         //GeneratedTexturesApp app; // TODO: does not even work in 2D
         //gltfObjectsApp app; // vr ok, also skybox
         //LandscapeDemo app; // vr ok
@@ -45,13 +45,15 @@ int main()
         app.run();
         man.deleteEngine(engine);
     }
+    if (true)
     {
         engine = man.createEngine();
-        Incoming app;
+        TextureViewer app;
         app.setEngine(engine);
         app.run();
         man.deleteEngine(engine);
     }
+    if (false)
     {
         engine = man.createEngine();
         Incoming app;

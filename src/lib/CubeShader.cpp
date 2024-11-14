@@ -11,10 +11,8 @@ void CubeShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	vertShaderModule = resources.createShaderModule("cube.vert.spv");
 	fragShaderModule = resources.createShaderModule("cube.frag.spv");
 
-	// we need a buffer to keep validation happy - content is irrelevant
-	static Vertex verts[36];
 	VkDeviceSize bufferSize = sizeof(Vertex) * 36;
-	resources.createVertexBufferStatic(bufferSize, &(verts[0]), vertexBuffer, vertexBufferMemory);
+	resources.createVertexBufferStatic(bufferSize, &(verts_fake_buffer[0]), vertexBuffer, vertexBufferMemory);
 
 	// descriptor set layout
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);

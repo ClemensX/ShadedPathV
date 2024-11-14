@@ -56,7 +56,6 @@ void CameraPositioner_FirstPerson::update(double deltaSeconds,
 
 void CameraPositioner_HMD::update(int viewNum, glm::vec3 pos, glm::quat ori, glm::mat4 proj, glm::mat4 view, glm::mat4 viewCam) {
 	//Log("HMD update" << std::endl);
-	//static glm::quat lastOriLeft = glm::vec3(1.0f);
 	auto normori = glm::normalize(ori);
 	lastOrientation = ori;
 	lastCameraViewMatrix = viewCam;

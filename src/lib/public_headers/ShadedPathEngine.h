@@ -258,7 +258,7 @@ public:
     bool renderThreadDebugLog = false;
     bool debugWindowPosition = false; // app window in right screen part
 
-    // move static fields of the other classes here to enamble multi-engine support
+    // move static fields of the other classes here to enable multi-engine support
     int threadResourcesCount = 0;
 
 private:

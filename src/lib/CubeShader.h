@@ -79,6 +79,9 @@ private:
 	VkBuffer vertexBuffer = nullptr;
 	VkDeviceMemory vertexBufferMemory = nullptr;
 	TextureInfo* skybox = nullptr;
+	// we need a buffer to keep validation happy - content is irrelevant
+	Vertex verts_fake_buffer[36];
+
 };
 
 struct CubeThreadResources : ShaderThreadResources {

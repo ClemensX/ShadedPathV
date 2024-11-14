@@ -9,7 +9,7 @@ void TextureViewer::run()
 {
     Log("TextureViewer started" << endl);
     {
-        setEngine(engine);
+        auto& shaders = engine->shaders;
         // camera initialization
         createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         createHMDCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -65,7 +65,7 @@ void TextureViewer::init() {
     unsigned int texIndexLogo = engine->textureStore.getTexture("logo")->index;
     unsigned int texIndex = texIndexTree;
     unsigned int texIndexHeightmap = engine->textureStore.getTexture("heightmap")->index;
-    shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
+    engine->shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
     // rocks
     engine->objectStore.createGroup("rocks_group");
     engine->meshStore.loadMesh("rocks_cmp.glb", "Rocks");
