@@ -249,7 +249,7 @@ public:
 	auto& getShaderUpdateQueue() {
 		return shaderUpdateQueue;
 	}
-    void pushUpdate(GlobalUpdateElement* updateElement);
+    void pushUpdate(int val);
     bool isUpdateThread() {
 		return threadModeSingle || isUpdateThread_;
 	}
@@ -294,11 +294,11 @@ private:
     ThreadGroup threads;
     RenderQueue queue;
     // we simply use indexes into the update array for handling resources
-    ThreadsafeWaitingQueue<GlobalUpdateElement*> shaderUpdateQueue;
+    ThreadsafeWaitingQueue<int> shaderUpdateQueue;
 
     // we need a separate update queue for threadModeSingle
     std::queue<ShaderUpdateElement*> shaderUpdateQueueSingle; // TODO: rework
-    static bool queueThreadFinished;
+    bool queueThreadFinished = false;
     void startRenderThreads();
     void startQueueSubmitThread();
     // global update thread for shuffling data to GPU in the background

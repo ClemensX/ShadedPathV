@@ -14,7 +14,6 @@ void Path::init(World* world, WorldObject* terrain, UltimateHeightmapInfo* hinfo
 
 void Path::updateCameraPosition(CameraPositionerInterface* camera, Movement& mv, double deltaSeconds)
 {
-    static float bug_dist = 0.0f, bug_time = 0.0f;
     auto cam = camera->getPosition();
 	float terrainHeight = world->getHeightmapValue(cam.x, cam.z);
     float intendedHeight = terrainHeight + mv.camAboveGround;

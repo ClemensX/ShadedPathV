@@ -45,15 +45,15 @@ int main()
         app.run();
         man.deleteEngine(engine);
     }
-    if (true)
+    if (false)
     {
         engine = man.createEngine();
-        TextureViewer app;
+        LandscapeGenerator app;
         app.setEngine(engine);
         app.run();
         man.deleteEngine(engine);
     }
-    if (false)
+    if (true)
     {
         engine = man.createEngine();
         Incoming app;

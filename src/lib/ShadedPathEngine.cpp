@@ -323,10 +323,8 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
     }
     //engine_instance->setRunning(false);
     LogF("run QueueSubmit end " << endl);
-    queueThreadFinished = true;
+    engine_instance->queueThreadFinished = true;
 }
-
-bool ShadedPathEngine::queueThreadFinished = false;
 
 void ShadedPathEngine::runUpdateThread(ShadedPathEngine* engine_instance)
 {
@@ -338,13 +336,13 @@ void ShadedPathEngine::runUpdateThread(ShadedPathEngine* engine_instance)
     LogCondF(LOG_QUEUE, "run shader update thread end" << endl);
 }
 
-void ShadedPathEngine::pushUpdate(GlobalUpdateElement* updateElement)
+void ShadedPathEngine::pushUpdate(int val)
 {
     //if (threadModeSingle) {
     //    shaderUpdateQueueSingle.push(updateElement);
     //    return;
     //}
-    shaderUpdateQueue.push(updateElement);
+    shaderUpdateQueue.push(val);
 }
 
 void ShadedPathEngine::startRenderThreads()

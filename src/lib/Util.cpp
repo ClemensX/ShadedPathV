@@ -466,7 +466,6 @@ void Util::writePPM(std::string filename, const char* imagedata, uint64_t width,
 
 void Util::writeHeightmapRaw(std::vector<glm::vec3>& points)
 {
-    static int imageCounter = 0;
     stringstream name;
     name << "out_heightmap_" << setw(2) << setfill('0') << imageCounter++ << ".raw";
     //auto filename = engine.files.findFile(name.str(), FileCategory::TEXTURE, false, true); // we rather use current directory, maybe reconsider later

@@ -171,7 +171,6 @@ MeshStore::~MeshStore()
 
 WorldObject::WorldObject() {
 	drawNormals = false;
-	objectNum = count++;
 }
 
 WorldObject::~WorldObject() {
@@ -258,7 +257,7 @@ void WorldObjectStore::addObjectPrivate(WorldObject* w, string id, vec3 pos, int
 	w->mesh = mesh;
 	w->alpha = 1.0f;
     w->userGroupId = userGroupId;
-	numObjects++;
+	w->objectNum = numObjects++;
 }
 
 const vector<WorldObject*>& WorldObjectStore::getSortedList()
@@ -420,5 +419,3 @@ bool WorldObject::isLineIntersectingBoundingBox(const vec3& lineStart, const vec
 float WorldObject::distanceTo(glm::vec3 pos) {
     return glm::length(pos - _pos);
 }
-
-atomic<UINT> WorldObject::count;

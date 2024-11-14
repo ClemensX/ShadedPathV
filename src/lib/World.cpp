@@ -184,8 +184,8 @@ void World::setHeightmap(TextureID heightmap)
 
 float World::getHeightmapValueWC(float xp, float zp)
 {
-	static size_t minIndex = heightmap->float_buffer.size() + 1000;
-	static size_t maxIndex = 0;
+	//static size_t minIndex = heightmap->float_buffer.size() + 1000;
+	//static size_t maxIndex = 0;
 	// check that we are within world borders:
     if (xp < minxz || xp > maxxz || zp < minxz || zp > maxxz) {
         Error("World::getHeightmapValueWC: coordinates out of world borders");
@@ -204,14 +204,14 @@ float World::getHeightmapValueWC(float xp, float zp)
 	if (index < 0 || index >= heightmap->float_buffer.size()) {
 		Error("World::getHeightmapValueWC: index out of range");
 	}
-    if (index < minIndex) {
-        minIndex = index;
-        //Log("minIndex: " << minIndex << std::endl);
-    }
-    if (index > maxIndex) {
-        maxIndex = index;
-        //Log("maxIndex: " << maxIndex << std::endl);
-    }
+    //if (index < minIndex) {
+    //    minIndex = index;
+    //    //Log("minIndex: " << minIndex << std::endl);
+    //}
+    //if (index > maxIndex) {
+    //    maxIndex = index;
+    //    //Log("maxIndex: " << maxIndex << std::endl);
+    //}
 	// convert world coords to texture coords:
 	if (heightmap->hasFlag(TextureFlags::ORIENTATION_RAW_START_WITH_XMAX_ZMAX)) {
         size_t i = heightmap->float_buffer.size() - index - 1;

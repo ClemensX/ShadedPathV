@@ -113,6 +113,7 @@ private:
     //PFN_vkDebugMarkerSetObjectNameEXT pfnDebugMarkerSetObjectNameEXT = nullptr;
     PFN_vkSetDebugUtilsObjectNameEXT pfnDebugUtilsObjectNameEXT = nullptr;
     ShadedPathEngine* engine = nullptr;
+    int imageCounter = 0;
 };
 
 class LogfileScanner

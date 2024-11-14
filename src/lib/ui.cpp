@@ -158,7 +158,8 @@ void UI::buildUI()
     if (!enabled)
         return;
     // switch between imgui demo window and our own
-    if (true) {
+    bool showImguiDemo = false;
+    if (!showImguiDemo) {
         bool open = false;
         bool* p_open = NULL;//&open; // no close button
 
@@ -170,7 +171,7 @@ void UI::buildUI()
         string appname = engine->appname;
         appname = "ShadedPath " + appname + " FPS: " + fps;
 
-        static int corner = 1;
+        int corner = 1;
         ImGuiIO& io = ImGui::GetIO();
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
         if (corner != -1)
