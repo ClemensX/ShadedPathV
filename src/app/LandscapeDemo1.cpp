@@ -9,7 +9,7 @@ void LandscapeDemo::run()
 {
     Log("LandscapeDemo started" << endl);
     {
-        setEngine(engine);
+        Shaders& shaders = engine->shaders;
         // camera initialization
         createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         createHMDCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -101,7 +101,7 @@ void LandscapeDemo::init() {
     unsigned int texIndexTree = engine->textureStore.getTexture("tree")->index;
     unsigned int texIndexLogo = engine->textureStore.getTexture("logo")->index;
     unsigned int texIndexHeightmap = engine->textureStore.getTexture("heightmap")->index;
-    shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
+    engine->shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
     // set texture index for billboards
     unsigned int texIndex = texIndexTree;
     //unsigned int texIndex = texIndexHeightmap;
@@ -181,7 +181,6 @@ void LandscapeDemo::drawFrame(ThreadResources& tr) {
 
 void LandscapeDemo::updatePerFrame(ThreadResources& tr)
 {
-    static double old_seconds = 0.0f;
     double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);

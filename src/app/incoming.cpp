@@ -210,7 +210,6 @@ void Incoming::drawFrame(ThreadResources& tr) {
 
 void Incoming::updatePerFrame(ThreadResources& tr)
 {
-    static double old_seconds = 0.0f;
     double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
@@ -262,7 +261,6 @@ void Incoming::updatePerFrame(ThreadResources& tr)
     engine->shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
     // change individual objects position:
     vector<LineDef> boundingBoxes;
-    static LineDef shootLine;
     vec3 finalGunPos(1000, 1000, 1000);
     for (auto& wo : engine->objectStore.getSortedList()) {
         PBRShader::DynamicUniformBufferObject* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
@@ -415,12 +413,6 @@ void Incoming::handleInput(InputState& inputState)
 
 void Incoming::buildCustomUI()
 {
-    static string helpText =
-        "g generate new seed\n"
-        "+ next Generation\n"
-        "- previous Generation\n"
-        "h write heightmap to file (VK_FORMAT_R32_SFLOAT)\n"
-        "p dump image";
     ImGui::Separator();
     int sizeX = world.getWorldSize().x;
     ImGui::Text("World size [m]: %d * %d", sizeX, sizeX);

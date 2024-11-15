@@ -9,7 +9,7 @@ void GeneratedTexturesApp::run()
 {
     Log("App started" << endl);
     {
-        setEngine(engine);
+        Shaders& shaders = engine->shaders;
         // camera initialization
         initCamera(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 1.0f, 0.0f));
         getFirstPersonCameraPositioner()->setMaxSpeed(0.1f);
@@ -51,7 +51,6 @@ void GeneratedTexturesApp::run()
             .addShader(shaders.clearShader)
             //.addShader(shaders.cubeShader)  // enable to render central cube with debug texture
             .addShader(shaders.billboardShader)
-            .addShader(shaders.lineShader)  // enable to see zero cross and billboard debug lines
             .addShader(shaders.pbrShader)
             ;
         if (enableLines) shaders.addShader(shaders.lineShader);
@@ -194,7 +193,7 @@ void GeneratedTexturesApp::init() {
 
     engine->textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
     unsigned int texIndexHeightmap = engine->textureStore.getTexture("heightmap")->index;
-    shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
+    engine->shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
 
 
     // add all intializer objects to vector:
@@ -231,7 +230,6 @@ void GeneratedTexturesApp::drawFrame(ThreadResources& tr) {
 
 void GeneratedTexturesApp::updatePerFrame(ThreadResources& tr)
 {
-    static double old_seconds = 0.0f;
     double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
@@ -260,7 +258,6 @@ void GeneratedTexturesApp::updatePerFrame(ThreadResources& tr)
     // dynamic lines:
     engine->shaders.lineShader.clearLocalLines(tr);
     float aspectRatio = engine->getAspect();
-    static float plus = 0.0f;
     LineDef myLines[] = {
         // start, end, color
         { glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },

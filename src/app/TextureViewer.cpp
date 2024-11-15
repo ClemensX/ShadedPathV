@@ -11,7 +11,7 @@ void TextureViewer::run()
     {
         auto& shaders = engine->shaders;
         // camera initialization
-        createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 20.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         createHMDCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         getFirstPersonCameraPositioner()->setMaxSpeed(5.0f);
         initCamera();
@@ -58,17 +58,17 @@ void TextureViewer::init() {
     //engine->textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
     engine->textureStore.loadTexture("debug.ktx", "2dTexture");
     engine->textureStore.loadTexture("eucalyptus.ktx2", "tree");
-    engine->textureStore.loadTexture("shadedpath_logo.ktx2", "logo");
-    //engine->textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
-    engine->textureStore.loadTexture("heightbig.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT);
     unsigned int texIndexTree = engine->textureStore.getTexture("tree")->index;
+    engine->textureStore.loadTexture("shadedpath_logo.ktx2", "logo");
     unsigned int texIndexLogo = engine->textureStore.getTexture("logo")->index;
+    engine->textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
+    //engine->textureStore.loadTexture("heightbig.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT);
     unsigned int texIndex = texIndexTree;
     unsigned int texIndexHeightmap = engine->textureStore.getTexture("heightmap")->index;
     engine->shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
     // rocks
-    engine->objectStore.createGroup("rocks_group");
-    engine->meshStore.loadMesh("rocks_cmp.glb", "Rocks");
+    //engine->objectStore.createGroup("rocks_group");
+    //engine->meshStore.loadMesh("rocks_cmp.glb", "Rocks");
 
     // add some lines:
     //scale tree height to 10m
@@ -133,7 +133,6 @@ void TextureViewer::drawFrame(ThreadResources& tr) {
 
 void TextureViewer::updatePerFrame(ThreadResources& tr)
 {
-    static double old_seconds = 0.0f;
     double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
@@ -195,8 +194,6 @@ static void HelpMarker(const char* desc)
 
 void TextureViewer::buildCustomUI()
 {
-    static string helpText =
-        "click to see texture names\n(leftmost on top)";
     int n;
     bool useAutoCameraCheckbox;
     if (!vr) {

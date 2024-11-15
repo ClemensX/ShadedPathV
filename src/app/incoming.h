@@ -36,6 +36,7 @@ private:
     bool enableIntersectTest = false;
     bool intersectTestModifyStartPoint = false;
     LineDef intersectTestLine;
+    LineDef shootLine;
     std::vector<WorldObject*> rockObjects;
 
     // game phases:

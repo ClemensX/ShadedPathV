@@ -9,7 +9,7 @@ void LineApp::run()
 {
     Log("SimpleApp started" << endl);
     {
-        setEngine(engine);
+        Shaders& shaders = engine->shaders;
         // camera initialization
         createFirstPersonCameraPositioner(glm::vec3(-0.36f, 0.0f, 2.340f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         createHMDCameraPositioner(glm::vec3(-0.38f, 0.10f, 0.82f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -87,7 +87,6 @@ void LineApp::drawFrame(ThreadResources& tr) {
 
 void LineApp::updatePerFrame(ThreadResources& tr)
 {
-    static double old_seconds = 0.0f;
     double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
@@ -110,7 +109,6 @@ void LineApp::updatePerFrame(ThreadResources& tr)
 
     // dynamic lines:
     float aspectRatio = engine->getAspect();
-    static float plus = 0.0f;
     LineDef myLines[] = {
         // start, end, color
         { glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },

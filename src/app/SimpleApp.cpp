@@ -9,7 +9,7 @@ void SimpleApp::run()
 {
     Log("SimpleApp started" << endl);
     {
-        setEngine(engine);
+        Shaders& shaders = engine->shaders;
         // camera initialization
         createFirstPersonCameraPositioner(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         createHMDCameraPositioner(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -90,7 +90,6 @@ void SimpleApp::drawFrame(ThreadResources& tr) {
 
 void SimpleApp::updatePerFrame(ThreadResources& tr)
 {
-    static double old_seconds = 0.0f;
     double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
@@ -105,7 +104,6 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
     old_seconds = seconds;
     SimpleShader::UniformBufferObject ubo{};
     SimpleShader::UniformBufferObject ubo2{};
-    static bool downmode;
     //float a = 0.3f; float b = 140.0f; float z = 15.0f;
     float a = 0.3f; float b = 14.0f; float z = 15.0f;
     // move object between a, a, a and b, b, b in z seconds
@@ -146,7 +144,6 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
     // dynamic lines:
     engine->shaders.lineShader.clearLocalLines(tr);
     float aspectRatio = engine->getAspect();
-    static float plus = 0.0f;
     LineDef myLines[] = {
         // start, end, color
         { glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },

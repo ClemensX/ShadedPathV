@@ -12,5 +12,6 @@ private:
     void updatePerFrame(ThreadResources& tr);
     World world;
     WorldObject *bottle = nullptr;
+    float plus = 0.0f;
 };
 

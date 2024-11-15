@@ -9,7 +9,7 @@ void gltfTerrainApp::run()
 {
     Log("gltfTerrainApp started" << endl);
     {
-        setEngine(engine);
+        Shaders& shaders = engine->shaders;
         // camera initialization
         createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         createHMDCameraPositioner(glm::vec3(0.0f, 70.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -110,7 +110,6 @@ void gltfTerrainApp::drawFrame(ThreadResources& tr) {
 
 void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
 {
-    static double old_seconds = 0.0f;
     double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
@@ -192,12 +191,6 @@ void gltfTerrainApp::handleInput(InputState& inputState)
 
 void gltfTerrainApp::buildCustomUI()
 {
-    static string helpText =
-        "g generate new seed\n"
-        "+ next Generation\n"
-        "- previous Generation\n"
-        "h write heightmap to file (VK_FORMAT_R32_SFLOAT)\n"
-        "p dump image";
     ImGui::Separator();
     int sizeX = world.getWorldSize().x;
     ImGui::Text("World size [m]: %d * %d", sizeX, sizeX);

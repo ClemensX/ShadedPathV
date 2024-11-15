@@ -120,7 +120,7 @@ typedef unsigned int UINT;
 
 //using namespace std;
 inline void LogFile(const char* s) {
-	static bool firstcall = true;
+	static bool firstcall = true; // exceptional use of local static field: reuse same log file for many engine runs in same process
 	std::ios_base::openmode mode;
 	if (firstcall) {
 		mode = std::ios::out;

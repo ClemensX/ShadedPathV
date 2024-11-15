@@ -122,7 +122,6 @@ void gltfObjectsApp::drawFrame(ThreadResources& tr) {
 
 void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
 {
-    static double old_seconds = 0.0f;
     double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
@@ -146,7 +145,6 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
     applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
 
     // dynamic lines:
-    static float plus = 0.0f;
     plus += 0.001f;
     if (enableLines) {
         engine->shaders.lineShader.clearLocalLines(tr);

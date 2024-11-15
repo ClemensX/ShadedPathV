@@ -38,4 +38,11 @@ private:
     std::mutex monitorMutex;
     bool useAutoCamera = false;
     bool useAutoCameraCheckbox = false;
+    std::string helpText =
+        "g generate new seed\n"
+        "+ next Generation\n"
+        "- previous Generation\n"
+        "h write heightmap to file (VK_FORMAT_R32_SFLOAT)\n"
+        "p dump image";
+    Parameters localp = initialParameters;
 };

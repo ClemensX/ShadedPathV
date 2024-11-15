@@ -378,4 +378,6 @@ public:
     virtual void drawFrame(ThreadResources& tr) = 0;
     virtual void handleInput(InputState& inputState) = 0;
     virtual void buildCustomUI() {};
+protected:
+    double old_seconds = 0.0f;
 };

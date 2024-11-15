@@ -9,7 +9,7 @@ void BillboardDemo::run()
 {
     Log("BillboardDemo started" << endl);
     {
-        setEngine(engine);
+        Shaders& shaders = engine->shaders;
         // camera initialization
         createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         createHMDCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -95,7 +95,7 @@ void BillboardDemo::init() {
     unsigned int texIndexLogo = engine->textureStore.getTexture("logo")->index;
     unsigned int texIndex = texIndexTree;
     unsigned int texIndexHeightmap = engine->textureStore.getTexture("heightmap")->index;
-    shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
+    engine->shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
     // add some lines:
     float aspectRatio = engine->getAspect();
     float plus = 0.0f;
@@ -157,7 +157,6 @@ void BillboardDemo::drawFrame(ThreadResources& tr) {
 
 void BillboardDemo::updatePerFrame(ThreadResources& tr)
 {
-    static double old_seconds = 0.0f;
     double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);

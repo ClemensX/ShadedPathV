@@ -69,7 +69,6 @@ void DeviceCoordApp::drawFrame(ThreadResources& tr) {
 
 void DeviceCoordApp::updatePerFrame(ThreadResources& tr)
 {
-    static double old_seconds = 0.0f;
     double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
@@ -82,7 +81,7 @@ void DeviceCoordApp::updatePerFrame(ThreadResources& tr)
     double deltaSeconds = seconds - old_seconds;
     positioner->update(deltaSeconds, input.pos, input.pressedLeft);
     old_seconds = seconds;
-    static bool downmode;
+    bool downmode;
     float a = -1.0f; float b = 1.0f; float z = 5.0f;
     // move float vlaue object between a and b in z seconds
     float rel_time = static_cast<float>(fmod(seconds, z));
@@ -99,7 +98,6 @@ void DeviceCoordApp::updatePerFrame(ThreadResources& tr)
 
     // dynamic lines:
     engine->shaders.lineShader.clearLocalLines(tr);
-    static float plus = 0.0f;
     vector<LineDef> lines;
     // x runs from -1 to 1 from left to right
     LineDef move1 = { vec3(-1.0f, floatVal,0.0f), vec3(1.0f,floatVal,0.0f), vec4(0.0f, 1.0f, 0.0f, 1.0f) };

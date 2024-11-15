@@ -10,7 +10,7 @@
 class AppSupport : public EngineParticipant
 {
 protected:
-    bool enableLines = false;
+    bool enableLines = true;
     bool enableUI = true;
     bool vr = false;
     bool stereo = false;
@@ -60,9 +60,6 @@ protected:
     }
 
     void updateCameraPositioners(double deltaSeconds) {
-        static float bug_dist = 0.0f, bug_time = 0.0f;
-        bug_time += deltaSeconds;
-        //Log("bug time update per frame: " << bug_time << std::endl);
         if (activePositionerIsHMD) {
             hmdPositioner.updateDeltaSeconds(deltaSeconds);
         } else {

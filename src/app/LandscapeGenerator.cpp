@@ -68,7 +68,6 @@ void LandscapeGenerator::drawFrame(ThreadResources& tr) {
 
 void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
 {
-    static double old_seconds = 0.0f;
     double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
@@ -245,13 +244,6 @@ static void HelpMarker(const char* desc)
 
 void LandscapeGenerator::buildCustomUI()
 {
-    static string helpText =
-        "g generate new seed\n" 
-        "+ next Generation\n"
-        "- previous Generation\n"
-        "h write heightmap to file (VK_FORMAT_R32_SFLOAT)\n"
-        "p dump image";
-    static Parameters localp = initialParameters;
     if (parameters.paramsChangedOutsideUI) {
         parameters.paramsChangedOutsideUI = false;
         parameters.generate = true;
@@ -307,9 +299,10 @@ void LandscapeGenerator::buildCustomUI()
             ImGui::InputInt("Iterations", &localp.generations);
             ImGui::SameLine();
         }
-        static int clicked = 0;
+        int clicked = 0;
         if (ImGui::Button("Generate")) {
             clicked++;
+            Log("button clicked " << clicked << endl);
         }
         // generate new landscape
         parameters.n = localp.n;
@@ -323,6 +316,7 @@ void LandscapeGenerator::buildCustomUI()
         parameters.generations = localp.generations;
         if (clicked & 1)
         {
+            Log("clicked " << clicked << endl);
             parameters.generate = true;
             clicked = 0;
         }

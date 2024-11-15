@@ -12,4 +12,6 @@ public:
 private:
     void updatePerFrame(ThreadResources& tr);
     std::vector<std::string> textureNames;
+    std::string helpText =
+        "click to see texture names\n(leftmost on top)";
 };
