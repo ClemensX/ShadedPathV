@@ -9,26 +9,28 @@ void DeviceCoordApp::run()
 {
     Log("DeviceCoordApp started" << endl);
     {
+        auto& shaders = engine->shaders;
         // camera initialization
-        CameraPositioner_FirstPerson positioner(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        Camera camera(&engine);
+        positioner_.init(engine, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        positioner = &positioner_;
+        Camera camera;
+        camera.setEngine(engine);
         camera.changePositioner(positioner);
         this->camera = &camera;
-        this->positioner = &positioner;
-        engine.enableKeyEvents();
-        engine.enableMousButtonEvents();
-        engine.enableMouseMoveEvents();
+        engine->enableKeyEvents();
+        engine->enableMousButtonEvents();
+        engine->enableMouseMoveEvents();
         // engine configuration
-        engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
-        engine.files.findAssetFolder("data");
-        engine.setBackBufferResolution(ShadedPathEngine::Resolution::OneK); //oneK == 960
+        engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
+        engine->files.findAssetFolder("data");
+        engine->setBackBufferResolution(ShadedPathEngine::Resolution::OneK); //oneK == 960
         int win_width = 960;//1800;// 800;//3700;
-        engine.enablePresentation(win_width, (int)(win_width /1.77f), "Vulkan Device Coordinates");
-        engine.setFramesInFlight(2);
-        engine.registerApp(this);
+        engine->enablePresentation(win_width, (int)(win_width /1.77f), "Vulkan Device Coordinates");
+        engine->setFramesInFlight(2);
+        engine->registerApp(this);
 
         // engine initialization
-        engine.init("DeviceCoordApp");
+        engine->init("DeviceCoordApp");
 
         // add shaders used in this app
         shaders
@@ -43,14 +45,14 @@ void DeviceCoordApp::run()
         init();
 
         // some shaders may need additional preparation
-        engine.prepareDrawing();
+        engine->prepareDrawing();
 
         // rendering
-        while (!engine.shouldClose()) {
-            engine.pollEvents();
-            engine.drawFrame();
+        while (!engine->shouldClose()) {
+            engine->pollEvents();
+            engine->drawFrame();
         }
-        engine.waitUntilShutdown();
+        engine->waitUntilShutdown();
     }
     Log("DeviceCoordApp ended" << endl);
 }
@@ -62,13 +64,12 @@ void DeviceCoordApp::init() {
 
 void DeviceCoordApp::drawFrame(ThreadResources& tr) {
     updatePerFrame(tr);
-    engine.shaders.submitFrame(tr);
+    engine->shaders.submitFrame(tr);
 }
 
 void DeviceCoordApp::updatePerFrame(ThreadResources& tr)
 {
-    static double old_seconds = 0.0f;
-    double seconds = engine.gameTime.getTimeSeconds();
+    double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
         return;
@@ -80,7 +81,7 @@ void DeviceCoordApp::updatePerFrame(ThreadResources& tr)
     double deltaSeconds = seconds - old_seconds;
     positioner->update(deltaSeconds, input.pos, input.pressedLeft);
     old_seconds = seconds;
-    static bool downmode;
+    bool downmode;
     float a = -1.0f; float b = 1.0f; float z = 5.0f;
     // move float vlaue object between a and b in z seconds
     float rel_time = static_cast<float>(fmod(seconds, z));
@@ -96,8 +97,7 @@ void DeviceCoordApp::updatePerFrame(ThreadResources& tr)
     lubo.proj = mat4(1.0f);
 
     // dynamic lines:
-    engine.shaders.lineShader.clearLocalLines(tr);
-    static float plus = 0.0f;
+    engine->shaders.lineShader.clearLocalLines(tr);
     vector<LineDef> lines;
     // x runs from -1 to 1 from left to right
     LineDef move1 = { vec3(-1.0f, floatVal,0.0f), vec3(1.0f,floatVal,0.0f), vec4(0.0f, 1.0f, 0.0f, 1.0f) };
@@ -109,10 +109,10 @@ void DeviceCoordApp::updatePerFrame(ThreadResources& tr)
     lines.push_back(move1);
     lines.push_back(move2);
     lines.push_back(move3);
-    engine.shaders.lineShader.addOneTime(lines, tr);
+    engine->shaders.lineShader.addOneTime(lines, tr);
 
-    engine.shaders.lineShader.prepareAddLines(tr);
-    engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo);
+    engine->shaders.lineShader.prepareAddLines(tr);
+    engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo);
 }
 
 void DeviceCoordApp::handleInput(InputState& inputState)

@@ -7,16 +7,16 @@
 // move functionality from app code to this class if it is useful to more than one app.
 // Apps need to subclass this class to be able to use it.
 
-class AppSupport
+class AppSupport : public EngineParticipant
 {
 protected:
-    bool enableLines = false;
+    bool enableLines = true;
     bool enableUI = true;
     bool vr = false;
     bool stereo = false;
-    bool enableSound = true;
+    bool enableSound = false;
     bool singleThreadMode = false;
-    bool debugWindowPosition = false; // if true try to open app window in right screen part
+    bool debugWindowPosition = true; // if true try to open app window in right screen part
     bool enableRenderDoc = true;
 
     bool firstPersonCameraAlwayUpright = true;
@@ -25,18 +25,15 @@ protected:
     CameraPositioner_FirstPerson fpPositioner;
     CameraPositioner_HMD hmdPositioner;
     InputState input;
-    ShadedPathEngine* engine = nullptr;
     World world;
     bool activePositionerIsHMD = false;
-    void setEngine(ShadedPathEngine& engine_) {
-        engine = &engine_;
-    }
+
     void createFirstPersonCameraPositioner(const glm::vec3& pos, const glm::vec3& target, const glm::vec3& up) {
-        fpPositioner = CameraPositioner_FirstPerson(pos, target, up);
+        fpPositioner.init(engine, pos, target, up);
         //fpPositioner.camAboveGround = 0.1f;
     }
     void createHMDCameraPositioner(const glm::vec3& pos, const glm::vec3& target, const glm::vec3& up) {
-        hmdPositioner = CameraPositioner_HMD(pos, target, up);
+        hmdPositioner.init(engine, pos, target, up);
     }
     CameraPositioner_FirstPerson* getFirstPersonCameraPositioner() {
         return &fpPositioner;
@@ -48,10 +45,10 @@ protected:
         camera2.setEngine(engine);
         getHMDCameraPositioner()->setCamera(&camera2);
         if (vr) {
-            camera2.changePositioner(hmdPositioner);
+            camera2.changePositioner(&hmdPositioner);
             activePositionerIsHMD = true;
         } else {
-            camera2.changePositioner(fpPositioner);
+            camera2.changePositioner(&fpPositioner);
             activePositionerIsHMD = false;
         }
         this->camera = &camera2;
@@ -63,9 +60,6 @@ protected:
     }
 
     void updateCameraPositioners(double deltaSeconds) {
-        static float bug_dist = 0.0f, bug_time = 0.0f;
-        bug_time += deltaSeconds;
-        //Log("bug time update per frame: " << bug_time << std::endl);
         if (activePositionerIsHMD) {
             hmdPositioner.updateDeltaSeconds(deltaSeconds);
         } else {
@@ -122,7 +116,7 @@ protected:
         engine->init(name);
         // even if we wanted VR initialization may have failed, fallback to non-VR
         if (!engine->isVR()) {
-            camera->changePositioner(fpPositioner);
+            camera->changePositioner(&fpPositioner);
             activePositionerIsHMD = false;
         }
         engine->setWorld(&world);

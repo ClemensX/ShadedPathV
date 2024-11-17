@@ -5,10 +5,10 @@ class ShadedPathEngine;
 
 // all resources needed for running in a separate thread.
 // it is ok to also READ from GlobalRendering and engine
-class ThreadResources
+class ThreadResources : public EngineParticipant
 {
 public:
-	ThreadResources();
+	ThreadResources(ShadedPathEngine* engine_);
 	virtual ~ThreadResources();
 
 	// prevent copy and assigment
@@ -18,7 +18,6 @@ public:
 	ThreadResources(ThreadResources&&) = default;
 	ThreadResources& operator=(ThreadResources&&) = default;
 
-	static ShadedPathEngine* engine;
 	VkSemaphore imageAvailableSemaphore = nullptr;
 	VkSemaphore renderFinishedSemaphore = nullptr;
 	VkFence inFlightFence = nullptr;
@@ -99,5 +98,4 @@ private:
 	void createCommandPool();
 	void createDepthResources();
 	// we need to know which ThreadRessources we have for sub shaders in arrays
-	static int threadResourcesCount;
 };

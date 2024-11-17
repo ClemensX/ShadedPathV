@@ -9,27 +9,27 @@ void TextureViewer::run()
 {
     Log("TextureViewer started" << endl);
     {
-        setEngine(engine);
+        auto& shaders = engine->shaders;
         // camera initialization
-        createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 20.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         createHMDCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         getFirstPersonCameraPositioner()->setMaxSpeed(5.0f);
         initCamera();
         // engine configuration
         enableEventsAndModes();
-        engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
-        engine.files.findAssetFolder("data");
-        engine.setMaxTextures(10);
-        //engine.setFixedPhysicalDeviceIndex(0);
+        engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
+        engine->files.findAssetFolder("data");
+        engine->setMaxTextures(10);
+        //engine->setFixedPhysicalDeviceIndex(0);
         setHighBackbufferResolution();
         int win_width = 960;//480;// 960;//1800;// 800;//3700; // 2500
-        engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Texture Viewer");
-        camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 2000.0f);
+        engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Texture Viewer");
+        camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 2000.0f);
 
-        engine.registerApp(this);
+        engine->registerApp(this);
         initEngine("TextureViewer");
 
-        engine.textureStore.generateBRDFLUT();
+        engine->textureStore.generateBRDFLUT();
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
@@ -54,21 +54,21 @@ void TextureViewer::init() {
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
 
     // load skybox cube texture
-    //engine.textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
-    //engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
-    engine.textureStore.loadTexture("debug.ktx", "2dTexture");
-    engine.textureStore.loadTexture("eucalyptus.ktx2", "tree");
-    engine.textureStore.loadTexture("shadedpath_logo.ktx2", "logo");
-    //engine.textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
-    engine.textureStore.loadTexture("heightbig.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT);
-    unsigned int texIndexTree = engine.textureStore.getTexture("tree")->index;
-    unsigned int texIndexLogo = engine.textureStore.getTexture("logo")->index;
+    //engine->textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
+    //engine->textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
+    engine->textureStore.loadTexture("debug.ktx", "2dTexture");
+    engine->textureStore.loadTexture("eucalyptus.ktx2", "tree");
+    unsigned int texIndexTree = engine->textureStore.getTexture("tree")->index;
+    engine->textureStore.loadTexture("shadedpath_logo.ktx2", "logo");
+    unsigned int texIndexLogo = engine->textureStore.getTexture("logo")->index;
+    engine->textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
+    //engine->textureStore.loadTexture("heightbig.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT);
     unsigned int texIndex = texIndexTree;
-    unsigned int texIndexHeightmap = engine.textureStore.getTexture("heightmap")->index;
-    shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
+    unsigned int texIndexHeightmap = engine->textureStore.getTexture("heightmap")->index;
+    engine->shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
     // rocks
-    engine.objectStore.createGroup("rocks_group");
-    engine.meshStore.loadMesh("rocks_cmp.glb", "Rocks");
+    //engine->objectStore.createGroup("rocks_group");
+    //engine->meshStore.loadMesh("rocks_cmp.glb", "Rocks");
 
     // add some lines:
     //scale tree height to 10m
@@ -92,7 +92,7 @@ void TextureViewer::init() {
     };
     vector<BillboardDef> billboards;
     //for_each(begin(myBillboards), end(myBillboards), [&billboards](BillboardDef l) {billboards.push_back(l); });
-    auto& allTex = engine.textureStore.getTexturesMap();
+    auto& allTex = engine->textureStore.getTexturesMap();
     vector<BillboardDef> billboardsToAdd;
     for (auto& tex : allTex) {
         auto& ti = tex.second;
@@ -110,31 +110,30 @@ void TextureViewer::init() {
         }
     }
 
-    engine.shaders.billboardShader.add(billboards);
+    engine->shaders.billboardShader.add(billboards);
 
     // select texture by uncommenting:
-    engine.global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
-    //engine.global.createCubeMapFrom2dTexture("Knife1", "2dTextureCube");
-    //engine.global.createCubeMapFrom2dTexture("WaterBottle2", "2dTextureCube");
-    //engine.global.createCubeMapFrom2dTexture(engine.textureStore.BRDFLUT_TEXTURE_ID, "2dTextureCube"); // doesn't work (missing mipmaps? format?)
-    engine.shaders.cubeShader.setFarPlane(1.0f); // cube around center
-    engine.shaders.cubeShader.setSkybox("2dTextureCube");
+    engine->global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
+    //engine->global.createCubeMapFrom2dTexture("Knife1", "2dTextureCube");
+    //engine->global.createCubeMapFrom2dTexture("WaterBottle2", "2dTextureCube");
+    //engine->global.createCubeMapFrom2dTexture(engine->textureStore.BRDFLUT_TEXTURE_ID, "2dTextureCube"); // doesn't work (missing mipmaps? format?)
+    engine->shaders.cubeShader.setFarPlane(1.0f); // cube around center
+    engine->shaders.cubeShader.setSkybox("2dTextureCube");
 
-    //engine.shaders.lineShader.initialUpload();
-    //engine.shaders.pbrShader.initialUpload();
-    //engine.shaders.cubeShader.initialUpload();
-    engine.shaders.billboardShader.initialUpload();
+    //engine->shaders.lineShader.initialUpload();
+    //engine->shaders.pbrShader.initialUpload();
+    //engine->shaders.cubeShader.initialUpload();
+    engine->shaders.billboardShader.initialUpload();
 }
 
 void TextureViewer::drawFrame(ThreadResources& tr) {
     updatePerFrame(tr);
-    engine.shaders.submitFrame(tr);
+    engine->shaders.submitFrame(tr);
 }
 
 void TextureViewer::updatePerFrame(ThreadResources& tr)
 {
-    static double old_seconds = 0.0f;
-    double seconds = engine.gameTime.getTimeSeconds();
+    double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
         return;
@@ -153,9 +152,9 @@ void TextureViewer::updatePerFrame(ThreadResources& tr)
     lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     // we still need to call prepareAddLines() even if we didn't actually add some
-    engine.shaders.lineShader.prepareAddLines(tr);
+    engine->shaders.lineShader.prepareAddLines(tr);
     applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
-    engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
+    engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
 
     // cube
     CubeShader::UniformBufferObject cubo{};
@@ -163,7 +162,7 @@ void TextureViewer::updatePerFrame(ThreadResources& tr)
     cubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     cubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     applyViewProjection(cubo.view, cubo.proj, cubo2.view, cubo2.proj);
-    engine.shaders.cubeShader.uploadToGPU(tr, cubo, cubo2, true);
+    engine->shaders.cubeShader.uploadToGPU(tr, cubo, cubo2, true);
  
     // billboards
     BillboardShader::UniformBufferObject bubo{};
@@ -171,7 +170,7 @@ void TextureViewer::updatePerFrame(ThreadResources& tr)
     bubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     bubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     applyViewProjection(bubo.view, bubo.proj, bubo2.view, bubo2.proj);
-    engine.shaders.billboardShader.uploadToGPU(tr, bubo, bubo2);
+    engine->shaders.billboardShader.uploadToGPU(tr, bubo, bubo2);
     //Util::printMatrix(bubo.proj);
 }
 
@@ -195,8 +194,6 @@ static void HelpMarker(const char* desc)
 
 void TextureViewer::buildCustomUI()
 {
-    static string helpText =
-        "click to see texture names\n(leftmost on top)";
     int n;
     bool useAutoCameraCheckbox;
     if (!vr) {

@@ -26,7 +26,7 @@ void CameraPositionerInterface::calcMovement(Movement& mv, glm::quat orientation
 				moveSpeed = glm::normalize(moveSpeed) * maxSpeed;
 		}
 	} else {
-		ShadedPathEngine::getInstance()->getWorld()->paths.updateCameraPosition(this, movement, deltaSeconds);
+		engine->getWorld()->paths.updateCameraPosition(this, movement, deltaSeconds);
 		//Error("Not implemented");
 	}
 }
@@ -50,13 +50,12 @@ void CameraPositioner_FirstPerson::update(double deltaSeconds,
 		cameraPosition += moveSpeed * static_cast<float>(deltaSeconds);
 	} else {
 		//Log("deltaSeconds: " << deltaSeconds << endl);
-		ShadedPathEngine::getInstance()->getWorld()->paths.updateCameraPosition(this, movement, deltaSeconds);
+		engine->getWorld()->paths.updateCameraPosition(this, movement, deltaSeconds);
 	}
 }
 
 void CameraPositioner_HMD::update(int viewNum, glm::vec3 pos, glm::quat ori, glm::mat4 proj, glm::mat4 view, glm::mat4 viewCam) {
 	//Log("HMD update" << std::endl);
-	//static glm::quat lastOriLeft = glm::vec3(1.0f);
 	auto normori = glm::normalize(ori);
 	lastOrientation = ori;
 	lastCameraViewMatrix = viewCam;
@@ -71,7 +70,7 @@ void CameraPositioner_HMD::update(int viewNum, glm::vec3 pos, glm::quat ori, glm
 	else {
 		//Log("deltaSeconds: " << deltaSeconds << endl);
         // adjust time delta because we are called twice per frame
-		ShadedPathEngine::getInstance()->getWorld()->paths.updateCameraPosition(this, movement, deltaSeconds/2.0f);
+		engine->getWorld()->paths.updateCameraPosition(this, movement, deltaSeconds/2.0f);
 	}
 	auto finalPos = cameraPosition + pos;
     movement.lastFinalPosition = finalPos;

@@ -4,10 +4,6 @@ using namespace std;
 
 thread_local bool ShadedPathEngine::isUpdateThread_ = false; // static
 
-// singleton intance watcher
-bool Singleton::instanceCreated = false;
-ShadedPathEngine* ShadedPathEngine::instance = nullptr;
-
 void ShadedPathEngine::init(string appname)
 {
     this->appname = appname;
@@ -66,9 +62,10 @@ void ShadedPathEngine::enableUI() {
 void ShadedPathEngine::setFramesInFlight(int n) {
     if (initialized) Error("Configuration after intialization not allowed");
     framesInFlight = n;
-    threadResources.resize(framesInFlight);
-    for (auto& threadRes : threadResources) {
-        //threadRes. = empty;
+    assert(threadResources.size() == 0); // only call once
+    threadResources.reserve(framesInFlight);
+    for (int i = 0; i < framesInFlight; i++) {
+        threadResources.emplace_back(this); // construct elements in place
     }
 }
 
@@ -326,10 +323,8 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
     }
     //engine_instance->setRunning(false);
     LogF("run QueueSubmit end " << endl);
-    queueThreadFinished = true;
+    engine_instance->queueThreadFinished = true;
 }
-
-bool ShadedPathEngine::queueThreadFinished = false;
 
 void ShadedPathEngine::runUpdateThread(ShadedPathEngine* engine_instance)
 {
@@ -341,13 +336,13 @@ void ShadedPathEngine::runUpdateThread(ShadedPathEngine* engine_instance)
     LogCondF(LOG_QUEUE, "run shader update thread end" << endl);
 }
 
-void ShadedPathEngine::pushUpdate(GlobalUpdateElement* updateElement)
+void ShadedPathEngine::pushUpdate(int val)
 {
     //if (threadModeSingle) {
     //    shaderUpdateQueueSingle.push(updateElement);
     //    return;
     //}
-    shaderUpdateQueue.push(updateElement);
+    shaderUpdateQueue.push(val);
 }
 
 void ShadedPathEngine::startRenderThreads()
@@ -459,5 +454,4 @@ ShadedPathEngine::~ShadedPathEngine()
     ThemedTimer::getInstance()->logInfo(TIMER_PART_BUFFER_COPY);
     ThemedTimer::getInstance()->logInfo(TIMER_PART_GLOBAL_UPDATE);
     ThemedTimer::getInstance()->logInfo(TIMER_PART_OPENXR);
-    instance = nullptr;
 }

@@ -10,8 +10,6 @@ public:
     void handleInput(InputState& inputState) override;
     void addRandomBillboards(std::vector<BillboardDef>& billboards, World& world, unsigned int textureIndex, float aspectRatio);
 private:
-    ShadedPathEngine engine;
-    Shaders& shaders = engine.shaders;
     void updatePerFrame(ThreadResources& tr);
     World world;
     Spatial2D* heightmap = nullptr;

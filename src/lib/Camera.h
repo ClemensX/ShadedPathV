@@ -37,7 +37,7 @@ struct Movement {
     MovementWalkingSubtype walkingSubtype = MovementWalkingSubtype::NoGradient;
 };
 
-class CameraPositionerInterface {
+class CameraPositionerInterface : public EngineParticipant {
 public:
 	virtual ~CameraPositionerInterface() = default;
 	// copy
@@ -78,25 +78,17 @@ public:
 	Movement movement;
 };
 
-class  Camera {
+class  Camera : public EngineParticipant {
 public:
 	Camera(ShadedPathEngine* engine_) {
-		engine = engine_;
+        setEngine(engine_);
 	}
 
 	Camera() {
 	}
 
-	void setEngine(ShadedPathEngine* engine_) {
-		engine = engine_;
-	}
-
-	ShadedPathEngine* getEngine() {
-        return engine;
-	}
-
-	void changePositioner(CameraPositionerInterface& positioner_) {
-		positioner = &positioner_;
+	void changePositioner(CameraPositionerInterface* positioner_) {
+		positioner = positioner_;
 	}
 
 	glm::mat4 getViewMatrix() const {
@@ -159,7 +151,6 @@ private:
 
 	CameraPositionerInterface* positioner = nullptr;
 	glm::mat4 projection = glm::mat4(1.0f);
-	ShadedPathEngine* engine = nullptr;
 	float fovy, aspect, nearZ, farZ;
 };
 
@@ -182,10 +173,12 @@ private:
 	glm::vec3 moveSpeed = glm::vec3(0.0f);
 public:
 	CameraPositioner_FirstPerson() = default;
-	CameraPositioner_FirstPerson(const glm::vec3 & pos, const glm::vec3 & target, const glm::vec3 & up)
-		: cameraPosition(pos)
-		, cameraOrientation(glm::lookAt(pos, target, up))
-	{}
+	void init(ShadedPathEngine* engine, const glm::vec3 & pos, const glm::vec3 & target, const glm::vec3 & up)
+	{
+        setEngine(engine);
+		cameraPosition = pos;
+		cameraOrientation = glm::lookAt(pos, target, up);
+	}
 	void update(double deltaSeconds, const glm::vec2& mousePos, bool mousePressed, bool alwaysUpright = false);
 
 	virtual glm::quat getOrientation() const override {
@@ -374,10 +367,12 @@ private:
     glm::mat4 lastCameraViewMatrix = glm::mat4(1.0f);
 public:
 	CameraPositioner_HMD() = default;
-	CameraPositioner_HMD(const glm::vec3& pos, const glm::vec3& target, const glm::vec3& up)
-		: cameraPosition(pos)
-		, cameraOrientation(glm::lookAt(pos, target, up))
-	{}
+	void init(ShadedPathEngine* engine, const glm::vec3& pos, const glm::vec3& target, const glm::vec3& up)
+	{
+        setEngine(engine);
+		cameraPosition = pos;
+		cameraOrientation = glm::lookAt(pos, target, up);
+	}
 	
 	void setCamera(Camera* c) {
         camera = c;

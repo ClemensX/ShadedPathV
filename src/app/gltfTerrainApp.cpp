@@ -9,7 +9,7 @@ void gltfTerrainApp::run()
 {
     Log("gltfTerrainApp started" << endl);
     {
-        setEngine(engine);
+        Shaders& shaders = engine->shaders;
         // camera initialization
         createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         createHMDCameraPositioner(glm::vec3(0.0f, 70.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -22,20 +22,20 @@ void gltfTerrainApp::run()
         Log("HMD position: " << p.x << " / " << p.y << " / " << p.z << endl);
         // engine configuration
         enableEventsAndModes();
-        engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
-        engine.files.findAssetFolder("data");
-        engine.setMaxTextures(50);
-        //engine.setFrameCountLimit(1000);
+        engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
+        engine->files.findAssetFolder("data");
+        engine->setMaxTextures(50);
+        //engine->setFrameCountLimit(1000);
         setHighBackbufferResolution();
         int win_width = 800;//480;// 960;//1800;// 800;//3700; // 2500;
-        engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF terrain");
-        //camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.01f, 4300.0f);
-        camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.10f, 2000.0f);
+        engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF terrain");
+        //camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 4300.0f);
+        camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.10f, 2000.0f);
 
-        engine.registerApp(this);
+        engine->registerApp(this);
         initEngine("gltfTerrain");
 
-        engine.textureStore.generateBRDFLUT();
+        engine->textureStore.generateBRDFLUT();
 
         // add shaders used in this app
         shaders
@@ -55,63 +55,62 @@ void gltfTerrainApp::run()
 }
 
 void gltfTerrainApp::init() {
-    float aspectRatio = engine.getAspect();
+    float aspectRatio = engine->getAspect();
 
     // 2 square km world size
     //world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     world.setWorldSize(1024.0f, 382.0f, 1024.0f);
 
-    //engine.meshStore.loadMesh("terrain2k/Project_Mesh_2m.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
-    //engine.meshStore.loadMesh("terrain2k/Project_Mesh_0.5.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
-    engine.meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
-    engine.objectStore.createGroup("terrain_group");
-    engine.objectStore.createGroup("knife_group");
-    engine.objectStore.createGroup("box_group");
-    engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
-    engine.meshStore.loadMesh("box1_cmp.glb", "Box1");
-    engine.meshStore.loadMesh("box10_cmp.glb", "Box10");
-    engine.meshStore.loadMesh("box100_cmp.glb", "Box100");
-    engine.meshStore.loadMesh("bottle2.glb", "WaterBottle");
+    //engine->meshStore.loadMesh("terrain2k/Project_Mesh_2m.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    //engine->meshStore.loadMesh("terrain2k/Project_Mesh_0.5.gltf", "WorldBaseTerrain", MeshType::MESH_TYPE_NO_TEXTURES);
+    engine->meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
+    engine->objectStore.createGroup("terrain_group");
+    engine->objectStore.createGroup("knife_group");
+    engine->objectStore.createGroup("box_group");
+    engine->meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
+    engine->meshStore.loadMesh("box1_cmp.glb", "Box1");
+    engine->meshStore.loadMesh("box10_cmp.glb", "Box10");
+    engine->meshStore.loadMesh("box100_cmp.glb", "Box100");
+    engine->meshStore.loadMesh("bottle2.glb", "WaterBottle");
 
-    auto terrain = engine.objectStore.addObject("terrain_group", "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
-    //auto knife = engine.objectStore.addObject("knife_group", "Knife", vec3(900.0f, 20.0f, 0.3f));
-    auto knife = engine.objectStore.addObject("knife_group", "Knife", vec3(5.47332f, 58.312f, 3.9));
+    auto terrain = engine->objectStore.addObject("terrain_group", "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
+    //auto knife = engine->objectStore.addObject("knife_group", "Knife", vec3(900.0f, 20.0f, 0.3f));
+    auto knife = engine->objectStore.addObject("knife_group", "Knife", vec3(5.47332f, 58.312f, 3.9));
     knife->rot().x = 3.14159f / 2;
     knife->rot().y = -3.14159f / 4;
-    auto bottle = engine.objectStore.addObject("knife_group", "WaterBottle", vec3(5.77332f, 58.43f, 3.6));
-    auto box1 = engine.objectStore.addObject("box_group", "Box1", vec3(5.57332f, 57.3f, 3.70005));
-    auto box10 = engine.objectStore.addObject("box_group", "Box10", vec3(-5.57332f, 57.3f, 3.70005));
-    auto box100 = engine.objectStore.addObject("box_group", "Box100", vec3(120.57332f, 57.3f, 3.70005));
+    auto bottle = engine->objectStore.addObject("knife_group", "WaterBottle", vec3(5.77332f, 58.43f, 3.6));
+    auto box1 = engine->objectStore.addObject("box_group", "Box1", vec3(5.57332f, 57.3f, 3.70005));
+    auto box10 = engine->objectStore.addObject("box_group", "Box10", vec3(-5.57332f, 57.3f, 3.70005));
+    auto box100 = engine->objectStore.addObject("box_group", "Box100", vec3(120.57332f, 57.3f, 3.70005));
     world.transformToWorld(terrain);
     auto p = hmdPositioner.getPosition();
 
-    engine.shaders.clearShader.setClearColor(vec4(0.1f, 0.1f, 0.9f, 1.0f));
-    engine.shaders.pbrShader.initialUpload();
+    engine->shaders.clearShader.setClearColor(vec4(0.1f, 0.1f, 0.9f, 1.0f));
+    engine->shaders.pbrShader.initialUpload();
     if (enableLines) {
         // Grid with 1m squares, floor on -10m, ceiling on 372m
         //Grid* grid = world.createWorldGrid(1.0f, -10.0f);
         Grid* grid = world.createWorldGrid(100.0f, 0.0f);
-        engine.shaders.lineShader.addFixedGlobalLines(grid->lines);
-        engine.shaders.lineShader.uploadFixedGlobalLines();
+        engine->shaders.lineShader.addFixedGlobalLines(grid->lines);
+        engine->shaders.lineShader.uploadFixedGlobalLines();
     }
     // load and play music
-    engine.sound.openSoundFile("power.ogg", "BACKGROUND_MUSIC", true);
-    //engine.sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 1.0f, 6000);
+    engine->sound.openSoundFile("power.ogg", "BACKGROUND_MUSIC", true);
+    //engine->sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 1.0f, 6000);
     // add sound to object
-    engine.sound.addWorldObject(knife);
-    engine.sound.changeSound(knife, "BACKGROUND_MUSIC");
-    engine.sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
+    engine->sound.addWorldObject(knife);
+    engine->sound.changeSound(knife, "BACKGROUND_MUSIC");
+    engine->sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
 }
 
 void gltfTerrainApp::drawFrame(ThreadResources& tr) {
     updatePerFrame(tr);
-    engine.shaders.submitFrame(tr);
+    engine->shaders.submitFrame(tr);
 }
 
 void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
 {
-    static double old_seconds = 0.0f;
-    double seconds = engine.gameTime.getTimeSeconds();
+    double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
         //tr.discardFrame = true;
@@ -133,7 +132,7 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
         lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
         lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
         applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
-        engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
+        engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
     }
     // pbr
     PBRShader::UniformBufferObject pubo{};
@@ -142,13 +141,13 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
     pubo.model = modeltransform;
     pubo2.model = modeltransform;
     applyViewProjection(pubo.view, pubo.proj, pubo2.view, pubo2.proj);
-    engine.shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
+    engine->shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
     // change individual objects position:
-    //auto grp = engine.objectStore.getGroup("knife_group");
-    for (auto& wo : engine.objectStore.getSortedList()) {
+    //auto grp = engine->objectStore.getGroup("knife_group");
+    for (auto& wo : engine->objectStore.getSortedList()) {
         //Log(" adapt object " << obj.get()->objectNum << endl);
         //WorldObject *wo = obj.get();
-        PBRShader::DynamicUniformBufferObject* buf = engine.shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
+        PBRShader::DynamicUniformBufferObject* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
         mat4 modeltransform;
         if (wo->objectNum == 0) {
             //terrain
@@ -192,12 +191,6 @@ void gltfTerrainApp::handleInput(InputState& inputState)
 
 void gltfTerrainApp::buildCustomUI()
 {
-    static string helpText =
-        "g generate new seed\n"
-        "+ next Generation\n"
-        "- previous Generation\n"
-        "h write heightmap to file (VK_FORMAT_R32_SFLOAT)\n"
-        "p dump image";
     ImGui::Separator();
     int sizeX = world.getWorldSize().x;
     ImGui::Text("World size [m]: %d * %d", sizeX, sizeX);

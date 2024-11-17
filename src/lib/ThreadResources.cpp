@@ -2,18 +2,15 @@
 
 using namespace std;
 
-ShadedPathEngine* ThreadResources::engine = nullptr;
-int ThreadResources::threadResourcesCount = 0;
-
-ThreadResources::ThreadResources()
+ThreadResources::ThreadResources(ShadedPathEngine* engine_)
 {
 	Log("ThreadResource c'tor: " << this << endl);
-    threadResourcesIndex = threadResourcesCount++;
+    setEngine(engine_);
+    threadResourcesIndex = engine->threadResourcesCount++;
 }
 
 void ThreadResources::initAll(ShadedPathEngine* engine)
 {
-	ThreadResources::engine = engine;
 	for (ThreadResources &res : engine->threadResources) {
 		res.init();
 	}

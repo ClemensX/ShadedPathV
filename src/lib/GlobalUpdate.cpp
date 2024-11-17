@@ -10,14 +10,14 @@ void GlobalUpdate::doGlobalShaderUpdates(bool threadModeSingle)
     // this is the only place with pop():
 	if (threadModeSingle) {
 		if (engine.getShaderUpdateQueue().size() > 0) {
-			optional<GlobalUpdateElement*> opt_el = engine.getShaderUpdateQueue().pop();
+			optional<int> opt_el = engine.getShaderUpdateQueue().pop();
 			if (!opt_el) {
 				return;
 			}
 		}
 		else return;
 	} else {
-		optional<GlobalUpdateElement*> opt_el = engine.getShaderUpdateQueue().pop();
+		optional<int> opt_el = engine.getShaderUpdateQueue().pop();
 		if (!opt_el) {
 			return;
 		}

@@ -131,7 +131,6 @@ struct BoundingBoxCorners {
 // 
 class WorldObject {
 public:
-	static std::atomic<UINT> count; // count all objects
 	WorldObject();
 	virtual ~WorldObject();
 	glm::vec3& pos();
@@ -139,7 +138,7 @@ public:
     glm::vec3& scale();
 	MeshInfo* mesh = nullptr;
 	float alpha = 1.0f;
-	bool disableSkinning = false; // set to true for animated object to use as static meshes
+	bool disableSkinning = false; // set to true for animated object to use as fixed mesh
 	bool isNonKeyframeAnimated = false; // signal that poses are not interpoalted by Path, but computed outside and set in update()
 	int visible; // visible in current view frustrum: 0 == no, 1 == intersection, 2 == completely visible
 	void setAction(std::string name);
@@ -210,5 +209,5 @@ private:
 	void addObjectPrivate(WorldObject* w, std::string id, glm::vec3 pos, int userGroupId);
 	MeshStore *meshStore;
 	std::vector<WorldObject*> sortedList;
-	UINT numObjects = 0;
+    UINT numObjects = 0; // count all objects
 };

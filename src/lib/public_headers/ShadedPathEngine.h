@@ -2,52 +2,19 @@
 
 #include "mainheader.h"
 
-// all applications must implement this class and register with engine.
-// All callback methods are defined here
-class ShadedPathApplication
-{
-public:
-    // called from multiple threads, only local resources should be changed
-    virtual void drawFrame(ThreadResources& tr) = 0;
-    virtual void handleInput(InputState& inputState) = 0;
-    virtual void buildCustomUI() {};
-};
+// forward declarations
+//class ShadedPathEngineManager;
+class ShadedPathApplication;
+//class World;
+//class ThreadResources;
+//struct GlobalUpdateElement;
+//struct ShaderUpdateElement;
+//struct InputState;
 
-class Singleton
-{
-public:
-    Singleton()
-    {
-        if (instanceCreated)
-        {
-            Error("You can only run one engine per process.\nFor tests you may want to run single tests via VS TestExplorer or configure in test.main()");
-        }
-        instanceCreated = true;
-        // Initialization code here
-    }
-
-    virtual ~Singleton()
-    {
-        instanceCreated = false;
-    }
-
-    // Prevent copy and assignment
-    Singleton(Singleton const&) = delete;
-    void operator=(Singleton const&) = delete;
-
-    static bool isInstanceCreated() {
-        return instanceCreated;
-    }
-
-private:
-    static bool instanceCreated;
-};
-
-// Engine contains options and aggregates GlobalRendering, Presentation, Shaders, ThreadResources
-// who do the vulkan work
+// .the engine.
 class ShadedPathEngine
 {
-public:
+private:
     // construct engine instance together with its needed aggregates
     ShadedPathEngine() :
         global(*this),
@@ -62,12 +29,15 @@ public:
     {
         Log("Engine c'tor\n");
         files.findFxFolder();
-        instance = this;
     }
 
-    static ShadedPathEngine* getInstance() {
-        return instance;
-    }
+public:
+    // Prevent copy and assignment
+    ShadedPathEngine(ShadedPathEngine const&) = delete;
+    void operator=(ShadedPathEngine const&) = delete;
+
+    virtual ~ShadedPathEngine();
+
     // engine state - may be read by apps
     enum State {
         INIT,        // before any rendering, all file loading should be done here
@@ -76,9 +46,7 @@ public:
     const std::string engineName = "ShadedPathV";
     const std::string engineVersion = "0.1";
     const uint32_t engineVersionInt = 1;
-    std::string vulkanAPIVersion = global.getVulkanAPIString();
-
-    virtual ~ShadedPathEngine();
+    std::string vulkanAPIVersion; // = global.getVulkanAPIString();
 
     enum class Resolution { HMDIndex, FourK, TwoK, OneK, DeviceDefault, Small };
 
@@ -91,10 +59,6 @@ public:
     void setBackBufferResolution(ShadedPathEngine::Resolution r);
     VkExtent2D getExtentForResolution(ShadedPathEngine::Resolution r);
     VkExtent2D getBackBufferExtent();
-
-    // prevent copy and assigment
-    ShadedPathEngine(ShadedPathEngine const&) = delete;
-    void operator=(ShadedPathEngine const&) = delete;
 
     // enable output window, without calling this only background processing is possible
     void enablePresentation(int w, int h, const char* name);
@@ -254,7 +218,6 @@ public:
     void queueSubmitThreadPreFrame(ThreadResources& tr);
     void queueSubmitThreadPostFrame(ThreadResources& tr);
 
-    Singleton singleton; // check that only one engine is running - maybe relax later
     GlobalRendering global;
 	GlobalUpdate globalUpdate;
     Presentation presentation;
@@ -286,7 +249,7 @@ public:
 	auto& getShaderUpdateQueue() {
 		return shaderUpdateQueue;
 	}
-    void pushUpdate(GlobalUpdateElement* updateElement);
+    void pushUpdate(int val);
     bool isUpdateThread() {
 		return threadModeSingle || isUpdateThread_;
 	}
@@ -295,8 +258,10 @@ public:
     bool renderThreadDebugLog = false;
     bool debugWindowPosition = false; // app window in right screen part
 
+    // move static fields of the other classes here to enable multi-engine support
+    int threadResourcesCount = 0;
+
 private:
-    static ShadedPathEngine* instance;
     thread_local static bool isUpdateThread_;
     ThreadGroup& getThreadGroup() {
         return threads;
@@ -329,11 +294,11 @@ private:
     ThreadGroup threads;
     RenderQueue queue;
     // we simply use indexes into the update array for handling resources
-    ThreadsafeWaitingQueue<GlobalUpdateElement*> shaderUpdateQueue;
+    ThreadsafeWaitingQueue<int> shaderUpdateQueue;
 
     // we need a separate update queue for threadModeSingle
     std::queue<ShaderUpdateElement*> shaderUpdateQueueSingle; // TODO: rework
-    static bool queueThreadFinished;
+    bool queueThreadFinished = false;
     void startRenderThreads();
     void startQueueSubmitThread();
     // global update thread for shuffling data to GPU in the background
@@ -356,4 +321,63 @@ private:
     std::atomic<long> frameNum = 0;
     // for rendering threads
     std::atomic<long> nextFreeFrameNum = 0;
+
+    friend class ShadedPathEngineManager;
+};
+
+class ShadedPathEngineManager
+{
+public:
+    // Create a new instance of ShadedPathEngine and store it in the list
+    ShadedPathEngine* createEngine()
+    {
+        auto engine = std::unique_ptr<ShadedPathEngine>(new ShadedPathEngine());
+        engines.push_back(std::move(engine));
+        return engines.back().get();
+    }
+
+    // delete engine instance by pointer
+    void deleteEngine(ShadedPathEngine* engine)
+    {
+        for (auto it = engines.begin(); it != engines.end(); ++it)
+        {
+            if (it->get() == engine)
+            {
+                engines.erase(it);
+                return;
+            }
+        }
+    }
+
+    // Get an engine instance by index
+    ShadedPathEngine* getEngine(size_t index)
+    {
+        if (index < engines.size())
+        {
+            return engines[index].get();
+        }
+        return nullptr;
+    }
+
+    // Get the number of engine instances
+    size_t getEngineCount() const
+    {
+        return engines.size();
+    }
+
+private:
+    std::vector<std::unique_ptr<ShadedPathEngine>> engines;
+};
+
+// all applications must implement this class and register with engine.
+// All callback methods are defined here
+class ShadedPathApplication
+{
+public:
+    // called from multiple threads, only local resources should be changed
+    virtual void drawFrame(ThreadResources& tr) = 0;
+    virtual void handleInput(InputState& inputState) = 0;
+    virtual void buildCustomUI() {};
+protected:
+    double old_seconds = 0.0f;
 };

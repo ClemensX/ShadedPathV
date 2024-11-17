@@ -9,7 +9,7 @@ void Incoming::run()
 {
     Log("Incoming started" << endl);
     {
-        setEngine(engine);
+        auto& shaders = engine->shaders;
         // camera initialization
         vec3 camStart(5.38f, 58.7576f, 5.30f);
         initCamera(camStart, vec3(0.0f, 50.0f, -100.0f), vec3(0.0f, 1.0f, 0.0f));
@@ -21,19 +21,19 @@ void Incoming::run()
         }
         // engine configuration
         enableEventsAndModes();
-        engine.gameTime.init(GameTime::GAMEDAY_REALTIME);
-        engine.files.findAssetFolder("data");
-        engine.setMaxTextures(50);
-        //engine.setFrameCountLimit(1000);
+        engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
+        engine->files.findAssetFolder("data");
+        engine->setMaxTextures(50);
+        //engine->setFrameCountLimit(1000);
         setHighBackbufferResolution();
         int win_width = 1800;//480;// 960;//1800;// 800;//3700; // 2500;
-        engine.enablePresentation(win_width, (int)(win_width / 1.77f), "Incoming");
-        camera->saveProjectionParams(glm::radians(45.0f), engine.getAspect(), 0.10f, 2000.0f);
+        engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Incoming");
+        camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.10f, 2000.0f);
 
-        engine.registerApp(this);
+        engine->registerApp(this);
         initEngine("Incoming");
 
-        engine.textureStore.generateBRDFLUT();
+        engine->textureStore.generateBRDFLUT();
 
         // add shaders used in this app
         shaders
@@ -59,7 +59,7 @@ void Incoming::addRandomRock(RockInfo ri, std::vector<WorldObject*>& rockList)
     int randomValue = rand() % 10;
     string rockName = "Rocks." + to_string(randomValue);
 
-    WorldObject* rock = engine.objectStore.addObject(GroupRocksName, rockName, ri.pos);
+    WorldObject* rock = engine->objectStore.addObject(GroupRocksName, rockName, ri.pos);
     rockList.push_back(rock);
 }
 
@@ -93,36 +93,36 @@ void Incoming::addRandomRockFormations(RockWave waveName, std::vector<WorldObjec
 
 void Incoming::init() {
     bool debugObjects = false; // false to disable all helper objects
-    float aspectRatio = engine.getAspect();
+    float aspectRatio = engine->getAspect();
 
     // 2 square km world size
     //world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     world.setWorldSize(1024.0f, 382.0f, 1024.0f);
-    engine.setWorld(&world);
+    engine->setWorld(&world);
 
-    engine.meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
-    engine.objectStore.createGroup(GroupTerrainName, GroupTerrain);
+    engine->meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
+    engine->objectStore.createGroup(GroupTerrainName, GroupTerrain);
     if (debugObjects) {
-        engine.objectStore.createGroup(GroupDebugName, GroupDebug);
-        engine.meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
-        engine.meshStore.loadMesh("box1_cmp.glb", "Box1");
-        engine.meshStore.loadMesh("box10_cmp.glb", "Box10");
-        engine.meshStore.loadMesh("box100_cmp.glb", "Box100");
-        engine.meshStore.loadMesh("bottle2.glb", "WaterBottle");
+        engine->objectStore.createGroup(GroupDebugName, GroupDebug);
+        engine->meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
+        engine->meshStore.loadMesh("box1_cmp.glb", "Box1");
+        engine->meshStore.loadMesh("box10_cmp.glb", "Box10");
+        engine->meshStore.loadMesh("box100_cmp.glb", "Box100");
+        engine->meshStore.loadMesh("bottle2.glb", "WaterBottle");
     }
 
     // terrain (has to be first object in world)
-    auto terrain = engine.objectStore.addObject(GroupTerrainName, "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
+    auto terrain = engine->objectStore.addObject(GroupTerrainName, "WorldBaseTerrain", vec3(0.3f, 0.0f, 0.0f));
 
     // rocks
-    engine.objectStore.createGroup(GroupRocksName, GroupRocks);
-    engine.meshStore.loadMesh("rocks_multi_cmp.glb", "Rocks");
+    engine->objectStore.createGroup(GroupRocksName, GroupRocks);
+    engine->meshStore.loadMesh("rocks_multi_cmp.glb", "Rocks");
     addRandomRockFormations(RockWave::Cube, rockObjects);
 
     // weapon
-    engine.objectStore.createGroup(GroupGunName, GroupGun);
-    engine.meshStore.loadMesh("cyberpunk_pistol_cmp.glb", "Gun", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
-    gun = engine.objectStore.addObject(GroupGunName, "Gun", vec3(4.97f, 57.39f, -3.9));
+    engine->objectStore.createGroup(GroupGunName, GroupGun);
+    engine->meshStore.loadMesh("cyberpunk_pistol_cmp.glb", "Gun", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
+    gun = engine->objectStore.addObject(GroupGunName, "Gun", vec3(4.97f, 57.39f, -3.9));
     gun->scale() = vec3(0.03f, 0.03f, 0.03f);
     //gun->rot() = vec3(4.8, 6.4, 7.4);
     gun->rot() = vec3(0.1, 0.1, 0.1);
@@ -130,21 +130,21 @@ void Incoming::init() {
 
     if (debugObjects) {
         WorldObject* knife = nullptr;
-        knife = engine.objectStore.addObject(GroupDebugName, "Knife", vec3(5.47332f, 58.312f, 3.9));
+        knife = engine->objectStore.addObject(GroupDebugName, "Knife", vec3(5.47332f, 58.312f, 3.9));
         knife->rot().x = 3.14159f / 2;
         knife->rot().y = -3.14159f / 4;
-        auto bottle = engine.objectStore.addObject(GroupDebugName, "WaterBottle", vec3(5.77332f, 58.43f, 3.6));
-        auto box1 = engine.objectStore.addObject(GroupDebugName, "Box1", vec3(5.57332f, 57.3f, 3.70005));
-        auto box10 = engine.objectStore.addObject(GroupDebugName, "Box10", vec3(-5.57332f, 57.3f, 3.70005));
-        auto box100 = engine.objectStore.addObject(GroupDebugName, "Box100", vec3(120.57332f, 57.3f, 3.70005));
+        auto bottle = engine->objectStore.addObject(GroupDebugName, "WaterBottle", vec3(5.77332f, 58.43f, 3.6));
+        auto box1 = engine->objectStore.addObject(GroupDebugName, "Box1", vec3(5.57332f, 57.3f, 3.70005));
+        auto box10 = engine->objectStore.addObject(GroupDebugName, "Box10", vec3(-5.57332f, 57.3f, 3.70005));
+        auto box100 = engine->objectStore.addObject(GroupDebugName, "Box100", vec3(120.57332f, 57.3f, 3.70005));
     }
     world.transformToWorld(terrain);
     auto p = hmdPositioner.getPosition();
 
     // heightmap
-    engine.textureStore.loadTexture("flat.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT,
+    engine->textureStore.loadTexture("flat.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT,
         TextureFlags::KEEP_DATA_BUFFER | TextureFlags::ORIENTATION_RAW_START_WITH_XMAX_ZMAX);
-    auto texHeightmap = engine.textureStore.getTexture("heightmap");
+    auto texHeightmap = engine->textureStore.getTexture("heightmap");
     world.setHeightmap(texHeightmap);
     unsigned int texIndexHeightmap = texHeightmap->index;
     world.prepareUltimateHeightmap(terrain);
@@ -155,32 +155,32 @@ void Incoming::init() {
     Log("Camera set to walking mode.\n")
 
     // skybox
-    engine.textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
-    engine.shaders.cubeShader.setSkybox("skyboxTexture");
-    engine.shaders.cubeShader.setFarPlane(2000.0f);
+    engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
+    engine->shaders.cubeShader.setSkybox("skyboxTexture");
+    engine->shaders.cubeShader.setFarPlane(2000.0f);
 
 
-    engine.shaders.clearShader.setClearColor(vec4(0.1f, 0.1f, 0.9f, 1.0f));
-    engine.shaders.pbrShader.initialUpload();
+    engine->shaders.clearShader.setClearColor(vec4(0.1f, 0.1f, 0.9f, 1.0f));
+    engine->shaders.pbrShader.initialUpload();
     if (enableLines) {
         // Grid with 100m squares, floor on -10m, ceiling on 372m
         Grid* grid = world.createWorldGrid(100.0f, 0.0f);
-        engine.shaders.lineShader.addFixedGlobalLines(grid->lines);
-        engine.shaders.lineShader.uploadFixedGlobalLines();
+        engine->shaders.lineShader.addFixedGlobalLines(grid->lines);
+        engine->shaders.lineShader.uploadFixedGlobalLines();
     }
     // load and play music
-    engine.sound.openSoundFile("inc_background.ogg", "BACKGROUND_MUSIC", true);
-    engine.sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 0.8f, 100);
+    engine->sound.openSoundFile("inc_background.ogg", "BACKGROUND_MUSIC", true);
+    engine->sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 0.8f, 100);
     // load sound effects
-    engine.sound.openSoundFile("lock_and_load_big_gun.ogg", "LOAD_GUN");
-    engine.sound.openSoundFile("announce_under_attack.ogg", "ANNOUNCE_UNDER_ATTACK");
-    engine.sound.openSoundFile("single_gun_shot_two.ogg", "SHOOT_GUN");
+    engine->sound.openSoundFile("lock_and_load_big_gun.ogg", "LOAD_GUN");
+    engine->sound.openSoundFile("announce_under_attack.ogg", "ANNOUNCE_UNDER_ATTACK");
+    engine->sound.openSoundFile("single_gun_shot_two.ogg", "SHOOT_GUN");
 
     // add sound to object
     if (enableSound) {
-        engine.sound.addWorldObject(gun);
-        //engine.sound.changeSound(gun, "BACKGROUND_MUSIC");
-        //engine.sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
+        engine->sound.addWorldObject(gun);
+        //engine->sound.changeSound(gun, "BACKGROUND_MUSIC");
+        //engine->sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
     }
 
     game.addGamePhase(PhaseIntro, "Intro");
@@ -198,20 +198,19 @@ void Incoming::init() {
     //game.setPhase(PhasePhase1);
 
     if (game.isGamePhase(PhasePrepare)) {
-        engine.sound.playSound("ANNOUNCE_UNDER_ATTACK", SoundCategory::EFFECT, 200.0f, 4000);
+        engine->sound.playSound("ANNOUNCE_UNDER_ATTACK", SoundCategory::EFFECT, 200.0f, 4000);
     }
 }
 
 void Incoming::drawFrame(ThreadResources& tr) {
     updatePerFrame(tr);
-    engine.shaders.submitFrame(tr);
+    engine->shaders.submitFrame(tr);
 }
 
 
 void Incoming::updatePerFrame(ThreadResources& tr)
 {
-    static double old_seconds = 0.0f;
-    double seconds = engine.gameTime.getTimeSeconds();
+    double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
         //tr.discardFrame = true;
@@ -234,12 +233,12 @@ void Incoming::updatePerFrame(ThreadResources& tr)
         lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
         lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
         applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
-        engine.shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
-        engine.shaders.lineShader.clearLocalLines(tr);
+        engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
+        engine->shaders.lineShader.clearLocalLines(tr);
         if (enableIntersectTest) {
             vector<LineDef> oneTimelines;
             oneTimelines.push_back(intersectTestLine);
-            engine.shaders.lineShader.addOneTime(oneTimelines, tr);
+            engine->shaders.lineShader.addOneTime(oneTimelines, tr);
         }
     }
     // cube
@@ -251,7 +250,7 @@ void Incoming::updatePerFrame(ThreadResources& tr)
     // reset view matrix to camera orientation without using camera position (prevent camera movin out of skybox)
     cubo.view = camera->getViewMatrixAtCameraPos();
     cubo2.view = camera->getViewMatrixAtCameraPos();
-    engine.shaders.cubeShader.uploadToGPU(tr, cubo, cubo2);
+    engine->shaders.cubeShader.uploadToGPU(tr, cubo, cubo2);
     // pbr
     PBRShader::UniformBufferObject pubo{};
     PBRShader::UniformBufferObject pubo2{};
@@ -259,13 +258,12 @@ void Incoming::updatePerFrame(ThreadResources& tr)
     pubo.model = modeltransform;
     pubo2.model = modeltransform;
     applyViewProjection(pubo.view, pubo.proj, pubo2.view, pubo2.proj);
-    engine.shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
+    engine->shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
     // change individual objects position:
     vector<LineDef> boundingBoxes;
-    static LineDef shootLine;
     vec3 finalGunPos(1000, 1000, 1000);
-    for (auto& wo : engine.objectStore.getSortedList()) {
-        PBRShader::DynamicUniformBufferObject* buf = engine.shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
+    for (auto& wo : engine->objectStore.getSortedList()) {
+        PBRShader::DynamicUniformBufferObject* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
         mat4 modeltransform;
         if (wo->userGroupId == GroupTerrain) {
             //terrain
@@ -336,14 +334,14 @@ void Incoming::updatePerFrame(ThreadResources& tr)
                 l.color = Colors::Blue;
                 l.end = pos + mv.up;
                 oneTimelines.push_back(l);
-                engine.shaders.lineShader.addOneTime(oneTimelines, tr);
+                engine->shaders.lineShader.addOneTime(oneTimelines, tr);
             }
         }
         buf->model = modeltransform;
     }
     if (enableLines) {
-        engine.shaders.lineShader.addOneTime(boundingBoxes, tr);
-        engine.shaders.lineShader.prepareAddLines(tr);
+        engine->shaders.lineShader.addOneTime(boundingBoxes, tr);
+        engine->shaders.lineShader.prepareAddLines(tr);
     }
     // game Logic
     if (game.isGamePhase(PhasePrepare)) {
@@ -354,16 +352,16 @@ void Incoming::updatePerFrame(ThreadResources& tr)
             Log("Picked up weapon" << endl);
             holdWeapon = true;
             game.setPhase(PhasePhase1);
-            engine.sound.playSound("LOAD_GUN", SoundCategory::EFFECT, 300.0f);
-            //engine.sound.changeSound(gun, "LOAD_GUN");
-            //engine.sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
+            engine->sound.playSound("LOAD_GUN", SoundCategory::EFFECT, 300.0f);
+            //engine->sound.changeSound(gun, "LOAD_GUN");
+            //engine->sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
         }
     }
     if (processGunshot) {
         processGunshot = false;
         if (game.isGamePhase(PhasePhase1)) {
             //Log("Shot weapon" << endl);
-            engine.sound.playSound("SHOOT_GUN", SoundCategory::EFFECT, 300.0f);
+            engine->sound.playSound("SHOOT_GUN", SoundCategory::EFFECT, 300.0f);
             WorldObject* nearestShotObject = nullptr;
             float lastDistance = 100000.0f;
             for (auto& wo : rockObjects) {
@@ -415,12 +413,6 @@ void Incoming::handleInput(InputState& inputState)
 
 void Incoming::buildCustomUI()
 {
-    static string helpText =
-        "g generate new seed\n"
-        "+ next Generation\n"
-        "- previous Generation\n"
-        "h write heightmap to file (VK_FORMAT_R32_SFLOAT)\n"
-        "p dump image";
     ImGui::Separator();
     int sizeX = world.getWorldSize().x;
     ImGui::Text("World size [m]: %d * %d", sizeX, sizeX);

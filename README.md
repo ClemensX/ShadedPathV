@@ -304,13 +304,17 @@ Use Khronos OpenXR sdk directly for VS 2022:
 ## TODO
 Things finished and things to do. Both very small and very large things, just as they come to my mind. 
 
-- [ ] add *Release* version to the current *Debug* config in cmake
-- [ ] BRDFLUT_TEXTURE cannot be used as cube map (all black). probably needs format conversion
-- [x] Cube maps (needed for PBR environment maps)
+- [ ] Rework engine to allow multiple instances (remove static fields, apply manager pattern)
+- [ ] rework FP object placement relative to cam (gun stuttering in *incoming* demo)
+- [ ] Rest of PBR stages
 - [ ] Environment maps
+- [ ] BRDFLUT_TEXTURE cannot be used as cube map (all black). probably needs format conversion
+- [ ] image based tests
+- [ ] fix line shader backbuffer2 image wrong format in stereo mode if no dynamic add lines
+- [x] add *Release* version to the current *Debug* config in cmake
+- [x] Cube maps (needed for PBR environment maps)
 - [x] Bug: billboard and possibly line shader cannot be last shader in app added (Validation Warning)
 - [x] Bug: LineApp not running (problem with wireframe loading)
-- [ ] Rest of PBR stages
 - [x] PBR Shader (simple: only base texture display, no lighting)
 - [x] PBR object loading from glTF files (vertices with pos and text coord, textures)
 - [x] Include KTX texture loading in PBR shader
@@ -324,16 +328,14 @@ Things finished and things to do. Both very small and very large things, just as
 - [x] Include *Dear ImGui* with standard Demo UI
 - [x] UI: FPS Counter
 - [x] Find assets by looking for 'data' folder up the whole path, starting at .exe location
-- [ ] image based tests
 - [x] Thread pool for backbuffer rendering
 - [x] dynamic lines for LineShader (added lines live only for one frame) in V 1.2 API
-- [ ] fix line shader backbuffer2 image wrong format in stereo mode if no dynamic add lines
 - [x] check for vulkan profile support: VP_KHR_roadmap_2022 level 1 (requires Feb 2022 drivers, only checked for nvdia)
 - [ ] Switch to V 1.3 API and get rid of framebuffer and renderpasses
 - [ ] LineText Shader with coordinate system display and dynamic text
 - [x] finalize thread architecture
 - [ ] optimze thread performance
-- [ ] vr view
+- [x] vr view
 - [x] asset loading (library)
 - [ ] Shaders
 - [ ] vr controllers

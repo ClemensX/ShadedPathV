@@ -225,10 +225,8 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 	}
 }
 
-static GlobalUpdateElement fake2;
-
 void LineShader::triggerUpdateThread() {
-	engine->pushUpdate(&fake2);
+	engine->pushUpdate(0);
 }
 
 void LineShader::resourceSwitch(GlobalResourceSet set)

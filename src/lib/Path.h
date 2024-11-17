@@ -11,4 +11,5 @@ private:
 	World* world = nullptr;
 	WorldObject* terrain = nullptr;
 	UltimateHeightmapInfo* hinfo = nullptr;
+	float bug_dist = 0.0f, bug_time = 0.0f;
 };
