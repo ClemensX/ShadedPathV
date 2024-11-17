@@ -49,7 +49,7 @@ int main()
         oldApp = &app;
         oldEngine = engine;
     }
-    if (true)
+    if (true && !oldEngine->shouldClosePermanent)
     {
         //man.deleteEngine(oldEngine); // delete old window, hav to create a new one
         engine = man.addEngineInApplicationWindow(oldEngine, oldApp);

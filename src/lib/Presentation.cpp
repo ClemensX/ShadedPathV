@@ -20,6 +20,10 @@ uint32_t Presentation::threadId = 0;
 void Presentation::initGLFW(bool handleKeyEvents, bool handleMouseMoveEevents, bool handleMouseButtonEvents)
 {
     if (!enabled) return;
+    if (engine->reuseOldWindow) {
+        window = engine->oldEngine->presentation.window;
+        return;
+    }
     glfwInit();
     if (true) {
         // Get the primary monitor
@@ -34,15 +38,15 @@ void Presentation::initGLFW(bool handleKeyEvents, bool handleMouseMoveEevents, b
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-        window = glfwCreateWindow(engine.win_width, engine.win_height, engine.win_name, nullptr, nullptr);
-        if (engine.debugWindowPosition) {
+        window = glfwCreateWindow(engine->win_width, engine->win_height, engine->win_name, nullptr, nullptr);
+        if (engine->debugWindowPosition) {
             // Set window position to right half near the top of the screen
             glfwSetWindowPos(window, desktopWidth / 2, 30);
         }
         // validate requested window size:
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
-        if (width != engine.win_width || height != engine.win_height) {
+        if (width != engine->win_width || height != engine->win_height) {
             Error("Could not create window with requested size");
         }
         // init callbacks: we assume that no other callback was installed (yet)
@@ -98,7 +102,7 @@ void Presentation::callbackKey(GLFWwindow* window, int key, int scancode, int ac
     inputState.scancode = scancode;
     inputState.action = action;
     inputState.mods = mods;
-    engine.app->handleInput(inputState);
+    engine->app->handleInput(inputState);
 }
 
 void Presentation::callbackCursorPos(GLFWwindow* window, double xpos, double ypos)
@@ -109,7 +113,7 @@ void Presentation::callbackCursorPos(GLFWwindow* window, double xpos, double ypo
     glfwGetFramebufferSize(window, &width, &height);
     inputState.pos.x = static_cast<float>(xpos / width);
     inputState.pos.y = static_cast<float>(ypos / height);
-    engine.app->handleInput(inputState);
+    engine->app->handleInput(inputState);
 }
 
 void Presentation::callbackMouseButton(GLFWwindow* window, int button, int action, int mods)
@@ -136,7 +140,7 @@ void Presentation::callbackMouseButton(GLFWwindow* window, int button, int actio
         //std::cout << "Right mouse button is still pressed." << std::endl;
         inputState.stillPressedRight = true;
     }
-    engine.app->handleInput(inputState);
+    engine->app->handleInput(inputState);
 }
 
 void Presentation::pollEvents()
@@ -159,7 +163,7 @@ void Presentation::possiblyAddDeviceExtensions(vector<const char*> &ext)
 
 void Presentation::createSurface()
 {
-    if (glfwCreateWindowSurface(engine.global.vkInstance, window, nullptr, &surface) != VK_SUCCESS) {
+    if (glfwCreateWindowSurface(engine->global.vkInstance, window, nullptr, &surface) != VK_SUCCESS) {
         Error("failed to create window surface!");
     }
 
@@ -240,7 +244,16 @@ VkExtent2D Presentation::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabi
 }
 
 void Presentation::createSwapChain() {
-    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(engine.global.physicalDevice);
+    if (engine->reuseOldWindow) {
+        swapChain = engine->oldEngine->presentation.swapChain;
+        swapChainImages = engine->oldEngine->presentation.swapChainImages;
+        swapChainImageFormat = engine->oldEngine->presentation.swapChainImageFormat;
+        swapChainExtent = engine->oldEngine->presentation.swapChainExtent;
+        swapChainImageViews = engine->oldEngine->presentation.swapChainImageViews;
+        imageCount = engine->oldEngine->presentation.imageCount;
+        return;
+    }
+    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(engine->global.physicalDevice);
 
     // list available modes
     VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats, true);
@@ -266,7 +279,7 @@ void Presentation::createSwapChain() {
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT| VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
-    QueueFamilyIndices indices = engine.global.findQueueFamilies(engine.global.physicalDevice);
+    QueueFamilyIndices indices = engine->global.findQueueFamilies(engine->global.physicalDevice);
     uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 
     if (indices.graphicsFamily != indices.presentFamily) {
@@ -291,13 +304,13 @@ void Presentation::createSwapChain() {
     createInfo.clipped = VK_TRUE;
     // only one fixed swap chain - no resizing
     createInfo.oldSwapchain = VK_NULL_HANDLE;
-    if (vkCreateSwapchainKHR(engine.global.device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
+    if (vkCreateSwapchainKHR(engine->global.device, &createInfo, nullptr, &swapChain) != VK_SUCCESS) {
         Error("failed to create swap chain!");
     }
     // retrieve swap chain images:
-    vkGetSwapchainImagesKHR(engine.global.device, swapChain, &imageCount, nullptr);
+    vkGetSwapchainImagesKHR(engine->global.device, swapChain, &imageCount, nullptr);
     swapChainImages.resize(imageCount);
-    vkGetSwapchainImagesKHR(engine.global.device, swapChain, &imageCount, swapChainImages.data());
+    vkGetSwapchainImagesKHR(engine->global.device, swapChain, &imageCount, swapChainImages.data());
     swapChainImageFormat = surfaceFormat.format;
     swapChainExtent = extent;
     Log("swap chain create with # images: " << imageCount << endl);
@@ -305,24 +318,27 @@ void Presentation::createSwapChain() {
 
 void Presentation::createImageViews()
 {
+    if (engine->reuseOldWindow) {
+        return;
+    }
     swapChainImageViews.resize(swapChainImages.size());
     for (size_t i = 0; i < swapChainImages.size(); i++) {
-        swapChainImageViews[i] = engine.global.createImageView(swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+        swapChainImageViews[i] = engine->global.createImageView(swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
     }
 }
 
 void Presentation::createPresentQueue(unsigned int value)
 {
     if (!enabled) return;
-    vkGetDeviceQueue(engine.global.device, value, 0, &presentQueue);
-    engine.global.presentQueueFamiliyIndex = value;
-    engine.global.presentQueueIndex = 0;
+    vkGetDeviceQueue(engine->global.device, value, 0, &presentQueue);
+    engine->global.presentQueueFamiliyIndex = value;
+    engine->global.presentQueueIndex = 0;
 }
 
 void Presentation::initBackBufferPresentationSingle(ThreadResources &res)
 {
-    auto& device = engine.global.device;
-    auto& global = engine.global;
+    auto& device = engine->global.device;
+    auto& global = engine->global;
 
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -333,8 +349,8 @@ void Presentation::initBackBufferPresentationSingle(ThreadResources &res)
     if (vkAllocateCommandBuffers(device, &allocInfo, &res.commandBufferPresentBack) != VK_SUCCESS) {
         Error("failed to allocate command buffers!");
     }
-    res.commandBufferDebugName = engine.util.createDebugName("ThreadResources.commandBufferPresentBack", res);
-    engine.util.debugNameObjectCommandBuffer(res.commandBufferPresentBack, res.commandBufferDebugName.c_str());
+    res.commandBufferDebugName = engine->util.createDebugName("ThreadResources.commandBufferPresentBack", res);
+    engine->util.debugNameObjectCommandBuffer(res.commandBufferPresentBack, res.commandBufferDebugName.c_str());
     if (vkAllocateCommandBuffers(device, &allocInfo, &res.commandBufferUI) != VK_SUCCESS) {
         Error("failed to allocate command buffers!");
     }
@@ -343,16 +359,16 @@ void Presentation::initBackBufferPresentationSingle(ThreadResources &res)
 void Presentation::initBackBufferPresentation()
 {
     if (!enabled) return;
-    for (auto& res : engine.threadResources) {
+    for (auto& res : engine->threadResources) {
         initBackBufferPresentationSingle(res);
     }
 }
 
 void Presentation::beginPresentFrame(ThreadResources& tr)
 {
-    if (engine.isVR()) {
-        engine.vr.pollEvent();
-        engine.vr.frameWait();
+    if (engine->isVR()) {
+        engine->vr.pollEvent();
+        engine->vr.frameWait();
     }
 }
 
@@ -361,8 +377,8 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     if (!enabled) return;
     bool simplify = false;
     // select the right thread resources
-    auto& device = engine.global.device;
-    auto& global = engine.global;
+    auto& device = engine->global.device;
+    auto& global = engine->global;
 
     // thread checking - make sure present is only called on one thread:
     std::hash<std::thread::id> myHashObject{};
@@ -406,7 +422,7 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     }
 
     // UI code
-    if (!simplify) engine.shaders.uiShader.draw(tr);
+    if (!simplify) engine->shaders.uiShader.draw(tr);
 
     // Transition destination image to transfer destination layout
     VkImageMemoryBarrier dstBarrier{};
@@ -425,8 +441,8 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     //imageCopyRegion.srcSubresource.layerCount = 1;
     //imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     //imageCopyRegion.dstSubresource.layerCount = 1;
-    //imageCopyRegion.extent.width = engine.getBackBufferExtent().width;
-    //imageCopyRegion.extent.height = engine.getBackBufferExtent().height;
+    //imageCopyRegion.extent.width = engine->getBackBufferExtent().width;
+    //imageCopyRegion.extent.height = engine->getBackBufferExtent().height;
     //imageCopyRegion.extent.depth = 1;
 
     //vkCmdCopyImage(
@@ -438,15 +454,15 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
 
     // Define the region to blit (we will blit the whole swapchain image)
     VkOffset3D blitSizeSrc;
-    blitSizeSrc.x = engine.getBackBufferExtent().width;
-    blitSizeSrc.y = engine.getBackBufferExtent().height;
+    blitSizeSrc.x = engine->getBackBufferExtent().width;
+    blitSizeSrc.y = engine->getBackBufferExtent().height;
     blitSizeSrc.z = 1;
     VkOffset3D blitSizeDst;
-    blitSizeDst.x = engine.win_width;
-    if (engine.isStereoPresentation()) {
-        blitSizeDst.x = engine.win_width / 2;
+    blitSizeDst.x = engine->win_width;
+    if (engine->isStereoPresentation()) {
+        blitSizeDst.x = engine->win_width / 2;
     }
-    blitSizeDst.y = engine.win_height;
+    blitSizeDst.y = engine->win_height;
     blitSizeDst.z = 1;
 
     VkImageBlit imageBlitRegion{};
@@ -457,8 +473,8 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     imageBlitRegion.dstSubresource.layerCount = 1;
     imageBlitRegion.dstOffsets[1] = blitSizeDst;
 
-    if (engine.isVR()) {
-        engine.vr.frameCopy(tr);
+    if (engine->isVR()) {
+        engine->vr.frameCopy(tr);
     }
 
     if (!simplify) {
@@ -471,13 +487,13 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
             VK_FILTER_LINEAR
         );
 
-        if (engine.isStereoPresentation()) {
+        if (engine->isStereoPresentation()) {
             VkOffset3D blitPosDst;
-            blitPosDst.x = engine.win_width / 2;
+            blitPosDst.x = engine->win_width / 2;
             blitPosDst.y = 0;
             blitPosDst.z = 0;
             imageBlitRegion.dstOffsets[0] = blitPosDst;
-            blitSizeDst.x = engine.win_width;
+            blitSizeDst.x = engine->win_width;
             imageBlitRegion.dstOffsets[1] = blitSizeDst;
             vkCmdBlitImage(
                 tr.commandBufferPresentBack,
@@ -503,8 +519,8 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     if (vkEndCommandBuffer(tr.commandBufferPresentBack) != VK_SUCCESS) {
         Error("failed to record back buffer copy command buffer!");
     }
-    //vkWaitForFences(engine.global.device, 1, &res.imageDumpFence, VK_TRUE, UINT64_MAX);
-    //vkResetFences(engine.global.device, 1, &res.imageDumpFence);
+    //vkWaitForFences(engine->global.device, 1, &res.imageDumpFence, VK_TRUE, UINT64_MAX);
+    //vkResetFences(engine->global.device, 1, &res.imageDumpFence);
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     ///VkSemaphore waitSemaphores[] = { tr.renderFinishedSemaphore };
@@ -520,13 +536,13 @@ void Presentation::presentBackBufferImage(ThreadResources& tr)
     submitInfo.pSignalSemaphores = signalSemaphores;
 
     //vkDeviceWaitIdle(global.device); does not help
-    if (LOG_GLOBAL_UPDATE) engine.log_current_thread();
+    if (LOG_GLOBAL_UPDATE) engine->log_current_thread();
     LogCondF(LOG_FENCE, "queue thread submit present fence " << hex << ThreadInfo::thread_osid() << endl);
-    if (vkQueueSubmit(engine.global.graphicsQueue, 1, &submitInfo, tr.presentFence) != VK_SUCCESS) {
+    if (vkQueueSubmit(engine->global.graphicsQueue, 1, &submitInfo, tr.presentFence) != VK_SUCCESS) {
         Error("failed to submit draw command buffer!");
     }
-    if (engine.isVR()) {
-        engine.vr.frameEnd(tr);
+    if (engine->isVR()) {
+        engine->vr.frameEnd(tr);
     }
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -547,10 +563,10 @@ Presentation::~Presentation() {
     if (!enabled) return;
     // destroy swap chain image views
     for (auto imageView : swapChainImageViews) {
-        vkDestroyImageView(engine.global.device, imageView, nullptr);
+        vkDestroyImageView(engine->global.device, imageView, nullptr);
     }
-    vkDestroySwapchainKHR(engine.global.device, swapChain, nullptr);
-    vkDestroySurfaceKHR(engine.global.vkInstance, surface, nullptr);
+    vkDestroySwapchainKHR(engine->global.device, swapChain, nullptr);
+    vkDestroySurfaceKHR(engine->global.vkInstance, surface, nullptr);
     Log("Presentation destructor\n");
 };
 

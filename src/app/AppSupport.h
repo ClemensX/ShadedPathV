@@ -11,7 +11,7 @@ class AppSupport : public EngineParticipant
 {
 protected:
     bool enableLines = true;
-    bool enableUI = true;
+    bool enableUI = false;
     bool vr = false;
     bool stereo = false;
     bool enableSound = false;

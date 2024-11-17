@@ -11,8 +11,10 @@ void TextureViewer::run()
     {
         auto& shaders = engine->shaders;
         // camera initialization
-        createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 20.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        createHMDCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        vec3 startPos = vec3(0.0f, 0.0f, 20.2f);
+        if (engine->reuseOldWindow) startPos.z += 50.0f;
+        createFirstPersonCameraPositioner(startPos, vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 1.0f, 0.0f));
+        createHMDCameraPositioner(vec3(0.0f, 0.0f, 1.2f), vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 1.0f, 0.0f));
         getFirstPersonCameraPositioner()->setMaxSpeed(5.0f);
         initCamera();
         // engine configuration

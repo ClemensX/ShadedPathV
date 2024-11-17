@@ -214,7 +214,17 @@ void ShadedPathEngine::checkAspect()
 
 bool ShadedPathEngine::shouldClose()
 {
+    bool shouldClose = false;
     if (presentation.enabled && presentation.shouldClose()) {
+        // close everything
+        shouldClose = true;
+        shouldClosePermanent = true;
+    }
+    else if (presentation.enabled && shouldCloseThisEngine) {
+        // close this angine instance and load another for next chapter
+        shouldClose = true;
+    }
+    if ( shouldClose) {
         if (threadModeSingle) {
             return true;
         }

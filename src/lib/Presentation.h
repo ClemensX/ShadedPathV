@@ -23,11 +23,12 @@ struct SwapChainSupportDetails {
 class ShadedPathEngine;
 class ThreadResources;
 
-class Presentation
+class Presentation : public EngineParticipant
 {
 public:
-	Presentation(ShadedPathEngine& s) : engine(s) {
+	Presentation(ShadedPathEngine* s) {
 		Log("Presentation c'tor\n");
+        setEngine(s);
 	};
 	~Presentation();
 	
@@ -66,7 +67,6 @@ public:
 	std::vector<VkImageView> swapChainImageViews;
 	uint32_t imageCount;
 private:
-	ShadedPathEngine& engine;
 	const std::vector<const char*> deviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 	};

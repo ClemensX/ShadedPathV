@@ -19,7 +19,7 @@ private:
     ShadedPathEngine() :
         global(*this),
         globalUpdate(*this),
-        presentation(*this),
+        presentation(this),
         shaders(*this),
         util(*this),
         vr(*this),
@@ -37,7 +37,7 @@ private:
         oldApp(oldApp_),
         global(*this),
         globalUpdate(*this),
-        presentation(*this),
+        presentation(this),
         shaders(*this),
         util(*this),
         vr(*this),
@@ -249,6 +249,9 @@ public:
     Sound sound;
     ShadedPathEngine* oldEngine = nullptr;
     ShadedPathApplication* oldApp = nullptr;
+    bool reuseOldWindow = oldEngine != nullptr;
+    bool shouldClosePermanent = false; // no next engine instance will be created (window close event)
+    bool shouldCloseThisEngine = false; // close this engine instance, but possibly create a new one (next chapter)
 
     // non-Vulkan members
     Files files;
