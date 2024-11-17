@@ -28,6 +28,9 @@ int main()
     Log("ShadedPathV app\n");
     ShadedPathEngineManager man;
     ShadedPathEngine* engine = nullptr;
+    ShadedPathEngine* oldEngine = nullptr;
+    TextureViewer app; // vr ok
+    TextureViewer* oldApp = nullptr;
     {
         engine = man.createEngine();
         //Incoming app;
@@ -36,18 +39,21 @@ int main()
         //SimpleApp app; // vr ok (some stuttering - will not be investigated)
         //DeviceCoordApp app; // vr not supported
         //BillboardDemo app; // vr ok
-        TextureViewer app; // vr ok
         //GeneratedTexturesApp app; // TODO: does not even work in 2D
         //gltfObjectsApp app; // vr ok, also skybox
         //LandscapeDemo app; // vr ok
         //LandscapeGenerator app; // vr ok with limited support
         app.setEngine(engine);
         app.run();
-        man.deleteEngine(engine);
+        //man.deleteEngine(engine);
+        oldApp = &app;
+        oldEngine = engine;
     }
     if (true)
     {
-        engine = man.createEngine();
+        //man.deleteEngine(oldEngine); // delete old window, hav to create a new one
+        engine = man.addEngineInApplicationWindow(oldEngine, oldApp);
+        //man.deleteEngine(oldEngine);
         TextureViewer app;
         app.setEngine(engine);
         app.run();

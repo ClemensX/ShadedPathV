@@ -1,7 +1,7 @@
 #pragma once
 
 // generate billboards to teview mass rendering
-class TextureViewer : ShadedPathApplication, public AppSupport
+class TextureViewer : public ShadedPathApplication, public AppSupport
 {
 public:
     void init();

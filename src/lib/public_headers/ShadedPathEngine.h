@@ -18,7 +18,7 @@ private:
     // construct engine instance together with its needed aggregates
     ShadedPathEngine() :
         global(*this),
-		globalUpdate(*this),
+        globalUpdate(*this),
         presentation(*this),
         shaders(*this),
         util(*this),
@@ -28,6 +28,24 @@ private:
         limiter(60.0f)
     {
         Log("Engine c'tor\n");
+        files.findFxFolder();
+    }
+
+    // construct engine to run in pre-existing window
+    ShadedPathEngine(ShadedPathEngine* oldEngine_, ShadedPathApplication* oldApp_) :
+        oldEngine(oldEngine_),
+        oldApp(oldApp_),
+        global(*this),
+        globalUpdate(*this),
+        presentation(*this),
+        shaders(*this),
+        util(*this),
+        vr(*this),
+        objectStore(&meshStore),
+        sound(*this),
+        limiter(60.0f)
+    {
+        Log("add engine c'tor\n");
         files.findFxFolder();
     }
 
@@ -229,6 +247,8 @@ public:
     MeshStore meshStore;
     WorldObjectStore objectStore;
     Sound sound;
+    ShadedPathEngine* oldEngine = nullptr;
+    ShadedPathApplication* oldApp = nullptr;
 
     // non-Vulkan members
     Files files;
@@ -328,7 +348,16 @@ private:
 class ShadedPathEngineManager
 {
 public:
-    // Create a new instance of ShadedPathEngine and store it in the list
+    // Add a new instance of ShadedPathEngine to run in an existing window
+    ShadedPathEngine* addEngineInApplicationWindow(ShadedPathEngine* oldEngine, ShadedPathApplication* oldApp)
+    {
+        auto engine = std::unique_ptr<ShadedPathEngine>(new ShadedPathEngine(oldEngine, oldApp));
+        engines.push_back(std::move(engine));
+        return engines.back().get();
+    }
+
+    // Create a new instance of ShadedPathEngine for running in its own window.
+    // Example usage would be chaining a setup app and a game app
     ShadedPathEngine* createEngine()
     {
         auto engine = std::unique_ptr<ShadedPathEngine>(new ShadedPathEngine());
