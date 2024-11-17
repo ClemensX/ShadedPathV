@@ -92,25 +92,27 @@ void UI::init(ShadedPathEngine* engine)
     }
 
     // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForVulkan(engine->presentation.window, true);
-    ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = engine->global.vkInstance;
-    init_info.PhysicalDevice = engine->global.physicalDevice;
-    init_info.Device = engine->global.device;
-    init_info.QueueFamily = engine->global.familyIndices.graphicsFamily.value();
-    init_info.Queue = engine->global.graphicsQueue;
-    init_info.PipelineCache = VK_NULL_HANDLE;
-    init_info.DescriptorPool = g_DescriptorPool;
-    init_info.Allocator = nullptr;
-    init_info.MinImageCount = engine->presentation.imageCount - 1;
-    init_info.ImageCount = engine->presentation.imageCount;
-    //init_info.CheckVkResultFn = check_vk_result;
-    ImGui_ImplVulkan_Init(&init_info, imGuiRenderPass);
+    if (engine->oldEngine == nullptr) {
+        ImGui_ImplGlfw_InitForVulkan(engine->presentation.window, true);
+        ImGui_ImplVulkan_InitInfo init_info = {};
+        init_info.Instance = engine->global.vkInstance;
+        init_info.PhysicalDevice = engine->global.physicalDevice;
+        init_info.Device = engine->global.device;
+        init_info.QueueFamily = engine->global.familyIndices.graphicsFamily.value();
+        init_info.Queue = engine->global.graphicsQueue;
+        init_info.PipelineCache = VK_NULL_HANDLE;
+        init_info.DescriptorPool = g_DescriptorPool;
+        init_info.Allocator = nullptr;
+        init_info.MinImageCount = engine->presentation.imageCount - 1;
+        init_info.ImageCount = engine->presentation.imageCount;
+        //init_info.CheckVkResultFn = check_vk_result;
+        ImGui_ImplVulkan_Init(&init_info, imGuiRenderPass);
 
-    // upload fonts to GPU
-    VkCommandBuffer command_buffer = engine->global.beginSingleTimeCommands();
-    ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
-    engine->global.endSingleTimeCommands(command_buffer);
+        // upload fonts to GPU
+        VkCommandBuffer command_buffer = engine->global.beginSingleTimeCommands();
+        ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
+        engine->global.endSingleTimeCommands(command_buffer);
+    }
 
 }
 
