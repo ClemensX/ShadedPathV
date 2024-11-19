@@ -56,7 +56,8 @@ void AppSupport::handleInput(InputState& inputState)
             fpPositioner.setUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
             //hmdPositioner->movement.backward_ = press;
         }
-        if (key == GLFW_KEY_Q) {
+        if (key == GLFW_KEY_Q && action == GLFW_RELEASE) {
+            Log("Quit key pressed.\n")
             engine->shouldCloseThisEngine = true; // load next chapter in another engine, keep window
         }
         if (key == GLFW_KEY_F && action == GLFW_RELEASE) {

@@ -22,6 +22,17 @@ void Presentation::initGLFW(bool handleKeyEvents, bool handleMouseMoveEevents, b
     if (!enabled) return;
     if (engine->reuseOldWindow) {
         window = engine->oldEngine->presentation.window;
+        static auto callback_static = [this](GLFWwindow* window, int key, int scancode, int action, int mods) {
+            // because we have a this pointer we are now able to call a non-static member method:
+            callbackKey(window, key, scancode, action, mods);
+            };
+        auto old = glfwSetKeyCallback(window,
+            [](GLFWwindow* window, int key, int scancode, int action, int mods)
+            {
+                // only static methods can be called here as we cannot change glfw function parameter list to include instance pointer
+                callback_static(window, key, scancode, action, mods);
+            }
+        );
         return;
     }
     glfwInit();

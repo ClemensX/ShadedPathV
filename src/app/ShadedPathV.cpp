@@ -54,7 +54,7 @@ int main()
         //man.deleteEngine(oldEngine); // delete old window, hav to create a new one
         engine = man.addEngineInApplicationWindow(oldEngine, oldApp);
         //man.deleteEngine(oldEngine);
-        TextureViewer app;
+        Incoming app;
         app.setEngine(engine);
         app.run();
         man.deleteEngine(engine);
