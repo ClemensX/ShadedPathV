@@ -66,7 +66,8 @@ void GlobalRendering::shutdown()
 
 void GlobalRendering::gatherDeviceExtensions()
 {
-    engine.presentation.possiblyAddDeviceExtensions(deviceExtensions);
+    // already added to deviceExtensions vector
+    //engine->presentation.possiblyAddDeviceExtensions(deviceExtensions);
 }
 
 void GlobalRendering::initVulkanInstance()
@@ -104,8 +105,8 @@ void GlobalRendering::initVulkanInstance()
     }
     else {
         vkInstance = VK_NULL_HANDLE;
-        if (engine.isVR()) {
-            engine.vr.initVulkanEnable2(createInfo);
+        if (engine->isVR()) {
+            engine->vr.initVulkanEnable2(createInfo);
         } else {
             if (vkCreateInstance(&createInfo, nullptr, &vkInstance) != VK_SUCCESS) {
                 Error("failed to create instance!");
@@ -144,7 +145,7 @@ std::vector<const char*> GlobalRendering::getRequiredExtensions() {
     if (DEBUG_UTILS_EXTENSION) {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     }
-    if (engine.isMeshShading()) {
+    if (engine->isMeshShading()) {
         deviceExtensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
     }
 
@@ -166,13 +167,13 @@ void GlobalRendering::pickPhysicalDevice(bool listmode)
     }
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(vkInstance, &deviceCount, devices.data());
-    if (engine.getFixedPhysicalDeviceIndex() >= 0) {
+    if (engine->getFixedPhysicalDeviceIndex() >= 0) {
         if (listmode) {
             Log("Cannot list physical devices if a fixed device is selected" << endl);
             return;
         }
-        assert(engine.getFixedPhysicalDeviceIndex() < devices.size());
-        physicalDevice = devices[engine.getFixedPhysicalDeviceIndex()];
+        assert(engine->getFixedPhysicalDeviceIndex() < devices.size());
+        physicalDevice = devices[engine->getFixedPhysicalDeviceIndex()];
         assignGlobals(physicalDevice);
         return;
     }
@@ -248,7 +249,7 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
 
     bool extensionsSupported = checkDeviceExtensionSupport(device, false);
     bool swapChainAdequate = false;
-    if (engine.presentation.enabled) {
+    if (true) {
         if (extensionsSupported) {
             SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
             swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
@@ -267,11 +268,11 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
     feature2.pNext = &meshFeatures;
     vkGetPhysicalDeviceFeatures2(device, &feature2);
     VkPhysicalDeviceMeshShaderFeaturesEXT* meshSupport = (VkPhysicalDeviceMeshShaderFeaturesEXT*)feature2.pNext;
-    if (engine.isMeshShading()) {
+    if (engine->isMeshShading()) {
         //Log(meshSupport << endl);
         if (!meshSupport->meshShader || !meshSupport->taskShader) {
             Log("device does not support Mesh Shaders" << endl);
-            Log("You might try not to enable Mesh Shader in app code by removing: engine.enableMeshShader()" << endl);
+            Log("You might try not to enable Mesh Shader in app code by removing: engine->enableMeshShader()" << endl);
             return false;
         } else {
             Log("Mesh Shader enabled!" << endl);
@@ -297,7 +298,7 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
         return false;
     }
     if (!extensionsSupported) Log("WARNING required extensions are not supported. Maybe problem with vpGetPhysicalDeviceProfileSupport().\nConsider disabling physical device checking by setFixedPhysicalDeviceIndex(0)" << endl);
-    return familyIndices.isComplete(engine.presentation.enabled) && extensionsSupported && swapChainAdequate && deviceFeatures.samplerAnisotropy && deviceFeatures.textureCompressionBC;
+    return familyIndices.isComplete(extensionsSupported && swapChainAdequate && deviceFeatures.samplerAnisotropy && deviceFeatures.textureCompressionBC);
 }
 
 QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, bool listmode)
@@ -324,14 +325,14 @@ QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, b
                 //Log("  other queue flags: " << getQueueFlagsString(queueFamily.queueFlags).c_str() << endl);
             }
         }
-        if (engine.presentation.enabled) {
+        if (true) {
             VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, engine.presentation.surface, &presentSupport);
+            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
             if (presentSupport) {
                 indices.presentFamily = i;
             }
         }
-        if (!listmode && indices.isComplete(engine.presentation.enabled)) {
+        if (!listmode && indices.isComplete(true)) {
             break;
         }
         i++;
@@ -410,7 +411,7 @@ void GlobalRendering::createLogicalDevice()
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = { familyIndices.graphicsFamily.value() };
     uniqueQueueFamilies.insert({ familyIndices.transferFamily.value() });
-    if (engine.presentation.enabled) {
+    if (true) {
         uniqueQueueFamilies.insert({ familyIndices.presentFamily.value() });
     }
 
@@ -479,11 +480,11 @@ void GlobalRendering::createLogicalDevice()
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    if (engine.isMeshShading()) {
+    if (engine->isMeshShading()) {
         createInfo.pNext = &meshFeatures;
     }
     if (!USE_PROFILE_DYN_RENDERING) {
-        if (engine.isMeshShading()) {
+        if (engine->isMeshShading()) {
             meshFeatures.pNext = (void*)&deviceFeatures2;
         } else {
             //createInfo.pNext = &dynamic_rendering_feature;
@@ -518,8 +519,8 @@ void GlobalRendering::createLogicalDevice()
             Error("failed to create logical device!");
         }
     } else {
-        if (engine.isVR()) {
-            engine.vr.initVulkanCreateDevice(createInfo);
+        if (engine->isVR()) {
+            engine->vr.initVulkanCreateDevice(createInfo);
         } else {
             VkResult res = vkCreateDevice(physicalDevice, &createInfo, nullptr, &device);
             if (res != VK_SUCCESS) {
@@ -532,20 +533,20 @@ void GlobalRendering::createLogicalDevice()
     }
 
     vkGetDeviceQueue(device, familyIndices.graphicsFamily.value(), 0, &graphicsQueue);
-    engine.util.debugNameObject((uint64_t)graphicsQueue, VK_OBJECT_TYPE_QUEUE, "MAIN GRAPHICS QUEUE");
+    engine->util.debugNameObject((uint64_t)graphicsQueue, VK_OBJECT_TYPE_QUEUE, "MAIN GRAPHICS QUEUE");
     vkGetDeviceQueue(device, familyIndices.transferFamily.value(), 0, &transferQueue);
-    engine.util.debugNameObject((uint64_t)transferQueue, VK_OBJECT_TYPE_QUEUE, "TRANSFER QUEUE");
+    engine->util.debugNameObject((uint64_t)transferQueue, VK_OBJECT_TYPE_QUEUE, "TRANSFER QUEUE");
     // we normally rely on 2 different queues for multithreading (mainly global updates and render threads)
     // enable single queue rendering with a warning
     if (graphicsQueue == transferQueue) {
-        engine.setSingleQueueMode();
+        engine->setSingleQueueMode();
         Log("WARNING: Your device does only offer a single queue. Expect severe performance penalties\n");
     }
-    if (engine.presentation.enabled) {
-        engine.presentation.createPresentQueue(familyIndices.presentFamily.value());
+    if (TRUE) {
+        //engine->presentation.createPresentQueue(familyIndices.presentFamily.value());
     }
-    if (engine.isVR()) {
-        engine.vr.create();
+    if (engine->isVR()) {
+        engine->vr.create();
     }
 }
 
@@ -578,22 +579,22 @@ bool GlobalRendering::checkDeviceExtensionSupport(VkPhysicalDevice phys_device, 
 
 SwapChainSupportDetails GlobalRendering::querySwapChainSupport(VkPhysicalDevice device) {
     SwapChainSupportDetails details{};
-    if (!engine.presentation.enabled) return details;
+    if (true) return details;
 
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, engine.presentation.surface, &details.capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
     uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device, engine.presentation.surface, &formatCount, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
 
     if (formatCount != 0) {
         details.formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, engine.presentation.surface, &formatCount, details.formats.data());
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
     }
     uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(device, engine.presentation.surface, &presentModeCount, nullptr);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
 
     if (presentModeCount != 0) {
         details.presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, engine.presentation.surface, &presentModeCount, details.presentModes.data());
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
     }
     return details;
 }
@@ -639,7 +640,7 @@ VkCommandBuffer GlobalRendering::beginSingleTimeCommands(bool sync, QueueSelecto
     VkCommandBuffer commandBuffer;
     vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
     VkCommandBufferBeginInfo beginInfo{};
-    engine.util.debugNameObjectCommandBuffer(commandBuffer, "SINGLE TIME COMMAND BUFFER");
+    engine->util.debugNameObjectCommandBuffer(commandBuffer, "SINGLE TIME COMMAND BUFFER");
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
@@ -692,9 +693,9 @@ void GlobalRendering::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
     }
 
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
-    engine.util.debugNameObjectBuffer(buffer, bufferDebugName.c_str());
+    engine->util.debugNameObjectBuffer(buffer, bufferDebugName.c_str());
     string memName = bufferDebugName + " memory";
-    engine.util.debugNameObjectDeviceMmeory(bufferMemory, memName.c_str());
+    engine->util.debugNameObjectDeviceMmeory(bufferMemory, memName.c_str());
 }
 
 void GlobalRendering::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, QueueSelector queue, uint64_t flags) {
@@ -716,20 +717,20 @@ void GlobalRendering::uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize buf
         stagingBuffer, stagingBufferMemory, bufferDebugName + " Staging");
 
     void* data;
-    vkMapMemory(engine.global.device, stagingBufferMemory, 0, bufferSize, 0, &data);
+    vkMapMemory(engine->global.device, stagingBufferMemory, 0, bufferSize, 0, &data);
     memcpy(data, src, (size_t)bufferSize);
-    vkUnmapMemory(engine.global.device, stagingBufferMemory);
+    vkUnmapMemory(engine->global.device, stagingBufferMemory);
 
     createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage, VK_MEMORY_HEAP_DEVICE_LOCAL_BIT,
         buffer, bufferMemory, bufferDebugName);
 
     //for (int i = 0; i < 10000; i++)
-    engine.global.copyBuffer(stagingBuffer, buffer, bufferSize, queue);
+    engine->global.copyBuffer(stagingBuffer, buffer, bufferSize, queue);
 
-    vkDestroyBuffer(engine.global.device, stagingBuffer, nullptr);
-    vkFreeMemory(engine.global.device, stagingBufferMemory, nullptr);
-    //vkDestroyBuffer(engine.global.device, buffer, nullptr);
-    //vkFreeMemory(engine.global.device, bufferMemory, nullptr);
+    vkDestroyBuffer(engine->global.device, stagingBuffer, nullptr);
+    vkFreeMemory(engine->global.device, stagingBufferMemory, nullptr);
+    //vkDestroyBuffer(engine->global.device, buffer, nullptr);
+    //vkFreeMemory(engine->global.device, bufferMemory, nullptr);
 }
 
 void GlobalRendering::createTextureSampler()
@@ -845,7 +846,7 @@ void GlobalRendering::createImage(uint32_t width, uint32_t height, uint32_t mipL
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = engine.global.findMemoryTypeIndex(memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = engine->global.findMemoryTypeIndex(memRequirements.memoryTypeBits, properties);
 
     if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
         Error("failed to allocate image memory!");
@@ -854,10 +855,10 @@ void GlobalRendering::createImage(uint32_t width, uint32_t height, uint32_t mipL
     vkBindImageMemory(device, image, imageMemory, 0);
 }
 
-void GlobalRendering::createCubeMapFrom2dTexture(string textureName2d, string textureNameCube)
+void GlobalRendering::createCubeMapFrom2dTexture(string textureName2d, string textureNameCube, TextureStore* textureStore)
 {
     FrameBufferAttachment attachment{};
-    TextureInfo* twoD = engine.textureStore.getTexture(textureName2d);
+    TextureInfo* twoD = textureStore->getTexture(textureName2d);
 
     createImageCube(twoD->vulkanTexture.width, twoD->vulkanTexture.height, twoD->vulkanTexture.levelCount, VK_SAMPLE_COUNT_1_BIT, twoD->vulkanTexture.imageFormat, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -940,7 +941,7 @@ void GlobalRendering::createCubeMapFrom2dTexture(string textureName2d, string te
 
     endSingleTimeCommands(cmd);
 
-    ::TextureInfo *texture = engine.textureStore.createTextureSlot(textureNameCube);
+    ::TextureInfo *texture = textureStore->createTextureSlot(textureNameCube);
     // copy base ktx texture fields and the adapt for new cube map:
     texture->vulkanTexture = twoD->vulkanTexture;
     texture->vulkanTexture.deviceMemory = nullptr;
@@ -957,14 +958,14 @@ void GlobalRendering::createViewportState(ShaderState& shaderState) {
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)engine.getBackBufferExtent().width;
-    viewport.height = (float)engine.getBackBufferExtent().height;
+    viewport.width = (float)engine->getBackBufferExtent().width;
+    viewport.height = (float)engine->getBackBufferExtent().height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor{};
     scissor.offset = { 0, 0 };
-    scissor.extent = engine.getBackBufferExtent();
+    scissor.extent = engine->getBackBufferExtent();
 
     VkPipelineViewportStateCreateInfo viewportState{};
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;

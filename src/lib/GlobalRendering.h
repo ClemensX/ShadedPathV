@@ -25,22 +25,13 @@ struct SingleQueueTransferInfo {
 	VkSubmitInfo* submitInfoAddr;
 };
 
-// forward declarations
-class ShadedPathEngine;
-
 // global resources that are not changed in rendering threads.
-// shader code, meshes, etc.
-// all objects here are specific to shaders
-// shader independent global objects like framebuffer, swap chain, render passes are in ShadedPathEngine
-class GlobalRendering
+class GlobalRendering : public EngineParticipant
 {
-private:
-	// we need direct access to engine instance
-	ShadedPathEngine& engine;
-
 public:
-	GlobalRendering(ShadedPathEngine& s) : engine(s) {
+	GlobalRendering(ShadedPathEngine* s) {
 		Log("GlobalRendering c'tor\n");
+        setEngine(s);
 		// log vulkan version as string
 		Log("Vulkan API Version: " << getVulkanAPIString().c_str() << std::endl);
 	};
@@ -104,6 +95,7 @@ public:
 	uint32_t findMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags properties);
 	uint32_t presentQueueFamiliyIndex = -1;
 	uint32_t presentQueueIndex = -1;
+	VkSurfaceKHR surface = nullptr;
 
 	// Vulkan helper
 
@@ -127,7 +119,7 @@ public:
 		VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
 		createImage(width, height, mipLevels, numSamples, format, tiling, usage, properties, image, imageMemory, 6);
 	}
-	void createCubeMapFrom2dTexture(std::string textureName2d, std::string textureNameCube);
+	void createCubeMapFrom2dTexture(std::string textureName2d, std::string textureNameCube, TextureStore* textureStore);
 
 	// fill in viewport and scissor and create VkPipelineViewportStateCreateInfo with them
 	void createViewportState(ShaderState &shaderState);
@@ -173,6 +165,7 @@ public:
     }
 private:
 	std::vector<const char*> deviceExtensions = {
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME
 		//VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME
 		//VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
 		//VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME

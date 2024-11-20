@@ -9,6 +9,7 @@
 #endif
 
 using namespace std;
+#if defined(YEAH)
 
 void VR::init()
 {
@@ -990,3 +991,4 @@ VkImageView VR::CreateImageView(const ImageViewCreateInfo& imageViewCI) {
     imageViewResources[imageView] = imageViewCI;
     return imageView;
 }
+#endif

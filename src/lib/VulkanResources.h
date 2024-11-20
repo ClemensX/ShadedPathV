@@ -3,6 +3,7 @@
 // forward declarations
 class ShadedPathEngine;
 
+
 enum class VulkanResourceType {
 	// first VkDescriptorSetLayout:
 	MVPBuffer, // base matrices, renewed every frame (will be stored in desciptor set)

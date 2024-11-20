@@ -11,11 +11,12 @@ enum GraphicsAPI_Type : uint8_t {
 };
 // include xr linear algebra for XrVector and XrMatrix classes.
 #include "xr_linear_algebra.h"
-class VR
+class VR : public EngineParticipant
 {
 public:
-	VR(ShadedPathEngine& s) : engine(s) {
+	VR(ShadedPathEngine* s) {
 		Log("VR c'tor\n");
+		setEngine(s);
 	};
 	~VR();
 
@@ -68,7 +69,6 @@ public:
 		positioner = newPositioner;
 	}
 private:
-	ShadedPathEngine& engine;
 	XrInstance instance = nullptr;
 	XrSystemId systemId;
 	XrSystemProperties xrProp{};

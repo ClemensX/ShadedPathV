@@ -16,18 +16,18 @@ file(GLOB VULKAN_SHADERS
 )
 
 add_executable(app
-  AppSupport.cpp
-  BillboardDemo.cpp
-  DeviceCoordApp.cpp
-  GeneratedTexturesApp.cpp
-  gltfObjectsApp.cpp
-  gltfTerrainApp.cpp
-  LandscapeDemo1.cpp
-  LandscapeGenerator.cpp
-  LineApp.cpp
-  SimpleApp.cpp
-  Incoming.cpp
-  TextureViewer.cpp
+#   AppSupport.cpp
+#   BillboardDemo.cpp
+#   DeviceCoordApp.cpp
+#   GeneratedTexturesApp.cpp
+#   gltfObjectsApp.cpp
+#   gltfTerrainApp.cpp
+#   LandscapeDemo1.cpp
+#   LandscapeGenerator.cpp
+#   LineApp.cpp
+#   SimpleApp.cpp
+#   Incoming.cpp
+#   TextureViewer.cpp
 
   ShadedPathV.cpp
   ${VULKAN_SHADERS}

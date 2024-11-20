@@ -6,6 +6,7 @@
 // if all shaders have finished using it. This is checked by singleDrawingThreadMaintenance() after each drame has been drawn.
 
 class ThreadResources;
+class ShaderBase;
 enum class GlobalUpdateDesignator { SET_A, SET_B };
 
 // used in all the global update methods to signal upadte status

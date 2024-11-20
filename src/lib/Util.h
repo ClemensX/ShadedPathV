@@ -1,5 +1,4 @@
 #pragma once
-class ShadedPathEngine;
 class ThreadResources;
 struct LineDef;
 class World;
@@ -19,7 +18,7 @@ namespace Colors {
     const glm::vec4 LightSteelBlue = { 0.69f, 0.77f, 0.87f, 1.0f };
 };
 
-class Util
+class Util : public EngineParticipant
 {
 public:
     // write simple image formats
@@ -63,9 +62,9 @@ public:
         };
     }
 
-    Util(ShadedPathEngine& s) {
+    Util(ShadedPathEngine* s) {
         Log("Util c'tor\n");
-        engine = &s;
+        engine = s;
     };
 
     ~Util() {};
@@ -112,7 +111,6 @@ private:
     void initializeDebugFunctionPointers();
     //PFN_vkDebugMarkerSetObjectNameEXT pfnDebugMarkerSetObjectNameEXT = nullptr;
     PFN_vkSetDebugUtilsObjectNameEXT pfnDebugUtilsObjectNameEXT = nullptr;
-    ShadedPathEngine* engine = nullptr;
     int imageCounter = 0;
 };
 
