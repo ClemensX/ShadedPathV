@@ -29,8 +29,8 @@ int main()
     ShadedPathEngineManager man;
     ShadedPathEngine* engine = nullptr;
     ShadedPathEngine* oldEngine = nullptr;
-    TextureViewer app; // vr ok
-    TextureViewer* oldApp = nullptr;
+    Incoming app; // vr ok
+    Incoming* oldApp = nullptr;
     {
         engine = man.createEngine();
         //Incoming app;
@@ -49,15 +49,16 @@ int main()
         oldApp = &app;
         oldEngine = engine;
     }
-    if (true && !oldEngine->shouldClosePermanent)
+    if (false && !oldEngine->shouldClosePermanent)
     {
         //man.deleteEngine(oldEngine); // delete old window, hav to create a new one
-        engine = man.addEngineInApplicationWindow(oldEngine, oldApp);
+        //engine = man.addEngineInApplicationWindow(oldEngine, oldApp);
         //man.deleteEngine(oldEngine);
-        Incoming app;
+        TextureViewer app;
         app.setEngine(engine);
+        engine->shutdownApp();
         app.run();
-        man.deleteEngine(engine);
+        //man.deleteEngine(engine);
     }
     if (false)
     {

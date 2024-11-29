@@ -288,6 +288,11 @@ void VR::GetViewConfigurationViews()
     OPENXR_CHECK(xrEnumerateViewConfigurationViews(instance, systemId, m_viewConfiguration, 0, &viewConfigurationViewCount, nullptr), "Failed to enumerate ViewConfiguration Views.");
     m_viewConfigurationViews.resize(viewConfigurationViewCount, { XR_TYPE_VIEW_CONFIGURATION_VIEW });
     OPENXR_CHECK(xrEnumerateViewConfigurationViews(instance, systemId, m_viewConfiguration, viewConfigurationViewCount, &viewConfigurationViewCount, m_viewConfigurationViews.data()), "Failed to enumerate ViewConfiguration Views.");
+    if (engine.getBackBufferExtent().width == 0) {
+        // we did not set the backbuffer resolution yet, so we use the recommended resolution from the VR system
+        VkExtent2D extent = { m_viewConfigurationViews[0].recommendedImageRectWidth, m_viewConfigurationViews[0].recommendedImageRectHeight };
+        engine.setBackBufferResolution(extent);
+    }
 }
 
 int64_t VR::selectColorSwapchainFormat(std::vector<int64_t> formats)

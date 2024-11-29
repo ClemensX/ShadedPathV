@@ -12,9 +12,9 @@ class AppSupport : public EngineParticipant
 protected:
     bool enableLines = true;
     bool enableUI = false;
-    bool vr = false;
+    bool vr = true;
     bool stereo = false;
-    bool enableSound = false;
+    bool enableSound = true;
     bool singleThreadMode = false;
     bool debugWindowPosition = true; // if true try to open app window in right screen part
     bool enableRenderDoc = true;
@@ -101,6 +101,18 @@ protected:
         }
     }
     void initEngine(std::string name) {
+        if (engine->shouldCloseApp) {
+            if (engine->isVR()) {
+                engine->vr.SetPositioner(getHMDCameraPositioner());
+            }
+            // even if we wanted VR initialization may have failed, fallback to non-VR
+            if (!engine->isVR()) {
+                camera->changePositioner(&fpPositioner);
+                activePositionerIsHMD = false;
+            }
+            engine->setWorld(&world);
+            return;
+        }
         if (engine->isVR()) {
             engine->vr.SetPositioner(getHMDCameraPositioner());
             engine->setFramesInFlight(1);
@@ -163,7 +175,7 @@ protected:
     }
     void setHighBackbufferResolution() {
         if (vr) {
-            engine->setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
+            engine->setBackBufferResolution(ShadedPathEngine::Resolution::Invalid);
         } else {
             engine->setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         }

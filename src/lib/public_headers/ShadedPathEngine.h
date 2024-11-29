@@ -66,7 +66,7 @@ public:
     const uint32_t engineVersionInt = 1;
     std::string vulkanAPIVersion; // = global.getVulkanAPIString();
 
-    enum class Resolution { HMDIndex, FourK, TwoK, OneK, DeviceDefault, Small };
+    enum class Resolution { HMDIndexXXX, FourK, TwoK, OneK, DeviceDefault, Small, Invalid };
 
     void registerApp(ShadedPathApplication* app) {
         this->app = app;
@@ -252,6 +252,8 @@ public:
     bool reuseOldWindow = oldEngine != nullptr;
     bool shouldClosePermanent = false; // no next engine instance will be created (window close event)
     bool shouldCloseThisEngine = false; // close this engine instance, but possibly create a new one (next chapter)
+    bool shouldCloseApp = false; // close running app and reuse same engine instance for next app
+    void shutdownApp();
 
     // non-Vulkan members
     Files files;

@@ -44,6 +44,7 @@ void ShadedPathEngine::log_current_thread() {
 }
 
 void ShadedPathEngine::enablePresentation(int w, int h, const char* name) {
+    if (shouldCloseApp) return;
     if (initialized) Error("Configuration after intialization not allowed");
     if (limitFrameCountEnabled) Error("Only one of presentation or frameCountLimit can be active");
     win_width = w;
@@ -178,7 +179,7 @@ void ShadedPathEngine::setBackBufferResolution(VkExtent2D e)
 VkExtent2D ShadedPathEngine::getExtentForResolution(ShadedPathEngine::Resolution res)
 {
     switch (res) {
-    case Resolution::HMDIndex:
+    case Resolution::HMDIndexXXX:
         return { 2468, 2740 };
     case Resolution::FourK:
         return { 3840, 2160 };
@@ -189,6 +190,8 @@ VkExtent2D ShadedPathEngine::getExtentForResolution(ShadedPathEngine::Resolution
         return {960, 540};
     case Resolution::Small:
         return {480, 270};
+    case Resolution::Invalid:
+        return { 0, 0 };
     default:
         return {960, 540};
     }
@@ -196,6 +199,7 @@ VkExtent2D ShadedPathEngine::getExtentForResolution(ShadedPathEngine::Resolution
 
 void ShadedPathEngine::setBackBufferResolution(ShadedPathEngine::Resolution res)
 {
+    if (shouldCloseApp) return;
     if (initialized) Error("Configuration after intialization not allowed");
     setBackBufferResolution(getExtentForResolution(res));
     checkAspect();
@@ -415,6 +419,12 @@ void ShadedPathEngine::advanceFrameCountersAfterPresentation()
     currentFrameIndex = frameNum % framesInFlight;
     gameTime.advanceTime();
     fpsCounter.tick(gameTime.getRealTimeDelta(), true);
+}
+
+void ShadedPathEngine::shutdownApp()
+{
+    Log("Shutting down app " << this->app << endl);
+    shouldCloseApp = true;
 }
 
 void ShadedPathEngine::shutdown()

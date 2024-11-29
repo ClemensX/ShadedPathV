@@ -20,9 +20,7 @@ void LineApp::run()
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine->files.findAssetFolder("data");
         //engine->setFrameCountLimit(1000);
-        engine->setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
-        //engine->setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
-        //engine->setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
+        setHighBackbufferResolution();
         int win_width = 960;// 960;//1800;// 800;//3700;
         engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Vulkan Simple Line App");
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);

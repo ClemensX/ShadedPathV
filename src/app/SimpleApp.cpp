@@ -22,11 +22,7 @@ void SimpleApp::run()
         engine->setMaxTextures(10);
         //engine->setFrameCountLimit(1000);
         //engine->setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
-        if (vr) {
-            engine->setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
-        } else {
-            engine->setBackBufferResolution(ShadedPathEngine::Resolution::FourK); // 960
-        }
+        setHighBackbufferResolution();
         int win_width = 960; //2500;//1800;// 800;//3700;
         engine->enablePresentation(win_width, (int)(win_width /1.77f), "Vulkan Simple App");
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);
