@@ -50,6 +50,7 @@ std::string Util::createDebugName(const char* name, ThreadResources& res) {
     return std::string(name) + " "; // +std::to_string(res.frameIndex);
 }
 
+#if 0
 void Util::debugNameObject(uint64_t object, VkObjectType objectType, const char* name) {
     if (pfnDebugUtilsObjectNameEXT == nullptr) {
         initializeDebugFunctionPointers();
@@ -65,6 +66,7 @@ void Util::debugNameObject(uint64_t object, VkObjectType objectType, const char*
         pfnDebugUtilsObjectNameEXT(engine->global.device, &nameInfo);
     }
 }
+#endif
 
 // MathHelper:
 using namespace glm;
@@ -269,6 +271,7 @@ bool Spatial2D::isAllPointsSet()
     return true;
 }
 
+#if 0
 void Spatial2D::adaptLinesToWorld(std::vector<LineDef>& lines, World& world)
 {
     vec4 center = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -295,6 +298,7 @@ void Spatial2D::adaptLinesToWorld(std::vector<LineDef>& lines, World& world)
         l.end.z = -1.0f * static_cast<float>(startz + l.end.z * indexZfactor);
     }
 }
+#endif
 
 void Spatial2D::diamondSquare(float randomMagnitude, float randomDampening, int seed, int steps)
 {
@@ -462,9 +466,11 @@ void Util::writePPM(std::string filename, const char* imagedata, uint64_t width,
     }
     file.close();
 
-    Log("written image dump file (PPM format): " << engine->files.absoluteFilePath(filename).c_str() << endl);
+    //Log("written image dump file (PPM format): " << engine->files.absoluteFilePath(filename).c_str() << endl);
+    Log("written image dump file (PPM format): " << filename.c_str() << endl);
 }
 
+#if 0
 void Util::writeHeightmapRaw(std::vector<glm::vec3>& points)
 {
     stringstream name;
@@ -501,6 +507,7 @@ void Util::writeHeightmapRaw(std::vector<glm::vec3>& points)
 
     Log("written 32-bit float RAW heightmap file with ( " << roundedSquareRoot << " x " << roundedSquareRoot << " ) points: " << engine->files.absoluteFilePath(filename).c_str() << endl);
 }
+#endif
 
 void Util::drawBoxFromAxes(std::vector<LineDef>& boxes, vec3* axes)
 {

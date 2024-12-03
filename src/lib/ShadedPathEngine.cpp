@@ -8,4 +8,5 @@ void ShadedPathEngine::initGlobal() {
 
 ShadedPathEngine::~ShadedPathEngine()
 {
+    Log("Engine destructor\n");
 }

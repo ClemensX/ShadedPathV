@@ -1,5 +1,5 @@
 set (SOURCES
-  #Util.cpp
+  Util.cpp
   ShadedPathEngine.cpp
   #Texture.cpp
   #GlobalRendering.cpp
