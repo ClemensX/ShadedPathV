@@ -167,6 +167,13 @@ public:
     FPSCounter fpsCounter;
     bool threadModeSingle = false;
 
+    // low level graphics
+
+    // create image in GPU with default settings (render target, no mipmaps)
+    GPUImage* createImage();
+    void destroyImage(GPUImage* image);
+    bool presentationMode = false; // get rid of this later
+
 private:
 
     // bool configuration flags:
@@ -199,5 +206,5 @@ private:
     bool singleQueueMode = false;
     int fixedPhysicalDeviceIndex = -1;
     World* world = nullptr;
-
+    std::vector<GPUImage> images;
 };

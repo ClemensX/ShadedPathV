@@ -11,6 +11,9 @@ void ShadedPathEngine::initGlobal() {
 ShadedPathEngine::~ShadedPathEngine()
 {
     Log("Engine destructor\n");
+    for (auto& img : images) {
+        destroyImage(&img);
+    }
 }
 
 VkExtent2D ShadedPathEngine::getBackBufferExtent()
@@ -52,3 +55,18 @@ void ShadedPathEngine::setBackBufferResolution(ShadedPathEngine::Resolution res)
     //checkAspect();
 }
 
+GPUImage* ShadedPathEngine::createImage()
+{
+    GPUImage gpui;
+    globalRendering.createImage(getBackBufferExtent().width, getBackBufferExtent().height, 1, VK_SAMPLE_COUNT_1_BIT, globalRendering.ImageFormat, VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gpui.image, gpui.memory);
+    gpui.view = globalRendering.createImageView(gpui.image, globalRendering.ImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    images.push_back(gpui);
+    return &images.back();
+}
+
+void ShadedPathEngine::destroyImage(GPUImage* image)
+{
+    globalRendering.destroyImageView(image->view);
+    globalRendering.destroyImage(image->image, image->memory);
+}

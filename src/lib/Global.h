@@ -18,3 +18,10 @@ struct SwapChainSupportDetails {
 	std::vector<VkSurfaceFormatKHR> formats;
 	std::vector<VkPresentModeKHR> presentModes;
 };
+
+// low leve graphics: define image on GPU, that can be used as source or target
+struct GPUImage {
+	VkImage image = nullptr;
+	VkDeviceMemory memory = nullptr;
+	VkImageView view = nullptr;
+};

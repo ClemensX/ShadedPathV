@@ -78,6 +78,7 @@ TEST(Engine, Initialization) {
 
         // engine initialization
         engine.initGlobal();
+        engine.createImage();
         //engine.init("Test");
     }
     Log("Test end. (Should appear after destructor log)\n");

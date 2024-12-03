@@ -120,6 +120,8 @@ public:
 		createImage(width, height, mipLevels, numSamples, format, tiling, usage, properties, image, imageMemory, 6);
 	}
 	void createCubeMapFrom2dTexture(std::string textureName2d, std::string textureNameCube, TextureStore* textureStore);
+	void destroyImage(VkImage image, VkDeviceMemory imageMemory);
+	void destroyImageView(VkImageView imageView);
 
 	// fill in viewport and scissor and create VkPipelineViewportStateCreateInfo with them
 	void createViewportState(ShaderState &shaderState);
@@ -165,7 +167,8 @@ public:
     }
 private:
 	std::vector<const char*> deviceExtensions = {
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        VK_KHR_SURFACE_EXTENSION_NAME
 		//VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME
 		//VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
 		//VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME

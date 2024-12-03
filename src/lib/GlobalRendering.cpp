@@ -249,7 +249,7 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
 
     bool extensionsSupported = checkDeviceExtensionSupport(device, false);
     bool swapChainAdequate = false;
-    if (true) {
+    if (engine->presentationMode) {
         if (extensionsSupported) {
             SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
             swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
@@ -298,7 +298,7 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
         return false;
     }
     if (!extensionsSupported) Log("WARNING required extensions are not supported. Maybe problem with vpGetPhysicalDeviceProfileSupport().\nConsider disabling physical device checking by setFixedPhysicalDeviceIndex(0)" << endl);
-    return familyIndices.isComplete(extensionsSupported && swapChainAdequate && deviceFeatures.samplerAnisotropy && deviceFeatures.textureCompressionBC);
+    return familyIndices.isComplete( engine->presentationMode) && extensionsSupported && swapChainAdequate && deviceFeatures.samplerAnisotropy && deviceFeatures.textureCompressionBC;
 }
 
 QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, bool listmode)
@@ -325,14 +325,14 @@ QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, b
                 //Log("  other queue flags: " << getQueueFlagsString(queueFamily.queueFlags).c_str() << endl);
             }
         }
-        if (true) {
+        if (engine->presentationMode) {
             VkBool32 presentSupport = false;
             vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
             if (presentSupport) {
                 indices.presentFamily = i;
             }
         }
-        if (!listmode && indices.isComplete(true)) {
+        if (!listmode && indices.isComplete(engine->presentationMode)) {
             break;
         }
         i++;
@@ -411,7 +411,7 @@ void GlobalRendering::createLogicalDevice()
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = { familyIndices.graphicsFamily.value() };
     uniqueQueueFamilies.insert({ familyIndices.transferFamily.value() });
-    if (familyIndices.presentFamily.has_value()) {
+    if (engine->presentationMode) {
         uniqueQueueFamilies.insert({ familyIndices.presentFamily.value() });
     }
 
@@ -495,8 +495,10 @@ void GlobalRendering::createLogicalDevice()
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.enabledExtensionCount = 0;
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-    createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+    if (engine->presentationMode) {
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+        createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+    }
     createInfo.enabledLayerCount = 0; // no longer used - validation layers handled in kvInstance
     if (false) {
         VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
@@ -579,7 +581,7 @@ bool GlobalRendering::checkDeviceExtensionSupport(VkPhysicalDevice phys_device, 
 
 SwapChainSupportDetails GlobalRendering::querySwapChainSupport(VkPhysicalDevice device) {
     SwapChainSupportDetails details{};
-    if (true) return details;
+    if (!engine->presentationMode) return details;
 
     vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
     uint32_t formatCount;
@@ -954,6 +956,17 @@ void GlobalRendering::createCubeMapFrom2dTexture(string textureName2d, string te
     texture->isKtxCreated = false;
     texture->imageView = createImageViewCube(texture->vulkanTexture.image, texture->vulkanTexture.imageFormat, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
     texture->available = true;
+}
+
+void GlobalRendering::destroyImage(VkImage image, VkDeviceMemory imageMemory)
+{
+    vkDestroyImage(device, image, nullptr);
+    vkFreeMemory(device, imageMemory, nullptr);
+}
+
+void GlobalRendering::destroyImageView(VkImageView imageView)
+{
+    vkDestroyImageView(device, imageView, nullptr);
 }
 
 void GlobalRendering::createViewportState(ShaderState& shaderState) {
