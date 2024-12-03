@@ -6,10 +6,10 @@ class ShadedPathEngine
 {
 public:
     ShadedPathEngine() :
-        global(this),
-        shaders(*this),
-        util(this),
-        vr(this)
+        //global(this),
+        //shaders(*this),
+        util(this)
+        //vr(this)
     {
         Log("Engine c'tor\n");
         //files.findFxFolder();
@@ -107,17 +107,17 @@ public:
         enabledMousButtonEvents = true;
     }
 
-    // application should set this in init() for any shader that needs world info
-    void setWorld(World* world) {
-        this->world = world;
-    }
+    //// application should set this in init() for any shader that needs world info
+    //void setWorld(World* world) {
+    //    this->world = world;
+    //}
 
-    // if app did not set world, we return nullptr
-    World* getWorld() {
-        return world;
-    }
+    //// if app did not set world, we return nullptr
+    //World* getWorld() {
+    //    return world;
+    //}
 
-    //ThreadInfo mainThreadInfo;
+    ////ThreadInfo mainThreadInfo;
 
     // limit number of rendered frames - cannot be used together with presentation enabled
     void setFrameCountLimit(long max);
@@ -155,14 +155,14 @@ public:
 
     // init global resources. will only be available once
     void initGlobal();
-    GlobalRendering global;
+    //GlobalRendering global;
     Util util;
-    Shaders shaders;
-    VR vr;
-    TextureStore textureStore;
+    //Shaders shaders;
+    //VR vr;
+    //TextureStore textureStore;
 
     // non-Vulkan members
-    Files files;
+    //Files files;
     GameTime gameTime;
     FPSCounter fpsCounter;
     bool threadModeSingle = false;

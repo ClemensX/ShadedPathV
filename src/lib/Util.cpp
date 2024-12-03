@@ -42,11 +42,12 @@ int LogfileScanner::searchForLine(string line, int startline)
 }
 
 void Util::initializeDebugFunctionPointers() {
-    pfnDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(engine->global.vkInstance, "vkSetDebugUtilsObjectNameEXT");
+    //pfnDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(engine->global.vkInstance, "vkSetDebugUtilsObjectNameEXT");
 }
 
 std::string Util::createDebugName(const char* name, ThreadResources& res) {
-    return std::string(name) + " " + std::to_string(res.frameIndex);
+    //return std::string(name) + " " + std::to_string(res.frameIndex);
+    return std::string(name) + " "; // +std::to_string(res.frameIndex);
 }
 
 void Util::debugNameObject(uint64_t object, VkObjectType objectType, const char* name) {

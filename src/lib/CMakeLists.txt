@@ -1,8 +1,17 @@
 set (SOURCES
-  Util.cpp
+  #Util.cpp
   ShadedPathEngine.cpp
-  Texture.cpp
-  GlobalRendering.cpp
+  #Texture.cpp
+  #GlobalRendering.cpp
+  GameTime.cpp
+  #CubeShader.cpp
+  #BillboardShader.cpp
+  #TerrainShader.cpp
+  #UIShader.cpp
+  #UI.cpp
+  #ClearShader.cpp
+  #SimpleShader.cpp
+  #pbrShader.cpp
 )
 if (OPENXR_INC)
   list(APPEND SOURCES VR.cpp)
