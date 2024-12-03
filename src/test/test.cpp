@@ -77,6 +77,7 @@ TEST(Engine, Initialization) {
         engine.setThreadModeSingle();
 
         // engine initialization
+        engine.initGlobal();
         //engine.init("Test");
     }
     Log("Test end. (Should appear after destructor log)\n");
@@ -91,6 +92,7 @@ TEST(Engine, Headless) {
     {
         ShadedPathEngine my_engine;
         static ShadedPathEngine* engine = &my_engine;
+        engine->initGlobal();
         //class TestApp : ShadedPathApplication
         //{
         //public:

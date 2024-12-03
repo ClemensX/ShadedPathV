@@ -50,7 +50,6 @@ std::string Util::createDebugName(const char* name, ThreadResources& res) {
     return std::string(name) + " "; // +std::to_string(res.frameIndex);
 }
 
-#if 0
 void Util::debugNameObject(uint64_t object, VkObjectType objectType, const char* name) {
     if (pfnDebugUtilsObjectNameEXT == nullptr) {
         initializeDebugFunctionPointers();
@@ -63,10 +62,9 @@ void Util::debugNameObject(uint64_t object, VkObjectType objectType, const char*
         nameInfo.objectType = objectType;
         nameInfo.objectHandle = object;
         nameInfo.pObjectName = name;
-        pfnDebugUtilsObjectNameEXT(engine->global.device, &nameInfo);
+        pfnDebugUtilsObjectNameEXT(engine->globalRendering.device, &nameInfo);
     }
 }
-#endif
 
 // MathHelper:
 using namespace glm;

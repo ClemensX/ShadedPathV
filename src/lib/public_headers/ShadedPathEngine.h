@@ -6,7 +6,7 @@ class ShadedPathEngine
 {
 public:
     ShadedPathEngine() :
-        //global(this),
+        globalRendering(this),
         //shaders(*this),
         util(this)
         //vr(this)
@@ -36,7 +36,7 @@ public:
     const uint32_t engineVersionInt = 1;
     std::string vulkanAPIVersion; // = global.getVulkanAPIString();
 
-    enum class Resolution { HMDIndex, FourK, TwoK, OneK, DeviceDefault, Small };
+    enum class Resolution { FourK, TwoK, OneK, DeviceDefault, Small, Invalid };
 
     // backbuffer sizing
     void setBackBufferResolution(VkExtent2D e);
@@ -155,7 +155,7 @@ public:
 
     // init global resources. will only be available once
     void initGlobal();
-    //GlobalRendering global;
+    GlobalRendering globalRendering;
     Util util;
     //Shaders shaders;
     //VR vr;
@@ -179,6 +179,8 @@ private:
     bool debugWindowPosition = false; // if true try to open app window in right screen part
     bool enableRenderDoc = true;
 
+    // backbuffer size:
+    VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);
     float backBufferAspect = 1.0f;
     long limitFrameCount = 0;
     int framesInFlight = 2;

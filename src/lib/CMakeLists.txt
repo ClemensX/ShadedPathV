@@ -2,7 +2,7 @@ set (SOURCES
   Util.cpp
   ShadedPathEngine.cpp
   #Texture.cpp
-  #GlobalRendering.cpp
+  GlobalRendering.cpp
   GameTime.cpp
   #CubeShader.cpp
   #BillboardShader.cpp

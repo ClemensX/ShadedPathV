@@ -106,7 +106,7 @@ void GlobalRendering::initVulkanInstance()
     else {
         vkInstance = VK_NULL_HANDLE;
         if (engine->isVR()) {
-            engine->vr.initVulkanEnable2(createInfo);
+            //engine->vr.initVulkanEnable2(createInfo);
         } else {
             if (vkCreateInstance(&createInfo, nullptr, &vkInstance) != VK_SUCCESS) {
                 Error("failed to create instance!");
@@ -411,7 +411,7 @@ void GlobalRendering::createLogicalDevice()
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = { familyIndices.graphicsFamily.value() };
     uniqueQueueFamilies.insert({ familyIndices.transferFamily.value() });
-    if (true) {
+    if (familyIndices.presentFamily.has_value()) {
         uniqueQueueFamilies.insert({ familyIndices.presentFamily.value() });
     }
 
@@ -520,7 +520,7 @@ void GlobalRendering::createLogicalDevice()
         }
     } else {
         if (engine->isVR()) {
-            engine->vr.initVulkanCreateDevice(createInfo);
+            //engine->vr.initVulkanCreateDevice(createInfo);
         } else {
             VkResult res = vkCreateDevice(physicalDevice, &createInfo, nullptr, &device);
             if (res != VK_SUCCESS) {
@@ -546,7 +546,7 @@ void GlobalRendering::createLogicalDevice()
         //engine->presentation.createPresentQueue(familyIndices.presentFamily.value());
     }
     if (engine->isVR()) {
-        engine->vr.create();
+        //engine->vr.create();
     }
 }
 
@@ -717,18 +717,18 @@ void GlobalRendering::uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize buf
         stagingBuffer, stagingBufferMemory, bufferDebugName + " Staging");
 
     void* data;
-    vkMapMemory(engine->global.device, stagingBufferMemory, 0, bufferSize, 0, &data);
+    vkMapMemory(engine->globalRendering.device, stagingBufferMemory, 0, bufferSize, 0, &data);
     memcpy(data, src, (size_t)bufferSize);
-    vkUnmapMemory(engine->global.device, stagingBufferMemory);
+    vkUnmapMemory(engine->globalRendering.device, stagingBufferMemory);
 
     createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage, VK_MEMORY_HEAP_DEVICE_LOCAL_BIT,
         buffer, bufferMemory, bufferDebugName);
 
     //for (int i = 0; i < 10000; i++)
-    engine->global.copyBuffer(stagingBuffer, buffer, bufferSize, queue);
+    engine->globalRendering.copyBuffer(stagingBuffer, buffer, bufferSize, queue);
 
-    vkDestroyBuffer(engine->global.device, stagingBuffer, nullptr);
-    vkFreeMemory(engine->global.device, stagingBufferMemory, nullptr);
+    vkDestroyBuffer(engine->globalRendering.device, stagingBuffer, nullptr);
+    vkFreeMemory(engine->globalRendering.device, stagingBufferMemory, nullptr);
     //vkDestroyBuffer(engine->global.device, buffer, nullptr);
     //vkFreeMemory(engine->global.device, bufferMemory, nullptr);
 }
@@ -846,7 +846,7 @@ void GlobalRendering::createImage(uint32_t width, uint32_t height, uint32_t mipL
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = engine->global.findMemoryTypeIndex(memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = engine->globalRendering.findMemoryTypeIndex(memRequirements.memoryTypeBits, properties);
 
     if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
         Error("failed to allocate image memory!");
@@ -858,7 +858,8 @@ void GlobalRendering::createImage(uint32_t width, uint32_t height, uint32_t mipL
 void GlobalRendering::createCubeMapFrom2dTexture(string textureName2d, string textureNameCube, TextureStore* textureStore)
 {
     FrameBufferAttachment attachment{};
-    TextureInfo* twoD = textureStore->getTexture(textureName2d);
+    assert(false);
+    TextureInfo* twoD = nullptr;//textureStore->getTexture(textureName2d);
 
     createImageCube(twoD->vulkanTexture.width, twoD->vulkanTexture.height, twoD->vulkanTexture.levelCount, VK_SAMPLE_COUNT_1_BIT, twoD->vulkanTexture.imageFormat, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -941,7 +942,8 @@ void GlobalRendering::createCubeMapFrom2dTexture(string textureName2d, string te
 
     endSingleTimeCommands(cmd);
 
-    ::TextureInfo *texture = textureStore->createTextureSlot(textureNameCube);
+    assert(false);
+    ::TextureInfo* texture = nullptr; // textureStore->createTextureSlot(textureNameCube);
     // copy base ktx texture fields and the adapt for new cube map:
     texture->vulkanTexture = twoD->vulkanTexture;
     texture->vulkanTexture.deviceMemory = nullptr;
