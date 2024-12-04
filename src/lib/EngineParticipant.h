@@ -14,3 +14,19 @@ public:
     }
     ShadedPathEngine* engine = nullptr;
 };
+
+// change image on GPU
+class ImageWriter : public EngineParticipant
+{
+public:
+    virtual ~ImageWriter() = 0;
+    virtual void writeToImage(GPUImage* gpui) = 0;
+};
+
+// consume image on GPU (copy to CPU or to another GPU image)
+class ImageConsumer : public EngineParticipant
+{
+public:
+    //virtual ~ImageConsumer() = 0;
+    virtual void consume(GPUImage* gpui) = 0;
+};

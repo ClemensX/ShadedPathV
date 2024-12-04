@@ -165,6 +165,13 @@ public:
 
         return std::string(buffer);
     }
+
+	// low level graphics
+
+	// create image in GPU with default settings (render target, no mipmaps)
+	GPUImage* createImage(std::vector<GPUImage>& list);
+	void destroyImage(GPUImage* image);
+
 private:
 	std::vector<const char*> deviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,

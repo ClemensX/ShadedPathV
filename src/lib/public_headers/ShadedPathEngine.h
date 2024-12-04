@@ -166,12 +166,7 @@ public:
     GameTime gameTime;
     FPSCounter fpsCounter;
     bool threadModeSingle = false;
-
-    // low level graphics
-
-    // create image in GPU with default settings (render target, no mipmaps)
     GPUImage* createImage();
-    void destroyImage(GPUImage* image);
     bool presentationMode = false; // get rid of this later
 
 private:

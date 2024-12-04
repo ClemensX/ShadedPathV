@@ -4,6 +4,7 @@ set (SOURCES
   #Texture.cpp
   GlobalRendering.cpp
   GameTime.cpp
+  DirectImage.cpp
   #CubeShader.cpp
   #BillboardShader.cpp
   #TerrainShader.cpp

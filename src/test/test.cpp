@@ -89,6 +89,29 @@ TEST(Engine, Initialization) {
     EXPECT_TRUE(log.assertLineBefore("Engine destructor", "Test end."));
 }
 
+TEST(Engine, DirectImageManipulation) {
+    {
+        ShadedPathEngine engine;
+        //engine.setFrameCountLimit(10);
+        //engine.setBackBufferResolution(ShadedPathEngine::Resolution::Small);
+        //engine.setFramesInFlight(2);
+        engine.setThreadModeSingle();
+
+        // engine initialization
+        engine.initGlobal();
+        auto gpui = engine.createImage();
+        DirectImage di(&engine);
+        di.dumpToFile(gpui);
+        //engine.init("Test");
+    }
+    Log("Test end. (Should appear after destructor log)\n");
+    LogfileScanner log;
+    EXPECT_GT(log.searchForLine("Engine destructor"), -1);
+    EXPECT_GT(log.searchForLine("Test end."), -1);
+    //Log(" found in logfile: " << log.searchForLine("Engine destructor") << endl);
+    EXPECT_TRUE(log.assertLineBefore("Engine destructor", "Test end."));
+}
+
 TEST(Engine, Headless) {
     {
         ShadedPathEngine my_engine;
