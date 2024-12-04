@@ -24,4 +24,7 @@ struct GPUImage {
 	VkImage image = nullptr;
 	VkDeviceMemory memory = nullptr;
 	VkImageView view = nullptr;
+    VkImageUsageFlags usage = 0;
+	const char* imagedata = nullptr;
+	VkSubresourceLayout subResourceLayout;
 };

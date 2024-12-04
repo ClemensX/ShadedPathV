@@ -170,6 +170,7 @@ public:
 
 	// create image in GPU with default settings (render target, no mipmaps)
 	GPUImage* createImage(std::vector<GPUImage>& list);
+    void createDumpImage(GPUImage& gpui);
 	void destroyImage(GPUImage* image);
 
 private:
