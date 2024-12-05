@@ -55,7 +55,7 @@ void ShadedPathEngine::setBackBufferResolution(ShadedPathEngine::Resolution res)
     //checkAspect();
 }
 
-GPUImage* ShadedPathEngine::createImage()
+GPUImage* ShadedPathEngine::createImage(const char* debugName)
 {
-    return globalRendering.createImage(images);
+    return globalRendering.createImage(images, debugName);
 }

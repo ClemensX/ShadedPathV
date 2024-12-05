@@ -24,6 +24,7 @@ public:
     // write simple image formats
 
     // write ppm image (usually screenshots), can be opened with GIMP
+    // written ppm is in binary format RGB, 8 bit per channel
     void writePPM(std::string filename, const char* imagedata, uint64_t width, uint64_t height, uint64_t rowPitch, bool colorSwizzle);
 
     // write 32 bit float heightmap image as raw image (no header data)
@@ -100,7 +101,11 @@ public:
     void debugNameObjectShaderModule(VkShaderModule m, const char* name) {
         debugNameObject((uint64_t)m, VK_OBJECT_TYPE_SHADER_MODULE, name);
     }
-	static std::wstring string2wstring(const std::string& s) {
+    // debug name shader module
+    void debugNameObjectImage(VkImage m, const char* name) {
+        debugNameObject((uint64_t)m, VK_OBJECT_TYPE_IMAGE, name);
+    }
+    static std::wstring string2wstring(const std::string& s) {
         std::wstringstream wss;
         wss << s.c_str();
         std::wstring wstr = wss.str();

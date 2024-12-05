@@ -9,5 +9,10 @@ public:
     ~DirectImage();
     void consume(GPUImage* gpui) override;
     void dumpToFile(GPUImage* gpui);
-    void dumpToFile(GPUImage* gpui, VkCommandBuffer commandBuffer);
+    void openForCPUWriteAccess(GPUImage* gpui, GPUImage* writeable);
+    void closeCPUWriteAccess(GPUImage* gpui, GPUImage* writeable);
+    void toLayout(VkImageLayout layout, VkAccessFlags access, VkCommandBuffer commandBuffer, GPUImage* gpui);
+private:
+    void copyBackbufferImage(GPUImage* gpui_source, GPUImage* gpui_target, VkCommandBuffer commandBuffer);
+    unsigned int imageCounter = 0;
 };

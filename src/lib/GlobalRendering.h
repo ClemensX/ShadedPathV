@@ -168,8 +168,9 @@ public:
 
 	// low level graphics
 
-	// create image in GPU with default settings (render target, no mipmaps)
-	GPUImage* createImage(std::vector<GPUImage>& list);
+	// create image in GPU with default settings (render target, no mipmaps, not host visible)
+	GPUImage* createImage(std::vector<GPUImage>& list, const char* debugName);
+    // create image in GPU with direct memory access by host, can be used for dumping to file or CPU based image manipulation
     void createDumpImage(GPUImage& gpui);
 	void destroyImage(GPUImage* image);
 

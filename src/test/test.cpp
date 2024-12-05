@@ -78,7 +78,7 @@ TEST(Engine, Initialization) {
 
         // engine initialization
         engine.initGlobal();
-        engine.createImage();
+        engine.createImage("debugName");
         //engine.init("Test");
     }
     Log("Test end. (Should appear after destructor log)\n");
@@ -99,8 +99,11 @@ TEST(Engine, DirectImageManipulation) {
 
         // engine initialization
         engine.initGlobal();
-        auto gpui = engine.createImage();
+        auto gpui = engine.createImage("Test Image");
         DirectImage di(&engine);
+        GPUImage directImage;
+        di.openForCPUWriteAccess(gpui, &directImage);
+        di.closeCPUWriteAccess(gpui, &directImage);
         di.dumpToFile(gpui);
         //engine.init("Test");
     }

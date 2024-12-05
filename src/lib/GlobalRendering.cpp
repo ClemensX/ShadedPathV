@@ -1004,21 +1004,23 @@ void GlobalRendering::logDeviceLimits()
     // maxDescriptorSetSampledImages
 }
 
-GPUImage* GlobalRendering::createImage(vector<GPUImage>& list)
+GPUImage* GlobalRendering::createImage(vector<GPUImage>& list, const char *debugName)
 {
     GPUImage gpui;
     gpui.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    gpui.layout = VK_IMAGE_LAYOUT_UNDEFINED;
     createImage(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height, 1, VK_SAMPLE_COUNT_1_BIT, ImageFormat, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gpui.image, gpui.memory);
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gpui.image, gpui.memory);
     gpui.view = createImageView(gpui.image, ImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
     list.push_back(gpui);
+    engine->util.debugNameObjectImage(gpui.image, debugName);
     return &list.back();
 }
 
 void GlobalRendering::createDumpImage(GPUImage& gpui)
 {
     createImage(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height, 1, VK_SAMPLE_COUNT_1_BIT, ImageFormat, VK_IMAGE_TILING_LINEAR,
-        VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         gpui.image, gpui.memory);
     // Get layout of the image (including row pitch)
     VkImageSubresource subResource{};

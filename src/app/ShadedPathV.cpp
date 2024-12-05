@@ -36,7 +36,7 @@ int main()
         ;
 
     engine.initGlobal();
-    engine.createImage();
+    engine.createImage("Image One");
     //ShadedPathEngineManager man;
     //ShadedPathEngine* engine = nullptr;
     //ShadedPathEngine* oldEngine = nullptr;

@@ -166,7 +166,7 @@ public:
     GameTime gameTime;
     FPSCounter fpsCounter;
     bool threadModeSingle = false;
-    GPUImage* createImage();
+    GPUImage* createImage(const char* debugName);
     bool presentationMode = false; // get rid of this later
 
 private:
