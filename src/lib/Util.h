@@ -30,6 +30,11 @@ public:
     // write 32 bit float heightmap image as raw image (no header data)
     void writeHeightmapRaw(std::vector<glm::vec3> &points);
 
+    // write to in memory image data (for debugging / testing)
+    // image is in format BGRA, 8 bit per channel
+    void writeRawImageTestData(GPUImage& img, int type);
+    void writeRawImagePixel(GPUImage& img, int x, int y, glm::vec4 color);
+
     // if you construct a skybox you need to be sure the edges of the view cube are still within far plane.
     // this calculates the maximum (half) cube edge size you can use (see CubeShader)
     static float getMaxCubeViewDistanceFromFarPlane(float f) {

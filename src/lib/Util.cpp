@@ -440,6 +440,66 @@ float Spatial2D::getHeightSave(int center_x, int center_y, int half)
     return height;
 }
 
+void Util::writeRawImageTestData(GPUImage& img, int type)
+{
+    //for (int i = 0; i < 100000; i++) {
+    //    unsigned int* row = (unsigned int*)(img.imagedata + i);
+    //    if ((*row % 3) == 0) *((char*)row) = 0x3f;
+    //}
+    //unsigned char data[] = {0xff, 0x00, 0x00, 0x00, 0x00, 0xff, 0x00, 0x00, 0x00, 0xff, 0x00, 0xff };
+    //unsigned int* row = (unsigned int*)(img.imagedata);
+    //for (int i = 0; i < 12; i++) {
+    //    *((char*)row + i) = data[i];
+    //}
+
+    //writeRawImagePixel(img, 0, 0, Colors::Cyan);
+    //writeRawImagePixel(img, 1, 0, Colors::LightSteelBlue);
+    //writeRawImagePixel(img, 2, 2, Colors::Blue);
+    //writeRawImagePixel(img, 3, 2, Colors::Magenta);
+    if (type == 0) {
+        float dist = (float)1.0 / img.width;
+        for (int y = 0; y < img.height; y++) {
+            for (int x = 0; x < img.width; x++) {
+                float r = (float)x * dist;
+                float g = (float)y * dist;
+                float b = 0.0f;
+                float a = 255.0f;
+                writeRawImagePixel(img, x, y, glm::vec4(r, g, b, a));
+                if (x == y) {
+                    //writeRawImagePixel(img, x, y, glm::vec4(0.0f + y * dist, 0.0f, 0.0f, 1.0f));
+                }
+            }
+        }
+    }
+}
+
+unsigned char floatToUnsignedChar(float value) {
+    return static_cast<unsigned char>(value * 255.0f);
+}
+
+void Util::writeRawImagePixel(GPUImage& img, int x, int y, glm::vec4 color)
+{
+    unsigned char* data = (unsigned char*)img.imagedata;
+    // add lines
+    data += y * img.subResourceLayout.rowPitch;
+    // add pixels
+    data += x * 4;
+    unsigned char r = floatToUnsignedChar(color.r);
+    unsigned char g = floatToUnsignedChar(color.g);
+    unsigned char b = floatToUnsignedChar(color.b);
+    unsigned char a = floatToUnsignedChar(color.a);
+    // no color swizzle
+    //*data = r;
+    //*(data + 1) = g;
+    //*(data + 2) = b;
+    //*(data + 3) = a;
+    // color swizzle
+    *data = b;
+    *(data + 1) = g;
+    *(data + 2) = r;
+    *(data + 3) = a;
+}
+
 void Util::writePPM(std::string filename, const char* imagedata, uint64_t width, uint64_t height, uint64_t rowPitch, bool colorSwizzle)
 {
     std::ofstream file(filename, std::ios::out | std::ios::binary);

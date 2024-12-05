@@ -103,6 +103,7 @@ TEST(Engine, DirectImageManipulation) {
         DirectImage di(&engine);
         GPUImage directImage;
         di.openForCPUWriteAccess(gpui, &directImage);
+        engine.util.writeRawImageTestData(directImage, 0);
         di.closeCPUWriteAccess(gpui, &directImage);
         di.dumpToFile(gpui);
         //engine.init("Test");

@@ -112,10 +112,6 @@ void DirectImage::openForCPUWriteAccess(GPUImage* gpui, GPUImage* writeable)
 	auto commandBuffer = global.beginSingleTimeCommands(false);
 	copyBackbufferImage(gpui, writeable, commandBuffer);
 	global.endSingleTimeCommands(commandBuffer);
-	for (int i = 0; i < 100000; i++) {
-		unsigned int* row = (unsigned int*)(writeable->imagedata + i);
-		*((char*)row) = 0xff;
-	}
 }
 
 void DirectImage::closeCPUWriteAccess(GPUImage* gpui, GPUImage* writeable)
