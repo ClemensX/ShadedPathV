@@ -52,6 +52,8 @@
 #include <functional>
 #include <regex>
 #include <bitset>
+#include <future>
+#include <condition_variable>
 //using namespace std;
 
 // headers for used libraries

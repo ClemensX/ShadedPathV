@@ -299,6 +299,24 @@ TEST(Spatial, Heightmap) {
     EXPECT_TRUE(heightmap.isAllPointsSet());
 }
 
+TEST(Threads, BasicTasks) {
+    ThreadGroup threadGroup(4); // Create a thread pool with 4 threads
+
+    auto future1 = threadGroup.asyncSubmit([] {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        Log("Task 1 completed" << std::endl);
+        });
+
+    auto future2 = threadGroup.asyncSubmit([] {
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        Log("Task 2 completed" << std::endl);
+        });
+
+    future1.get();
+    future2.get();
+    EXPECT_EQ(1, 1);
+}
+
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     // enable single tests

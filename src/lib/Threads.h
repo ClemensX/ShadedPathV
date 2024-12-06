@@ -55,9 +55,109 @@ public:
 
 class ThreadGroup {
 public:
-	ThreadGroup() = default;
-	ThreadGroup(const ThreadGroup&) = delete;
-	ThreadGroup& operator=(const ThreadGroup&) = delete;
+	ThreadGroup(size_t numThreads) {
+		for (size_t i = 0; i < numThreads; ++i) {
+			addThread(ThreadCategory::Draw, "WorkerThread_" + std::to_string(i), [this] {
+				while (true) {
+					std::function<void()> task;
+					{
+						std::unique_lock<std::mutex> lock(queueMutex);
+						condition.wait(lock, [this] { return !tasks.empty() || terminate; });
+						if (terminate && tasks.empty()) return;
+						task = std::move(tasks.front());
+						tasks.pop();
+					}
+					task();
+				}
+				});
+		}
+	}
+
+	~ThreadGroup() {
+		{
+			std::unique_lock<std::mutex> lock(queueMutex);
+			terminate = true;
+		}
+		condition.notify_all();
+		join_all();
+	}
+
+	// Method to submit tasks using std::async
+	template<class F, class... Args>
+	auto asyncSubmit(F&& f, Args&&... args) -> std::future<typename std::invoke_result<F, Args...>::type> {
+		using returnType = typename std::invoke_result<F, Args...>::type;
+
+		auto task = std::make_shared<std::packaged_task<returnType()>>(
+			std::bind(std::forward<F>(f), std::forward<Args>(args)...)
+		);
+
+		std::future<returnType> res = task->get_future();
+		{
+			std::unique_lock<std::mutex> lock(queueMutex);
+			tasks.emplace([task]() { (*task)(); });
+		}
+		condition.notify_one();
+		return res;
+	}
+
+	// Other methods remain unchanged
+	template <class Fn, class... Args>
+	void* addThread(ThreadCategory category, const std::string& name, Fn&& F, Args&&... A) {
+		ThreadInfo info;
+		info.name = name;
+		info.category = category;
+		info.thread = std::thread([this, &info, func = std::forward<Fn>(F), A...]() mutable {
+			func(std::forward<Args>(A)...);
+			});
+		threads.push_back(std::move(info));
+		threads.back().id = threads.back().thread.get_id();
+		auto native_handle = threads.back().thread.native_handle();
+#if defined(_WIN64)
+		std::wstring mod_name = Util::string2wstring(name);
+		SetThreadDescription((HANDLE)native_handle, mod_name.c_str());
+#endif
+		return native_handle;
+	}
+
+	ThreadInfo& current_thread() {
+		auto id = std::this_thread::get_id();
+		for (auto& t : threads) {
+			if (t.id == id) {
+				return t;
+			}
+		}
+		throw std::runtime_error("current_thread() not found");
+	}
+
+	void log_current_thread() {
+		auto& t = current_thread();
+		Log(t << std::endl);
+	}
+
+	void join_all() {
+		for (auto& t : threads) {
+			if (t.thread.joinable()) {
+				t.thread.join();
+			}
+		}
+	}
+
+	std::size_t size() const { return threads.size(); }
+
+private:
+	std::vector<ThreadInfo> threads;
+	std::queue<std::function<void()>> tasks;
+	std::mutex queueMutex;
+	std::condition_variable condition;
+	bool terminate = false;
+};
+
+
+class ThreadGroupOld {
+public:
+	ThreadGroupOld() = default;
+	ThreadGroupOld(const ThreadGroupOld&) = delete;
+	ThreadGroupOld& operator=(const ThreadGroupOld&) = delete;
 
 	// method to call add_t () with ThreadCategory and name of thread
 	template <class Fn, class... Args>
@@ -105,7 +205,7 @@ public:
 		}
 	}
 
-	~ThreadGroup() {
+	~ThreadGroupOld() {
 		join_all();
 	}
 
