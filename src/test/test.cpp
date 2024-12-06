@@ -102,11 +102,18 @@ TEST(Engine, DirectImageManipulation) {
         auto gpui = engine.createImage("Test Image");
         DirectImage di(&engine);
         GPUImage directImage;
+        engine.globalRendering.createDumpImage(directImage);
         di.openForCPUWriteAccess(gpui, &directImage);
         engine.util.writeRawImageTestData(directImage, 0);
         di.closeCPUWriteAccess(gpui, &directImage);
         di.dumpToFile(gpui);
-        //engine.init("Test");
+
+        di.openForCPUWriteAccess(gpui, &directImage);
+        engine.util.writeRawImageTestData(directImage, 1);
+        di.closeCPUWriteAccess(gpui, &directImage);
+        di.dumpToFile(gpui);
+
+        engine.globalRendering.destroyImage(&directImage);
     }
     Log("Test end. (Should appear after destructor log)\n");
     LogfileScanner log;

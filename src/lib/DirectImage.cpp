@@ -102,13 +102,15 @@ void DirectImage::toLayout(VkImageLayout layout, VkAccessFlags access, VkCommand
 void DirectImage::openForCPUWriteAccess(GPUImage* gpui, GPUImage* writeable)
 {
 	assert(writeable != nullptr);
+    assert(writeable->image != nullptr);
 	assert(gpui != nullptr);
 	auto& global = engine->globalRendering;
 	auto& device = global.device;
 
-	global.createDumpImage(*writeable);
+    if (writeable->imagedata == nullptr) {
+		Error("DirectImage::openForCPUWriteAccess: writeable image has no imagedata. Did you use GlobalRendering::createDumpImage() to create it?");
+    }
 	engine->util.debugNameObjectImage(writeable->image, "copy target for write access");
-	//engine->util.debugNameObjectImage(gpui->image, "dumptToFile source image");
 	auto commandBuffer = global.beginSingleTimeCommands(false);
 	copyBackbufferImage(gpui, writeable, commandBuffer);
 	global.endSingleTimeCommands(commandBuffer);
@@ -120,5 +122,4 @@ void DirectImage::closeCPUWriteAccess(GPUImage* gpui, GPUImage* writeable)
 	auto commandBuffer = global.beginSingleTimeCommands(false);
 	copyBackbufferImage(writeable, gpui, commandBuffer);
 	global.endSingleTimeCommands(commandBuffer);
-	global.destroyImage(writeable);
 }

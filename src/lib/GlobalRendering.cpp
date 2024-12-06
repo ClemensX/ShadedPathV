@@ -1025,6 +1025,7 @@ GPUImage* GlobalRendering::createImage(vector<GPUImage>& list, const char *debug
 
 void GlobalRendering::createDumpImage(GPUImage& gpui, uint32_t width, uint32_t height)
 {
+    assert(gpui.image == nullptr);
     if (width <= 0 || height <= 0) {
         width = engine->getBackBufferExtent().width;
         height = engine->getBackBufferExtent().height;
