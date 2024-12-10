@@ -2,11 +2,31 @@
 
 #pragma once
 
+// all applications must implement this class and register with engine.
+// All callback methods are defined here
+class ShadedPathApplication
+{
+public:
+    // called from multiple threads, only local resources should be changed
+    //virtual void drawFrame(ThreadResources& tr) = 0;
+    //virtual void handleInput(InputState& inputState) = 0;
+    virtual void prepareFrame() {};
+    virtual void buildCustomUI() {};
+    virtual void run() {};
+    void registerEngine(ShadedPathEngine* engine) {
+        this->engine = engine;
+    }
+protected:
+    double old_seconds = 0.0f;
+    ShadedPathEngine* engine = nullptr;
+};
+
 class ShadedPathEngine
 {
 public:
     ShadedPathEngine() :
         globalRendering(this),
+        threadsMain(0),
         //shaders(*this),
         util(this)
         //vr(this)
@@ -31,12 +51,21 @@ public:
     ShadedPathEngine& setDebugWindowPosition(bool enable) { debugWindowPosition = enable; return *this; }
     ShadedPathEngine& setEnableRenderDoc(bool enable) { enableRenderDoc = enable; return *this; }
 
+    void log_current_thread();
+    ThreadInfo mainThreadInfo;
+
     const std::string engineName = "ShadedPathV";
     const std::string engineVersion = "0.1";
     const uint32_t engineVersionInt = 1;
     std::string vulkanAPIVersion; // = global.getVulkanAPIString();
 
     enum class Resolution { FourK, TwoK, OneK, DeviceDefault, Small, Invalid };
+
+    ShadedPathApplication* app = nullptr;
+    void registerApp(ShadedPathApplication* app) {
+        this->app = app;
+        app->registerEngine(this);
+    }
 
     // backbuffer sizing
     void setBackBufferResolution(VkExtent2D e);
@@ -203,4 +232,11 @@ private:
     int fixedPhysicalDeviceIndex = -1;
     World* world = nullptr;
     std::vector<GPUImage> images;
+    // thread support:
+    ThreadGroup threadsMain;
+    ThreadGroup* threadsWorker = nullptr;
+    ThreadGroup& getThreadGroupMain() {
+        return threadsMain;
+    }
+
 };

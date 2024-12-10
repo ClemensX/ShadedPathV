@@ -4,6 +4,10 @@ using namespace std;
 
 void ShadedPathEngine::initGlobal() {
     Log("initGlobal\n");
+    mainThreadInfo.name = "Main Thread";
+    mainThreadInfo.category = ThreadCategory::MainThread;
+    mainThreadInfo.id = this_thread::get_id();
+    log_current_thread();
     globalRendering.initBeforePresentation();
     globalRendering.initAfterPresentation();
 }
@@ -58,4 +62,15 @@ void ShadedPathEngine::setBackBufferResolution(ShadedPathEngine::Resolution res)
 GPUImage* ShadedPathEngine::createImage(const char* debugName)
 {
     return globalRendering.createImage(images, debugName);
+}
+
+void ShadedPathEngine::log_current_thread() {
+    // check for main thread (used in single thread mode)
+    if (mainThreadInfo.id == this_thread::get_id()) {
+        Log(mainThreadInfo << std::endl);
+        return;
+    }
+    // check for worker threads
+    auto& t = getThreadGroupMain().current_thread();
+    Log(t << std::endl);
 }

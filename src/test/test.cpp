@@ -128,23 +128,32 @@ TEST(Engine, Headless) {
         ShadedPathEngine my_engine;
         static ShadedPathEngine* engine = &my_engine;
         engine->initGlobal();
-        //class TestApp : ShadedPathApplication
-        //{
-        //public:
-        //    void drawFrame(ThreadResources& tr) override {
+        class TestApp : public ShadedPathApplication
+        {
+        public:
+            void prepareFrame() override {
+                Log("prepareFrame\n");
+            };
+            void run() override {
+                Log("TestApp started\n");
+                Log(" run thread: ");
+                engine->log_current_thread();
+            };
+            //    void drawFrame(ThreadResources& tr) override {
         //        engine->shaders.submitFrame(tr);
         //    };
         //    void handleInput(InputState& inputState) override {
         //    };
-        //};
-        //TestApp testApp;
+        };
+        TestApp testApp;
         //ShaderState shaderState;
         //engine->files.findAssetFolder("data");
         //engine->setFrameCountLimit(10);
         //engine->setBackBufferResolution(ShadedPathEngine::Resolution::Small);
         //engine->setFramesInFlight(2);
         //engine->setThreadModeSingle();
-        //engine->registerApp((ShadedPathApplication*)&testApp);
+        engine->registerApp((ShadedPathApplication*)&testApp);
+        engine->app->run();
         //engine->init("Test");
         //engine->textureStore.generateBRDFLUT();
         //engine->shaders.addShader(engine->shaders.simpleShader);
@@ -152,6 +161,7 @@ TEST(Engine, Headless) {
 
         //engine->prepareDrawing();
         //engine->drawFrame();
+        EXPECT_TRUE(engine->app);
     }
     Log("Test end. (Should appear after destructor log)\n");
 }
@@ -314,6 +324,7 @@ TEST(Threads, BasicTasks) {
 
     future1.get();
     future2.get();
+    Log("Active threads: " << threadGroup.getActiveThreadCount() << std::endl);
     EXPECT_EQ(1, 1);
 }
 

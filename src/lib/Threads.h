@@ -55,9 +55,9 @@ public:
 
 class ThreadGroup {
 public:
-	ThreadGroup(size_t numThreads) {
+	ThreadGroup(size_t numThreads) : activeThreads(0) {
 		for (size_t i = 0; i < numThreads; ++i) {
-			addThread(ThreadCategory::Draw, "WorkerThread_" + std::to_string(i), [this] {
+			addThread(ThreadCategory::GlobalUpdate, "WorkerThread_" + std::to_string(i), [this] {
 				while (true) {
 					std::function<void()> task;
 					{
@@ -67,7 +67,9 @@ public:
 						task = std::move(tasks.front());
 						tasks.pop();
 					}
+					activeThreads++;
 					task();
+					activeThreads--;
 				}
 				});
 		}
@@ -144,11 +146,14 @@ public:
 
 	std::size_t size() const { return threads.size(); }
 
+	std::size_t getActiveThreadCount() const { return activeThreads.load(); }
+
 private:
 	std::vector<ThreadInfo> threads;
 	std::queue<std::function<void()>> tasks;
 	std::mutex queueMutex;
 	std::condition_variable condition;
+	std::atomic<std::size_t> activeThreads;
 	bool terminate = false;
 };
 
