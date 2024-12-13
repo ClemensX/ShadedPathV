@@ -10,8 +10,9 @@ public:
     // called from multiple threads, only local resources should be changed
     //virtual void drawFrame(ThreadResources& tr) = 0;
     //virtual void handleInput(InputState& inputState) = 0;
-    virtual void prepareFrame() {};
+    virtual void prepareFrame(FrameInfo* fi) {};
     virtual void buildCustomUI() {};
+    virtual bool shouldClose() { return true; };
     virtual void run() {};
     void registerEngine(ShadedPathEngine* engine) {
         this->engine = engine;
@@ -66,6 +67,9 @@ public:
         this->app = app;
         app->registerEngine(this);
     }
+
+    // run the main loop, called from app
+    void eventLoop();
 
     // backbuffer sizing
     void setBackBufferResolution(VkExtent2D e);
@@ -238,5 +242,15 @@ private:
     ThreadGroup& getThreadGroupMain() {
         return threadsMain;
     }
-
+    bool shouldClose();
+    void preFrame();
+    void drawFrame();
+    void postFrame();
+    void waitUntilShutdown();
+    // we no longer need frame num to be atomic
+    //std::atomic<long> nextFreeFrameNum = 0;
+    long nextFreeFrameNum = 0;
+    long getNextFrameNumber();
+    FrameInfo* currentFrameInfo = nullptr;
+    FrameInfo frameInfos[2];
 };

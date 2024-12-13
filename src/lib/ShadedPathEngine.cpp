@@ -64,7 +64,8 @@ GPUImage* ShadedPathEngine::createImage(const char* debugName)
     return globalRendering.createImage(images, debugName);
 }
 
-void ShadedPathEngine::log_current_thread() {
+void ShadedPathEngine::log_current_thread()
+{
     // check for main thread (used in single thread mode)
     if (mainThreadInfo.id == this_thread::get_id()) {
         Log(mainThreadInfo << std::endl);
@@ -74,3 +75,56 @@ void ShadedPathEngine::log_current_thread() {
     auto& t = getThreadGroupMain().current_thread();
     Log(t << std::endl);
 }
+
+void ShadedPathEngine::eventLoop()
+{
+    // some shaders may need additional preparation
+    //engine->prepareDrawing();
+
+
+    // rendering
+    while (!shouldClose()) {
+        preFrame();
+        drawFrame();
+        postFrame();
+    }
+    waitUntilShutdown();
+
+}
+
+bool ShadedPathEngine::shouldClose()
+{
+    return app->shouldClose();
+}
+
+void ShadedPathEngine::preFrame()
+{
+    // alternate frame infos:
+    long frameNum = getNextFrameNumber();
+    int currentFrameInfoIndex = frameNum & 0x01;
+    currentFrameInfo = &frameInfos[currentFrameInfoIndex];
+    // init frame info:
+    currentFrameInfo->frameNum = frameNum;
+
+    // call app
+    app->prepareFrame(currentFrameInfo);
+}
+
+void ShadedPathEngine::drawFrame()
+{
+}
+
+void ShadedPathEngine::postFrame()
+{
+}
+
+void ShadedPathEngine::waitUntilShutdown()
+{
+}
+
+long ShadedPathEngine::getNextFrameNumber()
+{
+    long n = ++nextFreeFrameNum;
+    return n;
+}
+

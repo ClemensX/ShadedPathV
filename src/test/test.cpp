@@ -131,14 +131,25 @@ TEST(Engine, Headless) {
         class TestApp : public ShadedPathApplication
         {
         public:
-            void prepareFrame() override {
-                Log("prepareFrame\n");
+            void prepareFrame(FrameInfo* fi) override {
+                Log("prepareFrame " << fi->frameNum << endl);
+                if (fi->frameNum >= 10) {
+                    shouldStop = true;
+                }
+                lastFrameNum = fi->frameNum;
             };
             void run() override {
                 Log("TestApp started\n");
                 Log(" run thread: ");
                 engine->log_current_thread();
+                engine->eventLoop();
             };
+            bool shouldClose() override {
+                return shouldStop;
+            }
+            long lastFrameNum = 0;
+        private:
+            bool shouldStop = false;
             //    void drawFrame(ThreadResources& tr) override {
         //        engine->shaders.submitFrame(tr);
         //    };
@@ -162,6 +173,7 @@ TEST(Engine, Headless) {
         //engine->prepareDrawing();
         //engine->drawFrame();
         EXPECT_TRUE(engine->app);
+        EXPECT_EQ(10, testApp.lastFrameNum);
     }
     Log("Test end. (Should appear after destructor log)\n");
 }

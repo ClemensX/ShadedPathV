@@ -31,3 +31,37 @@ struct GPUImage {
 	VkSubresourceLayout subResourceLayout;
     uint32_t width = 0, height = 0;
 };
+
+struct FrameInfo {
+	long frameNum = -1;
+//	long frameIndex = -1;
+//	std::vector<VkSubmitInfo> submitinfos;
+//	std::vector<VkCommandBuffer> activeCommandBuffers;
+//	VkFence presentFence = nullptr;
+//	ThreadsafeWaitingQueue<unsigned long> renderThreadContinueQueue;
+//	VkPipelineStageFlags waitStages[2];
+//#define	THREAD_RESOURCES_MAX_COMMAND_BUFFERS 10
+//	VkCommandBuffer commandBuffers[THREAD_RESOURCES_MAX_COMMAND_BUFFERS];
+//
+//	// depth buffer
+//	VkImage depthImage;
+//	VkDeviceMemory depthImageMemory;
+//	VkImageView depthImageView;
+//	// right side views:
+//	VkImage depthImage2;
+//	VkDeviceMemory depthImageMemory2;
+//	VkImageView depthImageView2;
+//
+//	bool threadFinished = false;
+
+	// VR
+#   if defined(OPENXR_AVAILABLE)	
+	  //XrFrameState frameState{ XR_TYPE_FRAME_STATE };
+	  //std::vector<XrCompositionLayerBaseHeader*> layers;
+#   endif
+
+	// Debugging
+	std::string commandBufferDebugName;
+	int threadResourcesIndex;
+
+};
