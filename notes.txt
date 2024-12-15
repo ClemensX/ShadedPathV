@@ -151,3 +151,11 @@ Jessica
 Nicole
 
 
+        auto gpui = engine.createImage("Test Image");
+        DirectImage di(&engine);
+        GPUImage directImage;
+        engine.globalRendering.createDumpImage(directImage);
+        di.openForCPUWriteAccess(gpui, &directImage);
+        engine.util.writeRawImageTestData(directImage, 0);
+        di.closeCPUWriteAccess(gpui, &directImage);
+        di.dumpToFile(gpui);

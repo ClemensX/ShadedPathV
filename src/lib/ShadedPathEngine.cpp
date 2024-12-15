@@ -18,6 +18,17 @@ ShadedPathEngine::~ShadedPathEngine()
     for (auto& img : images) {
         globalRendering.destroyImage(&img);
     }
+    if (globalRendering.device) vkDeviceWaitIdle(globalRendering.device);
+    //ThemedTimer::getInstance()->logInfo(TIMER_DRAW_FRAME);
+    //ThemedTimer::getInstance()->logFPS(TIMER_DRAW_FRAME);
+    ThemedTimer::getInstance()->logInfo(TIMER_PRESENT_FRAME);
+    ThemedTimer::getInstance()->logFPS(TIMER_PRESENT_FRAME);
+    ThemedTimer::getInstance()->logInfo(TIMER_INPUT_THREAD);
+    ThemedTimer::getInstance()->logFPS(TIMER_INPUT_THREAD);
+    ThemedTimer::getInstance()->logInfo(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
+    ThemedTimer::getInstance()->logInfo(TIMER_PART_BUFFER_COPY);
+    ThemedTimer::getInstance()->logInfo(TIMER_PART_GLOBAL_UPDATE);
+    ThemedTimer::getInstance()->logInfo(TIMER_PART_OPENXR);
 }
 
 VkExtent2D ShadedPathEngine::getBackBufferExtent()
@@ -112,6 +123,10 @@ void ShadedPathEngine::preFrame()
 
 void ShadedPathEngine::drawFrame()
 {
+    // call app
+    app->drawFrame(currentFrameInfo);
+    // initiate shader runs via job system
+
 }
 
 void ShadedPathEngine::postFrame()

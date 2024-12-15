@@ -6,6 +6,7 @@ class DirectImage : public ImageConsumer
 {
 public:
     DirectImage(ShadedPathEngine* s);
+    DirectImage();
     ~DirectImage();
     void consume(GPUImage* gpui) override;
     void dumpToFile(GPUImage* gpui);

@@ -1,6 +1,7 @@
 // ShadedPathV.cpp : This file contains the 'main' function. Program execution begins and ends there.
 
 #include "mainheader.h"
+#include "SimpleNewArch.h"
 //#include "AppSupport.h"
 //#include "LandscapeGenerator.h"
 //#include "SimpleApp.h"
@@ -18,13 +19,9 @@ int main()
 {
     // TODO: investigate options to have multiple render apps.
     //       in the end we want to have a single app that can switch between different render apps.
-    //       and it should use the sam glfw window...
+    //       and it should use the same glfw window...
     //       start with copilot prompt: are the static members of my classes preventing me from using multiple instances of ShadedPathEngine?
 
-    //{
-    //    DeviceCoordApp app; // vr not supported
-    //    app.run();
-    //}
     Log("ShadedPathV app\n");
     ShadedPathEngine engine;
     engine
@@ -36,7 +33,16 @@ int main()
         ;
 
     engine.initGlobal();
-    engine.createImage("Image One");
+    SimpleApp app;
+    engine.registerApp((ShadedPathApplication*)&app);
+    engine.app->run();
+}
+
+
+
+
+
+
     //ShadedPathEngineManager man;
     //ShadedPathEngine* engine = nullptr;
     //ShadedPathEngine* oldEngine = nullptr;
@@ -78,4 +84,3 @@ int main()
     //    app.run();
     //    man.deleteEngine(engine);
     //}
-}

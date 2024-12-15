@@ -11,6 +11,7 @@ public:
     //virtual void drawFrame(ThreadResources& tr) = 0;
     //virtual void handleInput(InputState& inputState) = 0;
     virtual void prepareFrame(FrameInfo* fi) {};
+    virtual void drawFrame(FrameInfo* fi) {};
     virtual void buildCustomUI() {};
     virtual bool shouldClose() { return true; };
     virtual void run() {};

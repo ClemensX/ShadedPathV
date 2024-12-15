@@ -28,7 +28,7 @@ add_executable(app
 #   SimpleApp.cpp
 #   Incoming.cpp
 #   TextureViewer.cpp
-
+  SimpleNewArch.cpp
   ShadedPathV.cpp
   ${VULKAN_SHADERS}
 )

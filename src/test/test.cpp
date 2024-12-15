@@ -138,11 +138,25 @@ TEST(Engine, Headless) {
                 }
                 lastFrameNum = fi->frameNum;
             };
+            void drawFrame(FrameInfo* fi) override {
+                Log("drawFrame " << fi->frameNum << endl);
+                engine->util.writeRawImageTestData(directImage, 0);
+            };
             void run() override {
                 Log("TestApp started\n");
                 Log(" run thread: ");
                 engine->log_current_thread();
+                di.setEngine(engine);
+                gpui = engine->createImage("Test Image");
+                engine->globalRendering.createDumpImage(directImage);
+                di.openForCPUWriteAccess(gpui, &directImage);
+
                 engine->eventLoop();
+
+                // cleanup
+                di.closeCPUWriteAccess(gpui, &directImage);
+                engine->globalRendering.destroyImage(&directImage);
+
             };
             bool shouldClose() override {
                 return shouldStop;
@@ -150,7 +164,11 @@ TEST(Engine, Headless) {
             long lastFrameNum = 0;
         private:
             bool shouldStop = false;
-            //    void drawFrame(ThreadResources& tr) override {
+            DirectImage di;
+            GPUImage* gpui = nullptr;
+            GPUImage directImage;
+
+        //    void drawFrame(ThreadResources& tr) override {
         //        engine->shaders.submitFrame(tr);
         //    };
         //    void handleInput(InputState& inputState) override {

@@ -4,8 +4,13 @@ using namespace std;
 
 DirectImage::DirectImage(ShadedPathEngine* s)
 {
-    Log("DirectImage constructor\n");
-    setEngine(s);
+	Log("DirectImage constructor with engine\n");
+	setEngine(s);
+}
+
+DirectImage::DirectImage()
+{
+	Log("DirectImage constructor\n");
 }
 
 void DirectImage::consume(GPUImage* gpui)
