@@ -9,9 +9,12 @@ void SimpleApp::prepareFrame(FrameInfo* fi) {
     lastFrameNum = fi->frameNum;
 };
 
-void SimpleApp::drawFrame(FrameInfo* fi) {
+GPUImage* SimpleApp::drawFrame(FrameInfo* fi) {
     Log("drawFrame " << fi->frameNum << std::endl);
+    directImage.rendered = false;
     engine->util.writeRawImageTestData(directImage, 0);
+    directImage.rendered = true;
+    return &directImage;
 };
 
 void SimpleApp::run() {

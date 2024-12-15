@@ -121,16 +121,37 @@ void ShadedPathEngine::preFrame()
     app->prepareFrame(currentFrameInfo);
 }
 
-void ShadedPathEngine::drawFrame()
+GPUImage* ShadedPathEngine::drawFrame()
 {
     // call app
-    app->drawFrame(currentFrameInfo);
+    GPUImage*renderedImage = app->drawFrame(currentFrameInfo);
     // initiate shader runs via job system
-
+    if (renderedImage->rendered == false) {
+        Error("Image not rendered");
+    }
+    lastImage = renderedImage; // TODO check
+    return renderedImage;
 }
 
 void ShadedPathEngine::postFrame()
 {
+    if (singleThreadMode) {
+        singleThreadPostFrame();
+    } else {
+        Error("Multi thread mode not implemented");
+    }
+}
+
+void ShadedPathEngine::singleThreadPostFrame()
+{
+    // consume image
+    // advance sound
+    // etc.
+    if (imageConsumer == nullptr) {
+        Log("WARNING: No image consumer set, defaulting to discarding image\n");
+        imageConsumer = &imageConsumerNullify;
+    }
+    imageConsumer->consume(lastImage);
 }
 
 void ShadedPathEngine::waitUntilShutdown()

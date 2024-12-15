@@ -11,7 +11,7 @@ public:
     //virtual void drawFrame(ThreadResources& tr) = 0;
     //virtual void handleInput(InputState& inputState) = 0;
     virtual void prepareFrame(FrameInfo* fi) {};
-    virtual void drawFrame(FrameInfo* fi) {};
+    virtual GPUImage* drawFrame(FrameInfo* fi) { return nullptr; };
     virtual void buildCustomUI() {};
     virtual bool shouldClose() { return true; };
     virtual void run() {};
@@ -21,6 +21,15 @@ public:
 protected:
     double old_seconds = 0.0f;
     ShadedPathEngine* engine = nullptr;
+};
+
+// most simple image consumer: just discard the image
+class ImageConsumerNullify : public ImageConsumer
+{
+public:
+    void consume(GPUImage* gpui) override {
+        gpui->consumed = true;
+    }
 };
 
 class ShadedPathEngine
@@ -52,6 +61,7 @@ public:
     ShadedPathEngine& setSingleThreadMode(bool enable) { singleThreadMode = enable; return *this; }
     ShadedPathEngine& setDebugWindowPosition(bool enable) { debugWindowPosition = enable; return *this; }
     ShadedPathEngine& setEnableRenderDoc(bool enable) { enableRenderDoc = enable; return *this; }
+    ShadedPathEngine& setImageConsumer(ImageConsumer* c ) { imageConsumer = c; return *this; }
 
     void log_current_thread();
     ThreadInfo mainThreadInfo;
@@ -215,6 +225,8 @@ private:
     bool singleThreadMode = false;
     bool debugWindowPosition = false; // if true try to open app window in right screen part
     bool enableRenderDoc = true;
+    ImageConsumer* imageConsumer = nullptr;
+    ImageConsumerNullify imageConsumerNullify;
 
     // backbuffer size:
     VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);
@@ -245,7 +257,7 @@ private:
     }
     bool shouldClose();
     void preFrame();
-    void drawFrame();
+    GPUImage* drawFrame();
     void postFrame();
     void waitUntilShutdown();
     // we no longer need frame num to be atomic
@@ -254,4 +266,7 @@ private:
     long getNextFrameNumber();
     FrameInfo* currentFrameInfo = nullptr;
     FrameInfo frameInfos[2];
+    // in single thread mode handle post processing (consume image, advance sound, etc.)
+    void singleThreadPostFrame();
+    GPUImage* lastImage = nullptr; // careful: this is not thread safe
 };

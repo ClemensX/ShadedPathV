@@ -30,6 +30,7 @@ int main()
         .setEnableUI(true)
         .setEnableSound(true)
         .setVR(false)
+        .setSingleThreadMode(true)
         ;
 
     engine.initGlobal();

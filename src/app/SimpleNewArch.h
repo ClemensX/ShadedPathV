@@ -3,7 +3,7 @@ class SimpleApp : public ShadedPathApplication
 {
 public:
     void prepareFrame(FrameInfo* fi) override;
-    void drawFrame(FrameInfo* fi) override;
+    GPUImage* drawFrame(FrameInfo* fi) override;
     void run() override;
     bool shouldClose() override;
 

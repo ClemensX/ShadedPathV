@@ -30,6 +30,8 @@ struct GPUImage {
 	char* imagedata = nullptr;
 	VkSubresourceLayout subResourceLayout;
     uint32_t width = 0, height = 0;
+    bool rendered = false;
+    bool consumed = false;
 };
 
 struct FrameInfo {

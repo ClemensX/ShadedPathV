@@ -1015,6 +1015,8 @@ GPUImage* GlobalRendering::createImage(vector<GPUImage>& list, const char *debug
     gpui.height = height;
     gpui.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     gpui.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    gpui.rendered = false;
+    gpui.consumed = false;
     createImage(gpui.width, gpui.height, 1, VK_SAMPLE_COUNT_1_BIT, ImageFormat, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gpui.image, gpui.memory);
     gpui.view = createImageView(gpui.image, ImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
