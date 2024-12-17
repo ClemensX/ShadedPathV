@@ -11,7 +11,9 @@ public:
     //virtual void drawFrame(ThreadResources& tr) = 0;
     //virtual void handleInput(InputState& inputState) = 0;
     virtual void prepareFrame(FrameInfo* fi) {};
-    virtual GPUImage* drawFrame(FrameInfo* fi) { return nullptr; };
+    // draw Frame depending on topic. is in range 0..appDrawCalls-1
+    // each topic will be called in parallel threads
+    virtual void drawFrame(FrameInfo* fi, int topic) {};
     virtual void buildCustomUI() {};
     virtual bool shouldClose() { return true; };
     virtual void run() {};
@@ -29,6 +31,7 @@ class ImageConsumerNullify : public ImageConsumer
 public:
     void consume(GPUImage* gpui) override {
         gpui->consumed = true;
+        gpui->rendered = false;
     }
 };
 
@@ -61,7 +64,10 @@ public:
     ShadedPathEngine& setSingleThreadMode(bool enable) { singleThreadMode = enable; return *this; }
     ShadedPathEngine& setDebugWindowPosition(bool enable) { debugWindowPosition = enable; return *this; }
     ShadedPathEngine& setEnableRenderDoc(bool enable) { enableRenderDoc = enable; return *this; }
-    ShadedPathEngine& setImageConsumer(ImageConsumer* c ) { imageConsumer = c; return *this; }
+    ShadedPathEngine& setImageConsumer(ImageConsumer* c) { imageConsumer = c; return *this; }
+    // how many draw calls should be done in parallel. App will be called with topic counter in range 0..appDrawCalls-1 to be able to separate the work
+    ShadedPathEngine& configureParallelAppDrawCalls(int num) { appDrawCalls = num; return *this; }
+    ShadedPathEngine& overrideCPUCores(int usedCores) { overrideUsedCores = usedCores; return *this; }
 
     void log_current_thread();
     ThreadInfo mainThreadInfo;
@@ -77,6 +83,9 @@ public:
     void registerApp(ShadedPathApplication* app) {
         this->app = app;
         app->registerEngine(this);
+    }
+    ShadedPathApplication* getApp() {
+        return app;
     }
 
     // run the main loop, called from app
@@ -197,6 +206,14 @@ public:
         return fixedPhysicalDeviceIndex;
     }
 
+    int getNumCores() {
+        return numCores;
+    }
+
+    ThreadGroup* getWorkerThreads() {
+        return threadsWorker;
+    }
+
     // init global resources. will only be available once
     void initGlobal();
     GlobalRendering globalRendering;
@@ -250,8 +267,12 @@ private:
     World* world = nullptr;
     std::vector<GPUImage> images;
     // thread support:
+    // main threads for global thinkgs like QueueSubmit thread
     ThreadGroup threadsMain;
+    // worker threads for rendering and other activities during frame generation
     ThreadGroup* threadsWorker = nullptr;
+    //std::future<void>* workerFutures = nullptr;
+    std::vector<std::future<void>> workerFutures;
     ThreadGroup& getThreadGroupMain() {
         return threadsMain;
     }
@@ -269,4 +290,8 @@ private:
     // in single thread mode handle post processing (consume image, advance sound, etc.)
     void singleThreadPostFrame();
     GPUImage* lastImage = nullptr; // careful: this is not thread safe
+    void initFrame(FrameInfo* fi, long frameNum);
+    int numCores = 0;
+    int overrideUsedCores = -1;
+    int appDrawCalls = 1;
 };

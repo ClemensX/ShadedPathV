@@ -4,10 +4,38 @@ using namespace std;
 
 void ShadedPathEngine::initGlobal() {
     Log("initGlobal\n");
+    Log("engine absolute start time (hours and fraction): " << gameTime.getTimeSystemClock() << endl);
+    ThemedTimer::getInstance()->create(TIMER_DRAW_FRAME, 1000);
+    ThemedTimer::getInstance()->create(TIMER_PRESENT_FRAME, 1000);
+    ThemedTimer::getInstance()->create(TIMER_INPUT_THREAD, 1000);
+    ThemedTimer::getInstance()->create(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT, 1000);
+    ThemedTimer::getInstance()->create(TIMER_PART_GLOBAL_UPDATE, 1000);
+    ThemedTimer::getInstance()->create(TIMER_PART_OPENXR, 1000);
+    ThemedTimer::getInstance()->create(TIMER_PART_BUFFER_COPY, 10);
     mainThreadInfo.name = "Main Thread";
     mainThreadInfo.category = ThreadCategory::MainThread;
     mainThreadInfo.id = this_thread::get_id();
     log_current_thread();
+    numCores = std::thread::hardware_concurrency();
+    if (numCores == 0) {
+        Log("Unable to detect the number of CPU cores." << std::endl);
+    }
+    else {
+        Log("Number of CPU cores: " << numCores << std::endl);
+    }
+    if (!singleThreadMode && overrideUsedCores >= 0) {
+        Log("Overriding number of used CPU cores to: " << overrideUsedCores << std::endl);
+        numCores = overrideUsedCores;
+    }
+    if (!singleThreadMode) {
+        if (numCores < 4) Error("You cannot run in multi core mode with less than 4 cores assigned");
+        Log("Multi Core mode creating " << numCores - 2 << " worker threads\n");
+        threadsWorker = new ThreadGroup(numCores - 2);
+//        workerFutures = new future<void>[numCores - 2];
+        workerFutures.resize(numCores - 2); // Initialize the vector with the appropriate size
+
+    }
+
     globalRendering.initBeforePresentation();
     globalRendering.initAfterPresentation();
 }
@@ -19,7 +47,9 @@ ShadedPathEngine::~ShadedPathEngine()
         globalRendering.destroyImage(&img);
     }
     if (globalRendering.device) vkDeviceWaitIdle(globalRendering.device);
-    //ThemedTimer::getInstance()->logInfo(TIMER_DRAW_FRAME);
+    if (threadsWorker) delete threadsWorker;
+    //if (workerFutures) delete workerFutures;
+    ThemedTimer::getInstance()->logInfo(TIMER_DRAW_FRAME);
     //ThemedTimer::getInstance()->logFPS(TIMER_DRAW_FRAME);
     ThemedTimer::getInstance()->logInfo(TIMER_PRESENT_FRAME);
     ThemedTimer::getInstance()->logFPS(TIMER_PRESENT_FRAME);
@@ -108,14 +138,19 @@ bool ShadedPathEngine::shouldClose()
     return app->shouldClose();
 }
 
+void ShadedPathEngine::initFrame(FrameInfo* fi, long frameNum)
+{
+    fi->frameNum = frameNum;
+    ThemedTimer::getInstance()->start(TIMER_DRAW_FRAME);
+}
+
 void ShadedPathEngine::preFrame()
 {
     // alternate frame infos:
     long frameNum = getNextFrameNumber();
     int currentFrameInfoIndex = frameNum & 0x01;
     currentFrameInfo = &frameInfos[currentFrameInfoIndex];
-    // init frame info:
-    currentFrameInfo->frameNum = frameNum;
+    initFrame(currentFrameInfo, frameNum);
 
     // call app
     app->prepareFrame(currentFrameInfo);
@@ -124,21 +159,39 @@ void ShadedPathEngine::preFrame()
 GPUImage* ShadedPathEngine::drawFrame()
 {
     // call app
-    GPUImage*renderedImage = app->drawFrame(currentFrameInfo);
+    if (singleThreadMode) {
+        for (int i = 0; i < appDrawCalls; i++) {
+            app->drawFrame(currentFrameInfo, i);
+        }
+    } else {
+        for (int i = 0; i < appDrawCalls; i++) {
+            workerFutures[i] = threadsWorker->asyncSubmit([this, i] {
+                app->drawFrame(currentFrameInfo, i);
+            });
+        }
+        // we must wait for all draw calls to finish
+        for (int i = 0; i < appDrawCalls; i++) {
+            workerFutures[i].wait();
+        }
+    }
     // initiate shader runs via job system
-    if (renderedImage->rendered == false) {
+    if (currentFrameInfo->renderedImage->rendered == false) {
         Error("Image not rendered");
     }
-    lastImage = renderedImage; // TODO check
-    return renderedImage;
+    lastImage = currentFrameInfo->renderedImage; // TODO check
+    return currentFrameInfo->renderedImage;
 }
 
 void ShadedPathEngine::postFrame()
 {
     if (singleThreadMode) {
+        ThemedTimer::getInstance()->stop(TIMER_DRAW_FRAME);
         singleThreadPostFrame();
     } else {
-        Error("Multi thread mode not implemented");
+        //Error("Multi thread mode not implemented");
+        // do the same in multi thread mode (for now)
+        ThemedTimer::getInstance()->stop(TIMER_DRAW_FRAME);
+        singleThreadPostFrame();
     }
 }
 

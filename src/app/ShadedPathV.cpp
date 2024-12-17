@@ -30,7 +30,8 @@ int main()
         .setEnableUI(true)
         .setEnableSound(true)
         .setVR(false)
-        .setSingleThreadMode(true)
+        //.setSingleThreadMode(true)
+        .overrideCPUCores(4)
         ;
 
     engine.initGlobal();

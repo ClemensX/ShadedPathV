@@ -55,6 +55,8 @@ public:
 
 class ThreadGroup {
 public:
+	// ThreadGroup(0) gets a group with no pre-created threads. Used for QueueSubmit and other 'global' activities.
+	// ThreadGroup(32) gets a thread group with 32 worker threads, that will be auto-assigned during asyncSubmit.
 	ThreadGroup(size_t numThreads) : activeThreads(0) {
 		for (size_t i = 0; i < numThreads; ++i) {
 			addThread(ThreadCategory::GlobalUpdate, "WorkerThread_" + std::to_string(i), [this] {

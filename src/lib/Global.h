@@ -65,5 +65,5 @@ struct FrameInfo {
 	// Debugging
 	std::string commandBufferDebugName;
 	int threadResourcesIndex;
-
+	GPUImage* renderedImage = nullptr;
 };

@@ -138,10 +138,12 @@ TEST(Engine, Headless) {
                 }
                 lastFrameNum = fi->frameNum;
             };
-            GPUImage* drawFrame(FrameInfo* fi) override {
+            void drawFrame(FrameInfo* fi, int topic) override {
                 Log("drawFrame " << fi->frameNum << endl);
+                directImage.rendered = false;
                 engine->util.writeRawImageTestData(directImage, 0);
-                return &directImage;
+                directImage.rendered = true;
+                fi->renderedImage = &directImage;
             };
             void run() override {
                 Log("TestApp started\n");

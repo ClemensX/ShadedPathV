@@ -9,12 +9,14 @@ void SimpleApp::prepareFrame(FrameInfo* fi) {
     lastFrameNum = fi->frameNum;
 };
 
-GPUImage* SimpleApp::drawFrame(FrameInfo* fi) {
-    Log("drawFrame " << fi->frameNum << std::endl);
-    directImage.rendered = false;
-    engine->util.writeRawImageTestData(directImage, 0);
-    directImage.rendered = true;
-    return &directImage;
+void SimpleApp::drawFrame(FrameInfo* fi, int topic) {
+    if (topic == 0) {
+        Log("drawFrame " << fi->frameNum << " topic " << topic << std::endl);
+        directImage.rendered = false;
+        engine->util.writeRawImageTestData(directImage, 0);
+        directImage.rendered = true;
+        fi->renderedImage = &directImage;
+    }
 };
 
 void SimpleApp::run() {
@@ -22,6 +24,7 @@ void SimpleApp::run() {
     Log(" run thread: ");
     engine->log_current_thread();
     di.setEngine(engine);
+    engine->configureParallelAppDrawCalls(2);
     gpui = engine->createImage("Test Image");
     engine->globalRendering.createDumpImage(directImage);
     di.openForCPUWriteAccess(gpui, &directImage);
