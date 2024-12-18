@@ -13,6 +13,10 @@ private:
     DirectImage di;
     GPUImage* gpui = nullptr;
     GPUImage directImage;
+    void openWindow(const char* title);
+    void openAnotherWindow(const char* title);
+    WindowInfo window1;
+    WindowInfo window2;
 
     //    void drawFrame(ThreadResources& tr) override {
     //        engine->shaders.submitFrame(tr);

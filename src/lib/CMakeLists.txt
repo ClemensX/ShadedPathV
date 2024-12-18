@@ -5,6 +5,7 @@ set (SOURCES
   GlobalRendering.cpp
   GameTime.cpp
   DirectImage.cpp
+  Presentation.cpp
   #CubeShader.cpp
   #BillboardShader.cpp
   #TerrainShader.cpp

@@ -9,7 +9,7 @@ class ShadedPathApplication
 public:
     // called from multiple threads, only local resources should be changed
     //virtual void drawFrame(ThreadResources& tr) = 0;
-    //virtual void handleInput(InputState& inputState) = 0;
+    virtual void handleInput(InputState& inputState) {};
     virtual void prepareFrame(FrameInfo* fi) {};
     // draw Frame depending on topic. is in range 0..appDrawCalls-1
     // each topic will be called in parallel threads
@@ -40,6 +40,7 @@ class ShadedPathEngine
 public:
     ShadedPathEngine() :
         globalRendering(this),
+        presentation(this),
         threadsMain(0),
         //shaders(*this),
         util(this)
@@ -69,6 +70,9 @@ public:
     ShadedPathEngine& configureParallelAppDrawCalls(int num) { appDrawCalls = num; return *this; }
     ShadedPathEngine& overrideCPUCores(int usedCores) { overrideUsedCores = usedCores; return *this; }
 
+    // getters
+    bool isDebugWindowPosition() { return debugWindowPosition; }
+
     void log_current_thread();
     ThreadInfo mainThreadInfo;
 
@@ -96,6 +100,9 @@ public:
     void setBackBufferResolution(ShadedPathEngine::Resolution r);
     VkExtent2D getExtentForResolution(ShadedPathEngine::Resolution r);
     VkExtent2D getBackBufferExtent();
+
+    // enable output window, can be called any time. Also needed for keyboard input
+    void enablePresentation(WindowInfo *winfo, int w, int h, const char* name);
 
     // other getters and setters
 
@@ -294,4 +301,5 @@ private:
     int numCores = 0;
     int overrideUsedCores = -1;
     int appDrawCalls = 1;
+    Presentation presentation;
 };
