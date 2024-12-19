@@ -105,10 +105,15 @@ GPUImage* ShadedPathEngine::createImage(const char* debugName)
     return globalRendering.createImage(images, debugName);
 }
 
+bool ShadedPathEngine::isMainThread()
+{
+    return mainThreadInfo.id == this_thread::get_id();
+}
+
 void ShadedPathEngine::log_current_thread()
 {
     // check for main thread (used in single thread mode)
-    if (mainThreadInfo.id == this_thread::get_id()) {
+    if (isMainThread()) {
         Log(mainThreadInfo << std::endl);
         return;
     }
@@ -146,6 +151,9 @@ void ShadedPathEngine::initFrame(FrameInfo* fi, long frameNum)
 
 void ShadedPathEngine::preFrame()
 {
+    // input
+    presentation.pollEvents();
+
     // alternate frame infos:
     long frameNum = getNextFrameNumber();
     int currentFrameInfoIndex = frameNum & 0x01;

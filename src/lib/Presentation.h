@@ -10,17 +10,23 @@ struct WindowInfo {
 class Presentation : public EngineParticipant
 {
 public:
-	Presentation(ShadedPathEngine* s) {
-		Log("Presentation c'tor\n");
-        setEngine(s);
-	};
+	Presentation(ShadedPathEngine* s);
 	~Presentation();
 
 	void createWindow(WindowInfo* winfo, int w, int h, const char* name,
 		bool handleKeyEvents = true, bool handleMouseMoveEevents = true, bool handleMouseButtonEvents = true);
+	// poll events from glfw.
+    // should be called from main thread and should work for all open glfw windows
+	void pollEvents();
+
+	// check if presentation is in use.
+	// if yes, glfw has been initialized.
+    bool isActive() {
+        return windowInfo != nullptr;
+    }
 
 	// current input/output window
-	WindowInfo* window = nullptr;
+	WindowInfo* windowInfo = nullptr;
 
 private:
     bool glfwInitCalled = false;

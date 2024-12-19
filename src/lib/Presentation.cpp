@@ -2,6 +2,23 @@
 
 using namespace std;
 
+void glfwErrorCallback(int error, const char* description) {
+    Log("GLFW Error (" << error << "): " << description << endl);
+    //cerr << "GLFW Error (" << error << "): " << description << endl;
+}
+
+Presentation::Presentation(ShadedPathEngine* s) {
+    Log("Presentation c'tor\n");
+    setEngine(s);
+    if (!glfwInitCalled) {
+        glfwSetErrorCallback(glfwErrorCallback);
+        if (!glfwInit()) {
+            Error("GLFW init failed\n");
+        }
+        glfwInitCalled = true;
+    }
+};
+
 Presentation::~Presentation()
 {
 	Log("Presentation destructor\n");
@@ -10,15 +27,25 @@ Presentation::~Presentation()
     }
 }
 
+// Key callback function
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS) {
+        std::cout << "Key pressed: " << key << std::endl;
+    }
+    else if (action == GLFW_RELEASE) {
+        std::cout << "Key released: " << key << std::endl;
+    }
+
+    // Close the window when the Escape key is pressed
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, GLFW_TRUE);
+    }
+}
+
 void Presentation::createWindow(WindowInfo* winfo, int w, int h, const char* name,
     bool handleKeyEvents, bool handleMouseMoveEevents, bool handleMouseButtonEvents)
 {
-    if (!glfwInitCalled) {
-        if (!glfwInit()) {
-            Error("GLFW init failed\n");
-        }
-        glfwInitCalled = true;
-    }
+    if (!engine->isMainThread()) Error("window creation has to be done from main thread");
     // Get the primary monitor
     GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
 
@@ -33,6 +60,7 @@ void Presentation::createWindow(WindowInfo* winfo, int w, int h, const char* nam
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     auto window = glfwCreateWindow(w, h, name, nullptr, nullptr);
     winfo->glfw_window = window;
+    windowInfo = winfo;
     if (engine->isDebugWindowPosition()) {
         // Set window position to right half near the top of the screen
         glfwSetWindowPos(window, desktopWidth / 2, 30);
@@ -45,21 +73,24 @@ void Presentation::createWindow(WindowInfo* winfo, int w, int h, const char* nam
     }
     // init callbacks: we assume that no other callback was installed (yet)
     if (handleKeyEvents) {
-        // we need a static member function that can be registered with glfw:
-        // static auto callback = bind(&Presentation::key_callbackMember, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5);
-        // the above works, but can be done more elegantly with a lambda expression:
-        static auto callback_static = [this](GLFWwindow* window, int key, int scancode, int action, int mods) {
-            // because we have a this pointer we are now able to call a non-static member method:
-            callbackKey(window, key, scancode, action, mods);
-            };
-        auto old = glfwSetKeyCallback(window,
-            [](GLFWwindow* window, int key, int scancode, int action, int mods)
-            {
-                // only static methods can be called here as we cannot change glfw function parameter list to include instance pointer
-                callback_static(window, key, scancode, action, mods);
-            }
-        );
-        assert(old == nullptr);
+        // Set the key callback
+        glfwSetKeyCallback(window, keyCallback);
+
+        //// we need a static member function that can be registered with glfw:
+        //// static auto callback = bind(&Presentation::key_callbackMember, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5);
+        //// the above works, but can be done more elegantly with a lambda expression:
+        //static auto callback_static = [this](GLFWwindow* window, int key, int scancode, int action, int mods) {
+        //    // because we have a this pointer we are now able to call a non-static member method:
+        //    callbackKey(window, key, scancode, action, mods);
+        //    };
+        //auto old = glfwSetKeyCallback(window,
+        //    [](GLFWwindow* window, int key, int scancode, int action, int mods)
+        //    {
+        //        // only static methods can be called here as we cannot change glfw function parameter list to include instance pointer
+        //        callback_static(window, key, scancode, action, mods);
+        //    }
+        //);
+        //assert(old == nullptr);
     }
     if (handleMouseMoveEevents) {
         static auto callback_static = [this](GLFWwindow* window, double xpos, double ypos) {
@@ -135,3 +166,12 @@ void Presentation::callbackMouseButton(GLFWwindow* window, int button, int actio
     }
     engine->app->handleInput(inputState);
 }
+
+void Presentation::pollEvents()
+{
+    if (isActive()) {
+        glfwPollEvents();
+        //glfwGetMouseButton(nullptr, GLFW_MOUSE_BUTTON_RIGHT);
+    }
+}
+

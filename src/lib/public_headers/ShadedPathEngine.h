@@ -73,6 +73,7 @@ public:
     // getters
     bool isDebugWindowPosition() { return debugWindowPosition; }
 
+    bool isMainThread();
     void log_current_thread();
     ThreadInfo mainThreadInfo;
 

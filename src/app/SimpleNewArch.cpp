@@ -2,23 +2,23 @@
 #include "SimpleNewArch.h"
 
 void SimpleApp::prepareFrame(FrameInfo* fi) {
-    Log("prepareFrame " << fi->frameNum << std::endl);
+    //Log("prepareFrame " << fi->frameNum << std::endl);
     if (fi->frameNum >= 10) {
-        shouldStop = true;
+        //shouldStop = true;
     }
     lastFrameNum = fi->frameNum;
+    if (fi->frameNum == 4) {
+        openWindow("Window Frame 4");
+    }
+    if (fi->frameNum == 8) {
+        openAnotherWindow("Another Win 8");
+    }
 };
 
 // drawFrame is called for each topic in parallel!! Beware!
 void SimpleApp::drawFrame(FrameInfo* fi, int topic) {
-    if (fi->frameNum == 4 && topic == 0) {
-        openWindow("Window Frame 4");
-    }
-    if (fi->frameNum == 8 && topic == 0) {
-        openAnotherWindow("Another Win 8");
-    }
     if (topic == 0) {
-        Log("drawFrame " << fi->frameNum << " topic " << topic << std::endl);
+        //Log("drawFrame " << fi->frameNum << " topic " << topic << std::endl);
         directImage.rendered = false;
         engine->util.writeRawImageTestData(directImage, 0);
         directImage.rendered = true;
@@ -35,6 +35,8 @@ void SimpleApp::run() {
     gpui = engine->createImage("Test Image");
     engine->globalRendering.createDumpImage(directImage);
     di.openForCPUWriteAccess(gpui, &directImage);
+
+    //openWindow("Window SimpleApp");
 
     engine->eventLoop();
 
