@@ -2,10 +2,12 @@
 class SimpleApp : public ShadedPathApplication
 {
 public:
+    void mainThreadHook() override;
     void prepareFrame(FrameInfo* fi) override;
     void drawFrame(FrameInfo* fi, int topic) override;
     void run() override;
     bool shouldClose() override;
+    void handleInput(InputState& inputState) override;
 
     long lastFrameNum = 0;
 private:

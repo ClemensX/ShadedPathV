@@ -2,18 +2,23 @@
 #include "SimpleNewArch.h"
 
 void SimpleApp::prepareFrame(FrameInfo* fi) {
+    if (!engine->isSingleThreadMode()) assert(false == engine->isMainThread());
+
     //Log("prepareFrame " << fi->frameNum << std::endl);
     if (fi->frameNum >= 10) {
         //shouldStop = true;
     }
     lastFrameNum = fi->frameNum;
-    if (fi->frameNum == 4) {
+};
+
+void SimpleApp::mainThreadHook() {
+    if (lastFrameNum >= 4 && window1.glfw_window == nullptr) {
         openWindow("Window Frame 4");
     }
-    if (fi->frameNum == 8) {
+    if (lastFrameNum >= 8 && window2.glfw_window == nullptr) {
         openAnotherWindow("Another Win 8");
     }
-};
+}
 
 // drawFrame is called for each topic in parallel!! Beware!
 void SimpleApp::drawFrame(FrameInfo* fi, int topic) {
@@ -62,4 +67,19 @@ void SimpleApp::openAnotherWindow(const char* title) {
     int win_width = 480;
     engine->enablePresentation(&window2, win_width, (int)(win_width / 1.77f), title);
 
+}
+
+void SimpleApp::handleInput(InputState& inputState)
+{
+    assert(engine->isMainThread());
+    if (inputState.windowClosed != nullptr) {
+        if (inputState.windowClosed == &window1) {
+            //Log("Window 1 shouldclosed\n");
+        }
+        if (inputState.windowClosed == &window2) {
+            //Log("Window 2 shouldclosed\n");
+        }
+        inputState.windowClosed = nullptr;
+        shouldStop = true;
+    }
 }

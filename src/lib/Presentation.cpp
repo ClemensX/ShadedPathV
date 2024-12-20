@@ -27,21 +27,6 @@ Presentation::~Presentation()
     }
 }
 
-// Key callback function
-void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (action == GLFW_PRESS) {
-        std::cout << "Key pressed: " << key << std::endl;
-    }
-    else if (action == GLFW_RELEASE) {
-        std::cout << "Key released: " << key << std::endl;
-    }
-
-    // Close the window when the Escape key is pressed
-    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
-    }
-}
-
 void Presentation::createWindow(WindowInfo* winfo, int w, int h, const char* name,
     bool handleKeyEvents, bool handleMouseMoveEevents, bool handleMouseButtonEvents)
 {
@@ -73,24 +58,21 @@ void Presentation::createWindow(WindowInfo* winfo, int w, int h, const char* nam
     }
     // init callbacks: we assume that no other callback was installed (yet)
     if (handleKeyEvents) {
-        // Set the key callback
-        glfwSetKeyCallback(window, keyCallback);
-
-        //// we need a static member function that can be registered with glfw:
-        //// static auto callback = bind(&Presentation::key_callbackMember, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5);
-        //// the above works, but can be done more elegantly with a lambda expression:
-        //static auto callback_static = [this](GLFWwindow* window, int key, int scancode, int action, int mods) {
-        //    // because we have a this pointer we are now able to call a non-static member method:
-        //    callbackKey(window, key, scancode, action, mods);
-        //    };
-        //auto old = glfwSetKeyCallback(window,
-        //    [](GLFWwindow* window, int key, int scancode, int action, int mods)
-        //    {
-        //        // only static methods can be called here as we cannot change glfw function parameter list to include instance pointer
-        //        callback_static(window, key, scancode, action, mods);
-        //    }
-        //);
-        //assert(old == nullptr);
+        // we need a static member function that can be registered with glfw:
+        // static auto callback = bind(&Presentation::key_callbackMember, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5);
+        // the above works, but can be done more elegantly with a lambda expression:
+        static auto callback_static = [this](GLFWwindow* window, int key, int scancode, int action, int mods) {
+            // because we have a this pointer we are now able to call a non-static member method:
+            callbackKey(window, key, scancode, action, mods);
+            };
+        auto old = glfwSetKeyCallback(window,
+            [](GLFWwindow* window, int key, int scancode, int action, int mods)
+            {
+                // only static methods can be called here as we cannot change glfw function parameter list to include instance pointer
+                callback_static(window, key, scancode, action, mods);
+            }
+        );
+        assert(old == nullptr);
     }
     if (handleMouseMoveEevents) {
         static auto callback_static = [this](GLFWwindow* window, double xpos, double ypos) {
@@ -120,6 +102,7 @@ void Presentation::createWindow(WindowInfo* winfo, int w, int h, const char* nam
 
 void Presentation::callbackKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+    assert(engine->isMainThread());
     inputState.mouseButtonEvent = inputState.mouseMoveEvent = false;
     inputState.keyEvent = true;
     inputState.key = key;
@@ -131,6 +114,7 @@ void Presentation::callbackKey(GLFWwindow* window, int key, int scancode, int ac
 
 void Presentation::callbackCursorPos(GLFWwindow* window, double xpos, double ypos)
 {
+    assert(engine->isMainThread());
     inputState.mouseButtonEvent = inputState.keyEvent = false;
     inputState.mouseMoveEvent = true;
     int width, height;
@@ -142,6 +126,7 @@ void Presentation::callbackCursorPos(GLFWwindow* window, double xpos, double ypo
 
 void Presentation::callbackMouseButton(GLFWwindow* window, int button, int action, int mods)
 {
+    assert(engine->isMainThread());
     inputState.mouseMoveEvent = inputState.keyEvent = false;
     inputState.mouseButtonEvent = true;
     if (button == GLFW_MOUSE_BUTTON_LEFT) {
@@ -170,8 +155,14 @@ void Presentation::callbackMouseButton(GLFWwindow* window, int button, int actio
 void Presentation::pollEvents()
 {
     if (isActive()) {
+        ThemedTimer::getInstance()->add(TIMER_INPUT_THREAD);
         glfwPollEvents();
-        //glfwGetMouseButton(nullptr, GLFW_MOUSE_BUTTON_RIGHT);
+        if (glfwWindowShouldClose(windowInfo->glfw_window)) {
+            // Handle window close event
+            //Log("Window close button pressed\n");
+            inputState.windowClosed = windowInfo;
+            engine->app->handleInput(inputState);
+        }
     }
 }
 

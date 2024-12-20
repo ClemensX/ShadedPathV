@@ -9,6 +9,10 @@ class ShadedPathApplication
 public:
     // called from multiple threads, only local resources should be changed
     //virtual void drawFrame(ThreadResources& tr) = 0;
+
+    // called form main thread, synchronized, for things like window mgmt.
+    // be very brief here, as this will block the main thread
+    virtual void mainThreadHook() {};
     virtual void handleInput(InputState& inputState) {};
     virtual void prepareFrame(FrameInfo* fi) {};
     // draw Frame depending on topic. is in range 0..appDrawCalls-1
@@ -72,6 +76,7 @@ public:
 
     // getters
     bool isDebugWindowPosition() { return debugWindowPosition; }
+    bool isSingleThreadMode() { return singleThreadMode; }
 
     bool isMainThread();
     void log_current_thread();

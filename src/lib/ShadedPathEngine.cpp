@@ -152,8 +152,12 @@ void ShadedPathEngine::initFrame(FrameInfo* fi, long frameNum)
 void ShadedPathEngine::preFrame()
 {
     // input
+    app->mainThreadHook();
     presentation.pollEvents();
-
+    if (!threadModeSingle) {
+        ThemedTimer::getInstance()->add(TIMER_INPUT_THREAD);
+        //limiter.waitForLimit();
+    }
     // alternate frame infos:
     long frameNum = getNextFrameNumber();
     int currentFrameInfoIndex = frameNum & 0x01;

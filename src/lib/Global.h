@@ -1,5 +1,8 @@
 #pragma once
 
+//forward
+struct WindowInfo;
+
 struct InputState {
 	glm::vec2 pos = glm::vec2(0.0f);
 	// click event
@@ -11,6 +14,7 @@ struct InputState {
 
 	int key = 0, scancode = 0, action = 0, mods = 0;
 	bool keyEvent = false, mouseMoveEvent = false, mouseButtonEvent = false;
+	WindowInfo* windowClosed = nullptr;
 };
 
 struct SwapChainSupportDetails {
