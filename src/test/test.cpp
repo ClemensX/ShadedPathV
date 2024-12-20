@@ -74,7 +74,7 @@ TEST(Engine, Initialization) {
         //engine.setFrameCountLimit(10);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::Small);
         //engine.setFramesInFlight(2);
-        engine.setThreadModeSingle();
+        engine.setSingleThreadMode(true);
 
         // engine initialization
         engine.initGlobal();
@@ -95,7 +95,7 @@ TEST(Engine, DirectImageManipulation) {
         //engine.setFrameCountLimit(10);
         //engine.setBackBufferResolution(ShadedPathEngine::Resolution::Small);
         //engine.setFramesInFlight(2);
-        engine.setThreadModeSingle();
+        engine.setSingleThreadMode(true);
 
         // engine initialization
         engine.initGlobal();

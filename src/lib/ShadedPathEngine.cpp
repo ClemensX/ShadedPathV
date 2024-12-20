@@ -38,6 +38,7 @@ void ShadedPathEngine::initGlobal() {
 
     globalRendering.initBeforePresentation();
     globalRendering.initAfterPresentation();
+    initialized = true;
 }
 
 ShadedPathEngine::~ShadedPathEngine()
@@ -125,17 +126,72 @@ void ShadedPathEngine::log_current_thread()
 void ShadedPathEngine::eventLoop()
 {
     // some shaders may need additional preparation
-    //engine->prepareDrawing();
-
+    prepareDrawing();
 
     // rendering
     while (!shouldClose()) {
-        preFrame();
-        drawFrame();
-        postFrame();
+        // input
+        app->mainThreadHook();
+        presentation.pollEvents();
+        if (!singleThreadMode) {
+            ThemedTimer::getInstance()->add(TIMER_INPUT_THREAD);
+            //limiter.waitForLimit();
+        } else {
+            // frame generation will only be called from main thred in single thread mode
+            preFrame();
+            drawFrame();
+            postFrame();
+        }
     }
     waitUntilShutdown();
 
+}
+
+void ShadedPathEngine::prepareDrawing()
+{
+    globalRendering.logDeviceLimits();
+    if (!initialized) Error("Engine was not initialized");
+    //for (int i = 0; i < threadResources.size(); i++) {
+    //    auto& tr = threadResources[i];
+    //    tr.frameIndex = i;
+    //    shaders.createCommandBuffers(tr);
+    //    string name = "renderContinueQueue_" + to_string(i);
+    //    tr.renderThreadContinueQueue.setLoggingInfo(LOG_RENDER_CONTINUATION, name);
+    //    tr.renderThreadContinueQueue.push(0);
+    //}
+    //presentation.initBackBufferPresentation();
+
+    if (!singleThreadMode) {
+        //startQueueSubmitThread();
+        startRenderThread();
+        //startUpdateThread();
+    }
+    //for (ThreadResources& tr : threadResources) {
+    //    shaders.createCommandBufferBackBufferImageDump(tr);
+    //}
+}
+
+void ShadedPathEngine::startRenderThread()
+{
+    if (!initialized) {
+        Error("cannot start render threads: pipeline not initialized\n");
+        return;
+    }
+    std::string name = "main_render_thread";
+    threadsMain.addThread(ThreadCategory::Draw, name, runDrawFrame, this);
+    //if (framesInFlight > 1 && isVR()) {
+    //    Error("cannot start render threads: VR mode not supported with multiple render threads. Use engine.setFramesInFlight(1)\n");
+    //}
+    //if (consumer == nullptr) {
+    //    Error("cannot start render threads: no frame consumer specified\n");
+    //    return;
+    //}
+    //pipelineStartTime = chrono::high_resolution_clock::now();
+    //for (int i = 0; i < framesInFlight; i++) {
+    //    auto* tr = &threadResources[i];
+    //    std::string name = "render_thread_" + std::to_string(i);
+    //    threads.addThread(ThreadCategory::Draw, name, runDrawFrame, this, tr);
+    //}
 }
 
 bool ShadedPathEngine::shouldClose()
@@ -151,13 +207,6 @@ void ShadedPathEngine::initFrame(FrameInfo* fi, long frameNum)
 
 void ShadedPathEngine::preFrame()
 {
-    // input
-    app->mainThreadHook();
-    presentation.pollEvents();
-    if (!threadModeSingle) {
-        ThemedTimer::getInstance()->add(TIMER_INPUT_THREAD);
-        //limiter.waitForLimit();
-    }
     // alternate frame infos:
     long frameNum = getNextFrameNumber();
     int currentFrameInfoIndex = frameNum & 0x01;
@@ -232,4 +281,35 @@ long ShadedPathEngine::getNextFrameNumber()
 void ShadedPathEngine::enablePresentation(WindowInfo* winfo, int w, int h, const char* name)
 {
     presentation.createWindow(winfo, w, h, name);
+}
+
+void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance)
+{
+    LogCondF(LOG_QUEUE, "run DrawFrame start " << endl);
+    //this_thread::sleep_for(chrono::milliseconds(1000 * (10 - tr->frameIndex)));
+    GlobalResourceSet set;
+    bool doSwitch;
+    ShaderBase* shaderInstance = nullptr;
+    //if (tr->frameIndex > 0) {
+    //    this_thread::sleep_for(chrono::seconds(3));
+    //}
+    while (engine_instance->shouldClose() == false) {
+        // wait until queue submit thread issued all present commands
+        //optional<unsigned long> o = tr->renderThreadContinueQueue.pop();
+        //if (!o) {
+        //    break;
+        //}
+        // draw next frame
+        //engine_instance->queueSubmitThreadPreFrame(*tr);
+        //engine_instance->drawFrame(*tr);
+        //engine_instance->globalUpdate.doSyncedDrawingThreadMaintenance();
+        //engine_instance->queue.push(tr);
+        engine_instance->preFrame();
+        engine_instance->drawFrame();
+        engine_instance->postFrame();
+        LogCondF(LOG_QUEUE, "pushed frame: " << endl);
+
+    }
+    LogCondF(LOG_QUEUE, "run DrawFrame end " << endl);
+    //tr->threadFinished = true;
 }

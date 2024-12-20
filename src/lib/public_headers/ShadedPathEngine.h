@@ -66,6 +66,8 @@ public:
     ShadedPathEngine& setVR(bool enable) { enableVr = enable; return *this; }
     ShadedPathEngine& setStereo(bool enable) { enableStereo = enable; return *this; }
     ShadedPathEngine& setEnableSound(bool enable) { enableSound = enable; return *this; }
+    // default is multi thread mode - use this for all in one single thread
+    // will disable render threads and global update thread
     ShadedPathEngine& setSingleThreadMode(bool enable) { singleThreadMode = enable; return *this; }
     ShadedPathEngine& setDebugWindowPosition(bool enable) { debugWindowPosition = enable; return *this; }
     ShadedPathEngine& setEnableRenderDoc(bool enable) { enableRenderDoc = enable; return *this; }
@@ -188,12 +190,6 @@ public:
     // limit number of rendered frames - cannot be used together with presentation enabled
     void setFrameCountLimit(long max);
 
-    // default is multi thread mode - use this for all in one single thread
-    // will disable render threads and global update thread
-    void setThreadModeSingle() {
-        threadModeSingle = true;
-    };
-
     // single queue mode is set automatically, if only one vulkan queue is available 
     // on the device. Will cause severe perfomance penalties
     void setSingleQueueMode() {
@@ -219,6 +215,10 @@ public:
         return fixedPhysicalDeviceIndex;
     }
 
+    // called once to setup commandbuffers for the shaders
+    // has to be called after all shaders have been initialized
+    void prepareDrawing();
+
     int getNumCores() {
         return numCores;
     }
@@ -239,7 +239,6 @@ public:
     //Files files;
     GameTime gameTime;
     FPSCounter fpsCounter;
-    bool threadModeSingle = false;
     // create image in backbuffer size
     GPUImage* createImage(const char* debugName);
     bool presentationMode = false; // get rid of this later
@@ -308,4 +307,11 @@ private:
     int overrideUsedCores = -1;
     int appDrawCalls = 1;
     Presentation presentation;
+    static void runDrawFrame(ShadedPathEngine* engine_instance);
+    static void runQueueSubmit(ShadedPathEngine* engine_instance);
+    static void runUpdateThread(ShadedPathEngine* engine_instance);
+    void startRenderThread();
+    void startQueueSubmitThread();
+    // global update thread for shuffling data to GPU in the background
+    void startUpdateThread();
 };

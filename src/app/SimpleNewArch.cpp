@@ -22,6 +22,7 @@ void SimpleApp::mainThreadHook() {
 
 // drawFrame is called for each topic in parallel!! Beware!
 void SimpleApp::drawFrame(FrameInfo* fi, int topic) {
+    if (!engine->isSingleThreadMode()) assert(false == engine->isMainThread());
     if (topic == 0) {
         //Log("drawFrame " << fi->frameNum << " topic " << topic << std::endl);
         directImage.rendered = false;
