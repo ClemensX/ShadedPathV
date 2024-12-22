@@ -7,6 +7,35 @@
 using namespace std;
 using namespace glm;
 
+// we need to change working directory for all non-trivial engine tests.
+// Especially for tests that check log files.
+// each test runs in a sub folder with it's name, e.g. build\src\test\Debug\Logs"
+class WorkingDirectoryTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        const ::testing::TestInfo* test_info = ::testing::UnitTest::GetInstance()->current_test_info();
+        std::string test_name = test_info->name();
+        original_path = std::filesystem::current_path();
+        test_directory = test_name;
+        if (!std::filesystem::exists(test_directory)) {
+            std::filesystem::create_directories(test_directory);
+        }
+        std::filesystem::current_path(test_directory);
+    }
+
+    void TearDown() override {
+        std::filesystem::current_path(original_path);
+    }
+
+private:
+    std::filesystem::path original_path;
+    std::filesystem::path test_directory;
+};
+
+class UtilTest : public WorkingDirectoryTest {};
+class EngineTest : public WorkingDirectoryTest {};
+class EngineImageConsumer : public WorkingDirectoryTest {};
+
 TEST(Environment, GLM) {
     glm::mat4 m1;
     glm::vec4 vec;
@@ -60,7 +89,7 @@ TEST(Environment, Vulkan) {
     EXPECT_GT((int)extensionCount, 10);
 }
 
-TEST(Util, Logs) {
+TEST_F(UtilTest, Logs) {
     // should log into /ShadedPathTest/spe_run.log
     LogFile("Hi, Shaded Path Engine\n");
 
@@ -68,7 +97,7 @@ TEST(Util, Logs) {
     Log("Hi, Shaded Path Engine!\n");
 }
 
-TEST(Engine, Initialization) {
+TEST_F(EngineTest, Initialization) {
     {
         ShadedPathEngine engine;
         //engine.setFrameCountLimit(10);
@@ -89,7 +118,7 @@ TEST(Engine, Initialization) {
     EXPECT_TRUE(log.assertLineBefore("Engine destructor", "Test end."));
 }
 
-TEST(Engine, DirectImageManipulation) {
+TEST_F(EngineTest, DirectImageManipulation) {
     {
         ShadedPathEngine engine;
         //engine.setFrameCountLimit(10);
@@ -123,7 +152,7 @@ TEST(Engine, DirectImageManipulation) {
     EXPECT_TRUE(log.assertLineBefore("Engine destructor", "Test end."));
 }
 
-TEST(Engine, Headless) {
+TEST_F(EngineTest, Headless) {
     {
         ShadedPathEngine my_engine;
         static ShadedPathEngine* engine = &my_engine;
@@ -199,7 +228,7 @@ TEST(Engine, Headless) {
     Log("Test end. (Should appear after destructor log)\n");
 }
 
-TEST(Engine, DumpTexture) {
+TEST_F(EngineTest, DumpTexture) {
     {
         //ShadedPathEngineManager man;
         //static ShadedPathEngine* engine = man.createEngine();
@@ -233,7 +262,7 @@ TEST(Engine, DumpTexture) {
     Log("Test end. (Should appear after destructor log)\n");
 }
 
-TEST(Engine, Alignment) {
+TEST_F(EngineTest, Alignment) {
     {
         //ShadedPathEngineManager man;
         //ShadedPathEngine* engine = man.createEngine();
@@ -359,6 +388,77 @@ TEST(Threads, BasicTasks) {
     future2.get();
     Log("Active threads: " << threadGroup.getActiveThreadCount() << std::endl);
     EXPECT_EQ(1, 1);
+}
+
+TEST_F(EngineImageConsumer, Dump) {
+    {
+        ShadedPathEngine my_engine;
+        my_engine
+            .setEnableLines(true)
+            .setDebugWindowPosition(true)
+            .setEnableUI(true)
+            .setEnableSound(true)
+            .setVR(false)
+            //.setSingleThreadMode(true)
+            .overrideCPUCores(4)
+            ;
+
+        static ShadedPathEngine* engine = &my_engine;
+        engine->initGlobal();
+        class TestApp : public ShadedPathApplication
+        {
+        public:
+            void prepareFrame(FrameInfo* fi) override {
+                if (fi->frameNum >= 10) {
+                    shouldStop = true;
+                }
+            };
+            // drawFrame is called for each topic in parallel!! Beware!
+            void drawFrame(FrameInfo* fi, int topic) override {
+                if (topic == 0) {
+                    directImage.rendered = false;
+                    engine->util.writeRawImageTestData(directImage, 0);
+                    directImage.rendered = true;
+                    fi->renderedImage = &directImage;
+                }
+            };
+            void run() override {
+                di.setEngine(engine);
+                engine->configureParallelAppDrawCalls(2);
+                gpui = engine->createImage("Test Image");
+                engine->globalRendering.createDumpImage(directImage);
+                di.openForCPUWriteAccess(gpui, &directImage);
+
+                engine->eventLoop();
+
+                // cleanup
+                di.closeCPUWriteAccess(gpui, &directImage);
+                engine->globalRendering.destroyImage(&directImage);
+            };
+            bool shouldClose() override {
+                return shouldStop;
+            }
+        private:
+            bool shouldStop = false;
+            DirectImage di;
+            GPUImage* gpui = nullptr;
+            GPUImage directImage;
+
+        };
+        TestApp testApp;
+        engine->registerApp((ShadedPathApplication*)&testApp);
+        ImageConsumerDump imageConsumerDump;
+        imageConsumerDump.configureFramesToDump(true, nullptr);
+        engine->setImageConsumer(&imageConsumerDump);
+        engine->app->run();
+        EXPECT_TRUE(engine->app);
+    }
+    Log("Test end. (Should appear after destructor log)\n");
+    LogfileScanner log;
+    // we should not get warnings about missing image consumer as we have set one:
+    EXPECT_EQ(log.searchForLine("WARNING: No image consumer set, defaulting to discarding image"), -1);
+    // TODO: check that dumping and drawing is done in parallel
+    // TODO: check for dumped images
 }
 
 int main(int argc, char** argv) {

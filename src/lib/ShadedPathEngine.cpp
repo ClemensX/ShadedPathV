@@ -217,7 +217,7 @@ void ShadedPathEngine::preFrame()
     app->prepareFrame(currentFrameInfo);
 }
 
-GPUImage* ShadedPathEngine::drawFrame()
+void ShadedPathEngine::drawFrame()
 {
     // call app
     if (singleThreadMode) {
@@ -239,8 +239,8 @@ GPUImage* ShadedPathEngine::drawFrame()
     if (currentFrameInfo->renderedImage->rendered == false) {
         Error("Image not rendered");
     }
-    lastImage = currentFrameInfo->renderedImage; // TODO check
-    return currentFrameInfo->renderedImage;
+    //lastImage = currentFrameInfo->renderedImage; // TODO check
+    //return currentFrameInfo->renderedImage;
 }
 
 void ShadedPathEngine::postFrame()
@@ -265,7 +265,7 @@ void ShadedPathEngine::singleThreadPostFrame()
         Log("WARNING: No image consumer set, defaulting to discarding image\n");
         imageConsumer = &imageConsumerNullify;
     }
-    imageConsumer->consume(lastImage);
+    imageConsumer->consume(currentFrameInfo->renderedImage);
 }
 
 void ShadedPathEngine::waitUntilShutdown()
@@ -313,3 +313,18 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance)
     LogCondF(LOG_QUEUE, "run DrawFrame end " << endl);
     //tr->threadFinished = true;
 }
+
+// image consumers
+
+void ImageConsumerDump::consume(GPUImage* gpui)
+{
+    gpui->consumed = true;
+    gpui->rendered = false;
+}
+
+void ImageConsumerDump::configureFramesToDump(bool dumpAll, std::vector<int>* frameNumbersToDump)
+{
+    this->dumpAll = dumpAll;
+    this->frameNumbersToDump = frameNumbersToDump;
+}
+

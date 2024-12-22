@@ -39,6 +39,17 @@ public:
     }
 };
 
+// image consumer to dump generated images to disk
+class ImageConsumerDump : public ImageConsumer
+{
+public:
+    void consume(GPUImage* gpui) override;
+    void configureFramesToDump(bool dumpAll, std::vector<int>* frameNumbersToDump);
+private:
+    bool dumpAll = false;
+    std::vector<int>* frameNumbersToDump = nullptr;
+};
+
 class ShadedPathEngine
 {
 public:
@@ -290,18 +301,18 @@ private:
     }
     bool shouldClose();
     void preFrame();
-    GPUImage* drawFrame();
+    void drawFrame();
     void postFrame();
     void waitUntilShutdown();
     // we no longer need frame num to be atomic
     //std::atomic<long> nextFreeFrameNum = 0;
     long nextFreeFrameNum = 0;
     long getNextFrameNumber();
+    // beware! current draw frame info is only valid during frame creation (preFrame() to postFrame())
     FrameInfo* currentFrameInfo = nullptr;
     FrameInfo frameInfos[2];
     // in single thread mode handle post processing (consume image, advance sound, etc.)
     void singleThreadPostFrame();
-    GPUImage* lastImage = nullptr; // careful: this is not thread safe
     void initFrame(FrameInfo* fi, long frameNum);
     int numCores = 0;
     int overrideUsedCores = -1;
