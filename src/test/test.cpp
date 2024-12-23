@@ -447,8 +447,8 @@ TEST_F(EngineImageConsumer, Dump) {
         };
         TestApp testApp;
         engine->registerApp((ShadedPathApplication*)&testApp);
-        ImageConsumerDump imageConsumerDump;
-        imageConsumerDump.configureFramesToDump(true, nullptr);
+        ImageConsumerDump imageConsumerDump(engine);
+        imageConsumerDump.configureFramesToDump(false, {4L, 7L});
         engine->setImageConsumer(&imageConsumerDump);
         engine->app->run();
         EXPECT_TRUE(engine->app);

@@ -8,7 +8,7 @@ public:
     DirectImage(ShadedPathEngine* s);
     DirectImage();
     ~DirectImage();
-    void consume(GPUImage* gpui) override;
+    void consume(FrameInfo* fi) override;
     void dumpToFile(GPUImage* gpui);
     void openForCPUWriteAccess(GPUImage* gpui, GPUImage* writeable);
     void closeCPUWriteAccess(GPUImage* gpui, GPUImage* writeable);

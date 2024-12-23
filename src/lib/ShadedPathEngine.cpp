@@ -265,11 +265,20 @@ void ShadedPathEngine::singleThreadPostFrame()
         Log("WARNING: No image consumer set, defaulting to discarding image\n");
         imageConsumer = &imageConsumerNullify;
     }
-    imageConsumer->consume(currentFrameInfo->renderedImage);
+    imageConsumer->consume(currentFrameInfo);
 }
 
 void ShadedPathEngine::waitUntilShutdown()
 {
+    if (!singleThreadMode) {
+        //queue.shutdown();
+        threadsMain.join_all();
+        if (threadsWorker) {
+            delete threadsWorker;
+            threadsWorker = nullptr;
+        }
+        //threadsWorker->join_all();
+    }
 }
 
 long ShadedPathEngine::getNextFrameNumber()
@@ -316,15 +325,18 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance)
 
 // image consumers
 
-void ImageConsumerDump::consume(GPUImage* gpui)
+void ImageConsumerDump::consume(FrameInfo* fi)
 {
-    gpui->consumed = true;
-    gpui->rendered = false;
+    if (dumpAll || frameNumbersToDump.find(fi->frameNum) != frameNumbersToDump.end()) {
+        directImage.dumpToFile(fi->renderedImage);
+    }
+    fi->renderedImage->consumed = true;
+    fi->renderedImage->rendered = false;
 }
 
-void ImageConsumerDump::configureFramesToDump(bool dumpAll, std::vector<int>* frameNumbersToDump)
+void ImageConsumerDump::configureFramesToDump(bool dumpAll, std::initializer_list<long> frameNumbers)
 {
     this->dumpAll = dumpAll;
-    this->frameNumbersToDump = frameNumbersToDump;
+    frameNumbersToDump.clear();
+    frameNumbersToDump.insert(frameNumbers.begin(), frameNumbers.end());
 }
-

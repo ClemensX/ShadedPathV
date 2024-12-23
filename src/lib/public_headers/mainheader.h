@@ -54,6 +54,8 @@
 #include <bitset>
 #include <future>
 #include <condition_variable>
+#include <unordered_set>
+#include <initializer_list>
 //using namespace std;
 
 // headers for used libraries

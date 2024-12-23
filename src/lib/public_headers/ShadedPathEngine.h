@@ -33,9 +33,9 @@ protected:
 class ImageConsumerNullify : public ImageConsumer
 {
 public:
-    void consume(GPUImage* gpui) override {
-        gpui->consumed = true;
-        gpui->rendered = false;
+    void consume(FrameInfo* fi) override {
+        fi->renderedImage->consumed = true;
+        fi->renderedImage->rendered = false;
     }
 };
 
@@ -43,11 +43,16 @@ public:
 class ImageConsumerDump : public ImageConsumer
 {
 public:
-    void consume(GPUImage* gpui) override;
-    void configureFramesToDump(bool dumpAll, std::vector<int>* frameNumbersToDump);
+    void consume(FrameInfo* fi) override;
+    void configureFramesToDump(bool dumpAll, std::initializer_list<long> frameNumbers);
+    ImageConsumerDump(ShadedPathEngine* s) {
+        setEngine(s);
+        directImage.setEngine(s);
+    }
 private:
     bool dumpAll = false;
-    std::vector<int>* frameNumbersToDump = nullptr;
+    std::unordered_set<long> frameNumbersToDump;
+    DirectImage directImage;
 };
 
 class ShadedPathEngine

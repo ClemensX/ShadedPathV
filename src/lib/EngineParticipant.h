@@ -27,6 +27,5 @@ public:
 class ImageConsumer : public EngineParticipant
 {
 public:
-    //virtual ~ImageConsumer() = 0;
-    virtual void consume(GPUImage* gpui) = 0;
+    virtual void consume(FrameInfo* fi) = 0;
 };

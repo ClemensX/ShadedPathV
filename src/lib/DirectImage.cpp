@@ -13,9 +13,9 @@ DirectImage::DirectImage()
 	Log("DirectImage constructor\n");
 }
 
-void DirectImage::consume(GPUImage* gpui)
+void DirectImage::consume(FrameInfo* fi)
 {
-    dumpToFile(gpui);
+    dumpToFile(fi->renderedImage);
 }
 
 DirectImage::~DirectImage()
