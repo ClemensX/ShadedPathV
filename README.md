@@ -92,7 +92,7 @@ Clone the repo, then type commands in highest project folder:
 
 Create the VS2022 project:
 ```
-cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=c:\dev\vulkan\vcpkg\scripts\buildsystems\vcpkg.cmake
+cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=C:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake
 ```
 
 Now you can either open VS2022 from the ./build folder and build in the IDE, or run this command:
