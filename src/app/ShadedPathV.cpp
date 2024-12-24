@@ -146,6 +146,7 @@ int main()
         .overrideCPUCores(4)
         ;
 
+
     engine.setFixedPhysicalDeviceIndex(0);
     engine.initGlobal();
     SimpleApp app;
