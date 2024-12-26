@@ -126,7 +126,9 @@ public:
     VkExtent2D getBackBufferExtent();
 
     // enable output window, can be called any time. Also needed for keyboard input
-    void enablePresentation(WindowInfo *winfo, int w, int h, const char* name);
+    void enablePresentation(WindowInfo* winfo, int w, int h, const char* name);
+    // enable Vulkan output to window
+    void enableWindowOutput(WindowInfo* winfo);
 
     // other getters and setters
 
@@ -257,7 +259,7 @@ public:
     FPSCounter fpsCounter;
     // create image in backbuffer size
     GPUImage* createImage(const char* debugName);
-    bool presentationMode = false; // get rid of this later
+    bool presentationMode = true; // get rid of this later
 
 private:
 

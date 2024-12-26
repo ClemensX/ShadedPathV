@@ -292,6 +292,11 @@ void ShadedPathEngine::enablePresentation(WindowInfo* winfo, int w, int h, const
     presentation.createWindow(winfo, w, h, name);
 }
 
+void ShadedPathEngine::enableWindowOutput(WindowInfo* winfo)
+{
+    presentation.createSwapChain(winfo);
+}
+
 void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance)
 {
     LogCondF(LOG_QUEUE, "run DrawFrame start " << endl);

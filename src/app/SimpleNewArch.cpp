@@ -67,7 +67,7 @@ void SimpleApp::openAnotherWindow(const char* title) {
     Log("openWindow " << title << std::endl);
     int win_width = 480;
     engine->enablePresentation(&window2, win_width, (int)(win_width / 1.77f), title);
-
+    engine->enableWindowOutput(&window2);
 }
 
 void SimpleApp::handleInput(InputState& inputState)
