@@ -6,7 +6,7 @@ struct WindowInfo {
     const char* title = "Shaded Path Engine";
     GLFWwindow* glfw_window = nullptr;
 	VkSurfaceKHR surface = nullptr;
-	VkSwapchainKHR swapChain{};
+	VkSwapchainKHR swapChain = nullptr;
 	std::vector<VkImage> swapChainImages;
 	VkFormat swapChainImageFormat{};
 	VkExtent2D swapChainExtent{};
@@ -22,6 +22,9 @@ public:
 
 	void createWindow(WindowInfo* winfo, int w, int h, const char* name,
 		bool handleKeyEvents = true, bool handleMouseMoveEevents = true, bool handleMouseButtonEvents = true);
+
+	void destroyWindowResources(WindowInfo* wi);
+
 	// poll events from glfw.
     // should be called from main thread and should work for all open glfw windows
 	void pollEvents();

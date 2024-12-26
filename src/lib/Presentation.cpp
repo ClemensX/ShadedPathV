@@ -104,6 +104,22 @@ void Presentation::createWindow(WindowInfo* winfo, int w, int h, const char* nam
     }
 }
 
+void Presentation::destroyWindowResources(WindowInfo* wi)
+{
+    if (wi->swapChain != nullptr) {
+        vkDestroySwapchainKHR(engine->globalRendering.device, wi->swapChain, nullptr);
+        wi->swapChain = nullptr;
+    }
+    if (wi->surface != nullptr) {
+        vkDestroySurfaceKHR(engine->globalRendering.vkInstance, wi->surface, nullptr);
+        wi->surface = nullptr;
+    }
+    if (wi->glfw_window != nullptr) {
+        glfwDestroyWindow(wi->glfw_window);
+        wi->glfw_window = nullptr;
+    }
+}
+
 void Presentation::callbackKey(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     assert(engine->isMainThread());

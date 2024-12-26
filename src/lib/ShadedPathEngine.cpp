@@ -44,6 +44,11 @@ void ShadedPathEngine::initGlobal() {
 ShadedPathEngine::~ShadedPathEngine()
 {
     Log("Engine destructor\n");
+    while (!windowInfos.empty()) {
+        WindowInfo* lastWindowInfo = windowInfos.back();
+        windowInfos.pop_back();
+        presentation.destroyWindowResources(lastWindowInfo);
+    }
     for (auto& img : images) {
         globalRendering.destroyImage(&img);
     }
@@ -289,6 +294,7 @@ long ShadedPathEngine::getNextFrameNumber()
 
 void ShadedPathEngine::enablePresentation(WindowInfo* winfo, int w, int h, const char* name)
 {
+    windowInfos.push_back(winfo);
     presentation.createWindow(winfo, w, h, name);
 }
 

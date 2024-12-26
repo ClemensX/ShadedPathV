@@ -332,4 +332,5 @@ private:
     void startQueueSubmitThread();
     // global update thread for shuffling data to GPU in the background
     void startUpdateThread();
+    std::vector<WindowInfo*> windowInfos;
 };

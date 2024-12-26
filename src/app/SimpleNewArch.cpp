@@ -60,6 +60,7 @@ void SimpleApp::openWindow(const char* title) {
     Log("openWindow " << title << std::endl);
     int win_width = 960;//480;// 960;//1800;// 800;//3700; // 2500
     engine->enablePresentation(&window1, win_width, (int)(win_width / 1.77f), title);
+    engine->enableWindowOutput(&window1);
 
 }
 
