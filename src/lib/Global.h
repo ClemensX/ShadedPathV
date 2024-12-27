@@ -71,3 +71,10 @@ struct FrameInfo {
 	int threadResourcesIndex;
 	GPUImage* renderedImage = nullptr;
 };
+
+class QueueSubmitResources
+{
+public:
+	FrameInfo* frameInfo = nullptr;
+	ThreadsafeWaitingQueue<unsigned long> renderThreadContinueQueue;
+};

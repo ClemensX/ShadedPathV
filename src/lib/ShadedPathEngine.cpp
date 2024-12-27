@@ -167,13 +167,25 @@ void ShadedPathEngine::prepareDrawing()
     //presentation.initBackBufferPresentation();
 
     if (!singleThreadMode) {
-        //startQueueSubmitThread();
+        qsr.renderThreadContinueQueue.setLoggingInfo(LOG_RENDER_CONTINUATION, "renderContinueQueue");
+        qsr.renderThreadContinueQueue.push(0);
+        startQueueSubmitThread();
         startRenderThread();
         //startUpdateThread();
     }
     //for (ThreadResources& tr : threadResources) {
     //    shaders.createCommandBufferBackBufferImageDump(tr);
     //}
+}
+
+void ShadedPathEngine::startQueueSubmitThread()
+{
+    if (!initialized) {
+        Error("cannot start update thread: pipeline not initialized\n");
+        return;
+    }
+    // one queue submit thread for all threads:
+    threadsMain.addThread(ThreadCategory::DrawQueueSubmit, "queue_submit", runQueueSubmit, this);
 }
 
 void ShadedPathEngine::startRenderThread()
@@ -303,6 +315,39 @@ void ShadedPathEngine::enableWindowOutput(WindowInfo* winfo)
     presentation.createSwapChain(winfo);
 }
 
+void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
+{
+    LogF("run QueueSubmit start " << endl);
+    //pipeline_instance->setRunning(true);
+    while (engine_instance->shouldClose() == false) {
+        //engine_instance->presentation.beginPresentFrame();
+        auto v = engine_instance->queue.pop();
+        if (v == nullptr) {
+            LogF("engine shutdown" << endl);
+            break;
+        }
+        LogCondF(LOG_QUEUE, "engine received frame: " << v->frameInfo->frameNum << endl);
+        //engine_instance->shaders.queueSubmit(*v);
+        // if we are pop()ed by drawing thread we can be sure to own the thread until presentFence is signalled,
+        // we still have to wait for inFlightFence to make sure rendering has ended
+        ThemedTimer::getInstance()->start(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
+        //engine_instance->presentation.presentBackBufferImage(*v); // TODO: test discarding out-of-sync frames
+        //engine_instance->advanceFrameCountersAfterPresentation();
+
+        //this_thread::sleep_for(chrono::milliseconds(5000));
+        //Log("rel time: " << engine_instance->gameTime.getRealTimeDelta() << endl);
+        ThemedTimer::getInstance()->stop(TIMER_PART_BACKBUFFER_COPY_AND_PRESENT);
+        ThemedTimer::getInstance()->add(TIMER_PRESENT_FRAME);
+        // tell render thread to continue:
+        //v->renderThreadContinue->test_and_set();
+        //v->renderThreadContinue->notify_one();
+        v->renderThreadContinueQueue.push(0);
+    }
+    //engine_instance->setRunning(false);
+    LogF("run QueueSubmit end " << endl);
+    engine_instance->queueThreadFinished = true;
+}
+
 void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance)
 {
     LogCondF(LOG_QUEUE, "run DrawFrame start " << endl);
@@ -315,10 +360,12 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance)
     //}
     while (engine_instance->shouldClose() == false) {
         // wait until queue submit thread issued all present commands
-        //optional<unsigned long> o = tr->renderThreadContinueQueue.pop();
-        //if (!o) {
-        //    break;
-        //}
+        // wait until queue submit thread issued all present commands
+        // tr->renderThreadContinue->wait(false);
+        optional<unsigned long> o = engine_instance->qsr.renderThreadContinueQueue.pop();
+        if (!o) {
+            break;
+        }
         // draw next frame
         //engine_instance->queueSubmitThreadPreFrame(*tr);
         //engine_instance->drawFrame(*tr);
@@ -327,6 +374,8 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance)
         engine_instance->preFrame();
         engine_instance->drawFrame();
         engine_instance->postFrame();
+        engine_instance->qsr.frameInfo = engine_instance->currentFrameInfo;
+        engine_instance->queue.push(&engine_instance->qsr);
         LogCondF(LOG_QUEUE, "pushed frame: " << endl);
 
     }
@@ -334,20 +383,3 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance)
     //tr->threadFinished = true;
 }
 
-// image consumers
-
-void ImageConsumerDump::consume(FrameInfo* fi)
-{
-    if (dumpAll || frameNumbersToDump.find(fi->frameNum) != frameNumbersToDump.end()) {
-        directImage.dumpToFile(fi->renderedImage);
-    }
-    fi->renderedImage->consumed = true;
-    fi->renderedImage->rendered = false;
-}
-
-void ImageConsumerDump::configureFramesToDump(bool dumpAll, std::initializer_list<long> frameNumbers)
-{
-    this->dumpAll = dumpAll;
-    frameNumbersToDump.clear();
-    frameNumbersToDump.insert(frameNumbers.begin(), frameNumbers.end());
-}

@@ -1,6 +1,7 @@
 set (SOURCES
   Util.cpp
   ShadedPathEngine.cpp
+  ImageConsumer.cpp
   #Texture.cpp
   GlobalRendering.cpp
   GameTime.cpp

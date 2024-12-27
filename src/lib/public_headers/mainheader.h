@@ -308,6 +308,7 @@ double static const PI_quarter = PI / 4.0;
 
 // engine headers
 
+#include "Threads_independent.h"
 #include "GlobalDef.h"
 #include "Global.h"
 #include "EngineParticipant.h"
@@ -319,6 +320,7 @@ double static const PI_quarter = PI / 4.0;
 #include "Texture.h"
 #include "GlobalRendering.h"
 #include "Threads.h"
+#include "ImageConsumer.h"
 #include "ShadedPathEngine.h"
 #include "Camera.h"
 #include "VR.h"
