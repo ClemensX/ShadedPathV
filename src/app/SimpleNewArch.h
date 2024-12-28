@@ -19,6 +19,7 @@ private:
     void openAnotherWindow(const char* title);
     WindowInfo window1;
     WindowInfo window2;
+    ImageConsumerWindow *imageConsumer = nullptr;
 
     //    void drawFrame(ThreadResources& tr) override {
     //        engine->shaders.submitFrame(tr);

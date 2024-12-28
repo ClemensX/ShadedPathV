@@ -29,3 +29,18 @@ private:
     DirectImage directImage;
 };
 
+// image consumer to show image in glfw window
+class ImageConsumerWindow : public ImageConsumer
+{
+public:
+    void consume(FrameInfo* fi) override;
+    void setWindow(WindowInfo* w) {
+        window = w;
+    }
+    ImageConsumerWindow(ShadedPathEngine* s) {
+        setEngine(s);
+    }
+private:
+    WindowInfo* window = nullptr;
+};
+

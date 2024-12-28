@@ -17,6 +17,8 @@ void SimpleApp::mainThreadHook() {
     }
     if (lastFrameNum >= 8 && window2.glfw_window == nullptr) {
         openAnotherWindow("Another Win 8");
+        imageConsumer->setWindow(&window2);
+        engine->setImageConsumer(imageConsumer);
     }
 }
 
@@ -41,6 +43,8 @@ void SimpleApp::run() {
     gpui = engine->createImage("Test Image");
     engine->globalRendering.createDumpImage(directImage);
     di.openForCPUWriteAccess(gpui, &directImage);
+    ImageConsumerWindow icw(engine);
+    imageConsumer = &icw;
 
     //openWindow("Window SimpleApp");
 
@@ -60,7 +64,7 @@ void SimpleApp::openWindow(const char* title) {
     Log("openWindow " << title << std::endl);
     int win_width = 960;//480;// 960;//1800;// 800;//3700; // 2500
     engine->enablePresentation(&window1, win_width, (int)(win_width / 1.77f), title);
-    engine->enableWindowOutput(&window1);
+    //engine->enableWindowOutput(&window1);
 
 }
 

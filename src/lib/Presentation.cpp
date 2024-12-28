@@ -45,6 +45,7 @@ void Presentation::createWindow(WindowInfo* winfo, int w, int h, const char* nam
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     auto window = glfwCreateWindow(w, h, name, nullptr, nullptr);
     winfo->glfw_window = window;
+    winfo->title = name;
     windowInfo = winfo;
     if (engine->isDebugWindowPosition()) {
         // Set window position to right half near the top of the screen
@@ -117,6 +118,30 @@ void Presentation::destroyWindowResources(WindowInfo* wi)
     if (wi->glfw_window != nullptr) {
         glfwDestroyWindow(wi->glfw_window);
         wi->glfw_window = nullptr;
+    }
+    if (wi->imageAvailableSemaphore != nullptr) {
+        vkDestroySemaphore(engine->globalRendering.device, wi->imageAvailableSemaphore, nullptr);
+        wi->imageAvailableSemaphore = nullptr;
+    }
+    if (wi->renderFinishedSemaphore != nullptr) {
+        vkDestroySemaphore(engine->globalRendering.device, wi->renderFinishedSemaphore, nullptr);
+        wi->renderFinishedSemaphore = nullptr;
+    }
+    if (wi->inFlightFence != nullptr) {
+        vkDestroyFence(engine->globalRendering.device, wi->inFlightFence, nullptr);
+        wi->inFlightFence = nullptr;
+    }
+    if (wi->uiRenderFinished != nullptr) {
+        vkDestroyEvent(engine->globalRendering.device, wi->uiRenderFinished, nullptr);
+        wi->uiRenderFinished = nullptr;
+    }
+    if (wi->imageDumpFence != nullptr) {
+        vkDestroyFence(engine->globalRendering.device, wi->imageDumpFence, nullptr);
+        wi->imageDumpFence = nullptr;
+    }
+    if (wi->presentFence != nullptr) {
+        vkDestroyFence(engine->globalRendering.device, wi->presentFence, nullptr);
+        wi->presentFence = nullptr;
     }
 }
 
@@ -323,5 +348,90 @@ VkExtent2D Presentation::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabi
         actualExtent.height = std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 
         return actualExtent;
+    }
+}
+
+
+
+void Presentation::presentImage(WindowInfo* winfo)
+{
+    auto& device = engine->globalRendering.device;
+    auto& global = engine->globalRendering;
+    uint32_t imageIndex;
+    if (vkAcquireNextImageKHR(device, winfo->swapChain, UINT64_MAX, winfo->imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS) {
+        Error("cannot aquire next image KHR");
+    }
+    //VkPresentInfoKHR presentInfo{};
+    //presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+    //presentInfo.waitSemaphoreCount = 1;
+    //presentInfo.pWaitSemaphores = signalSemaphores;
+
+    //VkSwapchainKHR swapChains[] = { swapChain };
+    //presentInfo.swapchainCount = 1;
+    //presentInfo.pSwapchains = swapChains;
+    //presentInfo.pImageIndices = &imageIndex;
+    //presentInfo.pResults = nullptr; // Optional
+    //vkQueuePresentKHR(winfo->presentQueue, &presentInfo);
+    ////LogF("Frame presented: " << tr.frameNum << endl);
+}
+
+void Presentation::preparePresentation(WindowInfo* winfo)
+{
+
+    auto& device = engine->globalRendering.device;
+    auto& global = engine->globalRendering;
+    createSwapChain(winfo);
+    auto v = global.familyIndices.presentFamily.value();
+    vkGetDeviceQueue(device, v, 0, &winfo->presentQueue);
+    //engine.global.presentQueueFamiliyIndex = value;
+    //engine.global.presentQueueIndex = 0;
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = global.commandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = (uint32_t)1;
+
+    if (vkAllocateCommandBuffers(device, &allocInfo, &winfo->commandBufferPresentBack) != VK_SUCCESS) {
+        Error("failed to allocate command buffers!");
+    }
+    winfo->commandBufferDebugName = "window.commandBufferPresentBack";
+    engine->util.debugNameObjectCommandBuffer(winfo->commandBufferPresentBack, winfo->commandBufferDebugName.c_str());
+    if (vkAllocateCommandBuffers(device, &allocInfo, &winfo->commandBufferUI) != VK_SUCCESS) {
+        Error("failed to allocate command buffers!");
+    }
+
+    // semaphores and fences
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &winfo->imageAvailableSemaphore) != VK_SUCCESS) {
+        Error("failed to create imageAvailableSemaphore for a frame");
+    }
+    if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &winfo->renderFinishedSemaphore) != VK_SUCCESS) {
+        Error("failed to create renderFinishedSemaphore for a frame");
+    }
+
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; // otherwise first wait() will wait forever
+
+    if (vkCreateFence(device, &fenceInfo, nullptr, &winfo->imageDumpFence) != VK_SUCCESS) {
+        Error("failed to create inFlightFence for a frame");
+    }
+    //fenceInfo.flags = 0; // present fence will be set during 1st present in queue submit thread
+    if (vkCreateFence(device, &fenceInfo, nullptr, &winfo->presentFence) != VK_SUCCESS) {
+        Error("failed to create presentFence for a frame");
+    }
+    fenceInfo.flags = 0; // present fence will be set during 1st present in queue submit thread
+    if (vkCreateFence(device, &fenceInfo, nullptr, &winfo->inFlightFence) != VK_SUCCESS) {
+        Error("failed to create inFlightFence for a frame");
+    }
+
+    VkEventCreateInfo eventInfo{};
+    eventInfo.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
+    eventInfo.flags = 0;
+    if (vkCreateEvent(global.device, &eventInfo, nullptr, &winfo->uiRenderFinished) != VK_SUCCESS) {
+        Error("failed to create event uiRenderFinished for a frame");
     }
 }

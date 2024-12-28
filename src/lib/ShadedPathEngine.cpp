@@ -318,7 +318,7 @@ void ShadedPathEngine::enablePresentation(WindowInfo* winfo, int w, int h, const
 
 void ShadedPathEngine::enableWindowOutput(WindowInfo* winfo)
 {
-    presentation.createSwapChain(winfo);
+    presentation.preparePresentation(winfo);
 }
 
 void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)

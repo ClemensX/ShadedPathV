@@ -19,3 +19,8 @@ void ImageConsumerDump::configureFramesToDump(bool dumpAll, std::initializer_lis
     frameNumbersToDump.clear();
     frameNumbersToDump.insert(frameNumbers.begin(), frameNumbers.end());
 }
+
+void ImageConsumerWindow::consume(FrameInfo* fi)
+{
+    Log("copy frame " << fi->frameNum << " to window " << window->title << endl);
+}
