@@ -41,6 +41,10 @@ public:
         //vr(this)
     {
         Log("Engine c'tor\n");
+#if defined (USE_FIXED_PHYSICAL_DEVICE_INDEX)
+        Log("override device selection to device " << PHYSICAL_DEVICE_INDEX << std::endl);
+        setFixedPhysicalDeviceIndex(PHYSICAL_DEVICE_INDEX);
+#endif
         //files.findFxFolder();
     }
 

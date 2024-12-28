@@ -147,7 +147,7 @@ int main()
         ;
 
 
-    engine.setFixedPhysicalDeviceIndex(0);
+    //engine.setFixedPhysicalDeviceIndex(0);
     engine.initGlobal();
     SimpleApp app;
     engine.registerApp((ShadedPathApplication*)&app);

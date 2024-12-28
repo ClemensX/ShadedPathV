@@ -142,7 +142,7 @@ void ShadedPathEngine::eventLoop()
             ThemedTimer::getInstance()->add(TIMER_INPUT_THREAD);
             //limiter.waitForLimit();
         } else {
-            // frame generation will only be called from main thred in single thread mode
+            // frame generation will only be called from main thread in single thread mode
             preFrame();
             drawFrame();
             postFrame();
@@ -269,7 +269,13 @@ void ShadedPathEngine::postFrame()
         //Error("Multi thread mode not implemented");
         // do the same in multi thread mode (for now)
         ThemedTimer::getInstance()->stop(TIMER_DRAW_FRAME);
-        singleThreadPostFrame();
+        //singleThreadPostFrame();
+        // we either have cmd buffers to submit or an already created image
+        if (currentFrameInfo->renderedImage->rendered == true) {
+            Log("postFrame consume rendered image " << currentFrameInfo->frameNum << endl);
+        } else {
+            Error("not implemented");
+        }
     }
 }
 
@@ -327,6 +333,15 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
             break;
         }
         LogCondF(LOG_QUEUE, "engine received frame: " << v->frameInfo->frameNum << endl);
+        if (v->frameInfo->renderedImage->rendered == true) {
+            // consume rendered image
+            Log("submit thread consuming frame image " << v->frameInfo->frameNum << endl);
+            if (engine_instance->imageConsumer == nullptr) {
+                Log("WARNING: No image consumer set, defaulting to discarding image\n");
+                engine_instance->imageConsumer = &engine_instance->imageConsumerNullify;
+            }
+            engine_instance->imageConsumer->consume(v->frameInfo);
+        }
         //engine_instance->shaders.queueSubmit(*v);
         // if we are pop()ed by drawing thread we can be sure to own the thread until presentFence is signalled,
         // we still have to wait for inFlightFence to make sure rendering has ended
@@ -372,9 +387,9 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance)
         //engine_instance->globalUpdate.doSyncedDrawingThreadMaintenance();
         //engine_instance->queue.push(tr);
         engine_instance->preFrame();
+        engine_instance->qsr.frameInfo = engine_instance->currentFrameInfo;
         engine_instance->drawFrame();
         engine_instance->postFrame();
-        engine_instance->qsr.frameInfo = engine_instance->currentFrameInfo;
         engine_instance->queue.push(&engine_instance->qsr);
         LogCondF(LOG_QUEUE, "pushed frame: " << endl);
 
