@@ -55,7 +55,7 @@ public:
 
 	// current input/output window
 	WindowInfo* windowInfo = nullptr;
-	void presentImage(WindowInfo *winfo);
+	void presentImage(WindowInfo *winfo, FrameInfo* srcFrame);
 	void preparePresentation(WindowInfo* winfo);
 private:
     bool glfwInitCalled = false;

@@ -237,6 +237,7 @@ public:
     FPSCounter fpsCounter;
     // create image in backbuffer size
     GPUImage* createImage(const char* debugName);
+    Presentation presentation;
     bool presentationMode = true; // get rid of this later
 
 private:
@@ -306,7 +307,6 @@ private:
     int numCores = 0;
     int overrideUsedCores = -1;
     int appDrawCalls = 1;
-    Presentation presentation;
     static void runDrawFrame(ShadedPathEngine* engine_instance);
     static void runQueueSubmit(ShadedPathEngine* engine_instance);
     static void runUpdateThread(ShadedPathEngine* engine_instance);

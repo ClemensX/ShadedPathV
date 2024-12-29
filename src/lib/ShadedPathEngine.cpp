@@ -273,6 +273,7 @@ void ShadedPathEngine::postFrame()
         // we either have cmd buffers to submit or an already created image
         if (currentFrameInfo->renderedImage->rendered == true) {
             Log("postFrame consume rendered image " << currentFrameInfo->frameNum << endl);
+            singleThreadPostFrame();
         } else {
             Error("not implemented");
         }
