@@ -46,6 +46,8 @@ void Presentation::createWindow(WindowInfo* winfo, int w, int h, const char* nam
     auto window = glfwCreateWindow(w, h, name, nullptr, nullptr);
     winfo->glfw_window = window;
     winfo->title = name;
+    winfo->width = w;
+    winfo->height = h;
     windowInfo = winfo;
     if (engine->isDebugWindowPosition()) {
         // Set window position to right half near the top of the screen
@@ -371,6 +373,51 @@ void Presentation::presentImage(WindowInfo* winfo, FrameInfo *srcFrame)
     if (vkBeginCommandBuffer(winfo->commandBufferPresentBack, &beginInfo) != VK_SUCCESS) {
         Error("failed to begin recording back buffer copy command buffer!");
     }
+
+    // UI code
+    //if (!simplify) engine.shaders.uiShader.draw(tr);
+    
+    // Transition image formats
+
+    // set src values for access, layout and image
+    GPUImage dstImage;
+    dstImage.access = 0;
+    dstImage.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    dstImage.image = winfo->swapChainImages[imageIndex];
+    DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_2_TRANSFER_READ_BIT, winfo->commandBufferPresentBack, srcFrame->renderedImage);
+    DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, winfo->commandBufferPresentBack, &dstImage);
+
+    // Define the region to blit (we will blit the whole swapchain image)
+    VkOffset3D blitSizeSrc;
+    blitSizeSrc.x = engine->getBackBufferExtent().width;
+    blitSizeSrc.y = engine->getBackBufferExtent().height;
+    blitSizeSrc.z = 1;
+    VkOffset3D blitSizeDst;
+    blitSizeDst.x = winfo->width;
+    if (engine->isStereoPresentation()) {
+        blitSizeDst.x = winfo->width / 2;
+    }
+    blitSizeDst.y = winfo->height;
+    blitSizeDst.z = 1;
+
+    VkImageBlit imageBlitRegion{};
+    imageBlitRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageBlitRegion.srcSubresource.layerCount = 1;
+    imageBlitRegion.srcOffsets[1] = blitSizeSrc;
+    imageBlitRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageBlitRegion.dstSubresource.layerCount = 1;
+    imageBlitRegion.dstOffsets[1] = blitSizeDst;
+
+    vkCmdBlitImage(
+        winfo->commandBufferPresentBack,
+        //tr.colorAttachment2.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, TODO
+        srcFrame->renderedImage->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        winfo->swapChainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1, &imageBlitRegion,
+        VK_FILTER_LINEAR
+    );
+
+    DirectImage::toLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_ACCESS_TRANSFER_WRITE_BIT, winfo->commandBufferPresentBack, &dstImage);
 
     if (vkEndCommandBuffer(winfo->commandBufferPresentBack) != VK_SUCCESS) {
         Error("failed to record back buffer copy command buffer!");
