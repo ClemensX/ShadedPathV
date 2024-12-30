@@ -16,17 +16,8 @@ private:
     GPUImage* gpui = nullptr;
     GPUImage directImage;
     void openWindow(const char* title);
-    void openAnotherWindow(const char* title);
     WindowInfo window1;
-    WindowInfo window2;
     bool window1wasopened = false;
-    bool window2wasopened = false;
     ImageConsumerWindow *imageConsumer = nullptr;
     ImageConsumerNullify imageConsumerNullify;
-
-    //    void drawFrame(ThreadResources& tr) override {
-    //        engine->shaders.submitFrame(tr);
-    //    };
-    //    void handleInput(InputState& inputState) override {
-    //    };
 };
