@@ -456,7 +456,11 @@ void Util::writeRawImageTestData(GPUImage& img, int type)
     //writeRawImagePixel(img, 1, 0, Colors::LightSteelBlue);
     //writeRawImagePixel(img, 2, 2, Colors::Blue);
     //writeRawImagePixel(img, 3, 2, Colors::Magenta);
-    if (type == 0) {
+    static long count = 0;
+    long mod = count++ % 1000;
+    float modf = 0.001f * mod;
+    //Log("b = " << modf << endl)
+    if (type == 0 || type == 2) {
         // write all image pixels with color gradient
         float dist = (float)1.0 / img.width;
         for (int y = 0; y < img.height; y++) {
@@ -464,6 +468,9 @@ void Util::writeRawImageTestData(GPUImage& img, int type)
                 float r = (float)x * dist;
                 float g = (float)y * dist;
                 float b = 0.0f;
+                if (type == 2) {
+                    b = modf;
+                }
                 float a = 255.0f;
                 writeRawImagePixel(img, x, y, glm::vec4(r, g, b, a));
                 if (x == y) {

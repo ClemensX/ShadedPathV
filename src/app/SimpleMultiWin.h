@@ -1,5 +1,5 @@
 #pragma once
-class SimpleApp : public ShadedPathApplication
+class SimpleMultiWin : public ShadedPathApplication
 {
 public:
     void mainThreadHook() override;
@@ -19,7 +19,10 @@ private:
     void openAnotherWindow(const char* title);
     WindowInfo window1;
     WindowInfo window2;
+    bool window1wasopened = false;
+    bool window2wasopened = false;
     ImageConsumerWindow *imageConsumer = nullptr;
+    ImageConsumerNullify imageConsumerNullify;
 
     //    void drawFrame(ThreadResources& tr) override {
     //        engine->shaders.submitFrame(tr);

@@ -107,7 +107,7 @@ void Presentation::createWindow(WindowInfo* winfo, int w, int h, const char* nam
     }
 }
 
-void Presentation::destroyWindowResources(WindowInfo* wi)
+void Presentation::destroyWindowResources(WindowInfo* wi, bool destroyGlfwWindow)
 {
     if (wi->swapChain != nullptr) {
         vkDestroySwapchainKHR(engine->globalRendering.device, wi->swapChain, nullptr);
@@ -117,17 +117,9 @@ void Presentation::destroyWindowResources(WindowInfo* wi)
         vkDestroySurfaceKHR(engine->globalRendering.vkInstance, wi->surface, nullptr);
         wi->surface = nullptr;
     }
-    if (wi->glfw_window != nullptr) {
+    if (wi->glfw_window != nullptr && destroyGlfwWindow) {
         glfwDestroyWindow(wi->glfw_window);
         wi->glfw_window = nullptr;
-    }
-    if (wi->imageAvailableSemaphore != nullptr) {
-        vkDestroySemaphore(engine->globalRendering.device, wi->imageAvailableSemaphore, nullptr);
-        wi->imageAvailableSemaphore = nullptr;
-    }
-    if (wi->renderFinishedSemaphore != nullptr) {
-        vkDestroySemaphore(engine->globalRendering.device, wi->renderFinishedSemaphore, nullptr);
-        wi->renderFinishedSemaphore = nullptr;
     }
     if (wi->inFlightFence != nullptr) {
         vkDestroyFence(engine->globalRendering.device, wi->inFlightFence, nullptr);
@@ -144,6 +136,14 @@ void Presentation::destroyWindowResources(WindowInfo* wi)
     if (wi->presentFence != nullptr) {
         vkDestroyFence(engine->globalRendering.device, wi->presentFence, nullptr);
         wi->presentFence = nullptr;
+    }
+    if (wi->imageAvailableSemaphore != nullptr) {
+        vkDestroySemaphore(engine->globalRendering.device, wi->imageAvailableSemaphore, nullptr);
+        wi->imageAvailableSemaphore = nullptr;
+    }
+    if (wi->renderFinishedSemaphore != nullptr) {
+        vkDestroySemaphore(engine->globalRendering.device, wi->renderFinishedSemaphore, nullptr);
+        wi->renderFinishedSemaphore = nullptr;
     }
 }
 
@@ -357,6 +357,7 @@ VkExtent2D Presentation::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabi
 
 void Presentation::presentImage(WindowInfo* winfo, FrameInfo *srcFrame)
 {
+    if (winfo->disabled) return;
     auto& device = engine->globalRendering.device;
     auto& global = engine->globalRendering;
     vkWaitForFences(global.device, 1, &winfo->presentFence, VK_TRUE, UINT64_MAX);
@@ -519,4 +520,9 @@ void Presentation::preparePresentation(WindowInfo* winfo)
     if (vkCreateEvent(global.device, &eventInfo, nullptr, &winfo->uiRenderFinished) != VK_SUCCESS) {
         Error("failed to create event uiRenderFinished for a frame");
     }
+}
+
+void Presentation::endPresentation(WindowInfo* winfo)
+{
+    destroyWindowResources(winfo, false);
 }

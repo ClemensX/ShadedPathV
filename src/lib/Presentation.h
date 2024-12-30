@@ -24,6 +24,7 @@ struct WindowInfo {
 	VkFence presentFence = nullptr;
 	// Debugging
 	std::string commandBufferDebugName;
+	bool disabled = false;
 };
 
 class Presentation : public EngineParticipant
@@ -35,7 +36,7 @@ public:
 	void createWindow(WindowInfo* winfo, int w, int h, const char* name,
 		bool handleKeyEvents = true, bool handleMouseMoveEevents = true, bool handleMouseButtonEvents = true);
 
-	void destroyWindowResources(WindowInfo* wi);
+	void destroyWindowResources(WindowInfo* wi, bool destroyGlfwWindow = true);
 
 	// poll events from glfw.
     // should be called from main thread and should work for all open glfw windows
@@ -57,6 +58,7 @@ public:
 	WindowInfo* windowInfo = nullptr;
 	void presentImage(WindowInfo *winfo, FrameInfo* srcFrame);
 	void preparePresentation(WindowInfo* winfo);
+	void endPresentation(WindowInfo* winfo);
 private:
     bool glfwInitCalled = false;
 	// event callbacks, will be called from main thread (via Presentation::pollEvents):
