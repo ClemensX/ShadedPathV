@@ -151,8 +151,27 @@ int main()
     //engine.setFixedPhysicalDeviceIndex(0);
     engine.initGlobal();
     SimpleMultiApp app;
+    SimpleMultiApp2 app2;
+    ContinuationInfo cont;
     engine.registerApp((ShadedPathApplication*)&app);
-    engine.app->run();
+    engine.app->run(&cont);
+    if (cont.cont) {
+        ShadedPathEngine engine;
+        engine
+            .setEnableLines(true)
+            .setDebugWindowPosition(true)
+            .setEnableUI(true)
+            .setEnableSound(true)
+            .setVR(false)
+            //.setSingleThreadMode(true)
+            .overrideCPUCores(4)
+            ;
+        engine.initGlobal();
+        engine.registerApp((ShadedPathApplication*)&app2);
+        cont.cont = false;
+        engine.app->run(&cont);
+
+    }
     return 0;
 }
 

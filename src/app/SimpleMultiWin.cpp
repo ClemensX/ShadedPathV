@@ -52,7 +52,7 @@ void SimpleMultiWin::drawFrame(FrameInfo* fi, int topic) {
     }
 };
 
-void SimpleMultiWin::run() {
+void SimpleMultiWin::run(ContinuationInfo* cont) {
     Log("TestApp started\n");
     Log(" run thread: ");
     engine->log_current_thread();

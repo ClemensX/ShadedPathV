@@ -174,7 +174,7 @@ TEST_F(EngineTest, Headless) {
                 directImage.rendered = true;
                 fi->renderedImage = &directImage;
             };
-            void run() override {
+            void run(ContinuationInfo* cont) override {
                 Log("TestApp started\n");
                 Log(" run thread: ");
                 engine->log_current_thread();
@@ -422,7 +422,7 @@ TEST_F(EngineImageConsumer, Dump) {
                     fi->renderedImage = &directImage;
                 }
             };
-            void run() override {
+            void run(ContinuationInfo* cont) override {
                 di.setEngine(engine);
                 engine->configureParallelAppDrawCalls(2);
                 gpui = engine->createImage("Test Image");

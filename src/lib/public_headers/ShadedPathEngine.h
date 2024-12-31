@@ -2,6 +2,12 @@
 
 #pragma once
 
+// if run() returns this filled
+struct ContinuationInfo
+{
+    bool cont = false;
+};
+
 // all applications must implement this class and register with engine.
 // All callback methods are defined here
 class ShadedPathApplication
@@ -20,7 +26,7 @@ public:
     virtual void drawFrame(FrameInfo* fi, int topic) {};
     virtual void buildCustomUI() {};
     virtual bool shouldClose() { return true; };
-    virtual void run() {};
+    virtual void run(ContinuationInfo* cont = nullptr) {};
     void registerEngine(ShadedPathEngine* engine) {
         this->engine = engine;
     }
