@@ -95,7 +95,7 @@ public:
 	uint32_t findMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags properties);
 	uint32_t presentQueueFamiliyIndex = -1;
 	uint32_t presentQueueIndex = -1;
-	VkSurfaceKHR surface = nullptr;
+    VkSurfaceKHR surface = nullptr; // TODO not initialized before window creation, need to find a way to NOT use this
 
 	// Vulkan helper
 

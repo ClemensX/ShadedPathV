@@ -159,3 +159,8 @@ Nicole
         engine.util.writeRawImageTestData(directImage, 0);
         di.closeCPUWriteAccess(gpui, &directImage);
         di.dumpToFile(gpui);
+
+
+rebuild all timings (branch):
+ 7.13 -  7.67 s newarch
+22.75 - 22.96 s main
