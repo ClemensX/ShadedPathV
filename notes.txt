@@ -164,3 +164,8 @@ Nicole
 rebuild all timings (branch):
  7.13 -  7.67 s newarch
 22.75 - 22.96 s main
+
+Ryzen 7 9800X3D:
+ 6.50 newarch
+20.58 main
+

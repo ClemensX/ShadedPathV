@@ -21,21 +21,185 @@ string GlobalRendering::getVulkanAPIString()
     return vulkan_version.str();
 }
 
-void GlobalRendering::initBeforePresentation()
+void GlobalRendering::gatherDeviceInfos()
 {
-    gatherDeviceExtensions();
+    //Log("gathering physical device capabilities.\n");
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(vkInstance, &deviceCount, nullptr);
+    if (deviceCount == 0) {
+        Error("no physical vulkan device available");
+    }
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(vkInstance, &deviceCount, devices.data());
+    Log("Found " << deviceCount << " Vulkan - supported devices : " << std::endl);
+    for (const auto& device : devices) {
+        VkPhysicalDeviceProperties properties{};
+        VkPhysicalDeviceProperties2 properties2{};
+        VkPhysicalDeviceFeatures features;
+        vkGetPhysicalDeviceProperties(device, &properties);
+        vkGetPhysicalDeviceFeatures(device, &features);
+        vkGetPhysicalDeviceProperties2(device, &properties2);
+
+        DeviceInfo info;
+        info.device = device;
+        info.properties = properties;
+        info.properties2 = properties2;
+        info.features = features;
+        Log("  " << properties.deviceName << " API version: " << Util::decodeVulkanVersion(properties.apiVersion).c_str() << " driver version: " << Util::decodeVulkanVersion(properties.driverVersion).c_str() << " type: " << Util::decodeDeviceType(properties.deviceType) << endl);
+        // get available device extensions:
+        getDeviceExtensionSupport(device, &info.extensions);
+        if (LIST_EXTENSIONS) {
+            Log("  available device extensions:\n");
+            for (const auto& extension : info.extensions) {
+                Log("  " << extension << endl);
+            }
+        }
+        info.suitable = isDeviceSuitable(info);
+        deviceInfos.push_back(info);
+    }
+}
+
+bool GlobalRendering::checkFeatureMeshShader(DeviceInfo& info)
+{
+    // check mesh support:
+    // set extension details for mesh shader
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshFeatures = {};
+    meshFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+    meshFeatures.pNext = nullptr;
+    VkPhysicalDeviceFeatures2 feature2{};
+    feature2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    feature2.pNext = &meshFeatures;
+    vkGetPhysicalDeviceFeatures2(info.device, &feature2);
+    VkPhysicalDeviceMeshShaderFeaturesEXT* meshSupport = (VkPhysicalDeviceMeshShaderFeaturesEXT*)feature2.pNext;
+    //Log(meshSupport << endl);
+    if (!meshSupport->meshShader || !meshSupport->taskShader) {
+        Log("device does not support Mesh Shaders" << endl);
+        Log("You might try not to enable Mesh Shader in app code by removing: engine->enableMeshShader()" << endl);
+        return false;
+    }
+    return true;
+}
+
+bool GlobalRendering::checkFeatureCompressedTextures(DeviceInfo& info)
+{
+    // check compressed texture support:
+    VkFormatProperties fp{};
+    vkGetPhysicalDeviceFormatProperties(info.device, VK_FORMAT_BC7_SRGB_BLOCK, &fp);
+    // 0x01d401
+    VkFormatFeatureFlags flagsToCheck = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT | VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+    if ((fp.linearTilingFeatures & flagsToCheck) == 0) {
+        Log("device does not support needed linearTilingFeatures" << endl);
+        return false;
+    }
+    if ((fp.optimalTilingFeatures & flagsToCheck) == 0) {
+        Log("device does not support needed optimalTilingFeatures" << endl);
+        return false;
+    }
+    return true;
+}
+
+bool GlobalRendering::checkFeatureDescriptorIndexSize(DeviceInfo& info)
+{
+    // check descriptor index size suitable for texture count:
+    if (info.properties.limits.maxDescriptorSetSampledImages < TextureStore::UPPER_LIMIT_TEXTURE_COUNT) {
+        Log("Device does not support enough texture slots in descriptors" << endl);
+        return false;
+    }
+    return true;
+}
+
+
+bool GlobalRendering::checkFeatureSwapChain(VkPhysicalDevice physDevice)
+{
+    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physDevice);
+    if (swapChainSupport.formats.empty() || swapChainSupport.presentModes.empty()) return false;
+    return true;
+}
+
+bool GlobalRendering::isDeviceSuitable(DeviceInfo& info)
+{
+    // check device extensions support:
+    for (const auto& extensionName : deviceExtensions) {
+        if (std::find(info.extensions.begin(), info.extensions.end(), extensionName) == info.extensions.end()) {
+            return false;
+        }
+    }
+
+    // check device features support:
+    if (isExtensionAvailable(deviceExtensions, VK_EXT_MESH_SHADER_EXTENSION_NAME)) {
+        if (!checkFeatureMeshShader(info)) return false;
+    }
+    if (!checkFeatureCompressedTextures(info)) return false;
+    if (!checkFeatureDescriptorIndexSize(info)) return false;
+    //if (!checkFeatureSwapChain(info)) return false;
+    familyIndices = findQueueFamilies(info.device);
+    if (!familyIndices.isComplete(true)) return false;
+
+    return true;
+}
+
+void GlobalRendering::pickInstanceAndDevice()
+{
+    int fixedDeviceIndex = engine->getFixedPhysicalDeviceIndex();
+    if (fixedDeviceIndex >= 0) {
+        if (fixedDeviceIndex < deviceInfos.size()) {
+            physicalDevice = deviceInfos[fixedDeviceIndex].device;
+            Log("WARNING: Using fixed device without checking feature support: " << deviceInfos[fixedDeviceIndex].properties.deviceName << endl);
+        } else {
+            Error("Fixed device index out of range");
+        }
+        return;
+    }
+    for (auto& info : deviceInfos) {
+        if (info.suitable) {
+            physicalDevice = info.device;
+            Log("Picked device: " << info.properties.deviceName << endl);
+            return;
+        }
+    }
+    Error("No suitable physical device found. You might consider using setFixedPhysicalDeviceIndex(0) to pre-select a device without feature support checking.");
+}
+
+void GlobalRendering::init()
+{
+    if (LIST_EXTENSIONS) {
+        vector<string> instanceExtensionlist;
+        getInstanceExtensionSupport(&instanceExtensionlist);
+        Log("available Vulkan instance extensions:\n");
+        for (const auto& extension : instanceExtensionlist) {
+            Log("  " << extension << endl);
+        }
+    }
     initVulkanInstance();
+    gatherDeviceInfos();
+    // list needed extensions:
+    Log("requested Vulkan instance extensions:" << endl)
+        Util::printCStringList(instanceExtensions);
+    Log("requested Vulkan device extensions:" << endl)
+        Util::printCStringList(deviceExtensions);
+    Log("suitable devices:\n");
+    for (auto& info : deviceInfos) {
+        if (info.suitable) {
+            Log("  " << info.properties.deviceName << endl);
+        }
+    }
+    pickInstanceAndDevice();
+    //checkFeatureSwapChain(physicalDevice);
+    // list queue properties:
+    findQueueFamilies(physicalDevice, true);
+    createLogicalDevice();
+    initAfterPresentation();
 }
 
 void GlobalRendering::initAfterPresentation()
 {
     // list available devices:
-    pickPhysicalDevice(true);
+    //pickPhysicalDeviceOld(true);
     // pick device
-    pickPhysicalDevice();
+    //pickPhysicalDeviceOld();
     // list queue properties:
-    findQueueFamilies(physicalDevice, true);
-    createLogicalDevice();
+    //findQueueFamilies(physicalDevice, true);
+    //createLogicalDevice();
     createCommandPools();
     createTextureSampler();
     VkSemaphoreCreateInfo semaphoreInfo{};
@@ -72,8 +236,15 @@ void GlobalRendering::gatherDeviceExtensions()
 
 void GlobalRendering::initVulkanInstance()
 {
-    if (!checkProfileSupport()) {
-        Error("required vulkan profile not available!");
+    if (vkInstance != nullptr) {
+        Error("Trying to re-init vulkan instance");
+    }
+    vector<string> instanceExtensionlist;
+    getInstanceExtensionSupport(&instanceExtensionlist);
+    for (const auto& extensionName : instanceExtensions) {
+        if (std::find(instanceExtensionlist.begin(), instanceExtensionlist.end(), extensionName) == instanceExtensionlist.end()) {
+            Error("instance extension not supported: " + string(extensionName));
+        }
     }
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -81,83 +252,29 @@ void GlobalRendering::initVulkanInstance()
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "ShadedPathV";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VP_KHR_ROADMAP_2022_MIN_API_VERSION;//API_VERSION;
+    appInfo.apiVersion = VK_API_VERSION_1_3;//VP_KHR_ROADMAP_2022_MIN_API_VERSION;//API_VERSION;
 
     VkInstanceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
-    auto extensions = getRequiredExtensions();
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-    createInfo.ppEnabledExtensionNames = extensions.data();
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtensions.size());
+    createInfo.ppEnabledExtensionNames = instanceExtensions.data();
 #   if defined(__APPLE__)    
     createInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #   endif
-    if (USE_PROFILE_DYN_RENDERING) {
-        VpInstanceCreateInfo vpCreateInfo{};
-        vpCreateInfo.pCreateInfo = &createInfo;
-        vpCreateInfo.enabledFullProfileCount = 1;
-        vpCreateInfo.pEnabledFullProfiles = &profile;
-        vpCreateInfo.flags = VP_INSTANCE_CREATE_FLAG_BITS_MAX_ENUM;
-
-        if (vpCreateInstance(&vpCreateInfo, nullptr, &vkInstance) != VK_SUCCESS) {
+    vkInstance = VK_NULL_HANDLE;
+    if (engine->isVR()) {
+        //engine->vr.initVulkanEnable2(createInfo);
+        Error("OpenXR not supported yet");
+    }
+    else {
+        if (vkCreateInstance(&createInfo, nullptr, &vkInstance) != VK_SUCCESS) {
             Error("failed to create instance!");
         }
     }
-    else {
-        vkInstance = VK_NULL_HANDLE;
-        if (engine->isVR()) {
-            //engine->vr.initVulkanEnable2(createInfo);
-        } else {
-            if (vkCreateInstance(&createInfo, nullptr, &vkInstance) != VK_SUCCESS) {
-                Error("failed to create instance!");
-            }
-        }
-    }
-
-    // list available extensions:
-    if (LIST_EXTENSIONS) {
-        uint32_t extensionCount = 0;
-        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-        std::vector<VkExtensionProperties> availExtensions(extensionCount);
-        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availExtensions.data());
-
-        Log("available Vulkan instance extensions:\n");
-        for (const auto& extension : availExtensions) {
-            Log("  " << extension.extensionName << '\n');
-        }
-    }
 }
 
-std::vector<const char*> GlobalRendering::getRequiredExtensions() {
-    uint32_t glfwExtensionCount = 0;
-    const char** glfwExtensions;
-    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-    // vector will be moved on return
-    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-#   if defined(__APPLE__)
-        extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-        deviceExtensions.push_back("VK_KHR_portability_subset");
-#   endif
-    //extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    //extensions.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    //extensions.push_back(VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME);
-    if (DEBUG_UTILS_EXTENSION) {
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    }
-    if (engine->isMeshShading()) {
-        deviceExtensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    }
-
-    Log("requested Vulkan instance extensions:" << endl)
-        Util::printCStringList(extensions);
-    Log("requested Vulkan device extensions:" << endl)
-        Util::printCStringList(deviceExtensions);
-
-    return extensions;
-}
-
-void GlobalRendering::pickPhysicalDevice(bool listmode)
+void GlobalRendering::pickPhysicalDeviceOld(bool listmode)
 {
     //Log("picking physical device listmode: " << listmode << endl);
     uint32_t deviceCount = 0;
@@ -179,7 +296,7 @@ void GlobalRendering::pickPhysicalDevice(bool listmode)
     }
     for (const auto& device : devices) {
         Log("found physical device: " << device << endl);
-        if (isDeviceSuitable(device, listmode)) {
+        if (isDeviceSuitableOld(device, listmode)) {
             // check for same device (phys device may have been initialized by OpenXR
             if (physicalDevice != nullptr) {
                 if (physicalDevice != device) {
@@ -220,7 +337,7 @@ void GlobalRendering::assignGlobals(VkPhysicalDevice device)
     familyIndices = findQueueFamilies(device);
 }
 
-bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
+bool GlobalRendering::isDeviceSuitableOld(VkPhysicalDevice device, bool listmode)
 {
     VkPhysicalDeviceProperties deviceProperties;
     VkPhysicalDeviceFeatures deviceFeatures;
@@ -236,18 +353,13 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
     vkGetPhysicalDeviceProperties2(device, &deviceProperties2);
     physicalDeviceProperties = deviceProperties2;
 
-    if (listmode) {
-        Log("Physical Device properties: " << deviceProperties.deviceName << " Vulkan API Version: " << Util::decodeVulkanVersion(deviceProperties.apiVersion).c_str() << " type: " << Util::decodeDeviceType(deviceProperties.deviceType) << endl);
-        checkDeviceExtensionSupport(device, listmode);
-        return false;
-    }
     // we just pick the first device for now
     Log("picked physical device: " << deviceProperties.deviceName << " " << Util::decodeVulkanVersion(deviceProperties.apiVersion).c_str() << endl);
 
     // now look for queue families:
     familyIndices = findQueueFamilies(device);
 
-    bool extensionsSupported = checkDeviceExtensionSupport(device, false);
+    bool extensionsSupported = true;
     bool swapChainAdequate = false;
     if (engine->presentationMode) {
         if (extensionsSupported) {
@@ -268,7 +380,7 @@ bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
     feature2.pNext = &meshFeatures;
     vkGetPhysicalDeviceFeatures2(device, &feature2);
     VkPhysicalDeviceMeshShaderFeaturesEXT* meshSupport = (VkPhysicalDeviceMeshShaderFeaturesEXT*)feature2.pNext;
-    if (engine->isMeshShading()) {
+    if (true /*engine->isMeshShading() */) {
         //Log(meshSupport << endl);
         if (!meshSupport->meshShader || !meshSupport->taskShader) {
             Log("device does not support Mesh Shaders" << endl);
@@ -509,28 +621,16 @@ void GlobalRendering::createLogicalDevice()
         bufferDeviceAddressFeatures.bufferDeviceAddressCaptureReplay = VK_TRUE;
         bufferDeviceAddressFeatures.bufferDeviceAddressMultiDevice = VK_TRUE;
     }
-    if (USE_PROFILE_DYN_RENDERING) {
-        VpDeviceCreateInfo vpCreateInfo{};
-        vpCreateInfo.pCreateInfo = &createInfo;
-        vpCreateInfo.enabledFullProfileCount = 1;
-        vpCreateInfo.pEnabledFullProfiles = &profile;
-        vpCreateInfo.flags = VP_INSTANCE_CREATE_FLAG_BITS_MAX_ENUM;
-
-        checkDeviceProfileSupport(vkInstance, physicalDevice);
-        if (vpCreateDevice(physicalDevice, &vpCreateInfo, nullptr, &device) != VK_SUCCESS) {
-            Error("failed to create logical device!");
-        }
-    } else {
-        if (engine->isVR()) {
-            //engine->vr.initVulkanCreateDevice(createInfo);
-        } else {
-            VkResult res = vkCreateDevice(physicalDevice, &createInfo, nullptr, &device);
-            if (res != VK_SUCCESS) {
-                if (DEBUG_UTILS_EXTENSION) {
-                    Error("Enabled VK_EXT_DEBUG_UTILS needs Vulkan Configurator running. Did you start it ? ");
-                }
-                Error("Device Creation failed.");
+    if (engine->isVR()) {
+        //engine->vr.initVulkanCreateDevice(createInfo);
+    }
+    else {
+        VkResult res = vkCreateDevice(physicalDevice, &createInfo, nullptr, &device);
+        if (res != VK_SUCCESS) {
+            if (DEBUG_UTILS_EXTENSION) {
+                Error("Enabled VK_EXT_DEBUG_UTILS needs Vulkan Configurator running. Did you start it ? ");
             }
+            Error("Device Creation failed.");
         }
     }
 
@@ -550,33 +650,6 @@ void GlobalRendering::createLogicalDevice()
     if (engine->isVR()) {
         //engine->vr.create();
     }
-}
-
-bool GlobalRendering::checkDeviceExtensionSupport(VkPhysicalDevice phys_device, bool listmode)
-{
-    uint32_t extensionCount;
-    vkEnumerateDeviceExtensionProperties(phys_device, nullptr, &extensionCount, nullptr);
-
-    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-    vkEnumerateDeviceExtensionProperties(phys_device, nullptr, &extensionCount, availableExtensions.data());
-
-    if (listmode && LIST_EXTENSIONS) {
-        Log("available Vulkan Device extensions:\n");
-        for (const auto& extension : availableExtensions) {
-            Log("  " << extension.extensionName << '\n');
-        }
-    }
-    VkBool32 supported = false;
-    auto result = vpGetPhysicalDeviceProfileSupport(vkInstance, phys_device, &profile, &supported);
-    if (result != VK_SUCCESS) {
-        Log("Cannot get physical device properties")
-        return false;
-    }
-    else if (supported != VK_TRUE) {
-        Log("Vulkan profile not supported: " << profile.profileName << std::endl);
-        return false;
-    }
-    return true;
 }
 
 SwapChainSupportDetails GlobalRendering::querySwapChainSupport(VkPhysicalDevice device) {

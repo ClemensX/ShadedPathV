@@ -36,8 +36,8 @@ void ShadedPathEngine::initGlobal() {
 
     }
 
-    globalRendering.initBeforePresentation();
-    globalRendering.initAfterPresentation();
+    globalRendering.init();
+    //globalRendering.initAfterPresentation();
     initialized = true;
 }
 

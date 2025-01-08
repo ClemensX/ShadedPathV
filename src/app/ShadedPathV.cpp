@@ -168,7 +168,7 @@ int main()
             ;
         engine.initGlobal();
         engine.registerApp((ShadedPathApplication*)&app2);
-        cont.cont = false;
+        //cont.cont = false;
         engine.app->run(&cont);
 
     }

@@ -30,7 +30,7 @@ struct GPUImage {
 	VkImageView view = nullptr;
     VkImageUsageFlags usage = 0;
     VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
-    VkAccessFlags access = 0;
+    VkAccessFlags2 access = 0;
 	char* imagedata = nullptr;
 	VkSubresourceLayout subResourceLayout;
     uint32_t width = 0, height = 0;

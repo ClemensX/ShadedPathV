@@ -41,6 +41,47 @@ public:
 		shutdown();
 	};
 
+	std::vector<const char*> instanceExtensions = {
+#   if defined(__APPLE__)
+		VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME
+#   endif
+#   if defined(_WIN64)
+        "VK_KHR_win32_surface",
+#   endif
+		VK_KHR_SURFACE_EXTENSION_NAME
+		//VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		//VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
+	};
+
+	std::vector<const char*> deviceExtensions = {
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		VK_EXT_MESH_SHADER_EXTENSION_NAME,
+		//VK_KHR_SURFACE_EXTENSION_NAME
+		//VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME
+		VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
+		//VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
+		// debug_utils is only an instance extension
+//#if defined(ENABLE_DEBUG_UTILS_EXTENSION)
+//		VK_EXT_DEBUG_UTILS_EXTENSION_NAME
+//#endif
+	};
+
+/*
+#   if defined(__APPLE__)
+		extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+		deviceExtensions.push_back("VK_KHR_portability_subset");
+#   endif
+	//extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+	extensions.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+	//extensions.push_back(VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME);
+	if (DEBUG_UTILS_EXTENSION) {
+		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	}
+	if (engine->isMeshShading()) {
+		deviceExtensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+	}
+
+*/
 	// select vulkan profile and API version
 	VpProfileProperties profile{
 #		if defined(USE_SMALL_GRAPHICS)
@@ -66,7 +107,7 @@ public:
 	static const bool DEBUG_UTILS_EXTENSION = false;
 #endif
 	// list device and instance extensions
-	static const bool LIST_EXTENSIONS = false;
+	static const bool LIST_EXTENSIONS = true;
 
 	// Vulkan formats we want to set centrally:
 
@@ -79,7 +120,7 @@ public:
 
 	// initialize all global Vulkan stuff - engine configuration settings
 	// cannot be changed after calling this, because some settings influence Vulkan creation options
-	void initBeforePresentation();
+	void init();
 	// device selection and creation
 	void initAfterPresentation();
 
@@ -126,7 +167,7 @@ public:
 	// fill in viewport and scissor and create VkPipelineViewportStateCreateInfo with them
 	void createViewportState(ShaderState &shaderState);
 	// Vulkan entities
-	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+	VkPhysicalDevice physicalDevice = nullptr;
 	VkDevice device = nullptr;
 	VkInstance vkInstance = nullptr;
 	VkQueue graphicsQueue = nullptr;
@@ -175,70 +216,73 @@ public:
 	void destroyImage(GPUImage* image);
 
 private:
-	std::vector<const char*> deviceExtensions = {
-		VK_KHR_SWAPCHAIN_EXTENSION_NAME//,
-        //VK_KHR_SURFACE_EXTENSION_NAME
-		//VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME
-		//VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
-		//VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
-		// debug_utils is only an instance extension
-//#if defined(ENABLE_DEBUG_UTILS_EXTENSION)
-//		VK_EXT_DEBUG_UTILS_EXTENSION_NAME
-//#endif
+
+    bool isExtensionAvailable(const std::vector<const char*>& availableExtensions, const char* extensionName) {
+        return std::find_if(availableExtensions.begin(), availableExtensions.end(),
+            [extensionName](const std::string& ext) {
+                return strcmp(ext.c_str(), extensionName) == 0;
+            }) != availableExtensions.end();
+    }
+
+    // check extension support and optionally return list of supported extensions
+	void getInstanceExtensionSupport(std::vector<std::string>* list) {
+		uint32_t extensionCount = 0;
+		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+		std::vector<VkExtensionProperties> extensions(extensionCount);
+		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+		if (list != nullptr) {
+			for (const auto& extension : extensions) {
+				list->push_back(extension.extensionName);
+			}
+		}
+	}
+
+	struct DeviceInfo {
+		VkPhysicalDevice device;
+		VkPhysicalDeviceProperties properties;
+		VkPhysicalDeviceProperties2 properties2;
+		VkPhysicalDeviceFeatures features;
+        std::vector<std::string> extensions;
+        bool suitable = false;
 	};
 
-	void gatherDeviceExtensions();
-	void initVulkanInstance();
+	bool checkFeatureMeshShader(DeviceInfo& info);
+    bool checkFeatureCompressedTextures(DeviceInfo& info);
+    bool checkFeatureDescriptorIndexSize(DeviceInfo& info);
+    // swap chain support check, only available after real device creation, not during device selection
+    bool checkFeatureSwapChain(VkPhysicalDevice physDevice);
+	// check extension support and optionally return list of supported extensions
+	void getDeviceExtensionSupport(VkPhysicalDevice device, std::vector<std::string>* list) {
+		uint32_t extensionCount = 0;
+		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+		std::vector<VkExtensionProperties> extensions(extensionCount);
+		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, extensions.data());
+		if (list != nullptr) {
+			for (const auto& extension : extensions) {
+				list->push_back(extension.extensionName);
+			}
+		}
+	}
 
-	std::vector<const char*> getRequiredExtensions();
+	std::vector<DeviceInfo> deviceInfos;
+	void gatherDeviceInfos();
+    void pickInstanceAndDevice();
+	bool isDeviceSuitable(DeviceInfo& info);
+
+	// init vulkan instance, using no extensions is needed for gathering device info at startup
+	void initVulkanInstance();
+	void gatherDeviceExtensions();
 
 	// devices
 	void assignGlobals(VkPhysicalDevice phys);
-	void pickPhysicalDevice(bool listmode = false);
+	void pickPhysicalDeviceOld(bool listmode = false);
 	// list or select physical devices
-	bool isDeviceSuitable(VkPhysicalDevice device, bool listmode = false);
+	bool isDeviceSuitableOld(VkPhysicalDevice device, bool listmode = false);
 	// list queue flags as text
 	std::string getQueueFlagsString(VkQueueFlags flags);
 
 	// swap chain query
-	bool checkDeviceExtensionSupport(VkPhysicalDevice phys_device, bool listmode);
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 
-	// check if selected profile is supported, return false otherwise
-	bool checkProfileSupport() {
-		return true;
-		VkResult result = VK_SUCCESS;
-		VkBool32 supported = VK_FALSE;
-		result = vpGetInstanceProfileSupport(nullptr, &profile, &supported);
-		if (result != VK_SUCCESS) {
-			// something went wrong
-			Log("Vulkan profile not supported: " << profile.profileName << std::endl);
-			return false;
-		}
-		else if (supported != VK_TRUE) {
-			// profile is not supported at the instance level
-			Log("Vulkan profile instance not supported: " << profile.profileName << " instance: " << profile.specVersion << std::endl);
-			return false;
-		}
-		Log("Vulkan profile checked ok: " << profile.profileName << " instance: " << profile.specVersion << std::endl)
-			return true;
-	}
-	bool checkDeviceProfileSupport(VkInstance instance, VkPhysicalDevice physDevice) {
-		VkResult result = VK_SUCCESS;
-		VkBool32 supported = VK_FALSE;
-		result = vpGetPhysicalDeviceProfileSupport(instance, physDevice, &profile, &supported);
-		if (result != VK_SUCCESS) {
-			// something went wrong
-			Log("Vulkan device profile not supported: " << profile.profileName << std::endl);
-			return false;
-		}
-		else if (supported != VK_TRUE) {
-			// profile is not supported at the instance level
-			Log("Vulkan device profile not supported: " << profile.profileName << " instance: " << profile.specVersion << std::endl);
-			return false;
-		}
-		Log("Vulkan device profile checked ok: " << profile.profileName << " instance: " << profile.specVersion << std::endl)
-			return true;
-	}
 };
 

@@ -386,7 +386,7 @@ void Presentation::presentImage(WindowInfo* winfo, FrameInfo *srcFrame)
     dstImage.layout = VK_IMAGE_LAYOUT_UNDEFINED;
     dstImage.image = winfo->swapChainImages[imageIndex];
     DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_2_TRANSFER_READ_BIT, winfo->commandBufferPresentBack, srcFrame->renderedImage);
-    DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, winfo->commandBufferPresentBack, &dstImage);
+    DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_2_TRANSFER_WRITE_BIT, winfo->commandBufferPresentBack, &dstImage);
 
     // Define the region to blit (we will blit the whole swapchain image)
     VkOffset3D blitSizeSrc;
@@ -418,7 +418,7 @@ void Presentation::presentImage(WindowInfo* winfo, FrameInfo *srcFrame)
         VK_FILTER_LINEAR
     );
 
-    DirectImage::toLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_ACCESS_TRANSFER_WRITE_BIT, winfo->commandBufferPresentBack, &dstImage);
+    DirectImage::toLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_ACCESS_2_TRANSFER_WRITE_BIT, winfo->commandBufferPresentBack, &dstImage);
 
     if (vkEndCommandBuffer(winfo->commandBufferPresentBack) != VK_SUCCESS) {
         Error("failed to record back buffer copy command buffer!");

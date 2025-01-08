@@ -60,7 +60,7 @@ void DirectImage::copyBackbufferImage(GPUImage* gpui_source, GPUImage* gpui_targ
 	// Transition destination image to transfer destination layout
     //auto oldLayout = gpui_source->layout;
     //auto oldAccess = gpui_source->access;
-	toLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, commandBuffer, gpui_target);
+	toLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_2_TRANSFER_WRITE_BIT, commandBuffer, gpui_target);
 	toLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_2_TRANSFER_READ_BIT, commandBuffer, gpui_source);
 
 	VkImageCopy imageCopyRegion{};
@@ -79,29 +79,35 @@ void DirectImage::copyBackbufferImage(GPUImage* gpui_source, GPUImage* gpui_targ
 		1,
 		&imageCopyRegion);
 
-	toLayout(VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_MEMORY_READ_BIT, commandBuffer, gpui_target);
+	toLayout(VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_2_MEMORY_READ_BIT, commandBuffer, gpui_target);
 
     // revert src image layout and access to before the image data copy
 	//toLayout(oldLayout, oldAccess, commandBuffer, gpui_source);
 }
 
-void DirectImage::toLayout(VkImageLayout layout, VkAccessFlags access, VkCommandBuffer commandBuffer, GPUImage* gpui)
+void DirectImage::toLayout(VkImageLayout layout, VkAccessFlags2 access, VkCommandBuffer commandBuffer, GPUImage* gpui)
 {
 	// maybe layout is already correct
     if (layout == gpui->layout) return;
 
-	VkImageMemoryBarrier dstBarrier{};
-	dstBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    VkImageMemoryBarrier2 dstBarrier{};
+	dstBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
 	dstBarrier.srcAccessMask = gpui->access;
 	dstBarrier.dstAccessMask = access;
 	dstBarrier.oldLayout = gpui->layout;
 	dstBarrier.newLayout = layout;
 	dstBarrier.image = gpui->image;
 	dstBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-		0, 0, nullptr, 0, nullptr, 1, &dstBarrier);
-    gpui->layout = layout;
-    gpui->access = access;
+    dstBarrier.srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    dstBarrier.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
+
+	VkDependencyInfo dependency_info{};
+    dependency_info.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+	dependency_info.imageMemoryBarrierCount = 1;
+	dependency_info.pImageMemoryBarriers = &dstBarrier;
+	vkCmdPipelineBarrier2(commandBuffer, &dependency_info);
+	gpui->layout = layout;
+	gpui->access = access;
 }
 
 void DirectImage::openForCPUWriteAccess(GPUImage* gpui, GPUImage* writeable)

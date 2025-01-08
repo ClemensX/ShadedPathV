@@ -150,12 +150,12 @@ public:
     }
 
     // enable mesh shaders. Will fail to create vulkan device if no suitable GPU is found
-    void enableMeshShader() {
-        meshShaderEnabled = true;
-    }
+    //void enableMeshShader() {
+    //    meshShaderEnabled = true;
+    //}
 
     bool isMeshShading() {
-        return meshShaderEnabled;
+        return false; //TODO remove
     }
 
     // set number of frames that can be worked on in parallel
@@ -213,6 +213,7 @@ public:
         fixedPhysicalDeviceIndex = i;
     }
 
+    // if returned value is >= 0, the engine will use this device index for vulkan device creation
     int getFixedPhysicalDeviceIndex() {
         return fixedPhysicalDeviceIndex;
     }
@@ -275,7 +276,7 @@ private:
     bool vrMode = false;
     bool stereoMode = false;
     bool stereoPresentation = false;
-    bool meshShaderEnabled = false;
+    //bool meshShaderEnabled = false;
     bool soundEnabled = false;
     bool singleQueueMode = false;
     int fixedPhysicalDeviceIndex = -1;

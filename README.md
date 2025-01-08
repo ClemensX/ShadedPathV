@@ -301,7 +301,15 @@ Use Khronos OpenXR sdk directly for VS 2022:
  
 <a id="toc-todo"></a>
 
-## TODO
+## TODO Major Steps
+Current main topics we are working on:
+
+- [ ] Rework engine thread and app model
+- [ ] Finish Incoming Demo
+- [ ] PBR Shader
+- [ ] Animation
+
+## TODO List
 Things finished and things to do. Both very small and very large things, just as they come to my mind. 
 
 - [ ] Rework engine to allow multiple instances (remove static fields, apply manager pattern)

@@ -119,19 +119,25 @@ void SimpleMultiApp2::run(ContinuationInfo* cont) {
     engine->log_current_thread();
     di.setEngine(engine);
     engine->configureParallelAppDrawCalls(2);
-    gpui = engine->createImage("Test Image");
-    engine->globalRendering.createDumpImage(directImage);
-    di.openForCPUWriteAccess(gpui, &directImage);
-    ImageConsumerWindow icw(engine);
-    imageConsumer = &icw;
 
-    //openWindow("Window SimpleApp");
+    if (cont->cont) {
+        gpui = engine->createImage("Test Image");
+        engine->globalRendering.createDumpImage(directImage);
+        di.openForCPUWriteAccess(gpui, &directImage);
+        ImageConsumerWindow icw(engine);
+        imageConsumer = &icw;
 
-    engine->eventLoop();
+        //openWindow("Window SimpleApp");
 
-    // cleanup
-    di.closeCPUWriteAccess(gpui, &directImage);
-    engine->globalRendering.destroyImage(&directImage);
+        engine->eventLoop();
+
+        // cleanup
+        di.closeCPUWriteAccess(gpui, &directImage);
+        engine->globalRendering.destroyImage(&directImage);
+    } else {
+        // we don't want to continue with 2nd app
+        Log("ERROR: app cannot continue\n");
+    }
 
 };
 
