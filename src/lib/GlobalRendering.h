@@ -214,9 +214,19 @@ public:
     // create image in GPU with direct memory access by host, can be used for dumping to file or CPU based image manipulation
     void createDumpImage(GPUImage& gpui, uint32_t width = 0, uint32_t height = 0);
 	void destroyImage(GPUImage* image);
+	bool isDeviceExtensionRequested(const char* extensionName) {
+        return isExtensionAvailable(deviceExtensions, extensionName);
+	}
+	bool isMeshShading() {
+        return isDeviceExtensionRequested(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+	}
+    bool isSynchronization2() {
+        return isDeviceExtensionRequested(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    }
 
 private:
-
+    // chain device feature structures, pNext pointer has to be directly after type
+    void chainNextDeviceFeature(void* elder, void* child);
     bool isExtensionAvailable(const std::vector<const char*>& availableExtensions, const char* extensionName) {
         return std::find_if(availableExtensions.begin(), availableExtensions.end(),
             [extensionName](const std::string& ext) {

@@ -35,6 +35,7 @@ void GlobalRendering::gatherDeviceInfos()
     for (const auto& device : devices) {
         VkPhysicalDeviceProperties properties{};
         VkPhysicalDeviceProperties2 properties2{};
+        properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
         VkPhysicalDeviceFeatures features;
         vkGetPhysicalDeviceProperties(device, &properties);
         vkGetPhysicalDeviceFeatures(device, &features);
@@ -144,6 +145,7 @@ void GlobalRendering::pickInstanceAndDevice()
     if (fixedDeviceIndex >= 0) {
         if (fixedDeviceIndex < deviceInfos.size()) {
             physicalDevice = deviceInfos[fixedDeviceIndex].device;
+            physicalDeviceProperties = deviceInfos[fixedDeviceIndex].properties2;
             Log("WARNING: Using fixed device without checking feature support: " << deviceInfos[fixedDeviceIndex].properties.deviceName << endl);
         } else {
             Error("Fixed device index out of range");
@@ -153,6 +155,7 @@ void GlobalRendering::pickInstanceAndDevice()
     for (auto& info : deviceInfos) {
         if (info.suitable) {
             physicalDevice = info.device;
+            physicalDeviceProperties = info.properties2;
             Log("Picked device: " << info.properties.deviceName << endl);
             return;
         }
@@ -518,6 +521,17 @@ uint32_t GlobalRendering::findMemoryTypeIndex(uint32_t typeBits, VkMemoryPropert
 }
 
 
+void GlobalRendering::chainNextDeviceFeature(void* elder, void* child)
+{
+    // cast so we can use pNext pointer:
+    VkBaseOutStructure* pElder = (VkBaseOutStructure*)elder;
+    VkBaseOutStructure* pChild = (VkBaseOutStructure*)child;
+    while (pElder->pNext != nullptr) {
+        pElder = pElder->pNext;
+    }
+    pElder->pNext = pChild;
+}
+
 void GlobalRendering::createLogicalDevice()
 {
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -554,7 +568,6 @@ void GlobalRendering::createLogicalDevice()
     meshFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
     meshFeatures.meshShader = VK_TRUE;
     meshFeatures.taskShader = VK_FALSE;
-    meshFeatures.pNext = nullptr;
 
     VkPhysicalDevicePortabilitySubsetFeaturesKHR portability{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR,
@@ -573,9 +586,13 @@ void GlobalRendering::createLogicalDevice()
 
     VkPhysicalDeviceFeatures2 deviceFeatures2{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-        .pNext = (void*)&deviceFeatures12,
+//        .pNext = (void*)&deviceFeatures12,
         .features = deviceFeatures,
     };
+
+    VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2Features{};
+    synchronization2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR;
+    synchronization2Features.synchronization2 = VK_TRUE;
 
     // disable geom shaders for mac as they don't support them TODO remove geom shaders alltogether
     // and use compute shaders instead
@@ -589,21 +606,21 @@ void GlobalRendering::createLogicalDevice()
     //Log("MoltenVK useMetalArgumentBuffers: " << conf.useMetalArgumentBuffers << endl);
     //vkSetMoltenVKConfigurationMVK();
 #   endif
-
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    if (engine->isMeshShading()) {
-        createInfo.pNext = &meshFeatures;
+    chainNextDeviceFeature(&createInfo, &deviceFeatures2);
+    chainNextDeviceFeature(&createInfo, &deviceFeatures12);
+    if (isMeshShading()) {
+        chainNextDeviceFeature(&createInfo, &meshFeatures);
     }
-    if (!USE_PROFILE_DYN_RENDERING) {
-        if (engine->isMeshShading()) {
-            meshFeatures.pNext = (void*)&deviceFeatures2;
-        } else {
-            //createInfo.pNext = &dynamic_rendering_feature;
-            createInfo.pNext = &deviceFeatures2;
-        }
-        //createInfo.pEnabledFeatures = &deviceFeatures;
+    if (isSynchronization2()) {
+        chainNextDeviceFeature(&createInfo, &synchronization2Features);
     }
+#   if defined(__APPLE__)
+    chainNextDeviceFeature(&createInfo, &portability);
+#   endif
+
+    //createInfo.pEnabledFeatures = &deviceFeatures;
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.enabledExtensionCount = 0;
