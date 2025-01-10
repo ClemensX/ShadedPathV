@@ -428,9 +428,13 @@ void GlobalRendering::createLogicalDevice()
 #       endif
     };
 
+    VkPhysicalDeviceVulkan13Features deviceFeatures13{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
+        .synchronization2 = VK_TRUE,
+    };
+
     VkPhysicalDeviceFeatures2 deviceFeatures2{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-//        .pNext = (void*)&deviceFeatures12,
         .features = deviceFeatures,
     };
 
@@ -454,6 +458,7 @@ void GlobalRendering::createLogicalDevice()
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     chainNextDeviceFeature(&createInfo, &deviceFeatures2);
     chainNextDeviceFeature(&createInfo, &deviceFeatures12);
+    chainNextDeviceFeature(&createInfo, &deviceFeatures13);
     if (isMeshShading()) {
         chainNextDeviceFeature(&createInfo, &meshFeatures);
     }

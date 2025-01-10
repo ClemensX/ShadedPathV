@@ -56,8 +56,8 @@ public:
 
 	std::vector<const char*> deviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-		VK_EXT_MESH_SHADER_EXTENSION_NAME,
-		VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
+		VK_EXT_MESH_SHADER_EXTENSION_NAME//,
+		//VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
 	};
 
 	// flag for debug marker extension used
