@@ -45,9 +45,8 @@ void Util::initializeDebugFunctionPointers() {
     pfnDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(engine->globalRendering.vkInstance, "vkSetDebugUtilsObjectNameEXT");
 }
 
-std::string Util::createDebugName(const char* name, ThreadResources& res) {
-    //return std::string(name) + " " + std::to_string(res.frameIndex);
-    return std::string(name) + " "; // +std::to_string(res.frameIndex);
+std::string Util::createDebugName(const char* name, int number) {
+    return std::string(name) + "_" + std::to_string(number);
 }
 
 void Util::debugNameObject(uint64_t object, VkObjectType objectType, const char* name) {

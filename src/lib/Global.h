@@ -31,6 +31,7 @@ struct GPUImage {
     VkImageUsageFlags usage = 0;
     VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkAccessFlags2 access = 0;
+    VkPipelineStageFlags2 stage = 0;
 	char* imagedata = nullptr;
 	VkSubresourceLayout subResourceLayout;
     uint32_t width = 0, height = 0;

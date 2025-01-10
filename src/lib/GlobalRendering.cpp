@@ -139,7 +139,7 @@ bool GlobalRendering::isDeviceSuitable(DeviceInfo& info)
     return true;
 }
 
-void GlobalRendering::pickInstanceAndDevice()
+void GlobalRendering::pickDevice()
 {
     int fixedDeviceIndex = engine->getFixedPhysicalDeviceIndex();
     if (fixedDeviceIndex >= 0) {
@@ -186,23 +186,11 @@ void GlobalRendering::init()
             Log("  " << info.properties.deviceName << endl);
         }
     }
-    pickInstanceAndDevice();
+    pickDevice();
     //checkFeatureSwapChain(physicalDevice);
     // list queue properties:
     findQueueFamilies(physicalDevice, true);
     createLogicalDevice();
-    initAfterPresentation();
-}
-
-void GlobalRendering::initAfterPresentation()
-{
-    // list available devices:
-    //pickPhysicalDeviceOld(true);
-    // pick device
-    //pickPhysicalDeviceOld();
-    // list queue properties:
-    //findQueueFamilies(physicalDevice, true);
-    //createLogicalDevice();
     createCommandPools();
     createTextureSampler();
     VkSemaphoreCreateInfo semaphoreInfo{};
@@ -229,12 +217,6 @@ void GlobalRendering::shutdown()
     vkDestroyInstance(vkInstance, nullptr);
     vkInstance = nullptr;
     glfwTerminate();
-}
-
-void GlobalRendering::gatherDeviceExtensions()
-{
-    // already added to deviceExtensions vector
-    //engine->presentation.possiblyAddDeviceExtensions(deviceExtensions);
 }
 
 void GlobalRendering::initVulkanInstance()
@@ -277,144 +259,6 @@ void GlobalRendering::initVulkanInstance()
     }
 }
 
-void GlobalRendering::pickPhysicalDeviceOld(bool listmode)
-{
-    //Log("picking physical device listmode: " << listmode << endl);
-    uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(vkInstance, &deviceCount, nullptr);
-    if (deviceCount == 0) {
-        Error("no physical vulkan device available");
-    }
-    std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(vkInstance, &deviceCount, devices.data());
-    if (engine->getFixedPhysicalDeviceIndex() >= 0) {
-        if (listmode) {
-            Log("Cannot list physical devices if a fixed device is selected" << endl);
-            return;
-        }
-        assert(engine->getFixedPhysicalDeviceIndex() < devices.size());
-        physicalDevice = devices[engine->getFixedPhysicalDeviceIndex()];
-        assignGlobals(physicalDevice);
-        return;
-    }
-    for (const auto& device : devices) {
-        Log("found physical device: " << device << endl);
-        if (isDeviceSuitableOld(device, listmode)) {
-            // check for same device (phys device may have been initialized by OpenXR
-            if (physicalDevice != nullptr) {
-                if (physicalDevice != device) {
-                    Error("Physical Device selected does not match pre-selected device from OpenXR");
-                } else {
-                    // all is fine - we already have our phys device
-                    return;
-                }
-            }
-            physicalDevice = device;
-            break;
-        }
-        if (!listmode) Log("   device not suitable" << endl);
-    }
-    if (listmode)
-        return;
-    if (physicalDevice == VK_NULL_HANDLE) {
-        Error("failed to find a suitable GPU!");
-    }
-    assignGlobals(physicalDevice);
-}
-
-void GlobalRendering::assignGlobals(VkPhysicalDevice device)
-{
-    VkPhysicalDeviceProperties deviceProperties;
-    VkPhysicalDeviceFeatures deviceFeatures;
-    vkGetPhysicalDeviceProperties(device, &deviceProperties);
-    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-    // query extension details (mesh shader)
-    VkPhysicalDeviceMeshShaderPropertiesEXT meshProperties = {};
-    meshProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
-    meshProperties.pNext = nullptr;
-    VkPhysicalDeviceProperties2 deviceProperties2 = {};
-    deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-    deviceProperties2.pNext = &meshProperties;
-    vkGetPhysicalDeviceProperties2(device, &deviceProperties2);
-    physicalDeviceProperties = deviceProperties2;
-    familyIndices = findQueueFamilies(device);
-}
-
-bool GlobalRendering::isDeviceSuitableOld(VkPhysicalDevice device, bool listmode)
-{
-    VkPhysicalDeviceProperties deviceProperties;
-    VkPhysicalDeviceFeatures deviceFeatures;
-    vkGetPhysicalDeviceProperties(device, &deviceProperties);
-    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-    // query extension details (mesh shader)
-    VkPhysicalDeviceMeshShaderPropertiesEXT meshProperties = {};
-    meshProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
-    meshProperties.pNext = nullptr;
-    VkPhysicalDeviceProperties2 deviceProperties2 = {};
-    deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-    deviceProperties2.pNext = &meshProperties;
-    vkGetPhysicalDeviceProperties2(device, &deviceProperties2);
-    physicalDeviceProperties = deviceProperties2;
-
-    // we just pick the first device for now
-    Log("picked physical device: " << deviceProperties.deviceName << " " << Util::decodeVulkanVersion(deviceProperties.apiVersion).c_str() << endl);
-
-    // now look for queue families:
-    familyIndices = findQueueFamilies(device);
-
-    bool extensionsSupported = true;
-    bool swapChainAdequate = false;
-    if (engine->presentationMode) {
-        if (extensionsSupported) {
-            SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
-            swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-        }
-    }
-    else {
-        swapChainAdequate = true;
-    }
-    // check mesh support:
-    // set extension details for mesh shader
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshFeatures = {};
-    meshFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
-    meshFeatures.pNext = nullptr;
-    VkPhysicalDeviceFeatures2 feature2{};
-    feature2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    feature2.pNext = &meshFeatures;
-    vkGetPhysicalDeviceFeatures2(device, &feature2);
-    VkPhysicalDeviceMeshShaderFeaturesEXT* meshSupport = (VkPhysicalDeviceMeshShaderFeaturesEXT*)feature2.pNext;
-    if (true /*engine->isMeshShading() */) {
-        //Log(meshSupport << endl);
-        if (!meshSupport->meshShader || !meshSupport->taskShader) {
-            Log("device does not support Mesh Shaders" << endl);
-            Log("You might try not to enable Mesh Shader in app code by removing: engine->enableMeshShader()" << endl);
-            return false;
-        } else {
-            Log("Mesh Shader enabled!" << endl);
-        }
-    }
-    // check compressed texture support:
-    VkFormatProperties fp{};
-    vkGetPhysicalDeviceFormatProperties(device, VK_FORMAT_BC7_SRGB_BLOCK, &fp);
-    // 0x01d401
-    VkFormatFeatureFlags flagsToCheck = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT | VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-    if ((fp.linearTilingFeatures & flagsToCheck) == 0) {
-        Log("device does not support needed linearTilingFeatures" << endl);
-        //return false;
-    }
-    if ((fp.optimalTilingFeatures & flagsToCheck) == 0) {
-        Log("device does not support needed optimalTilingFeatures" << endl);
-        return false;
-    }
-
-    // check descrtiptor index size suitable for texture count:
-    if (physicalDeviceProperties.properties.limits.maxDescriptorSetSampledImages < TextureStore::UPPER_LIMIT_TEXTURE_COUNT) {
-        Log("Device does not support enough texture slots in descriptors" << endl);
-        return false;
-    }
-    if (!extensionsSupported) Log("WARNING required extensions are not supported. Maybe problem with vpGetPhysicalDeviceProfileSupport().\nConsider disabling physical device checking by setFixedPhysicalDeviceIndex(0)" << endl);
-    return familyIndices.isComplete( engine->presentationMode) && extensionsSupported && swapChainAdequate && deviceFeatures.samplerAnisotropy && deviceFeatures.textureCompressionBC;
-}
 
 QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, bool listmode)
 {

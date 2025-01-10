@@ -145,6 +145,10 @@ void Presentation::destroyWindowResources(WindowInfo* wi, bool destroyGlfwWindow
         vkDestroySemaphore(engine->globalRendering.device, wi->renderFinishedSemaphore, nullptr);
         wi->renderFinishedSemaphore = nullptr;
     }
+    if (wi->prePresentCompleteSemaphore != nullptr) {
+        vkDestroySemaphore(engine->globalRendering.device, wi->prePresentCompleteSemaphore, nullptr);
+        wi->prePresentCompleteSemaphore = nullptr;
+    }
 }
 
 void Presentation::callbackKey(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -276,6 +280,10 @@ void Presentation::createSwapChain(WindowInfo* winfo) {
     assert(imageCount == winfo->imageCount);
     winfo->swapChainImageFormat = surfaceFormat.format;
     winfo->swapChainExtent = extent;
+    for (int i = 0; i < winfo->swapChainImages.size(); i++) {
+        auto& image = winfo->swapChainImages[i];
+        engine->util.debugNameObjectImage(image, engine->util.createDebugName("swapchain image", i).c_str());
+    }
     Log("swap chain created with # images: " << imageCount << endl);
 }
 
@@ -357,6 +365,7 @@ VkExtent2D Presentation::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabi
 
 void Presentation::presentImage(WindowInfo* winfo, FrameInfo *srcFrame)
 {
+    // 1. step: aquire image, wait for aquire semaphore, then create the copy commands and execute them
     if (winfo->disabled) return;
     auto& device = engine->globalRendering.device;
     auto& global = engine->globalRendering;
@@ -366,6 +375,21 @@ void Presentation::presentImage(WindowInfo* winfo, FrameInfo *srcFrame)
     if (vkAcquireNextImageKHR(device, winfo->swapChain, UINT64_MAX, winfo->imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS) {
         Error("cannot aquire next image KHR");
     }
+    VkSemaphoreSubmitInfo acquireCompleteInfo = {};
+    acquireCompleteInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+    acquireCompleteInfo.semaphore = winfo->imageAvailableSemaphore;
+    acquireCompleteInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    VkSemaphoreSubmitInfo renderingCompleteInfo = {};
+    renderingCompleteInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+    renderingCompleteInfo.semaphore = winfo->renderFinishedSemaphore;
+    renderingCompleteInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    VkCommandBufferSubmitInfo renderingCommandBufferInfo = {};
+    renderingCommandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+    renderingCommandBufferInfo.commandBuffer = winfo->commandBufferPresentBack;
+
+
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = 0; // Optional
@@ -382,11 +406,12 @@ void Presentation::presentImage(WindowInfo* winfo, FrameInfo *srcFrame)
 
     // set src values for access, layout and image
     GPUImage dstImage;
-    dstImage.access = 0;
+    dstImage.access = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
+    dstImage.stage = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
     dstImage.layout = VK_IMAGE_LAYOUT_UNDEFINED;
     dstImage.image = winfo->swapChainImages[imageIndex];
-    DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_2_TRANSFER_READ_BIT, winfo->commandBufferPresentBack, srcFrame->renderedImage);
-    DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_2_TRANSFER_WRITE_BIT, winfo->commandBufferPresentBack, &dstImage);
+    DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_READ_BIT, winfo->commandBufferPresentBack, srcFrame->renderedImage);
+    DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT, winfo->commandBufferPresentBack, &dstImage);
 
     // Define the region to blit (we will blit the whole swapchain image)
     VkOffset3D blitSizeSrc;
@@ -418,40 +443,63 @@ void Presentation::presentImage(WindowInfo* winfo, FrameInfo *srcFrame)
         VK_FILTER_LINEAR
     );
 
-    DirectImage::toLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_ACCESS_2_TRANSFER_WRITE_BIT, winfo->commandBufferPresentBack, &dstImage);
+    DirectImage::toLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, VK_ACCESS_2_MEMORY_READ_BIT, winfo->commandBufferPresentBack, &dstImage);
+
+    // end
 
     if (vkEndCommandBuffer(winfo->commandBufferPresentBack) != VK_SUCCESS) {
         Error("failed to record back buffer copy command buffer!");
     }
 
-    // only queue submit and present left to do:
+    VkSubmitInfo2 renderingSubmitInfo{};
+    renderingSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+    renderingSubmitInfo.waitSemaphoreInfoCount = 1;
+    renderingSubmitInfo.pWaitSemaphoreInfos = &acquireCompleteInfo;
+    renderingSubmitInfo.commandBufferInfoCount = 1;
+    renderingSubmitInfo.pCommandBufferInfos = &renderingCommandBufferInfo;
+    renderingSubmitInfo.signalSemaphoreInfoCount = 1;
+    renderingSubmitInfo.pSignalSemaphoreInfos = &renderingCompleteInfo;
 
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    ///VkSemaphore waitSemaphores[] = { tr.renderFinishedSemaphore };
-    VkSemaphore waitSemaphores[] = { winfo->imageAvailableSemaphore };
-    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &winfo->commandBufferPresentBack;
-    VkSemaphore signalSemaphores[] = { winfo->renderFinishedSemaphore };
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
+    if (vkQueueSubmit2(global.graphicsQueue, 1, &renderingSubmitInfo, 0) != VK_SUCCESS) {
+        Error("failed to submit draw command buffer!");
+    }
+
+    // only final queue submit and present left to do:
+
+    VkSemaphoreSubmitInfo prePresentWaitInfo = {};
+    prePresentWaitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+    prePresentWaitInfo.semaphore = winfo->renderFinishedSemaphore;
+    prePresentWaitInfo.stageMask = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
+
+    VkSemaphoreSubmitInfo prePresentCompleteInfo = {};
+    prePresentCompleteInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+    prePresentCompleteInfo.semaphore = winfo->prePresentCompleteSemaphore;
+    prePresentCompleteInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+
+    //VkCommandBufferSubmitInfo prePresentCommandBufferInfo = {};
+    //renderingCommandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+    //renderingCommandBufferInfo.commandBuffer = winfo->commandBufferPresentBack;
+
+    VkSubmitInfo2 submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+    submitInfo.waitSemaphoreInfoCount = 1;
+    submitInfo.pWaitSemaphoreInfos = &prePresentWaitInfo;
+    submitInfo.commandBufferInfoCount = 0;
+    //submitInfo.pCommandBuffers = &winfo->commandBufferPresentBack;
+    submitInfo.signalSemaphoreInfoCount = 1;
+    submitInfo.pSignalSemaphoreInfos = &prePresentCompleteInfo;
 
     //vkDeviceWaitIdle(global.device); does not help
     if (LOG_GLOBAL_UPDATE) engine->log_current_thread();
     LogCondF(LOG_FENCE, "queue thread submit present fence " << hex << ThreadInfo::thread_osid() << endl);
-    if (vkQueueSubmit(global.graphicsQueue, 1, &submitInfo, winfo->presentFence) != VK_SUCCESS) {
+    if (vkQueueSubmit2(global.graphicsQueue, 1, &submitInfo, winfo->presentFence) != VK_SUCCESS) {
         Error("failed to submit draw command buffer!");
     }
 
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
     presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = signalSemaphores;
+    presentInfo.pWaitSemaphores = &winfo->prePresentCompleteSemaphore;
 
     VkSwapchainKHR swapChains[] = { winfo->swapChain };
     presentInfo.swapchainCount = 1;
@@ -496,6 +544,9 @@ void Presentation::preparePresentation(WindowInfo* winfo)
     }
     if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &winfo->renderFinishedSemaphore) != VK_SUCCESS) {
         Error("failed to create renderFinishedSemaphore for a frame");
+    }
+    if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &winfo->prePresentCompleteSemaphore) != VK_SUCCESS) {
+        Error("failed to create prePresentCompleteSemaphore for a frame");
     }
 
     VkFenceCreateInfo fenceInfo{};

@@ -110,6 +110,57 @@ void DirectImage::toLayout(VkImageLayout layout, VkAccessFlags2 access, VkComman
 	gpui->access = access;
 }
 
+//DirectImage::toLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VK_ACCESS_2_MEMORY_READ_BIT| VK_ACCESS_2_MEMORY_WRITE_BIT, winfo->commandBufferPresentBack, &dstImage);
+void DirectImage::toLayout(VkImageLayout layout, VkPipelineStageFlags2 stage, VkAccessFlags2 access, VkCommandBuffer commandBuffer, GPUImage* gpui)
+{
+	// maybe layout is already correct
+	if (layout == gpui->layout) return;
+
+	VkImageMemoryBarrier2 dstBarrier{};
+	dstBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+	dstBarrier.srcAccessMask = gpui->access;
+	dstBarrier.dstAccessMask = access;
+	dstBarrier.oldLayout = gpui->layout;
+	dstBarrier.newLayout = layout;
+	dstBarrier.image = gpui->image;
+	dstBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+	dstBarrier.srcStageMask = gpui->stage;
+	dstBarrier.dstStageMask = stage;
+
+	VkDependencyInfo dependency_info{};
+	dependency_info.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+	dependency_info.imageMemoryBarrierCount = 1;
+	dependency_info.pImageMemoryBarriers = &dstBarrier;
+	vkCmdPipelineBarrier2(commandBuffer, &dependency_info);
+	gpui->layout = layout;
+	gpui->access = access;
+	gpui->stage = stage;
+}
+
+void DirectImage::toLayoutAllStagesOnlyForDebugging(VkImageLayout layout, VkCommandBuffer commandBuffer, GPUImage* gpui)
+{
+	// https://github.com/KhronosGroup/Vulkan-Docs/wiki/Synchronization-Examples#full-pipeline-barrier
+	VkImageMemoryBarrier2 dstBarrier{};
+	dstBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+	dstBarrier.srcAccessMask = VK_ACCESS_2_MEMORY_READ_BIT_KHR | VK_ACCESS_2_MEMORY_WRITE_BIT_KHR;
+	dstBarrier.dstAccessMask = VK_ACCESS_2_MEMORY_READ_BIT_KHR | VK_ACCESS_2_MEMORY_WRITE_BIT_KHR;
+	dstBarrier.oldLayout = gpui->layout;
+	//dstBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+	dstBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	dstBarrier.image = gpui->image;
+	dstBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+	dstBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR;
+	dstBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR;
+
+	VkDependencyInfo dependency_info{};
+	dependency_info.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+	dependency_info.imageMemoryBarrierCount = 1;
+	dependency_info.pImageMemoryBarriers = &dstBarrier;
+	vkCmdPipelineBarrier2(commandBuffer, &dependency_info);
+	//dstImage.layout = dstBarrier.newLayout;
+	//dstImage.access = dstBarrier.dstAccessMask;
+}
+
 void DirectImage::openForCPUWriteAccess(GPUImage* gpui, GPUImage* writeable)
 {
 	assert(writeable != nullptr);

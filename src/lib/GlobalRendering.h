@@ -42,63 +42,23 @@ public:
 	};
 
 	std::vector<const char*> instanceExtensions = {
+#   if defined(ENABLE_DEBUG_UTILS_EXTENSION)
+		VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+#   endif
 #   if defined(__APPLE__)
-		VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME
+		VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
 #   endif
 #   if defined(_WIN64)
         "VK_KHR_win32_surface",
 #   endif
 		VK_KHR_SURFACE_EXTENSION_NAME
-		//VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-		//VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
 	};
 
 	std::vector<const char*> deviceExtensions = {
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 		VK_EXT_MESH_SHADER_EXTENSION_NAME,
-		//VK_KHR_SURFACE_EXTENSION_NAME
-		//VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME
 		VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
-		//VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
-		// debug_utils is only an instance extension
-//#if defined(ENABLE_DEBUG_UTILS_EXTENSION)
-//		VK_EXT_DEBUG_UTILS_EXTENSION_NAME
-//#endif
 	};
-
-/*
-#   if defined(__APPLE__)
-		extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-		deviceExtensions.push_back("VK_KHR_portability_subset");
-#   endif
-	//extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-	extensions.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-	//extensions.push_back(VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME);
-	if (DEBUG_UTILS_EXTENSION) {
-		extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-	}
-	if (engine->isMeshShading()) {
-		deviceExtensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-	}
-
-*/
-	// select vulkan profile and API version
-	VpProfileProperties profile{
-#		if defined(USE_SMALL_GRAPHICS)
-			VP_KHR_ROADMAP_2022_NAME,
-			VP_KHR_ROADMAP_2022_SPEC_VERSION
-#		else
-			//VP_LUNARG_DESKTOP_PORTABILITY_2021_NAME,
-			//VP_LUNARG_DESKTOP_PORTABILITY_2021_SPEC_VERSION
-			//VP_LUNARG_DESKTOP_BASELINE_2022_NAME,
-			//VP_LUNARG_DESKTOP_BASELINE_2022_SPEC_VERSION
-			VP_KHR_ROADMAP_2024_NAME,
-			VP_KHR_ROADMAP_2024_SPEC_VERSION
-#		endif
-	};
-	//uint32_t API_VERSION = VP_KHR_ROADMAP_2022_MIN_API_VERSION;
-
-	static const bool USE_PROFILE_DYN_RENDERING = false;
 
 	// flag for debug marker extension used
 #if defined(ENABLE_DEBUG_UTILS_EXTENSION)
@@ -121,8 +81,6 @@ public:
 	// initialize all global Vulkan stuff - engine configuration settings
 	// cannot be changed after calling this, because some settings influence Vulkan creation options
 	void init();
-	// device selection and creation
-	void initAfterPresentation();
 
 	// destroy global resources, should only be called from engine dtor
 	void shutdown();
@@ -276,18 +234,12 @@ private:
 
 	std::vector<DeviceInfo> deviceInfos;
 	void gatherDeviceInfos();
-    void pickInstanceAndDevice();
+    void pickDevice();
 	bool isDeviceSuitable(DeviceInfo& info);
 
 	// init vulkan instance, using no extensions is needed for gathering device info at startup
 	void initVulkanInstance();
-	void gatherDeviceExtensions();
 
-	// devices
-	void assignGlobals(VkPhysicalDevice phys);
-	void pickPhysicalDeviceOld(bool listmode = false);
-	// list or select physical devices
-	bool isDeviceSuitableOld(VkPhysicalDevice device, bool listmode = false);
 	// list queue flags as text
 	std::string getQueueFlagsString(VkQueueFlags flags);
 

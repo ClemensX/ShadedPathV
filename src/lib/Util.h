@@ -75,8 +75,8 @@ public:
 
     ~Util() {};
 
-    // create debug name for thread resource object from name and ThreadResource id
-    std::string createDebugName(const char* name, ThreadResources& res);
+    // create debug name by appending a number to the given name
+    std::string createDebugName(const char* name, int number);
 
     // name vulkan objects. used to identify them in debug message from validation layer
     // general purpost method that can be used foe all object types

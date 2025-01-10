@@ -18,6 +18,7 @@ struct WindowInfo {
 	VkCommandBuffer commandBufferUI;
 	VkSemaphore imageAvailableSemaphore = nullptr;
 	VkSemaphore renderFinishedSemaphore = nullptr;
+	VkSemaphore prePresentCompleteSemaphore = nullptr;
 	VkFence inFlightFence = nullptr;
 	VkEvent uiRenderFinished = nullptr;
 	VkFence imageDumpFence = nullptr;
