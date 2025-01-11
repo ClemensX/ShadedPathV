@@ -75,7 +75,7 @@ void SimpleMultiWin::run(ContinuationInfo* cont) {
 };
 
 bool SimpleMultiWin::shouldClose() {
-    return shouldStop;
+    return shouldStopEngine;
 }
 
 void SimpleMultiWin::openWindow(const char* title) {
@@ -104,6 +104,6 @@ void SimpleMultiWin::handleInput(InputState& inputState)
             //Log("Window 2 shouldclosed\n");
         }
         inputState.windowClosed = nullptr;
-        shouldStop = true;
+        shouldStopEngine = true;
     }
 }

@@ -151,13 +151,14 @@ int main()
     //engine.setFixedPhysicalDeviceIndex(0);
     engine.initGlobal();
     SimpleMultiApp app;
-    SimpleMultiApp2 app2;
     ContinuationInfo cont;
     engine.registerApp((ShadedPathApplication*)&app);
     engine.app->run(&cont);
     if (cont.cont) {
+        SimpleMultiApp2 app2;
         ShadedPathEngine engine;
         engine
+            .setContinuationInfo(&cont)
             .setEnableLines(true)
             .setDebugWindowPosition(true)
             .setEnableUI(true)

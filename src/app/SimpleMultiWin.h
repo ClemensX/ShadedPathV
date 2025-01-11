@@ -11,7 +11,7 @@ public:
 
     long lastFrameNum = 0;
 private:
-    bool shouldStop = false;
+    bool shouldStopEngine = false;
     DirectImage di;
     GPUImage* gpui = nullptr;
     GPUImage directImage;

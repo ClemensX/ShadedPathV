@@ -163,7 +163,7 @@ TEST_F(EngineTest, Headless) {
             void prepareFrame(FrameInfo* fi) override {
                 Log("prepareFrame " << fi->frameNum << endl);
                 if (fi->frameNum >= 10) {
-                    shouldStop = true;
+                    shouldStopEngine = true;
                 }
                 lastFrameNum = fi->frameNum;
             };
@@ -191,11 +191,11 @@ TEST_F(EngineTest, Headless) {
 
             };
             bool shouldClose() override {
-                return shouldStop;
+                return shouldStopEngine;
             }
             long lastFrameNum = 0;
         private:
-            bool shouldStop = false;
+            bool shouldStopEngine = false;
             DirectImage di;
             GPUImage* gpui = nullptr;
             GPUImage directImage;
@@ -410,7 +410,7 @@ TEST_F(EngineImageConsumer, Dump) {
         public:
             void prepareFrame(FrameInfo* fi) override {
                 if (fi->frameNum >= 10) {
-                    shouldStop = true;
+                    shouldStopEngine = true;
                 }
             };
             // drawFrame is called for each topic in parallel!! Beware!
@@ -436,10 +436,10 @@ TEST_F(EngineImageConsumer, Dump) {
                 engine->globalRendering.destroyImage(&directImage);
             };
             bool shouldClose() override {
-                return shouldStop;
+                return shouldStopEngine;
             }
         private:
-            bool shouldStop = false;
+            bool shouldStopEngine = false;
             DirectImage di;
             GPUImage* gpui = nullptr;
             GPUImage directImage;

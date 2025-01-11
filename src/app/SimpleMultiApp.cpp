@@ -35,7 +35,7 @@ void SimpleMultiApp::drawFrame(FrameInfo* fi, int topic) {
 };
 
 void SimpleMultiApp::run(ContinuationInfo* cont) {
-    Log("TestApp started\n");
+    Log("TestApp started - press Q to start next application!!\n");
     Log(" run thread: ");
     engine->log_current_thread();
     di.setEngine(engine);
@@ -53,11 +53,15 @@ void SimpleMultiApp::run(ContinuationInfo* cont) {
     // cleanup
     di.closeCPUWriteAccess(gpui, &directImage);
     engine->globalRendering.destroyImage(&directImage);
-    cont->cont = true;
+    if (shouldStopAllApplications) {
+        cont->cont = false;
+    } else {
+        cont->cont = true;
+    }
 };
 
 bool SimpleMultiApp::shouldClose() {
-    return shouldStop;
+    return shouldStopEngine;
 }
 
 void SimpleMultiApp::openWindow(const char* title) {
@@ -75,7 +79,18 @@ void SimpleMultiApp::handleInput(InputState& inputState)
             //Log("Window 1 shouldclosed\n");
         }
         inputState.windowClosed = nullptr;
-        shouldStop = true;
+        shouldStopEngine = true;
+        shouldStopAllApplications = true; // using window close to stop app chaining
+    }
+    if (inputState.keyEvent) {
+        //Log("key pressed: " << inputState.key << endl);
+        auto key = inputState.key;
+        auto action = inputState.action;
+        auto mods = inputState.mods;
+        const bool press = action != GLFW_RELEASE;
+        if (key == GLFW_KEY_Q && press) {
+            shouldStopEngine = true;
+        }
     }
 }
 
@@ -107,7 +122,7 @@ void SimpleMultiApp2::drawFrame(FrameInfo* fi, int topic) {
     if (topic == 0) {
         //Log("drawFrame " << fi->frameNum << " topic " << topic << std::endl);
         directImage.rendered = false;
-        engine->util.writeRawImageTestData(directImage, 2);
+        engine->util.writeRawImageTestData(directImage, 1);
         directImage.rendered = true;
         fi->renderedImage = &directImage;
     }
@@ -120,7 +135,10 @@ void SimpleMultiApp2::run(ContinuationInfo* cont) {
     di.setEngine(engine);
     engine->configureParallelAppDrawCalls(2);
 
-    if (cont->cont) {
+    if (true) {
+        if (engine->getContinuationInfo() != nullptr) {
+            Log("This app should continue in same glfw window that the app before!\n");
+        }
         gpui = engine->createImage("Test Image");
         engine->globalRendering.createDumpImage(directImage);
         di.openForCPUWriteAccess(gpui, &directImage);
@@ -142,7 +160,7 @@ void SimpleMultiApp2::run(ContinuationInfo* cont) {
 };
 
 bool SimpleMultiApp2::shouldClose() {
-    return shouldStop;
+    return shouldStopEngine;
 }
 
 void SimpleMultiApp2::openWindow(const char* title) {
@@ -160,6 +178,6 @@ void SimpleMultiApp2::handleInput(InputState& inputState)
             //Log("Window 1 shouldclosed\n");
         }
         inputState.windowClosed = nullptr;
-        shouldStop = true;
+        shouldStopEngine = true;
     }
 }

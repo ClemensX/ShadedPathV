@@ -75,10 +75,12 @@ public:
     // how many draw calls should be done in parallel. App will be called with topic counter in range 0..appDrawCalls-1 to be able to separate the work
     ShadedPathEngine& configureParallelAppDrawCalls(int num) { appDrawCalls = num; return *this; }
     ShadedPathEngine& overrideCPUCores(int usedCores) { overrideUsedCores = usedCores; return *this; }
+    ShadedPathEngine& setContinuationInfo(ContinuationInfo* cont) { continuationInfo = cont; return *this; }
 
     // getters
     bool isDebugWindowPosition() { return debugWindowPosition; }
     bool isSingleThreadMode() { return singleThreadMode; }
+    ContinuationInfo* getContinuationInfo() { return continuationInfo; }
 
     bool isMainThread();
     void log_current_thread();
@@ -322,4 +324,5 @@ private:
     // global update thread for shuffling data to GPU in the background
     void startUpdateThread();
     std::vector<WindowInfo*> windowInfos;
+    ContinuationInfo* continuationInfo = nullptr;
 };
