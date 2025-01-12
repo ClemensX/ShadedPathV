@@ -81,7 +81,8 @@ bool SimpleMultiWin::shouldClose() {
 void SimpleMultiWin::openWindow(const char* title) {
     Log("openWindow " << title << std::endl);
     int win_width = 960;//480;// 960;//1800;// 800;//3700; // 2500
-    engine->enablePresentation(&window1, win_width, (int)(win_width / 1.77f), title);
+    engine->presentation.createWindow(&window1, win_width, (int)(win_width / 1.77f), title);
+    engine->enablePresentation(&window1);
     //engine->enableWindowOutput(&window1);
 
 }
@@ -89,7 +90,8 @@ void SimpleMultiWin::openWindow(const char* title) {
 void SimpleMultiWin::openAnotherWindow(const char* title) {
     Log("openWindow " << title << std::endl);
     int win_width = 480;
-    engine->enablePresentation(&window2, win_width, (int)(win_width / 1.77f), title);
+    engine->presentation.createWindow(&window2, win_width, (int)(win_width / 1.77f), title);
+    engine->enablePresentation(&window2);
     engine->enableWindowOutput(&window2);
 }
 

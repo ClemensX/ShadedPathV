@@ -161,11 +161,16 @@ Nicole
         di.dumpToFile(gpui);
 
 
-rebuild all timings (branch):
- 7.13 -  7.67 s newarch
-22.75 - 22.96 s main
-
-Ryzen 7 9800X3D:
- 6.50 newarch
-20.58 main
+SYNC-HAZARD-WRITE-AFTER-READ(ERROR / SPEC): msgNum: 929810911 - Validation Error: [ SYNC-HAZARD-WRITE-AFTER-READ ]
+ Object 0: handle = 0x1eb7fb24990, name = MAIN GRAPHICS QUEUE, 
+ type = VK_OBJECT_TYPE_QUEUE; | MessageID = 0x376bc9df | 
+ vkQueueSubmit():  Hazard WRITE_AFTER_READ for entry 0, VkCommandBuffer 0x1eb0a960da0[window.commandBufferPresentBack], 
+ Submitted access info (submitted_usage: SYNC_IMAGE_LAYOUT_TRANSITION, command: vkCmdPipelineBarrier2, seq_no: 2, reset_no: 1). 
+ Access info (prior_usage: SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_ACQUIRE_READ_SYNCVAL, 
+ read_barriers: VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT|VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, , batch_tag: 6, 
+ vkAcquireNextImageKHR aquire_tag:6: VkSwapchainKHR 0xe88693000000000c[], 
+ image_index: 0
+ image: VkImage 0xcad092000000000d[]).
+    Objects: 1
+        [0] 0x1eb7fb24990, type: 4, name: MAIN GRAPHICS QUEUE
 

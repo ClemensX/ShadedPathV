@@ -2,12 +2,6 @@
 
 #pragma once
 
-// if run() returns this filled
-struct ContinuationInfo
-{
-    bool cont = false;
-};
-
 // all applications must implement this class and register with engine.
 // All callback methods are defined here
 class ShadedPathApplication
@@ -112,7 +106,7 @@ public:
     VkExtent2D getBackBufferExtent();
 
     // enable output window, can be called any time. Also needed for keyboard input
-    void enablePresentation(WindowInfo* winfo, int w, int h, const char* name);
+    void enablePresentation(WindowInfo* winfo);
     // enable Vulkan output to window
     void enableWindowOutput(WindowInfo* winfo);
 

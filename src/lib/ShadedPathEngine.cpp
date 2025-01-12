@@ -311,10 +311,10 @@ long ShadedPathEngine::getNextFrameNumber()
     return n;
 }
 
-void ShadedPathEngine::enablePresentation(WindowInfo* winfo, int w, int h, const char* name)
+void ShadedPathEngine::enablePresentation(WindowInfo* winfo)
 {
     windowInfos.push_back(winfo);
-    presentation.createWindow(winfo, w, h, name);
+    
 }
 
 void ShadedPathEngine::enableWindowOutput(WindowInfo* winfo)

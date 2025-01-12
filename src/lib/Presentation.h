@@ -28,16 +28,26 @@ struct WindowInfo {
 	bool disabled = false;
 };
 
+// for multi-app chaining
+struct ContinuationInfo
+{
+	bool cont = false;
+	WindowInfo windowInfo;
+};
+
 class Presentation : public EngineParticipant
 {
 public:
 	Presentation(ShadedPathEngine* s);
 	~Presentation();
 
+	void initializeCallbacks(GLFWwindow* window, bool handleKeyEvents, bool handleMouseMoveEvents, bool handleMouseButtonEvents);
 	void createWindow(WindowInfo* winfo, int w, int h, const char* name,
 		bool handleKeyEvents = true, bool handleMouseMoveEevents = true, bool handleMouseButtonEvents = true);
 
 	void destroyWindowResources(WindowInfo* wi, bool destroyGlfwWindow = true);
+    void detachFromWindow(WindowInfo* wi, ContinuationInfo* contInfo);
+    void reuseWindow(WindowInfo* wi, ContinuationInfo* contInfo);
 
 	// poll events from glfw.
     // should be called from main thread and should work for all open glfw windows

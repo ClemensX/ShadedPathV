@@ -57,6 +57,7 @@ void SimpleMultiApp::run(ContinuationInfo* cont) {
         cont->cont = false;
     } else {
         cont->cont = true;
+        engine->presentation.detachFromWindow(&window1, cont);
     }
 };
 
@@ -67,7 +68,8 @@ bool SimpleMultiApp::shouldClose() {
 void SimpleMultiApp::openWindow(const char* title) {
     Log("openWindow " << title << std::endl);
     int win_width = 480;
-    engine->enablePresentation(&window1, win_width, (int)(win_width / 1.77f), title);
+    engine->presentation.createWindow(&window1, win_width, (int)(win_width / 1.77f), title);
+    engine->enablePresentation(&window1);
     engine->enableWindowOutput(&window1);
 }
 
@@ -164,9 +166,14 @@ bool SimpleMultiApp2::shouldClose() {
 }
 
 void SimpleMultiApp2::openWindow(const char* title) {
-    Log("openWindow " << title << std::endl);
-    int win_width = 480;
-    engine->enablePresentation(&window1, win_width, (int)(win_width / 1.77f), title);
+    Log("open or reuse Window " << title << std::endl);
+    if (engine->getContinuationInfo() != nullptr) {
+        engine->presentation.reuseWindow(&window1, engine->getContinuationInfo());
+    } else {
+        int win_width = 480;
+        engine->presentation.createWindow(&window1, win_width, (int)(win_width / 1.77f), title);
+    }
+    engine->enablePresentation(&window1);
     engine->enableWindowOutput(&window1);
 }
 
