@@ -7,8 +7,11 @@ void glfwErrorCallback(int error, const char* description) {
     //cerr << "GLFW Error (" << error << "): " << description << endl;
 }
 
-// Initialize the static member
+// Initialize the static member function pointers
+// the will be reset every time a new Presentation object is created (for another engine run)
 std::function<void(GLFWwindow*, int, int, int, int)> Presentation::currentKeyCallback = nullptr;
+std::function<void(GLFWwindow* window, int button, int action, int mods)> Presentation::currentMouseButtonCallback = nullptr;
+std::function<void(GLFWwindow* window, double x, double y)> Presentation::currentCursorPosCallback = nullptr;
 
 Presentation::Presentation(ShadedPathEngine* s) {
     Log("Presentation c'tor\n");
@@ -30,6 +33,7 @@ Presentation::~Presentation()
     }
 }
 
+// handle key callback
 void customKeyCallback(Presentation* presentation, GLFWwindow* window, int key, int scancode, int action, int mods) {
     // Custom key handling logic
     //presentation->keyCallback(window, key, scancode, action, mods);
@@ -46,52 +50,58 @@ void Presentation::keyCallback(GLFWwindow* window, int key, int scancode, int ac
     }
 }
 
+// handle MousButton callback
+void customMouseButtonCallback(Presentation* presentation, GLFWwindow* window, int button, int action, int mods) {
+    // Custom key handling logic
+    presentation->callbackMouseButton(window, button, action, mods);
+}
+
+void Presentation::setMouseButtonCallback(std::function<void(GLFWwindow* window, int button, int action, int mods)> callback) {
+    currentMouseButtonCallback = callback;
+}
+
+void Presentation::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    if (currentMouseButtonCallback) {
+        currentMouseButtonCallback(window, button, action, mods);
+    }
+}
+
+// handle key callback
+void customCursorPosCallback(Presentation* presentation, GLFWwindow* window, double x, double y) {
+    // Custom key handling logic
+    presentation->callbackCursorPos(window, x, y);
+}
+
+void Presentation::setCursorPosCallback(std::function<void(GLFWwindow* window, double x, double y)> callback) {
+    currentCursorPosCallback = callback;
+}
+
+void Presentation::cursorPosCallback(GLFWwindow* window, double x, double y) {
+    if (currentCursorPosCallback) {
+        currentCursorPosCallback(window, x, y);
+    }
+}
+
 void Presentation::initializeCallbacks(GLFWwindow* window, bool handleKeyEvents, bool handleMouseMoveEvents, bool handleMouseButtonEvents) {
-    // init callbacks: we assume that no other callback was installed (yet)
+    // init callbacks: we assume that no other callback was installed,
+    // or was already removed
     if (handleKeyEvents) {
         setKeyCallback([this](GLFWwindow* window, int key, int scancode, int action, int mods) {
             customKeyCallback(this, window, key, scancode, action, mods);
             });
         glfwSetKeyCallback(window, keyCallback);
     }
-
-    if (handleKeyEvents && false) {
-        // we need a static member function that can be registered with glfw:
-        // static auto callback = bind(&Presentation::key_callbackMember, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5);
-        // the above works, but can be done more elegantly with a lambda expression:
-        static auto callback_static = [this](GLFWwindow* window, int key, int scancode, int action, int mods) {
-            // because we have a this pointer we are now able to call a non-static member method:
-            callbackKey(window, key, scancode, action, mods);
-            };
-        auto old = glfwSetKeyCallback(window,
-            [](GLFWwindow* window, int key, int scancode, int action, int mods) {
-                // only static methods can be called here as we cannot change glfw function parameter list to include instance pointer
-                callback_static(window, key, scancode, action, mods);
-            }
-        );
-        assert(old == nullptr);
+    if (handleMouseButtonEvents) {
+        setMouseButtonCallback([this](GLFWwindow* window, int button, int action, int mods) {
+            customMouseButtonCallback(this, window, button, action, mods);
+            });
+        glfwSetMouseButtonCallback(window, mouseButtonCallback);
     }
     if (handleMouseMoveEvents) {
-        static auto callback_static = [this](GLFWwindow* window, double xpos, double ypos) {
-            callbackCursorPos(window, xpos, ypos);
-            };
-        auto old = glfwSetCursorPosCallback(window,
-            [](GLFWwindow* window, double xpos, double ypos) {
-                callback_static(window, xpos, ypos);
-            }
-        );
-        assert(old == nullptr);
-    }
-    if (handleMouseButtonEvents) {
-        static auto callback_static = [this](GLFWwindow* window, int button, int action, int mods) {
-            callbackMouseButton(window, button, action, mods);
-            };
-        auto old = glfwSetMouseButtonCallback(window,
-            [](GLFWwindow* window, int button, int action, int mods) {
-                callback_static(window, button, action, mods);
-            }
-        );
-        assert(old == nullptr);
+        setCursorPosCallback([this](GLFWwindow* window, double x, double y) {
+            customCursorPosCallback(this, window, x, y);
+            });
+        glfwSetCursorPosCallback(window, cursorPosCallback);
     }
 }
 
@@ -113,13 +123,10 @@ void Presentation::detachFromWindow(WindowInfo* wi, ContinuationInfo* contInfo)
     endPresentation(wi);
 }
 
-void Presentation::reuseWindow(WindowInfo* wi, ContinuationInfo* contInfo)
+void Presentation::reuseWindow(WindowInfo* wi, ContinuationInfo* contInfo, bool handleKeyEvents, bool handleMouseMoveEevents, bool handleMouseButtonEvents)
 {
     if (contInfo->windowInfo.glfw_window == nullptr) {
         Error("cannot reuse window without glfw window");
-    }
-    if (wi->swapChain == nullptr) {
-        //Error("cannot reuse window without swap chain");
     }
     Log("reuse window\n");
     wi->glfw_window = contInfo->windowInfo.glfw_window;
@@ -130,14 +137,7 @@ void Presentation::reuseWindow(WindowInfo* wi, ContinuationInfo* contInfo)
     if (glfwCreateWindowSurface(engine->globalRendering.vkInstance, wi->glfw_window, nullptr, &wi->surface) != VK_SUCCESS) {
         Error("failed to create window surface!");
     }
-    bool handleKeyEvents = true;
-    bool handleMouseMoveEevents = true;
-    bool handleMouseButtonEvents = true;
     initializeCallbacks(wi->glfw_window, handleKeyEvents, handleMouseMoveEevents, handleMouseButtonEvents);
-    // we need to recreate the swap chain
-    //destroyWindowResources(wi, false);
-    //createWindow(wi, wi->width, wi->height, wi->title.c_str());
-    //enableWindowOutput(wi);
 }
 
 void Presentation::createWindow(WindowInfo* winfo, int w, int h, const char* name,

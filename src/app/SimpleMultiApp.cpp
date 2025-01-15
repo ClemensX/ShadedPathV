@@ -8,7 +8,7 @@ void SimpleMultiApp::prepareFrame(FrameInfo* fi) {
 
 void SimpleMultiApp::mainThreadHook() {
     if (lastFrameNum >= 4 && window1.glfw_window == nullptr && !window1wasopened) {
-        reuseWindow("Multi App Window");
+        createWindow("Multi App Window");
         window1wasopened = true;
         imageConsumer->setWindow(&window1);
         engine->setImageConsumer(imageConsumer);
@@ -56,7 +56,7 @@ bool SimpleMultiApp::shouldClose() {
     return shouldStopEngine;
 }
 
-void SimpleMultiApp::reuseWindow(const char* title) {
+void SimpleMultiApp::createWindow(const char* title) {
     Log("reuseWindow " << title << std::endl);
     int win_width = 480;
     engine->presentation.createWindow(&window1, win_width, (int)(win_width / 1.77f), title);
