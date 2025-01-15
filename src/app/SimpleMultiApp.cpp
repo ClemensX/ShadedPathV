@@ -3,22 +3,15 @@
 
 void SimpleMultiApp::prepareFrame(FrameInfo* fi) {
     if (!engine->isSingleThreadMode()) assert(false == engine->isMainThread());
-
-    //Log("prepareFrame " << fi->frameNum << std::endl);
-    if (fi->frameNum >= 10) {
-        //shouldStop = true;
-    }
     lastFrameNum = fi->frameNum;
 };
 
 void SimpleMultiApp::mainThreadHook() {
     if (lastFrameNum >= 4 && window1.glfw_window == nullptr && !window1wasopened) {
-        openWindow("Multi App Window");
+        reuseWindow("Multi App Window");
         window1wasopened = true;
         imageConsumer->setWindow(&window1);
         engine->setImageConsumer(imageConsumer);
-    }
-    if (lastFrameNum >= 2000 && window1.glfw_window != nullptr && window1.swapChain == nullptr) {
     }
 }
 
@@ -35,7 +28,7 @@ void SimpleMultiApp::drawFrame(FrameInfo* fi, int topic) {
 };
 
 void SimpleMultiApp::run(ContinuationInfo* cont) {
-    Log("TestApp started - press Q to start next application!!\n");
+    Log("WARNING: TestApp started - press Q to start next application!!\n");
     Log(" run thread: ");
     engine->log_current_thread();
     di.setEngine(engine);
@@ -45,8 +38,6 @@ void SimpleMultiApp::run(ContinuationInfo* cont) {
     di.openForCPUWriteAccess(gpui, &directImage);
     ImageConsumerWindow icw(engine);
     imageConsumer = &icw;
-
-    //openWindow("Window SimpleApp");
 
     engine->eventLoop();
 
@@ -65,8 +56,8 @@ bool SimpleMultiApp::shouldClose() {
     return shouldStopEngine;
 }
 
-void SimpleMultiApp::openWindow(const char* title) {
-    Log("openWindow " << title << std::endl);
+void SimpleMultiApp::reuseWindow(const char* title) {
+    Log("reuseWindow " << title << std::endl);
     int win_width = 480;
     engine->presentation.createWindow(&window1, win_width, (int)(win_width / 1.77f), title);
     engine->enablePresentation(&window1);
@@ -90,7 +81,7 @@ void SimpleMultiApp::handleInput(InputState& inputState)
         auto action = inputState.action;
         auto mods = inputState.mods;
         const bool press = action != GLFW_RELEASE;
-        if (key == GLFW_KEY_Q && press) {
+        if (key == GLFW_KEY_Q && !press) {
             shouldStopEngine = true;
         }
     }
@@ -99,22 +90,15 @@ void SimpleMultiApp::handleInput(InputState& inputState)
 // app2 
 void SimpleMultiApp2::prepareFrame(FrameInfo* fi) {
     if (!engine->isSingleThreadMode()) assert(false == engine->isMainThread());
-
-    //Log("prepareFrame " << fi->frameNum << std::endl);
-    if (fi->frameNum >= 10) {
-        //shouldStop = true;
-    }
     lastFrameNum = fi->frameNum;
 };
 
 void SimpleMultiApp2::mainThreadHook() {
     if (lastFrameNum >= 4 && window1.glfw_window == nullptr && !window1wasopened) {
-        openWindow("Multi App Window");
+        reuseWindow("Multi App Window");
         window1wasopened = true;
         imageConsumer->setWindow(&window1);
         engine->setImageConsumer(imageConsumer);
-    }
-    if (lastFrameNum >= 2000 && window1.glfw_window != nullptr && window1.swapChain == nullptr) {
     }
 }
 
@@ -137,42 +121,32 @@ void SimpleMultiApp2::run(ContinuationInfo* cont) {
     di.setEngine(engine);
     engine->configureParallelAppDrawCalls(2);
 
-    if (true) {
-        if (engine->getContinuationInfo() != nullptr) {
-            Log("This app should continue in same glfw window that the app before!\n");
-        }
-        gpui = engine->createImage("Test Image");
-        engine->globalRendering.createDumpImage(directImage);
-        di.openForCPUWriteAccess(gpui, &directImage);
-        ImageConsumerWindow icw(engine);
-        imageConsumer = &icw;
-
-        //openWindow("Window SimpleApp");
-
-        engine->eventLoop();
-
-        // cleanup
-        di.closeCPUWriteAccess(gpui, &directImage);
-        engine->globalRendering.destroyImage(&directImage);
-    } else {
-        // we don't want to continue with 2nd app
-        Log("ERROR: app cannot continue\n");
+    if (engine->getContinuationInfo() == nullptr) {
+        Error("No existing window found. This app should continue in same glfw window that the app before!\n");
     }
+    gpui = engine->createImage("Test Image");
+    engine->globalRendering.createDumpImage(directImage);
+    di.openForCPUWriteAccess(gpui, &directImage);
+    ImageConsumerWindow icw(engine);
+    imageConsumer = &icw;
 
+    engine->eventLoop();
+
+    // cleanup
+    di.closeCPUWriteAccess(gpui, &directImage);
+    engine->globalRendering.destroyImage(&directImage);
 };
 
 bool SimpleMultiApp2::shouldClose() {
     return shouldStopEngine;
 }
 
-void SimpleMultiApp2::openWindow(const char* title) {
-    Log("open or reuse Window " << title << std::endl);
-    if (engine->getContinuationInfo() != nullptr) {
-        engine->presentation.reuseWindow(&window1, engine->getContinuationInfo());
-    } else {
-        int win_width = 480;
-        engine->presentation.createWindow(&window1, win_width, (int)(win_width / 1.77f), title);
+void SimpleMultiApp2::reuseWindow(const char* title) {
+    Log("reuse Window " << title << std::endl);
+    if (engine->getContinuationInfo() == nullptr) {
+        Error("No continuation info found. Reusing existing window not possible.\n");
     }
+    engine->presentation.reuseWindow(&window1, engine->getContinuationInfo());
     engine->enablePresentation(&window1);
     engine->enableWindowOutput(&window1);
 }
@@ -181,10 +155,62 @@ void SimpleMultiApp2::handleInput(InputState& inputState)
 {
     assert(engine->isMainThread());
     if (inputState.windowClosed != nullptr) {
-        if (inputState.windowClosed == &window1) {
-            //Log("Window 1 shouldclosed\n");
-        }
         inputState.windowClosed = nullptr;
         shouldStopEngine = true;
     }
+    if (inputState.keyEvent) {
+        Log("key pressed: " << inputState.key << std::endl);
+        auto key = inputState.key;
+        auto action = inputState.action;
+        auto mods = inputState.mods;
+        const bool press = action != GLFW_RELEASE;
+        if (key == GLFW_KEY_Q && !press) {
+            shouldStopEngine = true;
+        }
+    }
+}
+
+// define main method here, to prevent ShadedPathV.cpp from being complex
+int mainSimpleMultiApp()
+{
+    Log("WARNING: multi app example, press q to exit first app and start the next. Window close will end everything!\n");
+    ShadedPathEngine engine;
+    engine
+        .setEnableLines(true)
+        .setDebugWindowPosition(true)
+        .setEnableUI(true)
+        .setEnableSound(true)
+        .setVR(false)
+        //.setSingleThreadMode(true)
+        .overrideCPUCores(4)
+        ;
+
+
+    //engine.setFixedPhysicalDeviceIndex(0);
+    engine.initGlobal();
+    SimpleMultiApp app;
+    ContinuationInfo cont;
+    engine.registerApp((ShadedPathApplication*)&app);
+    engine.app->run(&cont);
+    if (cont.cont) {
+        SimpleMultiApp2 app2;
+        ShadedPathEngine engine;
+        engine
+            .setContinuationInfo(&cont)
+            .setEnableLines(true)
+            .setDebugWindowPosition(true)
+            .setEnableUI(true)
+            .setEnableSound(true)
+            .setVR(false)
+            //.setSingleThreadMode(true)
+            .overrideCPUCores(4)
+            ;
+        engine.initGlobal();
+        engine.registerApp((ShadedPathApplication*)&app2);
+        
+        cont.cont = false; // uncomment for chained app execution:
+        engine.app->run(&cont);
+
+    }
+    return 0;
 }

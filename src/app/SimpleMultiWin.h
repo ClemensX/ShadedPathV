@@ -1,4 +1,8 @@
 #pragma once
+
+// Use this example with care. It is a basic test for using mutiple windows with one app.
+// Currently produces validation warnings if a window is removed from render queue.
+// It is not recommended to use this as a base for your application.
 class SimpleMultiWin : public ShadedPathApplication
 {
 public:
@@ -15,7 +19,7 @@ private:
     DirectImage di;
     GPUImage* gpui = nullptr;
     GPUImage directImage;
-    void openWindow(const char* title);
+    void reuseWindow(const char* title);
     void openAnotherWindow(const char* title);
     WindowInfo window1;
     WindowInfo window2;
@@ -30,3 +34,5 @@ private:
     //    void handleInput(InputState& inputState) override {
     //    };
 };
+
+int mainSimpleMultiWin();

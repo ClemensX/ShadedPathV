@@ -1,6 +1,10 @@
 #include "mainheader.h"
 #include "SimpleMultiWin.h"
 
+// Use this example with care. It is a basic test for using mutiple windows with one app.
+// Currently produces validation warnings if a window is removed from render queue.
+// It is not recommended to use this as a base for your application.
+
 void SimpleMultiWin::prepareFrame(FrameInfo* fi) {
     if (!engine->isSingleThreadMode()) assert(false == engine->isMainThread());
 
@@ -13,7 +17,7 @@ void SimpleMultiWin::prepareFrame(FrameInfo* fi) {
 
 void SimpleMultiWin::mainThreadHook() {
     if (lastFrameNum >= 4 && window1.glfw_window == nullptr && !window1wasopened) {
-        openWindow("Window Frame 4");
+        reuseWindow("Window Frame 4");
         window1wasopened = true;
     }
     if (lastFrameNum >= 8 && window2.glfw_window == nullptr && !window2wasopened) {
@@ -23,13 +27,13 @@ void SimpleMultiWin::mainThreadHook() {
         engine->setImageConsumer(imageConsumer);
     }
     if (lastFrameNum >= 1000 && window2.glfw_window != nullptr && window2.swapChain) {
-        Log("Terminate win 2 presentation");
+        Log("Terminate win 2 Image consumer\n");
         engine->setImageConsumer(&imageConsumerNullify);
         window2.disabled = true;
         engine->presentation.windowInfo = &window1;
     }
     if (lastFrameNum >= 1500 && window2.glfw_window != nullptr && window2.swapChain) {
-        Log("Terminate win 2 presentation");
+        Log("Terminate win 2 presentation\n");
         //engine->setImageConsumer(&imageConsumerNullify);
         engine->presentation.endPresentation(&window2);
     }
@@ -78,8 +82,8 @@ bool SimpleMultiWin::shouldClose() {
     return shouldStopEngine;
 }
 
-void SimpleMultiWin::openWindow(const char* title) {
-    Log("openWindow " << title << std::endl);
+void SimpleMultiWin::reuseWindow(const char* title) {
+    Log("reuseWindow " << title << std::endl);
     int win_width = 960;//480;// 960;//1800;// 800;//3700; // 2500
     engine->presentation.createWindow(&window1, win_width, (int)(win_width / 1.77f), title);
     engine->enablePresentation(&window1);
@@ -88,7 +92,7 @@ void SimpleMultiWin::openWindow(const char* title) {
 }
 
 void SimpleMultiWin::openAnotherWindow(const char* title) {
-    Log("openWindow " << title << std::endl);
+    Log("reuseWindow " << title << std::endl);
     int win_width = 480;
     engine->presentation.createWindow(&window2, win_width, (int)(win_width / 1.77f), title);
     engine->enablePresentation(&window2);
@@ -108,4 +112,26 @@ void SimpleMultiWin::handleInput(InputState& inputState)
         inputState.windowClosed = nullptr;
         shouldStopEngine = true;
     }
+}
+
+int mainSimpleMultiWin() {
+    Log("ShadedPathV app\n");
+    ShadedPathEngine engine;
+    engine
+        .setEnableLines(true)
+        .setDebugWindowPosition(true)
+        .setEnableUI(true)
+        .setEnableSound(true)
+        .setVR(false)
+        //.setSingleThreadMode(true)
+        .overrideCPUCores(4)
+        ;
+
+
+    //engine.setFixedPhysicalDeviceIndex(0);
+    engine.initGlobal();
+    SimpleMultiWin app;
+    engine.registerApp((ShadedPathApplication*)&app);
+    engine.app->run();
+    return 0;
 }

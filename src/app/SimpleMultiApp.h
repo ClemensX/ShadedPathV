@@ -15,7 +15,7 @@ private:
     DirectImage di;
     GPUImage* gpui = nullptr;
     GPUImage directImage;
-    void openWindow(const char* title);
+    void reuseWindow(const char* title);
     WindowInfo window1;
     bool window1wasopened = false;
     ImageConsumerWindow *imageConsumer = nullptr;
@@ -39,9 +39,11 @@ private:
     DirectImage di;
     GPUImage* gpui = nullptr;
     GPUImage directImage;
-    void openWindow(const char* title);
+    void reuseWindow(const char* title);
     WindowInfo window1;
     bool window1wasopened = false;
     ImageConsumerWindow* imageConsumer = nullptr;
     ImageConsumerNullify imageConsumerNullify;
 };
+
+int mainSimpleMultiApp();

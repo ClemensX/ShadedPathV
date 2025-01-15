@@ -7,6 +7,9 @@ void glfwErrorCallback(int error, const char* description) {
     //cerr << "GLFW Error (" << error << "): " << description << endl;
 }
 
+// Initialize the static member
+std::function<void(GLFWwindow*, int, int, int, int)> Presentation::currentKeyCallback = nullptr;
+
 Presentation::Presentation(ShadedPathEngine* s) {
     Log("Presentation c'tor\n");
     setEngine(s);
@@ -27,9 +30,32 @@ Presentation::~Presentation()
     }
 }
 
+void customKeyCallback(Presentation* presentation, GLFWwindow* window, int key, int scancode, int action, int mods) {
+    // Custom key handling logic
+    //presentation->keyCallback(window, key, scancode, action, mods);
+    presentation->callbackKey(window, key, scancode, action, mods);
+}
+
+void Presentation::setKeyCallback(std::function<void(GLFWwindow*, int, int, int, int)> callback) {
+    currentKeyCallback = callback;
+}
+
+void Presentation::keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (currentKeyCallback) {
+        currentKeyCallback(window, key, scancode, action, mods);
+    }
+}
+
 void Presentation::initializeCallbacks(GLFWwindow* window, bool handleKeyEvents, bool handleMouseMoveEvents, bool handleMouseButtonEvents) {
     // init callbacks: we assume that no other callback was installed (yet)
     if (handleKeyEvents) {
+        setKeyCallback([this](GLFWwindow* window, int key, int scancode, int action, int mods) {
+            customKeyCallback(this, window, key, scancode, action, mods);
+            });
+        glfwSetKeyCallback(window, keyCallback);
+    }
+
+    if (handleKeyEvents && false) {
         // we need a static member function that can be registered with glfw:
         // static auto callback = bind(&Presentation::key_callbackMember, this, placeholders::_1, placeholders::_2, placeholders::_3, placeholders::_4, placeholders::_5);
         // the above works, but can be done more elegantly with a lambda expression:
