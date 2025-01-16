@@ -5,7 +5,38 @@
 using namespace std;
 using namespace glm;
 
-void LineApp::run()
+void LineApp::mainThreadHook()
+{
+}
+
+void LineApp::prepareFrame(FrameInfo* fi)
+{
+}
+
+void LineApp::drawFrame(FrameInfo* fi, int topic)
+{
+}
+
+void LineApp::run(ContinuationInfo* cont)
+{
+    Log("LineApp start\n");
+    //di.setEngine(engine);
+    engine->configureParallelAppDrawCalls(2);
+    engine->eventLoop();
+
+    // cleanup
+}
+
+bool LineApp::shouldClose()
+{
+    return false;
+}
+
+void LineApp::handleInput(InputState& inputState)
+{
+}
+
+/*void LineApp::run()
 {
     Log("SimpleApp started" << endl);
     {
@@ -188,3 +219,4 @@ void LineApp::handleInput(InputState& inputState)
 {
     AppSupport::handleInput(inputState);
 }
+*/

@@ -24,7 +24,7 @@ add_executable(app
 #   gltfTerrainApp.cpp
 #   LandscapeDemo1.cpp
 #   LandscapeGenerator.cpp
-#   LineApp.cpp
+   LineApp.cpp
 #   SimpleApp.cpp
 #   Incoming.cpp
 #   TextureViewer.cpp

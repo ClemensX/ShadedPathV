@@ -1,5 +1,5 @@
 #pragma once
-#if defined(OPENXR_AVAILABLE)
+#if defined(OPENXR_AVAILABLEXXX)
 // OpenXR VR implementation, see https://github.com/KhronosGroup/OpenXR-SDK-Source.git
 enum GraphicsAPI_Type : uint8_t {
 	UNKNOWN,
@@ -166,11 +166,12 @@ private:
 	RenderLayerInfo renderLayerInfo;
 };
 #else
-class VR
+class VR : public EngineParticipant
 {
 	public:
-		VR(ShadedPathEngine& s) : engine(s) {
+		VR(ShadedPathEngine* s) {
 			Log("VR c'tor\n");
+			setEngine(s);
 		};
 		~VR(){};
 	// VR has to be initialized before Vulkan instance creation
@@ -202,7 +203,6 @@ class VR
 	}
 	void create() {};
 private:
-		ShadedPathEngine& engine;
 		CameraPositioner_HMD* positioner = nullptr;
 };
 #endif

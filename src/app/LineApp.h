@@ -1,17 +1,23 @@
 #pragma once
 
-// siple app only rendering lines with LineShader
+// simple app only rendering lines with LineShader
 class LineApp : ShadedPathApplication, public AppSupport
 {
 public:
-    void init();
-    void run();
-    void drawFrame(ThreadResources& tr) override;
+    void mainThreadHook() override;
+    void prepareFrame(FrameInfo* fi) override;
+    void drawFrame(FrameInfo* fi, int topic) override;
+    void run(ContinuationInfo* cont) override;
+    bool shouldClose() override;
     void handleInput(InputState& inputState) override;
+    //void init();
+    //void run();
+    //void drawFrame(ThreadResources& tr) override;
+    //void handleInput(InputState& inputState) override;
 private:
-    void updatePerFrame(ThreadResources& tr);
+    //void updatePerFrame(ThreadResources& tr);
 
-    // implent square formed of lines
+    // implement square formed of lines
     // it is increased on every call by one more square slightly above the others
     void increaseLineStack(std::vector<LineDef>& lines);
     int currentLineStackCount = 0;

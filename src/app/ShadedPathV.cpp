@@ -1,13 +1,14 @@
 // ShadedPathV.cpp : This file contains the 'main' function. Program execution begins and ends there.
 
 #include "mainheader.h"
+#include "AppSupport.h"
 #include "SimpleMultiApp.h"
 #include "SimpleMultiWin.h"
 //#include "AppSupport.h"
 //#include "LandscapeGenerator.h"
 //#include "SimpleApp.h"
 //#include "DeviceCoordApp.h"
-//#include "LineApp.h"
+#include "LineApp.h"
 //#include "gltfObjectsApp.h"
 //#include "gltfTerrainApp.h"
 //#include "GeneratedTexturesApp.h"
@@ -20,6 +21,25 @@
 int main()
 {
     //mainSimpleMultiWin(); // use with care, see notes in SimpleMultiWin.h
-    mainSimpleMultiApp();
+    //mainSimpleMultiApp(); return 0;
+
+    LineApp app;
+
+    Log("main() start!\n");
+    ShadedPathEngine engine;
+    engine
+        .setEnableLines(true)
+        .setDebugWindowPosition(true)
+        .setEnableUI(true)
+        .setEnableSound(true)
+        .setVR(false)
+        //.setSingleThreadMode(true)
+        .overrideCPUCores(4)
+        ;
+
+    engine.initGlobal();
+    ContinuationInfo cont;
+    engine.registerApp((ShadedPathApplication*)&app);
+    engine.app->run(&cont);
 }
 

@@ -4,7 +4,7 @@
 
 // all applications must implement this class and register with engine.
 // All callback methods are defined here
-class ShadedPathApplication
+class ShadedPathApplication : public EngineParticipant
 {
 public:
     // called from multiple threads, only local resources should be changed
@@ -21,12 +21,8 @@ public:
     virtual void buildCustomUI() {};
     virtual bool shouldClose() { return true; };
     virtual void run(ContinuationInfo* cont = nullptr) {};
-    void registerEngine(ShadedPathEngine* engine) {
-        this->engine = engine;
-    }
 protected:
     double old_seconds = 0.0f;
-    ShadedPathEngine* engine = nullptr;
 };
 
 class ShadedPathEngine
@@ -37,8 +33,8 @@ public:
         presentation(this),
         threadsMain(0),
         //shaders(*this),
-        util(this)
-        //vr(this)
+        util(this),
+        vr(this)
     {
         Log("Engine c'tor\n");
 #if defined (USE_FIXED_PHYSICAL_DEVICE_INDEX)
@@ -90,11 +86,12 @@ public:
     ShadedPathApplication* app = nullptr;
     void registerApp(ShadedPathApplication* app) {
         this->app = app;
-        app->registerEngine(this);
+        app->setEngine(this);
     }
     ShadedPathApplication* getApp() {
         return app;
     }
+    std::string appname = "ShadedPath Engine";
 
     // run the main loop, called from app
     void eventLoop();
@@ -173,15 +170,15 @@ public:
         enabledMousButtonEvents = true;
     }
 
-    //// application should set this in init() for any shader that needs world info
-    //void setWorld(World* world) {
-    //    this->world = world;
-    //}
+    // application should set this in init() for any shader that needs world info
+    void setWorld(World* world) {
+        this->world = world;
+    }
 
-    //// if app did not set world, we return nullptr
-    //World* getWorld() {
-    //    return world;
-    //}
+    // if app did not set world, we return nullptr
+    World* getWorld() {
+        return world;
+    }
 
     ////ThreadInfo mainThreadInfo;
 
@@ -227,11 +224,11 @@ public:
     }
 
     // init global resources. will only be available once
-    void initGlobal();
+    void initGlobal(std::string appname = "");
     GlobalRendering globalRendering;
     Util util;
     //Shaders shaders;
-    //VR vr;
+    VR vr;
     //TextureStore textureStore;
 
     // non-Vulkan members

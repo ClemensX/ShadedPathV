@@ -7,8 +7,12 @@
 // move functionality from app code to this class if it is useful to more than one app.
 // Apps need to subclass this class to be able to use it.
 
-class AppSupport : public EngineParticipant
+class AppSupport
 {
+public:
+    void setEngine(ShadedPathEngine* e) {
+        app_engine = e;
+    }
 protected:
     bool enableLines = true;
     bool enableUI = false;
@@ -29,11 +33,11 @@ protected:
     bool activePositionerIsHMD = false;
 
     void createFirstPersonCameraPositioner(const glm::vec3& pos, const glm::vec3& target, const glm::vec3& up) {
-        fpPositioner.init(engine, pos, target, up);
+        fpPositioner.init(app_engine, pos, target, up);
         //fpPositioner.camAboveGround = 0.1f;
     }
     void createHMDCameraPositioner(const glm::vec3& pos, const glm::vec3& target, const glm::vec3& up) {
-        hmdPositioner.init(engine, pos, target, up);
+        hmdPositioner.init(app_engine, pos, target, up);
     }
     CameraPositioner_FirstPerson* getFirstPersonCameraPositioner() {
         return &fpPositioner;
@@ -42,7 +46,7 @@ protected:
         return &hmdPositioner;
     }
     void initCamera() {
-        camera2.setEngine(engine);
+        camera2.setEngine(app_engine);
         getHMDCameraPositioner()->setCamera(&camera2);
         if (vr) {
             camera2.changePositioner(&hmdPositioner);
@@ -86,65 +90,57 @@ protected:
         }
     }
     void enableEventsAndModes() {
-        engine->enableKeyEvents();
-        engine->enableMousButtonEvents();
-        engine->enableMouseMoveEvents();
+        app_engine->enableKeyEvents();
+        app_engine->enableMousButtonEvents();
+        app_engine->enableMouseMoveEvents();
         if (vr) {
-            engine->enableVR();
+            app_engine->enableVR();
         }
         if (stereo) {
-            engine->enableStereo();
-            engine->enableStereoPresentation();
+            app_engine->setStereo(true);
+            app_engine->enableStereoPresentation();
         }
         if (enableRenderDoc) {
-            engine->setFixedPhysicalDeviceIndex(0);
+            app_engine->setFixedPhysicalDeviceIndex(0);
         }
     }
     void initEngine(std::string name) {
-        if (engine->isVR()) {
-            engine->vr.SetPositioner(getHMDCameraPositioner());
-            engine->setFramesInFlight(1);
+        if (app_engine->isVR()) {
+            app_engine->vr.SetPositioner(getHMDCameraPositioner());
+            app_engine->setFramesInFlight(1);
         }
         else {
-            engine->setFramesInFlight(2);
+            app_engine->setFramesInFlight(2);
         }
-        if (enableSound) engine->enableSound();
-        if (singleThreadMode) engine->setThreadModeSingle();
-        if (debugWindowPosition) engine->debugWindowPosition = true;
+        if (enableSound) app_engine->setEnableSound(true);
+        if (singleThreadMode) app_engine->setSingleThreadMode(true);
+        if (debugWindowPosition) app_engine->setDebugWindowPosition(true);
 
         // engine initialization
-        engine->init(name);
+        app_engine->initGlobal(name);
         // even if we wanted VR initialization may have failed, fallback to non-VR
-        if (!engine->isVR()) {
+        if (!app_engine->isVR()) {
             camera->changePositioner(&fpPositioner);
             activePositionerIsHMD = false;
         }
-        engine->setWorld(&world);
+        app_engine->setWorld(&world);
     }
     void eventLoop() {
-        // some shaders may need additional preparation
-        engine->prepareDrawing();
-
-
-        // rendering
-        while (!engine->shouldClose()) {
-            engine->pollEvents();
-            engine->drawFrame();
-        }
-        engine->waitUntilShutdown();
+        app_engine->eventLoop();
     }
-    void postUpdatePerFrame(ThreadResources& tr) {
-        if (enableSound && engine->isDedicatedRenderUpdateThread(tr)) {
-            engine->sound.Update(camera);
-        }
-    }
+
+    //void postUpdatePerFrame(ThreadResources& tr) {
+    //    if (enableSound && engine->isDedicatedRenderUpdateThread(tr)) {
+    //        engine->sound.Update(camera);
+    //    }
+    //}
     void logCameraPosition() {
         auto p = camera->getPosition();
         Log("Camera position: " << p.x << " / " << p.y << " / " << p.z << std::endl);
     }
 
     glm::mat4* getProjection() {
-        if (!engine->isVR()) {
+        if (!app_engine->isVR()) {
             if (fpProjectionInitialized)
                 return &fpProjection;
             else {
@@ -163,15 +159,16 @@ protected:
     }
     void setHighBackbufferResolution() {
         if (vr) {
-            engine->setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
+            app_engine->setBackBufferResolution(ShadedPathEngine::Resolution::Invalid);
         } else {
-            engine->setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
+            app_engine->setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         }
     }
 private:
     // fixed projection matrix for first person camera
     glm::mat4 fpProjection = glm::mat4(1.0f); // identity matrix
     bool fpProjectionInitialized = false;
+    ShadedPathEngine* app_engine = nullptr;
 };
 
 #endif // APPSUPPORT_H

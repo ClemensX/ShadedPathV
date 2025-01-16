@@ -2,7 +2,10 @@
 
 using namespace std;
 
-void ShadedPathEngine::initGlobal() {
+void ShadedPathEngine::initGlobal(string appname) {
+    if (!appname.empty()) {
+        this->appname = appname;
+    }
     Log("initGlobal\n");
     Log("engine absolute start time (hours and fraction): " << gameTime.getTimeSystemClock() << endl);
     ThemedTimer::getInstance()->create(TIMER_DRAW_FRAME, 1000);
@@ -36,8 +39,11 @@ void ShadedPathEngine::initGlobal() {
 
     }
 
+    vr.init();
     globalRendering.init();
-    //globalRendering.initAfterPresentation();
+    //textureStore.init(this, maxTextures);
+    //meshStore.init(this);
+    //if (soundEnabled) sound.init();
     initialized = true;
 }
 
