@@ -8,7 +8,7 @@ class SimpleMultiWin : public ShadedPathApplication
 public:
     void mainThreadHook() override;
     void prepareFrame(FrameInfo* fi) override;
-    void drawFrame(FrameInfo* fi, int topic) override;
+    void drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult) override;
     void run(ContinuationInfo* cont = nullptr) override;
     bool shouldClose() override;
     void handleInput(InputState& inputState) override;

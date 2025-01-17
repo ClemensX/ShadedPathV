@@ -17,7 +17,7 @@ public:
     virtual void prepareFrame(FrameInfo* fi) {};
     // draw Frame depending on topic. is in range 0..appDrawCalls-1
     // each topic will be called in parallel threads
-    virtual void drawFrame(FrameInfo* fi, int topic) {};
+    virtual void drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult) {};
     virtual void buildCustomUI() {};
     virtual bool shouldClose() { return true; };
     virtual void run(ContinuationInfo* cont = nullptr) {};
@@ -51,20 +51,20 @@ public:
     virtual ~ShadedPathEngine();
 
     // chain setters
-    ShadedPathEngine& setEnableLines(bool enable) { enableLines = enable; return *this; }
-    ShadedPathEngine& setEnableUI(bool enable) { enableUI = enable; return *this; }
-    ShadedPathEngine& setVR(bool enable) { enableVr = enable; return *this; }
-    ShadedPathEngine& setStereo(bool enable) { enableStereo = enable; return *this; }
-    ShadedPathEngine& setEnableSound(bool enable) { enableSound = enable; return *this; }
+    ShadedPathEngine& setEnableLines(bool enable) { fii(); enableLines = enable; return *this; }
+    ShadedPathEngine& setEnableUI(bool enable) { fii(); enableUI = enable; return *this; }
+    ShadedPathEngine& setVR(bool enable) { fii(); enableVr = enable; return *this; }
+    ShadedPathEngine& setStereo(bool enable) { fii(); enableStereo = enable; return *this; }
+    ShadedPathEngine& setEnableSound(bool enable) { fii(); enableSound = enable; return *this; }
     // default is multi thread mode - use this for all in one single thread
     // will disable render threads and global update thread
-    ShadedPathEngine& setSingleThreadMode(bool enable) { singleThreadMode = enable; return *this; }
-    ShadedPathEngine& setDebugWindowPosition(bool enable) { debugWindowPosition = enable; return *this; }
-    ShadedPathEngine& setEnableRenderDoc(bool enable) { enableRenderDoc = enable; return *this; }
+    ShadedPathEngine& setSingleThreadMode(bool enable) { fii(); singleThreadMode = enable; return *this; }
+    ShadedPathEngine& setDebugWindowPosition(bool enable) { fii(); debugWindowPosition = enable; return *this; }
+    ShadedPathEngine& setEnableRenderDoc(bool enable) { fii(); enableRenderDoc = enable; return *this; }
     ShadedPathEngine& setImageConsumer(ImageConsumer* c) { imageConsumer = c; return *this; }
     // how many draw calls should be done in parallel. App will be called with topic counter in range 0..appDrawCalls-1 to be able to separate the work
-    ShadedPathEngine& configureParallelAppDrawCalls(int num) { appDrawCalls = num; return *this; }
-    ShadedPathEngine& overrideCPUCores(int usedCores) { overrideUsedCores = usedCores; return *this; }
+    ShadedPathEngine& configureParallelAppDrawCalls(int num) { fii(); appDrawCalls = num; return *this; }
+    ShadedPathEngine& overrideCPUCores(int usedCores) { fii(); overrideUsedCores = usedCores; return *this; }
     ShadedPathEngine& setContinuationInfo(ContinuationInfo* cont) { continuationInfo = cont; return *this; }
 
     // getters
@@ -223,7 +223,8 @@ public:
         return threadsWorker;
     }
 
-    // init global resources. will only be available once
+    // init global resources. will only be available once. Many engine parameters
+    // are not allowed to change after this call
     void initGlobal(std::string appname = "");
     GlobalRendering globalRendering;
     Util util;
@@ -300,7 +301,7 @@ private:
     long getNextFrameNumber();
     // beware! current draw frame info is only valid during frame creation (preFrame() to postFrame())
     FrameInfo* currentFrameInfo = nullptr;
-    FrameInfo frameInfos[2];
+    FrameInfo frameInfos[2]; // only 2 frame infos needed for alternating during draw calls, initialized in initGlobal()
     // in single thread mode handle post processing (consume image, advance sound, etc.)
     void singleThreadPostFrame();
     void initFrame(FrameInfo* fi, long frameNum);
@@ -316,4 +317,10 @@ private:
     void startUpdateThread();
     std::vector<WindowInfo*> windowInfos;
     ContinuationInfo* continuationInfo = nullptr;
+    // fail if initialized. Util method for checking failing if engine is already initialized
+    void fii() {
+        if (initialized) {
+            Error("Engine already initialized. Cannot change this parameter after initialization\n");
+        }
+    }
 };

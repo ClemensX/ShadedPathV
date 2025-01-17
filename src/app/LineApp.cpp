@@ -13,7 +13,7 @@ void LineApp::prepareFrame(FrameInfo* fi)
 {
 }
 
-void LineApp::drawFrame(FrameInfo* fi, int topic)
+void LineApp::drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult)
 {
 }
 
@@ -21,7 +21,6 @@ void LineApp::run(ContinuationInfo* cont)
 {
     Log("LineApp start\n");
     //di.setEngine(engine);
-    engine->configureParallelAppDrawCalls(2);
     engine->eventLoop();
 
     // cleanup

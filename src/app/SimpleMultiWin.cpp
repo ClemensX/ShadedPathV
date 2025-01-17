@@ -45,7 +45,7 @@ void SimpleMultiWin::mainThreadHook() {
 }
 
 // drawFrame is called for each topic in parallel!! Beware!
-void SimpleMultiWin::drawFrame(FrameInfo* fi, int topic) {
+void SimpleMultiWin::drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult) {
     if (!engine->isSingleThreadMode()) assert(false == engine->isMainThread());
     if (topic == 0) {
         //Log("drawFrame " << fi->frameNum << " topic " << topic << std::endl);
@@ -61,7 +61,6 @@ void SimpleMultiWin::run(ContinuationInfo* cont) {
     Log(" run thread: ");
     engine->log_current_thread();
     di.setEngine(engine);
-    engine->configureParallelAppDrawCalls(2);
     gpui = engine->createImage("Test Image");
     engine->globalRendering.createDumpImage(directImage);
     di.openForCPUWriteAccess(gpui, &directImage);
@@ -125,6 +124,7 @@ int mainSimpleMultiWin() {
         .setVR(false)
         //.setSingleThreadMode(true)
         .overrideCPUCores(4)
+        .configureParallelAppDrawCalls(2)
         ;
 
 

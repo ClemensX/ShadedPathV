@@ -167,7 +167,7 @@ TEST_F(EngineTest, Headless) {
                 }
                 lastFrameNum = fi->frameNum;
             };
-            void drawFrame(FrameInfo* fi, int topic) override {
+            void drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult) override {
                 Log("drawFrame " << fi->frameNum << endl);
                 directImage.rendered = false;
                 engine->util.writeRawImageTestData(directImage, 0);
@@ -414,7 +414,7 @@ TEST_F(EngineImageConsumer, Dump) {
                 }
             };
             // drawFrame is called for each topic in parallel!! Beware!
-            void drawFrame(FrameInfo* fi, int topic) override {
+            void drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult) override {
                 if (topic == 0) {
                     directImage.rendered = false;
                     engine->util.writeRawImageTestData(directImage, 0);
@@ -459,6 +459,56 @@ TEST_F(EngineImageConsumer, Dump) {
     EXPECT_EQ(log.searchForLine("WARNING: No image consumer set, defaulting to discarding image"), -1);
     // TODO: check that dumping and drawing is done in parallel
     // TODO: check for dumped images
+}
+
+TEST(CommandBufferIterator, Count) {
+    FrameInfo fi;
+    //for (auto& commandBuffer : fi) {
+    //    // should not enter here
+    //    EXPECT_TRUE(false);
+    //}
+    // simple cases
+    EXPECT_EQ(0, fi.countCommandBuffers());
+    DrawResult dr1, dr2;
+
+    // init all command buffers to nullptr
+    for (auto& commandBuffer : dr1.commandBuffers) {
+        commandBuffer = nullptr;
+    }
+    for (auto& commandBuffer : dr2.commandBuffers) {
+        commandBuffer = nullptr;
+    }
+
+    // 1 draw result with 1 command buffer
+    dr1.commandBuffers[0] = (VkCommandBuffer)0xcaffee;
+    fi.drawResults.push_back(dr1);
+    EXPECT_EQ(1, fi.countCommandBuffers());
+    fi.drawResults.pop_back(); // remove dr1
+
+    // 1 draw result with 2 command buffers
+    dr1.commandBuffers[1] = (VkCommandBuffer)0xcaffee;
+    fi.drawResults.push_back(dr1);
+    EXPECT_EQ(2, fi.countCommandBuffers());
+    fi.drawResults.pop_back(); // remove dr1
+
+    // 1 draw result with 3 command buffers, but with nullptr in between
+    // nullptr means and of list and should stop iterating
+    dr1.commandBuffers[3] = (VkCommandBuffer)0xcaffee;
+    fi.drawResults.push_back(dr1);
+    EXPECT_EQ(2, fi.countCommandBuffers());
+    fi.drawResults.pop_back(); // remove dr1
+
+    // 2 draw result with 3 command buffers each, but first list has nullptr in between
+    fi.drawResults.push_back(dr1);
+    dr2.commandBuffers[0] = (VkCommandBuffer)0x0042;
+    dr2.commandBuffers[1] = (VkCommandBuffer)0x0042;
+    dr2.commandBuffers[2] = (VkCommandBuffer)0x0042;
+    fi.drawResults.push_back(dr2);
+    EXPECT_EQ(5, fi.countCommandBuffers());
+    fi.drawResults.pop_back(); // remove dr2
+    fi.drawResults.pop_back(); // remove dr1
+
+    // multiple draw results
 }
 
 int main(int argc, char** argv) {

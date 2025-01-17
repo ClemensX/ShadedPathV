@@ -36,9 +36,17 @@ void ShadedPathEngine::initGlobal(string appname) {
         threadsWorker = new ThreadGroup(numCores - 2);
 //        workerFutures = new future<void>[numCores - 2];
         workerFutures.resize(numCores - 2); // Initialize the vector with the appropriate size
-
     }
-
+    // init frame infos:
+    for (int i = 0; i < 2; i++) {
+        frameInfos[i].drawResults.resize(appDrawCalls); // one draw result per draw call topic
+        for (auto& dr : frameInfos[i].drawResults) {
+            dr.image = nullptr;
+            for (auto& cb : dr.commandBuffers) { // initialize command buffers to nullptr
+                cb = nullptr;
+            }
+        }
+    }
     vr.init();
     globalRendering.init();
     //textureStore.init(this, maxTextures);
@@ -243,14 +251,15 @@ void ShadedPathEngine::preFrame()
 void ShadedPathEngine::drawFrame()
 {
     // call app
+    currentFrameInfo->drawFrameDone = false;
     if (singleThreadMode) {
         for (int i = 0; i < appDrawCalls; i++) {
-            app->drawFrame(currentFrameInfo, i);
+            app->drawFrame(currentFrameInfo, i, &currentFrameInfo->drawResults[i]);
         }
     } else {
         for (int i = 0; i < appDrawCalls; i++) {
             workerFutures[i] = threadsWorker->asyncSubmit([this, i] {
-                app->drawFrame(currentFrameInfo, i);
+                app->drawFrame(currentFrameInfo, i, &currentFrameInfo->drawResults[i]);
             });
         }
         // we must wait for all draw calls to finish
@@ -258,10 +267,13 @@ void ShadedPathEngine::drawFrame()
             workerFutures[i].wait();
         }
     }
-    // initiate shader runs via job system
-    if (currentFrameInfo->renderedImage->rendered == false) {
+    // app work is done, we should have a bunch of uncommitted command buffers or a finished image
+    if (currentFrameInfo->renderedImage == nullptr) {
+        Log("WARNING: Image not rendered");
+    } else if (currentFrameInfo->renderedImage->rendered == false) {
         Error("Image not rendered");
     }
+    currentFrameInfo->numCommandBuffers = currentFrameInfo->countCommandBuffers();
     //lastImage = currentFrameInfo->renderedImage; // TODO check
     //return currentFrameInfo->renderedImage;
 }

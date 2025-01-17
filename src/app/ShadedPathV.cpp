@@ -20,7 +20,7 @@
 
 int main()
 {
-    //mainSimpleMultiWin(); // use with care, see notes in SimpleMultiWin.h
+    //mainSimpleMultiWin(); return 0; // use with care, see notes in SimpleMultiWin.h
     //mainSimpleMultiApp(); return 0;
 
     LineApp app;
@@ -35,6 +35,7 @@ int main()
         .setVR(false)
         //.setSingleThreadMode(true)
         .overrideCPUCores(4)
+        .configureParallelAppDrawCalls(2)
         ;
 
     engine.initGlobal();

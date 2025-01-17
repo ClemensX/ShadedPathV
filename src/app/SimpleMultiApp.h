@@ -5,7 +5,7 @@ class SimpleMultiApp : public ShadedPathApplication
 public:
     void mainThreadHook() override;
     void prepareFrame(FrameInfo* fi) override;
-    void drawFrame(FrameInfo* fi, int topic) override;
+    void drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult) override;
     void run(ContinuationInfo* cont) override;
     bool shouldClose() override;
     void handleInput(InputState& inputState) override;
@@ -29,7 +29,7 @@ class SimpleMultiApp2 : public ShadedPathApplication
 public:
     void mainThreadHook() override;
     void prepareFrame(FrameInfo* fi) override;
-    void drawFrame(FrameInfo* fi, int topic) override;
+    void drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult) override;
     void run(ContinuationInfo* cont) override;
     bool shouldClose() override;
     void handleInput(InputState& inputState) override;

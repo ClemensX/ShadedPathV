@@ -39,6 +39,15 @@ struct GPUImage {
     bool consumed = false;
 };
 
+// we either have command buffers or a rendered image as draw result
+struct DrawResult {
+    static const int MAX_COMMAND_BUFFERS_PER_DRAW = 100; // arbitrary, should be enough for most cases
+    GPUImage* image = nullptr;
+	// possibly many command buffers for each draw call / topic
+    // the first nullptr indicates the end of the list
+	std::array<VkCommandBuffer, MAX_COMMAND_BUFFERS_PER_DRAW> commandBuffers;
+};
+
 struct FrameInfo {
 	long frameNum = -1;
 //	long frameIndex = -1;
@@ -71,6 +80,34 @@ struct FrameInfo {
 	std::string commandBufferDebugName;
 	int threadResourcesIndex;
 	GPUImage* renderedImage = nullptr;
+    bool drawFrameDone = false;
+    std::vector<DrawResult> drawResults; // one result for each draw call topic
+    int numCommandBuffers = 0;
+
+    // rest of this struct is for having a nice iterator.
+    // use like this:
+    // for (auto& commandBuffer : frameInfo) {
+    //     Process each commandBuffer
+    // }
+    int countCommandBuffers() {
+        int count = 0;
+        forEachCommandBuffer([&count](VkCommandBuffer) {
+            count++;
+            });
+        return count;
+    }
+
+    template <typename Func>
+    void forEachCommandBuffer(Func func) {
+        for (auto& drawResult : drawResults) {
+            for (auto& commandBuffer : drawResult.commandBuffers) {
+                if (commandBuffer == nullptr) {
+                    break;
+                }
+                func(commandBuffer);
+            }
+        }
+    }
 };
 
 class QueueSubmitResources

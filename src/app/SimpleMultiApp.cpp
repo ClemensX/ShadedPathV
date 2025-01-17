@@ -16,7 +16,7 @@ void SimpleMultiApp::mainThreadHook() {
 }
 
 // drawFrame is called for each topic in parallel!! Beware!
-void SimpleMultiApp::drawFrame(FrameInfo* fi, int topic) {
+void SimpleMultiApp::drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult) {
     if (!engine->isSingleThreadMode()) assert(false == engine->isMainThread());
     if (topic == 0) {
         //Log("drawFrame " << fi->frameNum << " topic " << topic << std::endl);
@@ -32,7 +32,6 @@ void SimpleMultiApp::run(ContinuationInfo* cont) {
     Log(" run thread: ");
     engine->log_current_thread();
     di.setEngine(engine);
-    engine->configureParallelAppDrawCalls(2);
     gpui = engine->createImage("Test Image");
     engine->globalRendering.createDumpImage(directImage);
     di.openForCPUWriteAccess(gpui, &directImage);
@@ -103,7 +102,7 @@ void SimpleMultiApp2::mainThreadHook() {
 }
 
 // drawFrame is called for each topic in parallel!! Beware!
-void SimpleMultiApp2::drawFrame(FrameInfo* fi, int topic) {
+void SimpleMultiApp2::drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult) {
     if (!engine->isSingleThreadMode()) assert(false == engine->isMainThread());
     if (topic == 0) {
         //Log("drawFrame " << fi->frameNum << " topic " << topic << std::endl);
@@ -119,7 +118,6 @@ void SimpleMultiApp2::run(ContinuationInfo* cont) {
     Log(" run thread: ");
     engine->log_current_thread();
     di.setEngine(engine);
-    engine->configureParallelAppDrawCalls(2);
 
     if (engine->getContinuationInfo() == nullptr) {
         Error("No existing window found. This app should continue in same glfw window that the app before!\n");
@@ -183,6 +181,7 @@ int mainSimpleMultiApp()
         .setVR(false)
         //.setSingleThreadMode(true)
         .overrideCPUCores(4)
+        .configureParallelAppDrawCalls(2)
         ;
 
 
@@ -204,6 +203,7 @@ int mainSimpleMultiApp()
             .setVR(false)
             //.setSingleThreadMode(true)
             .overrideCPUCores(4)
+            .configureParallelAppDrawCalls(2)
             ;
         engine.initGlobal();
         engine.registerApp((ShadedPathApplication*)&app2);
