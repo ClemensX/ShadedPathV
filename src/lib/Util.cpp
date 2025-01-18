@@ -65,6 +65,14 @@ void Util::debugNameObject(uint64_t object, VkObjectType objectType, const char*
     }
 }
 
+void Util::warn(std::string msg)
+{
+    if (msg != last_warn_msg) {
+        Log("WARNING: " << msg << endl);
+        last_warn_msg = msg;
+    }
+}
+
 // MathHelper:
 using namespace glm;
 

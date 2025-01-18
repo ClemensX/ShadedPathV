@@ -33,9 +33,9 @@ void ShadedPathEngine::initGlobal(string appname) {
     if (!singleThreadMode) {
         if (numCores < 4) Error("You cannot run in multi core mode with less than 4 cores assigned");
         Log("Multi Core mode creating " << numCores - 2 << " worker threads\n");
-        threadsWorker = new ThreadGroup(numCores - 2);
-//        workerFutures = new future<void>[numCores - 2];
-        workerFutures.resize(numCores - 2); // Initialize the vector with the appropriate size
+        numWorkerThreads = numCores - 2;
+        threadsWorker = new ThreadGroup(numWorkerThreads);
+        workerFutures.resize(numWorkerThreads); // Initialize the vector with the appropriate size
     }
     // init frame infos:
     for (int i = 0; i < 2; i++) {
@@ -258,6 +258,9 @@ void ShadedPathEngine::drawFrame()
         }
     } else {
         for (int i = 0; i < appDrawCalls; i++) {
+            if (appDrawCalls > threadsWorker->size()) {
+                Error("App wants more parallel calls than there are worker threads!");
+            }
             workerFutures[i] = threadsWorker->asyncSubmit([this, i] {
                 app->drawFrame(currentFrameInfo, i, &currentFrameInfo->drawResults[i]);
             });
@@ -268,18 +271,15 @@ void ShadedPathEngine::drawFrame()
         }
     }
     // app work is done, we should have a bunch of uncommitted command buffers or a finished image
-    if (currentFrameInfo->renderedImage == nullptr) {
-        Log("WARNING: Image not rendered");
-    } else if (currentFrameInfo->renderedImage->rendered == false) {
-        Error("Image not rendered");
-    }
     currentFrameInfo->numCommandBuffers = currentFrameInfo->countCommandBuffers();
-    //lastImage = currentFrameInfo->renderedImage; // TODO check
-    //return currentFrameInfo->renderedImage;
 }
 
-void ShadedPathEngine::postFrame()
+bool ShadedPathEngine::postFrame()
 {
+    if (!isDrawResult(currentFrameInfo)) {
+        util.warn("Application did not provide any draw result");
+        return true;
+    }
     if (singleThreadMode) {
         ThemedTimer::getInstance()->stop(TIMER_DRAW_FRAME);
         singleThreadPostFrame();
@@ -295,6 +295,7 @@ void ShadedPathEngine::postFrame()
         } else {
             Error("not implemented");
         }
+        return true;
     }
 }
 
@@ -308,6 +309,17 @@ void ShadedPathEngine::singleThreadPostFrame()
         imageConsumer = &imageConsumerNullify;
     }
     imageConsumer->consume(currentFrameInfo);
+}
+
+bool ShadedPathEngine::isDrawResult(FrameInfo* fi)
+{
+    if (fi->numCommandBuffers > 0) {
+        return true;
+    }
+    if (fi->renderedImage != nullptr && fi->renderedImage->rendered == true) {
+        return true;
+    }
+    return false;
 }
 
 void ShadedPathEngine::waitUntilShutdown()
@@ -408,8 +420,9 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance)
         engine_instance->preFrame();
         engine_instance->qsr.frameInfo = engine_instance->currentFrameInfo;
         engine_instance->drawFrame();
-        engine_instance->postFrame();
-        engine_instance->queue.push(&engine_instance->qsr);
+        if (engine_instance->postFrame()) {
+            engine_instance->queue.push(&engine_instance->qsr);
+        }
         LogCondF(LOG_QUEUE, "pushed frame: " << endl);
 
     }

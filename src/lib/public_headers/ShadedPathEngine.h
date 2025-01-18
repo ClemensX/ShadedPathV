@@ -240,7 +240,7 @@ public:
     GPUImage* createImage(const char* debugName);
     Presentation presentation;
     bool presentationMode = true; // get rid of this later
-
+    int numWorkerThreads = 0;
 private:
 
     // bool configuration flags:
@@ -293,8 +293,11 @@ private:
     bool shouldClose();
     void preFrame();
     void drawFrame();
-    void postFrame();
+    // clean up draw and prepare submit, return false if nothing to submit
+    bool postFrame();
     void waitUntilShutdown();
+    // command buffers need to have been already counted bfeore calling this
+    bool isDrawResult(FrameInfo* fi);
     // we no longer need frame num to be atomic
     //std::atomic<long> nextFreeFrameNum = 0;
     long nextFreeFrameNum = 0;

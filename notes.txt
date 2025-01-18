@@ -161,16 +161,14 @@ Nicole
         di.dumpToFile(gpui);
 
 
-SYNC-HAZARD-WRITE-AFTER-READ(ERROR / SPEC): msgNum: 929810911 - Validation Error: [ SYNC-HAZARD-WRITE-AFTER-READ ]
- Object 0: handle = 0x1eb7fb24990, name = MAIN GRAPHICS QUEUE, 
- type = VK_OBJECT_TYPE_QUEUE; | MessageID = 0x376bc9df | 
- vkQueueSubmit():  Hazard WRITE_AFTER_READ for entry 0, VkCommandBuffer 0x1eb0a960da0[window.commandBufferPresentBack], 
- Submitted access info (submitted_usage: SYNC_IMAGE_LAYOUT_TRANSITION, command: vkCmdPipelineBarrier2, seq_no: 2, reset_no: 1). 
- Access info (prior_usage: SYNC_PRESENT_ENGINE_SYNCVAL_PRESENT_ACQUIRE_READ_SYNCVAL, 
- read_barriers: VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT|VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, , batch_tag: 6, 
- vkAcquireNextImageKHR aquire_tag:6: VkSwapchainKHR 0xe88693000000000c[], 
- image_index: 0
- image: VkImage 0xcad092000000000d[]).
-    Objects: 1
-        [0] 0x1eb7fb24990, type: 4, name: MAIN GRAPHICS QUEUE
+C:\Program Files\PowerShell\7;C:\Program Files\Oculus\Support\oculus-runtime;C:\tools\vcpkg;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\Microsoft VS Code\bin;C:\Program Files\Git\cmd;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;c:\Program Files\CMake\bin;C:\tools\maven\bin;C:\tools\UltraEdit;C:\Users\cleme\AppData\Roaming\nvm;C:\Program Files\nodejs;C:\Program Files\PowerShell\7\;C:\Program Files\NVIDIA Corporation\NVIDIA app\NvDLISR;C:\Program Files (x86)\Common Files\Acronis\SnapAPI\;C:\Program Files (x86)\Common Files\Acronis\VirtualFile\;C:\Program Files (x86)\Common Files\Acronis\VirtualFile64\;C:\Program Files (x86)\Common Files\Acronis\FileProtector\;C:\Program Files (x86)\Common Files\Acronis\FileProtector64\;C:\Program Files\dotnet\;C:\Users\cleme\AppData\Local\Programs\Python\Python312\Scripts\;C:\Users\cleme\AppData\Local\Programs\Python\Python312\;f:\secretsclient\run\bin;C:\Users\cleme\AppData\Local\Microsoft\WindowsApps;C:\Users\cleme\AppData\Roaming\nvm;C:\Program Files\nodejs;e:\secretsclient\run\bin;C:\Users\cleme\.dotnet\tools
 
+multi thread:
+each draw thread need it's own command pool to record command buffers in parallel
+we need a surrounding primary command buffer, the draw threads will use secondary cmd buffers
+
+we need another queue submit thread for rendering (added to the one for presenting) to execute and wait for submission
+OR we use global submit queue for everything. makes final copy of image easier...
+  main submit queue only doing presentation seems over-the-top
+--> use main submit queue for everything, also will nicely synchronize all submits...
+    (data upload and long running background task are another story...)

@@ -110,6 +110,10 @@ public:
     void debugNameObjectImage(VkImage m, const char* name) {
         debugNameObject((uint64_t)m, VK_OBJECT_TYPE_IMAGE, name);
     }
+    // debug name command pool
+    void debugNameObjectCommandPool(VkCommandPool m, const char* name) {
+        debugNameObject((uint64_t)m, VK_OBJECT_TYPE_COMMAND_POOL, name);
+    }
     static std::wstring string2wstring(const std::string& s) {
         std::wstringstream wss;
         wss << s.c_str();
@@ -117,11 +121,13 @@ public:
 		return wstr;
     }
 
+    void warn(std::string msg);
 private:
     void initializeDebugFunctionPointers();
     //PFN_vkDebugMarkerSetObjectNameEXT pfnDebugMarkerSetObjectNameEXT = nullptr;
     PFN_vkSetDebugUtilsObjectNameEXT pfnDebugUtilsObjectNameEXT = nullptr;
     int imageCounter = 0;
+    std::string last_warn_msg;
 };
 
 class LogfileScanner

@@ -138,9 +138,10 @@ public:
 	void createCommandPools();
 	VkCommandPool commandPool = nullptr;
 	VkCommandPool commandPoolTransfer = nullptr;
+    std::vector<WorkerThreadRessources> workerThreadRessources;
 	bool syncedOperations = false;
 	VkCommandBuffer commandBufferSingle = nullptr;
-	void createCommandPool(VkCommandPool& pool);
+	void createCommandPool(VkCommandPool& pool, std::string name = "");
 	void createCommandPoolTransfer(VkCommandPool& pool);
 	// single time commands with optional syncing
 	VkCommandBuffer beginSingleTimeCommands(bool sync = false, QueueSelector queue = QueueSelector::GRAPHICS);

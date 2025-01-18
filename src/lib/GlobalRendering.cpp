@@ -540,7 +540,7 @@ SwapChainSupportDetails GlobalRendering::querySwapChainSupport(VkPhysicalDevice 
     return details;
 }
 
-void GlobalRendering::createCommandPool(VkCommandPool& pool)
+void GlobalRendering::createCommandPool(VkCommandPool& pool, std::string name)
 {
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -548,6 +548,9 @@ void GlobalRendering::createCommandPool(VkCommandPool& pool)
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     if (vkCreateCommandPool(device, &poolInfo, nullptr, &pool) != VK_SUCCESS) {
         Error("failed to create command pool!");
+    }
+    if (!name.empty()) {
+        engine->util.debugNameObjectCommandPool(pool, name.c_str());
     }
 }
 
@@ -566,6 +569,10 @@ void GlobalRendering::createCommandPools()
 {
     createCommandPool(commandPool);
     createCommandPoolTransfer(commandPoolTransfer);
+    workerThreadRessources.resize(engine->numWorkerThreads); // Initialize the vector with the appropriate size
+    for (int i = 0; i < engine->numWorkerThreads; i++) {
+        createCommandPool(workerThreadRessources[i].commandPool, engine->util.createDebugName("WorkerThreadCommandPool_", i));
+    }
 }
 
 VkCommandBuffer GlobalRendering::beginSingleTimeCommands(bool sync, QueueSelector queue) {

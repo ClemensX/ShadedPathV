@@ -116,3 +116,9 @@ public:
 	FrameInfo* frameInfo = nullptr;
 	ThreadsafeWaitingQueue<unsigned long> renderThreadContinueQueue;
 };
+
+
+struct WorkerThreadRessources {
+    VkCommandPool commandPool = nullptr;
+    VkCommandBuffer commandBuffer = nullptr;
+};
