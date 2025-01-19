@@ -274,11 +274,11 @@ void ShadedPathEngine::drawFrame()
     currentFrameInfo->numCommandBuffers = currentFrameInfo->countCommandBuffers();
 }
 
-bool ShadedPathEngine::postFrame()
+void ShadedPathEngine::postFrame()
 {
     if (!isDrawResult(currentFrameInfo)) {
         util.warn("Application did not provide any draw result");
-        return true;
+        return;
     }
     if (singleThreadMode) {
         ThemedTimer::getInstance()->stop(TIMER_DRAW_FRAME);
@@ -295,7 +295,6 @@ bool ShadedPathEngine::postFrame()
         } else {
             Error("not implemented");
         }
-        return true;
     }
 }
 
@@ -364,14 +363,16 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
             break;
         }
         LogCondF(LOG_QUEUE, "engine received frame: " << v->frameInfo->frameNum << endl);
-        if (v->frameInfo->renderedImage->rendered == true) {
-            // consume rendered image
-            Log("submit thread consuming frame image " << v->frameInfo->frameNum << endl);
-            if (engine_instance->imageConsumer == nullptr) {
-                Log("WARNING: No image consumer set, defaulting to discarding image\n");
-                engine_instance->imageConsumer = &engine_instance->imageConsumerNullify;
+        if (engine_instance->isDrawResult(v->frameInfo)) {
+            if (v->frameInfo->renderedImage->rendered == true) {
+                // consume rendered image
+                Log("submit thread consuming frame image " << v->frameInfo->frameNum << endl);
+                if (engine_instance->imageConsumer == nullptr) {
+                    Log("WARNING: No image consumer set, defaulting to discarding image\n");
+                    engine_instance->imageConsumer = &engine_instance->imageConsumerNullify;
+                }
+                engine_instance->imageConsumer->consume(v->frameInfo);
             }
-            engine_instance->imageConsumer->consume(v->frameInfo);
         }
         //engine_instance->shaders.queueSubmit(*v);
         // if we are pop()ed by drawing thread we can be sure to own the thread until presentFence is signalled,
@@ -420,9 +421,9 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance)
         engine_instance->preFrame();
         engine_instance->qsr.frameInfo = engine_instance->currentFrameInfo;
         engine_instance->drawFrame();
-        if (engine_instance->postFrame()) {
-            engine_instance->queue.push(&engine_instance->qsr);
-        }
+        engine_instance->postFrame();
+        engine_instance->queue.push(&engine_instance->qsr);
+
         LogCondF(LOG_QUEUE, "pushed frame: " << endl);
 
     }

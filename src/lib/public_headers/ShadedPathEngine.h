@@ -294,7 +294,7 @@ private:
     void preFrame();
     void drawFrame();
     // clean up draw and prepare submit, return false if nothing to submit
-    bool postFrame();
+    void postFrame();
     void waitUntilShutdown();
     // command buffers need to have been already counted bfeore calling this
     bool isDrawResult(FrameInfo* fi);

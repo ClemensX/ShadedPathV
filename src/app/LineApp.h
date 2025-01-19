@@ -22,5 +22,6 @@ private:
     void increaseLineStack(std::vector<LineDef>& lines);
     int currentLineStackCount = 0;
     float plus = 0.0f;
+    bool shouldStopEngine = false;
 };
 

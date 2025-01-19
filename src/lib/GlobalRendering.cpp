@@ -210,6 +210,10 @@ void GlobalRendering::shutdown()
         }
     }
     vkDestroySemaphore(device, singleTimeCommandsSemaphore, nullptr);
+    for (int i = 0; i < engine->numWorkerThreads; i++) {
+        auto& res = workerThreadRessources[i];
+        vkDestroyCommandPool(device, res.commandPool, nullptr);
+    }
     vkDestroyCommandPool(device, commandPool, nullptr);
     vkDestroyCommandPool(device, commandPoolTransfer, nullptr);
     vkDestroyDevice(device, nullptr);

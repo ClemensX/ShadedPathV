@@ -15,6 +15,12 @@ void LineApp::prepareFrame(FrameInfo* fi)
 
 void LineApp::drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult)
 {
+    if (fi->frameNum % 1000 == 0) {
+        Log("LineApp drawFrame " << fi->frameNum << endl);
+    }
+    if (fi->frameNum == 10000) {
+        shouldStopEngine = true;
+    }
 }
 
 void LineApp::run(ContinuationInfo* cont)
@@ -28,7 +34,7 @@ void LineApp::run(ContinuationInfo* cont)
 
 bool LineApp::shouldClose()
 {
-    return false;
+    return shouldStopEngine;
 }
 
 void LineApp::handleInput(InputState& inputState)

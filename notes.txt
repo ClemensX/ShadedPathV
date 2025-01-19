@@ -167,7 +167,8 @@ multi thread:
 each draw thread need it's own command pool to record command buffers in parallel
 we need a surrounding primary command buffer, the draw threads will use secondary cmd buffers
 
-we need another queue submit thread for rendering (added to the one for presenting) to execute and wait for submission
+we need another queue submit thread for rendering (added to the one for presenting) to execute
+and wait for submission
 OR we use global submit queue for everything. makes final copy of image easier...
   main submit queue only doing presentation seems over-the-top
 --> use main submit queue for everything, also will nicely synchronize all submits...
