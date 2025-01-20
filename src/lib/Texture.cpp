@@ -472,6 +472,9 @@ TextureStore::~TextureStore()
 			}
 		}
 	}
+    if (vdi.device == nullptr) {
+        Error("Texture store not properly initialized");
+    }
 	ktxVulkanDeviceInfo_Destruct(&vdi);
 	vkDestroyDescriptorSetLayout(device, layout, nullptr);
 	vkDestroyDescriptorPool(device, pool, nullptr);

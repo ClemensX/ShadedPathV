@@ -49,7 +49,7 @@ void ShadedPathEngine::initGlobal(string appname) {
     }
     vr.init();
     globalRendering.init();
-    //textureStore.init(this, maxTextures);
+    textureStore.init(this, maxTextures);
     //meshStore.init(this);
     //if (soundEnabled) sound.init();
     initialized = true;

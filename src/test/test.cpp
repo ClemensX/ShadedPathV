@@ -401,7 +401,8 @@ TEST_F(EngineImageConsumer, Dump) {
             .setVR(false)
             //.setSingleThreadMode(true)
             .overrideCPUCores(4)
-            ;
+            .configureParallelAppDrawCalls(2)
+        ;
 
         static ShadedPathEngine* engine = &my_engine;
         engine->initGlobal();
@@ -424,7 +425,6 @@ TEST_F(EngineImageConsumer, Dump) {
             };
             void run(ContinuationInfo* cont) override {
                 di.setEngine(engine);
-                engine->configureParallelAppDrawCalls(2);
                 gpui = engine->createImage("Test Image");
                 engine->globalRendering.createDumpImage(directImage);
                 di.openForCPUWriteAccess(gpui, &directImage);
