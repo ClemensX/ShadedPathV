@@ -35,7 +35,8 @@ void ClearShader::createCommandBuffer(ThreadResources& tr)
 void ClearShader::addCurrentCommandBuffer(ThreadResources& tr)
 {
 	ClearSubShader& cs = clearSubShaders[tr.threadResourcesIndex];
-	tr.activeCommandBuffers.push_back(cs.commandBuffer);
+	//tr.activeCommandBuffers.push_back(cs.commandBuffer);
+    // TODO: add this secondary buffer to primary command buffer
 };
 
 ClearShader::~ClearShader()
@@ -57,7 +58,7 @@ void ClearSubShader::init(ClearShader* parent, std::string debugName) {
 	clearShader = parent;
 	name = debugName;
 	engine = clearShader->engine;
-	device = &engine->global.device;
+	device = &engine->globalRendering.device;
 	Log("ClearSubShader init: " << debugName.c_str() << std::endl);
 }
 

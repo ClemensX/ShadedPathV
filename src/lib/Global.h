@@ -23,7 +23,13 @@ struct SwapChainSupportDetails {
 	std::vector<VkPresentModeKHR> presentModes;
 };
 
-// low leve graphics: define image on GPU, that can be used as source or target
+struct FrameBufferAttachment {
+    VkImage image;
+    VkDeviceMemory memory;
+    VkImageView view;
+};
+
+// low level graphics: define image on GPU, that can be used as source or target
 struct GPUImage {
 	VkImage image = nullptr;
 	VkDeviceMemory memory = nullptr;
@@ -48,6 +54,8 @@ struct DrawResult {
 	std::array<VkCommandBuffer, MAX_COMMAND_BUFFERS_PER_DRAW> commandBuffers;
 };
 
+// FrameInfo and ThreadResources work together: FrameInfo has all all global frame data
+// that is not related to multi-trhread rendering. ThreadResources has all thread specific data.
 struct FrameInfo {
 	long frameNum = -1;
 //	long frameIndex = -1;
@@ -59,14 +67,18 @@ struct FrameInfo {
 //#define	THREAD_RESOURCES_MAX_COMMAND_BUFFERS 10
 //	VkCommandBuffer commandBuffers[THREAD_RESOURCES_MAX_COMMAND_BUFFERS];
 //
-//	// depth buffer
-//	VkImage depthImage;
-//	VkDeviceMemory depthImageMemory;
-//	VkImageView depthImageView;
-//	// right side views:
-//	VkImage depthImage2;
-//	VkDeviceMemory depthImageMemory2;
-//	VkImageView depthImageView2;
+	// depth buffer
+	VkImage depthImage;
+	VkDeviceMemory depthImageMemory;
+	VkImageView depthImageView;
+	// right side views:
+	VkImage depthImage2;
+	VkDeviceMemory depthImageMemory2;
+	VkImageView depthImageView2;
+
+    FrameBufferAttachment colorAttachment/*, depthAttachment*/;
+    FrameBufferAttachment colorAttachment2; // right side view
+
 //
 //	bool threadFinished = false;
 
@@ -78,8 +90,7 @@ struct FrameInfo {
 
 	// Debugging
 	std::string commandBufferDebugName;
-	int threadResourcesIndex;
-	GPUImage* renderedImage = nullptr;
+    GPUImage* renderedImage = nullptr;
     bool drawFrameDone = false;
     std::vector<DrawResult> drawResults; // one result for each draw call topic
     int numCommandBuffers = 0;
@@ -118,7 +129,27 @@ public:
 };
 
 
-struct WorkerThreadRessources {
+class ThreadResources : public EngineParticipant {
+public:
+    virtual ~ThreadResources();
+    FrameInfo* frameInfo = nullptr;
     VkCommandPool commandPool = nullptr;
     VkCommandBuffer commandBuffer = nullptr;
+    // index into shader specific resources array (TODO: should be fixed resource element instead of index)
+    int threadResourcesIndex = -1;
+};
+
+// change image on GPU
+class ImageWriter : public EngineParticipant
+{
+public:
+    virtual ~ImageWriter() = 0;
+    virtual void writeToImage(GPUImage* gpui) = 0;
+};
+
+// consume image on GPU (copy to CPU or to another GPU image)
+class ImageConsumer : public EngineParticipant
+{
+public:
+    virtual void consume(FrameInfo* fi) = 0;
 };

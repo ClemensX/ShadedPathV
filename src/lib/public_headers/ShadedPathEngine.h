@@ -32,7 +32,7 @@ public:
         globalRendering(this),
         presentation(this),
         threadsMain(0),
-        //shaders(*this),
+        shaders(this),
         util(this),
         vr(this)
     {
@@ -41,7 +41,7 @@ public:
         Log("override device selection to device " << PHYSICAL_DEVICE_INDEX << std::endl);
         setFixedPhysicalDeviceIndex(PHYSICAL_DEVICE_INDEX);
 #endif
-        //files.findFxFolder();
+        files.findFxFolder();
     }
 
     // Prevent copy and assignment
@@ -228,12 +228,12 @@ public:
     void initGlobal(std::string appname = "");
     GlobalRendering globalRendering;
     Util util;
-    //Shaders shaders;
+    Shaders shaders;
     VR vr;
-    //TextureStore textureStore;
+    TextureStore textureStore;
 
     // non-Vulkan members
-    //Files files;
+    Files files;
     GameTime gameTime;
     FPSCounter fpsCounter;
     // create image in backbuffer size

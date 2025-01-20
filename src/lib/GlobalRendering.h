@@ -138,7 +138,7 @@ public:
 	void createCommandPools();
 	VkCommandPool commandPool = nullptr;
 	VkCommandPool commandPoolTransfer = nullptr;
-    std::vector<WorkerThreadRessources> workerThreadRessources;
+    std::vector<ThreadResources> workerThreadResources;
 	bool syncedOperations = false;
 	VkCommandBuffer commandBufferSingle = nullptr;
 	void createCommandPool(VkCommandPool& pool, std::string name = "");

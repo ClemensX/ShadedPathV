@@ -1,20 +1,5 @@
 #pragma once
 
-// ShaderState will be used during initial shader setup only (not for regular frame rendering).
-// it tracks state that has to be accessed by more than one shader
-struct ShaderState
-{
-	VkViewport viewport{};
-	VkRect2D scissor{};
-	VkPipelineViewportStateCreateInfo viewportState{};
-
-	// various flags, usually set by shaders init() or initSingle()
-
-	// signal first shader that should clear depth and framebuffers
-	bool isClear = false;
-	bool isPresent = false;
-};
-
 class Shaders : public EngineParticipant
 {
 	class Config {
@@ -54,9 +39,10 @@ class Shaders : public EngineParticipant
 		ShaderState shaderState;
 	};
 public:
-	Shaders(ShadedPathEngine& s) : engine(s) {
+	Shaders(ShadedPathEngine* s) {
 		Log("Shaders c'tor\n");
-		config.setEngine(&s);
+		setEngine(s);
+		config.setEngine(s);
 	};
 	~Shaders();
 
@@ -103,13 +89,13 @@ public:
 
 	ClearShader clearShader;
 	EndShader endShader;
-	SimpleShader simpleShader;
-	LineShader lineShader;
-	UIShader uiShader;
-	PBRShader pbrShader;
-	CubeShader cubeShader;
-	BillboardShader billboardShader;
-	TerrainShader terrainShader;
+	//SimpleShader simpleShader;
+	//LineShader lineShader;
+	//UIShader uiShader;
+	//PBRShader pbrShader;
+	//CubeShader cubeShader;
+	//BillboardShader billboardShader;
+	//TerrainShader terrainShader;
 
 	// submit command buffers for current frame
 	void submitFrame(ThreadResources& tr);
@@ -167,7 +153,6 @@ private:
 	Config config;
 
 	void initiateShader_BackBufferImageDumpSingle(ThreadResources& res);
-	ShadedPathEngine& engine;
 
 	unsigned int imageCounter = 0;
 	bool enabledAllImageDump = false;

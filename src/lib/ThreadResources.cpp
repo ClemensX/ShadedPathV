@@ -2,6 +2,14 @@
 
 using namespace std;
 
+ThreadResources::~ThreadResources()
+{
+    auto& device = engine->globalRendering.device;
+    auto& global = engine->globalRendering;
+    auto& shaders = engine->shaders;
+}
+
+/*
 ThreadResources::ThreadResources(ShadedPathEngine* engine_)
 {
 	Log("ThreadResource c'tor: " << this << endl);
@@ -127,3 +135,4 @@ ThreadResources::~ThreadResources()
     }
     Log("ThreadResource destructed: " << this << endl);
 };
+*/

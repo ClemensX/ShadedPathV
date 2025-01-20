@@ -211,7 +211,7 @@ void GlobalRendering::shutdown()
     }
     vkDestroySemaphore(device, singleTimeCommandsSemaphore, nullptr);
     for (int i = 0; i < engine->numWorkerThreads; i++) {
-        auto& res = workerThreadRessources[i];
+        auto& res = workerThreadResources[i];
         vkDestroyCommandPool(device, res.commandPool, nullptr);
     }
     vkDestroyCommandPool(device, commandPool, nullptr);
@@ -573,9 +573,9 @@ void GlobalRendering::createCommandPools()
 {
     createCommandPool(commandPool);
     createCommandPoolTransfer(commandPoolTransfer);
-    workerThreadRessources.resize(engine->numWorkerThreads); // Initialize the vector with the appropriate size
+    workerThreadResources.resize(engine->numWorkerThreads); // Initialize the vector with the appropriate size
     for (int i = 0; i < engine->numWorkerThreads; i++) {
-        createCommandPool(workerThreadRessources[i].commandPool, engine->util.createDebugName("WorkerThreadCommandPool_", i));
+        createCommandPool(workerThreadResources[i].commandPool, engine->util.createDebugName("WorkerThreadCommandPool_", i));
     }
 }
 

@@ -7,11 +7,11 @@
  * 3) local changes updated for each drawing thread. Only use for small line sets to bring dynamic element to line drawing. Lines have to be uploaded for each and every frame. Use rarely.
  */
 
- // basic line definitions
-struct LineDef {
-	glm::vec3 start, end;
-	glm::vec4 color;
-};
+ // basic line definitions, see globalDef.h
+//struct LineDef {
+//	glm::vec3 start, end;
+//	glm::vec4 color;
+//};
 
 // each execution needs one instance of ApplicationData
 struct LineShaderApplicationData {
@@ -77,7 +77,7 @@ public:
 	// shader initialization, end result is a graphics pipeline for each ThreadResources instance
 
 	// max # lines for dynamic adding for single frame
-	// we limit this to allow for pre-allocated vertex buffer in thread ressources
+	// we limit this to allow for pre-allocated vertex buffer in thread resources
 	//static const size_t MAX_DYNAMIC_LINES = 100000;
 	static const size_t MAX_DYNAMIC_LINES = 5000000;
 

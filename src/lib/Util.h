@@ -142,12 +142,6 @@ private:
     std::vector<std::string> lines;
 };
 
-struct FrameBufferAttachment {
-    VkImage image;
-    VkDeviceMemory memory;
-    VkImageView view;
-};
-
 // https://github.com/opengl-tutorials/ogl/blob/master/common/quaternion_utils.cpp
 class MathHelper {
 public:

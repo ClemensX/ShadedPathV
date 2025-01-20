@@ -8,8 +8,8 @@ void ShaderBase::init(ShadedPathEngine& engine)
 		Error("Shader already initialized!");
 	}
 	engine.shaders.checkShaderState(engine);
-	this->device = engine.global.device;
-	this->global = &engine.global;
+	this->device = engine.globalRendering.device;
+	this->global = &engine.globalRendering;
 	this->engine = &engine;
 	resources.init(&engine);
 	enabled = true;
@@ -76,7 +76,7 @@ void ShaderBase::createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState
 {
 	// depth buffer attachement
 	VkAttachmentDescription depthAttachment{};
-	depthAttachment.format = engine->global.depthFormat;
+	depthAttachment.format = engine->globalRendering.depthFormat;
 	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -97,7 +97,7 @@ void ShaderBase::createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState
 
 	// attachment
 	VkAttachmentDescription colorAttachment{};
-	colorAttachment.format = engine->global.ImageFormat;
+	colorAttachment.format = engine->globalRendering.ImageFormat;
 	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -143,12 +143,12 @@ void ShaderBase::createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState
 	renderPassInfo.dependencyCount = 1;
 	renderPassInfo.pDependencies = &dependency;
 
-	if (vkCreateRenderPass(engine->global.device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+	if (vkCreateRenderPass(engine->globalRendering.device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
 		Error("failed to create render pass!");
 	}
 
 	// frame buffer
-	array<VkImageView, 2> attachmentsView = { tr.colorAttachment.view, tr.depthImageView };
+	array<VkImageView, 2> attachmentsView = { tr.frameInfo->colorAttachment.view, tr.frameInfo->depthImageView };
 
 	VkFramebufferCreateInfo framebufferInfo{};
 	framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -159,11 +159,11 @@ void ShaderBase::createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState
 	framebufferInfo.height = static_cast<uint32_t>(shaderState.viewport.height);
 	framebufferInfo.layers = 1;
 
-	if (vkCreateFramebuffer(engine->global.device, &framebufferInfo, nullptr, &frameBuffer) != VK_SUCCESS) {
+	if (vkCreateFramebuffer(engine->globalRendering.device, &framebufferInfo, nullptr, &frameBuffer) != VK_SUCCESS) {
 		Error("failed to create framebuffer!");
 	}
 	if (engine->isStereo()) {
-		array<VkImageView, 2> attachmentsView2 = { tr.colorAttachment2.view, tr.depthImageView2 };
+		array<VkImageView, 2> attachmentsView2 = { tr.frameInfo->colorAttachment2.view, tr.frameInfo->depthImageView2 };
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -174,7 +174,7 @@ void ShaderBase::createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState
 		framebufferInfo.height = static_cast<uint32_t>(shaderState.viewport.height);
 		framebufferInfo.layers = 1;
 
-		if (vkCreateFramebuffer(engine->global.device, &framebufferInfo, nullptr, &frameBuffer2) != VK_SUCCESS) {
+		if (vkCreateFramebuffer(engine->globalRendering.device, &framebufferInfo, nullptr, &frameBuffer2) != VK_SUCCESS) {
 			Error("failed to create framebuffer!");
 		}
 	}

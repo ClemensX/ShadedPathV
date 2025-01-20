@@ -24,6 +24,8 @@ void Files::findFxFolder()
 	std::string spp(1, sep); // Convert separator to string
 	string testPath = "build" + spp + "src" + spp + "test" + spp + "Debug";
 	if (current.string().find(testPath) != string::npos) {
+		current = filesystem::current_path().parent_path() / "shader.bin";
+
 		string appPath = "build" + spp + "src" + spp + "app";
 		string changedPath = current.string().replace(current.string().find(testPath), testPath.length(), appPath);
 		current = filesystem::path(changedPath);

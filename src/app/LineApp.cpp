@@ -9,24 +9,26 @@ void LineApp::mainThreadHook()
 {
 }
 
+// prepare drawing, guaranteed single thread
 void LineApp::prepareFrame(FrameInfo* fi)
 {
 }
 
+// draw from multiple threads
 void LineApp::drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult)
 {
-    if (fi->frameNum % 1000 == 0) {
+    if (fi->frameNum % 1000 == 0 && topic == 1) {
         Log("LineApp drawFrame " << fi->frameNum << endl);
-    }
-    if (fi->frameNum == 10000) {
-        shouldStopEngine = true;
+        if (fi->frameNum == 10000) {
+            shouldStopEngine = true;
+        }
     }
 }
 
 void LineApp::run(ContinuationInfo* cont)
 {
     Log("LineApp start\n");
-    //di.setEngine(engine);
+    Shaders& shaders = engine->shaders;
     engine->eventLoop();
 
     // cleanup

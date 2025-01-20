@@ -2,7 +2,8 @@ set (SOURCES
   Util.cpp
   ShadedPathEngine.cpp
   ImageConsumer.cpp
-  #Texture.cpp
+  Files.cpp
+  Texture.cpp
   GlobalRendering.cpp
   GameTime.cpp
   DirectImage.cpp
@@ -12,9 +13,13 @@ set (SOURCES
   #TerrainShader.cpp
   #UIShader.cpp
   #UI.cpp
-  #ClearShader.cpp
+  ShaderBase.cpp
+  ClearShader.cpp
   #SimpleShader.cpp
   #pbrShader.cpp
+  ThreadResources.cpp
+  Shaders.cpp
+  VulkanResources.cpp
 )
 if (OPENXR_INC)
   list(APPEND SOURCES VR.cpp)
