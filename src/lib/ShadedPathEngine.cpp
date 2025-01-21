@@ -36,6 +36,8 @@ void ShadedPathEngine::initGlobal(string appname) {
         numWorkerThreads = numCores - 2;
         threadsWorker = new ThreadGroup(numWorkerThreads);
         workerFutures.resize(numWorkerThreads); // Initialize the vector with the appropriate size
+    } else {
+        numWorkerThreads = 1;
     }
     // init frame infos:
     for (int i = 0; i < 2; i++) {
@@ -88,7 +90,7 @@ VkExtent2D ShadedPathEngine::getBackBufferExtent()
 
 void ShadedPathEngine::setBackBufferResolution(VkExtent2D e)
 {
-    if (initialized) Error("Configuration after intialization not allowed");
+    //if (initialized) Error("Configuration after intialization not allowed");
     backBufferExtent = e;
     backBufferAspect = (float)e.width / (float)e.height;
 }
@@ -115,7 +117,7 @@ VkExtent2D ShadedPathEngine::getExtentForResolution(ShadedPathEngine::Resolution
 void ShadedPathEngine::setBackBufferResolution(ShadedPathEngine::Resolution res)
 {
     //if (shouldCloseApp) return;
-    if (initialized) Error("Configuration after intialization not allowed");
+    //if (initialized) Error("Configuration after intialization not allowed");
     setBackBufferResolution(getExtentForResolution(res));
     //checkAspect();
 }

@@ -5,7 +5,7 @@ using namespace std;
 void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 {
 	ShaderBase::init(engine);
-	engine.globalUpdate.registerShader(this);
+	//engine.globalUpdate.registerShader(this);
 	resources.setResourceDefinition(&vulkanResourceDefinition);
 
 	// create shader modules
@@ -85,7 +85,7 @@ void LineShader::uploadFixedGlobalLines()
 
 	// create and copy vertex buffer in GPU
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * all.size();
-	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, all.data(), vertexBufferFixedGlobal, vertexBufferMemoryFixedGlobal, "LineShader Global Buffer");
+	engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, all.data(), vertexBufferFixedGlobal, vertexBufferMemoryFixedGlobal, "LineShader Global Buffer");
 }
 
 void LineShader::createCommandBuffer(ThreadResources& tr)
@@ -99,15 +99,15 @@ void LineShader::createCommandBuffer(ThreadResources& tr)
 void LineShader::addCurrentCommandBuffer(ThreadResources& tr) {
 	auto& perFrameSubShader = perFrameLineSubShaders[tr.threadResourcesIndex];
 	if (perFrameSubShader.drawCount != 0) {
-		tr.activeCommandBuffers.push_back(perFrameSubShader.commandBuffer);
+		//tr.activeCommandBuffers.push_back(perFrameSubShader.commandBuffer);
 	}
 	auto& globalSubShader = globalLineSubShaders[tr.threadResourcesIndex];
 	if (globalSubShader.drawCount != 0) {
-		tr.activeCommandBuffers.push_back(globalSubShader.commandBuffer);
+		//tr.activeCommandBuffers.push_back(globalSubShader.commandBuffer);
 	}
 	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
 	if (ug.active) {
-		tr.activeCommandBuffers.push_back(ug.commandBuffer);
+		//tr.activeCommandBuffers.push_back(ug.commandBuffer);
 	}
 
 };
@@ -154,11 +154,11 @@ void LineShader::addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& t
 void LineShader::addPermament(std::vector<LineDef>& linesToAdd, ThreadResources& tr)
 {
 	//assert(engine->isUpdateThread() == false);
-	if (engine->globalUpdate.isRunning()) {
-		//Error("ERROR: trying to add permanent lines while global update is running\n");
-		Log("WARNING: trying to add permanent lines while global update is running\n");
-		return;
-	}
+	//if (engine->globalUpdate.isRunning()) {
+	//	//Error("ERROR: trying to add permanent lines while global update is running\n");
+	//	Log("WARNING: trying to add permanent lines while global update is running\n");
+	//	return;
+	//}
 	if (renderThreadUpdateRunning) {
 		Log("WARNING: trying to add permanent lines while another threads runs the same (should not happen)\n");
 		return;
@@ -190,7 +190,7 @@ void LineShader::prepareAddLines(ThreadResources& tr)
 }
 
 void LineShader::assertUpdateThread() {
-	assert(engine->isUpdateThread() == true);
+	//assert(engine->isUpdateThread() == true);
 }
 
 // called from user code in drawing thread
@@ -214,19 +214,19 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 	}
 	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
 	// handle changed update sets:
-	auto* applyGlobalUpdateSet = engine->globalUpdate.getChangedGlobalUpdateSet(tr.currentGlobalUpdateElement, ug.updateNumber);
-	if (applyGlobalUpdateSet != nullptr) {
-		//Log("render thread " << tr.frameIndex << " should apply global update " << applyGlobalUpdateSet->updateNumber << " set " << applyGlobalUpdateSet->to_string() << endl);
-		applyGlobalUpdate(ug, tr, applyGlobalUpdateSet);
-	}
-	// if we have an active update set, we need to upload its MVP matrix to GPU
-	if (tr.currentGlobalUpdateElement != nullptr) {
-			ug.uploadToGPU(tr, ubo, ubo2);
-	}
+	//auto* applyGlobalUpdateSet = engine->globalUpdate.getChangedGlobalUpdateSet(tr.currentGlobalUpdateElement, ug.updateNumber);
+	//if (applyGlobalUpdateSet != nullptr) {
+	//	//Log("render thread " << tr.frameIndex << " should apply global update " << applyGlobalUpdateSet->updateNumber << " set " << applyGlobalUpdateSet->to_string() << endl);
+	//	applyGlobalUpdate(ug, tr, applyGlobalUpdateSet);
+	//}
+	//// if we have an active update set, we need to upload its MVP matrix to GPU
+	//if (tr.currentGlobalUpdateElement != nullptr) {
+	//		ug.uploadToGPU(tr, ubo, ubo2);
+	//}
 }
 
 void LineShader::triggerUpdateThread() {
-	engine->pushUpdate(0);
+	//engine->pushUpdate(0);
 }
 
 void LineShader::resourceSwitch(GlobalResourceSet set)
@@ -276,7 +276,7 @@ void LineSubShader::init(LineShader* parent, std::string debugName) {
 	lineShader = parent;
 	name = debugName;
 	engine = lineShader->engine;
-	device = &engine->global.device;
+	device = &engine->globalRendering.device;
 	Log("LineSubShader init: " << debugName.c_str() << std::endl);
 }
 
@@ -301,7 +301,7 @@ void LineSubShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	handover.descriptorSet2 = &descriptorSet2;
 	handover.dynBuffer = nullptr;
 	handover.dynBufferSize = 0;
-	handover.debugBaseName = engine->util.createDebugName("ThreadResources.lineShader", tr);
+	handover.debugBaseName = engine->util.createDebugName("ThreadResources.lineShader", tr.threadResourcesIndex);
 	vulkanResources->createThreadResources(handover);
 
 	lineShader->createRenderPassAndFramebuffer(tr, shaderState, renderPass, framebuffer, framebuffer2);
@@ -499,7 +499,7 @@ void LineShader::updateGlobal(GlobalUpdateElement& currentSet)
 	}
 	//Log("LineShader::updateGlobal wants to update to gen " << currentSet.updateNumber << " would delete, draw count " << updateElem->drawCount << endl);
 	updateElem->active = true;
-	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, verticesPermanent.data(),
+	engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, verticesPermanent.data(),
 		updateElem->vertexBuffer, updateElem->vertexBufferMemory, "LineShader Global UPDATE Buffer " + currentSet.to_string(), GlobalRendering::QueueSelector::TRANSFER);
 	updateElem->drawCount = verticesPermanent.size();
 	//this_thread::sleep_for(chrono::milliseconds(3000)); //test slow update
@@ -525,7 +525,7 @@ void LineShader::applyGlobalUpdate(LineSubShader& updateSubShader, ThreadResourc
 	updateSubShader.addRenderPassAndDrawCommands(tr, &updateSubShader.commandBuffer, shaderResources->vertexBuffer);
 	updateSubShader.active = true;
 	updateSubShader.updateNumber = updateSet->updateNumber;
-	engine->globalUpdate.markGlobalUpdateSetAsUsed(updateSet, tr);
+	//engine->globalUpdate.markGlobalUpdateSetAsUsed(updateSet, tr);
 }
 
 void LineShader::freeUpdateResources(GlobalUpdateElement* updateSet)

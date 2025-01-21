@@ -15,6 +15,7 @@ set (SOURCES
   #UI.cpp
   ShaderBase.cpp
   ClearShader.cpp
+  LineShader.cpp
   #SimpleShader.cpp
   #pbrShader.cpp
   ThreadResources.cpp

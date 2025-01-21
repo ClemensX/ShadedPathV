@@ -28,7 +28,30 @@ void LineApp::drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult)
 void LineApp::run(ContinuationInfo* cont)
 {
     Log("LineApp start\n");
+    AppSupport::setEngine(engine);
     Shaders& shaders = engine->shaders;
+
+    // camera initialization
+    createFirstPersonCameraPositioner(glm::vec3(-0.36f, 0.0f, 2.340f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    createHMDCameraPositioner(glm::vec3(-0.38f, 0.10f, 0.82f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    getFirstPersonCameraPositioner()->setMaxSpeed(15.0f);
+    initCamera();
+    enableEventsAndModes();
+    engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
+    engine->files.findAssetFolder("data");
+    setHighBackbufferResolution();
+    int win_width = 960;// 960;//1800;// 800;//3700;
+    //engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Vulkan Simple Line App");
+    camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);
+
+    // add shaders used in this app
+    shaders
+        .addShader(shaders.clearShader)
+        .addShader(shaders.lineShader)
+        ;
+    // init shaders, e.g. one-time uploads before rendering cycle starts go here
+    shaders.initActiveShaders();
+
     engine->eventLoop();
 
     // cleanup

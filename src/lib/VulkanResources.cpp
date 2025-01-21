@@ -85,7 +85,7 @@ void VulkanResources::createDescriptorSetResources(VkDescriptorSetLayout& layout
     poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
     if (vkCreateDescriptorPool(engine->globalRendering.device, &poolInfo, nullptr, &pool) != VK_SUCCESS) {
-        Error("failed to create descriptor pool!");
+        Error("failed to create descriptor pool! You might want to look into option OVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT");
     }
     this->layout = layout;
     this->pool = pool;

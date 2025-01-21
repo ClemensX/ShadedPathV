@@ -56,6 +56,7 @@ struct DrawResult {
 
 // FrameInfo and ThreadResources work together: FrameInfo has all all global frame data
 // that is not related to multi-trhread rendering. ThreadResources has all thread specific data.
+// FrameInfo has all s
 struct FrameInfo {
 	long frameNum = -1;
 //	long frameIndex = -1;

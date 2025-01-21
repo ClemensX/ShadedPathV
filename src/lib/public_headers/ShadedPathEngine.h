@@ -151,13 +151,6 @@ public:
         return false; //TODO remove
     }
 
-    // set number of frames that can be worked on in parallel
-    void setFramesInFlight(int n);
-
-    int getFramesInFlight() {
-        return framesInFlight;
-    }
-
     void enableKeyEvents() {
         enabledKeyEvents = true;
     }
@@ -236,11 +229,18 @@ public:
     Files files;
     GameTime gameTime;
     FPSCounter fpsCounter;
+    // get aspect ratio of backbuffer - window should be same, but that is not enforced
+    float getAspect() {
+        return backBufferAspect;
+    }
     // create image in backbuffer size
     GPUImage* createImage(const char* debugName);
     Presentation presentation;
     bool presentationMode = true; // get rid of this later
     int numWorkerThreads = 0;
+    int getFramesInFlight() {
+        return numWorkerThreads; // 1 for  single thread mode, 2 or more for multi
+    }
 private:
 
     // bool configuration flags:
@@ -259,7 +259,6 @@ private:
     VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);
     float backBufferAspect = 1.0f;
     long limitFrameCount = 0;
-    int framesInFlight = 2;
     size_t maxTextures = 5;
     bool limitFrameCountEnabled = false;
     bool initialized = false;

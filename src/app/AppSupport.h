@@ -104,27 +104,27 @@ protected:
             app_engine->setFixedPhysicalDeviceIndex(0);
         }
     }
-    void initEngine(std::string name) {
-        if (app_engine->isVR()) {
-            app_engine->vr.SetPositioner(getHMDCameraPositioner());
-            app_engine->setFramesInFlight(1);
-        }
-        else {
-            app_engine->setFramesInFlight(2);
-        }
-        if (enableSound) app_engine->setEnableSound(true);
-        if (singleThreadMode) app_engine->setSingleThreadMode(true);
-        if (debugWindowPosition) app_engine->setDebugWindowPosition(true);
+    //void initEngine(std::string name) {
+    //    if (app_engine->isVR()) {
+    //        app_engine->vr.SetPositioner(getHMDCameraPositioner());
+    //        app_engine->setFramesInFlight(1);
+    //    }
+    //    else {
+    //        app_engine->setFramesInFlight(2);
+    //    }
+    //    if (enableSound) app_engine->setEnableSound(true);
+    //    if (singleThreadMode) app_engine->setSingleThreadMode(true);
+    //    if (debugWindowPosition) app_engine->setDebugWindowPosition(true);
 
-        // engine initialization
-        app_engine->initGlobal(name);
-        // even if we wanted VR initialization may have failed, fallback to non-VR
-        if (!app_engine->isVR()) {
-            camera->changePositioner(&fpPositioner);
-            activePositionerIsHMD = false;
-        }
-        app_engine->setWorld(&world);
-    }
+    //    // engine initialization
+    //    app_engine->initGlobal(name);
+    //    // even if we wanted VR initialization may have failed, fallback to non-VR
+    //    if (!app_engine->isVR()) {
+    //        camera->changePositioner(&fpPositioner);
+    //        activePositionerIsHMD = false;
+    //    }
+    //    app_engine->setWorld(&world);
+    //}
     void eventLoop() {
         app_engine->eventLoop();
     }

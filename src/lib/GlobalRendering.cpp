@@ -575,6 +575,7 @@ void GlobalRendering::createCommandPools()
     createCommandPoolTransfer(commandPoolTransfer);
     workerThreadResources.resize(engine->numWorkerThreads); // Initialize the vector with the appropriate size
     for (int i = 0; i < engine->numWorkerThreads; i++) {
+        workerThreadResources[i].threadResourcesIndex = i;
         createCommandPool(workerThreadResources[i].commandPool, engine->util.createDebugName("WorkerThreadCommandPool_", i));
     }
 }
