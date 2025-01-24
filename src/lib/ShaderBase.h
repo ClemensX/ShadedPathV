@@ -105,20 +105,20 @@ public:
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderSate) = 0;
 
 	// create graphics pipeline with all support structures and other thread resources
-	virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) = 0;
+	virtual void initSingle(FrameResources& tr, ShaderState& shaderState) = 0;
 
 	// finish shader initialization
 	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderSate) = 0;
 
 	// destroy thread local shader resources
-	virtual void destroyThreadResources(ThreadResources& tr) = 0;
+	virtual void destroyThreadResources(FrameResources& tr) = 0;
 
 	// create command buffers. One time auto called before rendering starts.
 	// Also post init phase stuff goes here, like VulcanResources.updateDescriptorSets()
-	virtual void createCommandBuffer(ThreadResources& tr) = 0;
+	virtual void createCommandBuffer(FrameResources& tr) = 0;
 
 	// add current command buffers
-	virtual void addCurrentCommandBuffer(ThreadResources& tr) = 0;
+	virtual void addCurrentCommandBuffer(FrameResources& tr) = 0;
 
 	// Base class methodas that can be used in the subclasses
 
@@ -145,7 +145,7 @@ public:
 	void createVertexBuffer(VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory);
 
 	// create render pass and framebuffer with respect to shader state
-	void createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState shaderState, VkRenderPass& renderPass, VkFramebuffer& frameBuffer, VkFramebuffer& frameBuffer2);
+	void createRenderPassAndFramebuffer(FrameResources& tr, ShaderState shaderState, VkRenderPass& renderPass, VkFramebuffer& frameBuffer, VkFramebuffer& frameBuffer2);
 
 	void setLastShader(bool last) {
 		lastShader = last;

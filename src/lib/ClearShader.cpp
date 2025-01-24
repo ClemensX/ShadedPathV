@@ -12,9 +12,9 @@ void ClearShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 	}
 }
 
-void ClearShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
+void ClearShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 {
-	ClearSubShader& cs = clearSubShaders[tr.threadResourcesIndex];
+	ClearSubShader& cs = clearSubShaders[tr.frameIndex];
 	cs.initSingle(tr, shaderState);
 	cs.allocateCommandBuffer(tr, &cs.commandBuffer, "CLEAR PERMANENT COMMAND BUFFER");
 	createRenderPassAndFramebuffer(tr, shaderState, cs.renderPass, cs.framebuffer, cs.framebuffer2);
@@ -25,16 +25,16 @@ void ClearShader::finishInitialization(ShadedPathEngine& engine, ShaderState& sh
 	shaderState.isClear = false;
 }
 
-void ClearShader::createCommandBuffer(ThreadResources& tr)
+void ClearShader::createCommandBuffer(FrameResources& tr)
 {
 	if (!enabled) return;
-	ClearSubShader& sub = clearSubShaders[tr.threadResourcesIndex];
+	ClearSubShader& sub = clearSubShaders[tr.frameIndex];
 	sub.createGlobalCommandBufferAndRenderPass(tr);
 }
 
-void ClearShader::addCurrentCommandBuffer(ThreadResources& tr)
+void ClearShader::addCurrentCommandBuffer(FrameResources& tr)
 {
-	ClearSubShader& cs = clearSubShaders[tr.threadResourcesIndex];
+	ClearSubShader& cs = clearSubShaders[tr.frameIndex];
 	//tr.activeCommandBuffers.push_back(cs.commandBuffer);
     // TODO: add this secondary buffer to primary command buffer
 };
@@ -50,7 +50,7 @@ ClearShader::~ClearShader()
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 }
 
-void ClearShader::destroyThreadResources(ThreadResources& tr)
+void ClearShader::destroyThreadResources(FrameResources& tr)
 {
 }
 
@@ -62,7 +62,7 @@ void ClearSubShader::init(ClearShader* parent, std::string debugName) {
 	Log("ClearSubShader init: " << debugName.c_str() << std::endl);
 }
 
-void ClearSubShader::allocateCommandBuffer(ThreadResources& tr, VkCommandBuffer* cmdBufferPtr, const char* debugName)
+void ClearSubShader::allocateCommandBuffer(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, const char* debugName)
 {
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -76,13 +76,13 @@ void ClearSubShader::allocateCommandBuffer(ThreadResources& tr, VkCommandBuffer*
 	engine->util.debugNameObjectCommandBuffer(commandBuffer, debugName);
 }
 
-void ClearSubShader::createGlobalCommandBufferAndRenderPass(ThreadResources& tr)
+void ClearSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr)
 {
 	allocateCommandBuffer(tr, &commandBuffer, "CLEAR COMMAND BUFFER");
 	addRenderPassAndDrawCommands(tr, &commandBuffer);
 }
 
-void ClearSubShader::addRenderPassAndDrawCommands(ThreadResources& tr, VkCommandBuffer* cmdBufferPtr)
+void ClearSubShader::addRenderPassAndDrawCommands(FrameResources& tr, VkCommandBuffer* cmdBufferPtr)
 {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

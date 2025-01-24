@@ -160,14 +160,14 @@ TEST_F(EngineTest, Headless) {
         class TestApp : public ShadedPathApplication
         {
         public:
-            void prepareFrame(FrameInfo* fi) override {
+            void prepareFrame(FrameResources* fi) override {
                 Log("prepareFrame " << fi->frameNum << endl);
                 if (fi->frameNum >= 10) {
                     shouldStopEngine = true;
                 }
                 lastFrameNum = fi->frameNum;
             };
-            void drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult) override {
+            void drawFrame(FrameResources* fi, int topic, DrawResult* drawResult) override {
                 Log("drawFrame " << fi->frameNum << endl);
                 directImage.rendered = false;
                 engine->util.writeRawImageTestData(directImage, 0);
@@ -409,13 +409,13 @@ TEST_F(EngineImageConsumer, Dump) {
         class TestApp : public ShadedPathApplication
         {
         public:
-            void prepareFrame(FrameInfo* fi) override {
+            void prepareFrame(FrameResources* fi) override {
                 if (fi->frameNum >= 10) {
                     shouldStopEngine = true;
                 }
             };
             // drawFrame is called for each topic in parallel!! Beware!
-            void drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult) override {
+            void drawFrame(FrameResources* fi, int topic, DrawResult* drawResult) override {
                 if (topic == 0) {
                     directImage.rendered = false;
                     engine->util.writeRawImageTestData(directImage, 0);
@@ -462,7 +462,7 @@ TEST_F(EngineImageConsumer, Dump) {
 }
 
 TEST(CommandBufferIterator, Count) {
-    FrameInfo fi;
+    FrameResources fi;
     //for (auto& commandBuffer : fi) {
     //    // should not enter here
     //    EXPECT_TRUE(false);

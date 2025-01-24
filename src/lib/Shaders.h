@@ -18,11 +18,11 @@ class Shaders : public EngineParticipant
 		// Initialize ShaderState and all shaders
 		Config& init();
 
-		void createCommandBuffers(ThreadResources& tr);
-		void gatherActiveCommandBuffers(ThreadResources& tr);
+		void createCommandBuffers(FrameResources& tr);
+		void gatherActiveCommandBuffers(FrameResources& tr);
 
 		// destroy shader thread resources
-		void destroyThreadResources(ThreadResources& tr);
+		void destroyThreadResources(FrameResources& tr);
 
 		void setEngine(ShadedPathEngine* s) {
 			engine = s;
@@ -73,16 +73,16 @@ public:
 	}
 
 	// go through added shaders and initilaize thread local command buffers
-	void createCommandBuffers(ThreadResources& tr);
+	void createCommandBuffers(FrameResources& tr);
 
-	void gatherActiveCommandBuffers(ThreadResources& tr);
+	void gatherActiveCommandBuffers(FrameResources& tr);
 	void checkShaderState(ShadedPathEngine& engine);
 
 	// destroy all shader thread local resources
-	void destroyThreadResources(ThreadResources& tr);
+	void destroyThreadResources(FrameResources& tr);
 
 	// general methods
-	void queueSubmit(ThreadResources& tr);
+	void queueSubmit(FrameResources& tr);
 	VkShaderModule createShaderModule(const std::vector<std::byte>& code);
 
 	// SHADERS. All shaders instances are here, but each shader has to be activated in application code

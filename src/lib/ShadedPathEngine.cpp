@@ -39,18 +39,14 @@ void ShadedPathEngine::initGlobal(string appname) {
     } else {
         numWorkerThreads = 1;
     }
-    // init frame infos:
-    for (int i = 0; i < 2; i++) {
-        frameInfos[i].drawResults.resize(appDrawCalls); // one draw result per draw call topic
-        for (auto& dr : frameInfos[i].drawResults) {
-            dr.image = nullptr;
-            for (auto& cb : dr.commandBuffers) { // initialize command buffers to nullptr
-                cb = nullptr;
-            }
-        }
-    }
     vr.init();
     globalRendering.init();
+    // init frame infos index:
+    for (int i = 0; i < 2; i++) {
+        frameInfos[i].engine = this;
+        frameInfos[i].frameIndex = i;
+    }
+    FrameResources::initAll(this);
     textureStore.init(this, maxTextures);
     //meshStore.init(this);
     //if (soundEnabled) sound.init();
@@ -232,7 +228,7 @@ bool ShadedPathEngine::shouldClose()
     return app->shouldClose();
 }
 
-void ShadedPathEngine::initFrame(FrameInfo* fi, long frameNum)
+void ShadedPathEngine::initFrame(FrameResources* fi, long frameNum)
 {
     fi->frameNum = frameNum;
     ThemedTimer::getInstance()->start(TIMER_DRAW_FRAME);
@@ -312,7 +308,7 @@ void ShadedPathEngine::singleThreadPostFrame()
     imageConsumer->consume(currentFrameInfo);
 }
 
-bool ShadedPathEngine::isDrawResult(FrameInfo* fi)
+bool ShadedPathEngine::isDrawResult(FrameResources* fi)
 {
     if (fi->numCommandBuffers > 0) {
         return true;

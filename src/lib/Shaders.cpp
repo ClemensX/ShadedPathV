@@ -17,16 +17,19 @@ Shaders::Config& Shaders::Config::init()
 	engine->globalRendering.createViewportState(shaderState);
 	for (ShaderBase* shader : shaderList) {
 		shader->init(*engine, shaderState);
-		// pipelines must be created for every rendering thread
-		for (auto& res : engine->globalRendering.workerThreadResources) {
-			shader->initSingle(res, shaderState);
-		}
+		// pipelines must be created for all FrameInfos
+        for (auto& fi : engine->getFrameResources()) {
+            shader->initSingle(fi, shaderState);
+        }
+		//for (auto& res : engine->globalRendering.workerThreadResources) {
+		//	shader->initSingle(fi   res, shaderState);
+		//}
 		shader->finishInitialization(*engine, shaderState);
 	}
 	return *this;
 }
 
-void Shaders::Config::gatherActiveCommandBuffers(ThreadResources& tr)
+void Shaders::Config::gatherActiveCommandBuffers(FrameResources& tr)
 {
 	//tr.activeCommandBuffers.clear();
 	for (ShaderBase* shader : shaderList) {
@@ -47,20 +50,20 @@ VkShaderModule Shaders::createShaderModule(const vector<byte>& code)
 	return shaderModule;
 }
 
-void Shaders::Config::createCommandBuffers(ThreadResources& tr) {
+void Shaders::Config::createCommandBuffers(FrameResources& tr) {
 	for (ShaderBase* shader : shaderList) {
 		shader->createCommandBuffer(tr);
 	}
 }
 
-void Shaders::Config::destroyThreadResources(ThreadResources& tr)
+void Shaders::Config::destroyThreadResources(FrameResources& tr)
 {
 	for (ShaderBase* shader : shaderList) {
 		shader->destroyThreadResources(tr);
 	}
 }
 
-void Shaders::createCommandBuffers(ThreadResources& tr)
+void Shaders::createCommandBuffers(FrameResources& tr)
 {
 	config.createCommandBuffers(tr);
 }
@@ -69,11 +72,11 @@ void Shaders::checkShaderState(ShadedPathEngine& engine) {
 	config.checkShaderState();
 }
 
-void Shaders::gatherActiveCommandBuffers(ThreadResources& tr) {
+void Shaders::gatherActiveCommandBuffers(FrameResources& tr) {
 	config.gatherActiveCommandBuffers(tr);
 }
 
-void Shaders::destroyThreadResources(ThreadResources& tr)
+void Shaders::destroyThreadResources(FrameResources& tr)
 {
 	config.destroyThreadResources(tr);
 }

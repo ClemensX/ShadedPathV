@@ -5,7 +5,7 @@
 // Currently produces validation warnings if a window is removed from render queue.
 // It is not recommended to use this as a base for your application.
 
-void SimpleMultiWin::prepareFrame(FrameInfo* fi) {
+void SimpleMultiWin::prepareFrame(FrameResources* fi) {
     if (!engine->isSingleThreadMode()) assert(false == engine->isMainThread());
 
     //Log("prepareFrame " << fi->frameNum << std::endl);
@@ -45,7 +45,7 @@ void SimpleMultiWin::mainThreadHook() {
 }
 
 // drawFrame is called for each topic in parallel!! Beware!
-void SimpleMultiWin::drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult) {
+void SimpleMultiWin::drawFrame(FrameResources* fi, int topic, DrawResult* drawResult) {
     if (!engine->isSingleThreadMode()) assert(false == engine->isMainThread());
     if (topic == 0) {
         //Log("drawFrame " << fi->frameNum << " topic " << topic << std::endl);

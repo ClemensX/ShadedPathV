@@ -155,6 +155,9 @@ void VulkanResources::createThreadResources(VulkanHandoverResources& hdv)
     allocInfo.pSetLayouts = &layout;
     VkResult res = vkAllocateDescriptorSets(engine->globalRendering.device, &allocInfo, hdv.descriptorSet);
     if ( res != VK_SUCCESS) {
+        if (res == VK_ERROR_OUT_OF_POOL_MEMORY) {
+            Error("VK_ERROR_OUT_OF_POOL_MEMORY at descriptor allocation. Consider using OVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT in local cmake!");
+        }
         Error("failed to allocate descriptor sets!");
     }
     string dname = hdv.debugBaseName + " Descriptor Set 1";
@@ -355,7 +358,7 @@ void VulkanResources::updateDescriptorSetForTextures() {
     globalTextureDescriptorSetValid = true;
 }
 
-void VulkanResources::updateDescriptorSets(ThreadResources& tr)
+void VulkanResources::updateDescriptorSets(FrameResources& tr)
 {
     vector<VulkanResourceElement>& def = *resourceDefinition;
     for (auto& d : def) {

@@ -10,11 +10,11 @@ class UIShader : public ShaderBase
 public:
     // set up shader
     virtual void init(ShadedPathEngine& engine, ShaderState& shaderState) override;
-    virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) override;
+    virtual void initSingle(FrameResources& tr, ShaderState& shaderState) override;
     virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState) override;
-    virtual void createCommandBuffer(ThreadResources& tr) override;
-    virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
-    virtual void destroyThreadResources(ThreadResources& tr) override;
+    virtual void createCommandBuffer(FrameResources& tr) override;
+    virtual void addCurrentCommandBuffer(FrameResources& tr) override;
+    virtual void destroyThreadResources(FrameResources& tr) override;
 
 
     // render UI, only to be called from Presentation::presentBackBufferImage() because ImGUI is not thread save

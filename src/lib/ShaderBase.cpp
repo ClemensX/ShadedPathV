@@ -72,7 +72,7 @@ void ShaderBase::createDescriptorPool(vector<VkDescriptorPoolSize>& poolSizes, v
 	}
 }
 
-void ShaderBase::createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState shaderState, VkRenderPass& renderPass, VkFramebuffer& frameBuffer, VkFramebuffer& frameBuffer2)
+void ShaderBase::createRenderPassAndFramebuffer(FrameResources& tr, ShaderState shaderState, VkRenderPass& renderPass, VkFramebuffer& frameBuffer, VkFramebuffer& frameBuffer2)
 {
 	// depth buffer attachement
 	VkAttachmentDescription depthAttachment{};
@@ -148,7 +148,10 @@ void ShaderBase::createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState
 	}
 
 	// frame buffer
-	array<VkImageView, 2> attachmentsView = { tr.frameInfo->colorAttachment.view, tr.frameInfo->depthImageView };
+    if (tr.colorAttachment.view == nullptr || tr.depthImageView == nullptr) {
+        Error("colorAttachment or depthImageView not initialized! We need a render surface before initializing the shaders.");
+    }
+	array<VkImageView, 2> attachmentsView = { tr.colorAttachment.view, tr.depthImageView };
 
 	VkFramebufferCreateInfo framebufferInfo{};
 	framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -163,7 +166,7 @@ void ShaderBase::createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState
 		Error("failed to create framebuffer!");
 	}
 	if (engine->isStereo()) {
-		array<VkImageView, 2> attachmentsView2 = { tr.frameInfo->colorAttachment2.view, tr.frameInfo->depthImageView2 };
+		array<VkImageView, 2> attachmentsView2 = { tr.colorAttachment2.view, tr.depthImageView2 };
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

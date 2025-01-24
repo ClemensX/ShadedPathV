@@ -1,7 +1,7 @@
 #include "mainheader.h"
 #include "SimpleMultiApp.h"
 
-void SimpleMultiApp::prepareFrame(FrameInfo* fi) {
+void SimpleMultiApp::prepareFrame(FrameResources* fi) {
     if (!engine->isSingleThreadMode()) assert(false == engine->isMainThread());
     lastFrameNum = fi->frameNum;
 };
@@ -16,7 +16,7 @@ void SimpleMultiApp::mainThreadHook() {
 }
 
 // drawFrame is called for each topic in parallel!! Beware!
-void SimpleMultiApp::drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult) {
+void SimpleMultiApp::drawFrame(FrameResources* fi, int topic, DrawResult* drawResult) {
     if (!engine->isSingleThreadMode()) assert(false == engine->isMainThread());
     if (topic == 0) {
         //Log("drawFrame " << fi->frameNum << " topic " << topic << std::endl);
@@ -87,7 +87,7 @@ void SimpleMultiApp::handleInput(InputState& inputState)
 }
 
 // app2 
-void SimpleMultiApp2::prepareFrame(FrameInfo* fi) {
+void SimpleMultiApp2::prepareFrame(FrameResources* fi) {
     if (!engine->isSingleThreadMode()) assert(false == engine->isMainThread());
     lastFrameNum = fi->frameNum;
 };
@@ -102,7 +102,7 @@ void SimpleMultiApp2::mainThreadHook() {
 }
 
 // drawFrame is called for each topic in parallel!! Beware!
-void SimpleMultiApp2::drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult) {
+void SimpleMultiApp2::drawFrame(FrameResources* fi, int topic, DrawResult* drawResult) {
     if (!engine->isSingleThreadMode()) assert(false == engine->isMainThread());
     if (topic == 0) {
         //Log("drawFrame " << fi->frameNum << " topic " << topic << std::endl);

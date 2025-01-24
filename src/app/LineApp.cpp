@@ -10,12 +10,12 @@ void LineApp::mainThreadHook()
 }
 
 // prepare drawing, guaranteed single thread
-void LineApp::prepareFrame(FrameInfo* fi)
+void LineApp::prepareFrame(FrameResources* fi)
 {
 }
 
 // draw from multiple threads
-void LineApp::drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult)
+void LineApp::drawFrame(FrameResources* fi, int topic, DrawResult* drawResult)
 {
     if (fi->frameNum % 1000 == 0 && topic == 1) {
         Log("LineApp drawFrame " << fi->frameNum << endl);

@@ -7,7 +7,7 @@
 class ImageConsumerNullify : public ImageConsumer
 {
 public:
-    void consume(FrameInfo* fi) override {
+    void consume(FrameResources* fi) override {
         fi->renderedImage->consumed = true;
         fi->renderedImage->rendered = false;
     }
@@ -17,7 +17,7 @@ public:
 class ImageConsumerDump : public ImageConsumer
 {
 public:
-    void consume(FrameInfo* fi) override;
+    void consume(FrameResources* fi) override;
     void configureFramesToDump(bool dumpAll, std::initializer_list<long> frameNumbers);
     ImageConsumerDump(ShadedPathEngine* s) {
         setEngine(s);
@@ -33,7 +33,7 @@ private:
 class ImageConsumerWindow : public ImageConsumer
 {
 public:
-    void consume(FrameInfo* fi) override;
+    void consume(FrameResources* fi) override;
     void setWindow(WindowInfo* w) {
         window = w;
     }

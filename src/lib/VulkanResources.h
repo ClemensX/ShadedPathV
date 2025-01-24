@@ -87,7 +87,7 @@ public:
 	// vkAllocateDescriptorSets and create the VkWriteDescriptorSets
 	void createThreadResources(VulkanHandoverResources& res);
 	// set after init and possibly before each frame
-	void updateDescriptorSets(ThreadResources& tr);
+	void updateDescriptorSets(FrameResources& tr);
 	// create pipeline layout and store in parameter.
 	void createPipelineLayout(VkPipelineLayout* pipelineLayout, ShaderBase* shaderBase, VkDescriptorSetLayout additionalLayout = nullptr, size_t additionalLayoutPos = 0);
 

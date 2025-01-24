@@ -14,10 +14,10 @@ public:
     // be very brief here, as this will block the main thread
     virtual void mainThreadHook() {};
     virtual void handleInput(InputState& inputState) {};
-    virtual void prepareFrame(FrameInfo* fi) {};
+    virtual void prepareFrame(FrameResources* fi) {};
     // draw Frame depending on topic. is in range 0..appDrawCalls-1
     // each topic will be called in parallel threads
-    virtual void drawFrame(FrameInfo* fi, int topic, DrawResult* drawResult) {};
+    virtual void drawFrame(FrameResources* fi, int topic, DrawResult* drawResult) {};
     virtual void buildCustomUI() {};
     virtual bool shouldClose() { return true; };
     virtual void run(ContinuationInfo* cont = nullptr) {};
@@ -71,6 +71,7 @@ public:
     bool isDebugWindowPosition() { return debugWindowPosition; }
     bool isSingleThreadMode() { return singleThreadMode; }
     ContinuationInfo* getContinuationInfo() { return continuationInfo; }
+    int getParrallelAppDrawCalls() { return appDrawCalls; }
 
     bool isMainThread();
     void log_current_thread();
@@ -241,6 +242,9 @@ public:
     int getFramesInFlight() {
         return numWorkerThreads; // 1 for  single thread mode, 2 or more for multi
     }
+    std::array<FrameResources,2>& getFrameResources() {
+        return frameInfos;
+    }
 private:
 
     // bool configuration flags:
@@ -296,17 +300,17 @@ private:
     void postFrame();
     void waitUntilShutdown();
     // command buffers need to have been already counted bfeore calling this
-    bool isDrawResult(FrameInfo* fi);
+    bool isDrawResult(FrameResources* fi);
     // we no longer need frame num to be atomic
     //std::atomic<long> nextFreeFrameNum = 0;
     long nextFreeFrameNum = 0;
     long getNextFrameNumber();
     // beware! current draw frame info is only valid during frame creation (preFrame() to postFrame())
-    FrameInfo* currentFrameInfo = nullptr;
-    FrameInfo frameInfos[2]; // only 2 frame infos needed for alternating during draw calls, initialized in initGlobal()
+    FrameResources* currentFrameInfo = nullptr;
+    std::array<FrameResources,2> frameInfos; // only 2 frame infos needed for alternating during draw calls, initialized in initGlobal()
     // in single thread mode handle post processing (consume image, advance sound, etc.)
     void singleThreadPostFrame();
-    void initFrame(FrameInfo* fi, long frameNum);
+    void initFrame(FrameResources* fi, long frameNum);
     int numCores = 0;
     int overrideUsedCores = -1;
     int appDrawCalls = 1;

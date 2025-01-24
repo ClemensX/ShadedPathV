@@ -4,7 +4,7 @@ using namespace std;
 
 // image consumers
 
-void ImageConsumerDump::consume(FrameInfo* fi)
+void ImageConsumerDump::consume(FrameResources* fi)
 {
     if (dumpAll || frameNumbersToDump.find(fi->frameNum) != frameNumbersToDump.end()) {
         directImage.dumpToFile(fi->renderedImage);
@@ -20,7 +20,7 @@ void ImageConsumerDump::configureFramesToDump(bool dumpAll, std::initializer_lis
     frameNumbersToDump.insert(frameNumbers.begin(), frameNumbers.end());
 }
 
-void ImageConsumerWindow::consume(FrameInfo* fi)
+void ImageConsumerWindow::consume(FrameResources* fi)
 {
     //Log("copy frame " << fi->frameNum << " to window " << window->title << endl);
     engine->presentation.presentImage(window, fi);

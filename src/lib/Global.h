@@ -2,6 +2,7 @@
 
 //forward
 struct WindowInfo;
+class ShadedPathEngine;
 
 struct InputState {
 	glm::vec2 pos = glm::vec2(0.0f);
@@ -54,21 +55,30 @@ struct DrawResult {
 	std::array<VkCommandBuffer, MAX_COMMAND_BUFFERS_PER_DRAW> commandBuffers;
 };
 
-// FrameInfo and ThreadResources work together: FrameInfo has all all global frame data
+// FrameResources and ThreadResources work together: FrameResources has all all global frame data
 // that is not related to multi-trhread rendering. ThreadResources has all thread specific data.
-// FrameInfo has all s
-struct FrameInfo {
-	long frameNum = -1;
-//	long frameIndex = -1;
+// FrameResources[2] --- engine.frameInfos[2], used alternating depending on frame number
+//    - ThreadResources[engine.numWorkerThreads] --- globalRendering.workerThreadResources[], assigned to frameInfo in preFrame()
+struct FrameResources {
+    static void initAll(ShadedPathEngine* engine);
+    void init();
+    ShadedPathEngine* engine = nullptr;
+    long frameNum = -1;
+    // index into shader specific resources array (TODO: should be fixed resource element instead of index)
+    long frameIndex = -1;
 //	std::vector<VkSubmitInfo> submitinfos;
 //	std::vector<VkCommandBuffer> activeCommandBuffers;
-//	VkFence presentFence = nullptr;
+	VkFence presentFence = nullptr;
 //	ThreadsafeWaitingQueue<unsigned long> renderThreadContinueQueue;
 //	VkPipelineStageFlags waitStages[2];
 //#define	THREAD_RESOURCES_MAX_COMMAND_BUFFERS 10
 //	VkCommandBuffer commandBuffers[THREAD_RESOURCES_MAX_COMMAND_BUFFERS];
 //
-	// depth buffer
+    VkSemaphore imageAvailableSemaphore = nullptr;
+    VkSemaphore renderFinishedSemaphore = nullptr;
+    VkFence inFlightFence = nullptr;
+    VkEvent uiRenderFinished = nullptr;
+    // depth buffer
 	VkImage depthImage;
 	VkDeviceMemory depthImageMemory;
 	VkImageView depthImageView;
@@ -79,6 +89,7 @@ struct FrameInfo {
 
     FrameBufferAttachment colorAttachment/*, depthAttachment*/;
     FrameBufferAttachment colorAttachment2; // right side view
+    VkCommandPool commandPool = nullptr;
 
 //
 //	bool threadFinished = false;
@@ -120,12 +131,17 @@ struct FrameInfo {
             }
         }
     }
+private:
+    void createFencesAndSemaphores();
+    void createBackBufferImage();
+    void createCommandPool();
+    void createDepthResources();
 };
 
 class QueueSubmitResources
 {
 public:
-	FrameInfo* frameInfo = nullptr;
+	FrameResources* frameInfo = nullptr;
 	ThreadsafeWaitingQueue<unsigned long> renderThreadContinueQueue;
 };
 
@@ -133,11 +149,9 @@ public:
 class ThreadResources : public EngineParticipant {
 public:
     virtual ~ThreadResources();
-    FrameInfo* frameInfo = nullptr;
+    FrameResources* frameInfo = nullptr;
     VkCommandPool commandPool = nullptr;
     VkCommandBuffer commandBuffer = nullptr;
-    // index into shader specific resources array (TODO: should be fixed resource element instead of index)
-    int threadResourcesIndex = -1;
 };
 
 // change image on GPU
@@ -152,5 +166,5 @@ public:
 class ImageConsumer : public EngineParticipant
 {
 public:
-    virtual void consume(FrameInfo* fi) = 0;
+    virtual void consume(FrameResources* fi) = 0;
 };

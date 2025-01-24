@@ -83,11 +83,11 @@ public:
 
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
 	// thread resources initialization
-	virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) override;
+	virtual void initSingle(FrameResources& tr, ShaderState& shaderState) override;
 	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState) override;
-	virtual void createCommandBuffer(ThreadResources& tr) override;
-	virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
-	virtual void destroyThreadResources(ThreadResources& tr) override;
+	virtual void createCommandBuffer(FrameResources& tr) override;
+	virtual void addCurrentCommandBuffer(FrameResources& tr) override;
+	virtual void destroyThreadResources(FrameResources& tr) override;
 
 	virtual void createUpdateSet(GlobalUpdateElement& el) override;
 	virtual void updateGlobal(GlobalUpdateElement& currentSet) override;
@@ -104,10 +104,10 @@ public:
 
 	// clear line buffer, has to be called at begin of each frame
 	// NOT after adding last group of lines
-	void clearLocalLines(ThreadResources& tr);
+	void clearLocalLines(FrameResources& tr);
 
 	// per frame update of UBO / MVP
-	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
+	void uploadToGPU(FrameResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
 
 	// resource switch after upload of new data has finished:
 	void resourceSwitch(GlobalResourceSet set) override;
@@ -137,11 +137,11 @@ public:
 	// free old resources:
 	void reuseUpdateElement(LineShaderUpdateElement* el);
 	// single thread methods to change current global update:
-	void applyGlobalUpdate(LineSubShader& updateShader, ThreadResources& tr, GlobalUpdateElement* updateSet);
+	void applyGlobalUpdate(LineSubShader& updateShader, FrameResources& tr, GlobalUpdateElement* updateSet);
 	std::vector<LineShader::Vertex> verticesPermanent;
 
 private:
-	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
+	void recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
 
 
 	int drawAddLinesSize = 0;
@@ -162,13 +162,13 @@ private:
 	// util methods
 public:
 	// add lines for just one frame
-	void addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& tr);
+	void addOneTime(std::vector<LineDef>& linesToAdd, FrameResources& tr);
 
 	// prepare command buffer for added lines
-	void prepareAddLines(ThreadResources& tr);
+	void prepareAddLines(FrameResources& tr);
 
 	// add lines permanently via update thread
-	void addPermament(std::vector<LineDef>& linesToAdd, ThreadResources& tr);
+	void addPermament(std::vector<LineDef>& linesToAdd, FrameResources& tr);
 
 	static void addCross(std::vector<LineDef>& lines, glm::vec3 pos, glm::vec4 color) {
 		static float oDistance = 5.0f;
@@ -214,20 +214,20 @@ public:
 	void setFragShaderModule(VkShaderModule sm) {
 		fragShaderModule = sm;
 	}
-	void initSingle(ThreadResources& tr, ShaderState& shaderState);
+	void initSingle(FrameResources& tr, ShaderState& shaderState);
 	void setVulkanResources(VulkanResources* vr) {
 		vulkanResources = vr;
 	}
 
 	// All sections need: buffer allocation and recording draw commands.
 	// Stage they are called at will be very different
-	void allocateCommandBuffer(ThreadResources& tr, VkCommandBuffer* cmdBufferPtr, const char* debugName);
-	void addRenderPassAndDrawCommands(ThreadResources& tr, VkCommandBuffer* cmdBufferPtr, VkBuffer vertexBuffer);
+	void allocateCommandBuffer(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, const char* debugName);
+	void addRenderPassAndDrawCommands(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, VkBuffer vertexBuffer);
 
-	void createGlobalCommandBufferAndRenderPass(ThreadResources& tr);
-	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
+	void createGlobalCommandBufferAndRenderPass(FrameResources& tr);
+	void recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
 	// per frame update of UBO / MVP
-	void uploadToGPU(ThreadResources& tr, LineShader::UniformBufferObject& ubo, LineShader::UniformBufferObject& ubo2);
+	void uploadToGPU(FrameResources& tr, LineShader::UniformBufferObject& ubo, LineShader::UniformBufferObject& ubo2);
 
 	void destroy();
 

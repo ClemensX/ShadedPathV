@@ -13,7 +13,7 @@ DirectImage::DirectImage()
 	Log("DirectImage constructor\n");
 }
 
-void DirectImage::consume(FrameInfo* fi)
+void DirectImage::consume(FrameResources* fi)
 {
     dumpToFile(fi->renderedImage);
 }

@@ -434,7 +434,7 @@ VkExtent2D Presentation::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabi
 
 
 
-void Presentation::presentImage(WindowInfo* winfo, FrameInfo *srcFrame)
+void Presentation::presentImage(WindowInfo* winfo, FrameResources *srcFrame)
 {
     // 1. step: aquire image, wait for aquire semaphore, then create the copy commands and execute them
     if (winfo->disabled) return;
