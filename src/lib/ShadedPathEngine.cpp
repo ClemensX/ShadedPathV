@@ -46,7 +46,7 @@ void ShadedPathEngine::initGlobal(string appname) {
         frameInfos[i].engine = this;
         frameInfos[i].frameIndex = i;
     }
-    FrameResources::initAll(this);
+    //FrameResources::initAll(this);
     textureStore.init(this, maxTextures);
     //meshStore.init(this);
     //if (soundEnabled) sound.init();

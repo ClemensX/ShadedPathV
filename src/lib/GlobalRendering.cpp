@@ -767,7 +767,7 @@ VkImageView GlobalRendering::createImageViewCube(VkImage image, VkFormat format,
 }
 
 void GlobalRendering::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-                                  VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, uint32_t layers) {
+                                  VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, const char* debugName, uint32_t layers) {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -792,6 +792,7 @@ void GlobalRendering::createImage(uint32_t width, uint32_t height, uint32_t mipL
     if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
         Error("failed to create image!");
     }
+    engine->util.debugNameObjectImage(image, debugName);
 
     VkMemoryRequirements memRequirements;
     vkGetImageMemoryRequirements(device, image, &memRequirements);
@@ -806,6 +807,9 @@ void GlobalRendering::createImage(uint32_t width, uint32_t height, uint32_t mipL
     }
 
     vkBindImageMemory(device, image, imageMemory, 0);
+    string memName = debugName;
+    memName += "_dev_mem";
+    engine->util.debugNameObjectDeviceMmeory(imageMemory, memName.c_str());
 }
 
 void GlobalRendering::createCubeMapFrom2dTexture(string textureName2d, string textureNameCube, TextureStore* textureStore)
@@ -816,7 +820,7 @@ void GlobalRendering::createCubeMapFrom2dTexture(string textureName2d, string te
 
     createImageCube(twoD->vulkanTexture.width, twoD->vulkanTexture.height, twoD->vulkanTexture.levelCount, VK_SAMPLE_COUNT_1_BIT, twoD->vulkanTexture.imageFormat, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        attachment.image, attachment.memory);
+        attachment.image, attachment.memory, textureNameCube.c_str());
     auto cmd = beginSingleTimeCommands(true);
 
     auto subresourceRangeSrc = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, twoD->vulkanTexture.levelCount, 0, 1 };
@@ -969,10 +973,9 @@ GPUImage* GlobalRendering::createImage(vector<GPUImage>& list, const char *debug
     gpui.rendered = false;
     gpui.consumed = false;
     createImage(gpui.width, gpui.height, 1, VK_SAMPLE_COUNT_1_BIT, ImageFormat, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gpui.image, gpui.memory);
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gpui.image, gpui.memory, debugName);
     gpui.view = createImageView(gpui.image, ImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
     list.push_back(gpui);
-    engine->util.debugNameObjectImage(gpui.image, debugName);
     return &list.back();
 }
 
@@ -987,7 +990,7 @@ void GlobalRendering::createDumpImage(GPUImage& gpui, uint32_t width, uint32_t h
     gpui.height = height;
     createImage(gpui.width, gpui.height, 1, VK_SAMPLE_COUNT_1_BIT, ImageFormat, VK_IMAGE_TILING_LINEAR,
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        gpui.image, gpui.memory);
+        gpui.image, gpui.memory, "dump image");
     // Get layout of the image (including row pitch)
     VkImageSubresource subResource{};
     subResource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;

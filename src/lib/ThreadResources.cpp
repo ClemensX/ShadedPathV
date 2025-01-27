@@ -4,6 +4,33 @@ using namespace std;
 
 // FrameResources
 
+FrameResources::~FrameResources() {
+    auto& device = engine->globalRendering.device;
+    auto& global = engine->globalRendering;
+    auto& shaders = engine->shaders;
+    vkDestroyImage(device, colorAttachment.image, nullptr);
+    vkDestroyImage(device, depthImage, nullptr);
+    vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
+    vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
+    vkDestroyFence(device, presentFence, nullptr);
+    vkDestroyFence(device, inFlightFence, nullptr);
+    vkDestroyEvent(device, uiRenderFinished, nullptr);
+    vkFreeMemory(device, colorAttachment.memory, nullptr);
+    vkFreeMemory(device, depthImageMemory, nullptr);
+    vkDestroyImageView(device, colorAttachment.view, nullptr);
+    vkDestroyImageView(device, depthImageView, nullptr);
+    vkDestroyCommandPool(device, commandPool, nullptr);
+    if (engine->isStereo()) {
+        vkDestroyImage(device, colorAttachment2.image, nullptr);
+        vkDestroyImage(device, depthImage2, nullptr);
+        vkFreeMemory(device, colorAttachment2.memory, nullptr);
+        vkFreeMemory(device, depthImageMemory2, nullptr);
+        vkDestroyImageView(device, colorAttachment2.view, nullptr);
+        vkDestroyImageView(device, depthImageView2, nullptr);
+    }
+    Log("FrameResources destroyed\n");
+};
+
 void FrameResources::initAll(ShadedPathEngine* engine)
 {
     // FrameResources.index and engine ptr was set in ShadedPathEngine::initGlobal()
@@ -29,9 +56,12 @@ void FrameResources::createFencesAndSemaphores()
     if (vkCreateSemaphore(engine->globalRendering.device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS) {
         Error("failed to create imageAvailableSemaphore for a frame");
     }
+    engine->util.debugNameObjectSemaphore(imageAvailableSemaphore, "FrameResources.imageAvailableSemaphore");
+
     if (vkCreateSemaphore(engine->globalRendering.device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS) {
         Error("failed to create renderFinishedSemaphore for a frame");
     }
+    engine->util.debugNameObjectSemaphore(renderFinishedSemaphore, "FrameResources.renderFinishedSemaphore");
 
     VkFenceCreateInfo fenceInfo{};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -45,9 +75,11 @@ void FrameResources::createFencesAndSemaphores()
         Error("failed to create presentFence for a frame");
     }
     fenceInfo.flags = 0; // present fence will be set during 1st present in queue submit thread
+    engine->util.debugNameObjectFence(presentFence, "FrameResources.presentFence");
     if (vkCreateFence(engine->globalRendering.device, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
         Error("failed to create inFlightFence for a frame");
     }
+    engine->util.debugNameObjectFence(inFlightFence, "FrameResources.inFlightFence");
 
     VkEventCreateInfo eventInfo{};
     eventInfo.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;
@@ -55,6 +87,7 @@ void FrameResources::createFencesAndSemaphores()
     if (vkCreateEvent(engine->globalRendering.device, &eventInfo, nullptr, &uiRenderFinished) != VK_SUCCESS) {
         Error("failed to create event uiRenderFinished for a frame");
     }
+    engine->util.debugNameObjectEvent(uiRenderFinished, "FrameResources.uiRenderFinished");
 }
 
 void FrameResources::createBackBufferImage()
@@ -62,12 +95,14 @@ void FrameResources::createBackBufferImage()
     auto& device = engine->globalRendering.device;
     auto& global = engine->globalRendering;
     // Color attachment
+    auto name = engine->util.createDebugName("FrameInfo BackBufferImage", frameIndex);
     global.createImage(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height, 1, VK_SAMPLE_COUNT_1_BIT, global.ImageFormat, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorAttachment.image, colorAttachment.memory);
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorAttachment.image, colorAttachment.memory, name.c_str());
     colorAttachment.view = global.createImageView(colorAttachment.image, global.ImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
     if (engine->isStereo()) {
+        auto name = engine->util.createDebugName("FrameInfo Stereo BackBufferImage", frameIndex);
         global.createImage(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height, 1, VK_SAMPLE_COUNT_1_BIT, global.ImageFormat, VK_IMAGE_TILING_OPTIMAL,
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorAttachment2.image, colorAttachment2.memory);
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorAttachment2.image, colorAttachment2.memory, name.c_str());
         colorAttachment2.view = global.createImageView(colorAttachment2.image, global.ImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
     }
 }
@@ -76,12 +111,14 @@ void FrameResources::createDepthResources()
 {
     VkFormat depthFormat = engine->globalRendering.depthFormat;
 
+    auto name = engine->util.createDebugName("FrameInfo DepthImage_", frameIndex);
     engine->globalRendering.createImage(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height, 1, VK_SAMPLE_COUNT_1_BIT, depthFormat, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory, name.c_str());
     depthImageView = engine->globalRendering.createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
     if (engine->isStereo()) {
+        auto name = engine->util.createDebugName("FrameInfo Stereo DepthImage_", frameIndex);
         engine->globalRendering.createImage(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height, 1, VK_SAMPLE_COUNT_1_BIT, depthFormat, VK_IMAGE_TILING_OPTIMAL,
-            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage2, depthImageMemory2);
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage2, depthImageMemory2, name.c_str());
         depthImageView2 = engine->globalRendering.createImageView(depthImage2, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
     }
 }

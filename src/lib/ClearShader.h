@@ -49,6 +49,7 @@ private:
     std::string name;
     ShadedPathEngine* engine = nullptr;
     VkDevice* device = nullptr;
+    FrameResources* frameResources = nullptr;
 };
 
 // use identical shader with new name for ending shader chain

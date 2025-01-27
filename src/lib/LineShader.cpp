@@ -282,6 +282,7 @@ void LineSubShader::init(LineShader* parent, std::string debugName) {
 
 void LineSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 {
+	frameResources = &tr;
 	// MVP uniform buffer
 	lineShader->createUniformBuffer(uniformBuffer, sizeof(LineShader::UniformBufferObject),
 		uniformBufferMemory);
@@ -478,6 +479,7 @@ void LineSubShader::destroy() {
 	vkDestroyRenderPass(*device, renderPass, nullptr);
 	vkDestroyBuffer(*device, uniformBuffer, nullptr);
 	vkDestroyBuffer(*device, uniformBuffer2, nullptr);
+    vkFreeCommandBuffers(*device, frameResources->commandPool, 1, &commandBuffer);
 	vkFreeMemory(*device, uniformBufferMemory, nullptr);
 	vkFreeMemory(*device, uniformBufferMemory2, nullptr);
 	vkDestroyBuffer(*device, vertexBufferLocal, nullptr);

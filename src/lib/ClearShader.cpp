@@ -64,6 +64,7 @@ void ClearSubShader::init(ClearShader* parent, std::string debugName) {
 
 void ClearSubShader::allocateCommandBuffer(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, const char* debugName)
 {
+	frameResources = &tr;
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = tr.commandPool;
@@ -121,6 +122,7 @@ void ClearSubShader::addRenderPassAndDrawCommands(FrameResources& tr, VkCommandB
 
 void ClearSubShader::destroy()
 {
+    vkFreeCommandBuffers(*device, frameResources->commandPool, 1, &commandBuffer);
 	vkDestroyFramebuffer(*device, framebuffer, nullptr);
 	vkDestroyRenderPass(*device, renderPass, nullptr);
 	if (engine->isStereo()) {

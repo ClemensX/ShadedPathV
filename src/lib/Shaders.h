@@ -59,6 +59,7 @@ public:
 
 	// Initialize ShaderState and all added shaders
 	Shaders& initActiveShaders() {
+        FrameResources::initAll(engine);
 		auto& shaders = getShaders();
 		if (shaders.size() == 0) Error("No shaders added to Shaders object");
 		auto shaderInstance = shaders.back();

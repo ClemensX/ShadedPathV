@@ -102,6 +102,18 @@ public:
     void debugNameObjectDescriptorSet(VkDescriptorSet m, const char* name) {
         debugNameObject((uint64_t)m, VK_OBJECT_TYPE_DESCRIPTOR_SET, name);
     }
+    // debug name event
+    void debugNameObjectEvent(VkEvent m, const char* name) {
+        debugNameObject((uint64_t)m, VK_OBJECT_TYPE_EVENT, name);
+    }
+    // debug name fence
+    void debugNameObjectFence(VkFence m, const char* name) {
+        debugNameObject((uint64_t)m, VK_OBJECT_TYPE_FENCE, name);
+    }
+    // debug name semaphore
+    void debugNameObjectSemaphore(VkSemaphore m, const char* name) {
+        debugNameObject((uint64_t)m, VK_OBJECT_TYPE_SEMAPHORE, name);
+    }
     // debug name shader module
     void debugNameObjectShaderModule(VkShaderModule m, const char* name) {
         debugNameObject((uint64_t)m, VK_OBJECT_TYPE_SHADER_MODULE, name);

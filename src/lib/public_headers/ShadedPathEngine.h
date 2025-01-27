@@ -222,6 +222,10 @@ public:
     void initGlobal(std::string appname = "");
     GlobalRendering globalRendering;
     Util util;
+private:
+    // need to insert here for proper destruction order
+    std::array<FrameResources, 2> frameInfos; // only 2 frame infos needed for alternating during draw calls, initialized in initGlobal()
+public:
     Shaders shaders;
     VR vr;
     TextureStore textureStore;
@@ -307,7 +311,6 @@ private:
     long getNextFrameNumber();
     // beware! current draw frame info is only valid during frame creation (preFrame() to postFrame())
     FrameResources* currentFrameInfo = nullptr;
-    std::array<FrameResources,2> frameInfos; // only 2 frame infos needed for alternating during draw calls, initialized in initGlobal()
     // in single thread mode handle post processing (consume image, advance sound, etc.)
     void singleThreadPostFrame();
     void initFrame(FrameResources* fi, long frameNum);

@@ -60,6 +60,7 @@ struct DrawResult {
 // FrameResources[2] --- engine.frameInfos[2], used alternating depending on frame number
 //    - ThreadResources[engine.numWorkerThreads] --- globalRendering.workerThreadResources[], assigned to frameInfo in preFrame()
 struct FrameResources {
+    ~FrameResources();
     static void initAll(ShadedPathEngine* engine);
     void init();
     ShadedPathEngine* engine = nullptr;

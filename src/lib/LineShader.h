@@ -263,5 +263,6 @@ private:
 	VkShaderModule fragShaderModule = nullptr;
 	ShadedPathEngine* engine = nullptr;
 	VkDevice* device = nullptr;
+	FrameResources* frameResources = nullptr;
 };
 
