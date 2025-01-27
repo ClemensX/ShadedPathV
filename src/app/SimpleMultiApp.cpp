@@ -38,6 +38,7 @@ void SimpleMultiApp::run(ContinuationInfo* cont) {
     ImageConsumerWindow icw(engine);
     imageConsumer = &icw;
 
+    engine->shaders.initActiveShaders();
     engine->eventLoop();
 
     // cleanup
@@ -128,6 +129,7 @@ void SimpleMultiApp2::run(ContinuationInfo* cont) {
     ImageConsumerWindow icw(engine);
     imageConsumer = &icw;
 
+    engine->shaders.initActiveShaders();
     engine->eventLoop();
 
     // cleanup

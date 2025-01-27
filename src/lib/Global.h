@@ -25,9 +25,9 @@ struct SwapChainSupportDetails {
 };
 
 struct FrameBufferAttachment {
-    VkImage image;
-    VkDeviceMemory memory;
-    VkImageView view;
+    VkImage image = nullptr;
+    VkDeviceMemory memory = nullptr;
+    VkImageView view = nullptr;
 };
 
 // low level graphics: define image on GPU, that can be used as source or target
@@ -80,16 +80,16 @@ struct FrameResources {
     VkFence inFlightFence = nullptr;
     VkEvent uiRenderFinished = nullptr;
     // depth buffer
-	VkImage depthImage;
-	VkDeviceMemory depthImageMemory;
-	VkImageView depthImageView;
+	VkImage depthImage = nullptr;
+	VkDeviceMemory depthImageMemory = nullptr;
+	VkImageView depthImageView = nullptr;
 	// right side views:
-	VkImage depthImage2;
-	VkDeviceMemory depthImageMemory2;
-	VkImageView depthImageView2;
+	VkImage depthImage2 = nullptr;
+	VkDeviceMemory depthImageMemory2 = nullptr;
+	VkImageView depthImageView2 = nullptr;
 
-    FrameBufferAttachment colorAttachment/*, depthAttachment*/;
-    FrameBufferAttachment colorAttachment2; // right side view
+    FrameBufferAttachment colorAttachment{}/*, depthAttachment*/;
+    FrameBufferAttachment colorAttachment2{}; // right side view
     VkCommandPool commandPool = nullptr;
 
 //

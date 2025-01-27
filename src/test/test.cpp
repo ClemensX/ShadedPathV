@@ -182,6 +182,7 @@ TEST_F(EngineTest, Headless) {
                 gpui = engine->createImage("Test Image");
                 engine->globalRendering.createDumpImage(directImage);
                 di.openForCPUWriteAccess(gpui, &directImage);
+                engine->shaders.initActiveShaders();
 
                 engine->eventLoop();
 
@@ -429,6 +430,7 @@ TEST_F(EngineImageConsumer, Dump) {
                 engine->globalRendering.createDumpImage(directImage);
                 di.openForCPUWriteAccess(gpui, &directImage);
 
+                engine->shaders.initActiveShaders();
                 engine->eventLoop();
 
                 // cleanup

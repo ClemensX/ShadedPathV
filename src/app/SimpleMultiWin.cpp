@@ -68,7 +68,7 @@ void SimpleMultiWin::run(ContinuationInfo* cont) {
     imageConsumer = &icw;
 
     //openWindow("Window SimpleApp");
-
+    engine->shaders.initActiveShaders();
     engine->eventLoop();
 
     // cleanup

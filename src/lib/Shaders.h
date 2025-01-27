@@ -61,7 +61,10 @@ public:
 	Shaders& initActiveShaders() {
         FrameResources::initAll(engine);
 		auto& shaders = getShaders();
-		if (shaders.size() == 0) Error("No shaders added to Shaders object");
+		if (shaders.size() == 0) {
+			Log("WARNING: No shaders were added to global Shaders object");
+			return *this;
+		}
 		auto shaderInstance = shaders.back();
 		// check subclass for EndShader
 		EndShader* derivedPtr = dynamic_cast<EndShader*>(shaderInstance);

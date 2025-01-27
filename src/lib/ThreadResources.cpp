@@ -8,25 +8,25 @@ FrameResources::~FrameResources() {
     auto& device = engine->globalRendering.device;
     auto& global = engine->globalRendering;
     auto& shaders = engine->shaders;
-    vkDestroyImage(device, colorAttachment.image, nullptr);
-    vkDestroyImage(device, depthImage, nullptr);
-    vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
-    vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
-    vkDestroyFence(device, presentFence, nullptr);
-    vkDestroyFence(device, inFlightFence, nullptr);
-    vkDestroyEvent(device, uiRenderFinished, nullptr);
-    vkFreeMemory(device, colorAttachment.memory, nullptr);
-    vkFreeMemory(device, depthImageMemory, nullptr);
-    vkDestroyImageView(device, colorAttachment.view, nullptr);
-    vkDestroyImageView(device, depthImageView, nullptr);
-    vkDestroyCommandPool(device, commandPool, nullptr);
-    if (engine->isStereo()) {
-        vkDestroyImage(device, colorAttachment2.image, nullptr);
-        vkDestroyImage(device, depthImage2, nullptr);
-        vkFreeMemory(device, colorAttachment2.memory, nullptr);
-        vkFreeMemory(device, depthImageMemory2, nullptr);
-        vkDestroyImageView(device, colorAttachment2.view, nullptr);
-        vkDestroyImageView(device, depthImageView2, nullptr);
+    if (colorAttachment.image) vkDestroyImage(device, colorAttachment.image, nullptr);
+    if (depthImage) vkDestroyImage(device, depthImage, nullptr);
+    if (imageAvailableSemaphore) vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
+    if (renderFinishedSemaphore) vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
+    if (presentFence) vkDestroyFence(device, presentFence, nullptr);
+    if (inFlightFence) vkDestroyFence(device, inFlightFence, nullptr);
+    if (uiRenderFinished) vkDestroyEvent(device, uiRenderFinished, nullptr);
+    if (colorAttachment.memory) vkFreeMemory(device, colorAttachment.memory, nullptr);
+    if (depthImageMemory) vkFreeMemory(device, depthImageMemory, nullptr);
+    if (colorAttachment.view) vkDestroyImageView(device, colorAttachment.view, nullptr);
+    if (depthImageView) vkDestroyImageView(device, depthImageView, nullptr);
+    if (commandPool) vkDestroyCommandPool(device, commandPool, nullptr);
+    if (engine && engine->isStereo()) {
+        if (colorAttachment2.image) vkDestroyImage(device, colorAttachment2.image, nullptr);
+        if (depthImage2) vkDestroyImage(device, depthImage2, nullptr);
+        if (colorAttachment2.memory) vkFreeMemory(device, colorAttachment2.memory, nullptr);
+        if (depthImageMemory2) vkFreeMemory(device, depthImageMemory2, nullptr);
+        if (colorAttachment2.view) vkDestroyImageView(device, colorAttachment2.view, nullptr);
+        if (depthImageView2) vkDestroyImageView(device, depthImageView2, nullptr);
     }
     Log("FrameResources destroyed\n");
 };

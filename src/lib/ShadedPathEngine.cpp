@@ -177,7 +177,12 @@ void ShadedPathEngine::prepareDrawing()
     //    tr.renderThreadContinueQueue.push(0);
     //}
     //presentation.initBackBufferPresentation();
-
+    // check frame resources:
+    for (auto& fi : frameInfos) {
+        if (fi.drawResults.size() < appDrawCalls) {
+            Error("Frames have not been properly initialized. Did you forget initActiveShaders()?");
+        }
+    }
     if (!singleThreadMode) {
         qsr.renderThreadContinueQueue.setLoggingInfo(LOG_RENDER_CONTINUATION, "renderContinueQueue");
         qsr.renderThreadContinueQueue.push(0);
