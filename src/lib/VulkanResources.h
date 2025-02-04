@@ -48,7 +48,10 @@ struct VulkanHandoverResources {
 	VkImageView imageView = nullptr;
 	VkBuffer dynBuffer = nullptr;
 	VkDeviceSize dynBufferSize = 0L;
+	ShaderBase* shader = nullptr;
+	// debug
 	std::string debugBaseName = "no_name_given";
+    uint32_t debugDescriptorCount = 0;
 };
 
 
@@ -81,7 +84,7 @@ public:
 
 	// create DescriptorSetLayout and DescriptorPool with enough size for all threads
 	// poolMaxSetsFactor is usually the number of sub shaders per render thread
-	void createDescriptorSetResources(VkDescriptorSetLayout& layout, VkDescriptorPool& pool, int poolMaxSetsFactor = 1);
+	void createDescriptorSetResources(VkDescriptorSetLayout& layout, VkDescriptorPool& pool, ShaderBase* shaderBase, int poolMaxSetsFactor = 1);
 	// populate descriptor set, all necessary resources have to be set in handover struct.
 	// Called one-time only during init phase or after init phase in createCommandBuffer().
 	// vkAllocateDescriptorSets and create the VkWriteDescriptorSets
@@ -112,12 +115,12 @@ private:
 	// option to overide if more sets needed (e.g. 2x uniform buffers for LineShader)
 	void addResourcesForElement(VulkanResourceElement el);
 	void addThreadResourcesForElement(VulkanResourceElement d, VulkanHandoverResources& res);
-	// create resources for global texture descriptor set layout
+	// create resources for global texture descriptor set layout, independent of other descriptor sets
 	void createDescriptorSetResourcesForTextures();
 	// update texture descriptors, only once after init
 	void updateDescriptorSetForTextures();
-	VkDescriptorSetLayout layout = nullptr;
-	VkDescriptorPool pool = nullptr;
+	//VkDescriptorSetLayout layout = nullptr;
+	//VkDescriptorPool pool = nullptr;
 	// resources for temporary store info objects between the various create... calls:
 	std::vector<VkDescriptorBufferInfo> bufferInfos;
 	std::vector<VkDescriptorImageInfo> imageInfos;

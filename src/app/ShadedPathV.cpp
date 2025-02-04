@@ -36,6 +36,7 @@ int main()
         //.setSingleThreadMode(true)
         .overrideCPUCores(4)
         .configureParallelAppDrawCalls(2)
+        .setFixedPhysicalDeviceIndex(1)
         ;
 
     engine.initGlobal();

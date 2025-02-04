@@ -35,6 +35,10 @@ public:
 
 	virtual ~ShaderBase() = 0;
 
+	virtual std::string getName() const {
+		return typeid(*this).name();
+	}
+
 	// initializations:
 	// Color and depth render pass (single)
 	//   VkAttachmentDescription
@@ -167,6 +171,10 @@ public:
 
 	VkDescriptorSetLayout descriptorSetLayout = nullptr;
 	VkDescriptorPool descriptorPool = nullptr;
+	// debug pool allocation count
+    uint32_t poolAllocationSetCount = 0; // increase on each set allocation
+    uint32_t poolAllocationMaxSet = 0; // maximum number of sets allocated with vkCreateDescriptorPool()
+    uint32_t poolAllocationMaxSingleDescriptors = 0; // cumulated number of single descriptors over all descrptor sets (all descriptor types added together)
 	std::vector<VkPushConstantRange> pushConstantRanges;
 
 	// util methods to simplify shader creation

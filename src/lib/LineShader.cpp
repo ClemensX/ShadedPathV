@@ -13,7 +13,7 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	fragShaderModule = resources.createShaderModule("line.frag.spv");
 
 	// descriptor set layout
-	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, 3);
+	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, this, 3); // allocate for 3 subshaders
 	resources.createPipelineLayout(&pipelineLayout, this);
 
 	int fl = engine.getFramesInFlight();
@@ -303,6 +303,9 @@ void LineSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	handover.dynBuffer = nullptr;
 	handover.dynBufferSize = 0;
 	handover.debugBaseName = engine->util.createDebugName("ThreadResources.lineShader", tr.frameIndex);
+    assert(lineShader->descriptorSetLayout != nullptr);
+    assert(lineShader->descriptorPool != nullptr);
+	handover.shader = lineShader;
 	vulkanResources->createThreadResources(handover);
 
 	lineShader->createRenderPassAndFramebuffer(tr, shaderState, renderPass, framebuffer, framebuffer2);

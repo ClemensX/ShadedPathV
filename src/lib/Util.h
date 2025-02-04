@@ -126,6 +126,10 @@ public:
     void debugNameObjectCommandPool(VkCommandPool m, const char* name) {
         debugNameObject((uint64_t)m, VK_OBJECT_TYPE_COMMAND_POOL, name);
     }
+    // debug name command pool
+    void debugNameObjectDescriptorPool(VkDescriptorPool m, const char* name) {
+        debugNameObject((uint64_t)m, VK_OBJECT_TYPE_DESCRIPTOR_POOL, name);
+    }
     static std::wstring string2wstring(const std::string& s) {
         std::wstringstream wss;
         wss << s.c_str();

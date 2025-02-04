@@ -44,7 +44,7 @@ void VulkanResources::createIndexBufferStatic(VkDeviceSize bufferSize, const voi
     this->engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, bufferSize, src, buffer, bufferMemory, "IndexBufferStatic");
 }
 
-void VulkanResources::createDescriptorSetResources(VkDescriptorSetLayout& layout, VkDescriptorPool& pool, int poolMaxSetsFactor)
+void VulkanResources::createDescriptorSetResources(VkDescriptorSetLayout& layout, VkDescriptorPool& pool, ShaderBase* shaderBase, int poolMaxSetsFactor)
 {
     vector<VulkanResourceElement>& def = *resourceDefinition;
 
@@ -83,12 +83,24 @@ void VulkanResources::createDescriptorSetResources(VkDescriptorSetLayout& layout
     }
 
     poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-
+    shaderBase->poolAllocationMaxSet = poolInfo.maxSets;
+    // multiply each descriptor count by number of sets (strangely, Vulkan uses the single descriptor count for all sets)
+    for (auto& p : poolSizes) {
+        Log("pool add single descriptors " << shaderBase->getName() << ": " << p.descriptorCount << endl);
+        p.descriptorCount *= poolInfo.maxSets;
+        shaderBase->poolAllocationMaxSingleDescriptors += p.descriptorCount;
+    }
+    Log("pool descriptor sets max count " << shaderBase->getName() << ": " << shaderBase->poolAllocationMaxSet << endl);
+    Log("pool total single descriptors " << shaderBase->getName() << ": " << shaderBase->poolAllocationMaxSingleDescriptors << endl);
+    shaderBase->poolAllocationMaxSet = poolInfo.maxSets;
     if (vkCreateDescriptorPool(engine->globalRendering.device, &poolInfo, nullptr, &pool) != VK_SUCCESS) {
         Error("failed to create descriptor pool! You might want to look into option OVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT");
     }
-    this->layout = layout;
-    this->pool = pool;
+    string name = shaderBase->getName() + " Descriptor Pool";
+    engine->util.debugNameObjectDescriptorPool(pool, name.c_str());
+    // each shader has its own descriptor set layout and pool, no need to assign here
+    //this->layout = layout;
+    //this->pool = pool;
 }
 
 void VulkanResources::addResourcesForElement(VulkanResourceElement el)
@@ -108,12 +120,8 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         bindings.push_back(layoutBinding);
         poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         // https://community.khronos.org/t/vk-error-out-of-pool-memory-when-allocating-second-descriptor-sets/104304/3
-        int uniformBufferFactor = 1;
-#       if (defined(OVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT))
-        Log("WARNING: OVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT used. Look into resource management!" << endl);
-        uniformBufferFactor = 3;
-#       endif
-        poolSize.descriptorCount = uniformBufferFactor * engine->getFramesInFlight(); // TODO hack
+        // https://www.reddit.com/r/vulkan/comments/12nwl3i/out_of_pool_memory_when_allocating_multiple/
+        poolSize.descriptorCount = 1;
         poolSizes.push_back(poolSize);
         if (engine->isStereo()) {
             poolSizes.push_back(poolSize);
@@ -126,7 +134,7 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         layoutBinding.pImmutableSamplers = nullptr;
         bindings.push_back(layoutBinding);
         poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-        poolSize.descriptorCount = 1 * engine->getFramesInFlight(); // TODO hack
+        poolSize.descriptorCount = 1;
         poolSizes.push_back(poolSize);
 
     } else if (el.type == VulkanResourceType::SingleTexture) {
@@ -137,7 +145,7 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         layoutBinding.pImmutableSamplers = nullptr;
         bindings.push_back(layoutBinding);
         poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSize.descriptorCount = 1 * engine->getFramesInFlight(); // TODO hack
+        poolSize.descriptorCount = 1;
         poolSizes.push_back(poolSize);
     } else if (el.type == VulkanResourceType::GlobalTextureSet) {
         createDescriptorSetResourcesForTextures();
@@ -150,9 +158,11 @@ void VulkanResources::createThreadResources(VulkanHandoverResources& hdv)
     if (hdv.descriptorSet == nullptr) Error("Shader did not initialize needed Thread Resources: descriptorSet is missing");
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = pool;
+    allocInfo.descriptorPool = hdv.shader->descriptorPool;
     allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &layout;
+    allocInfo.pSetLayouts = &hdv.shader->descriptorSetLayout;
+    hdv.shader->poolAllocationSetCount += allocInfo.descriptorSetCount;
+    Log("alloc descriptor set total " << hdv.shader->poolAllocationSetCount << endl);
     VkResult res = vkAllocateDescriptorSets(engine->globalRendering.device, &allocInfo, hdv.descriptorSet);
     if ( res != VK_SUCCESS) {
         if (res == VK_ERROR_OUT_OF_POOL_MEMORY) {
@@ -373,7 +383,8 @@ void VulkanResources::updateDescriptorSets(FrameResources& tr)
 // auto add set layout for global texture array if needed
 void VulkanResources::createPipelineLayout(VkPipelineLayout* pipelineLayout, ShaderBase* shaderBase, VkDescriptorSetLayout additionalLayout, size_t additionalLayoutPos) {
     vector<VkDescriptorSetLayout> sets;
-    sets.push_back(layout);
+    assert(shaderBase->descriptorSetLayout != nullptr);
+    sets.push_back(shaderBase->descriptorSetLayout);
     if (additionalLayout != nullptr) {
         assert(additionalLayoutPos = 1);
         sets.push_back(additionalLayout);
