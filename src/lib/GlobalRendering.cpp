@@ -402,10 +402,14 @@ void GlobalRendering::createLogicalDevice()
 
     VkPhysicalDeviceFeatures deviceFeatures{
         // provoke validation layer warning by commenting out following line:
+        // https://registry.khronos.org/vulkan/specs/latest/man/html/VkPhysicalDeviceFeatures.html
         .geometryShader = VK_TRUE,
         .samplerAnisotropy = VK_TRUE,
         .textureCompressionBC = VK_TRUE,
+        .vertexPipelineStoresAndAtomics = VK_TRUE,
+        .fragmentStoresAndAtomics = VK_TRUE,
         .shaderSampledImageArrayDynamicIndexing = VK_TRUE,
+        .shaderInt64 = VK_TRUE,
         //deviceFeatures.textureCompressionETC2 = VK_TRUE; not supported on Quadro P2000 with Max-Q Design 1.3.194
         //deviceFeatures.textureCompressionASTC_LDR = VK_TRUE; not supported on Quadro P2000 with Max-Q Design 1.3.194
         //deviceFeatures.dynamicRendering
@@ -424,9 +428,14 @@ void GlobalRendering::createLogicalDevice()
 
     VkPhysicalDeviceVulkan12Features deviceFeatures12{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+        .uniformAndStorageBuffer8BitAccess = VK_TRUE,
         .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
         .descriptorBindingPartiallyBound = VK_TRUE,
         .runtimeDescriptorArray = VK_TRUE,
+        .timelineSemaphore = VK_TRUE,
+        .bufferDeviceAddress = VK_TRUE,
+        .vulkanMemoryModel = VK_TRUE,
+        .vulkanMemoryModelDeviceScope = VK_TRUE,
 #       if defined(__APPLE__)
         .pNext = (void*)&portability,
 #       endif

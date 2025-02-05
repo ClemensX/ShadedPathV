@@ -36,7 +36,7 @@ int main()
         //.setSingleThreadMode(true)
         .overrideCPUCores(4)
         .configureParallelAppDrawCalls(2)
-        .setFixedPhysicalDeviceIndex(1)
+        //.setFixedPhysicalDeviceIndex(1) // if GPU card is available it should be device 0. device 1 is usually the integrated Intel/AMD GPU
         ;
 
     engine.initGlobal();

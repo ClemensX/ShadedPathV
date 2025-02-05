@@ -166,7 +166,9 @@ void VulkanResources::createThreadResources(VulkanHandoverResources& hdv)
     VkResult res = vkAllocateDescriptorSets(engine->globalRendering.device, &allocInfo, hdv.descriptorSet);
     if ( res != VK_SUCCESS) {
         if (res == VK_ERROR_OUT_OF_POOL_MEMORY) {
-            Error("VK_ERROR_OUT_OF_POOL_MEMORY at descriptor allocation. Consider using OVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT in local cmake!");
+            stringstream s;
+            s << "VK_ERROR_OUT_OF_POOL_MEMORY at descriptor allocation. Check your shader implemenation " << hdv.shader->getName();
+            Error(s.str().c_str());
         }
         Error("failed to allocate descriptor sets!");
     }
