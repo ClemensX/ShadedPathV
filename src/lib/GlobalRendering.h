@@ -186,8 +186,12 @@ public:
     // dump a rendered image to file
     void dumpToFile(FrameBufferAttachment* fba);
 
-    // submit command buffers, can only be called from queue submit thread
-    void submit(FrameResources* fr);
+	// prepare next frame, wait for submit fences, etc.
+	void preFrame(FrameResources* fr);
+	// last action before submitting command buffers
+	void postFrame(FrameResources* fr);
+	// submit command buffers, can only be called from queue submit thread
+	void submit(FrameResources* fr);
 private:
     // gather all cmd buffers from the DrawResults of the current frame and copy into single list cmdBufs
 	void consolidateCommandBuffers(CommandBufferArray& cmdBufs, FrameResources* fr);

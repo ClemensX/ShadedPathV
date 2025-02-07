@@ -1017,7 +1017,7 @@ void GlobalRendering::consolidateCommandBuffers(CommandBufferArray& cmdBufs, Fra
     assert(fr->numCommandBuffers < MAX_COMMAND_BUFFERS_PER_DRAW);
     int index = 0;
     fr->forEachCommandBuffer([&index, &cmdBufs](VkCommandBuffer b) {
-        //Log("cmd buffer " << b << endl);
+        Log("cmd buffer " << b << endl);
         cmdBufs[index++] = b;
         });
 }
@@ -1038,8 +1038,23 @@ void GlobalRendering::dumpToFile(FrameBufferAttachment* fba)
     di.dumpToFile(&gpui);
 }
 
+void GlobalRendering::preFrame(FrameResources* fr)
+{
+    // wait for fence signal from submit call 2 frames before
+    LogCondF(LOG_QUEUE, "wait present fence image index " << fr->frameIndex << endl);
+    Log("wait for fence " << fr->inFlightFence << " index " << fr->frameIndex << endl);
+    vkWaitForFences(device, 1, &fr->inFlightFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(device, 1, &fr->inFlightFence);
+    LogCondF(LOG_QUEUE, "signalled present fence image index " << fr->frameIndex << endl);
+}
+
+void GlobalRendering::postFrame(FrameResources* fr)
+{
+}
+
 void GlobalRendering::submit(FrameResources* fr)
 {
+    //Log("submit thread submitting frame " << fr->frameNum << endl);
     consolidateCommandBuffers(submitCommandBuffers, fr);
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1055,12 +1070,14 @@ void GlobalRendering::submit(FrameResources* fr)
     //VkSemaphore signalSemaphores[] = { tr.renderFinishedSemaphore };
     submitInfo.signalSemaphoreCount = 0;
     submitInfo.pSignalSemaphores = nullptr; // signalSemaphores;
-    if (vkQueueSubmit(engine->globalRendering.graphicsQueue, 1, &submitInfo, fr->inFlightFence) != VK_SUCCESS) {
+    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, fr->inFlightFence) != VK_SUCCESS) {
         Error("failed to submit draw command buffer!");
     }
+    Log("submit fence " << fr->inFlightFence << " index " << fr->frameIndex << endl);
+    //vkQueueWaitIdle(graphicsQueue);
     fr->clearDrawResults();
-    if (fr->frameNum == 1000) {
-        Log("dump to file frame 1000" << fr->colorAttachment.image << endl);
+    if (true && fr->frameNum == 9000) {
+        Log("dump to file frame 10" << fr->colorAttachment.image << endl);
         dumpToFile(&fr->colorAttachment);
     }
 }

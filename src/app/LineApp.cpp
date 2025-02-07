@@ -90,6 +90,9 @@ void LineApp::prepareFrame(FrameResources* fr)
 // draw from multiple threads
 void LineApp::drawFrame(FrameResources* fi, int topic, DrawResult* drawResult)
 {
+    //if (fi->frameNum == 20) {
+    //    shouldStopEngine = true;
+    //}
     if (fi->frameNum % 1000 == 0 && topic == 1) {
         Log("LineApp drawFrame " << fi->frameNum << endl);
         if (fi->frameNum == 10000) {

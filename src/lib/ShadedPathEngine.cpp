@@ -249,9 +249,11 @@ void ShadedPathEngine::preFrame()
     gameTime.advanceTime();
     fpsCounter.tick(gameTime.getRealTimeDelta(), true);
     initFrame(currentFrameInfo, frameNum);
+    globalRendering.preFrame(currentFrameInfo);
 
     // call app
     app->prepareFrame(currentFrameInfo);
+
 }
 
 void ShadedPathEngine::drawFrame()
@@ -299,8 +301,7 @@ void ShadedPathEngine::postFrame()
             //Log("postFrame consume rendered image " << currentFrameInfo->frameNum << endl);
             singleThreadPostFrame();
         } else {
-            //Error("not implemented");
-            // nothing to do - cmd buffers will be submitted in submit thread
+            globalRendering.postFrame(currentFrameInfo);
         }
     }
 }
@@ -398,7 +399,7 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
             }
         } else if (engine_instance->isDrawResultCommandBuffers(v->frameInfo)) {
             // submit command buffers
-            Log("submit thread submitting frame " << v->frameInfo->frameNum << endl);
+            //Log("submit thread submitting frame " << v->frameInfo->frameNum << endl);
             engine_instance->globalRendering.submit(v->frameInfo);
         }
         //engine_instance->shaders.queueSubmit(*v);

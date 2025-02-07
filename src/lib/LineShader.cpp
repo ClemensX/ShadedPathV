@@ -53,7 +53,8 @@ void LineShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	pf.initSingle(tr, shaderState);
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * LineShader::MAX_DYNAMIC_LINES;
 	createVertexBuffer(pf.vertexBufferLocal, bufferSize, pf.vertexBufferMemoryLocal);
-	pf.allocateCommandBuffer(tr, &pf.commandBuffer, "LINE ADD COMMAND BUFFER");
+    auto name = engine->util.createDebugName("LINE ADD COMMAND BUFFER", tr.frameIndex);
+	pf.allocateCommandBuffer(tr, &pf.commandBuffer, name.c_str());
 	LineSubShader& sub = globalLineSubShaders[tr.frameIndex];
 	sub.initSingle(tr, shaderState);
 }
@@ -420,6 +421,7 @@ void LineSubShader::addRenderPassAndDrawCommands(FrameResources& tr, VkCommandBu
 	beginInfo.flags = 0; // Optional
 	beginInfo.pInheritanceInfo = nullptr; // Optional
 
+	Log("LineSubShader begin cmd buffer: " << commandBuffer << endl);
 	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
 		Error("failed to begin recording triangle command buffer!");
 	}

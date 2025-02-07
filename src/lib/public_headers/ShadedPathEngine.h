@@ -288,7 +288,7 @@ private:
     World* world = nullptr;
     std::vector<GPUImage> images;
     // thread support:
-    // main threads for global thinkgs like QueueSubmit thread
+    // main threads for global things like QueueSubmit thread
     ThreadGroup threadsMain;
     // worker threads for rendering and other activities during frame generation
     ThreadGroup* threadsWorker = nullptr;
