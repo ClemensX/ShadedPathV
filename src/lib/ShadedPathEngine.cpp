@@ -302,6 +302,7 @@ void ShadedPathEngine::postFrame()
             singleThreadPostFrame();
         } else {
             globalRendering.postFrame(currentFrameInfo);
+            app->postFrame(currentFrameInfo);
         }
     }
 }

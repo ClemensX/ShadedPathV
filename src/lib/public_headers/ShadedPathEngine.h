@@ -18,6 +18,8 @@ public:
     // draw Frame depending on topic. is in range 0..appDrawCalls-1
     // each topic will be called in parallel threads
     virtual void drawFrame(FrameResources* fi, int topic, DrawResult* drawResult) {};
+    // post rendering: present rendered frame or dump to file, etc.
+    virtual void postFrame(FrameResources* fi) {};
     virtual void buildCustomUI() {};
     virtual bool shouldClose() { return true; };
     virtual void run(ContinuationInfo* cont = nullptr) {};

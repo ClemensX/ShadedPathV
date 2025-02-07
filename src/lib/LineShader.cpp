@@ -421,7 +421,7 @@ void LineSubShader::addRenderPassAndDrawCommands(FrameResources& tr, VkCommandBu
 	beginInfo.flags = 0; // Optional
 	beginInfo.pInheritanceInfo = nullptr; // Optional
 
-	Log("LineSubShader begin cmd buffer: " << commandBuffer << endl);
+	//Log("LineSubShader begin cmd buffer: " << commandBuffer << endl);
 	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
 		Error("failed to begin recording triangle command buffer!");
 	}

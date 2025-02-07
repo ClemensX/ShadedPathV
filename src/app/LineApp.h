@@ -10,6 +10,8 @@ public:
     void prepareFrame(FrameResources* fi) override;
     // draw from multiple threads
     void drawFrame(FrameResources* fi, int topic, DrawResult* drawResult) override;
+    // present or dump to file
+    void postFrame(FrameResources* fi) override;
     void run(ContinuationInfo* cont) override;
     bool shouldClose() override;
     void handleInput(InputState& inputState) override;
@@ -26,5 +28,6 @@ private:
     int currentLineStackCount = 0;
     float plus = 0.0f;
     bool shouldStopEngine = false;
+    long frameNum = 0;
 };
 

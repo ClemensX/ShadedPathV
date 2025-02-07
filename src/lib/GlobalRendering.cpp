@@ -1017,7 +1017,7 @@ void GlobalRendering::consolidateCommandBuffers(CommandBufferArray& cmdBufs, Fra
     assert(fr->numCommandBuffers < MAX_COMMAND_BUFFERS_PER_DRAW);
     int index = 0;
     fr->forEachCommandBuffer([&index, &cmdBufs](VkCommandBuffer b) {
-        Log("cmd buffer " << b << endl);
+        //Log("cmd buffer " << b << endl);
         cmdBufs[index++] = b;
         });
 }
@@ -1042,7 +1042,7 @@ void GlobalRendering::preFrame(FrameResources* fr)
 {
     // wait for fence signal from submit call 2 frames before
     LogCondF(LOG_QUEUE, "wait present fence image index " << fr->frameIndex << endl);
-    Log("wait for fence " << fr->inFlightFence << " index " << fr->frameIndex << endl);
+    //Log("wait for fence " << fr->inFlightFence << " index " << fr->frameIndex << endl);
     vkWaitForFences(device, 1, &fr->inFlightFence, VK_TRUE, UINT64_MAX);
     vkResetFences(device, 1, &fr->inFlightFence);
     LogCondF(LOG_QUEUE, "signalled present fence image index " << fr->frameIndex << endl);
@@ -1073,10 +1073,9 @@ void GlobalRendering::submit(FrameResources* fr)
     if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, fr->inFlightFence) != VK_SUCCESS) {
         Error("failed to submit draw command buffer!");
     }
-    Log("submit fence " << fr->inFlightFence << " index " << fr->frameIndex << endl);
-    //vkQueueWaitIdle(graphicsQueue);
+    //Log("submit fence " << fr->inFlightFence << " index " << fr->frameIndex << endl);
     fr->clearDrawResults();
-    if (true && fr->frameNum == 9000) {
+    if (false && fr->frameNum == 9000) {
         Log("dump to file frame 10" << fr->colorAttachment.image << endl);
         dumpToFile(&fr->colorAttachment);
     }

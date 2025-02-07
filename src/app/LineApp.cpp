@@ -12,6 +12,7 @@ void LineApp::mainThreadHook()
 // prepare drawing, guaranteed single thread
 void LineApp::prepareFrame(FrameResources* fr)
 {
+    frameNum = fr->frameNum;
     FrameResources& tr = *fr;
     double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
@@ -105,6 +106,15 @@ void LineApp::drawFrame(FrameResources* fi, int topic, DrawResult* drawResult)
         engine->shaders.lineShader.addCommandBuffers(fi, drawResult);
         engine->shaders.endShader.addCommandBuffers(fi, drawResult);
         //engine->shaders.submitFrame();
+    }
+}
+
+void LineApp::postFrame(FrameResources* fr)
+{
+    //Log("LineApp postFrame " << fi->frameNum << endl);
+    if (true && fr->frameNum == 9000) {
+        Log("dump to file frame 10" << fr->colorAttachment.image << endl);
+        engine->globalRendering.dumpToFile(&fr->colorAttachment);
     }
 }
 
