@@ -183,7 +183,16 @@ public:
         return isDeviceExtensionRequested(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     }
 
+    // dump a rendered image to file
+    void dumpToFile(FrameBufferAttachment* fba);
+
+    // submit command buffers, can only be called from queue submit thread
+    void submit(FrameResources* fr);
 private:
+    // gather all cmd buffers from the DrawResults of the current frame and copy into single list cmdBufs
+	void consolidateCommandBuffers(CommandBufferArray& cmdBufs, FrameResources* fr);
+	// copy all cmd buffers here before calling vkQueueSubmit
+	CommandBufferArray submitCommandBuffers;
     // chain device feature structures, pNext pointer has to be directly after type
     void chainNextDeviceFeature(void* elder, void* child);
     bool isExtensionAvailable(const std::vector<const char*>& availableExtensions, const char* extensionName) {

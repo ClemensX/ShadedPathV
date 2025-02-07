@@ -1011,6 +1011,60 @@ void GlobalRendering::createDumpImage(GPUImage& gpui, uint32_t width, uint32_t h
     gpui.imagedata += gpui.subResourceLayout.offset;
 }
 
+void GlobalRendering::consolidateCommandBuffers(CommandBufferArray& cmdBufs, FrameResources* fr)
+{
+    assert(fr->numCommandBuffers > 0);
+    assert(fr->numCommandBuffers < MAX_COMMAND_BUFFERS_PER_DRAW);
+    int index = 0;
+    fr->forEachCommandBuffer([&index, &cmdBufs](VkCommandBuffer b) {
+        //Log("cmd buffer " << b << endl);
+        cmdBufs[index++] = b;
+        });
+}
+
+void GlobalRendering::dumpToFile(FrameBufferAttachment* fba)
+{   
+    GPUImage gpui;
+    gpui.width = engine->getBackBufferExtent().width;
+    gpui.height = engine->getBackBufferExtent().height;
+    gpui.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    gpui.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    gpui.rendered = true;
+    gpui.consumed = false;
+    gpui.image = fba->image;
+    gpui.memory = fba->memory;
+    gpui.view = fba->view;
+    DirectImage di(engine);
+    di.dumpToFile(&gpui);
+}
+
+void GlobalRendering::submit(FrameResources* fr)
+{
+    consolidateCommandBuffers(submitCommandBuffers, fr);
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    //VkSemaphore waitSemaphores[] = { tr.imageAvailableSemaphore };
+    //VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    //tr.waitStages[0] = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    submitInfo.waitSemaphoreCount = 0;
+    submitInfo.pWaitSemaphores = nullptr;//waitSemaphores;
+    //submitInfo.pWaitDstStageMask = &tr.waitStages[0];
+    submitInfo.commandBufferCount = static_cast<uint32_t>(fr->numCommandBuffers);
+    submitInfo.pCommandBuffers = &submitCommandBuffers[0];
+    //VkSemaphore signalSemaphores[] = { tr.renderFinishedSemaphore };
+    submitInfo.signalSemaphoreCount = 0;
+    submitInfo.pSignalSemaphores = nullptr; // signalSemaphores;
+    if (vkQueueSubmit(engine->globalRendering.graphicsQueue, 1, &submitInfo, fr->inFlightFence) != VK_SUCCESS) {
+        Error("failed to submit draw command buffer!");
+    }
+    fr->clearDrawResults();
+    if (fr->frameNum == 1000) {
+        Log("dump to file frame 1000" << fr->colorAttachment.image << endl);
+        dumpToFile(&fr->colorAttachment);
+    }
+}
+
 void GlobalRendering::destroyImage(GPUImage* image)
 {
     destroyImageView(image->view);

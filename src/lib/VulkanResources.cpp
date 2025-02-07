@@ -94,7 +94,7 @@ void VulkanResources::createDescriptorSetResources(VkDescriptorSetLayout& layout
     Log("pool total single descriptors " << shaderBase->getName() << ": " << shaderBase->poolAllocationMaxSingleDescriptors << endl);
     shaderBase->poolAllocationMaxSet = poolInfo.maxSets;
     if (vkCreateDescriptorPool(engine->globalRendering.device, &poolInfo, nullptr, &pool) != VK_SUCCESS) {
-        Error("failed to create descriptor pool! You might want to look into option OVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT");
+        Error("failed to create descriptor pool! Look logs for descriptor couns. Former problem #define OVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT");
     }
     string name = shaderBase->getName() + " Descriptor Pool";
     engine->util.debugNameObjectDescriptorPool(pool, name.c_str());

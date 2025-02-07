@@ -34,7 +34,8 @@ public:
         threadsMain(0),
         shaders(this),
         util(this),
-        vr(this)
+        vr(this),
+        objectStore(&meshStore)
     {
         Log("Engine c'tor\n");
 #if defined (USE_FIXED_PHYSICAL_DEVICE_INDEX)
@@ -229,6 +230,9 @@ public:
     Shaders shaders;
     VR vr;
     TextureStore textureStore;
+    MeshStore meshStore;
+    WorldObjectStore objectStore;
+    //Sound sound;
 
     // non-Vulkan members
     Files files;
@@ -300,11 +304,15 @@ private:
     bool shouldClose();
     void preFrame();
     void drawFrame();
-    // clean up draw and prepare submit, return false if nothing to submit
+    // clean up draw and prepare submit, single threaded
     void postFrame();
     void waitUntilShutdown();
-    // command buffers need to have been already counted bfeore calling this
+    // command buffers need to have been already counted before calling this
     bool isDrawResult(FrameResources* fi);
+    // command buffers need to have been already counted before calling this
+    bool isDrawResultImage(FrameResources* fi);
+    // command buffers need to have been already counted before calling this
+    bool isDrawResultCommandBuffers(FrameResources* fi);
     // we no longer need frame num to be atomic
     //std::atomic<long> nextFreeFrameNum = 0;
     long nextFreeFrameNum = 0;

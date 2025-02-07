@@ -182,6 +182,7 @@ void ShadedPathEngine::prepareDrawing()
         if (fi.drawResults.size() < appDrawCalls) {
             Error("Frames have not been properly initialized. Did you forget initActiveShaders()?");
         }
+        shaders.createCommandBuffers(fi);
     }
     if (!singleThreadMode) {
         qsr.renderThreadContinueQueue.setLoggingInfo(LOG_RENDER_CONTINUATION, "renderContinueQueue");
@@ -245,6 +246,8 @@ void ShadedPathEngine::preFrame()
     long frameNum = getNextFrameNumber();
     int currentFrameInfoIndex = frameNum & 0x01;
     currentFrameInfo = &frameInfos[currentFrameInfoIndex];
+    gameTime.advanceTime();
+    fpsCounter.tick(gameTime.getRealTimeDelta(), true);
     initFrame(currentFrameInfo, frameNum);
 
     // call app
@@ -292,11 +295,12 @@ void ShadedPathEngine::postFrame()
         ThemedTimer::getInstance()->stop(TIMER_DRAW_FRAME);
         //singleThreadPostFrame();
         // we either have cmd buffers to submit or an already created image
-        if (currentFrameInfo->renderedImage->rendered == true) {
+        if (currentFrameInfo->renderedImage != nullptr && currentFrameInfo->renderedImage->rendered == true) {
             //Log("postFrame consume rendered image " << currentFrameInfo->frameNum << endl);
             singleThreadPostFrame();
         } else {
-            Error("not implemented");
+            //Error("not implemented");
+            // nothing to do - cmd buffers will be submitted in submit thread
         }
     }
 }
@@ -315,10 +319,26 @@ void ShadedPathEngine::singleThreadPostFrame()
 
 bool ShadedPathEngine::isDrawResult(FrameResources* fi)
 {
-    if (fi->numCommandBuffers > 0) {
+    if (isDrawResultCommandBuffers(fi)) {
         return true;
     }
+    if (isDrawResultImage(fi)) {
+        return true;
+    }
+    return false;
+}
+
+bool ShadedPathEngine::isDrawResultImage(FrameResources* fi)
+{
     if (fi->renderedImage != nullptr && fi->renderedImage->rendered == true) {
+        return true;
+    }
+    return false;
+}
+
+bool ShadedPathEngine::isDrawResultCommandBuffers(FrameResources* fi)
+{
+    if (fi->numCommandBuffers > 0) {
         return true;
     }
     return false;
@@ -366,7 +386,7 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
             break;
         }
         LogCondF(LOG_QUEUE, "engine received frame: " << v->frameInfo->frameNum << endl);
-        if (engine_instance->isDrawResult(v->frameInfo)) {
+        if (engine_instance->isDrawResultImage(v->frameInfo)) {
             if (v->frameInfo->renderedImage->rendered == true) {
                 // consume rendered image
                 Log("submit thread consuming frame image " << v->frameInfo->frameNum << endl);
@@ -376,6 +396,10 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
                 }
                 engine_instance->imageConsumer->consume(v->frameInfo);
             }
+        } else if (engine_instance->isDrawResultCommandBuffers(v->frameInfo)) {
+            // submit command buffers
+            Log("submit thread submitting frame " << v->frameInfo->frameNum << endl);
+            engine_instance->globalRendering.submit(v->frameInfo);
         }
         //engine_instance->shaders.queueSubmit(*v);
         // if we are pop()ed by drawing thread we can be sure to own the thread until presentFence is signalled,

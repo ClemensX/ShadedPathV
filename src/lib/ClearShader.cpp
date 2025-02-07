@@ -36,8 +36,15 @@ void ClearShader::addCurrentCommandBuffer(FrameResources& tr)
 {
 	ClearSubShader& cs = clearSubShaders[tr.frameIndex];
 	//tr.activeCommandBuffers.push_back(cs.commandBuffer);
-    // TODO: add this secondary buffer to primary command buffer
 };
+
+void ClearShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
+	int index = drawResult->getNextFreeCommandBufferIndex();
+	ClearSubShader& cs = clearSubShaders[fr->frameIndex];
+	drawResult->commandBuffers[index++] = cs.commandBuffer;
+	//tr.activeCommandBuffers.push_back(cs.commandBuffer);
+	// TODO: add this secondary buffer to primary command buffer
+}
 
 ClearShader::~ClearShader()
 {

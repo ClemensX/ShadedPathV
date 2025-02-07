@@ -135,7 +135,16 @@ void FrameResources::createCommandPool()
     engine->globalRendering.createCommandPool(commandPool, engine->util.createDebugName("FrameInfoMainCommandPool_", frameIndex));
 }
 
-
+void FrameResources::clearDrawResults()
+{
+    for (auto& dr : drawResults) {
+        dr.image = nullptr;
+        for (auto& cb : dr.commandBuffers) { // initialize command buffers to nullptr
+            cb = nullptr;
+        }
+    }
+    numCommandBuffers = 0;
+}
 
 // ThreadResources
 

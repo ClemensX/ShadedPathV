@@ -123,6 +123,7 @@ public:
 
 	// add current command buffers
 	virtual void addCurrentCommandBuffer(FrameResources& tr) = 0;
+    virtual void addCommandBuffers(FrameResources* tr, DrawResult* drawResult) = 0;
 
 	// Base class methodas that can be used in the subclasses
 

@@ -4,13 +4,16 @@
 class LineApp : ShadedPathApplication, public AppSupport
 {
 public:
+    // called from main thread
     void mainThreadHook() override;
+    // prepare drawing, guaranteed single thread
     void prepareFrame(FrameResources* fi) override;
+    // draw from multiple threads
     void drawFrame(FrameResources* fi, int topic, DrawResult* drawResult) override;
     void run(ContinuationInfo* cont) override;
     bool shouldClose() override;
     void handleInput(InputState& inputState) override;
-    //void init();
+    void init();
     //void run();
     //void drawFrame(ThreadResources& tr) override;
     //void handleInput(InputState& inputState) override;

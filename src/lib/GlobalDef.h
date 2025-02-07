@@ -19,3 +19,4 @@ struct ShaderState
 	bool isPresent = false;
 };
 
+static const int MAX_COMMAND_BUFFERS_PER_DRAW = 100; // arbitrary, should be enough for most cases

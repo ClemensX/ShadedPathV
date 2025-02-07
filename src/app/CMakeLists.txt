@@ -16,7 +16,7 @@ file(GLOB VULKAN_SHADERS
 )
 
 add_executable(app
-#   AppSupport.cpp
+   AppSupport.cpp
 #   BillboardDemo.cpp
 #   DeviceCoordApp.cpp
 #   GeneratedTexturesApp.cpp

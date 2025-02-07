@@ -21,6 +21,11 @@ set (SOURCES
   ThreadResources.cpp
   Shaders.cpp
   VulkanResources.cpp
+  World.cpp
+  Path.cpp
+  Camera.cpp
+  Object.cpp
+  gltf.cpp
 )
 if (OPENXR_INC)
   list(APPEND SOURCES VR.cpp)

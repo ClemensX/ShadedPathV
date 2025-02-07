@@ -46,13 +46,22 @@ struct GPUImage {
     bool consumed = false;
 };
 
+using CommandBufferArray = std::array<VkCommandBuffer, MAX_COMMAND_BUFFERS_PER_DRAW>;
+
 // we either have command buffers or a rendered image as draw result
 struct DrawResult {
-    static const int MAX_COMMAND_BUFFERS_PER_DRAW = 100; // arbitrary, should be enough for most cases
     GPUImage* image = nullptr;
 	// possibly many command buffers for each draw call / topic
     // the first nullptr indicates the end of the list
-	std::array<VkCommandBuffer, MAX_COMMAND_BUFFERS_PER_DRAW> commandBuffers;
+    CommandBufferArray commandBuffers;
+    size_t getNextFreeCommandBufferIndex() {
+        for (size_t i = 0; i < commandBuffers.size(); i++) {
+            if (commandBuffers[i] == nullptr) {
+                return i;
+            }
+        }
+        return -1;
+    }
 };
 
 // FrameResources and ThreadResources work together: FrameResources has all all global frame data
@@ -132,6 +141,7 @@ struct FrameResources {
             }
         }
     }
+    void clearDrawResults();
 private:
     void createFencesAndSemaphores();
     void createBackBufferImage();

@@ -10,144 +10,9 @@ void LineApp::mainThreadHook()
 }
 
 // prepare drawing, guaranteed single thread
-void LineApp::prepareFrame(FrameResources* fi)
+void LineApp::prepareFrame(FrameResources* fr)
 {
-}
-
-// draw from multiple threads
-void LineApp::drawFrame(FrameResources* fi, int topic, DrawResult* drawResult)
-{
-    if (fi->frameNum % 1000 == 0 && topic == 1) {
-        Log("LineApp drawFrame " << fi->frameNum << endl);
-        if (fi->frameNum == 10000) {
-            shouldStopEngine = true;
-        }
-    }
-}
-
-void LineApp::run(ContinuationInfo* cont)
-{
-    Log("LineApp start\n");
-    AppSupport::setEngine(engine);
-    Shaders& shaders = engine->shaders;
-
-    // camera initialization
-    createFirstPersonCameraPositioner(glm::vec3(-0.36f, 0.0f, 2.340f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    createHMDCameraPositioner(glm::vec3(-0.38f, 0.10f, 0.82f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    getFirstPersonCameraPositioner()->setMaxSpeed(15.0f);
-    initCamera();
-    enableEventsAndModes();
-    engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
-    engine->files.findAssetFolder("data");
-    setHighBackbufferResolution();
-    int win_width = 960;// 960;//1800;// 800;//3700;
-    //engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Vulkan Simple Line App");
-    camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);
-
-    // add shaders used in this app
-    shaders
-        .addShader(shaders.clearShader)
-        .addShader(shaders.lineShader)
-        ;
-    // init shaders, e.g. one-time uploads before rendering cycle starts go here
-    shaders.initActiveShaders();
-
-    engine->eventLoop();
-
-    // cleanup
-}
-
-bool LineApp::shouldClose()
-{
-    return shouldStopEngine;
-}
-
-void LineApp::handleInput(InputState& inputState)
-{
-}
-
-/*void LineApp::run()
-{
-    Log("SimpleApp started" << endl);
-    {
-        Shaders& shaders = engine->shaders;
-        // camera initialization
-        createFirstPersonCameraPositioner(glm::vec3(-0.36f, 0.0f, 2.340f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        createHMDCameraPositioner(glm::vec3(-0.38f, 0.10f, 0.82f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        getFirstPersonCameraPositioner()->setMaxSpeed(15.0f);
-        initCamera();
-        // engine configuration
-        enableEventsAndModes();
-        engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
-        engine->files.findAssetFolder("data");
-        //engine->setFrameCountLimit(1000);
-        engine->setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
-        //engine->setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
-        //engine->setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 960;// 960;//1800;// 800;//3700;
-        engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Vulkan Simple Line App");
-        camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);
-
-        engine->registerApp(this);
-        initEngine("LineApp");
-
-        // add shaders used in this app
-        shaders
-            .addShader(shaders.clearShader)
-            .addShader(shaders.lineShader)
-            ;
-        // init shaders, e.g. one-time uploads before rendering cycle starts go here
-        shaders.initActiveShaders();
-
-        // init app rendering:
-        init();
-        eventLoop();
-    }
-    Log("LineApp ended" << endl);
-}
-
-void LineApp::init() {
-    // add some lines:
-    float aspectRatio = engine->getAspect();
-    float plus = 0.0f;
-    LineDef myLines[] = {
-        // start, end, color
-        { glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) },
-        { glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { glm::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f) }
-    };
-    vector<LineDef> lines;
-
-    // loading objects
-    // TODO currently wireframe rendering is bugged
-    if (false) {
-        engine->meshStore.loadMeshWireframe("WaterBottle.glb", "WaterBottle", lines);
-        auto o = engine->meshStore.getMesh("WaterBottle");
-        Log("Object loaded: " << o->id.c_str() << endl);
-    }
-
-
-    // add all intializer objects to vector:
-    for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
-    //LineShader::addZeroCross(lines);
-    //LineShader::addCross(lines, vec3(1.0f, 1.0f, 1.0f), vec4(1.0f, 1.0f, 0.0f, 1.0f));
-
-    engine->shaders.lineShader.addFixedGlobalLines(lines);
-
-    // 2 square km world size
-    world.setWorldSize(2048.0f, 382.0f, 2048.0f);
-    // Grid with 1m squares, floor on -10m, ceiling on 372m
-
-	engine->shaders.lineShader.uploadFixedGlobalLines();
-}
-
-void LineApp::drawFrame(ThreadResources& tr) {
-    updatePerFrame(tr);
-    engine->shaders.submitFrame(tr);
-}
-
-void LineApp::updatePerFrame(ThreadResources& tr)
-{
+    FrameResources& tr = *fr;
     double seconds = engine->gameTime.getTimeSeconds();
     if (old_seconds > 0.0f && old_seconds == seconds) {
         Log("DOUBLE TIME" << endl);
@@ -175,7 +40,7 @@ void LineApp::updatePerFrame(ThreadResources& tr)
         { glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
         { glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
         { glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f ), glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
+        { glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f), glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
         { glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
         { glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) }
     };
@@ -207,18 +72,112 @@ void LineApp::updatePerFrame(ThreadResources& tr)
             increaseLineStack(permlines);
             engine->shaders.lineShader.addPermament(permlines, tr);
         }
-    } else {
+    }
+    else {
         if ((tr.frameNum + 9) % 10 == 0) {
             // global update
-            increaseLineStack(permlines);
-            engine->shaders.lineShader.addPermament(permlines, tr);
+            //increaseLineStack(permlines);
+            //engine->shaders.lineShader.addPermament(permlines, tr);
         }
     }
 
     engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
-    
+
     //logCameraPosition();
     //this_thread::sleep_for(chrono::milliseconds(300));
+}
+
+// draw from multiple threads
+void LineApp::drawFrame(FrameResources* fi, int topic, DrawResult* drawResult)
+{
+    if (fi->frameNum % 1000 == 0 && topic == 1) {
+        Log("LineApp drawFrame " << fi->frameNum << endl);
+        if (fi->frameNum == 10000) {
+            shouldStopEngine = true;
+        }
+    }
+    if (topic == 0) {
+        // draw lines
+        engine->shaders.clearShader.addCommandBuffers(fi, drawResult);
+        engine->shaders.lineShader.addCommandBuffers(fi, drawResult);
+        engine->shaders.endShader.addCommandBuffers(fi, drawResult);
+        //engine->shaders.submitFrame();
+    }
+}
+
+void LineApp::run(ContinuationInfo* cont)
+{
+    Log("LineApp start\n");
+    AppSupport::setEngine(engine);
+    Shaders& shaders = engine->shaders;
+
+    // camera initialization
+    createFirstPersonCameraPositioner(glm::vec3(-0.36f, 0.0f, 2.340f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    createHMDCameraPositioner(glm::vec3(-0.38f, 0.10f, 0.82f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    getFirstPersonCameraPositioner()->setMaxSpeed(15.0f);
+    initCamera();
+    enableEventsAndModes();
+    engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
+    engine->files.findAssetFolder("data");
+    setHighBackbufferResolution();
+    int win_width = 960;// 960;//1800;// 800;//3700;
+    //engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Vulkan Simple Line App");
+    camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);
+
+    // add shaders used in this app
+    shaders
+        .addShader(shaders.clearShader)
+        .addShader(shaders.lineShader)
+        ;
+    // init shaders, e.g. one-time uploads before rendering cycle starts go here
+    shaders.initActiveShaders();
+
+    init();
+    engine->eventLoop();
+
+    // cleanup
+}
+
+bool LineApp::shouldClose()
+{
+    return shouldStopEngine;
+}
+
+void LineApp::init() {
+    // add some lines:
+    float aspectRatio = engine->getAspect();
+    float plus = 0.0f;
+    LineDef myLines[] = {
+        // start, end, color
+        { glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) },
+        { glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
+        { glm::vec3(-0.25f, -0.25f * aspectRatio, 0.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f) }
+    };
+    vector<LineDef> lines;
+
+    // loading objects
+    // TODO currently wireframe rendering is bugged
+    if (false) {
+        //engine->meshStore.loadMeshWireframe("WaterBottle.glb", "WaterBottle", lines);
+        //auto o = engine->meshStore.getMesh("WaterBottle");
+        //Log("Object loaded: " << o->id.c_str() << endl);
+    }
+
+
+    // add all intializer objects to vector:
+    for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
+    //LineShader::addZeroCross(lines);
+    //LineShader::addCross(lines, vec3(1.0f, 1.0f, 1.0f), vec4(1.0f, 1.0f, 0.0f, 1.0f));
+
+    engine->shaders.lineShader.addFixedGlobalLines(lines);
+
+    // 2 square km world size
+    world.setWorldSize(2048.0f, 382.0f, 2048.0f);
+    // Grid with 1m squares, floor on -10m, ceiling on 372m
+
+	engine->shaders.lineShader.uploadFixedGlobalLines();
+    engine->shaders.clearShader.setClearColor(vec4(0.1f, 0.1f, 0.9f, 1.0f));
+
 }
 
 void LineApp::increaseLineStack(std::vector<LineDef>& lines)
@@ -249,4 +208,3 @@ void LineApp::handleInput(InputState& inputState)
 {
     AppSupport::handleInput(inputState);
 }
-*/

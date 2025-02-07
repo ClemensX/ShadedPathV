@@ -6,7 +6,7 @@ enable_testing()
 # should not be necessary for regular vulkan device,
 # but for small graphics like Intel Iris Xe
 # add_definitions(-DUSE_SMALL_GRAPHICS)
-# add_definitions(-DOVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT)
+# add_definitions(-DOVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT) (should no longer be necessary)
 # add_definitions(-DALLOW_USING_NON_TRANSFER_ONLY_QUEUE)
 #add_definitions(-DUSE_FIXED_PHYSICAL_DEVICE_INDEX)
 add_definitions(-DPHYSICAL_DEVICE_INDEX=0)
