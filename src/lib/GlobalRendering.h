@@ -186,6 +186,8 @@ public:
     // dump a rendered image to file
     void dumpToFile(FrameBufferAttachment* fba);
 
+	// process finished render image (copy to app window, dump to file, etc.)
+	void processImage(FrameResources* fr);
 	// prepare next frame, wait for submit fences, etc.
 	void preFrame(FrameResources* fr);
 	// last action before submitting command buffers

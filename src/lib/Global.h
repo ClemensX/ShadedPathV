@@ -84,6 +84,7 @@ struct FrameResources {
 //#define	THREAD_RESOURCES_MAX_COMMAND_BUFFERS 10
 //	VkCommandBuffer commandBuffers[THREAD_RESOURCES_MAX_COMMAND_BUFFERS];
 //
+    ThreadsafeWaitingQueue<unsigned long> processImageQueue;
     VkSemaphore imageAvailableSemaphore = nullptr;
     VkSemaphore renderFinishedSemaphore = nullptr;
     VkFence inFlightFence = nullptr;

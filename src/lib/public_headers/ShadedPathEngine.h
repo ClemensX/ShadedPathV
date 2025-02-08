@@ -18,7 +18,7 @@ public:
     // draw Frame depending on topic. is in range 0..appDrawCalls-1
     // each topic will be called in parallel threads
     virtual void drawFrame(FrameResources* fi, int topic, DrawResult* drawResult) {};
-    // post rendering: present rendered frame or dump to file, etc.
+    // post rendering: before queue submit (present rendered frame or dump to file, etc.)
     virtual void postFrame(FrameResources* fi) {};
     virtual void buildCustomUI() {};
     virtual bool shouldClose() { return true; };
@@ -296,6 +296,7 @@ private:
     ThreadGroup* threadsWorker = nullptr;
     RenderQueue queue;
     bool queueThreadFinished = false;
+    bool processImageThreadFinished = false;
     QueueSubmitResources qsr;
 
     //std::future<void>* workerFutures = nullptr;
@@ -329,6 +330,7 @@ private:
     int appDrawCalls = 1;
     static void runDrawFrame(ShadedPathEngine* engine_instance);
     static void runQueueSubmit(ShadedPathEngine* engine_instance);
+    static void runProcessImage(ShadedPathEngine* engine_instance);
     static void runUpdateThread(ShadedPathEngine* engine_instance);
     void startRenderThread();
     void startQueueSubmitThread();

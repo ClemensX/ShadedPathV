@@ -10,6 +10,8 @@ enum class ThreadCategory {
 	GlobalUpdate,
 	// submitting draw commands
 	DrawQueueSubmit,
+    // after queue submit finished rendering we can process the image
+    ProcessImage,
 	// main thread
 	MainThread
 };

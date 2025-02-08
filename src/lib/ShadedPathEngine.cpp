@@ -204,6 +204,7 @@ void ShadedPathEngine::startQueueSubmitThread()
     }
     // one queue submit thread for all threads:
     threadsMain.addThread(ThreadCategory::DrawQueueSubmit, "queue_submit", runQueueSubmit, this);
+    threadsMain.addThread(ThreadCategory::ProcessImage, "process_image", runProcessImage, this);
 }
 
 void ShadedPathEngine::startRenderThread()
@@ -398,7 +399,8 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
                 }
                 engine_instance->imageConsumer->consume(v->frameInfo);
             }
-        } else if (engine_instance->isDrawResultCommandBuffers(v->frameInfo)) {
+        }
+        else if (engine_instance->isDrawResultCommandBuffers(v->frameInfo)) {
             // submit command buffers
             //Log("submit thread submitting frame " << v->frameInfo->frameNum << endl);
             engine_instance->globalRendering.submit(v->frameInfo);
@@ -422,6 +424,30 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
     //engine_instance->setRunning(false);
     LogF("run QueueSubmit end " << endl);
     engine_instance->queueThreadFinished = true;
+}
+
+void ShadedPathEngine::runProcessImage(ShadedPathEngine* engine_instance)
+{
+    LogF("run ProcessImage start " << endl);
+    auto device = engine_instance->globalRendering.device;
+    //pipeline_instance->setRunning(true);
+    int i = 1; // we start with frame number 1 on index 1
+    while (engine_instance->shouldClose() == false) {
+        //Log("process image thread waiting for image" << endl);
+        //this_thread::sleep_for(chrono::milliseconds(300));
+        auto& fr = engine_instance->frameInfos[i];
+        // calculate next frame index
+        i = (i + 1) & 0x01;
+        // wait for queue submit completion
+        vkWaitForFences(device, 1, &fr.inFlightFence, VK_TRUE, UINT64_MAX);
+        vkResetFences(device, 1, &fr.inFlightFence);
+        Log("frame ready, start processing " << fr.frameNum << endl);
+        engine_instance->globalRendering.processImage(&fr);
+        fr.processImageQueue.push(i);
+    }
+    //engine_instance->setRunning(false);
+    LogF("run ProcessImage end " << endl);
+    engine_instance->processImageThreadFinished = true;
 }
 
 void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance)
