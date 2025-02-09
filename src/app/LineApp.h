@@ -31,5 +31,6 @@ private:
     float plus = 0.0f;
     bool shouldStopEngine = false;
     long frameNum = 0;
+    DirectImage* di = nullptr;
 };
 

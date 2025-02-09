@@ -200,10 +200,21 @@ void GlobalRendering::init()
     if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &singleTimeCommandsSemaphore) != VK_SUCCESS) {
         Error("failed to create singleTimeCommandsSemaphore");
     }
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; // otherwise first wait() will wait forever
+
+    if (vkCreateFence(device, &fenceInfo, nullptr, &queueSubmitFence) != VK_SUCCESS) {
+        Error("failed to create inFlightFence for a frame");
+    }
+    engine->util.debugNameObjectFence(queueSubmitFence, "GlobalRendering.queueSubmitFence");
 }
 
 void GlobalRendering::shutdown()
 {
+    if (queueSubmitFence != nullptr) {
+        vkDestroyFence(device, queueSubmitFence, nullptr);
+    }
     for (auto& sam : textureSampler) {
         if (sam != nullptr) {
             vkDestroySampler(device, sam, nullptr);
@@ -1022,7 +1033,7 @@ void GlobalRendering::consolidateCommandBuffers(CommandBufferArray& cmdBufs, Fra
         });
 }
 
-void GlobalRendering::dumpToFile(FrameBufferAttachment* fba)
+void GlobalRendering::dumpToFile(FrameBufferAttachment* fba, DirectImage& di)
 {   
     GPUImage gpui;
     gpui.width = engine->getBackBufferExtent().width;
@@ -1034,7 +1045,6 @@ void GlobalRendering::dumpToFile(FrameBufferAttachment* fba)
     gpui.image = fba->image;
     gpui.memory = fba->memory;
     gpui.view = fba->view;
-    DirectImage di(engine);
     di.dumpToFile(&gpui);
 }
 
@@ -1052,7 +1062,7 @@ void GlobalRendering::preFrame(FrameResources* fr)
     //vkWaitForFences(device, 1, &fr->inFlightFence, VK_TRUE, UINT64_MAX);
     //vkResetFences(device, 1, &fr->inFlightFence);
     // wait until old image from 2 frames before is processed
-    auto v = fr->processImageQueue.pop();
+    //auto v = fr->processImageQueue.pop();
     LogCondF(LOG_QUEUE, "signalled present fence image index " << fr->frameIndex << endl);
 }
 
@@ -1060,6 +1070,11 @@ void GlobalRendering::postFrame(FrameResources* fr)
 {
 }
 
+// submit to graphics queue, called only from queue submit thread
+// 1) finalize command buffers
+// 2) wait for last frame to be processed (last submit has finished)
+// 3) submit new command buffers
+// 4) call preocessImage to process last frame
 void GlobalRendering::submit(FrameResources* fr)
 {
     //Log("submit thread submitting frame " << fr->frameNum << endl);
@@ -1078,23 +1093,19 @@ void GlobalRendering::submit(FrameResources* fr)
     //VkSemaphore signalSemaphores[] = { tr.renderFinishedSemaphore };
     submitInfo.signalSemaphoreCount = 0;
     submitInfo.pSignalSemaphores = nullptr; // signalSemaphores;
-    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, fr->inFlightFence) != VK_SUCCESS) {
+    // wait for last submit to finish:
+    vkWaitForFences(device, 1, &queueSubmitFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(device, 1, &queueSubmitFence);
+    // submit next frame
+    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, queueSubmitFence) != VK_SUCCESS) {
         Error("failed to submit draw command buffer!");
     }
     //Log("submit fence " << fr->inFlightFence << " index " << fr->frameIndex << endl);
     fr->clearDrawResults();
-    if (false && fr->frameNum == 9000) {
-        Log("dump to file frame 10" << fr->colorAttachment.image << endl);
-        dumpToFile(&fr->colorAttachment);
-    }
 }
 
 void GlobalRendering::processImage(FrameResources* fr)
 {
-    Log("process frame " << fr->frameNum << endl);
-    if (fr->frameNum == 10) {
-        //this_thread::sleep_for(chrono::seconds(10));
-    }
 }
 
 void GlobalRendering::destroyImage(GPUImage* image)

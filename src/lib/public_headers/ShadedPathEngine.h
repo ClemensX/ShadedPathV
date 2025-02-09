@@ -298,7 +298,6 @@ private:
     ThreadGroup* threadsWorker = nullptr;
     RenderQueue queue;
     bool queueThreadFinished = false;
-    bool processImageThreadFinished = false;
     QueueSubmitResources qsr;
 
     //std::future<void>* workerFutures = nullptr;
@@ -335,7 +334,6 @@ private:
     int appDrawCalls = 1;
     static void runDrawFrame(ShadedPathEngine* engine_instance);
     static void runQueueSubmit(ShadedPathEngine* engine_instance);
-    static void runProcessImage(ShadedPathEngine* engine_instance);
     static void runUpdateThread(ShadedPathEngine* engine_instance);
     void startRenderThread();
     void startQueueSubmitThread();

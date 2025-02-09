@@ -184,7 +184,7 @@ public:
     }
 
     // dump a rendered image to file
-    void dumpToFile(FrameBufferAttachment* fba);
+    void dumpToFile(FrameBufferAttachment* fba, DirectImage& di);
 
 	// process finished render image (copy to app window, dump to file, etc.)
 	void processImage(FrameResources* fr);
@@ -261,6 +261,7 @@ private:
 
 	// swap chain query
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+	VkFence queueSubmitFence = nullptr;
 
 };
 

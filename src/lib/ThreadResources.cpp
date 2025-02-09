@@ -75,11 +75,10 @@ void FrameResources::createFencesAndSemaphores()
         Error("failed to create presentFence for a frame");
     }
     engine->util.debugNameObjectFence(presentFence, "FrameResources.presentFence");
-    //fenceInfo.flags = 0; // present fence will be set during 1st present in queue submit thread
-    if (vkCreateFence(engine->globalRendering.device, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
-        Error("failed to create inFlightFence for a frame");
-    }
-    engine->util.debugNameObjectFence(inFlightFence, "FrameResources.inFlightFence");
+    //if (vkCreateFence(engine->globalRendering.device, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
+    //    Error("failed to create inFlightFence for a frame");
+    //}
+    //engine->util.debugNameObjectFence(inFlightFence, "FrameResources.inFlightFence");
 
     VkEventCreateInfo eventInfo{};
     eventInfo.sType = VK_STRUCTURE_TYPE_EVENT_CREATE_INFO;

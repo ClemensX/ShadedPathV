@@ -116,8 +116,17 @@ void LineApp::postFrame(FrameResources* fr)
 void LineApp::processImage(FrameResources* fr)
 {
     //Log("LineApp postFrame " << fi->frameNum << endl);
-    if (true && fr->frameNum == 9000) {
-        Log("dump to file frame 9000" << fr->colorAttachment.image << endl);
+    if (true && fr->frameNum > 10 && fr->frameNum <= 12) {
+        Log("dump to file frame " << fr->frameNum << " " << fr->colorAttachment.image << endl);
+        engine->globalRendering.dumpToFile(&fr->colorAttachment, *di);
+    }
+    if (true && fr->frameNum == 9000 ) {
+        Log("dump to file frame " << fr->frameNum << " " << fr->colorAttachment.image << endl);
+        engine->globalRendering.dumpToFile(&fr->colorAttachment, *di);
+    }
+    if (true && fr->frameNum == 10) {
+        Log("sleep...");
+        this_thread::sleep_for(chrono::seconds(2));
         //engine->globalRendering.dumpToFile(&fr->colorAttachment);
     }
 }
@@ -161,6 +170,7 @@ bool LineApp::shouldClose()
 }
 
 void LineApp::init() {
+    di = new DirectImage(engine);
     // add some lines:
     float aspectRatio = engine->getAspect();
     float plus = 0.0f;
