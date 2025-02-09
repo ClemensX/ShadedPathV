@@ -476,13 +476,13 @@ void Presentation::presentImage(WindowInfo* winfo, GPUImage *srcImage)
     // Transition image formats
 
     // set src values for access, layout and image
-    GPUImage dstImage;
+    GPUImage dstImage{};
     dstImage.access = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
     dstImage.stage = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
     dstImage.layout = VK_IMAGE_LAYOUT_UNDEFINED;
     dstImage.fba.image = winfo->swapChainImages[imageIndex];
-    DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_READ_BIT, winfo->commandBufferPresentBack, srcImage);
     DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT, winfo->commandBufferPresentBack, &dstImage);
+    DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_READ_BIT, winfo->commandBufferPresentBack, srcImage);
 
     // Define the region to blit (we will blit the whole swapchain image)
     VkOffset3D blitSizeSrc;
@@ -507,9 +507,8 @@ void Presentation::presentImage(WindowInfo* winfo, GPUImage *srcImage)
 
     vkCmdBlitImage(
         winfo->commandBufferPresentBack,
-        //tr.colorAttachment2.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, TODO
         srcImage->fba.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-        winfo->swapChainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        dstImage.fba.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1, &imageBlitRegion,
         VK_FILTER_LINEAR
     );
@@ -534,6 +533,7 @@ void Presentation::presentImage(WindowInfo* winfo, GPUImage *srcImage)
     if (vkQueueSubmit2(global.graphicsQueue, 1, &renderingSubmitInfo, 0) != VK_SUCCESS) {
         Error("failed to submit draw command buffer!");
     }
+    vkQueueWaitIdle(global.graphicsQueue);
 
     // only final queue submit and present left to do:
 

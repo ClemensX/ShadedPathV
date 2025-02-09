@@ -58,8 +58,8 @@ void DirectImage::dumpToFile(GPUImage* gpui)
 void DirectImage::copyBackbufferImage(GPUImage* gpui_source, GPUImage* gpui_target, VkCommandBuffer commandBuffer)
 {
 	// Transition destination image to transfer destination layout
-    //auto oldLayout = gpui_source->layout;
-    //auto oldAccess = gpui_source->access;
+	//auto oldLayout = gpui_source->layout;
+	//auto oldAccess = gpui_source->access;
 	toLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_2_TRANSFER_WRITE_BIT, commandBuffer, gpui_target);
 	toLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_2_TRANSFER_READ_BIT, commandBuffer, gpui_source);
 
@@ -81,7 +81,37 @@ void DirectImage::copyBackbufferImage(GPUImage* gpui_source, GPUImage* gpui_targ
 
 	toLayout(VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_2_MEMORY_READ_BIT, commandBuffer, gpui_target);
 
-    // revert src image layout and access to before the image data copy
+	// revert src image layout and access to before the image data copy
+	//toLayout(oldLayout, oldAccess, commandBuffer, gpui_source);
+}
+
+void DirectImage::copyBackbufferImageP(GPUImage* gpui_source, GPUImage* gpui_target, VkCommandBuffer commandBuffer, ShadedPathEngine* engine)
+{
+	// Transition destination image to transfer destination layout
+	//auto oldLayout = gpui_source->layout;
+	//auto oldAccess = gpui_source->access;
+	toLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_ACCESS_2_TRANSFER_WRITE_BIT, commandBuffer, gpui_target);
+	toLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_2_TRANSFER_READ_BIT, commandBuffer, gpui_source);
+
+	VkImageCopy imageCopyRegion{};
+	imageCopyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageCopyRegion.srcSubresource.layerCount = 1;
+	imageCopyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageCopyRegion.dstSubresource.layerCount = 1;
+	imageCopyRegion.extent.width = engine->getBackBufferExtent().width;
+	imageCopyRegion.extent.height = engine->getBackBufferExtent().height;
+	imageCopyRegion.extent.depth = 1;
+
+	vkCmdCopyImage(
+		commandBuffer,
+		gpui_source->fba.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		gpui_target->fba.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		1,
+		&imageCopyRegion);
+
+	toLayout(VK_IMAGE_LAYOUT_GENERAL, VK_ACCESS_2_MEMORY_READ_BIT, commandBuffer, gpui_target);
+
+	// revert src image layout and access to before the image data copy
 	//toLayout(oldLayout, oldAccess, commandBuffer, gpui_source);
 }
 
