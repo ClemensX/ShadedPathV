@@ -148,10 +148,10 @@ void ShaderBase::createRenderPassAndFramebuffer(FrameResources& tr, ShaderState 
 	}
 
 	// frame buffer
-    if (tr.colorAttachment.view == nullptr || tr.depthImageView == nullptr) {
+    if (tr.colorImage.fba.view == nullptr || tr.depthImageView == nullptr) {
         Error("colorAttachment or depthImageView not initialized! We need a render surface before initializing the shaders.");
     }
-	array<VkImageView, 2> attachmentsView = { tr.colorAttachment.view, tr.depthImageView };
+	array<VkImageView, 2> attachmentsView = { tr.colorImage.fba.view, tr.depthImageView };
 
 	VkFramebufferCreateInfo framebufferInfo{};
 	framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -166,7 +166,7 @@ void ShaderBase::createRenderPassAndFramebuffer(FrameResources& tr, ShaderState 
 		Error("failed to create framebuffer!");
 	}
 	if (engine->isStereo()) {
-		array<VkImageView, 2> attachmentsView2 = { tr.colorAttachment2.view, tr.depthImageView2 };
+		array<VkImageView, 2> attachmentsView2 = { tr.colorImage2.fba.view, tr.depthImageView2 };
 
 		VkFramebufferCreateInfo framebufferInfo{};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

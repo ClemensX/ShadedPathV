@@ -189,6 +189,9 @@ public:
 	// dump a rendered image to file
 	void dumpToFile(FrameBufferAttachment* fba, DirectImage& di);
 
+	// present a rendered image to file
+	void present(FrameResources* fr, DirectImage& di, WindowInfo* winfo);
+
 	// process finished render image (copy to app window, dump to file, etc.)
 	void processImage(FrameResources* fr);
 	// prepare next frame, wait for submit fences, etc.

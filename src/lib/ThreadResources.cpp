@@ -8,24 +8,24 @@ FrameResources::~FrameResources() {
     auto& device = engine->globalRendering.device;
     auto& global = engine->globalRendering;
     auto& shaders = engine->shaders;
-    if (colorAttachment.image) vkDestroyImage(device, colorAttachment.image, nullptr);
+    if (colorImage.fba.image) vkDestroyImage(device, colorImage.fba.image, nullptr);
     if (depthImage) vkDestroyImage(device, depthImage, nullptr);
     if (imageAvailableSemaphore) vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
     if (renderFinishedSemaphore) vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
     if (presentFence) vkDestroyFence(device, presentFence, nullptr);
     if (inFlightFence) vkDestroyFence(device, inFlightFence, nullptr);
     if (uiRenderFinished) vkDestroyEvent(device, uiRenderFinished, nullptr);
-    if (colorAttachment.memory) vkFreeMemory(device, colorAttachment.memory, nullptr);
+    if (colorImage.fba.memory) vkFreeMemory(device, colorImage.fba.memory, nullptr);
     if (depthImageMemory) vkFreeMemory(device, depthImageMemory, nullptr);
-    if (colorAttachment.view) vkDestroyImageView(device, colorAttachment.view, nullptr);
+    if (colorImage.fba.view) vkDestroyImageView(device, colorImage.fba.view, nullptr);
     if (depthImageView) vkDestroyImageView(device, depthImageView, nullptr);
     if (commandPool) vkDestroyCommandPool(device, commandPool, nullptr);
     if (engine && engine->isStereo()) {
-        if (colorAttachment2.image) vkDestroyImage(device, colorAttachment2.image, nullptr);
+        if (colorImage2.fba.image) vkDestroyImage(device, colorImage2.fba.image, nullptr);
         if (depthImage2) vkDestroyImage(device, depthImage2, nullptr);
-        if (colorAttachment2.memory) vkFreeMemory(device, colorAttachment2.memory, nullptr);
+        if (colorImage2.fba.memory) vkFreeMemory(device, colorImage2.fba.memory, nullptr);
         if (depthImageMemory2) vkFreeMemory(device, depthImageMemory2, nullptr);
-        if (colorAttachment2.view) vkDestroyImageView(device, colorAttachment2.view, nullptr);
+        if (colorImage2.fba.view) vkDestroyImageView(device, colorImage2.fba.view, nullptr);
         if (depthImageView2) vkDestroyImageView(device, depthImageView2, nullptr);
     }
     Log("FrameResources destroyed\n");
@@ -96,13 +96,25 @@ void FrameResources::createBackBufferImage()
     // Color attachment
     auto name = engine->util.createDebugName("FrameInfo BackBufferImage", frameIndex);
     global.createImage(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height, 1, VK_SAMPLE_COUNT_1_BIT, global.ImageFormat, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorAttachment.image, colorAttachment.memory, name.c_str());
-    colorAttachment.view = global.createImageView(colorAttachment.image, global.ImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorImage.fba.image, colorImage.fba.memory, name.c_str());
+    colorImage.fba.view = global.createImageView(colorImage.fba.image, global.ImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    colorImage.width = engine->getBackBufferExtent().width;
+    colorImage.height = engine->getBackBufferExtent().height;
+    colorImage.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    colorImage.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorImage.rendered = false;
+    colorImage.consumed = false;
     if (engine->isStereo()) {
         auto name = engine->util.createDebugName("FrameInfo Stereo BackBufferImage", frameIndex);
         global.createImage(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height, 1, VK_SAMPLE_COUNT_1_BIT, global.ImageFormat, VK_IMAGE_TILING_OPTIMAL,
-            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorAttachment2.image, colorAttachment2.memory, name.c_str());
-        colorAttachment2.view = global.createImageView(colorAttachment2.image, global.ImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, colorImage2.fba.image, colorImage2.fba.memory, name.c_str());
+        colorImage2.fba.view = global.createImageView(colorImage2.fba.image, global.ImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+        colorImage2.width = engine->getBackBufferExtent().width;
+        colorImage2.height = engine->getBackBufferExtent().height;
+        colorImage2.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        colorImage2.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+        colorImage2.rendered = false;
+        colorImage2.consumed = false;
     }
 }
 

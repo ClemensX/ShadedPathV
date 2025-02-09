@@ -434,7 +434,7 @@ VkExtent2D Presentation::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabi
 
 
 
-void Presentation::presentImage(WindowInfo* winfo, FrameResources *srcFrame)
+void Presentation::presentImage(WindowInfo* winfo, GPUImage *srcImage)
 {
     // 1. step: aquire image, wait for aquire semaphore, then create the copy commands and execute them
     if (winfo->disabled) return;
@@ -480,8 +480,8 @@ void Presentation::presentImage(WindowInfo* winfo, FrameResources *srcFrame)
     dstImage.access = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
     dstImage.stage = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
     dstImage.layout = VK_IMAGE_LAYOUT_UNDEFINED;
-    dstImage.image = winfo->swapChainImages[imageIndex];
-    DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_READ_BIT, winfo->commandBufferPresentBack, srcFrame->renderedImage);
+    dstImage.fba.image = winfo->swapChainImages[imageIndex];
+    DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_READ_BIT, winfo->commandBufferPresentBack, srcImage);
     DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT, winfo->commandBufferPresentBack, &dstImage);
 
     // Define the region to blit (we will blit the whole swapchain image)
@@ -508,7 +508,7 @@ void Presentation::presentImage(WindowInfo* winfo, FrameResources *srcFrame)
     vkCmdBlitImage(
         winfo->commandBufferPresentBack,
         //tr.colorAttachment2.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, TODO
-        srcFrame->renderedImage->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        srcImage->fba.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         winfo->swapChainImages[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1, &imageBlitRegion,
         VK_FILTER_LINEAR

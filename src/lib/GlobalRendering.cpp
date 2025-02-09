@@ -993,15 +993,15 @@ GPUImage* GlobalRendering::createImage(vector<GPUImage>& list, const char *debug
     gpui.rendered = false;
     gpui.consumed = false;
     createImage(gpui.width, gpui.height, 1, VK_SAMPLE_COUNT_1_BIT, ImageFormat, VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gpui.image, gpui.memory, debugName);
-    gpui.view = createImageView(gpui.image, ImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gpui.fba.image, gpui.fba.memory, debugName);
+    gpui.fba.view = createImageView(gpui.fba.image, ImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
     list.push_back(gpui);
     return &list.back();
 }
 
 void GlobalRendering::createDumpImage(GPUImage& gpui, uint32_t width, uint32_t height)
 {
-    assert(gpui.image == nullptr);
+    assert(gpui.fba.image == nullptr);
     if (width <= 0 || height <= 0) {
         width = engine->getBackBufferExtent().width;
         height = engine->getBackBufferExtent().height;
@@ -1010,15 +1010,15 @@ void GlobalRendering::createDumpImage(GPUImage& gpui, uint32_t width, uint32_t h
     gpui.height = height;
     createImage(gpui.width, gpui.height, 1, VK_SAMPLE_COUNT_1_BIT, ImageFormat, VK_IMAGE_TILING_LINEAR,
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        gpui.image, gpui.memory, "dump image");
+        gpui.fba.image, gpui.fba.memory, "dump image");
     // Get layout of the image (including row pitch)
     VkImageSubresource subResource{};
     subResource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-    vkGetImageSubresourceLayout(device, gpui.image, &subResource, &gpui.subResourceLayout);
+    vkGetImageSubresourceLayout(device, gpui.fba.image, &subResource, &gpui.subResourceLayout);
 
     // Map image memory so we can start copying from it
-    vkMapMemory(device, gpui.memory, 0, VK_WHOLE_SIZE, 0, (void**)&gpui.imagedata);
+    vkMapMemory(device, gpui.fba.memory, 0, VK_WHOLE_SIZE, 0, (void**)&gpui.imagedata);
     gpui.imagedata += gpui.subResourceLayout.offset;
 }
 
@@ -1041,16 +1041,23 @@ void GlobalRendering::makeGPUImage(FrameBufferAttachment* fba, GPUImage& gpui)
     gpui.layout = VK_IMAGE_LAYOUT_UNDEFINED;
     gpui.rendered = true;
     gpui.consumed = false;
-    gpui.image = fba->image;
-    gpui.memory = fba->memory;
-    gpui.view = fba->view;
+    gpui.fba = *fba;
 }
 
 void GlobalRendering::dumpToFile(FrameBufferAttachment* fba, DirectImage& di)
-{   
+{
     GPUImage gpui;
     makeGPUImage(fba, gpui);
     di.dumpToFile(&gpui);
+}
+
+void GlobalRendering::present(FrameResources* fr, DirectImage& di, WindowInfo* winfo)
+{
+    //GPUImage* gpui = &fr->colorImage;
+    engine->presentation.presentImage(winfo, &fr->colorImage);
+    //auto commandBuffer = beginSingleTimeCommands(false);
+    //di.copyBackbufferImage(gpui, &target, commandBuffer);
+    //endSingleTimeCommands(commandBuffer);
 }
 
 void GlobalRendering::preFrame(FrameResources* fr)
@@ -1115,6 +1122,6 @@ void GlobalRendering::processImage(FrameResources* fr)
 
 void GlobalRendering::destroyImage(GPUImage* image)
 {
-    destroyImageView(image->view);
-    destroyImage(image->image, image->memory);
+    destroyImageView(image->fba.view);
+    destroyImage(image->fba.image, image->fba.memory);
 }

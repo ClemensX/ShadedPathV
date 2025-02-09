@@ -108,23 +108,24 @@ void LineApp::processImage(FrameResources* fr)
 {
     //Log("LineApp postFrame " << fi->frameNum << endl);
     if (false && fr->frameNum > 10 && fr->frameNum <= 12) {
-        Log("dump to file frame " << fr->frameNum << " " << fr->colorAttachment.image << endl);
-        engine->globalRendering.dumpToFile(&fr->colorAttachment, di);
+        Log("dump to file frame " << fr->frameNum << " " << fr->colorImage.fba.image << endl);
+        engine->globalRendering.dumpToFile(&fr->colorImage.fba, di);
     }
-    if (false && fr->frameNum == 9000 ) {
-        Log("dump to file frame " << fr->frameNum << " " << fr->colorAttachment.image << endl);
-        engine->globalRendering.dumpToFile(&fr->colorAttachment, di);
+    if (false && fr->frameNum == 1000 ) {
+        Log("dump to file frame " << fr->frameNum << " " << fr->colorImage.fba.image << endl);
+        engine->globalRendering.dumpToFile(&fr->colorImage.fba, di);
     }
     if (false && fr->frameNum == 10) {
         Log("sleep...");
         this_thread::sleep_for(chrono::seconds(2));
         //engine->globalRendering.dumpToFile(&fr->colorAttachment);
     }
-    GPUImage gpui;
-    engine->globalRendering.makeGPUImage(&fr->colorAttachment, gpui);
-    fr->renderedImage = &gpui;
-    fr->renderedImage->rendered = false;
-    imageConsumer->consume(fr);
+    engine->globalRendering.present(fr, di, &window);
+    //GPUImage gpui;
+    //engine->globalRendering.makeGPUImage(&fr->colorAttachment, gpui);
+    //fr->renderedImage = &gpui;
+    //fr->renderedImage->rendered = false;
+    //imageConsumer->consume(fr);
 }
 
 void LineApp::run(ContinuationInfo* cont)

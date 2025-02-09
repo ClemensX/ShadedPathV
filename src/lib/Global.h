@@ -32,9 +32,7 @@ struct FrameBufferAttachment {
 
 // low level graphics: define image on GPU, that can be used as source or target
 struct GPUImage {
-	VkImage image = nullptr;
-	VkDeviceMemory memory = nullptr;
-	VkImageView view = nullptr;
+    FrameBufferAttachment fba;
     VkImageUsageFlags usage = 0;
     VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkAccessFlags2 access = 0;
@@ -98,8 +96,9 @@ struct FrameResources {
 	VkDeviceMemory depthImageMemory2 = nullptr;
 	VkImageView depthImageView2 = nullptr;
 
-    FrameBufferAttachment colorAttachment{}/*, depthAttachment*/;
-    FrameBufferAttachment colorAttachment2{}; // right side view
+    GPUImage colorImage;
+    GPUImage colorImage2;
+public:
     VkCommandPool commandPool = nullptr;
 
 //

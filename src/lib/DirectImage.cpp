@@ -30,7 +30,7 @@ void DirectImage::dumpToFile(GPUImage* gpui)
 
     GPUImage target;
 	global.createDumpImage(target);
-	engine->util.debugNameObjectImage(target.image, "dumpToFile target image");
+	engine->util.debugNameObjectImage(target.fba.image, "dumpToFile target image");
 	//engine->util.debugNameObjectImage(gpui->image, "dumptToFile source image");
 	auto commandBuffer = global.beginSingleTimeCommands(false);
     copyBackbufferImage(gpui, &target, commandBuffer);
@@ -74,8 +74,8 @@ void DirectImage::copyBackbufferImage(GPUImage* gpui_source, GPUImage* gpui_targ
 
 	vkCmdCopyImage(
 		commandBuffer,
-		gpui_source->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		gpui_target->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		gpui_source->fba.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		gpui_target->fba.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		1,
 		&imageCopyRegion);
 
@@ -96,7 +96,7 @@ void DirectImage::toLayout(VkImageLayout layout, VkAccessFlags2 access, VkComman
 	dstBarrier.dstAccessMask = access;
 	dstBarrier.oldLayout = gpui->layout;
 	dstBarrier.newLayout = layout;
-	dstBarrier.image = gpui->image;
+	dstBarrier.image = gpui->fba.image;
 	dstBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
     dstBarrier.srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
     dstBarrier.dstStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT;
@@ -122,7 +122,7 @@ void DirectImage::toLayout(VkImageLayout layout, VkPipelineStageFlags2 stage, Vk
 	dstBarrier.dstAccessMask = access;
 	dstBarrier.oldLayout = gpui->layout;
 	dstBarrier.newLayout = layout;
-	dstBarrier.image = gpui->image;
+	dstBarrier.image = gpui->fba.image;
 	dstBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 	dstBarrier.srcStageMask = gpui->stage;
 	dstBarrier.dstStageMask = stage;
@@ -147,7 +147,7 @@ void DirectImage::toLayoutAllStagesOnlyForDebugging(VkImageLayout layout, VkComm
 	dstBarrier.oldLayout = gpui->layout;
 	//dstBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
 	dstBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	dstBarrier.image = gpui->image;
+	dstBarrier.image = gpui->fba.image;
 	dstBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 	dstBarrier.srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR;
 	dstBarrier.dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT_KHR;
@@ -164,7 +164,7 @@ void DirectImage::toLayoutAllStagesOnlyForDebugging(VkImageLayout layout, VkComm
 void DirectImage::openForCPUWriteAccess(GPUImage* gpui, GPUImage* writeable)
 {
 	assert(writeable != nullptr);
-    assert(writeable->image != nullptr);
+    assert(writeable->fba.image != nullptr);
 	assert(gpui != nullptr);
 	auto& global = engine->globalRendering;
 	auto& device = global.device;
@@ -172,7 +172,7 @@ void DirectImage::openForCPUWriteAccess(GPUImage* gpui, GPUImage* writeable)
     if (writeable->imagedata == nullptr) {
 		Error("DirectImage::openForCPUWriteAccess: writeable image has no imagedata. Did you use GlobalRendering::createDumpImage() to create it?");
     }
-	engine->util.debugNameObjectImage(writeable->image, "copy target for write access");
+	engine->util.debugNameObjectImage(writeable->fba.image, "copy target for write access");
 	auto commandBuffer = global.beginSingleTimeCommands(false);
 	copyBackbufferImage(gpui, writeable, commandBuffer);
 	global.endSingleTimeCommands(commandBuffer);

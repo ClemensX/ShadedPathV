@@ -67,7 +67,7 @@ public:
 
 	// current input/output window
 	WindowInfo* windowInfo = nullptr;
-	void presentImage(WindowInfo *winfo, FrameResources* srcFrame);
+	void presentImage(WindowInfo *winfo, GPUImage* srcImage);
 	void preparePresentation(WindowInfo* winfo);
 	void endPresentation(WindowInfo* winfo);
 	static void setKeyCallback(std::function<void(GLFWwindow*, int, int, int, int)> callback);
