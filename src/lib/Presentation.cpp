@@ -440,9 +440,8 @@ void Presentation::presentImage(WindowInfo* winfo, GPUImage *srcImage)
     if (winfo->disabled) return;
     auto& device = engine->globalRendering.device;
     auto& global = engine->globalRendering;
-    //vkWaitForFences(global.device, 1, &winfo->presentFence, VK_TRUE, UINT64_MAX);
-    //vkResetFences(global.device, 1, &winfo->presentFence);
     uint32_t imageIndex;
+
     if (vkAcquireNextImageKHR(device, winfo->swapChain, UINT64_MAX, winfo->imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS) {
         Error("cannot aquire next image KHR");
     }
@@ -450,11 +449,6 @@ void Presentation::presentImage(WindowInfo* winfo, GPUImage *srcImage)
     acquireCompleteInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
     acquireCompleteInfo.semaphore = winfo->imageAvailableSemaphore;
     acquireCompleteInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-    VkSemaphoreSubmitInfo renderingCompleteInfo = {};
-    renderingCompleteInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-    renderingCompleteInfo.semaphore = winfo->renderFinishedSemaphore;
-    renderingCompleteInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
 
     VkCommandBufferSubmitInfo renderingCommandBufferInfo = {};
     renderingCommandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
@@ -515,8 +509,6 @@ void Presentation::presentImage(WindowInfo* winfo, GPUImage *srcImage)
 
     DirectImage::toLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, VK_ACCESS_2_MEMORY_READ_BIT, winfo->commandBufferPresentBack, &dstImage);
 
-    // end
-
     if (vkEndCommandBuffer(winfo->commandBufferPresentBack) != VK_SUCCESS) {
         Error("failed to record back buffer copy command buffer!");
     }
@@ -527,8 +519,6 @@ void Presentation::presentImage(WindowInfo* winfo, GPUImage *srcImage)
     renderingSubmitInfo.pWaitSemaphoreInfos = &acquireCompleteInfo;
     renderingSubmitInfo.commandBufferInfoCount = 1;
     renderingSubmitInfo.pCommandBufferInfos = &renderingCommandBufferInfo;
-    renderingSubmitInfo.signalSemaphoreInfoCount = 0;
-    renderingSubmitInfo.pSignalSemaphoreInfos = &renderingCompleteInfo;
 
     if (vkQueueSubmit2(global.graphicsQueue, 1, &renderingSubmitInfo, winfo->presentFence) != VK_SUCCESS) {
         Error("failed to submit draw command buffer!");
@@ -537,38 +527,6 @@ void Presentation::presentImage(WindowInfo* winfo, GPUImage *srcImage)
     vkResetFences(global.device, 1, &winfo->presentFence);
     //vkQueueWaitIdle(global.graphicsQueue);
 
-    // only final queue submit and present left to do:
-
-/*    VkSemaphoreSubmitInfo prePresentWaitInfo = {};
-    prePresentWaitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-    prePresentWaitInfo.semaphore = winfo->renderFinishedSemaphore;
-    prePresentWaitInfo.stageMask = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
-
-    VkSemaphoreSubmitInfo prePresentCompleteInfo = {};
-    prePresentCompleteInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
-    prePresentCompleteInfo.semaphore = winfo->prePresentCompleteSemaphore;
-    prePresentCompleteInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-
-    //VkCommandBufferSubmitInfo prePresentCommandBufferInfo = {};
-    //renderingCommandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
-    //renderingCommandBufferInfo.commandBuffer = winfo->commandBufferPresentBack;
-
-    VkSubmitInfo2 submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
-    submitInfo.waitSemaphoreInfoCount = 1;
-    submitInfo.pWaitSemaphoreInfos = &prePresentWaitInfo;
-    submitInfo.commandBufferInfoCount = 0;
-    //submitInfo.pCommandBuffers = &winfo->commandBufferPresentBack;
-    submitInfo.signalSemaphoreInfoCount = 1;
-    submitInfo.pSignalSemaphoreInfos = &prePresentCompleteInfo;
-
-    //vkDeviceWaitIdle(global.device); does not help
-    if (LOG_GLOBAL_UPDATE) engine->log_current_thread();
-    LogCondF(LOG_FENCE, "queue thread submit present fence " << hex << ThreadInfo::thread_osid() << endl);
-    if (vkQueueSubmit2(global.graphicsQueue, 1, &submitInfo, winfo->presentFence) != VK_SUCCESS) {
-        Error("failed to submit draw command buffer!");
-    }
-*/
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 0;
