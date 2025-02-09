@@ -1033,9 +1033,8 @@ void GlobalRendering::consolidateCommandBuffers(CommandBufferArray& cmdBufs, Fra
         });
 }
 
-void GlobalRendering::dumpToFile(FrameBufferAttachment* fba, DirectImage& di)
-{   
-    GPUImage gpui;
+void GlobalRendering::makeGPUImage(FrameBufferAttachment* fba, GPUImage& gpui)
+{
     gpui.width = engine->getBackBufferExtent().width;
     gpui.height = engine->getBackBufferExtent().height;
     gpui.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
@@ -1045,6 +1044,12 @@ void GlobalRendering::dumpToFile(FrameBufferAttachment* fba, DirectImage& di)
     gpui.image = fba->image;
     gpui.memory = fba->memory;
     gpui.view = fba->view;
+}
+
+void GlobalRendering::dumpToFile(FrameBufferAttachment* fba, DirectImage& di)
+{   
+    GPUImage gpui;
+    makeGPUImage(fba, gpui);
     di.dumpToFile(&gpui);
 }
 

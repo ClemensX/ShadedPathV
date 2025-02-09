@@ -183,8 +183,11 @@ public:
         return isDeviceExtensionRequested(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
     }
 
-    // dump a rendered image to file
-    void dumpToFile(FrameBufferAttachment* fba, DirectImage& di);
+    // create GPU image from FrameBufferAttachment
+	void makeGPUImage(FrameBufferAttachment* fba, GPUImage& gpu);
+
+	// dump a rendered image to file
+	void dumpToFile(FrameBufferAttachment* fba, DirectImage& di);
 
 	// process finished render image (copy to app window, dump to file, etc.)
 	void processImage(FrameResources* fr);

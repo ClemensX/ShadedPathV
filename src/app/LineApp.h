@@ -18,6 +18,7 @@ public:
     bool shouldClose() override;
     void handleInput(InputState& inputState) override;
     void init();
+    void prepareWindowOutput();
     //void run();
     //void drawFrame(ThreadResources& tr) override;
     //void handleInput(InputState& inputState) override;
@@ -31,6 +32,8 @@ private:
     float plus = 0.0f;
     bool shouldStopEngine = false;
     long frameNum = 0;
-    DirectImage* di = nullptr;
+    DirectImage di;
+    WindowInfo window;
+    ImageConsumerWindow* imageConsumer = nullptr;
 };
 

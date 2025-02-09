@@ -91,15 +91,6 @@ void LineApp::prepareFrame(FrameResources* fr)
 // draw from multiple threads
 void LineApp::drawFrame(FrameResources* fi, int topic, DrawResult* drawResult)
 {
-    //if (fi->frameNum == 20) {
-    //    shouldStopEngine = true;
-    //}
-    if (fi->frameNum % 1000 == 0 && topic == 1) {
-        Log("LineApp drawFrame " << fi->frameNum << endl);
-        if (fi->frameNum == 10000) {
-            shouldStopEngine = true;
-        }
-    }
     if (topic == 0) {
         // draw lines
         engine->shaders.clearShader.addCommandBuffers(fi, drawResult);
@@ -116,19 +107,24 @@ void LineApp::postFrame(FrameResources* fr)
 void LineApp::processImage(FrameResources* fr)
 {
     //Log("LineApp postFrame " << fi->frameNum << endl);
-    if (true && fr->frameNum > 10 && fr->frameNum <= 12) {
+    if (false && fr->frameNum > 10 && fr->frameNum <= 12) {
         Log("dump to file frame " << fr->frameNum << " " << fr->colorAttachment.image << endl);
-        engine->globalRendering.dumpToFile(&fr->colorAttachment, *di);
+        engine->globalRendering.dumpToFile(&fr->colorAttachment, di);
     }
-    if (true && fr->frameNum == 9000 ) {
+    if (false && fr->frameNum == 9000 ) {
         Log("dump to file frame " << fr->frameNum << " " << fr->colorAttachment.image << endl);
-        engine->globalRendering.dumpToFile(&fr->colorAttachment, *di);
+        engine->globalRendering.dumpToFile(&fr->colorAttachment, di);
     }
-    if (true && fr->frameNum == 10) {
+    if (false && fr->frameNum == 10) {
         Log("sleep...");
         this_thread::sleep_for(chrono::seconds(2));
         //engine->globalRendering.dumpToFile(&fr->colorAttachment);
     }
+    GPUImage gpui;
+    engine->globalRendering.makeGPUImage(&fr->colorAttachment, gpui);
+    fr->renderedImage = &gpui;
+    fr->renderedImage->rendered = false;
+    imageConsumer->consume(fr);
 }
 
 void LineApp::run(ContinuationInfo* cont)
@@ -150,6 +146,8 @@ void LineApp::run(ContinuationInfo* cont)
     //engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Vulkan Simple Line App");
     camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);
 
+    ImageConsumerWindow icw(engine);
+    imageConsumer = &icw;
     // add shaders used in this app
     shaders
         .addShader(shaders.clearShader)
@@ -170,7 +168,7 @@ bool LineApp::shouldClose()
 }
 
 void LineApp::init() {
-    di = new DirectImage(engine);
+    di.setEngine(engine);
     // add some lines:
     float aspectRatio = engine->getAspect();
     float plus = 0.0f;
@@ -205,6 +203,17 @@ void LineApp::init() {
 	engine->shaders.lineShader.uploadFixedGlobalLines();
     engine->shaders.clearShader.setClearColor(vec4(0.1f, 0.1f, 0.9f, 1.0f));
 
+    prepareWindowOutput();
+}
+
+void LineApp::prepareWindowOutput()
+{
+    int win_width = 960;// 480; 960;//1800;// 800;//3700;
+    engine->presentation.createWindow(&window, win_width, (int)(win_width / 1.77f), "Line App");
+    engine->enablePresentation(&window);
+    engine->enableWindowOutput(&window);
+    imageConsumer->setWindow(&window);
+    engine->setImageConsumer(imageConsumer);
 }
 
 void LineApp::increaseLineStack(std::vector<LineDef>& lines)
@@ -233,5 +242,9 @@ void LineApp::increaseLineStack(std::vector<LineDef>& lines)
 
 void LineApp::handleInput(InputState& inputState)
 {
+    if (inputState.windowClosed != nullptr) {
+        inputState.windowClosed = nullptr;
+        shouldStopEngine = true;
+    }
     AppSupport::handleInput(inputState);
 }
