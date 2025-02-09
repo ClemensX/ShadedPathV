@@ -440,8 +440,8 @@ void Presentation::presentImage(WindowInfo* winfo, GPUImage *srcImage)
     if (winfo->disabled) return;
     auto& device = engine->globalRendering.device;
     auto& global = engine->globalRendering;
-    vkWaitForFences(global.device, 1, &winfo->presentFence, VK_TRUE, UINT64_MAX);
-    vkResetFences(global.device, 1, &winfo->presentFence);
+    //vkWaitForFences(global.device, 1, &winfo->presentFence, VK_TRUE, UINT64_MAX);
+    //vkResetFences(global.device, 1, &winfo->presentFence);
     uint32_t imageIndex;
     if (vkAcquireNextImageKHR(device, winfo->swapChain, UINT64_MAX, winfo->imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex) != VK_SUCCESS) {
         Error("cannot aquire next image KHR");
@@ -530,14 +530,16 @@ void Presentation::presentImage(WindowInfo* winfo, GPUImage *srcImage)
     renderingSubmitInfo.signalSemaphoreInfoCount = 1;
     renderingSubmitInfo.pSignalSemaphoreInfos = &renderingCompleteInfo;
 
-    if (vkQueueSubmit2(global.graphicsQueue, 1, &renderingSubmitInfo, 0) != VK_SUCCESS) {
+    if (vkQueueSubmit2(global.graphicsQueue, 1, &renderingSubmitInfo, winfo->presentFence) != VK_SUCCESS) {
         Error("failed to submit draw command buffer!");
     }
-    vkQueueWaitIdle(global.graphicsQueue);
+    vkWaitForFences(global.device, 1, &winfo->presentFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(global.device, 1, &winfo->presentFence);
+    //vkQueueWaitIdle(global.graphicsQueue);
 
     // only final queue submit and present left to do:
 
-    VkSemaphoreSubmitInfo prePresentWaitInfo = {};
+/*    VkSemaphoreSubmitInfo prePresentWaitInfo = {};
     prePresentWaitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
     prePresentWaitInfo.semaphore = winfo->renderFinishedSemaphore;
     prePresentWaitInfo.stageMask = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
@@ -566,11 +568,11 @@ void Presentation::presentImage(WindowInfo* winfo, GPUImage *srcImage)
     if (vkQueueSubmit2(global.graphicsQueue, 1, &submitInfo, winfo->presentFence) != VK_SUCCESS) {
         Error("failed to submit draw command buffer!");
     }
-
+*/
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = &winfo->prePresentCompleteSemaphore;
+    presentInfo.pWaitSemaphores = &winfo->renderFinishedSemaphore;//&winfo->prePresentCompleteSemaphore;
 
     VkSwapchainKHR swapChains[] = { winfo->swapChain };
     presentInfo.swapchainCount = 1;
@@ -627,7 +629,7 @@ void Presentation::preparePresentation(WindowInfo* winfo)
     if (vkCreateFence(device, &fenceInfo, nullptr, &winfo->imageDumpFence) != VK_SUCCESS) {
         Error("failed to create inFlightFence for a frame");
     }
-    //fenceInfo.flags = 0; // present fence will be set during 1st present in queue submit thread
+    fenceInfo.flags = 0; // present fence will be set during 1st present in queue submit thread
     if (vkCreateFence(device, &fenceInfo, nullptr, &winfo->presentFence) != VK_SUCCESS) {
         Error("failed to create presentFence for a frame");
     }
