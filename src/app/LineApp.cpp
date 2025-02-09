@@ -111,10 +111,14 @@ void LineApp::drawFrame(FrameResources* fi, int topic, DrawResult* drawResult)
 
 void LineApp::postFrame(FrameResources* fr)
 {
+}
+
+void LineApp::processImage(FrameResources* fr)
+{
     //Log("LineApp postFrame " << fi->frameNum << endl);
     if (true && fr->frameNum == 9000) {
-        Log("dump to file frame 10" << fr->colorAttachment.image << endl);
-        engine->globalRendering.dumpToFile(&fr->colorAttachment);
+        Log("dump to file frame 9000" << fr->colorAttachment.image << endl);
+        //engine->globalRendering.dumpToFile(&fr->colorAttachment);
     }
 }
 

@@ -1093,7 +1093,7 @@ void GlobalRendering::processImage(FrameResources* fr)
 {
     Log("process frame " << fr->frameNum << endl);
     if (fr->frameNum == 10) {
-        this_thread::sleep_for(chrono::seconds(10));
+        //this_thread::sleep_for(chrono::seconds(10));
     }
 }
 

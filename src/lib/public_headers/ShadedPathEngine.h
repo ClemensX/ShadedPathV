@@ -18,8 +18,10 @@ public:
     // draw Frame depending on topic. is in range 0..appDrawCalls-1
     // each topic will be called in parallel threads
     virtual void drawFrame(FrameResources* fi, int topic, DrawResult* drawResult) {};
-    // post rendering: before queue submit (present rendered frame or dump to file, etc.)
+    // post rendering: just before queue submit
     virtual void postFrame(FrameResources* fi) {};
+    // process finished frame: dump to file, copy to window, etc.
+    virtual void processImage(FrameResources* fi) {};
     virtual void buildCustomUI() {};
     virtual bool shouldClose() { return true; };
     virtual void run(ContinuationInfo* cont = nullptr) {};
@@ -304,8 +306,11 @@ private:
     ThreadGroup& getThreadGroupMain() {
         return threadsMain;
     }
+    // check if engine should close
     bool shouldClose();
+    // increase frame number and prepare frame info, advance timer, wait for old frame with same index to have finished
     void preFrame();
+    // draw the frame (create command buffers) from multiple threads
     void drawFrame();
     // clean up draw and prepare submit, single threaded
     void postFrame();

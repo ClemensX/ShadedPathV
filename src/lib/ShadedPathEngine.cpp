@@ -443,6 +443,7 @@ void ShadedPathEngine::runProcessImage(ShadedPathEngine* engine_instance)
         vkResetFences(device, 1, &fr.inFlightFence);
         Log("frame ready, start processing " << fr.frameNum << endl);
         engine_instance->globalRendering.processImage(&fr);
+        //engine_instance->app->processImage(&fr);
         fr.processImageQueue.push(i);
     }
     //engine_instance->setRunning(false);
