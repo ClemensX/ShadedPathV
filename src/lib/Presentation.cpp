@@ -527,7 +527,7 @@ void Presentation::presentImage(WindowInfo* winfo, GPUImage *srcImage)
     renderingSubmitInfo.pWaitSemaphoreInfos = &acquireCompleteInfo;
     renderingSubmitInfo.commandBufferInfoCount = 1;
     renderingSubmitInfo.pCommandBufferInfos = &renderingCommandBufferInfo;
-    renderingSubmitInfo.signalSemaphoreInfoCount = 1;
+    renderingSubmitInfo.signalSemaphoreInfoCount = 0;
     renderingSubmitInfo.pSignalSemaphoreInfos = &renderingCompleteInfo;
 
     if (vkQueueSubmit2(global.graphicsQueue, 1, &renderingSubmitInfo, winfo->presentFence) != VK_SUCCESS) {
@@ -571,7 +571,7 @@ void Presentation::presentImage(WindowInfo* winfo, GPUImage *srcImage)
 */
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.waitSemaphoreCount = 0;
     presentInfo.pWaitSemaphores = &winfo->renderFinishedSemaphore;//&winfo->prePresentCompleteSemaphore;
 
     VkSwapchainKHR swapChains[] = { winfo->swapChain };
