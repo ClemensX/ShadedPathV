@@ -39,7 +39,9 @@ public:
         shaders(this),
         util(this),
         vr(this),
-        objectStore(&meshStore)
+        objectStore(&meshStore),
+//        sound(*this),
+        limiter(60.0f)
     {
         Log("Engine c'tor\n");
 #if defined (USE_FIXED_PHYSICAL_DEVICE_INDEX)
@@ -335,6 +337,7 @@ private:
     static void runDrawFrame(ShadedPathEngine* engine_instance);
     static void runQueueSubmit(ShadedPathEngine* engine_instance);
     static void runUpdateThread(ShadedPathEngine* engine_instance);
+    ThreadLimiter limiter;
     void startRenderThread();
     void startQueueSubmitThread();
     // global update thread for shuffling data to GPU in the background

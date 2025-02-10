@@ -152,7 +152,7 @@ void ShadedPathEngine::eventLoop()
         presentation.pollEvents();
         if (!singleThreadMode) {
             ThemedTimer::getInstance()->add(TIMER_INPUT_THREAD);
-            //limiter.waitForLimit();
+            limiter.waitForLimit();
         } else {
             // frame generation will only be called from main thread in single thread mode
             preFrame();
@@ -400,7 +400,7 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
             }
         }
         else if (engine_instance->isDrawResultCommandBuffers(v->frameInfo)) {
-            // submit command buffers
+            // submit command buffers for this frame and process finished image from last frame
             //Log("submit thread submitting frame " << v->frameInfo->frameNum << endl);
             engine_instance->globalRendering.submit(v->frameInfo);
             int lastFrameIndex = (v->frameInfo->frameIndex + 1) & 0x01;
