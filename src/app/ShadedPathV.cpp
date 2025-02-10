@@ -6,7 +6,7 @@
 #include "SimpleMultiWin.h"
 //#include "AppSupport.h"
 //#include "LandscapeGenerator.h"
-//#include "SimpleApp.h"
+#include "SimpleApp.h"
 //#include "DeviceCoordApp.h"
 #include "LineApp.h"
 //#include "gltfObjectsApp.h"
@@ -24,6 +24,7 @@ int main()
     //mainSimpleMultiApp(); return 0;
 
     LineApp app;
+    //SimpleApp app;
 
     Log("main() start!\n");
     ShadedPathEngine engine;

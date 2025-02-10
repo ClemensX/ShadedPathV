@@ -303,6 +303,8 @@ void ShadedPathEngine::postFrame()
         } else {
             globalRendering.postFrame(currentFrameInfo);
             app->postFrame(currentFrameInfo);
+            // at least end shader should have been added during postFrame(), we need to count again:
+            currentFrameInfo->numCommandBuffers = currentFrameInfo->countCommandBuffers();
         }
     }
 }

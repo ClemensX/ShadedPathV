@@ -20,8 +20,6 @@ void LineApp::run(ContinuationInfo* cont)
     engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
     engine->files.findAssetFolder("data");
     setHighBackbufferResolution();
-    int win_width = 960;// 960;//1800;// 800;//3700;
-    //engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Vulkan Simple Line App");
     camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);
 
     // add shaders used in this app
@@ -153,22 +151,21 @@ void LineApp::prepareFrame(FrameResources* fr)
 
     //logCameraPosition();
     //this_thread::sleep_for(chrono::milliseconds(300));
+    engine->shaders.clearShader.addCommandBuffers(fr, &fr->drawResults[0]); // put clear shader first
 }
 
 // draw from multiple threads
-void LineApp::drawFrame(FrameResources* fi, int topic, DrawResult* drawResult)
+void LineApp::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
 {
     if (topic == 0) {
         // draw lines
-        engine->shaders.clearShader.addCommandBuffers(fi, drawResult);
-        engine->shaders.lineShader.addCommandBuffers(fi, drawResult);
-        engine->shaders.endShader.addCommandBuffers(fi, drawResult);
-        //engine->shaders.submitFrame();
+        engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
     }
 }
 
 void LineApp::postFrame(FrameResources* fr)
 {
+    engine->shaders.endShader.addCommandBuffers(fr, fr->getLatestCommandBufferArray());
 }
 
 void LineApp::processImage(FrameResources* fr)

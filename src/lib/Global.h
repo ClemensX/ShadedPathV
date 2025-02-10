@@ -141,6 +141,17 @@ public:
             }
         }
     }
+    DrawResult* getLatestCommandBufferArray() {
+        DrawResult* ret = nullptr;
+        for (auto& drawResult : drawResults) {
+            if (drawResult.commandBuffers[0] != nullptr) {
+                ret = &drawResult;
+            } else {
+                break;
+            }
+        }
+        return ret;
+    }
     void clearDrawResults();
 private:
     void createFencesAndSemaphores();
