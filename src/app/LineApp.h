@@ -18,13 +18,7 @@ public:
     bool shouldClose() override;
     void handleInput(InputState& inputState) override;
     void init();
-    void prepareWindowOutput();
-    //void run();
-    //void drawFrame(ThreadResources& tr) override;
-    //void handleInput(InputState& inputState) override;
 private:
-    //void updatePerFrame(ThreadResources& tr);
-
     // implement square formed of lines
     // it is increased on every call by one more square slightly above the others
     void increaseLineStack(std::vector<LineDef>& lines);
@@ -32,8 +26,5 @@ private:
     float plus = 0.0f;
     bool shouldStopEngine = false;
     long frameNum = 0;
-    DirectImage di;
-    WindowInfo window;
-    ImageConsumerWindow* imageConsumer = nullptr;
 };
 

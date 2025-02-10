@@ -40,6 +40,8 @@ public:
     ImageConsumerWindow(ShadedPathEngine* s) {
         setEngine(s);
     }
+    ImageConsumerWindow() {
+    }
 private:
     WindowInfo* window = nullptr;
 };

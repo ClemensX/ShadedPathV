@@ -12,6 +12,8 @@ class AppSupport
 public:
     void setEngine(ShadedPathEngine* e) {
         app_engine = e;
+        di.setEngine(e);
+        imageConsumerWindow.setEngine(e);
     }
 protected:
     bool enableLines = true;
@@ -22,6 +24,7 @@ protected:
     bool singleThreadMode = false;
     bool debugWindowPosition = true; // if true try to open app window in right screen part
     bool enableRenderDoc = true;
+    int win_width = 960;// 480; 960;//1800;// 800;//3700;
 
     bool firstPersonCameraAlwayUpright = true;
     Camera* camera = nullptr;
@@ -164,11 +167,27 @@ protected:
             app_engine->setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         }
     }
+    void prepareWindowOutput(const char* title) {
+        app_engine->presentation.createWindow(&window, win_width, (int)(win_width / 1.77f), "Line App");
+        app_engine->enablePresentation(&window);
+        app_engine->enableWindowOutput(&window);
+        imageConsumerWindow.setWindow(&window);
+        app_engine->setImageConsumer(&imageConsumerWindow);
+    }
+    void dumpToFile(FrameResources* fr) {
+        app_engine->globalRendering.dumpToFile(&fr->colorImage.fba, di);
+    }
+    void present(FrameResources* fr) {
+        app_engine->globalRendering.present(fr, di, &window);
+    }
 private:
     // fixed projection matrix for first person camera
     glm::mat4 fpProjection = glm::mat4(1.0f); // identity matrix
     bool fpProjectionInitialized = false;
     ShadedPathEngine* app_engine = nullptr;
+    DirectImage di;
+    WindowInfo window;
+    ImageConsumerWindow imageConsumerWindow;
 };
 
 #endif // APPSUPPORT_H
