@@ -24,6 +24,7 @@ void LineApp::run(ContinuationInfo* cont)
 
     // add shaders used in this app
     shaders
+        .addShader(shaders.uiShader)
         .addShader(shaders.clearShader)
         .addShader(shaders.lineShader)
         ;

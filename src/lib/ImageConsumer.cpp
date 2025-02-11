@@ -20,10 +20,10 @@ void ImageConsumerDump::configureFramesToDump(bool dumpAll, std::initializer_lis
     frameNumbersToDump.insert(frameNumbers.begin(), frameNumbers.end());
 }
 
-void ImageConsumerWindow::consume(FrameResources* fi)
+void ImageConsumerWindow::consume(FrameResources* fr)
 {
     //Log("copy frame " << fi->frameNum << " to window " << window->title << endl);
-    engine->presentation.presentImage(window, fi->renderedImage);
-    fi->renderedImage->consumed = true;
-    fi->renderedImage->rendered = false;
+    engine->presentation.presentImage(fr, window, fr->renderedImage);
+    fr->renderedImage->consumed = true;
+    fr->renderedImage->rendered = false;
 }

@@ -1,7 +1,7 @@
 #include "mainheader.h"
 
 using namespace std;
-
+/*
 void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 {
 	ShaderBase::init(engine);
@@ -237,3 +237,4 @@ void SimpleShader::destroyThreadResources(ThreadResources& tr)
 		vkDestroyFramebuffer(device, trl.framebuffer2, nullptr);
 	}
 }
+*/

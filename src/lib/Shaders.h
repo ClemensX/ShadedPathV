@@ -95,7 +95,7 @@ public:
 	EndShader endShader;
 	//SimpleShader simpleShader;
 	LineShader lineShader;
-	//UIShader uiShader;
+	UIShader uiShader;
 	//PBRShader pbrShader;
 	//CubeShader cubeShader;
 	//BillboardShader billboardShader;

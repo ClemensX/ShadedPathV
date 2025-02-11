@@ -5,10 +5,11 @@
 using namespace std;
 using namespace glm;
 
-void SimpleApp::run()
+void SimpleApp::run(ContinuationInfo* cont)
 {
     Log("SimpleApp started" << endl);
     {
+        AppSupport::setEngine(engine);
         Shaders& shaders = engine->shaders;
         // camera initialization
         createFirstPersonCameraPositioner(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -20,20 +21,11 @@ void SimpleApp::run()
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine->files.findAssetFolder("data");
         engine->setMaxTextures(10);
-        //engine->setFrameCountLimit(1000);
-        //engine->setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
-        if (vr) {
-            engine->setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
-        } else {
-            engine->setBackBufferResolution(ShadedPathEngine::Resolution::FourK); // 960
-        }
-        int win_width = 960; //2500;//1800;// 800;//3700;
-        engine->enablePresentation(win_width, (int)(win_width /1.77f), "Vulkan Simple App");
+        setHighBackbufferResolution();
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);
 
-        engine->registerApp(this);
-        initEngine("SimpleApp");
         engine->textureStore.generateBRDFLUT();
+
         // add shaders used in this app
         shaders
             .addShader(shaders.uiShader)
@@ -46,7 +38,7 @@ void SimpleApp::run()
 
         // init app rendering:
         init();
-        eventLoop();
+        engine->eventLoop();
     }
     Log("SimpleApp ended" << endl);
 }
@@ -83,25 +75,22 @@ void SimpleApp::init() {
     engine->shaders.lineShader.uploadFixedGlobalLines();
 }
 
-void SimpleApp::drawFrame(ThreadResources& tr) {
-    updatePerFrame(tr);
-    engine->shaders.submitFrame(tr);
+void SimpleApp::mainThreadHook()
+{
 }
 
-void SimpleApp::updatePerFrame(ThreadResources& tr)
+void SimpleApp::prepareFrame(FrameResources* fr)
 {
+    FrameResources& tr = *fr;
     double seconds = engine->gameTime.getTimeSeconds();
-    if (old_seconds > 0.0f && old_seconds == seconds) {
-        Log("DOUBLE TIME" << endl);
-        return;
-    }
-    if (old_seconds > seconds) {
-        Log("INVERTED TIME" << endl);
+    if ((old_seconds > 0.0f && old_seconds == seconds) || old_seconds > seconds) {
+        Error("APP TIME ERROR - should not happen");
         return;
     }
     double deltaSeconds = seconds - old_seconds;
     updateCameraPositioners(deltaSeconds);
     old_seconds = seconds;
+
     SimpleShader::UniformBufferObject ubo{};
     SimpleShader::UniformBufferObject ubo2{};
     //float a = 0.3f; float b = 140.0f; float z = 15.0f;
@@ -160,7 +149,35 @@ void SimpleApp::updatePerFrame(ThreadResources& tr)
     engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
 }
 
+// draw from multiple threads
+void SimpleApp::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
+{
+    if (topic == 0) {
+        // draw lines
+        engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
+    }
+}
+
+void SimpleApp::postFrame(FrameResources* fr)
+{
+    engine->shaders.endShader.addCommandBuffers(fr, fr->getLatestCommandBufferArray());
+}
+
+void SimpleApp::processImage(FrameResources* fr)
+{
+    present(fr);
+}
+
+bool SimpleApp::shouldClose()
+{
+    return shouldStopEngine;
+}
+
 void SimpleApp::handleInput(InputState& inputState)
 {
+    if (inputState.windowClosed != nullptr) {
+        inputState.windowClosed = nullptr;
+        shouldStopEngine = true;
+    }
     AppSupport::handleInput(inputState);
 }

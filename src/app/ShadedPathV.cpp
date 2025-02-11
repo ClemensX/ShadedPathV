@@ -6,7 +6,7 @@
 #include "SimpleMultiWin.h"
 //#include "AppSupport.h"
 //#include "LandscapeGenerator.h"
-#include "SimpleApp.h"
+//#include "SimpleApp.h"
 //#include "DeviceCoordApp.h"
 #include "LineApp.h"
 //#include "gltfObjectsApp.h"
@@ -31,7 +31,7 @@ int main()
     engine
         .setEnableLines(true)
         .setDebugWindowPosition(true)
-        .setEnableUI(true)
+        .setEnableUI(false)
         .setEnableSound(true)
         .setVR(false)
         //.setSingleThreadMode(true)

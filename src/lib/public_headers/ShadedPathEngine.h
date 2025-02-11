@@ -244,6 +244,7 @@ public:
     Files files;
     GameTime gameTime;
     FPSCounter fpsCounter;
+    UI ui;
     // get aspect ratio of backbuffer - window should be same, but that is not enforced
     float getAspect() {
         return backBufferAspect;

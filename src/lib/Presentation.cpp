@@ -434,7 +434,7 @@ VkExtent2D Presentation::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabi
 
 
 
-void Presentation::presentImage(WindowInfo* winfo, GPUImage *srcImage)
+void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo, GPUImage *srcImage)
 {
     // 1. step: aquire image, wait for aquire semaphore, then create the copy commands and execute them
     if (winfo->disabled) return;
@@ -465,7 +465,7 @@ void Presentation::presentImage(WindowInfo* winfo, GPUImage *srcImage)
     }
 
     // UI code
-    //if (!simplify) engine.shaders.uiShader.draw(tr);
+    engine->shaders.uiShader.draw(fr);
     
     // Transition image formats
 

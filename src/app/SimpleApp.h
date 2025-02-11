@@ -19,5 +19,6 @@ public:
 private:
     bool downmode;
     float plus = 0.0f;
+    bool shouldStopEngine = false;
 };
 

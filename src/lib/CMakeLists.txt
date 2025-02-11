@@ -11,8 +11,8 @@ set (SOURCES
   #CubeShader.cpp
   #BillboardShader.cpp
   #TerrainShader.cpp
-  #UIShader.cpp
-  #UI.cpp
+  UIShader.cpp
+  UI.cpp
   ShaderBase.cpp
   ClearShader.cpp
   LineShader.cpp
@@ -26,6 +26,13 @@ set (SOURCES
   Camera.cpp
   Object.cpp
   gltf.cpp
+  imgui/imgui_demo.cpp
+  imgui/imgui_draw.cpp
+  imgui/imgui_impl_glfw.cpp
+  imgui/imgui_impl_vulkan.cpp
+  imgui/imgui_tables.cpp
+  imgui/imgui_widgets.cpp
+  imgui/imgui.cpp
 )
 if (OPENXR_INC)
   list(APPEND SOURCES VR.cpp)

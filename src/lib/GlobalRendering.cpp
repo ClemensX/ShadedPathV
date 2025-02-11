@@ -1054,7 +1054,7 @@ void GlobalRendering::dumpToFile(FrameBufferAttachment* fba, DirectImage& di)
 void GlobalRendering::present(FrameResources* fr, DirectImage& di, WindowInfo* winfo)
 {
     //GPUImage* gpui = &fr->colorImage;
-    engine->presentation.presentImage(winfo, &fr->colorImage);
+    engine->presentation.presentImage(fr, winfo, &fr->colorImage);
     //auto commandBuffer = beginSingleTimeCommands(false);
     //di.copyBackbufferImage(gpui, &target, commandBuffer);
     //endSingleTimeCommands(commandBuffer);
