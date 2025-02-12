@@ -465,13 +465,12 @@ void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo, GPUImage 
     beginInfo.flags = 0; // Optional
     beginInfo.pInheritanceInfo = nullptr; // Optional
 
+    // UI code
+    engine->shaders.uiShader.draw(fr, winfo, srcImage);
+    
     if (vkBeginCommandBuffer(winfo->commandBufferPresentBack, &beginInfo) != VK_SUCCESS) {
         Error("failed to begin recording back buffer copy command buffer!");
     }
-
-    // UI code
-    engine->shaders.uiShader.draw(fr, srcImage);
-    
     // Transition image formats
 
     // set src values for access, layout and image
@@ -481,6 +480,9 @@ void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo, GPUImage 
     dstImage.layout = VK_IMAGE_LAYOUT_UNDEFINED;
     dstImage.fba.image = winfo->swapChainImages[imageIndex];
     DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT, winfo->commandBufferPresentBack, &dstImage);
+    if (engine->shaders.uiShader.enabled) {
+        DirectImage::toLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT, winfo->commandBufferPresentBack, srcImage);
+    }
     DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_READ_BIT, winfo->commandBufferPresentBack, srcImage);
 
     // Define the region to blit (we will blit the whole swapchain image)
@@ -518,6 +520,9 @@ void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo, GPUImage 
         Error("failed to record back buffer copy command buffer!");
     }
 
+    if (engine->shaders.uiShader.enabled) {
+        acquireCompleteInfo.semaphore = fr->imageAvailableSemaphore;
+    }
     VkSubmitInfo2 renderingSubmitInfo{};
     renderingSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
     renderingSubmitInfo.waitSemaphoreInfoCount = 1;

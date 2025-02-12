@@ -63,7 +63,7 @@ UIShader::~UIShader()
     }
 }
 
-void UIShader::draw(FrameResources* fr, GPUImage* srcImage)
+void UIShader::draw(FrameResources* fr, WindowInfo* winfo, GPUImage* srcImage)
 {
     if (enabled)
     {
@@ -86,8 +86,12 @@ void UIShader::draw(FrameResources* fr, GPUImage* srcImage)
         dstBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         dstBarrier.image = tr.colorImage.fba.image;
         dstBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-        vkCmdPipelineBarrier(pf.commandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-            0, 0, nullptr, 0, nullptr, 1, &dstBarrier);
+        //vkCmdPipelineBarrier(pf.commandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        //    0, 0, nullptr, 0, nullptr, 1, &dstBarrier);
+        DirectImage::toLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
+            pf.commandBuffer, srcImage);
 
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -120,7 +124,7 @@ void UIShader::draw(FrameResources* fr, GPUImage* srcImage)
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        VkSemaphore waitSemaphores[] = { tr.imageAvailableSemaphore };
+        VkSemaphore waitSemaphores[] = { winfo->imageAvailableSemaphore };
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
@@ -137,7 +141,8 @@ void UIShader::draw(FrameResources* fr, GPUImage* srcImage)
         if (vkQueueSubmit(engine->globalRendering.graphicsQueue, 1, &submitInfo, nullptr/*tr.presentFence*/) != VK_SUCCESS) {
             Error("failed to submit draw command buffer!");
         }
-
+        // force image format transition:
+        srcImage->layout = VK_IMAGE_LAYOUT_UNDEFINED;
     }
 }
 
