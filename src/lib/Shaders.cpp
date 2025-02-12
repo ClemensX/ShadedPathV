@@ -21,9 +21,6 @@ Shaders::Config& Shaders::Config::init()
         for (auto& fi : engine->getFrameResources()) {
             shader->initSingle(fi, shaderState);
         }
-		//for (auto& res : engine->globalRendering.workerThreadResources) {
-		//	shader->initSingle(fi   res, shaderState);
-		//}
 		shader->finishInitialization(*engine, shaderState);
 	}
 	return *this;
@@ -252,4 +249,5 @@ void Shaders::queueSubmit(ThreadResources& tr)
 Shaders::~Shaders()
 {
 	Log("Shaders destructor\n");
+	//destroyThreadResources(*this);
 }

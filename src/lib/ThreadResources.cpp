@@ -8,6 +8,7 @@ FrameResources::~FrameResources() {
     auto& device = engine->globalRendering.device;
     auto& global = engine->globalRendering;
     auto& shaders = engine->shaders;
+    shaders.destroyThreadResources(*this);
     if (colorImage.fba.image) vkDestroyImage(device, colorImage.fba.image, nullptr);
     if (depthImage) vkDestroyImage(device, depthImage, nullptr);
     if (imageAvailableSemaphore) vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);

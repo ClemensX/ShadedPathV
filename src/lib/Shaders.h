@@ -97,7 +97,7 @@ public:
 
 	ClearShader clearShader;
 	EndShader endShader;
-	//SimpleShader simpleShader;
+	SimpleShader simpleShader;
 	LineShader lineShader;
 	UIShader uiShader;
 	//PBRShader pbrShader;

@@ -6,7 +6,7 @@
 #include "SimpleMultiWin.h"
 //#include "AppSupport.h"
 //#include "LandscapeGenerator.h"
-//#include "SimpleApp.h"
+#include "SimpleApp.h"
 //#include "DeviceCoordApp.h"
 #include "LineApp.h"
 //#include "gltfObjectsApp.h"

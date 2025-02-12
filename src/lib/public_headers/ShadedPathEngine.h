@@ -228,14 +228,15 @@ public:
     // init global resources. will only be available once. Many engine parameters
     // are not allowed to change after this call
     void initGlobal(std::string appname = "");
+
     GlobalRendering globalRendering;
+    Shaders shaders;
     Util util;
+    VR vr;
 private:
     // need to insert here for proper destruction order
     std::array<FrameResources, 2> frameInfos; // only 2 frame infos needed for alternating during draw calls, initialized in initGlobal()
 public:
-    Shaders shaders;
-    VR vr;
     TextureStore textureStore;
     MeshStore meshStore;
     WorldObjectStore objectStore;

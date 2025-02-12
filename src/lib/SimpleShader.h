@@ -17,6 +17,7 @@ struct SimpleThreadResources : ShaderThreadResources {
 class SimpleShader : public ShaderBase
 {
 public:
+    std::vector<SimpleThreadResources> subFrameResources;
     std::vector<VulkanResourceElement> vulkanResourceDefinition = {
         { VulkanResourceType::MVPBuffer },
         { VulkanResourceType::SingleTexture },
@@ -109,7 +110,7 @@ public:
     virtual ~SimpleShader() override;
 
     // pre-record draw commands (one time call)
-    void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, VkBuffer indexBuffer, bool isRightEye = false);
+    void recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, VkBuffer vertexBuffer, VkBuffer indexBuffer, bool isRightEye = false);
     
     TextureInfo* texture = nullptr;
 

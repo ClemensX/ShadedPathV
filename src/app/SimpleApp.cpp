@@ -73,6 +73,9 @@ void SimpleApp::init() {
     Grid *grid = world.createWorldGrid(1.0f, -10.0f);
     engine->shaders.lineShader.addFixedGlobalLines(grid->lines);
     engine->shaders.lineShader.uploadFixedGlobalLines();
+
+    prepareWindowOutput("Simple App");
+    engine->presentation.startUI();
 }
 
 void SimpleApp::mainThreadHook()
@@ -147,6 +150,7 @@ void SimpleApp::prepareFrame(FrameResources* fr)
 
     engine->shaders.lineShader.prepareAddLines(tr);
     engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
+    engine->shaders.clearShader.addCommandBuffers(fr, &fr->drawResults[0]); // put clear shader first
 }
 
 // draw from multiple threads
@@ -155,6 +159,7 @@ void SimpleApp::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
     if (topic == 0) {
         // draw lines
         engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
+        engine->shaders.simpleShader.addCommandBuffers(fr, drawResult);
     }
 }
 

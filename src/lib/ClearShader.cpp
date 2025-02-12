@@ -129,7 +129,7 @@ void ClearSubShader::addRenderPassAndDrawCommands(FrameResources& tr, VkCommandB
 
 void ClearSubShader::destroy()
 {
-    vkFreeCommandBuffers(*device, frameResources->commandPool, 1, &commandBuffer);
+    //vkFreeCommandBuffers(*device, frameResources->commandPool, 1, &commandBuffer);
 	vkDestroyFramebuffer(*device, framebuffer, nullptr);
 	vkDestroyRenderPass(*device, renderPass, nullptr);
 	if (engine->isStereo()) {

@@ -63,7 +63,7 @@ struct DrawResult {
 };
 
 // FrameResources and ThreadResources work together: FrameResources has all all global frame data
-// that is not related to multi-trhread rendering. ThreadResources has all thread specific data.
+// that is not related to multi-thread rendering (drawFrame()). ThreadResources has all thread specific data.
 // FrameResources[2] --- engine.frameInfos[2], used alternating depending on frame number
 //    - ThreadResources[engine.numWorkerThreads] --- globalRendering.workerThreadResources[], assigned to frameInfo in preFrame()
 struct FrameResources {
@@ -98,7 +98,6 @@ struct FrameResources {
 
     GPUImage colorImage;
     GPUImage colorImage2;
-public:
     VkCommandPool commandPool = nullptr;
 
 //

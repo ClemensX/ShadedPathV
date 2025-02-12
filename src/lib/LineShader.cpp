@@ -502,7 +502,7 @@ void LineSubShader::destroy() {
 	vkDestroyRenderPass(*device, renderPass, nullptr);
 	vkDestroyBuffer(*device, uniformBuffer, nullptr);
 	vkDestroyBuffer(*device, uniformBuffer2, nullptr);
-    vkFreeCommandBuffers(*device, frameResources->commandPool, 1, &commandBuffer);
+    //vkFreeCommandBuffers(*device, frameResources->commandPool, 1, &commandBuffer);
 	vkFreeMemory(*device, uniformBufferMemory, nullptr);
 	vkFreeMemory(*device, uniformBufferMemory2, nullptr);
 	vkDestroyBuffer(*device, vertexBufferLocal, nullptr);

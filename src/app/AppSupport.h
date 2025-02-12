@@ -168,7 +168,7 @@ protected:
         }
     }
     void prepareWindowOutput(const char* title) {
-        app_engine->presentation.createWindow(&window, win_width, (int)(win_width / 1.77f), "Line App");
+        app_engine->presentation.createWindow(&window, win_width, (int)(win_width / 1.77f), title);
         app_engine->enablePresentation(&window);
         app_engine->enableWindowOutput(&window);
         imageConsumerWindow.setWindow(&window);
