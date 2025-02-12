@@ -31,7 +31,7 @@ int main()
     engine
         .setEnableLines(true)
         .setDebugWindowPosition(true)
-        .setEnableUI(false)
+        .setEnableUI(true)
         .setEnableSound(true)
         .setVR(false)
         //.setSingleThreadMode(true)

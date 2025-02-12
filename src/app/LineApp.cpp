@@ -73,6 +73,7 @@ void LineApp::init() {
     engine->shaders.clearShader.setClearColor(vec4(0.1f, 0.1f, 0.9f, 1.0f));
 
     prepareWindowOutput("Line App");
+    engine->presentation.startUI();
 }
 
 void LineApp::mainThreadHook()

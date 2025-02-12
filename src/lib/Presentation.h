@@ -45,6 +45,8 @@ public:
 	void createWindow(WindowInfo* winfo, int w, int h, const char* name,
 		bool handleKeyEvents = true, bool handleMouseMoveEevents = true, bool handleMouseButtonEvents = true);
 
+    // only after win creation we can initiate Dear ImGui
+	void startUI();
 	void destroyWindowResources(WindowInfo* wi, bool destroyGlfwWindow = true);
     void detachFromWindow(WindowInfo* wi, ContinuationInfo* contInfo);
     void reuseWindow(WindowInfo* wi, ContinuationInfo* contInfo, bool handleKeyEvents = true, bool handleMouseMoveEevents = true, bool handleMouseButtonEvents = true);

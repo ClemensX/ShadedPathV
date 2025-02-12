@@ -79,6 +79,7 @@ public:
     bool isSingleThreadMode() { return singleThreadMode; }
     ContinuationInfo* getContinuationInfo() { return continuationInfo; }
     int getParrallelAppDrawCalls() { return appDrawCalls; }
+    bool isEnableUI() { return enableUI; }
 
     bool isMainThread();
     void log_current_thread();

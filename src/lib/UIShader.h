@@ -19,7 +19,7 @@ public:
 
 
     // render UI, only to be called from Presentation::presentBackBufferImage() because ImGUI is not thread save
-    void draw(FrameResources* fr);
+    void draw(FrameResources* fr, GPUImage* srcImage);
 
     virtual ~UIShader() override;
 

@@ -33,10 +33,10 @@ class Shaders : public EngineParticipant
 				Error("ShaderState not initialized. Did you run Shaders::initActiveShaders()?");
 			}
 		}
+		ShaderState shaderState;
 	private:
 		std::vector<ShaderBase*> shaderList;
 		ShadedPathEngine* engine = nullptr;
-		ShaderState shaderState;
 	};
 public:
 	Shaders(ShadedPathEngine* s) {
@@ -56,6 +56,10 @@ public:
 	std::vector<ShaderBase*>& getShaders() {
 		return config.getShaders();
 	}
+
+    ShaderState& getShaderState() {
+        return config.shaderState;
+    }
 
 	// Initialize ShaderState and all added shaders
 	Shaders& initActiveShaders() {

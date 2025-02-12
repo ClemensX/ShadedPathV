@@ -150,6 +150,7 @@ void ShadedPathEngine::eventLoop()
         // input
         app->mainThreadHook();
         presentation.pollEvents();
+        ui.update();
         if (!singleThreadMode) {
             ThemedTimer::getInstance()->add(TIMER_INPUT_THREAD);
             limiter.waitForLimit();

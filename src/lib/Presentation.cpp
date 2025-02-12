@@ -28,9 +28,6 @@ Presentation::Presentation(ShadedPathEngine* s) {
 Presentation::~Presentation()
 {
 	Log("Presentation destructor\n");
-    if (glfwInitCalled) {
-        glfwTerminate();
-    }
 }
 
 // handle key callback
@@ -176,6 +173,14 @@ void Presentation::createWindow(WindowInfo* winfo, int w, int h, const char* nam
         Error("failed to create window surface!");
     }
     initializeCallbacks(window, handleKeyEvents, handleMouseMoveEevents, handleMouseButtonEvents);
+}
+
+void Presentation::startUI()
+{
+    if (!engine->isEnableUI()) return;
+    engine->ui.enable();
+    //engine->shaders.uiShader.enabled = true;
+    engine->shaders.uiShader.init(*engine, engine->shaders.getShaderState());
 }
 
 void Presentation::destroyWindowResources(WindowInfo* wi, bool destroyGlfwWindow)
@@ -465,7 +470,7 @@ void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo, GPUImage 
     }
 
     // UI code
-    engine->shaders.uiShader.draw(fr);
+    engine->shaders.uiShader.draw(fr, srcImage);
     
     // Transition image formats
 

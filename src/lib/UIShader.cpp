@@ -4,7 +4,7 @@ using namespace std;
 
 void UIShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 {
-    if (!enabled) {
+    if (engine.presentation.windowInfo == nullptr) {
         return;
     }
 	ShaderBase::init(engine);
@@ -13,8 +13,11 @@ void UIShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
     for (int i = 0; i < fl; i++) {
         // per frame
         UISubShader pf;
-        pf.init(this, "PerFrameLineSubshader");
+        pf.init(this, "PerFrameUISubshader");
         perFrameSubShaders.push_back(pf);
+    }
+    for (auto& fi : engine.getFrameResources()) {
+        initSingle(fi, shaderState);
     }
 
 }
@@ -60,7 +63,7 @@ UIShader::~UIShader()
     }
 }
 
-void UIShader::draw(FrameResources* fr)
+void UIShader::draw(FrameResources* fr, GPUImage* srcImage)
 {
     if (enabled)
     {
