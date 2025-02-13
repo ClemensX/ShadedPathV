@@ -1,5 +1,5 @@
 #pragma once
-#if defined(OPENXR_AVAILABLEXXX)
+#if defined(OPENXR_AVAILABLE)
 // OpenXR VR implementation, see https://github.com/KhronosGroup/OpenXR-SDK-Source.git
 enum GraphicsAPI_Type : uint8_t {
 	UNKNOWN,
@@ -40,6 +40,7 @@ public:
 	const std::vector<std::string> REQUIRED_XR_EXTENSIONS{ "XR_KHR_vulkan_enable2", "XR_EXT_hand_tracking" };
 #   endif
 
+	HMDProperties& getHMDProperties();
 	// Transferred from Sample Code:
 	void logLayersAndExtensions();
 	void createInstanceInternal();
@@ -50,9 +51,9 @@ public:
 	// threaded frame generation
 	void pollEvent();
     void frameWait();
-	void frameBegin(ThreadResources& tr);
-	void frameCopy(ThreadResources& tr);
-	void frameEnd(ThreadResources& tr);
+	void frameBegin(FrameResources& tr);
+	void frameCopy(FrameResources& tr);
+	void frameEnd(FrameResources& tr);
 	DebugOutput debugOutput;  // This redirects std::cerr and std::cout to the IDE's output or Android Studio's logcat.
 	enum class SwapchainType : uint8_t {
 		COLOR,
@@ -103,7 +104,7 @@ private:
 		std::vector<XrCompositionLayerBaseHeader*> layers;
 		XrCompositionLayerProjection layerProjection = { XR_TYPE_COMPOSITION_LAYER_PROJECTION };
 		std::vector<XrCompositionLayerProjectionView> layerProjectionViews;
-		ThreadResources* tr = nullptr;
+		FrameResources* tr = nullptr;
 		uint32_t viewCount = 0;
 		uint32_t width = 0;
 		uint32_t height = 0;
@@ -164,6 +165,7 @@ private:
 	CameraPositioner_HMD* positioner = nullptr;
 	XrFrameState frameState{ XR_TYPE_FRAME_STATE };
 	RenderLayerInfo renderLayerInfo;
+	HMDProperties hmdProperties{};
 };
 #else
 class VR : public EngineParticipant

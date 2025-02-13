@@ -112,7 +112,7 @@ void LineApp::prepareFrame(FrameResources* fr)
         { glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
         { glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) }
     };
-    if (vr) plus += 0.0001f;
+    if (engine->isVR()) plus += 0.0001f;
     else plus += 0.00001f;
     //plus = 0.021f;
     vector<LineDef> oneTimelines;

@@ -159,6 +159,11 @@ void SimpleApp::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
     if (topic == 0) {
         // draw lines
         engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
+        //engine->shaders.simpleShader.addCommandBuffers(fr, drawResult);
+    } else if (topic == 1) {
+        //Log("drawFrame topic 1" << endl);   
+        // draw lines
+        //engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
         engine->shaders.simpleShader.addCommandBuffers(fr, drawResult);
     }
 }

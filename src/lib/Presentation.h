@@ -44,6 +44,7 @@ public:
 	void initializeCallbacks(GLFWwindow* window, bool handleKeyEvents, bool handleMouseMoveEvents, bool handleMouseButtonEvents);
 	void createWindow(WindowInfo* winfo, int w, int h, const char* name,
 		bool handleKeyEvents = true, bool handleMouseMoveEevents = true, bool handleMouseButtonEvents = true);
+	void createPresentQueue(unsigned int value);
 
     // only after win creation we can initiate Dear ImGui
 	void startUI();

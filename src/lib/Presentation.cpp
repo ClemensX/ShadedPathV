@@ -363,6 +363,13 @@ void Presentation::createSwapChain(WindowInfo* winfo) {
     Log("swap chain created with # images: " << imageCount << endl);
 }
 
+void Presentation::createPresentQueue(unsigned int value)
+{
+    //vkGetDeviceQueue(engine.global.device, value, 0, &presentQueue);
+    engine->globalRendering.presentQueueFamiliyIndex = value;
+    engine->globalRendering.presentQueueIndex = 0;
+}
+
 SwapChainSupportDetails Presentation::querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) {
     SwapChainSupportDetails details{};
 

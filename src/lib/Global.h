@@ -189,3 +189,7 @@ class ImageConsumer : public EngineParticipant
 public:
     virtual void consume(FrameResources* fi) = 0;
 };
+
+struct HMDProperties {
+    VkExtent2D recommendedImageSize;
+};

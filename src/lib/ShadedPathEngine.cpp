@@ -105,6 +105,14 @@ VkExtent2D ShadedPathEngine::getExtentForResolution(ShadedPathEngine::Resolution
         return { 480, 270 };
     case Resolution::Invalid:
         return { 0, 0 };
+    case Resolution::HMD_Native:
+    {
+        HMDProperties& hmdProperties = vr.getHMDProperties();
+        if (hmdProperties.recommendedImageSize.width == 0) {
+            Error("HMD image size not available.");
+        }
+        return { hmdProperties.recommendedImageSize.width, hmdProperties.recommendedImageSize.height };
+    }
     default:
         return { 960, 540 };
     }

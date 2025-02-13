@@ -60,7 +60,9 @@ public:
     // chain setters
     ShadedPathEngine& setEnableLines(bool enable) { fii(); enableLines = enable; return *this; }
     ShadedPathEngine& setEnableUI(bool enable) { fii(); enableUI = enable; return *this; }
-    ShadedPathEngine& setVR(bool enable) { fii(); enableVr = enable; return *this; }
+    // enable VR mode. Needs needs active HMD device to work.
+    // If no device available will revert back to Stereo mode
+    ShadedPathEngine& setVR(bool enable) { fii(); vrMode = enable; if (enable) stereoMode = true; return *this; }
     ShadedPathEngine& setStereo(bool enable) { fii(); enableStereo = enable; return *this; }
     ShadedPathEngine& setEnableSound(bool enable) { fii(); enableSound = enable; return *this; }
     // default is multi thread mode - use this for all in one single thread
@@ -90,7 +92,7 @@ public:
     const uint32_t engineVersionInt = 1;
     std::string vulkanAPIVersion; // = global.getVulkanAPIString();
 
-    enum class Resolution { FourK, TwoK, OneK, DeviceDefault, Small, Invalid };
+    enum class Resolution { FourK, TwoK, OneK, DeviceDefault, Small, Invalid, HMD_Native };
 
     ShadedPathApplication* app = nullptr;
     void registerApp(ShadedPathApplication* app) {
@@ -117,13 +119,6 @@ public:
     void enableWindowOutput(WindowInfo* winfo);
 
     // other getters and setters
-
-    // enable VR mode. Needs needs active HMD device to work.
-    // If no device available will revert back to Stereo mode
-    void enableVR(bool enable = true) {
-        vrMode = enable;
-        if (enable) stereoMode = true;
-    }
 
     bool isVR() {
         return vrMode;
@@ -267,7 +262,6 @@ private:
     // bool configuration flags:
     bool enableLines = false;
     bool enableUI = false;
-    bool enableVr = false;
     bool enableStereo = false;
     bool enableSound = false;
     bool singleThreadMode = false;

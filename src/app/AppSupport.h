@@ -16,14 +16,14 @@ public:
         imageConsumerWindow.setEngine(e);
     }
 protected:
-    bool enableLines = true;
-    bool enableUI = false;
-    bool vr = false;
-    bool stereo = false;
-    bool enableSound = false;
-    bool singleThreadMode = false;
-    bool debugWindowPosition = true; // if true try to open app window in right screen part
-    bool enableRenderDoc = true;
+    //bool enableLines = true;
+    //bool enableUI = false;
+    //bool vr = false;
+    //bool stereo = false;
+    //bool enableSound = false;
+    //bool singleThreadMode = false;
+    //bool debugWindowPosition = true; // if true try to open app window in right screen part
+    //bool enableRenderDoc = true;
     int win_width = 960;// 480; 960;//1800;// 800;//3700;
 
     bool firstPersonCameraAlwayUpright = true;
@@ -51,7 +51,7 @@ protected:
     void initCamera() {
         camera2.setEngine(app_engine);
         getHMDCameraPositioner()->setCamera(&camera2);
-        if (vr) {
+        if (app_engine->isVR()) {
             camera2.changePositioner(&hmdPositioner);
             activePositionerIsHMD = true;
         } else {
@@ -96,16 +96,6 @@ protected:
         app_engine->enableKeyEvents();
         app_engine->enableMousButtonEvents();
         app_engine->enableMouseMoveEvents();
-        if (vr) {
-            app_engine->enableVR();
-        }
-        if (stereo) {
-            app_engine->setStereo(true);
-            app_engine->enableStereoPresentation();
-        }
-        if (enableRenderDoc) {
-            app_engine->setFixedPhysicalDeviceIndex(0);
-        }
     }
     //void initEngine(std::string name) {
     //    if (app_engine->isVR()) {
@@ -161,8 +151,8 @@ protected:
         }
     }
     void setHighBackbufferResolution() {
-        if (vr) {
-            app_engine->setBackBufferResolution(ShadedPathEngine::Resolution::Invalid);
+        if (app_engine->isVR()) {
+            app_engine->setBackBufferResolution(ShadedPathEngine::Resolution::HMD_Native);
         } else {
             app_engine->setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
         }

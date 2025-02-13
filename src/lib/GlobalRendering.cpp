@@ -264,8 +264,7 @@ void GlobalRendering::initVulkanInstance()
 #   endif
     vkInstance = VK_NULL_HANDLE;
     if (engine->isVR()) {
-        //engine->vr.initVulkanEnable2(createInfo);
-        Error("OpenXR not supported yet");
+        engine->vr.initVulkanEnable2(createInfo);
     }
     else {
         if (vkCreateInstance(&createInfo, nullptr, &vkInstance) != VK_SUCCESS) {
@@ -288,6 +287,7 @@ QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, b
     for (const auto& queueFamily : queueFamilies) {
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphicsFamily = i;
+            indices.presentFamily = i; // all graohics queues are also presentation queues
             if (listmode) {
                 Log("found graphics queue at index " << i << ", max queues: " << queueFamily.queueCount << endl);
             }
@@ -303,7 +303,7 @@ QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, b
             VkBool32 presentSupport = true; // TODO hack
             //vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
             if (presentSupport) {
-                indices.presentFamily = i;
+                //indices.presentFamily = i;
             }
         }
         if (!listmode && indices.isComplete(engine->presentationMode)) {
@@ -512,7 +512,7 @@ void GlobalRendering::createLogicalDevice()
         bufferDeviceAddressFeatures.bufferDeviceAddressMultiDevice = VK_TRUE;
     }
     if (engine->isVR()) {
-        //engine->vr.initVulkanCreateDevice(createInfo);
+        engine->vr.initVulkanCreateDevice(createInfo);
     }
     else {
         VkResult res = vkCreateDevice(physicalDevice, &createInfo, nullptr, &device);
@@ -535,10 +535,10 @@ void GlobalRendering::createLogicalDevice()
         Log("WARNING: Your device does only offer a single queue. Expect severe performance penalties\n");
     }
     if (TRUE) {
-        //engine->presentation.createPresentQueue(familyIndices.presentFamily.value());
+        engine->presentation.createPresentQueue(familyIndices.presentFamily.value());
     }
     if (engine->isVR()) {
-        //engine->vr.create();
+        engine->vr.create();
     }
 }
 
