@@ -1053,29 +1053,11 @@ void GlobalRendering::dumpToFile(FrameBufferAttachment* fba, DirectImage& di)
 
 void GlobalRendering::present(FrameResources* fr, DirectImage& di, WindowInfo* winfo)
 {
-    //GPUImage* gpui = &fr->colorImage;
-    engine->presentation.presentImage(fr, winfo, &fr->colorImage);
-    //auto commandBuffer = beginSingleTimeCommands(false);
-    //di.copyBackbufferImage(gpui, &target, commandBuffer);
-    //endSingleTimeCommands(commandBuffer);
+    engine->presentation.presentImage(fr, winfo);
 }
 
 void GlobalRendering::preFrame(FrameResources* fr)
 {
-    // wait for fence signal from submit call 2 frames before
-    LogCondF(LOG_QUEUE, "wait present fence image index " << fr->frameIndex << endl);
-    //VkResult fenceStatus = vkGetFenceStatus(device, fr->inFlightFence);
-    //if (fenceStatus == VK_SUCCESS) {
-    //    //Log("fence signaled image index " << fr->frameIndex << endl);
-    //} else {
-    //    Log("fence not signaled image index " << fr->frameIndex << endl);
-    //}
-    //Log("wait for fence " << fr->inFlightFence << " index " << fr->frameIndex << endl);
-    //vkWaitForFences(device, 1, &fr->inFlightFence, VK_TRUE, UINT64_MAX);
-    //vkResetFences(device, 1, &fr->inFlightFence);
-    // wait until old image from 2 frames before is processed
-    //auto v = fr->processImageQueue.pop();
-    LogCondF(LOG_QUEUE, "signalled present fence image index " << fr->frameIndex << endl);
 }
 
 void GlobalRendering::postFrame(FrameResources* fr)

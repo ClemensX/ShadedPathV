@@ -42,6 +42,7 @@ struct GPUImage {
     uint32_t width = 0, height = 0;
     bool rendered = false;
     bool consumed = false;
+    bool isRightEye = false;
 };
 
 using CommandBufferArray = std::array<VkCommandBuffer, MAX_COMMAND_BUFFERS_PER_DRAW>;
@@ -191,5 +192,6 @@ public:
 };
 
 struct HMDProperties {
-    VkExtent2D recommendedImageSize;
+    VkExtent2D recommendedImageSize{};
+    float aspectRatio = 0.0f;
 };

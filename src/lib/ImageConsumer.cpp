@@ -23,7 +23,7 @@ void ImageConsumerDump::configureFramesToDump(bool dumpAll, std::initializer_lis
 void ImageConsumerWindow::consume(FrameResources* fr)
 {
     //Log("copy frame " << fi->frameNum << " to window " << window->title << endl);
-    engine->presentation.presentImage(fr, window, fr->renderedImage);
+    engine->presentation.presentImage(fr, window);
     fr->renderedImage->consumed = true;
     fr->renderedImage->rendered = false;
 }

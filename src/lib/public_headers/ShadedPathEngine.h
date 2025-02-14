@@ -63,7 +63,12 @@ public:
     // enable VR mode. Needs needs active HMD device to work.
     // If no device available will revert back to Stereo mode
     ShadedPathEngine& setVR(bool enable) { fii(); vrMode = enable; if (enable) stereoMode = true; return *this; }
-    ShadedPathEngine& setStereo(bool enable) { fii(); enableStereo = enable; return *this; }
+    // exit if VR could not be enabled (instead of reverting to stereo mode)
+    ShadedPathEngine& failIfNoVR(bool enable) { fii(); vrEnforce = enable; return *this; }
+    // enable stereo mode: 2 render buffers for each shader, 
+    // 2 images for left and right eye will be displayed in main window.
+    // auto-enabled in VR mode
+    ShadedPathEngine& setStereo(bool enable) { fii(); stereoMode = enable; return *this; }
     ShadedPathEngine& setEnableSound(bool enable) { fii(); enableSound = enable; return *this; }
     // default is multi thread mode - use this for all in one single thread
     // will disable render threads and global update thread
@@ -82,6 +87,7 @@ public:
     ContinuationInfo* getContinuationInfo() { return continuationInfo; }
     int getParrallelAppDrawCalls() { return appDrawCalls; }
     bool isEnableUI() { return enableUI; }
+    bool isEnforceVR() { return vrEnforce; }
 
     bool isMainThread();
     void log_current_thread();
@@ -122,13 +128,6 @@ public:
 
     bool isVR() {
         return vrMode;
-    }
-
-    // enable stereo mode: 2 render buffers for each shader, 
-        // 2 images for left and right eye will be displayed in main window.
-        // auto-enabled in VR mode
-    void enableStereoMode() {
-        stereoMode = true;
     }
 
     bool isStereo() {
@@ -262,11 +261,11 @@ private:
     // bool configuration flags:
     bool enableLines = false;
     bool enableUI = false;
-    bool enableStereo = false;
     bool enableSound = false;
     bool singleThreadMode = false;
     bool debugWindowPosition = false; // if true try to open app window in right screen part
     bool enableRenderDoc = true;
+    bool stereoMode = false;
     ImageConsumer* imageConsumer = nullptr;
     ImageConsumerNullify imageConsumerNullify;
 
@@ -282,7 +281,7 @@ private:
     bool enabledMouseMoveEvents = false;
     bool enabledMousButtonEvents = false;
     bool vrMode = false;
-    bool stereoMode = false;
+    bool vrEnforce = false;
     bool stereoPresentation = false;
     //bool meshShaderEnabled = false;
     bool soundEnabled = false;

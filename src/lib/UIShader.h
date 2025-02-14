@@ -19,6 +19,7 @@ public:
 
 
     // render UI, only to be called from Presentation::presentBackBufferImage() because ImGUI is not thread save
+    // will only render for left eye in stereo or vr mode
     void draw(FrameResources* fr, WindowInfo* winfo, GPUImage* srcImage);
 
     virtual ~UIShader() override;

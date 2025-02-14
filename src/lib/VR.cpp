@@ -167,6 +167,19 @@ void VR::createInstanceInternal() {
         engine->setVR(false);
         return;
     }
+    // check the hmd instance
+    XrSystemGetInfo sysGetInfo{ .type = XR_TYPE_SYSTEM_GET_INFO };
+    sysGetInfo.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
+    if (XR_FAILED(xrGetSystem(instance, &sysGetInfo, &systemId))) {
+        if (engine->isEnforceVR()) {
+            Error("Failed to access HMD after instance creation. Make sure your headset is switched on.");
+            return;
+        }
+        enabled = false;
+        Log("Failed to access HMD after instance creation. Make sure your headset is switched on. Running without VR" << endl);
+        engine->setVR(false);
+        return;
+    }
     Log("OpenXR instance created successfully!" << endl);
 }
 
@@ -358,6 +371,7 @@ void VR::CreateSwapchains()
         hmdProperties.recommendedImageSize.width = swapchainCI.width;
         swapchainCI.height = m_viewConfigurationViews[i].recommendedImageRectHeight;
         hmdProperties.recommendedImageSize.height = swapchainCI.height;
+        hmdProperties.aspectRatio = static_cast<float>(swapchainCI.width) / static_cast<float>(swapchainCI.height);
         swapchainCI.faceCount = 1;
         swapchainCI.arraySize = 1;
         swapchainCI.mipCount = 1;

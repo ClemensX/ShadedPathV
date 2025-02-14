@@ -67,6 +67,9 @@ void UIShader::draw(FrameResources* fr, WindowInfo* winfo, GPUImage* srcImage)
 {
     if (enabled)
     {
+        if (srcImage->isRightEye) {
+            return;
+        }
         auto& tr = *fr;
         UISubShader& pf = perFrameSubShaders[tr.frameIndex];
         VkCommandBufferBeginInfo beginInfo{};
@@ -78,16 +81,6 @@ void UIShader::draw(FrameResources* fr, WindowInfo* winfo, GPUImage* srcImage)
             Error("failed to begin recording back buffer copy command buffer!");
         }
         // Transition src image to LAYOUT_COLOR_ATTACHMENT_OPTIMAL
-        VkImageMemoryBarrier dstBarrier{};
-        dstBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-        dstBarrier.srcAccessMask = 0;
-        dstBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-        dstBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        dstBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        dstBarrier.image = tr.colorImage.fba.image;
-        dstBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-        //vkCmdPipelineBarrier(pf.commandBuffer, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        //    0, 0, nullptr, 0, nullptr, 1, &dstBarrier);
         DirectImage::toLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
             VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
             VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,

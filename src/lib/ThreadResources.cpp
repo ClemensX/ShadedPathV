@@ -116,6 +116,7 @@ void FrameResources::createBackBufferImage()
         colorImage2.layout = VK_IMAGE_LAYOUT_UNDEFINED;
         colorImage2.rendered = false;
         colorImage2.consumed = false;
+        colorImage2.isRightEye = true;
     }
 }
 

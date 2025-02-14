@@ -446,7 +446,7 @@ VkExtent2D Presentation::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabi
 
 
 
-void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo, GPUImage *srcImage)
+void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo)
 {
     // 1. step: aquire image, wait for aquire semaphore, then create the copy commands and execute them
     if (winfo->disabled) return;
@@ -473,7 +473,7 @@ void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo, GPUImage 
     beginInfo.pInheritanceInfo = nullptr; // Optional
 
     // UI code
-    engine->shaders.uiShader.draw(fr, winfo, srcImage);
+    engine->shaders.uiShader.draw(fr, winfo, &fr->colorImage);
     
     if (vkBeginCommandBuffer(winfo->commandBufferPresentBack, &beginInfo) != VK_SUCCESS) {
         Error("failed to begin recording back buffer copy command buffer!");
@@ -488,9 +488,9 @@ void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo, GPUImage 
     dstImage.fba.image = winfo->swapChainImages[imageIndex];
     DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT, winfo->commandBufferPresentBack, &dstImage);
     if (engine->shaders.uiShader.enabled) {
-        DirectImage::toLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT, winfo->commandBufferPresentBack, srcImage);
+        DirectImage::toLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT, winfo->commandBufferPresentBack, &fr->colorImage);
     }
-    DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_READ_BIT, winfo->commandBufferPresentBack, srcImage);
+    DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_READ_BIT, winfo->commandBufferPresentBack, &fr->colorImage);
 
     // Define the region to blit (we will blit the whole swapchain image)
     VkOffset3D blitSizeSrc;
@@ -515,11 +515,30 @@ void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo, GPUImage 
 
     vkCmdBlitImage(
         winfo->commandBufferPresentBack,
-        srcImage->fba.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        fr->colorImage.fba.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         dstImage.fba.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1, &imageBlitRegion,
         VK_FILTER_LINEAR
     );
+
+    // right eye:
+    if (engine->isStereoPresentation()) {
+        DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_READ_BIT, winfo->commandBufferPresentBack, &fr->colorImage2);
+        VkOffset3D blitPosDst;
+        blitPosDst.x = winfo->width / 2;
+        blitPosDst.y = 0;
+        blitPosDst.z = 0;
+        imageBlitRegion.dstOffsets[0] = blitPosDst;
+        blitSizeDst.x = winfo->width;
+        imageBlitRegion.dstOffsets[1] = blitSizeDst;
+        vkCmdBlitImage(
+            winfo->commandBufferPresentBack,
+            fr->colorImage2.fba.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+            dstImage.fba.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1, &imageBlitRegion,
+            VK_FILTER_LINEAR
+        );
+    }
 
     DirectImage::toLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, VK_ACCESS_2_MEMORY_READ_BIT, winfo->commandBufferPresentBack, &dstImage);
 
