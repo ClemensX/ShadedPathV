@@ -52,7 +52,7 @@ public:
 	void pollEvent();
     void frameWait();
 	void frameBegin(FrameResources& tr);
-	void frameCopy(FrameResources& tr);
+	void frameCopy(FrameResources& tr, WindowInfo* winfo);
 	void frameEnd(FrameResources& tr);
 	DebugOutput debugOutput;  // This redirects std::cerr and std::cout to the IDE's output or Android Studio's logcat.
 	enum class SwapchainType : uint8_t {
@@ -113,7 +113,7 @@ private:
 		//XrSwapchain colorSwapchain = XR_NULL_HANDLE;
 	};
 	bool RenderLayerPrepare(RenderLayerInfo& layerInfo);
-	bool RenderLayerCopyRenderedImage(RenderLayerInfo& layerInfo);
+	bool RenderLayerCopyRenderedImage(RenderLayerInfo& layerInfo, WindowInfo* winfo);
 	// init calls
 	void createSystem();
 	void GetEnvironmentBlendModes();

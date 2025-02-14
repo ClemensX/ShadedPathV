@@ -21,6 +21,7 @@ void LineApp::run(ContinuationInfo* cont)
     engine->files.findAssetFolder("data");
     setHighBackbufferResolution();
     camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);
+    engine->enableStereoPresentation();
 
     // add shaders used in this app
     shaders

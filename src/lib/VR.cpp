@@ -698,12 +698,12 @@ void VR::frameBegin(FrameResources& tr)
     }
 }
 
-void VR::frameCopy(FrameResources& tr)
+void VR::frameCopy(FrameResources& tr, WindowInfo* winfo)
 {
     if (!enabled) return;
     renderLayerInfo.tr = &tr;
     if (renderLayerInfo.renderStarted) {
-        bool rendered = RenderLayerCopyRenderedImage(renderLayerInfo);
+        bool rendered = RenderLayerCopyRenderedImage(renderLayerInfo, winfo);
         if (rendered) {
             renderLayerInfo.layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&renderLayerInfo.layerProjection));
         }
@@ -844,7 +844,7 @@ bool VR::RenderLayerPrepare(RenderLayerInfo& renderLayerInfo)
     return true;
 }
 
-bool VR::RenderLayerCopyRenderedImage(RenderLayerInfo& renderLayerInfo)
+bool VR::RenderLayerCopyRenderedImage(RenderLayerInfo& renderLayerInfo, WindowInfo* winfo)
 {
     for (uint32_t i = 0; i < renderLayerInfo.viewCount; i++) {
         SwapchainInfo& colorSwapchainInfo = m_colorSwapchainInfos[i];
@@ -894,15 +894,15 @@ bool VR::RenderLayerCopyRenderedImage(RenderLayerInfo& renderLayerInfo)
             imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             imageBarrier.image = destImage;
             imageBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-/*            vkCmdPipelineBarrier(tr->commandBufferPresentBack, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VkDependencyFlagBits(0), 0, nullptr, 0, nullptr, 1, &imageBarrier);
+            vkCmdPipelineBarrier(winfo->commandBufferPresentBack, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VkDependencyFlagBits(0), 0, nullptr, 0, nullptr, 1, &imageBarrier);
             vkCmdBlitImage(
-                tr->commandBufferPresentBack,
+                winfo->commandBufferPresentBack,
                 srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                 destImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 1, &imageBlitRegion,
                 VK_FILTER_LINEAR
             );
-*/            //vkCmdPipelineBarrier(tr->commandBufferPresentBack, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VkDependencyFlagBits(0), 0, nullptr, 0, nullptr, 1, &imageBarrier);
+            //vkCmdPipelineBarrier(tr->commandBufferPresentBack, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VkDependencyFlagBits(0), 0, nullptr, 0, nullptr, 1, &imageBarrier);
         }
         //m_graphicsAPI->ClearDepth(depthSwapchainInfo.imageViews[depthImageIndex], 1.0f);
 

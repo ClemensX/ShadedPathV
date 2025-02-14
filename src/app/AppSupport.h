@@ -41,6 +41,10 @@ protected:
     }
     void createHMDCameraPositioner(const glm::vec3& pos, const glm::vec3& target, const glm::vec3& up) {
         hmdPositioner.init(app_engine, pos, target, up);
+        if (app_engine->isVR()) {
+            app_engine->vr.SetPositioner(getHMDCameraPositioner());
+            //engine->setFramesInFlight(1);
+        }
     }
     CameraPositioner_FirstPerson* getFirstPersonCameraPositioner() {
         return &fpPositioner;

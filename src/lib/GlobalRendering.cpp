@@ -1058,6 +1058,11 @@ void GlobalRendering::present(FrameResources* fr, DirectImage& di, WindowInfo* w
 
 void GlobalRendering::preFrame(FrameResources* fr)
 {
+    if (engine->isVR()) {
+        engine->vr.pollEvent();
+        engine->vr.frameWait();
+        engine->vr.frameBegin(*fr);
+    }
 }
 
 void GlobalRendering::postFrame(FrameResources* fr)

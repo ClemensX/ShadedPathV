@@ -513,6 +513,10 @@ void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo)
     imageBlitRegion.dstSubresource.layerCount = 1;
     imageBlitRegion.dstOffsets[1] = blitSizeDst;
 
+    if (engine->isVR()) {
+        engine->vr.frameCopy(*fr, winfo);
+    }
+
     vkCmdBlitImage(
         winfo->commandBufferPresentBack,
         fr->colorImage.fba.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -563,6 +567,9 @@ void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo)
     vkResetFences(global.device, 1, &winfo->presentFence);
     //vkQueueWaitIdle(global.graphicsQueue);
 
+    if (engine->isVR()) {
+        engine->vr.frameEnd(*fr);
+    }
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 0;
