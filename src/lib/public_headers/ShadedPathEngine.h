@@ -331,6 +331,11 @@ private:
     int overrideUsedCores = -1;
     int appDrawCalls = 1;
     static void runDrawFrame(ShadedPathEngine* engine_instance);
+    // in queue submit thread we submit the command buffers of the current frame,
+    // this should take some time time to process, so we display the last frame in the meantime
+    // basically we are 1 frame behind with rendering
+    // for VR this doesn't work, because 1 frame behind leads to display smearing: our drawings lag behind HMD movement
+    // VR system drawings (like SteamVR desk) are ok, so for debugging we can see different movement of e.g. our drawings and the SteamVR desk
     static void runQueueSubmit(ShadedPathEngine* engine_instance);
     static void runUpdateThread(ShadedPathEngine* engine_instance);
     ThreadLimiter limiter;

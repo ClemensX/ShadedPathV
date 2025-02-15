@@ -414,9 +414,19 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
             // submit command buffers for this frame and process finished image from last frame
             //Log("submit thread submitting frame " << v->frameInfo->frameNum << endl);
             engine_instance->globalRendering.submit(v->frameInfo);
-            int lastFrameIndex = (v->frameInfo->frameIndex + 1) & 0x01;
-            engine_instance->globalRendering.processImage(&engine_instance->frameInfos[lastFrameIndex]);
-            engine_instance->app->processImage(&engine_instance->frameInfos[lastFrameIndex]);
+            // we submitted the command buffers of the current frame,
+            // this should take some time time to process, so we display the last frame in the meantime
+            // basically we are 1 frame behind with rendering
+            // for VR this doesn't work, because 1 frame behind leads to display smearing: our drawings lag behind HMD movement
+            // VR system drawings (like SteamVR desk) are ok, so for debugging we can see different movement of e.g. our drawings and the SteamVR desk
+            if (engine_instance->isVR()) {
+                engine_instance->globalRendering.processImage(v->frameInfo);
+                engine_instance->app->processImage(v->frameInfo);
+            } else {
+                int lastFrameIndex = (v->frameInfo->frameIndex + 1) & 0x01;
+                engine_instance->globalRendering.processImage(&engine_instance->frameInfos[lastFrameIndex]);
+                engine_instance->app->processImage(&engine_instance->frameInfos[lastFrameIndex]);
+            }
         }
         //engine_instance->shaders.queueSubmit(*v);
         // if we are pop()ed by drawing thread we can be sure to own the thread until presentFence is signalled,
