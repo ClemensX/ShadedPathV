@@ -23,8 +23,8 @@ int main()
     //mainSimpleMultiWin(); return 0; // use with care, see notes in SimpleMultiWin.h
     //mainSimpleMultiApp(); return 0;
 
-    LineApp app;
-    //SimpleApp app;
+    //LineApp app;
+    SimpleApp app;
 
     Log("main() start!\n");
     ShadedPathEngine engine;
@@ -33,7 +33,7 @@ int main()
         .setDebugWindowPosition(true)
         .setEnableUI(true)
         .setEnableSound(true)
-        .setVR(false)
+        .setVR(true)
         .setStereo(true)
         .failIfNoVR(true)
         //.setSingleThreadMode(true)
