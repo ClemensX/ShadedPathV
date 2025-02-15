@@ -80,6 +80,9 @@ public:
     ShadedPathEngine& configureParallelAppDrawCalls(int num) { fii(); appDrawCalls = num; return *this; }
     ShadedPathEngine& overrideCPUCores(int usedCores) { fii(); overrideUsedCores = usedCores; return *this; }
     ShadedPathEngine& setContinuationInfo(ContinuationInfo* cont) { continuationInfo = cont; return *this; }
+    // enable stereo presentation mode that shows left and right eye output in main window
+    ShadedPathEngine& enableStereoPresentation() { fii(); if (isStereo()) { stereoPresentation = true; } return *this; }
+
 
     // getters
     bool isDebugWindowPosition() { return debugWindowPosition; }
@@ -132,13 +135,6 @@ public:
 
     bool isStereo() {
         return stereoMode;
-    }
-
-    // enable stereo presentation mode that shows left and right eye output in main window
-    void enableStereoPresentation() {
-        if (isStereo()) {
-            stereoPresentation = true;
-        }
     }
 
     bool isStereoPresentation() {

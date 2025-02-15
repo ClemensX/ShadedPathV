@@ -16,7 +16,7 @@ void VR::init()
     if (!engine->isVR()) return;
 	uint32_t instanceExtensionCount;
 	const char* layerName = nullptr;
-    XR_TUT_LOG("OpenXR Tutorial Chapter 2");
+    Log("OpenXR Init");
     auto xrResult = xrEnumerateInstanceExtensionProperties(layerName, 0, &instanceExtensionCount, nullptr);
 	if (XR_FAILED(xrResult)) {
 		enabled = false;

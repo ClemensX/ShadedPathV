@@ -100,9 +100,6 @@ protected:
         app_engine->enableKeyEvents();
         app_engine->enableMousButtonEvents();
         app_engine->enableMouseMoveEvents();
-        if (!app_engine->isVR() && app_engine->isStereo()) {
-            app_engine->enableStereoPresentation();
-        }
     }
     //void initEngine(std::string name) {
     //    if (app_engine->isVR()) {
@@ -173,10 +170,11 @@ protected:
             if (app_engine->vr.getHMDProperties().recommendedImageSize.width == 0) {
                 Error("HMD image size not available.");
             }
-            if (app_engine->vr.getHMDProperties().aspectRatio != 1.77f) {
-                //Error("Fix aspect ratio");
+            if (app_engine->vr.getHMDProperties().aspectRatio != 0.0f) {
                 win_height = (int)(win_width / app_engine->vr.getHMDProperties().aspectRatio);
             }
+        } else {
+            win_height = (int)(win_width / app_engine->getAspect());
         }
         app_engine->presentation.createWindow(&window, win_width, win_height, title);
         app_engine->enablePresentation(&window);

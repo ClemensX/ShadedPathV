@@ -40,7 +40,7 @@ void LineApp::run(ContinuationInfo* cont)
 
 void LineApp::init() {
     // add some lines:
-    float aspectRatio = engine->getAspect();
+    float aspectRatio = 1.0f; // engine->getAspect();
     float plus = 0.0f;
     LineDef myLines[] = {
         // start, end, color
@@ -103,7 +103,7 @@ void LineApp::prepareFrame(FrameResources* fr)
     applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
 
     // dynamic lines:
-    float aspectRatio = engine->getAspect();
+    float aspectRatio = 1.0f; // engine->getAspect();
     LineDef myLines[] = {
         // start, end, color
         { glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
