@@ -1,14 +1,16 @@
 #include "mainheader.h"
+#include "AppSupport.h"
 #include "DeviceCoordApp.h"
 
 using namespace std;
 using namespace glm;
 
 
-void DeviceCoordApp::run()
+void DeviceCoordApp::run(ContinuationInfo* cont)
 {
     Log("DeviceCoordApp started" << endl);
     {
+        AppSupport::setEngine(engine);
         auto& shaders = engine->shaders;
         // camera initialization
         positioner_.init(engine, glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -25,12 +27,12 @@ void DeviceCoordApp::run()
         engine->files.findAssetFolder("data");
         engine->setBackBufferResolution(ShadedPathEngine::Resolution::OneK); //oneK == 960
         int win_width = 960;//1800;// 800;//3700;
-        engine->enablePresentation(win_width, (int)(win_width /1.77f), "Vulkan Device Coordinates");
-        engine->setFramesInFlight(2);
+        //engine->enablePresentation(win_width, (int)(win_width /1.77f), "Vulkan Device Coordinates");
+        //engine->setFramesInFlight(2);
         engine->registerApp(this);
 
         // engine initialization
-        engine->init("DeviceCoordApp");
+        //engine->init("DeviceCoordApp");
 
         // add shaders used in this app
         shaders
@@ -43,16 +45,7 @@ void DeviceCoordApp::run()
 
         // init app rendering:
         init();
-
-        // some shaders may need additional preparation
-        engine->prepareDrawing();
-
-        // rendering
-        while (!engine->shouldClose()) {
-            engine->pollEvents();
-            engine->drawFrame();
-        }
-        engine->waitUntilShutdown();
+        engine->eventLoop();
     }
     Log("DeviceCoordApp ended" << endl);
 }
@@ -60,22 +53,16 @@ void DeviceCoordApp::run()
 void DeviceCoordApp::init() {
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
+    prepareWindowOutput("Vulkan Device Coordinates");
 }
 
-void DeviceCoordApp::drawFrame(ThreadResources& tr) {
-    updatePerFrame(tr);
-    engine->shaders.submitFrame(tr);
-}
-
-void DeviceCoordApp::updatePerFrame(ThreadResources& tr)
+// prepare drawing, guaranteed single thread
+void DeviceCoordApp::prepareFrame(FrameResources* fr)
 {
+    FrameResources& tr = *fr;
     double seconds = engine->gameTime.getTimeSeconds();
-    if (old_seconds > 0.0f && old_seconds == seconds) {
-        Log("DOUBLE TIME" << endl);
-        return;
-    }
-    if (old_seconds > seconds) {
-        Log("INVERTED TIME" << endl);
+    if ((old_seconds > 0.0f && old_seconds == seconds) || old_seconds > seconds) {
+        Error("APP TIME ERROR - should not happen");
         return;
     }
     double deltaSeconds = seconds - old_seconds;
@@ -113,10 +100,39 @@ void DeviceCoordApp::updatePerFrame(ThreadResources& tr)
 
     engine->shaders.lineShader.prepareAddLines(tr);
     engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo);
+    engine->shaders.clearShader.addCommandBuffers(fr, &fr->drawResults[0]); // put clear shader first
+}
+
+// draw from multiple threads
+void DeviceCoordApp::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
+{
+    if (topic == 0) {
+        // draw lines
+        engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
+    }
+}
+
+void DeviceCoordApp::postFrame(FrameResources* fr)
+{
+    engine->shaders.endShader.addCommandBuffers(fr, fr->getLatestCommandBufferArray());
+}
+
+void DeviceCoordApp::processImage(FrameResources* fr)
+{
+    present(fr);
+}
+
+bool DeviceCoordApp::shouldClose()
+{
+    return shouldStopEngine;
 }
 
 void DeviceCoordApp::handleInput(InputState& inputState)
 {
+    if (inputState.windowClosed != nullptr) {
+        inputState.windowClosed = nullptr;
+        shouldStopEngine = true;
+    }
     if (inputState.mouseButtonEvent) {
         //Log("mouse button pressed (left/right): " << inputState.pressedLeft << " / " << inputState.pressedRight << endl);
         input.pressedLeft = inputState.pressedLeft;

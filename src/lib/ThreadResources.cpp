@@ -5,6 +5,7 @@ using namespace std;
 // FrameResources
 
 FrameResources::~FrameResources() {
+    if (engine == nullptr) return; // may happen in test cases
     auto& device = engine->globalRendering.device;
     auto& global = engine->globalRendering;
     auto& shaders = engine->shaders;
