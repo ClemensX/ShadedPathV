@@ -100,7 +100,7 @@ public:
 	SimpleShader simpleShader;
 	LineShader lineShader;
 	UIShader uiShader;
-	//PBRShader pbrShader;
+	PBRShader pbrShader;
 	//CubeShader cubeShader;
 	//BillboardShader billboardShader;
 	//TerrainShader terrainShader;

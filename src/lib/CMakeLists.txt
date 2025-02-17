@@ -17,7 +17,7 @@ set (SOURCES
   ClearShader.cpp
   LineShader.cpp
   SimpleShader.cpp
-  #pbrShader.cpp
+  pbrShader.cpp
   ThreadResources.cpp
   Shaders.cpp
   VulkanResources.cpp

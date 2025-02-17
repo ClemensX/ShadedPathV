@@ -74,7 +74,6 @@ public:
 		return attributeDescriptions;
 	}
 	virtual ~LineShader() override;
-	// shader initialization, end result is a graphics pipeline for each ThreadResources instance
 
 	// max # lines for dynamic adding for single frame
 	// we limit this to allow for pre-allocated vertex buffer in thread resources

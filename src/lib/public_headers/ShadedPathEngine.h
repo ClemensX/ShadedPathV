@@ -190,8 +190,10 @@ public:
     // applications have to set max number of used textures because we need to know
     // at shader creation time
     // default value is 5
-    void setMaxTextures(size_t maxTextures) {
+    ShadedPathEngine& setMaxTextures(size_t maxTextures) {
+        fii();
         this->maxTextures = maxTextures;
+        return *this;
     }
 
     void setFixedPhysicalDeviceIndex(int i) {

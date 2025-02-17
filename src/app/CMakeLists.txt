@@ -17,11 +17,11 @@ file(GLOB VULKAN_SHADERS
 
 add_executable(app
    AppSupport.cpp
-#   BillboardDemo.cpp
    DeviceCoordApp.cpp
-#   GeneratedTexturesApp.cpp
+   GeneratedTexturesApp.cpp
+   gltfTerrainApp.cpp
+#   BillboardDemo.cpp
 #   gltfObjectsApp.cpp
-#   gltfTerrainApp.cpp
 #   LandscapeDemo1.cpp
 #   LandscapeGenerator.cpp
    LineApp.cpp

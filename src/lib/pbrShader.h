@@ -14,11 +14,16 @@ const VkPushConstantRange pbrPushConstantRange = {
 	sizeof(pbrPushConstants) // size
 };
 
+// forward
+class PBRSubShader;
+
 // pbr shader draws objects read from glTF files with PBR lighing
 class PBRShader : public ShaderBase {
 public:
 	// We have to set max number of objects, as dynamic uniform buffers have to be allocated (one entry for each object in a large buffer)
 	uint64_t MaxObjects = 1000;
+
+	std::vector<PBRSubShader> globalSubShaders;
 
 	std::vector<VulkanResourceElement> vulkanResourceDefinition = {
 		{ VulkanResourceType::MVPBuffer },
@@ -82,10 +87,10 @@ public:
 		return attributeDescriptions;
 	}
 	virtual ~PBRShader() override;
-	// shader initialization, end result is a graphics pipeline for each ThreadResources instance
 
+	// shader initialization, end result is a shader sub resource for each worker thread
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
-	// thread resources initialization
+	// frame resources initialization
 	virtual void initSingle(FrameResources& tr, ShaderState& shaderState) override;
 	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState) override;
 	// create command buffers. One time auto called before rendering starts
@@ -93,40 +98,65 @@ public:
 	virtual void createCommandBuffer(FrameResources& tr) override;
 	// add the pre-computed command buffer for the current object
 	virtual void addCurrentCommandBuffer(FrameResources& tr) override;
+	virtual void addCommandBuffers(FrameResources* fr, DrawResult* drawResult) override;
 	virtual void destroyThreadResources(FrameResources& tr) override;
 
 	// get access to dynamic uniform buffer for an object
-	DynamicUniformBufferObject* getAccessToModel(ThreadResources& tr, UINT num);
+	DynamicUniformBufferObject* getAccessToModel(FrameResources& tr, UINT num);
 	
 	// upload of all objects to GPU - only valid before first render
 	void initialUpload();
 
 	// per frame update of UBOs / MVPs
-	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
-private:
-
-	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, WorldObject* obj, bool isRightEye = false);
-
+	void uploadToGPU(FrameResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
+	VkPipelineLayout pipelineLayout = nullptr;
 	// preset PBR texture indexes in the dynamic Uniform Buffer.
 	// Application code can overwrite the setting in drawFrame()
-	void prefillTextureIndexes(ThreadResources& tr);
+	void prefillTextureIndexes(FrameResources& tr);
 
+private:
 	UniformBufferObject ubo = {};
 	UniformBufferObject updatedUBO = {};
 	bool disabled = false;
 
 	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;
-
-	// util methods
-public:
 };
 
-struct PBRThreadResources : ShaderThreadResources {
+/*
+ * PBRSubShader includes everything for one shader invocation.
+ * Currently only 1 sub shader
+ */
+class PBRSubShader {
+public:
+	// name is used in shader debugging
+	void init(PBRShader* parent, std::string debugName);
+	void setVertShaderModule(VkShaderModule sm) {
+		vertShaderModule = sm;
+	}
+	void setFragShaderModule(VkShaderModule sm) {
+		fragShaderModule = sm;
+	}
+	void initSingle(FrameResources& tr, ShaderState& shaderState);
+	void setVulkanResources(VulkanResources* vr) {
+		vulkanResources = vr;
+	}
+
+	// All sections need: buffer allocation and recording draw commands.
+	// Stage they are called at will be very different
+	void allocateCommandBuffer(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, const char* debugName);
+	void addRenderPassAndDrawCommands(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, VkBuffer vertexBuffer);
+
+	void createGlobalCommandBufferAndRenderPass(FrameResources& tr);
+	void recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, WorldObject* obj, bool isRightEye = false);
+	// per frame update of UBO / MVP
+	void uploadToGPU(FrameResources& tr, PBRShader::UniformBufferObject& ubo, PBRShader::UniformBufferObject& ubo2);
+
+	void destroy();
+
 	VkFramebuffer framebuffer = nullptr;
 	VkFramebuffer framebuffer2 = nullptr;
 	VkRenderPass renderPass = nullptr;
-	VkPipelineLayout pipelineLayout = nullptr;
 	VkPipeline graphicsPipeline = nullptr;
 	VkCommandBuffer commandBuffer = nullptr;
 	// VP buffer
@@ -142,4 +172,18 @@ struct PBRThreadResources : ShaderThreadResources {
 	// M buffer device memory
 	VkDeviceMemory dynamicUniformBufferMemory = nullptr;
 	void* dynamicUniformBufferCPUMemory = nullptr;
+	size_t drawCount = 0; // set number of draw calls for this sub shader, also used as indicator if this is active
+
+private:
+	PBRShader* pbrShader = nullptr;
+	VulkanResources* vulkanResources = nullptr;
+	std::string name;
+	VkShaderModule vertShaderModule = nullptr;
+	VkShaderModule fragShaderModule = nullptr;
+	ShadedPathEngine* engine = nullptr;
+	VkDevice device = nullptr;
+	FrameResources* frameResources = nullptr;
+};
+	
+struct PBRThreadResources : ShaderThreadResources {
 };

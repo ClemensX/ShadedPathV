@@ -19,17 +19,17 @@ old infos:
 #include "AppSupport.h"
 #include "SimpleMultiApp.h"
 #include "SimpleMultiWin.h"
-//#include "LandscapeGenerator.h"
+#include "LineApp.h"
 #include "SimpleApp.h"
 #include "DeviceCoordApp.h"
-#include "LineApp.h"
+#include "GeneratedTexturesApp.h"
+#include "gltfTerrainApp.h"
 //#include "gltfObjectsApp.h"
-//#include "gltfTerrainApp.h"
-//#include "GeneratedTexturesApp.h"
 //#include "BillboardDemo.h"
 //#include "TextureViewer.h"
 //#include "LandscapeDemo1.h"
 //#include "incoming.h"
+//#include "LandscapeGenerator.h"
 
 
 int main()
@@ -39,7 +39,9 @@ int main()
 
     //LineApp app; // vr ok
     //SimpleApp app; // vr ok (some stuttering - will not be investigated)
-    DeviceCoordApp app; // vr not supported
+    //DeviceCoordApp app; // vr not supported
+    gltfTerrainApp app;
+    //GeneratedTexturesApp app;
 
     Log("main() start!\n");
     ShadedPathEngine engine;
@@ -55,6 +57,7 @@ int main()
         //.enableStereoPresentation()
         .overrideCPUCores(4)
         .configureParallelAppDrawCalls(2)
+        .setMaxTextures(50)
         //.setFixedPhysicalDeviceIndex(1) // if GPU card is available it should be device 0. device 1 is usually the integrated Intel/AMD GPU
         ;
 

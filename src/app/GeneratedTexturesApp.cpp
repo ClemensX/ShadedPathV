@@ -5,10 +5,12 @@
 using namespace std;
 using namespace glm;
 
-void GeneratedTexturesApp::run()
+#if defined(NIXOS)
+void GeneratedTexturesApp::run(ContinuationInfo* cont)
 {
     Log("App started" << endl);
     {
+        AppSupport::setEngine(engine);
         Shaders& shaders = engine->shaders;
         // camera initialization
         initCamera(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 1.0f, 0.0f));
@@ -17,35 +19,16 @@ void GeneratedTexturesApp::run()
         //camera.changePositioner(positioner);
         //this->camera = &camera;
         //this->positioner = &positioner;
-        engine->enableKeyEvents();
-        engine->enableMousButtonEvents();
-        engine->enableMouseMoveEvents();
-        //engine->enableMeshShader();
-        //engine->enableVR();
-        //engine->enableStereo();
-        engine->enableStereoPresentation();
-        // engine configuration
+
+        enableEventsAndModes();
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine->files.findAssetFolder("data");
+        setHighBackbufferResolution();
         engine->setMaxTextures(20);
-        //engine->setFrameCountLimit(1000);
-        engine->setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
-        //engine->setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 960;//480;// 960;//1800;// 800;//3700; // 2500
-        engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Review generated Textures");
-        //camera.saveProjection(perspective(glm::radians(45.0f), engine->getAspect(), 0.01f, 2000.0f));
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 2000.0f);
 
-        engine->setFramesInFlight(2);
-        engine->registerApp(this);
-        //engine->enableSound();
-        //engine->setThreadModeSingle();
-
-        // engine initialization
-        engine->init("gltfObjects");
-
         engine->textureStore.generateBRDFLUT();
-        //this_thread::sleep_for(chrono::milliseconds(3000));
+
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
@@ -59,17 +42,7 @@ void GeneratedTexturesApp::run()
 
         // init app rendering:
         init();
-
-        // some shaders may need additional preparation
-        engine->prepareDrawing();
-
-
-        // rendering
-        while (!engine->shouldClose()) {
-            engine->pollEvents();
-            engine->drawFrame();
-        }
-        engine->waitUntilShutdown();
+        engine->eventLoop();
     }
     Log("LineApp ended" << endl);
 }
@@ -372,3 +345,4 @@ void GeneratedTexturesApp::handleInput(InputState& inputState)
     //        positioner->setUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
     //}
 }
+#endif

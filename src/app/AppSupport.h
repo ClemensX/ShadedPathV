@@ -126,11 +126,11 @@ protected:
         app_engine->eventLoop();
     }
 
-    //void postUpdatePerFrame(ThreadResources& tr) {
-    //    if (enableSound && engine->isDedicatedRenderUpdateThread(tr)) {
-    //        engine->sound.Update(camera);
-    //    }
-    //}
+    void postUpdatePerFrame(FrameResources& tr) {
+        //if (enableSound && app_engine->isDedicatedRenderUpdateThread(tr)) {
+        //    engine->sound.Update(camera);
+        //}
+    }
     void logCameraPosition() {
         auto p = camera->getPosition();
         Log("Camera position: " << p.x << " / " << p.y << " / " << p.z << std::endl);

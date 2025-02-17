@@ -5,10 +5,11 @@
 using namespace std;
 using namespace glm;
 
-void gltfTerrainApp::run()
+void gltfTerrainApp::run(ContinuationInfo* cont)
 {
     Log("gltfTerrainApp started" << endl);
     {
+        AppSupport::setEngine(engine);
         Shaders& shaders = engine->shaders;
         // camera initialization
         createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -24,16 +25,10 @@ void gltfTerrainApp::run()
         enableEventsAndModes();
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine->files.findAssetFolder("data");
-        engine->setMaxTextures(50);
+        //engine->setMaxTextures(50);
         //engine->setFrameCountLimit(1000);
         setHighBackbufferResolution();
-        int win_width = 800;//480;// 960;//1800;// 800;//3700; // 2500;
-        engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF terrain");
-        //camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 4300.0f);
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.10f, 2000.0f);
-
-        engine->registerApp(this);
-        initEngine("gltfTerrain");
 
         engine->textureStore.generateBRDFLUT();
 
@@ -49,7 +44,7 @@ void gltfTerrainApp::run()
 
         // init app rendering:
         init();
-        eventLoop();
+        engine->eventLoop();
     }
     Log("gltfTerrainApp ended" << endl);
 }
@@ -95,30 +90,27 @@ void gltfTerrainApp::init() {
         engine->shaders.lineShader.uploadFixedGlobalLines();
     }
     // load and play music
-    engine->sound.openSoundFile("power.ogg", "BACKGROUND_MUSIC", true);
-    //engine->sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 1.0f, 6000);
-    // add sound to object
-    engine->sound.addWorldObject(knife);
-    engine->sound.changeSound(knife, "BACKGROUND_MUSIC");
-    engine->sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
+    //engine->sound.openSoundFile("power.ogg", "BACKGROUND_MUSIC", true);
+    ////engine->sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 1.0f, 6000);
+    //// add sound to object
+    //engine->sound.addWorldObject(knife);
+    //engine->sound.changeSound(knife, "BACKGROUND_MUSIC");
+    //engine->sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
+    prepareWindowOutput("Line App");
+    engine->presentation.startUI();
 }
 
-void gltfTerrainApp::drawFrame(ThreadResources& tr) {
-    updatePerFrame(tr);
-    engine->shaders.submitFrame(tr);
-}
-
-void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
+void gltfTerrainApp::mainThreadHook()
 {
+}
+
+// prepare drawing, guaranteed single thread
+void gltfTerrainApp::prepareFrame(FrameResources* fr)
+{
+    FrameResources& tr = *fr;
     double seconds = engine->gameTime.getTimeSeconds();
-    if (old_seconds > 0.0f && old_seconds == seconds) {
-        Log("DOUBLE TIME" << endl);
-        //tr.discardFrame = true;
-        return;
-    }
-    if (old_seconds > seconds) {
-        Log("INVERTED TIME" << endl);
-        //tr.discardFrame = true;
+    if ((old_seconds > 0.0f && old_seconds == seconds) || old_seconds > seconds) {
+        Error("APP TIME ERROR - should not happen");
         return;
     }
     double deltaSeconds = seconds - old_seconds;
@@ -182,10 +174,40 @@ void gltfTerrainApp::updatePerFrame(ThreadResources& tr)
         buf->model = modeltransform;
     }
     postUpdatePerFrame(tr);
+    engine->shaders.clearShader.addCommandBuffers(fr, &fr->drawResults[0]); // put clear shader first
+}
+
+// draw from multiple threads
+void gltfTerrainApp::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
+{
+    if (topic == 0) {
+        // draw lines and objects
+        engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
+        engine->shaders.pbrShader.addCommandBuffers(fr, drawResult);
+    }
+}
+
+void gltfTerrainApp::postFrame(FrameResources* fr)
+{
+    engine->shaders.endShader.addCommandBuffers(fr, fr->getLatestCommandBufferArray());
+}
+
+void gltfTerrainApp::processImage(FrameResources* fr)
+{
+    present(fr);
+}
+
+bool gltfTerrainApp::shouldClose()
+{
+    return shouldStopEngine;
 }
 
 void gltfTerrainApp::handleInput(InputState& inputState)
 {
+    if (inputState.windowClosed != nullptr) {
+        inputState.windowClosed = nullptr;
+        shouldStopEngine = true;
+    }
     AppSupport::handleInput(inputState);
 }
 
