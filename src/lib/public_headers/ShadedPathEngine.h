@@ -88,7 +88,7 @@ public:
     bool isDebugWindowPosition() { return debugWindowPosition; }
     bool isSingleThreadMode() { return singleThreadMode; }
     ContinuationInfo* getContinuationInfo() { return continuationInfo; }
-    int getParrallelAppDrawCalls() { return appDrawCalls; }
+    int getParallelAppDrawCalls() { return appDrawCalls; }
     bool isEnableUI() { return enableUI; }
     bool isEnforceVR() { return vrEnforce; }
 

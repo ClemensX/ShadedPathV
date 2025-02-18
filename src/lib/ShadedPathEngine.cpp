@@ -176,7 +176,9 @@ void ShadedPathEngine::eventLoop()
 void ShadedPathEngine::prepareDrawing()
 {
     globalRendering.logDeviceLimits();
+    // do some basic engine initialization checks:
     if (!initialized) Error("Engine was not initialized");
+    if (isVR() && !isStereo()) Error("VR mode requested but stereo mode disabled. Change configuration.");
     //for (int i = 0; i < threadResources.size(); i++) {
     //    auto& tr = threadResources[i];
     //    tr.frameIndex = i;

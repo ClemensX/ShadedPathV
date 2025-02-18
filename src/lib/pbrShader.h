@@ -109,7 +109,6 @@ public:
 
 	// per frame update of UBOs / MVPs
 	void uploadToGPU(FrameResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
-	VkPipelineLayout pipelineLayout = nullptr;
 	// preset PBR texture indexes in the dynamic Uniform Buffer.
 	// Application code can overwrite the setting in drawFrame()
 	void prefillTextureIndexes(FrameResources& tr);
@@ -172,7 +171,7 @@ public:
 	// M buffer device memory
 	VkDeviceMemory dynamicUniformBufferMemory = nullptr;
 	void* dynamicUniformBufferCPUMemory = nullptr;
-	size_t drawCount = 0; // set number of draw calls for this sub shader, also used as indicator if this is active
+	VkPipelineLayout pipelineLayout = nullptr;
 
 private:
 	PBRShader* pbrShader = nullptr;

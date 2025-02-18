@@ -183,6 +183,7 @@ void gltfTerrainApp::drawFrame(FrameResources* fr, int topic, DrawResult* drawRe
     if (topic == 0) {
         // draw lines and objects
         engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
+    } else if (topic == 1) {
         engine->shaders.pbrShader.addCommandBuffers(fr, drawResult);
     }
 }

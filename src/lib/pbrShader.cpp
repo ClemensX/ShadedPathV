@@ -14,7 +14,7 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	// descriptor
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, this, 1);
 	alignedDynamicUniformBufferSize = global->calcConstantBufferSize(sizeof(DynamicUniformBufferObject));
-	resources.createPipelineLayout(&pipelineLayout, this);
+	//resources.createPipelineLayout(&pipelineLayout, this);
 
 	// push constants
 	pushConstantRanges.push_back(pbrPushConstantRange);
@@ -35,7 +35,8 @@ void PBRShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 {
 	PBRSubShader& ug = globalSubShaders[tr.frameIndex];
 	ug.initSingle(tr, shaderState);
-	ug.allocateCommandBuffer(tr, &ug.commandBuffer, "PBR PERMANENT COMMAND BUFFER");
+    // do not allocate command buffer here, as it is done in createCommandBuffer, after app init() in prepareDrawing()
+	//ug.allocateCommandBuffer(tr, &ug.commandBuffer, "PBR PERMANENT COMMAND BUFFER");
 }
 
 void PBRShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
@@ -79,9 +80,7 @@ void PBRShader::addCurrentCommandBuffer(FrameResources& tr) {
 void PBRShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
 	int index = drawResult->getNextFreeCommandBufferIndex();
 	auto& sub = globalSubShaders[fr->frameIndex];
-	if (sub.drawCount != 0) {
-		drawResult->commandBuffers[index++] = sub.commandBuffer;
-	}
+	drawResult->commandBuffers[index++] = sub.commandBuffer;
 }
 void PBRShader::uploadToGPU(FrameResources& fr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
 	auto& sub = globalSubShaders[fr.frameIndex];
@@ -105,7 +104,7 @@ PBRShader::~PBRShader()
     for (PBRSubShader& sub : globalSubShaders) {
         sub.destroy();
     }
-	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+	//vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);
 	vkDestroyShaderModule(device, vertShaderModule, nullptr);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
@@ -199,8 +198,7 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	// empty for now...
 
 	// pipeline layout
-	//vulkanResources->createPipelineLayout(&pipelineLayout, pbrShader);
-	//resources.createPipelineLayout(&str.pipelineLayout, descriptorSetLayoutForEachMesh, 1);
+	vulkanResources->createPipelineLayout(&pipelineLayout, pbrShader);
 
 	// depth stencil
 	auto depthStencil = pbrShader->createStandardDepthStencil();
@@ -218,7 +216,7 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	pipelineInfo.pDepthStencilState = &depthStencil;
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = nullptr; // Optional
-	pipelineInfo.layout = pbrShader->pipelineLayout;
+	pipelineInfo.layout = pipelineLayout;
 	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
@@ -256,6 +254,14 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr)
 {
 	allocateCommandBuffer(tr, &commandBuffer, "PBR COMMAND BUFFER");
 
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = 0; // Optional
+	beginInfo.pInheritanceInfo = nullptr; // Optional
+
+	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+		Error("failed to begin recording triangle command buffer!");
+	}
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassInfo.renderPass = renderPass;
@@ -310,7 +316,7 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 	vkCmdBindIndexBuffer(commandBuffer, obj->mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 	// bind global texture array:
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pbrShader->pipelineLayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
 
 	// bind descriptor sets:
 	// One dynamic offset per dynamic descriptor to offset into the ubo containing all model matrices
@@ -318,16 +324,16 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	uint32_t dynamicOffset = static_cast<uint32_t>(objId * pbrShader->alignedDynamicUniformBufferSize);
 	if (!isRightEye) {
 		// left eye
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pbrShader->pipelineLayout, 0, 1, &descriptorSet, 1, &dynamicOffset);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 1, &dynamicOffset);
 	}
 	else {
 		// right eye
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pbrShader->pipelineLayout, 0, 1, &descriptorSet2, 1, &dynamicOffset);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet2, 1, &dynamicOffset);
 	}
 	pbrPushConstants pushConstants;
 	pushConstants.mode = obj->mesh->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES) ? 1 : 0;
 	//if (isRightEye) pushConstants.mode = 2;
-	vkCmdPushConstants(commandBuffer, pbrShader->pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pbrPushConstants), &pushConstants);
+	vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pbrPushConstants), &pushConstants);
 	//if (isRightEye) vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);
 	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);
 }
@@ -337,6 +343,7 @@ void PBRSubShader::destroy()
 	vkDestroyFramebuffer(device, framebuffer, nullptr);
 	vkDestroyRenderPass(device, renderPass, nullptr);
 	vkDestroyPipeline(device, graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 	vkDestroyBuffer(device, uniformBuffer, nullptr);
 	vkFreeMemory(device, uniformBufferMemory, nullptr);
 	vkDestroyBuffer(device, dynamicUniformBuffer, nullptr);

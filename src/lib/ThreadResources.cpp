@@ -139,7 +139,7 @@ void FrameResources::createDepthResources()
 
 void FrameResources::createCommandPool()
 {
-    drawResults.resize(engine->getParrallelAppDrawCalls()); // one draw result per draw call topic
+    drawResults.resize(engine->getParallelAppDrawCalls()); // one draw result per draw call topic
     for (auto& dr : drawResults) {
         dr.image = nullptr;
         for (auto& cb : dr.commandBuffers) { // initialize command buffers to nullptr
