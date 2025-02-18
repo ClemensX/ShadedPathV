@@ -40,8 +40,8 @@ int main()
     //LineApp app; // vr ok
     //SimpleApp app; // vr ok (some stuttering - will not be investigated)
     //DeviceCoordApp app; // vr not supported
-    gltfTerrainApp app;
-    //GeneratedTexturesApp app;
+    //gltfTerrainApp app; // vr ok
+    GeneratedTexturesApp app;
 
     Log("main() start!\n");
     ShadedPathEngine engine;

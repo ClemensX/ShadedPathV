@@ -9,7 +9,7 @@ set (SOURCES
   DirectImage.cpp
   Presentation.cpp
   #CubeShader.cpp
-  #BillboardShader.cpp
+  BillboardShader.cpp
   #TerrainShader.cpp
   UIShader.cpp
   UI.cpp

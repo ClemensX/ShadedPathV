@@ -22,10 +22,6 @@ public:
     bool shouldClose() override;
     void handleInput(InputState& inputState) override;
 private:
-    void updatePerFrame(ThreadResources& tr);
-    //Camera* camera;
-    //CameraPositioner_FirstPerson* positioner;
-    //InputState input;
     World world;
     WorldObject *knife1, *knife2;
     float plus = 0.0f;

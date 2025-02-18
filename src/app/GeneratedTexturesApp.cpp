@@ -5,26 +5,21 @@
 using namespace std;
 using namespace glm;
 
-#if defined(NIXOS)
 void GeneratedTexturesApp::run(ContinuationInfo* cont)
 {
-    Log("App started" << endl);
+    Log("Generated Textures App started" << endl);
     {
         AppSupport::setEngine(engine);
         Shaders& shaders = engine->shaders;
         // camera initialization
         initCamera(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 1.0f, 0.0f));
         getFirstPersonCameraPositioner()->setMaxSpeed(0.1f);
-        //Camera camera(&engine);
-        //camera.changePositioner(positioner);
-        //this->camera = &camera;
-        //this->positioner = &positioner;
 
+        // engine configuration
         enableEventsAndModes();
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine->files.findAssetFolder("data");
         setHighBackbufferResolution();
-        engine->setMaxTextures(20);
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 2000.0f);
 
         engine->textureStore.generateBRDFLUT();
@@ -44,7 +39,7 @@ void GeneratedTexturesApp::run(ContinuationInfo* cont)
         init();
         engine->eventLoop();
     }
-    Log("LineApp ended" << endl);
+    Log("Generated Textures App ended" << endl);
 }
 
 
@@ -182,37 +177,38 @@ void GeneratedTexturesApp::init() {
     // Grid with 1m squares, floor on -10m, ceiling on 372m
 
     // select texture by uncommenting:
-    engine->global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
+    engine->globalRendering.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
     //engine->global.createCubeMapFrom2dTexture("Knife1", "2dTextureCube");
     //engine->global.createCubeMapFrom2dTexture("WaterBottle2", "2dTextureCube");
     //engine->global.createCubeMapFrom2dTexture(engine->textureStore.BRDFLUT_TEXTURE_ID, "2dTextureCube"); // doesn't work (missing mipmaps? format?)
-    engine->shaders.cubeShader.setFarPlane(1.0f); // cube around center
-    engine->shaders.cubeShader.setSkybox("2dTextureCube");
+    //engine->shaders.cubeShader.setFarPlane(1.0f); // cube around center
+    //engine->shaders.cubeShader.setSkybox("2dTextureCube");
 
     //engine->shaders.lineShader.initialUpload();
     engine->shaders.pbrShader.initialUpload();
     //engine->shaders.cubeShader.initialUpload();
     engine->shaders.billboardShader.initialUpload();
     // last thing in init() should always be texture description creation
+
+    prepareWindowOutput("View Textures");
+    engine->presentation.startUI();
 }
 
-void GeneratedTexturesApp::drawFrame(ThreadResources& tr) {
-    updatePerFrame(tr);
-    engine->shaders.submitFrame(tr);
-}
-
-void GeneratedTexturesApp::updatePerFrame(ThreadResources& tr)
+void GeneratedTexturesApp::mainThreadHook()
 {
+}
+
+// prepare drawing, guaranteed single thread
+void GeneratedTexturesApp::prepareFrame(FrameResources* fr)
+{
+    FrameResources& tr = *fr;
     double seconds = engine->gameTime.getTimeSeconds();
-    if (old_seconds > 0.0f && old_seconds == seconds) {
-        Log("DOUBLE TIME" << endl);
-        return;
-    }
-    if (old_seconds > seconds) {
-        Log("INVERTED TIME" << endl);
+    if ((old_seconds > 0.0f && old_seconds == seconds) || old_seconds > seconds) {
+        Error("APP TIME ERROR - should not happen");
         return;
     }
     double deltaSeconds = seconds - old_seconds;
+
     //positioner->update(deltaSeconds, input.pos, input.pressedLeft);
     old_seconds = seconds;
     updateCameraPositioners(deltaSeconds);
@@ -256,7 +252,7 @@ void GeneratedTexturesApp::updatePerFrame(ThreadResources& tr)
     cubo.proj = lubo.proj;
     auto cubo2 = cubo;
     cubo2.view = cubo.view;
-    engine->shaders.cubeShader.uploadToGPU(tr, cubo, cubo2, true);
+    //engine->shaders.cubeShader.uploadToGPU(tr, cubo, cubo2, true);
  
     // pbr
     PBRShader::UniformBufferObject pubo{};
@@ -303,46 +299,44 @@ void GeneratedTexturesApp::updatePerFrame(ThreadResources& tr)
     bubo.proj = lubo.proj;
     auto bubo2 = bubo;
     bubo2.view = lubo2.view;
-    engine->shaders.billboardShader.uploadToGPU(tr, bubo, bubo2);
+    //engine->shaders.billboardShader.uploadToGPU(tr, bubo, bubo2);
     //Util::printMatrix(bubo.proj);
+
+    engine->shaders.clearShader.addCommandBuffers(fr, &fr->drawResults[0]); // put clear shader first
+}
+
+// draw from multiple threads
+void GeneratedTexturesApp::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
+{
+    if (topic == 0) {
+        // draw lines and objects
+        engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
+    }
+    else if (topic == 1) {
+        engine->shaders.pbrShader.addCommandBuffers(fr, drawResult);
+    }
+}
+
+void GeneratedTexturesApp::postFrame(FrameResources* fr)
+{
+    engine->shaders.endShader.addCommandBuffers(fr, fr->getLatestCommandBufferArray());
+}
+
+void GeneratedTexturesApp::processImage(FrameResources* fr)
+{
+    present(fr);
+}
+
+bool GeneratedTexturesApp::shouldClose()
+{
+    return shouldStopEngine;
 }
 
 void GeneratedTexturesApp::handleInput(InputState& inputState)
 {
+    if (inputState.windowClosed != nullptr) {
+        inputState.windowClosed = nullptr;
+        shouldStopEngine = true;
+    }
     AppSupport::handleInput(inputState);
-
-    //if (inputState.mouseButtonEvent) {
-    //    //Log("mouse button pressed (left/right): " << inputState.pressedLeft << " / " << inputState.pressedRight << endl);
-    //    input.pressedLeft = inputState.pressedLeft;
-    //    input.pressedRight = inputState.pressedRight;
-    //}
-    //if (inputState.mouseMoveEvent) {
-    //    //Log("mouse pos (x/y): " << inputState.pos.x << " / " << inputState.pos.y << endl);
-    //    input.pos.x = inputState.pos.x;
-    //    input.pos.y = inputState.pos.y;
-    //}
-    //if (inputState.keyEvent) {
-    //    //Log("key pressed: " << inputState.key << endl);
-    //    auto key = inputState.key;
-    //    auto action = inputState.action;
-    //    auto mods = inputState.mods;
-    //    const bool press = action != GLFW_RELEASE;
-    //    if (key == GLFW_KEY_W)
-    //        positioner->movement.forward_ = press;
-    //    if (key == GLFW_KEY_S)
-    //        positioner->movement.backward_ = press;
-    //    if (key == GLFW_KEY_A)
-    //        positioner->movement.left_ = press;
-    //    if (key == GLFW_KEY_D)
-    //        positioner->movement.right_ = press;
-    //    if (key == GLFW_KEY_1)
-    //        positioner->movement.up_ = press;
-    //    if (key == GLFW_KEY_2)
-    //        positioner->movement.down_ = press;
-    //    if (mods & GLFW_MOD_SHIFT)
-    //        positioner->movement.fastSpeed_ = press;
-    //    if (key == GLFW_KEY_SPACE)
-    //        positioner->setUpVector(glm::vec3(0.0f, 1.0f, 0.0f));
-    //}
 }
-#endif

@@ -118,7 +118,7 @@ public:
 		VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, const char* debugName) {
 		createImage(width, height, mipLevels, numSamples, format, tiling, usage, properties, image, imageMemory, debugName, 6);
 	}
-	void createCubeMapFrom2dTexture(std::string textureName2d, std::string textureNameCube, TextureStore* textureStore);
+	void createCubeMapFrom2dTexture(std::string textureName2d, std::string textureNameCube);
 	void destroyImage(VkImage image, VkDeviceMemory imageMemory);
 	void destroyImageView(VkImageView imageView);
 

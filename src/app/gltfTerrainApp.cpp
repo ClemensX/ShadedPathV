@@ -96,7 +96,7 @@ void gltfTerrainApp::init() {
     //engine->sound.addWorldObject(knife);
     //engine->sound.changeSound(knife, "BACKGROUND_MUSIC");
     //engine->sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
-    prepareWindowOutput("Line App");
+    prepareWindowOutput("glTF Terrain App");
     engine->presentation.startUI();
 }
 

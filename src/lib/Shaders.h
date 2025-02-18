@@ -102,7 +102,7 @@ public:
 	UIShader uiShader;
 	PBRShader pbrShader;
 	//CubeShader cubeShader;
-	//BillboardShader billboardShader;
+	BillboardShader billboardShader;
 	//TerrainShader terrainShader;
 
 	// submit command buffers for current frame
