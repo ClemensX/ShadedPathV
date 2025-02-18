@@ -24,7 +24,7 @@ old infos:
 #include "DeviceCoordApp.h"
 #include "GeneratedTexturesApp.h"
 #include "gltfTerrainApp.h"
-//#include "gltfObjectsApp.h"
+#include "gltfObjectsApp.h"
 //#include "BillboardDemo.h"
 //#include "TextureViewer.h"
 //#include "LandscapeDemo1.h"
@@ -41,7 +41,8 @@ int main()
     //SimpleApp app; // vr ok (some stuttering - will not be investigated)
     //DeviceCoordApp app; // vr not supported
     //gltfTerrainApp app; // vr ok
-    GeneratedTexturesApp app;
+    //GeneratedTexturesApp app; // TODO: does not even work in 2D
+    gltfObjectsApp app;
 
     Log("main() start!\n");
     ShadedPathEngine engine;

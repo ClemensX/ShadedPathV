@@ -450,6 +450,7 @@ void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo)
 {
     // 1. step: aquire image, wait for aquire semaphore, then create the copy commands and execute them
     if (winfo->disabled) return;
+    if (winfo->glfw_window == nullptr) Error("no window available");
     auto& device = engine->globalRendering.device;
     auto& global = engine->globalRendering;
     uint32_t imageIndex;

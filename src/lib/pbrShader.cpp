@@ -82,6 +82,7 @@ void PBRShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
 	auto& sub = globalSubShaders[fr->frameIndex];
 	drawResult->commandBuffers[index++] = sub.commandBuffer;
 }
+
 void PBRShader::uploadToGPU(FrameResources& fr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
 	auto& sub = globalSubShaders[fr.frameIndex];
     sub.uploadToGPU(fr, ubo, ubo2);

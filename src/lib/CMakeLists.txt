@@ -8,7 +8,7 @@ set (SOURCES
   GameTime.cpp
   DirectImage.cpp
   Presentation.cpp
-  #CubeShader.cpp
+  CubeShader.cpp
   BillboardShader.cpp
   #TerrainShader.cpp
   UIShader.cpp

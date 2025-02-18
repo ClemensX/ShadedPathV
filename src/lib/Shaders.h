@@ -101,7 +101,7 @@ public:
 	LineShader lineShader;
 	UIShader uiShader;
 	PBRShader pbrShader;
-	//CubeShader cubeShader;
+	CubeShader cubeShader;
 	BillboardShader billboardShader;
 	//TerrainShader terrainShader;
 

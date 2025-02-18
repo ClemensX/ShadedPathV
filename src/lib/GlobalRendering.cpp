@@ -918,8 +918,7 @@ void GlobalRendering::createCubeMapFrom2dTexture(string textureName2d, string te
 
     endSingleTimeCommands(cmd);
 
-    assert(false);
-    ::TextureInfo* texture = nullptr; // textureStore->createTextureSlot(textureNameCube);
+    ::TextureInfo* texture = engine->textureStore.createTextureSlot(textureNameCube);
     // copy base ktx texture fields and the adapt for new cube map:
     texture->vulkanTexture = twoD->vulkanTexture;
     texture->vulkanTexture.deviceMemory = nullptr;

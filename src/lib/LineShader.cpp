@@ -114,6 +114,7 @@ void LineShader::addCurrentCommandBuffer(FrameResources& tr) {
 };
 
 void LineShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
+	if (!enabled) return;
 	int index = drawResult->getNextFreeCommandBufferIndex();
 	auto& perFrameSubShader = perFrameLineSubShaders[fr->frameIndex];
 	if (perFrameSubShader.drawCount != 0) {
@@ -137,12 +138,14 @@ void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResource
 
 void LineShader::clearLocalLines(FrameResources& tr)
 {
+	if (!enabled) return;
 	LineSubShader& pf = perFrameLineSubShaders[tr.frameIndex];
 	pf.vertices.clear();
 }
 
 void LineShader::addFixedGlobalLines(vector<LineDef>& linesToAdd)
 {
+	if (!enabled) return;
 	if (linesToAdd.size() == 0 && lines.size() == 0)
 		return;
 
@@ -151,6 +154,7 @@ void LineShader::addFixedGlobalLines(vector<LineDef>& linesToAdd)
 
 void LineShader::addOneTime(std::vector<LineDef>& linesToAdd, FrameResources& tr)
 {
+	if (!enabled) return;
 	LineSubShader& pf = perFrameLineSubShaders[tr.frameIndex];
 	//auto& lines = getInactiveAppDataSet(user)->oneTimeLines;
 	if (linesToAdd.size() == 0)

@@ -58,6 +58,7 @@ void BillboardSubShader::initSingle(FrameResources& tr, ShaderState& shaderState
 	handover.imageView = nullptr;
 	handover.descriptorSet = &descriptorSet;
 	handover.descriptorSet2 = &descriptorSet2;
+	handover.shader = billboardShader;
 	vulkanResources->createThreadResources(handover);
 	
 	billboardShader->createRenderPassAndFramebuffer(tr, shaderState, renderPass, framebuffer, framebuffer2);
