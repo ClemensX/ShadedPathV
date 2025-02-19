@@ -107,19 +107,6 @@ public:
 	// submit command buffers for current frame
 	void submitFrame(ThreadResources& tr);
 
-	// BackBufferImageDump: copy backbuffer to image file
-	// initiate before rendering first frame
-	// either all frames will be dumped (mainly for automated tests)
-	// or a single frame after calling backBufferImageDumpNextFrame()
-	// engine should be in single thread mode for image dumps
-	void initiateShader_BackBufferImageDump(bool dumpAll = true); // default: dump all frames
-	// write backbuffer image to file (during frame creation)
-	void executeBufferImageDump(ThreadResources& tr);
-	// dump next frame only
-	void backBufferImageDumpNextFrame() {
-		enabledImageDumpForNextFrame = true;
-	}
-
 	VkPipelineShaderStageCreateInfo createVertexShaderCreateInfo(VkShaderModule& shaderModule) {
 		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
 		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

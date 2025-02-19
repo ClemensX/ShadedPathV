@@ -169,6 +169,7 @@ public:
 
     // if app did not set world, we return nullptr
     World* getWorld() {
+        if (world == nullptr) Error("app did not set engine world reference. Use engine->setWorld() in init()");
         return world;
     }
 

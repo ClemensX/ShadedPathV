@@ -191,6 +191,7 @@ void CubeSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr)
 }
 
 void CubeShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
+	if (!enabled) return;
 	int index = drawResult->getNextFreeCommandBufferIndex();
 	auto& sub = globalSubShaders[fr->frameIndex];
 	drawResult->commandBuffers[index++] = sub.commandBuffer;
@@ -245,6 +246,7 @@ void CubeShader::setSkybox(string texID)
 
 CubeShader::~CubeShader()
 {
+	if (!enabled) return;
 	Log("CubeShader destructor\n");
 	if (!enabled) {
 		return;

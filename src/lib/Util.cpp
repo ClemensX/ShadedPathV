@@ -277,7 +277,6 @@ bool Spatial2D::isAllPointsSet()
     return true;
 }
 
-#if 0
 void Spatial2D::adaptLinesToWorld(std::vector<LineDef>& lines, World& world)
 {
     vec4 center = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -304,7 +303,6 @@ void Spatial2D::adaptLinesToWorld(std::vector<LineDef>& lines, World& world)
         l.end.z = -1.0f * static_cast<float>(startz + l.end.z * indexZfactor);
     }
 }
-#endif
 
 void Spatial2D::diamondSquare(float randomMagnitude, float randomDampening, int seed, int steps)
 {

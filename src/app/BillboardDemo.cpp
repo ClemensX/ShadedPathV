@@ -5,34 +5,25 @@
 using namespace std;
 using namespace glm;
 
-void BillboardDemo::run()
+void BillboardDemo::run(ContinuationInfo* cont)
 {
     Log("BillboardDemo started" << endl);
     {
+        AppSupport::setEngine(engine);
         Shaders& shaders = engine->shaders;
         // camera initialization
-        createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        createHMDCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        getFirstPersonCameraPositioner()->setMaxSpeed(5.0f);
-        initCamera();
+        initCamera(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        setMaxSpeed(5.0f);
+
         // engine configuration
         enableEventsAndModes();
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine->files.findAssetFolder("data");
-        engine->setMaxTextures(10);
-        //engine->setFrameCountLimit(1000);
         setHighBackbufferResolution();
-        //engine->setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
-        //engine->setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 960;//480;// 960;//1800;// 800;//3700; // 2500
-        engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Billboard Demo");
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 2000.0f);
 
-        engine->registerApp(this);
-        initEngine("BillboardDemo");
-
         engine->textureStore.generateBRDFLUT();
-        //this_thread::sleep_for(chrono::milliseconds(3000));
+
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
@@ -41,13 +32,13 @@ void BillboardDemo::run()
             .addShader(shaders.lineShader)  // enable to see zero cross and billboard debug lines
             //.addShader(shaders.pbrShader)
             ;
-        if (enableUI) shaders.addShader(shaders.uiShader);
+        //if (enableUI) shaders.addShader(shaders.uiShader);
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         shaders.initActiveShaders();
 
         // init app rendering:
         init();
-        eventLoop();
+        engine->eventLoop();
     }
     Log("BillboardDemo ended" << endl);
 }
@@ -137,10 +128,10 @@ void BillboardDemo::init() {
     engine->shaders.lineShader.addFixedGlobalLines(lines);
 
     // select texture by uncommenting:
-    engine->global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
-    //engine->global.createCubeMapFrom2dTexture("Knife1", "2dTextureCube");
-    //engine->global.createCubeMapFrom2dTexture("WaterBottle2", "2dTextureCube");
-    //engine->global.createCubeMapFrom2dTexture(engine->textureStore.BRDFLUT_TEXTURE_ID, "2dTextureCube"); // doesn't work (missing mipmaps? format?)
+    engine->globalRendering.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
+    //engine->globalRendering.createCubeMapFrom2dTexture("Knife1", "2dTextureCube");
+    //engine->globalRendering.createCubeMapFrom2dTexture("WaterBottle2", "2dTextureCube");
+    //engine->globalRendering.createCubeMapFrom2dTexture(engine->textureStore.BRDFLUT_TEXTURE_ID, "2dTextureCube"); // doesn't work (missing mipmaps? format?)
     engine->shaders.cubeShader.setFarPlane(1.0f); // cube around center
     engine->shaders.cubeShader.setSkybox("2dTextureCube");
 
@@ -148,25 +139,25 @@ void BillboardDemo::init() {
     //engine->shaders.pbrShader.initialUpload();
     //engine->shaders.cubeShader.initialUpload();
     engine->shaders.billboardShader.initialUpload();
+
+    prepareWindowOutput("Billboard Demo");
 }
 
-void BillboardDemo::drawFrame(ThreadResources& tr) {
-    updatePerFrame(tr);
-    engine->shaders.submitFrame(tr);
-}
-
-void BillboardDemo::updatePerFrame(ThreadResources& tr)
+void BillboardDemo::mainThreadHook()
 {
+}
+
+// prepare drawing, guaranteed single thread
+void BillboardDemo::prepareFrame(FrameResources* fr)
+{
+    FrameResources& tr = *fr;
     double seconds = engine->gameTime.getTimeSeconds();
-    if (old_seconds > 0.0f && old_seconds == seconds) {
-        Log("DOUBLE TIME" << endl);
-        return;
-    }
-    if (old_seconds > seconds) {
-        Log("INVERTED TIME" << endl);
+    if ((old_seconds > 0.0f && old_seconds == seconds) || old_seconds > seconds) {
+        Error("APP TIME ERROR - should not happen");
         return;
     }
     double deltaSeconds = seconds - old_seconds;
+
     updateCameraPositioners(deltaSeconds);
     old_seconds = seconds;
 
@@ -201,9 +192,42 @@ void BillboardDemo::updatePerFrame(ThreadResources& tr)
     applyViewProjection(bubo.view, bubo.proj, bubo2.view, bubo2.proj);
     engine->shaders.billboardShader.uploadToGPU(tr, bubo, bubo2);
     //Util::printMatrix(bubo.proj);
+
+    engine->shaders.clearShader.addCommandBuffers(fr, &fr->drawResults[0]); // put clear shader first
+}
+
+// draw from multiple threads
+void BillboardDemo::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
+{
+    if (topic == 0) {
+        engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
+        engine->shaders.cubeShader.addCommandBuffers(fr, drawResult);
+    }
+    else if (topic == 1) {
+        engine->shaders.billboardShader.addCommandBuffers(fr, drawResult);
+    }
+}
+
+void BillboardDemo::postFrame(FrameResources* fr)
+{
+    engine->shaders.endShader.addCommandBuffers(fr, fr->getLatestCommandBufferArray());
+}
+
+void BillboardDemo::processImage(FrameResources* fr)
+{
+    present(fr);
+}
+
+bool BillboardDemo::shouldClose()
+{
+    return shouldStopEngine;
 }
 
 void BillboardDemo::handleInput(InputState& inputState)
 {
+    if (inputState.windowClosed != nullptr) {
+        inputState.windowClosed = nullptr;
+        shouldStopEngine = true;
+    }
     AppSupport::handleInput(inputState);
 }

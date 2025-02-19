@@ -21,13 +21,13 @@ add_executable(app
    GeneratedTexturesApp.cpp
    gltfTerrainApp.cpp
    gltfObjectsApp.cpp
-#   BillboardDemo.cpp
-#   LandscapeDemo1.cpp
+   BillboardDemo.cpp
+   LandscapeDemo1.cpp
 #   LandscapeGenerator.cpp
    LineApp.cpp
    SimpleApp.cpp
 #   Incoming.cpp
-#   TextureViewer.cpp
+  TextureViewer.cpp
   SimpleMultiApp.cpp
   SimpleMultiWin.cpp
   ShadedPathV.cpp

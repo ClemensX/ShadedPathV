@@ -5,33 +5,26 @@
 using namespace std;
 using namespace glm;
 
-void TextureViewer::run()
+void TextureViewer::run(ContinuationInfo* cont)
 {
     Log("TextureViewer started" << endl);
     {
+        AppSupport::setEngine(engine);
         auto& shaders = engine->shaders;
         // camera initialization
         vec3 startPos = vec3(0.0f, 0.0f, 20.2f);
-        if (engine->reuseOldWindow) startPos.z += 50.0f;
-        createFirstPersonCameraPositioner(startPos, vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 1.0f, 0.0f));
-        createHMDCameraPositioner(vec3(0.0f, 0.0f, 1.2f), vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 1.0f, 0.0f));
-        getFirstPersonCameraPositioner()->setMaxSpeed(5.0f);
-        initCamera();
+        initCamera(startPos, vec3(0.0f, 0.0f, -1.0f), vec3(0.0f, 1.0f, 0.0f));
+        setMaxSpeed(5.0f);
+
         // engine configuration
         enableEventsAndModes();
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine->files.findAssetFolder("data");
-        engine->setMaxTextures(10);
-        //engine->setFixedPhysicalDeviceIndex(0);
         setHighBackbufferResolution();
-        int win_width = 960;//480;// 960;//1800;// 800;//3700; // 2500
-        engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Texture Viewer");
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 2000.0f);
 
-        engine->registerApp(this);
-        initEngine("TextureViewer");
-
         engine->textureStore.generateBRDFLUT();
+
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
@@ -40,7 +33,9 @@ void TextureViewer::run()
             //.addShader(shaders.lineShader)  // enable to see zero cross and billboard debug lines
             //.addShader(shaders.pbrShader)
             ;
+
         if (enableUI) shaders.addShader(shaders.uiShader);
+
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         shaders.initActiveShaders();
 
@@ -115,10 +110,10 @@ void TextureViewer::init() {
     engine->shaders.billboardShader.add(billboards);
 
     // select texture by uncommenting:
-    engine->global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
-    //engine->global.createCubeMapFrom2dTexture("Knife1", "2dTextureCube");
-    //engine->global.createCubeMapFrom2dTexture("WaterBottle2", "2dTextureCube");
-    //engine->global.createCubeMapFrom2dTexture(engine->textureStore.BRDFLUT_TEXTURE_ID, "2dTextureCube"); // doesn't work (missing mipmaps? format?)
+    engine->globalRendering.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
+    //engine->globalRendering.createCubeMapFrom2dTexture("Knife1", "2dTextureCube");
+    //engine->globalRendering.createCubeMapFrom2dTexture("WaterBottle2", "2dTextureCube");
+    //engine->globalRendering.createCubeMapFrom2dTexture(engine->textureStore.BRDFLUT_TEXTURE_ID, "2dTextureCube"); // doesn't work (missing mipmaps? format?)
     engine->shaders.cubeShader.setFarPlane(1.0f); // cube around center
     engine->shaders.cubeShader.setSkybox("2dTextureCube");
 
@@ -126,25 +121,26 @@ void TextureViewer::init() {
     //engine->shaders.pbrShader.initialUpload();
     //engine->shaders.cubeShader.initialUpload();
     engine->shaders.billboardShader.initialUpload();
+
+    prepareWindowOutput("Texture Viewer");
+    engine->presentation.startUI();
 }
 
-void TextureViewer::drawFrame(ThreadResources& tr) {
-    updatePerFrame(tr);
-    engine->shaders.submitFrame(tr);
-}
-
-void TextureViewer::updatePerFrame(ThreadResources& tr)
+void TextureViewer::mainThreadHook()
 {
+}
+
+// prepare drawing, guaranteed single thread
+void TextureViewer::prepareFrame(FrameResources* fr)
+{
+    FrameResources& tr = *fr;
     double seconds = engine->gameTime.getTimeSeconds();
-    if (old_seconds > 0.0f && old_seconds == seconds) {
-        Log("DOUBLE TIME" << endl);
-        return;
-    }
-    if (old_seconds > seconds) {
-        Log("INVERTED TIME" << endl);
+    if ((old_seconds > 0.0f && old_seconds == seconds) || old_seconds > seconds) {
+        Error("APP TIME ERROR - should not happen");
         return;
     }
     double deltaSeconds = seconds - old_seconds;
+
     updateCameraPositioners(deltaSeconds);
     old_seconds = seconds;
 
@@ -174,10 +170,43 @@ void TextureViewer::updatePerFrame(ThreadResources& tr)
     applyViewProjection(bubo.view, bubo.proj, bubo2.view, bubo2.proj);
     engine->shaders.billboardShader.uploadToGPU(tr, bubo, bubo2);
     //Util::printMatrix(bubo.proj);
+
+    engine->shaders.clearShader.addCommandBuffers(fr, &fr->drawResults[0]); // put clear shader first
+}
+
+// draw from multiple threads
+void TextureViewer::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
+{
+    if (topic == 0) {
+        //engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
+        engine->shaders.cubeShader.addCommandBuffers(fr, drawResult);
+    }
+    else if (topic == 1) {
+        engine->shaders.billboardShader.addCommandBuffers(fr, drawResult);
+    }
+}
+
+void TextureViewer::postFrame(FrameResources* fr)
+{
+    engine->shaders.endShader.addCommandBuffers(fr, fr->getLatestCommandBufferArray());
+}
+
+void TextureViewer::processImage(FrameResources* fr)
+{
+    present(fr);
+}
+
+bool TextureViewer::shouldClose()
+{
+    return shouldStopEngine;
 }
 
 void TextureViewer::handleInput(InputState& inputState)
 {
+    if (inputState.windowClosed != nullptr) {
+        inputState.windowClosed = nullptr;
+        shouldStopEngine = true;
+    }
     AppSupport::handleInput(inputState);
 }
 
@@ -198,6 +227,7 @@ void TextureViewer::buildCustomUI()
 {
     int n;
     bool useAutoCameraCheckbox;
+    bool vr = engine->isVR();
     if (!vr) {
         ImGui::Separator();
         ImGui::Text("Texture count: %d", textureNames.size());

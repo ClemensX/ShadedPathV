@@ -63,11 +63,17 @@ protected:
             activePositionerIsHMD = false;
         }
         this->camera = &camera2;
+        app_engine->setWorld(&world);
     }
     void initCamera(const glm::vec3& pos, const glm::vec3& target, const glm::vec3& up) {
         createFirstPersonCameraPositioner(pos, target, up);
         createHMDCameraPositioner(pos, target, up);
         initCamera();
+    }
+
+    void setMaxSpeed(float speed) {
+        fpPositioner.setMaxSpeed(speed);
+        hmdPositioner.setMaxSpeed(speed);
     }
 
     void updateCameraPositioners(double deltaSeconds) {

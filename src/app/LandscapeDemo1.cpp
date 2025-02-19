@@ -5,32 +5,25 @@
 using namespace std;
 using namespace glm;
 
-void LandscapeDemo::run()
+void LandscapeDemo::run(ContinuationInfo* cont)
 {
     Log("LandscapeDemo started" << endl);
     {
+        AppSupport::setEngine(engine);
         Shaders& shaders = engine->shaders;
         // camera initialization
-        createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        createHMDCameraPositioner(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        getFirstPersonCameraPositioner()->setMaxSpeed(5.0f);
-        initCamera();
+        initCamera(glm::vec3(0.0f, 0.0f, 1.2f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        setMaxSpeed(5.0f);
+
         // engine configuration
         enableEventsAndModes();
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine->files.findAssetFolder("data");
-        engine->setMaxTextures(20);
-        //engine->setFrameCountLimit(1000);
         setHighBackbufferResolution();
-        int win_width = 960;//480;// 960;//1800;// 800;//3700; // 2500
-        engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Landscape Demo");
-        //camera.saveProjection(perspective(glm::radians(45.0f), engine->getAspect(), 0.01f, 4300.0f));
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 4300.0f);
 
-        engine->registerApp(this);
-        initEngine("LandscapeDemo");
-
         engine->textureStore.generateBRDFLUT();
+
         // add shaders used in this app
         shaders
             .addShader(shaders.uiShader)
@@ -43,8 +36,6 @@ void LandscapeDemo::run()
             ;
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         shaders.initActiveShaders();
-        shaders.initiateShader_BackBufferImageDump(false); // enable image dumps upon request
-
 
         // init app rendering:
         init();
@@ -162,7 +153,7 @@ void LandscapeDemo::init() {
         engine->shaders.cubeShader.setSkybox("skyboxTexture");
         engine->shaders.cubeShader.setFarPlane(2000.0f);
     } else {
-        engine->global.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
+        engine->globalRendering.createCubeMapFrom2dTexture("2dTexture", "2dTextureCube");
         engine->shaders.cubeShader.setFarPlane(1.0f); // cube around center
         engine->shaders.cubeShader.setSkybox("2dTextureCube");
     }
@@ -172,25 +163,26 @@ void LandscapeDemo::init() {
     //engine->shaders.pbrShader.initialUpload();
     //engine->shaders.cubeShader.initialUpload();
     engine->shaders.billboardShader.initialUpload();
+
+    prepareWindowOutput("Landscape Demo");
+    engine->presentation.startUI();
 }
 
-void LandscapeDemo::drawFrame(ThreadResources& tr) {
-    updatePerFrame(tr);
-    engine->shaders.submitFrame(tr);
-}
-
-void LandscapeDemo::updatePerFrame(ThreadResources& tr)
+void LandscapeDemo::mainThreadHook()
 {
+}
+
+// prepare drawing, guaranteed single thread
+void LandscapeDemo::prepareFrame(FrameResources* fr)
+{
+    FrameResources& tr = *fr;
     double seconds = engine->gameTime.getTimeSeconds();
-    if (old_seconds > 0.0f && old_seconds == seconds) {
-        Log("DOUBLE TIME" << endl);
-        return;
-    }
-    if (old_seconds > seconds) {
-        Log("INVERTED TIME" << endl);
+    if ((old_seconds > 0.0f && old_seconds == seconds) || old_seconds > seconds) {
+        Error("APP TIME ERROR - should not happen");
         return;
     }
     double deltaSeconds = seconds - old_seconds;
+
     updateCameraPositioners(deltaSeconds);
     old_seconds = seconds;
 
@@ -226,10 +218,41 @@ void LandscapeDemo::updatePerFrame(ThreadResources& tr)
     engine->shaders.billboardShader.uploadToGPU(tr, bubo, bubo2);
     //Util::printMatrix(bubo.proj);
 
-    postUpdatePerFrame(tr);
+    engine->shaders.clearShader.addCommandBuffers(fr, &fr->drawResults[0]); // put clear shader first
+}
+
+// draw from multiple threads
+void LandscapeDemo::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
+{
+    if (topic == 0) {
+        engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
+        engine->shaders.cubeShader.addCommandBuffers(fr, drawResult);
+    }
+    else if (topic == 1) {
+        engine->shaders.billboardShader.addCommandBuffers(fr, drawResult);
+    }
+}
+
+void LandscapeDemo::postFrame(FrameResources* fr)
+{
+    engine->shaders.endShader.addCommandBuffers(fr, fr->getLatestCommandBufferArray());
+}
+
+void LandscapeDemo::processImage(FrameResources* fr)
+{
+    present(fr);
+}
+
+bool LandscapeDemo::shouldClose()
+{
+    return shouldStopEngine;
 }
 
 void LandscapeDemo::handleInput(InputState& inputState)
 {
+    if (inputState.windowClosed != nullptr) {
+        inputState.windowClosed = nullptr;
+        shouldStopEngine = true;
+    }
     AppSupport::handleInput(inputState);
 }
