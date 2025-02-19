@@ -98,11 +98,9 @@ public:
     // set up shader
     virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
     virtual void initSingle(FrameResources& tr, ShaderState& shaderState) override;
-    virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState) override;
     // create command buffers. One time auto called before rendering starts.
     // Also post init phase stuff goes here, like VulcanResources.updateDescriptorSets()
     virtual void createCommandBuffer(FrameResources& tr) override;
-    virtual void addCurrentCommandBuffer(FrameResources& tr) override;
     virtual void addCommandBuffers(FrameResources* fr, DrawResult* drawResult) override;
     virtual void destroyThreadResources(FrameResources& tr) override;
 

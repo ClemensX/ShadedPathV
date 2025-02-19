@@ -39,10 +39,6 @@ void PBRShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	//ug.allocateCommandBuffer(tr, &ug.commandBuffer, "PBR PERMANENT COMMAND BUFFER");
 }
 
-void PBRShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
-{
-}
-
 void PBRShader::initialUpload()
 {
 	// upload all meshes from store:
@@ -72,10 +68,6 @@ void PBRShader::createCommandBuffer(FrameResources& tr)
 	PBRSubShader& sub = globalSubShaders[tr.frameIndex];
 	sub.createGlobalCommandBufferAndRenderPass(tr);
 }
-
-void PBRShader::addCurrentCommandBuffer(FrameResources& tr) {
-	//tr.activeCommandBuffers.push_back(tr.pbrResources.commandBuffer);
-};
 
 void PBRShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
 	int index = drawResult->getNextFreeCommandBufferIndex();
@@ -110,10 +102,6 @@ PBRShader::~PBRShader()
 	vkDestroyShaderModule(device, vertShaderModule, nullptr);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
-}
-
-void PBRShader::destroyThreadResources(FrameResources& tr)
-{
 }
 
 // PBRSubShader

@@ -83,12 +83,8 @@ public:
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
 	// thread resources initialization
 	virtual void initSingle(FrameResources& tr, ShaderState& shaderState) override;
-	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState) override;
 	virtual void createCommandBuffer(FrameResources& tr) override;
-	virtual void addCurrentCommandBuffer(FrameResources& tr) override;
 	virtual void addCommandBuffers(FrameResources* fr, DrawResult* drawResult) override;
-	virtual void destroyThreadResources(FrameResources& tr) override;
-
 	virtual void createUpdateSet(GlobalUpdateElement& el) override;
 	virtual void updateGlobal(GlobalUpdateElement& currentSet) override;
 	virtual void freeUpdateResources(GlobalUpdateElement* updateSet);

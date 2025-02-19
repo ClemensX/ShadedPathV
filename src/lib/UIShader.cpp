@@ -33,24 +33,14 @@ void UIShader::initSingle(FrameResources& tr, ShaderState& shaderState)
     pf.allocateCommandBuffer(tr, name.c_str());
 }
 
-void UIShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
-{
-}
-
 void UIShader::createCommandBuffer(FrameResources& tr)
 {
 }
-
-void UIShader::addCurrentCommandBuffer(FrameResources& tr) {
-};
 
 void UIShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult)
 {
 }
 
-void UIShader::destroyThreadResources(FrameResources& tr)
-{
-}
 
 UIShader::~UIShader()
 {

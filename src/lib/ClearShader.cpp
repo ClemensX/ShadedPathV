@@ -32,12 +32,6 @@ void ClearShader::createCommandBuffer(FrameResources& tr)
 	sub.createGlobalCommandBufferAndRenderPass(tr);
 }
 
-void ClearShader::addCurrentCommandBuffer(FrameResources& tr)
-{
-	ClearSubShader& cs = clearSubShaders[tr.frameIndex];
-	//tr.activeCommandBuffers.push_back(cs.commandBuffer);
-};
-
 void ClearShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
 	int index = drawResult->getNextFreeCommandBufferIndex();
 	ClearSubShader& cs = clearSubShaders[fr->frameIndex];
@@ -55,10 +49,6 @@ ClearShader::~ClearShader()
 		sub.destroy();
 	}
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
-}
-
-void ClearShader::destroyThreadResources(FrameResources& tr)
-{
 }
 
 void ClearSubShader::init(ClearShader* parent, std::string debugName) {

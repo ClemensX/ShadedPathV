@@ -49,14 +49,11 @@ public:
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
 	// thread resources initialization
 	virtual void initSingle(FrameResources& tr, ShaderState& shaderState) override;
-	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState) override;
 	// create command buffers. One time auto called before rendering starts
 	// we create one command buffer for every mesh loaded
 	virtual void createCommandBuffer(FrameResources& tr) override;
 	// add the pre-computed command buffer for the current object
-	virtual void addCurrentCommandBuffer(FrameResources& tr) override;
 	virtual void addCommandBuffers(FrameResources* fr, DrawResult* drawResult) override;
-	virtual void destroyThreadResources(FrameResources& tr) override;
 
 	// per frame update of UBOs / MVPs
 	// outsideMode is for rendering a cube with cubemaps projected to its 6 sides
@@ -145,7 +142,4 @@ private:
 	ShadedPathEngine* engine = nullptr;
 	VkDevice device = nullptr;
 	FrameResources* frameResources = nullptr;
-};
-
-struct CubeThreadResources : ShaderThreadResources {
 };

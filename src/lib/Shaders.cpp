@@ -26,14 +26,6 @@ Shaders::Config& Shaders::Config::init()
 	return *this;
 }
 
-void Shaders::Config::gatherActiveCommandBuffers(FrameResources& tr)
-{
-	//tr.activeCommandBuffers.clear();
-	for (ShaderBase* shader : shaderList) {
-		shader->addCurrentCommandBuffer(tr);
-	}
-}
-
 VkShaderModule Shaders::createShaderModule(const vector<byte>& code)
 {
 	VkShaderModuleCreateInfo createInfo{};
@@ -67,10 +59,6 @@ void Shaders::createCommandBuffers(FrameResources& tr)
 
 void Shaders::checkShaderState(ShadedPathEngine& engine) {
 	config.checkShaderState();
-}
-
-void Shaders::gatherActiveCommandBuffers(FrameResources& tr) {
-	config.gatherActiveCommandBuffers(tr);
 }
 
 void Shaders::destroyThreadResources(FrameResources& tr)

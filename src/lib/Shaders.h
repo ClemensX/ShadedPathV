@@ -19,7 +19,6 @@ class Shaders : public EngineParticipant
 		Config& init();
 
 		void createCommandBuffers(FrameResources& tr);
-		void gatherActiveCommandBuffers(FrameResources& tr);
 
 		// destroy shader thread resources
 		void destroyThreadResources(FrameResources& tr);

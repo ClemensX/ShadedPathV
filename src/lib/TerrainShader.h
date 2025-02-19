@@ -63,7 +63,6 @@ public:
     virtual void initSingle(FrameResources& tr, ShaderState& shaderState) override;
     virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState) override;
     virtual void createCommandBuffer(FrameResources& tr) override;
-    virtual void addCurrentCommandBuffer(FrameResources& tr) override;
     virtual void destroyThreadResources(FrameResources& tr) override;
 
     // Additional methods specific to terrain rendering can be added here

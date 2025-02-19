@@ -122,10 +122,6 @@ void SimpleShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	}
 }
 
-void SimpleShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
-{
-}
-
 void SimpleShader::uploadToGPU(FrameResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
 	if (!enabled) Error("Shader disabled. Calling methods on it is not allowed.");
 	auto& str = subFrameResources[tr.frameIndex]; //shortcut to shader thread resources
@@ -189,11 +185,6 @@ void SimpleShader::createCommandBuffer(FrameResources& tr)
 		Error("failed to record triangle command buffer!");
 	}
 }
-
-void SimpleShader::addCurrentCommandBuffer(FrameResources& tr) {
-	auto& str = subFrameResources[tr.frameIndex]; //shortcut to shader thread resources
-	//tr.activeCommandBuffers.push_back(str.commandBuffer);
-};
 
 void SimpleShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
 	int index = drawResult->getNextFreeCommandBufferIndex();

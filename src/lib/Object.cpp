@@ -155,8 +155,20 @@ const vector<MeshInfo*> &MeshStore::getSortedList()
 	return sortedList;
 }
 
+// we either have single meshes in meshes or collections in meshCollections, delete all with flag available == true
 MeshStore::~MeshStore()
 {
+	for (auto& coll : meshCollections) {
+		if (coll.available) {
+            for (auto& obj : coll.meshInfos) {
+				vkDestroyBuffer(engine->globalRendering.device, obj->vertexBuffer, nullptr);
+				vkFreeMemory(engine->globalRendering.device, obj->vertexBufferMemory, nullptr);
+				vkDestroyBuffer(engine->globalRendering.device, obj->indexBuffer, nullptr);
+				vkFreeMemory(engine->globalRendering.device, obj->indexBufferMemory, nullptr);
+                obj->available = false;
+            }
+		}
+	}
 	for (auto& mapobj : meshes) {
 		if (mapobj.second.available) {
 			auto& obj = mapobj.second;
@@ -166,7 +178,6 @@ MeshStore::~MeshStore()
 			vkFreeMemory(engine->globalRendering.device, obj.indexBufferMemory, nullptr);
 		}
 	}
-
 }
 
 WorldObject::WorldObject() {

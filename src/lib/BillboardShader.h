@@ -105,11 +105,8 @@ public:
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
 	// thread resources initialization
 	virtual void initSingle(FrameResources& tr, ShaderState& shaderState) override;
-	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState) override;
 	virtual void createCommandBuffer(FrameResources& tr) override;
-	virtual void addCurrentCommandBuffer(FrameResources& tr) override;
 	virtual void addCommandBuffers(FrameResources* fr, DrawResult* drawResult) override;
-	virtual void destroyThreadResources(FrameResources& tr) override;
 
 	// add billboards - they will never  be removed
 	void add(std::vector<BillboardDef>& billboardsToAdd);

@@ -239,18 +239,10 @@ void BillboardSubShader::uploadToGPU(FrameResources& tr, BillboardShader::Unifor
 
 }
 
-void BillboardShader::addCurrentCommandBuffer(FrameResources& tr) {
-	//tr.activeCommandBuffers.push_back(tr.billboardResources.commandBuffer);
-};
-
 void BillboardShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
 	int index = drawResult->getNextFreeCommandBufferIndex();
 	auto& sub = globalSubShaders[fr->frameIndex];
 	drawResult->commandBuffers[index++] = sub.commandBuffer;
-}
-
-void BillboardShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
-{
 }
 
 void BillboardShader::add(std::vector<BillboardDef>& billboardsToAdd)
@@ -304,10 +296,6 @@ void BillboardSubShader::init(BillboardShader* parent, std::string debugName) {
 	engine = billboardShader->engine;
 	device = engine->globalRendering.device;
 	Log("BillboardSubShader init: " << debugName.c_str() << std::endl);
-}
-
-void BillboardShader::destroyThreadResources(FrameResources& tr)
-{
 }
 
 void BillboardSubShader::destroy()

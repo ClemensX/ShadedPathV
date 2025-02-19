@@ -59,11 +59,6 @@ void LineShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	sub.initSingle(tr, shaderState);
 }
 
-void LineShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
-{
-}
-
-
 void LineShader::uploadFixedGlobalLines()
 {
 	if (!enabled) return;
@@ -96,22 +91,6 @@ void LineShader::createCommandBuffer(FrameResources& tr)
 
 	sub.createGlobalCommandBufferAndRenderPass(tr);
 }
-
-void LineShader::addCurrentCommandBuffer(FrameResources& tr) {
-	auto& perFrameSubShader = perFrameLineSubShaders[tr.frameIndex];
-	if (perFrameSubShader.drawCount != 0) {
-		//tr.activeCommandBuffers.push_back(perFrameSubShader.commandBuffer);
-	}
-	auto& globalSubShader = globalLineSubShaders[tr.frameIndex];
-	if (globalSubShader.drawCount != 0) {
-		//tr.activeCommandBuffers.push_back(globalSubShader.commandBuffer);
-	}
-	LineSubShader& ug = globalUpdateLineSubShaders[tr.frameIndex];
-	if (ug.active) {
-		//tr.activeCommandBuffers.push_back(ug.commandBuffer);
-	}
-
-};
 
 void LineShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
 	if (!enabled) return;
@@ -285,12 +264,6 @@ LineShader::~LineShader()
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-}
-
-void LineShader::destroyThreadResources(FrameResources& tr)
-{
-	if (engine->isStereo()) {
-	}
 }
 
 // LineSubShader

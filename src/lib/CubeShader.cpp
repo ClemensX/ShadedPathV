@@ -124,10 +124,6 @@ void CubeSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	}
 }
 
-void CubeShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
-{
-}
-
 void CubeShader::createCommandBuffer(FrameResources& tr)
 {
 	CubeSubShader& sub = globalSubShaders[tr.frameIndex];
@@ -194,9 +190,6 @@ void CubeSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr)
 	}
 }
 
-void CubeShader::addCurrentCommandBuffer(FrameResources& tr) {
-};
-
 void CubeShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
 	int index = drawResult->getNextFreeCommandBufferIndex();
 	auto& sub = globalSubShaders[fr->frameIndex];
@@ -250,36 +243,6 @@ void CubeShader::setSkybox(string texID)
 	}
 }
 
-void CubeShader::createSkyboxTextureDescriptors()
-{
-	VkDescriptorSetAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = descriptorPool;
-	allocInfo.descriptorSetCount = 1;
-	//allocInfo.pSetLayouts = &descriptorSetLayoutTexture;
-	//VkResult res = vkAllocateDescriptorSets(device, &allocInfo, &mesh->descriptorSet);
-	//if (res != VK_SUCCESS) {
-	//	Error("failed to allocate descriptor sets!");
-	//}
-	//engine->util.debugNameObjectDescriptorSet(mesh->descriptorSet, "Mesh Texture Descriptor Set");
-	//// Descriptor
-	//array<VkWriteDescriptorSet, 1> descriptorWrites{};
-	//// populate descriptor set:
-	//VkDescriptorImageInfo imageInfo0{};
-	//imageInfo0.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	//imageInfo0.imageView = mesh->textureInfos[0]->imageView;
-	//imageInfo0.sampler = global->textureSampler;
-
-	//descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	//descriptorWrites[0].dstSet = mesh->descriptorSet;
-	//descriptorWrites[0].dstBinding = 0;
-	//descriptorWrites[0].dstArrayElement = 0;
-	//descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	//descriptorWrites[0].descriptorCount = 1;
-	//descriptorWrites[0].pImageInfo = &imageInfo0;
-	//vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-}
-
 CubeShader::~CubeShader()
 {
 	Log("CubeShader destructor\n");
@@ -295,10 +258,6 @@ CubeShader::~CubeShader()
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 	vkDestroyBuffer(device, vertexBuffer, nullptr);
 	vkFreeMemory(device, vertexBufferMemory, nullptr);
-}
-
-void CubeShader::destroyThreadResources(FrameResources& tr)
-{
 }
 
 void CubeSubShader::init(CubeShader* parent, std::string debugName) {

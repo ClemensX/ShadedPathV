@@ -112,17 +112,16 @@ public:
 	virtual void initSingle(FrameResources& tr, ShaderState& shaderState) = 0;
 
 	// finish shader initialization
-	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderSate) = 0;
+	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderSate) {};
 
 	// destroy thread local shader resources
-	virtual void destroyThreadResources(FrameResources& tr) = 0;
+	virtual void destroyThreadResources(FrameResources& tr) {};
 
 	// create command buffers. One time auto called before rendering starts.
 	// Also post init phase stuff goes here, like VulcanResources.updateDescriptorSets()
 	virtual void createCommandBuffer(FrameResources& tr) = 0;
 
 	// add current command buffers
-	virtual void addCurrentCommandBuffer(FrameResources& tr) = 0;
     virtual void addCommandBuffers(FrameResources* tr, DrawResult* drawResult) = 0;
 
 	// Base class methodas that can be used in the subclasses

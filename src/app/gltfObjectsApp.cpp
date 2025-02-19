@@ -13,6 +13,9 @@ void gltfObjectsApp::run(ContinuationInfo* cont)
         auto& shaders = engine->shaders;
         // camera initialization
         initCamera(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        getFirstPersonCameraPositioner()->setMaxSpeed(0.1f);
+        getHMDCameraPositioner()->setMaxSpeed(0.1f);
+
         // engine configuration
         enableEventsAndModes();
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
