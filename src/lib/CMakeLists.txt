@@ -25,6 +25,7 @@ set (SOURCES
   Path.cpp
   Camera.cpp
   Object.cpp
+  Sound.cpp
   gltf.cpp
   imgui/imgui_demo.cpp
   imgui/imgui_draw.cpp

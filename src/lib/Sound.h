@@ -46,4 +46,5 @@ public:
     void setSoundRolloff(std::string id, float rolloff);
 	void lowBackgroundMusicVolume(bool volumeDown = true);
 	void changeSound(WorldObject* wo, std::string soundId);
+    bool enabled = false;
 };

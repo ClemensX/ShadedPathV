@@ -40,7 +40,7 @@ public:
         util(this),
         vr(this),
         objectStore(&meshStore),
-//        sound(*this),
+        sound(*this),
         limiter(60.0f)
     {
         Log("Engine c'tor\n");
@@ -91,6 +91,7 @@ public:
     int getParallelAppDrawCalls() { return appDrawCalls; }
     bool isEnableUI() { return enableUI; }
     bool isEnforceVR() { return vrEnforce; }
+    bool isSoundEnabled() { return enableSound; }
 
     bool isMainThread();
     void log_current_thread();
@@ -233,7 +234,7 @@ public:
     TextureStore textureStore;
     MeshStore meshStore;
     WorldObjectStore objectStore;
-    //Sound sound;
+    Sound sound;
 
     // non-Vulkan members
     Files files;
@@ -283,7 +284,6 @@ private:
     bool vrEnforce = false;
     bool stereoPresentation = false;
     //bool meshShaderEnabled = false;
-    bool soundEnabled = false;
     bool singleQueueMode = false;
     int fixedPhysicalDeviceIndex = -1;
     World* world = nullptr;

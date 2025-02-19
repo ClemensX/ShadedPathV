@@ -335,7 +335,7 @@ double static const PI_quarter = PI / 4.0;
 #include "TerrainShader.h"
 #include "gltf.h"
 #include "Object.h"
-//#include "Sound.h"
+#include "Sound.h"
 #include "ui.h"
 #include "UIShader.h"
 #include "Shaders.h"

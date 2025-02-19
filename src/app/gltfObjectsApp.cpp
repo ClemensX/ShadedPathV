@@ -43,6 +43,7 @@ void gltfObjectsApp::run(ContinuationInfo* cont)
 }
 
 void gltfObjectsApp::init() {
+    engine->sound.init();
     // add some lines:
     float aspectRatio = engine->getAspect();
     float plus = 0.0f;
@@ -100,12 +101,12 @@ void gltfObjectsApp::init() {
 
     //engine->shaders.lineShader.initialUpload();
     engine->shaders.pbrShader.initialUpload();
-    //// load and play music
-    //engine->sound.openSoundFile("power.ogg", "BACKGROUND_MUSIC", true);
-    ////engine->sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 1.0f, 6000);
-    //// add sound to object
-    //engine->sound.addWorldObject(bottle);
-    //engine->sound.changeSound(bottle, "BACKGROUND_MUSIC");
+    // load and play music
+    engine->sound.openSoundFile("power.ogg", "BACKGROUND_MUSIC", true);
+    //engine->sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 1.0f, 6000);
+    // add sound to object
+    engine->sound.addWorldObject(bottle);
+    engine->sound.changeSound(bottle, "BACKGROUND_MUSIC");
     prepareWindowOutput("glTF Objects App");
     engine->presentation.startUI();
 }
@@ -219,6 +220,9 @@ void gltfObjectsApp::drawFrame(FrameResources* fr, int topic, DrawResult* drawRe
     if (topic == 0) {
         engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
         engine->shaders.cubeShader.addCommandBuffers(fr, drawResult);
+        if (engine->sound.enabled) {
+            engine->sound.Update(camera);
+        }
     }
     else if (topic == 1) {
         engine->shaders.pbrShader.addCommandBuffers(fr, drawResult);
