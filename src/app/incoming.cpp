@@ -5,33 +5,30 @@
 using namespace std;
 using namespace glm;
 
-void Incoming::run()
+void Incoming::run(ContinuationInfo* cont)
 {
     Log("Incoming started" << endl);
     {
+        AppSupport::setEngine(engine);
         auto& shaders = engine->shaders;
         // camera initialization
         vec3 camStart(5.38f, 58.7576f, 5.30f);
         initCamera(camStart, vec3(0.0f, 50.0f, -100.0f), vec3(0.0f, 1.0f, 0.0f));
-        getFirstPersonCameraPositioner()->setMaxSpeed(15.0f);
+        setMaxSpeed(15.0f);
+
         if (enableIntersectTest) {
             intersectTestLine.color = Colors::Red;
             intersectTestLine.start = camStart + vec3(0.5f, -0.3f, 0.0f);
             intersectTestLine.end = camStart + vec3(0.5f, -0.3f, -1.0f);
         }
+
         // engine configuration
         enableEventsAndModes();
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine->files.findAssetFolder("data");
-        engine->setMaxTextures(50);
         //engine->setFrameCountLimit(1000);
         setHighBackbufferResolution();
-        int win_width = 1800;//480;// 960;//1800;// 800;//3700; // 2500;
-        engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Incoming");
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.10f, 2000.0f);
-
-        engine->registerApp(this);
-        initEngine("Incoming");
 
         engine->textureStore.generateBRDFLUT();
 
@@ -92,6 +89,7 @@ void Incoming::addRandomRockFormations(RockWave waveName, std::vector<WorldObjec
 }
 
 void Incoming::init() {
+    engine->sound.init();
     bool debugObjects = false; // false to disable all helper objects
     float aspectRatio = engine->getAspect();
 
@@ -177,7 +175,7 @@ void Incoming::init() {
     engine->sound.openSoundFile("single_gun_shot_two.ogg", "SHOOT_GUN");
 
     // add sound to object
-    if (enableSound) {
+    if (engine->isSoundEnabled()) {
         engine->sound.addWorldObject(gun);
         //engine->sound.changeSound(gun, "BACKGROUND_MUSIC");
         //engine->sound.setSoundRolloff("BACKGROUND_MUSIC", 0.1f);
@@ -200,31 +198,27 @@ void Incoming::init() {
     if (game.isGamePhase(PhasePrepare)) {
         engine->sound.playSound("ANNOUNCE_UNDER_ATTACK", SoundCategory::EFFECT, 200.0f, 4000);
     }
+    prepareWindowOutput("Incoming");
+    engine->presentation.startUI();
 }
 
-void Incoming::drawFrame(ThreadResources& tr) {
-    updatePerFrame(tr);
-    engine->shaders.submitFrame(tr);
-}
-
-
-void Incoming::updatePerFrame(ThreadResources& tr)
+void Incoming::mainThreadHook()
 {
+}
+
+// prepare drawing, guaranteed single thread
+void Incoming::prepareFrame(FrameResources* fr)
+{
+    FrameResources& tr = *fr;
     double seconds = engine->gameTime.getTimeSeconds();
-    if (old_seconds > 0.0f && old_seconds == seconds) {
-        Log("DOUBLE TIME" << endl);
-        //tr.discardFrame = true;
-        return;
-    }
-    if (old_seconds > seconds) {
-        Log("INVERTED TIME" << endl);
-        //tr.discardFrame = true;
+    if ((old_seconds > 0.0f && old_seconds == seconds) || old_seconds > seconds) {
+        Error("APP TIME ERROR - should not happen");
         return;
     }
     double deltaSeconds = seconds - old_seconds;
-    old_seconds = seconds;
 
     updateCameraPositioners(deltaSeconds);
+    old_seconds = seconds;
 
     // lines
     if (enableLines) {
@@ -382,11 +376,45 @@ void Incoming::updatePerFrame(ThreadResources& tr)
     }
 
 
-    postUpdatePerFrame(tr);
+    engine->shaders.clearShader.addCommandBuffers(fr, &fr->drawResults[0]); // put clear shader first
+}
+
+// draw from multiple threads
+void Incoming::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
+{
+    if (topic == 0) {
+        engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
+        engine->shaders.cubeShader.addCommandBuffers(fr, drawResult);
+        if (engine->sound.enabled) {
+            engine->sound.Update(camera);
+        }
+    }
+    else if (topic == 1) {
+        engine->shaders.pbrShader.addCommandBuffers(fr, drawResult);
+    }
+}
+
+void Incoming::postFrame(FrameResources* fr)
+{
+    engine->shaders.endShader.addCommandBuffers(fr, fr->getLatestCommandBufferArray());
+}
+
+void Incoming::processImage(FrameResources* fr)
+{
+    present(fr);
+}
+
+bool Incoming::shouldClose()
+{
+    return shouldStopEngine;
 }
 
 void Incoming::handleInput(InputState& inputState)
 {
+    if (inputState.windowClosed != nullptr) {
+        inputState.windowClosed = nullptr;
+        shouldStopEngine = true;
+    }
     auto key = inputState.key;
     auto action = inputState.action;
     auto mods = inputState.mods;

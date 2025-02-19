@@ -28,7 +28,7 @@ old infos:
 #include "BillboardDemo.h"
 #include "TextureViewer.h"
 #include "LandscapeDemo1.h"
-//#include "incoming.h"
+#include "incoming.h"
 //#include "LandscapeGenerator.h"
 
 
@@ -42,10 +42,11 @@ int main()
     //DeviceCoordApp app; // vr not supported
     //gltfTerrainApp app; // vr ok
     //GeneratedTexturesApp app; // TODO: does not even work in 2D
-    gltfObjectsApp app; // vr ok, also skybox
+    //gltfObjectsApp app; // vr ok, also skybox
     //BillboardDemo app; // vr ok
     //TextureViewer app; // vr ok
     //LandscapeDemo app; // vr ok
+    Incoming app;
 
     Log("main() start!\n");
     ShadedPathEngine engine;

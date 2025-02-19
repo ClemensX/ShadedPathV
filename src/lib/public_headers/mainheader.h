@@ -343,6 +343,7 @@ double static const PI_quarter = PI / 4.0;
 #include "structs.h"
 #include "Path.h"
 #include "World.h"
+#include "Game.h"
 
 //#include "EngineParticipant.h"
 //#include "Files.h"

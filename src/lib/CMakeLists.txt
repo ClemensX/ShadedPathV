@@ -23,6 +23,7 @@ set (SOURCES
   VulkanResources.cpp
   World.cpp
   Path.cpp
+  Game.cpp
   Camera.cpp
   Object.cpp
   Sound.cpp
