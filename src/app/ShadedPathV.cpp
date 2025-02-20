@@ -37,7 +37,7 @@ int main()
     //mainSimpleMultiWin(); return 0; // use with care, see notes in SimpleMultiWin.h
     //mainSimpleMultiApp(); return 0;
 
-    //LineApp app; // vr ok
+    LineApp app; // vr ok
     //SimpleApp app; // vr ok (some stuttering - will not be investigated)
     //DeviceCoordApp app; // vr not supported
     //gltfTerrainApp app; // vr ok
@@ -46,7 +46,7 @@ int main()
     //BillboardDemo app; // vr ok
     //TextureViewer app; // vr ok
     //LandscapeDemo app; // vr ok
-    Incoming app;
+    //Incoming app;
 
     Log("main() start!\n");
     ShadedPathEngine engine;

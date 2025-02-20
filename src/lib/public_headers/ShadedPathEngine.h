@@ -13,7 +13,9 @@ public:
     // called form main thread, synchronized, for things like window mgmt.
     // be very brief here, as this will block the main thread
     virtual void mainThreadHook() {};
+    virtual void run(ContinuationInfo* cont = nullptr) {};
     virtual void handleInput(InputState& inputState) {};
+    virtual void backgroundWork() {};
     virtual void prepareFrame(FrameResources* fi) {};
     // draw Frame depending on topic. is in range 0..appDrawCalls-1
     // each topic will be called in parallel threads
@@ -24,7 +26,6 @@ public:
     virtual void processImage(FrameResources* fi) {};
     virtual void buildCustomUI() {};
     virtual bool shouldClose() { return true; };
-    virtual void run(ContinuationInfo* cont = nullptr) {};
 protected:
     double old_seconds = 0.0f;
 };
@@ -256,6 +257,19 @@ public:
     std::array<FrameResources,2>& getFrameResources() {
         return frameInfos;
     }
+    // unsafe check if background thread is available - you still must do a reservation
+    bool isBackgroundThreadAvailable() {
+        return backgroundThreadAvailable;
+    }
+    // reserve background thread. If false is returned the thread was not available
+    // backgroundWork() in app code may be immediately called, even before this method returns,
+    // so make sure all is prepared before making a reservation
+    bool reserveBackgroundThread() {
+        if (!backgroundThreadAvailable) return false;
+        backgroundThreadAvailable = false;
+        backgroundThreadQueue.push(&backRes);
+        return true;
+    }
 private:
 
     // bool configuration flags:
@@ -289,13 +303,16 @@ private:
     World* world = nullptr;
     std::vector<GPUImage> images;
     // thread support:
-    // main threads for global things like QueueSubmit thread
+    // main threads for global things like QueueSubmit thread and background thread
     ThreadGroup threadsMain;
     // worker threads for rendering and other activities during frame generation
     ThreadGroup* threadsWorker = nullptr;
     RenderQueue queue;
+    RenderQueue backgroundThreadQueue;
+    std::atomic<bool> backgroundThreadAvailable = true;
     bool queueThreadFinished = false;
     QueueSubmitResources qsr;
+    QueueSubmitResources backRes;
 
     //std::future<void>* workerFutures = nullptr;
     std::vector<std::future<void>> workerFutures;

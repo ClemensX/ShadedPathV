@@ -18,6 +18,7 @@ public:
     void processImage(FrameResources* fi) override;
     bool shouldClose() override;
     void handleInput(InputState& inputState) override;
+    void backgroundWork() override;
 private:
     // implement square formed of lines
     // it is increased on every call by one more square slightly above the others
@@ -26,5 +27,6 @@ private:
     float plus = 0.0f;
     bool shouldStopEngine = false;
     long frameNum = 0;
+    int updatesPending = 0;
 };
 

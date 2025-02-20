@@ -200,11 +200,21 @@ void ShadedPathEngine::prepareDrawing()
         qsr.renderThreadContinueQueue.push(0);
         startQueueSubmitThread();
         startRenderThread();
-        //startUpdateThread();
+        startUpdateThread();
     }
     //for (ThreadResources& tr : threadResources) {
     //    shaders.createCommandBufferBackBufferImageDump(tr);
     //}
+}
+
+void ShadedPathEngine::startUpdateThread()
+{
+    if (!initialized) {
+        Error("cannot start background thread: pipeline not initialized\n");
+        return;
+    }
+    // one queue submit thread for all threads:
+    threadsMain.addThread(ThreadCategory::DrawQueueSubmit, "background_render", runUpdateThread, this);
 }
 
 void ShadedPathEngine::startQueueSubmitThread()
@@ -446,6 +456,8 @@ void ShadedPathEngine::runQueueSubmit(ShadedPathEngine* engine_instance)
         //v->renderThreadContinue->notify_one();
         v->renderThreadContinueQueue.push(0);
     }
+    // kill background thread
+    engine_instance->backgroundThreadQueue.push(nullptr);
     //engine_instance->setRunning(false);
     LogF("run QueueSubmit end " << endl);
     engine_instance->queueThreadFinished = true;
@@ -487,3 +499,24 @@ void ShadedPathEngine::runDrawFrame(ShadedPathEngine* engine_instance)
     //tr->threadFinished = true;
 }
 
+void ShadedPathEngine::runUpdateThread(ShadedPathEngine* engine_instance)
+{
+    LogF("run Update Thread start " << endl);
+    while (engine_instance->shouldClose() == false) {
+        auto v = engine_instance->backgroundThreadQueue.pop();
+        if (v == nullptr) {
+            LogF("engine shutdown" << endl);
+            break;
+        }
+        LogCondF(LOG_QUEUE, "backgroun thread woken " << endl);
+        if (engine_instance->backgroundThreadAvailable) {
+            Error("Background thread should already be reserver.");
+        }
+        engine_instance->app->backgroundWork();
+        engine_instance->backgroundThreadAvailable = true;
+    }
+    //engine_instance->setRunning(false);
+    LogF("run Update Thread end " << endl);
+    engine_instance->queueThreadFinished = true;
+
+}

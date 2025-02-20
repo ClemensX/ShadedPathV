@@ -134,11 +134,13 @@ public:
 	void reuseUpdateElement(LineShaderUpdateElement* el);
 	// single thread methods to change current global update:
 	void applyGlobalUpdate(LineSubShader& updateShader, FrameResources& tr, GlobalUpdateElement* updateSet);
+	// called from app.prepareFrame(), we are single threaded there
+	void applyGlobalUpdate(FrameResources& tr);
 	std::vector<LineShader::Vertex> verticesPermanent;
 
 private:
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
-
+    LineShaderUpdateElement updateElement = {}; // copied to activeUpdateElement in sub shader
 
 	int drawAddLinesSize = 0;
 
@@ -154,6 +156,7 @@ private:
 	VkDeviceMemory vertexBufferMemoryUpdates = nullptr;
 	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;
+    int oldUpdateInUse = 0; // count down from 2 to 0, then we can free old update resources because no old update element is still in use
 
 	// util methods
 public:
@@ -164,7 +167,7 @@ public:
 	void prepareAddLines(FrameResources& tr);
 
 	// add lines permanently via update thread
-	void addPermament(std::vector<LineDef>& linesToAdd, FrameResources& tr);
+	void addPermament(std::vector<LineDef>& linesToAdd);
 
 	static void addCross(std::vector<LineDef>& lines, glm::vec3 pos, glm::vec4 color) {
 		static float oDistance = 5.0f;
@@ -250,6 +253,7 @@ public:
 	VkDeviceMemory vertexBufferMemoryLocal = nullptr;
 	bool active = false;
 	long updateNumber = -1; // matches update number in GlobalUpdateElement, for knowing which global update has been applied
+	LineShaderUpdateElement activeUpdateElement = {}; // vertex buffer and memory in use for global update
 
 private:
 	LineShader* lineShader = nullptr;

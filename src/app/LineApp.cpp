@@ -129,27 +129,37 @@ void LineApp::prepareFrame(FrameResources* fr)
         if (tr.frameNum == 11) {
             // single update
             increaseLineStack(permlines);
-            engine->shaders.lineShader.addPermament(permlines, tr);
+            engine->shaders.lineShader.addPermament(permlines);
         }
         if (tr.frameNum == 100) {
             // single update
             increaseLineStack(permlines);
-            engine->shaders.lineShader.addPermament(permlines, tr);
+            engine->shaders.lineShader.addPermament(permlines);
         }
         if (tr.frameNum == 200) {
             // single update
             increaseLineStack(permlines);
-            engine->shaders.lineShader.addPermament(permlines, tr);
+            engine->shaders.lineShader.addPermament(permlines);
         }
     }
     else {
         if ((tr.frameNum + 9) % 10 == 0) {
+            bool back = engine->reserveBackgroundThread();
             // global update
             //increaseLineStack(permlines);
             //engine->shaders.lineShader.addPermament(permlines, tr);
         }
+        if (tr.frameNum == 100) {
+            //bool back = engine->reserveBackgroundThread();
+            //if (back) {
+            //    Log("LineApp background work reserved\n");
+            //}
+        }
     }
-
+    if (updatesPending > 0) {
+        engine->shaders.lineShader.applyGlobalUpdate(tr);
+        updatesPending--;
+    }
     engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
 
     //logCameraPosition();
@@ -216,6 +226,21 @@ void LineApp::increaseLineStack(std::vector<LineDef>& lines)
         lines.push_back(ld);
     }
 	//Log("Line stack increased to " << currentLineStackCount << endl);
+}
+
+void LineApp::backgroundWork()
+{
+    if (updatesPending > 0) {
+        Log("WARNING: LineApp backgroundWork update pending\n");
+        return;
+    }
+    //Log("LineApp backgroundWork\n");
+    //this_thread::sleep_for(chrono::milliseconds(4000));
+    vector<LineDef> permlines;
+    increaseLineStack(permlines);
+    engine->shaders.lineShader.addPermament(permlines);
+    updatesPending = 2; // each frame needs to update
+    //Log("LineApp backgroundWork done\n");
 }
 
 void LineApp::handleInput(InputState& inputState)
