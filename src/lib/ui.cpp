@@ -41,7 +41,7 @@ void UI::init(ShadedPathEngine* engine)
         pool_info.maxSets = 1000 * IM_ARRAYSIZE(pool_sizes);
         pool_info.poolSizeCount = (uint32_t)IM_ARRAYSIZE(pool_sizes);
         pool_info.pPoolSizes = pool_sizes;
-        if (vkCreateDescriptorPool(engine->global.device, &pool_info, nullptr, &g_DescriptorPool) != VK_SUCCESS) {
+        if (vkCreateDescriptorPool(engine->globalRendering.device, &pool_info, nullptr, &g_DescriptorPool) != VK_SUCCESS) {
             Error("Cannot create DescriptorPool for DearImGui");
         }
     }
@@ -49,7 +49,7 @@ void UI::init(ShadedPathEngine* engine)
     {
         // attachment
         VkAttachmentDescription colorAttachment{};
-        colorAttachment.format = engine->global.ImageFormat;
+        colorAttachment.format = engine->globalRendering.ImageFormat;
         colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
         colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
         colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -86,32 +86,32 @@ void UI::init(ShadedPathEngine* engine)
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        if (vkCreateRenderPass(engine->global.device, &renderPassInfo, nullptr, &imGuiRenderPass) != VK_SUCCESS) {
+        if (vkCreateRenderPass(engine->globalRendering.device, &renderPassInfo, nullptr, &imGuiRenderPass) != VK_SUCCESS) {
             Error("failed to create render pass!");
         }
     }
 
     // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForVulkan(engine->presentation.window, true);
+    WindowInfo* winfo = engine->presentation.windowInfo;
+    ImGui_ImplGlfw_InitForVulkan(winfo->glfw_window, true);
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = engine->global.vkInstance;
-    init_info.PhysicalDevice = engine->global.physicalDevice;
-    init_info.Device = engine->global.device;
-    init_info.QueueFamily = engine->global.familyIndices.graphicsFamily.value();
-    init_info.Queue = engine->global.graphicsQueue;
+    init_info.Instance = engine->globalRendering.vkInstance;
+    init_info.PhysicalDevice = engine->globalRendering.physicalDevice;
+    init_info.Device = engine->globalRendering.device;
+    init_info.QueueFamily = engine->globalRendering.familyIndices.graphicsFamily.value();
+    init_info.Queue = engine->globalRendering.graphicsQueue;
     init_info.PipelineCache = VK_NULL_HANDLE;
     init_info.DescriptorPool = g_DescriptorPool;
     init_info.Allocator = nullptr;
-    init_info.MinImageCount = engine->presentation.imageCount - 1;
-    init_info.ImageCount = engine->presentation.imageCount;
+    init_info.MinImageCount = winfo->imageCount - 1;
+    init_info.ImageCount = winfo->imageCount;
     //init_info.CheckVkResultFn = check_vk_result;
     ImGui_ImplVulkan_Init(&init_info, imGuiRenderPass);
 
     // upload fonts to GPU
-    VkCommandBuffer command_buffer = engine->global.beginSingleTimeCommands();
+    VkCommandBuffer command_buffer = engine->globalRendering.beginSingleTimeCommands();
     ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
-    engine->global.endSingleTimeCommands(command_buffer);
-
+    engine->globalRendering.endSingleTimeCommands(command_buffer);
 }
 
 void UI::update()
@@ -125,7 +125,7 @@ void UI::update()
     uiRenderAvailable = true;
 }
 
-void UI::render(ThreadResources& tr)
+void UI::render(FrameResources* fr, UISubShader* pf)
 {
     if (!enabled)
         return;
@@ -133,7 +133,7 @@ void UI::render(ThreadResources& tr)
     if (!uiRenderAvailable) {
         return;
     }
-    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), tr.commandBufferUI);
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), pf->commandBuffer);
 }
 
 void UI::beginFrame()
@@ -222,8 +222,8 @@ UI::~UI()
 {
     if (!enabled)
         return;
-    vkDestroyRenderPass(engine->global.device, imGuiRenderPass, nullptr);
-    vkDestroyDescriptorPool(engine->global.device, g_DescriptorPool, nullptr);
+    vkDestroyRenderPass(engine->globalRendering.device, imGuiRenderPass, nullptr);
+    vkDestroyDescriptorPool(engine->globalRendering.device, g_DescriptorPool, nullptr);
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

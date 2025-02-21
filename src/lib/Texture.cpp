@@ -10,7 +10,7 @@ void TextureStore::init(ShadedPathEngine* engine, size_t maxTextures) {
 	// and command pool. Save the handles to these in a struct called vkctx.
 	// ktx VulkanDeviceInfo is used to pass these with the expectation that
 	// apps are likely to upload a large number of textures.
-	auto ktxresult = ktxVulkanDeviceInfo_Construct(&vdi, engine->global.physicalDevice, engine->global.device, engine->global.graphicsQueue, engine->global.commandPool, nullptr);
+	auto ktxresult = ktxVulkanDeviceInfo_Construct(&vdi, engine->globalRendering.physicalDevice, engine->globalRendering.device, engine->globalRendering.graphicsQueue, engine->globalRendering.commandPool, nullptr);
 	if (ktxresult != KTX_SUCCESS) {
 		Log("ERROR: in ktxVulkanDeviceInfo_Construct " << ktxresult);
 		Error("Could not init ktxVulkanDeviceInfo_Construct");
@@ -121,9 +121,9 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 		}
 		// create image view and sampler:
 		if (kTexture->isCubemap) {
-			texture->imageView = engine->global.createImageViewCube(texture->vulkanTexture.image, format, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
+			texture->imageView = engine->globalRendering.createImageViewCube(texture->vulkanTexture.image, format, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
 		} else {
-			texture->imageView = engine->global.createImageView(texture->vulkanTexture.image, format, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
+			texture->imageView = engine->globalRendering.createImageView(texture->vulkanTexture.image, format, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
 		}
 		texture->available = true;
 		return;
@@ -137,7 +137,7 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 			Error("Could not upload texture to GPU ktxTexture_VkUploadEx");
 		}
 		// create image view and sampler:
-		texture->imageView = engine->global.createImageView(texture->vulkanTexture.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
+		texture->imageView = engine->globalRendering.createImageView(texture->vulkanTexture.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
 		texture->available = true;
 	}
 }
@@ -177,8 +177,8 @@ TextureInfo* TextureStore::internalCreateTextureSlot(string id)
 
 void TextureStore::generateBRDFLUT()
 {
-	auto& global = engine->global;
-	auto& device = engine->global.device;
+	auto& global = engine->globalRendering;
+	auto& device = engine->globalRendering.device;
 	auto& texStore = engine->textureStore;
 	const VkFormat format = VK_FORMAT_R16G16_SFLOAT;
 	const int32_t dim = 512;
@@ -191,7 +191,9 @@ void TextureStore::generateBRDFLUT()
 	//	VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 	//	attachment.image, attachment.memory);
 	// create image and imageview:
-	global.createImage(dim, dim, 1, VK_SAMPLE_COUNT_1_BIT, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | /*VK_IMAGE_USAGE_TRANSFER_DST_BIT | */ VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, 0, attachment.image, attachment.memory);
+	global.createImage(dim, dim, 1, VK_SAMPLE_COUNT_1_BIT, format,
+		VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | /*VK_IMAGE_USAGE_TRANSFER_DST_BIT | */ VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+		0, attachment.image, attachment.memory, "BRDFLUT");
 
 	ti->vulkanTexture.deviceMemory = nullptr;
 	ti->vulkanTexture.layerCount = 1;
@@ -458,20 +460,23 @@ void TextureStore::checkStoreSize()
 
 TextureStore::~TextureStore()
 {
-	auto& device = engine->global.device;
+	auto& device = engine->globalRendering.device;
 	for (auto& tex : textures) {
 		auto &ti = tex.second;
 		Log("Texture found: " << ti.id.c_str() << " " << ti.filename.c_str() << " " << ti.vulkanTexture.deviceMemory << endl);
 		if (ti.available) {
-			vkDestroyImageView(engine->global.device, tex.second.imageView, nullptr);
+			vkDestroyImageView(engine->globalRendering.device, tex.second.imageView, nullptr);
 			if (ti.isKtxCreated) {
-				ktxVulkanTexture_Destruct(&ti.vulkanTexture, engine->global.device, nullptr);
+				ktxVulkanTexture_Destruct(&ti.vulkanTexture, engine->globalRendering.device, nullptr);
 			} else {
 				vkDestroyImage(device, ti.vulkanTexture.image, nullptr);
 				vkFreeMemory(device, ti.vulkanTexture.deviceMemory, nullptr);
 			}
 		}
 	}
+    if (vdi.device == nullptr) {
+        Error("Texture store not properly initialized");
+    }
 	ktxVulkanDeviceInfo_Destruct(&vdi);
 	vkDestroyDescriptorSetLayout(device, layout, nullptr);
 	vkDestroyDescriptorPool(device, pool, nullptr);

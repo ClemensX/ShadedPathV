@@ -1,5 +1,4 @@
 #pragma once
-class ShadedPathEngine;
 class ThreadResources;
 struct LineDef;
 class World;
@@ -19,16 +18,22 @@ namespace Colors {
     const glm::vec4 LightSteelBlue = { 0.69f, 0.77f, 0.87f, 1.0f };
 };
 
-class Util
+class Util : public EngineParticipant
 {
 public:
     // write simple image formats
 
     // write ppm image (usually screenshots), can be opened with GIMP
+    // written ppm is in binary format RGB, 8 bit per channel
     void writePPM(std::string filename, const char* imagedata, uint64_t width, uint64_t height, uint64_t rowPitch, bool colorSwizzle);
 
     // write 32 bit float heightmap image as raw image (no header data)
     void writeHeightmapRaw(std::vector<glm::vec3> &points);
+
+    // write to in memory image data (for debugging / testing)
+    // image is in format BGRA, 8 bit per channel
+    void writeRawImageTestData(GPUImage& img, int type);
+    void writeRawImagePixel(GPUImage& img, int x, int y, glm::vec4 color);
 
     // if you construct a skybox you need to be sure the edges of the view cube are still within far plane.
     // this calculates the maximum (half) cube edge size you can use (see CubeShader)
@@ -63,15 +68,15 @@ public:
         };
     }
 
-    Util(ShadedPathEngine& s) {
+    Util(ShadedPathEngine* s) {
         Log("Util c'tor\n");
-        engine = &s;
+        engine = s;
     };
 
     ~Util() {};
 
-    // create debug name for thread resource object from name and ThreadResource id
-    std::string createDebugName(const char* name, ThreadResources& res);
+    // create debug name by appending a number to the given name
+    std::string createDebugName(const char* name, int number);
 
     // name vulkan objects. used to identify them in debug message from validation layer
     // general purpost method that can be used foe all object types
@@ -97,23 +102,48 @@ public:
     void debugNameObjectDescriptorSet(VkDescriptorSet m, const char* name) {
         debugNameObject((uint64_t)m, VK_OBJECT_TYPE_DESCRIPTOR_SET, name);
     }
+    // debug name event
+    void debugNameObjectEvent(VkEvent m, const char* name) {
+        debugNameObject((uint64_t)m, VK_OBJECT_TYPE_EVENT, name);
+    }
+    // debug name fence
+    void debugNameObjectFence(VkFence m, const char* name) {
+        debugNameObject((uint64_t)m, VK_OBJECT_TYPE_FENCE, name);
+    }
+    // debug name semaphore
+    void debugNameObjectSemaphore(VkSemaphore m, const char* name) {
+        debugNameObject((uint64_t)m, VK_OBJECT_TYPE_SEMAPHORE, name);
+    }
     // debug name shader module
     void debugNameObjectShaderModule(VkShaderModule m, const char* name) {
         debugNameObject((uint64_t)m, VK_OBJECT_TYPE_SHADER_MODULE, name);
     }
-	static std::wstring string2wstring(const std::string& s) {
+    // debug name shader module
+    void debugNameObjectImage(VkImage m, const char* name) {
+        debugNameObject((uint64_t)m, VK_OBJECT_TYPE_IMAGE, name);
+    }
+    // debug name command pool
+    void debugNameObjectCommandPool(VkCommandPool m, const char* name) {
+        debugNameObject((uint64_t)m, VK_OBJECT_TYPE_COMMAND_POOL, name);
+    }
+    // debug name command pool
+    void debugNameObjectDescriptorPool(VkDescriptorPool m, const char* name) {
+        debugNameObject((uint64_t)m, VK_OBJECT_TYPE_DESCRIPTOR_POOL, name);
+    }
+    static std::wstring string2wstring(const std::string& s) {
         std::wstringstream wss;
         wss << s.c_str();
         std::wstring wstr = wss.str();
 		return wstr;
     }
 
+    void warn(std::string msg);
 private:
     void initializeDebugFunctionPointers();
     //PFN_vkDebugMarkerSetObjectNameEXT pfnDebugMarkerSetObjectNameEXT = nullptr;
     PFN_vkSetDebugUtilsObjectNameEXT pfnDebugUtilsObjectNameEXT = nullptr;
-    ShadedPathEngine* engine = nullptr;
     int imageCounter = 0;
+    std::string last_warn_msg;
 };
 
 class LogfileScanner
@@ -126,12 +156,6 @@ public:
     int searchForLine(std::string line, int startline = 0);
 private:
     std::vector<std::string> lines;
-};
-
-struct FrameBufferAttachment {
-    VkImage image;
-    VkDeviceMemory memory;
-    VkImageView view;
 };
 
 // https://github.com/opengl-tutorials/ogl/blob/master/common/quaternion_utils.cpp

@@ -1,0 +1,2 @@
+restarting another engine instance is causing a lot of errors,
+think of reusing another app inside the running engine

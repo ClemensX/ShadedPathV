@@ -5,33 +5,26 @@
 using namespace std;
 using namespace glm;
 
-void gltfObjectsApp::run()
+void gltfObjectsApp::run(ContinuationInfo* cont)
 {
     Log("gltfObjectsApp started" << endl);
     {
+        AppSupport::setEngine(engine);
         auto& shaders = engine->shaders;
         // camera initialization
-        createFirstPersonCameraPositioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        createHMDCameraPositioner(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        initCamera(glm::vec3(0.0f, 0.0f, 0.3f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         getFirstPersonCameraPositioner()->setMaxSpeed(0.1f);
-        initCamera();
+        getHMDCameraPositioner()->setMaxSpeed(0.1f);
+
         // engine configuration
         enableEventsAndModes();
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine->files.findAssetFolder("data");
-        engine->setMaxTextures(50);
-        //engine->setFrameCountLimit(1000);
-        engine->setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
-        //engine->setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 1800;//480;// 960;//1800;// 800;//3700; // 2500;
-        //engine->enablePresentation(win_width, (int)(win_width / 3.55f), "Render glTF objects");
-        engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Render glTF objects");
+        setHighBackbufferResolution();
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);
 
-        engine->registerApp(this);
-        initEngine("gltfObjects");
-
         engine->textureStore.generateBRDFLUT();
+
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
@@ -44,12 +37,13 @@ void gltfObjectsApp::run()
 
         // init app rendering:
         init();
-        eventLoop();
+        engine->eventLoop();
     }
     Log("gltfObjectsApp ended" << endl);
 }
 
 void gltfObjectsApp::init() {
+    engine->sound.init();
     // add some lines:
     float aspectRatio = engine->getAspect();
     float plus = 0.0f;
@@ -99,7 +93,7 @@ void gltfObjectsApp::init() {
     //engine->textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
     //engine->textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
     engine->textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
-    //engine->global.createCubeMapFrom2dTexture(engine->textureStore.BRDFLUT_TEXTURE_ID, "skyboxTexture");
+    //engine->globalRendering.createCubeMapFrom2dTexture(engine->textureStore.BRDFLUT_TEXTURE_ID, "skyboxTexture");
 
     engine->shaders.cubeShader.setSkybox("skyboxTexture");
     engine->shaders.cubeShader.setFarPlane(2000.0f);
@@ -113,25 +107,25 @@ void gltfObjectsApp::init() {
     // add sound to object
     engine->sound.addWorldObject(bottle);
     engine->sound.changeSound(bottle, "BACKGROUND_MUSIC");
+    prepareWindowOutput("glTF Objects App");
+    engine->presentation.startUI();
 }
 
-void gltfObjectsApp::drawFrame(ThreadResources& tr) {
-    updatePerFrame(tr);
-    engine->shaders.submitFrame(tr);
-}
-
-void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
+void gltfObjectsApp::mainThreadHook()
 {
+}
+
+// prepare drawing, guaranteed single thread
+void gltfObjectsApp::prepareFrame(FrameResources* fr)
+{
+    FrameResources& tr = *fr;
     double seconds = engine->gameTime.getTimeSeconds();
-    if (old_seconds > 0.0f && old_seconds == seconds) {
-        Log("DOUBLE TIME" << endl);
-        return;
-    }
-    if (old_seconds > seconds) {
-        Log("INVERTED TIME" << endl);
+    if ((old_seconds > 0.0f && old_seconds == seconds) || old_seconds > seconds) {
+        Error("APP TIME ERROR - should not happen");
         return;
     }
     double deltaSeconds = seconds - old_seconds;
+
     updateCameraPositioners(deltaSeconds);
     old_seconds = seconds;
 
@@ -217,9 +211,44 @@ void gltfObjectsApp::updatePerFrame(ThreadResources& tr)
         buf->model = modeltransform;
     }
     postUpdatePerFrame(tr);
+    engine->shaders.clearShader.addCommandBuffers(fr, &fr->drawResults[0]); // put clear shader first
+}
+
+// draw from multiple threads
+void gltfObjectsApp::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
+{
+    if (topic == 0) {
+        engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
+        engine->shaders.cubeShader.addCommandBuffers(fr, drawResult);
+        if (engine->sound.enabled) {
+            engine->sound.Update(camera);
+        }
+    }
+    else if (topic == 1) {
+        engine->shaders.pbrShader.addCommandBuffers(fr, drawResult);
+    }
+}
+
+void gltfObjectsApp::postFrame(FrameResources* fr)
+{
+    engine->shaders.endShader.addCommandBuffers(fr, fr->getLatestCommandBufferArray());
+}
+
+void gltfObjectsApp::processImage(FrameResources* fr)
+{
+    present(fr);
+}
+
+bool gltfObjectsApp::shouldClose()
+{
+    return shouldStopEngine;
 }
 
 void gltfObjectsApp::handleInput(InputState& inputState)
 {
+    if (inputState.windowClosed != nullptr) {
+        inputState.windowClosed = nullptr;
+        shouldStopEngine = true;
+    }
     AppSupport::handleInput(inputState);
 }

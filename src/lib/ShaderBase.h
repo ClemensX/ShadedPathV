@@ -9,20 +9,6 @@ struct ShaderState;
 struct ShaderThreadResources {
 };
 
-// each shader has 2 resource sets A and B. They will be triggered to upload, enable and disable by engine
-enum class GlobalResourceState { INACTIVE, ACTIVE, UPLOADING }; // inactive --> uploading --> active --> inactive
-enum class GlobalResourceSet { SET_A, SET_B };
-
-// all shaders have to subclass this for their update array
-struct ShaderUpdateElement {
-	std::atomic<bool> free = true;   // can be reserved
-	bool inuse = false; // update process in progress
-	unsigned long num = 0; // count updates
-	size_t arrayIndex = 0; // we need to know array index into updateArray by having just a pointer to an element
-	GlobalResourceSet globalResourceSet;
-	ShaderBase* shaderInstance = nullptr;
-};
-		
 // Info needed to connect shaders during intialization.
 // Like DepthBuffer, sizes, image formats and states
 class ShaderBase
@@ -34,6 +20,10 @@ public:
 	// virtual methods each subclass has to provide
 
 	virtual ~ShaderBase() = 0;
+
+	virtual std::string getName() const {
+		return typeid(*this).name();
+	}
 
 	// initializations:
 	// Color and depth render pass (single)
@@ -105,20 +95,20 @@ public:
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderSate) = 0;
 
 	// create graphics pipeline with all support structures and other thread resources
-	virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) = 0;
+	virtual void initSingle(FrameResources& tr, ShaderState& shaderState) = 0;
 
 	// finish shader initialization
-	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderSate) = 0;
+	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderSate) {};
 
 	// destroy thread local shader resources
-	virtual void destroyThreadResources(ThreadResources& tr) = 0;
+	virtual void destroyThreadResources(FrameResources& tr) {};
 
 	// create command buffers. One time auto called before rendering starts.
 	// Also post init phase stuff goes here, like VulcanResources.updateDescriptorSets()
-	virtual void createCommandBuffer(ThreadResources& tr) = 0;
+	virtual void createCommandBuffer(FrameResources& tr) = 0;
 
 	// add current command buffers
-	virtual void addCurrentCommandBuffer(ThreadResources& tr) = 0;
+    virtual void addCommandBuffers(FrameResources* tr, DrawResult* drawResult) = 0;
 
 	// Base class methodas that can be used in the subclasses
 
@@ -145,7 +135,7 @@ public:
 	void createVertexBuffer(VkBuffer& uniformBuffer, size_t size, VkDeviceMemory& uniformBufferMemory);
 
 	// create render pass and framebuffer with respect to shader state
-	void createRenderPassAndFramebuffer(ThreadResources& tr, ShaderState shaderState, VkRenderPass& renderPass, VkFramebuffer& frameBuffer, VkFramebuffer& frameBuffer2);
+	void createRenderPassAndFramebuffer(FrameResources& tr, ShaderState shaderState, VkRenderPass& renderPass, VkFramebuffer& frameBuffer, VkFramebuffer& frameBuffer2);
 
 	void setLastShader(bool last) {
 		lastShader = last;
@@ -167,6 +157,10 @@ public:
 
 	VkDescriptorSetLayout descriptorSetLayout = nullptr;
 	VkDescriptorPool descriptorPool = nullptr;
+	// debug pool allocation count
+    uint32_t poolAllocationSetCount = 0; // increase on each set allocation
+    uint32_t poolAllocationMaxSet = 0; // maximum number of sets allocated with vkCreateDescriptorPool()
+    uint32_t poolAllocationMaxSingleDescriptors = 0; // cumulated number of single descriptors over all descrptor sets (all descriptor types added together)
 	std::vector<VkPushConstantRange> pushConstantRanges;
 
 	// util methods to simplify shader creation
@@ -266,41 +260,5 @@ public:
 		depthStencil.back = {}; // Optional
 		return depthStencil;
 	}
-
-	// thread handling for global resource updates (for non-thread local resources)
-
-	// will only be called from global update thread to do the resource copy to GPU
-	virtual void uploadResourceSet(ShaderUpdateElement* resUpdateEl, GlobalResourceSet set) {};
-
-	// each shader class has its own update array. do this in shader:
-	//std::array<ShaderUpdateElement, 10> updateArray;
-
-private:
-	GlobalResourceState resourceSetA = GlobalResourceState::INACTIVE;
-	GlobalResourceState resourceSetB = GlobalResourceState::INACTIVE;
-
-public:
-	// allow access to updateArray without knowing the derived type
-	virtual ShaderUpdateElement* getUpdateElement(size_t i) {
-		return nullptr;
-	}
-	virtual size_t getUpdateArraySize() {
-		Error("Shader class did not implement getUpdateArraySize()");
-		return 0;
-	}
-	virtual void update(ShaderUpdateElement* el) {};
-	virtual void resourceSwitch(GlobalResourceSet set) {};
-
-	GlobalResourceSet getInactiveResourceSet() {
-		if (resourceSetA == GlobalResourceState::INACTIVE) {
-			return GlobalResourceSet::SET_A;
-		} else if (resourceSetB == GlobalResourceState::INACTIVE) {
-			return GlobalResourceSet::SET_B;
-		} else {
-			Error("ERROR: no resource slot available");
-			return GlobalResourceSet::SET_A; // keep compiler happy
-		}
-	}
-
 };
 

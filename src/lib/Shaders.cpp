@@ -10,28 +10,20 @@ Shaders::Config& Shaders::Config::init()
 	}
 	// mark last shader
 	auto& lastShader = shaderList[shaderList.size() - 1];
-	if (lastShader == &engine->shaders.uiShader) {
-		Error("In this version UI shader cannot be the last shader added");
-	}
+	//if (lastShader == &engine->shaders.uiShader) {
+	//	Error("In this version UI shader cannot be the last shader added");
+	//}
 	lastShader->setLastShader(true);
-	engine->global.createViewportState(shaderState);
+	engine->globalRendering.createViewportState(shaderState);
 	for (ShaderBase* shader : shaderList) {
 		shader->init(*engine, shaderState);
-		// pipelines must be created for every rendering thread
-		for (auto& res : engine->threadResources) {
-			shader->initSingle(res, shaderState);
-		}
+		// pipelines must be created for all FrameInfos
+        for (auto& fi : engine->getFrameResources()) {
+            shader->initSingle(fi, shaderState);
+        }
 		shader->finishInitialization(*engine, shaderState);
 	}
 	return *this;
-}
-
-void Shaders::Config::gatherActiveCommandBuffers(ThreadResources& tr)
-{
-	tr.activeCommandBuffers.clear();
-	for (ShaderBase* shader : shaderList) {
-		shader->addCurrentCommandBuffer(tr);
-	}
 }
 
 VkShaderModule Shaders::createShaderModule(const vector<byte>& code)
@@ -41,26 +33,26 @@ VkShaderModule Shaders::createShaderModule(const vector<byte>& code)
 	createInfo.codeSize = code.size();
 	createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 	VkShaderModule shaderModule;
-	if (vkCreateShaderModule(engine.global.device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+	if (vkCreateShaderModule(engine->globalRendering.device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
 		Error("failed to create shader module!");
 	}
 	return shaderModule;
 }
 
-void Shaders::Config::createCommandBuffers(ThreadResources& tr) {
+void Shaders::Config::createCommandBuffers(FrameResources& tr) {
 	for (ShaderBase* shader : shaderList) {
 		shader->createCommandBuffer(tr);
 	}
 }
 
-void Shaders::Config::destroyThreadResources(ThreadResources& tr)
+void Shaders::Config::destroyThreadResources(FrameResources& tr)
 {
 	for (ShaderBase* shader : shaderList) {
 		shader->destroyThreadResources(tr);
 	}
 }
 
-void Shaders::createCommandBuffers(ThreadResources& tr)
+void Shaders::createCommandBuffers(FrameResources& tr)
 {
 	config.createCommandBuffers(tr);
 }
@@ -69,17 +61,13 @@ void Shaders::checkShaderState(ShadedPathEngine& engine) {
 	config.checkShaderState();
 }
 
-void Shaders::gatherActiveCommandBuffers(ThreadResources& tr) {
-	config.gatherActiveCommandBuffers(tr);
-}
-
-void Shaders::destroyThreadResources(ThreadResources& tr)
+void Shaders::destroyThreadResources(FrameResources& tr)
 {
 	config.destroyThreadResources(tr);
 }
 
 // SHADER Triangle
-
+/*
 // Be aware of local arrays - they will be overwritten after leaving this method!!
 // TODO remove clear / push_back cycle
 void Shaders::submitFrame(ThreadResources& tr)
@@ -245,8 +233,9 @@ void Shaders::queueSubmit(ThreadResources& tr)
 		Error("failed to submit draw command buffer!");
 	}
 }
-
+*/
 Shaders::~Shaders()
 {
 	Log("Shaders destructor\n");
+	//destroyThreadResources(*this);
 }

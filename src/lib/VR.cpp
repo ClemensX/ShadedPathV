@@ -9,23 +9,24 @@
 #endif
 
 using namespace std;
+#if defined(OPENXR_AVAILABLE)
 
 void VR::init()
 {
-    if (!engine.isVR()) return;
+    if (!engine->isVR()) return;
 	uint32_t instanceExtensionCount;
 	const char* layerName = nullptr;
-    XR_TUT_LOG("OpenXR Tutorial Chapter 2");
+    Log("OpenXR Init");
     auto xrResult = xrEnumerateInstanceExtensionProperties(layerName, 0, &instanceExtensionCount, nullptr);
 	if (XR_FAILED(xrResult)) {
 		enabled = false;
 		Log("OpenXR intialization failed - running without VR, reverting to Stereo mode" << endl);
-        engine.enableVR(false);
+        engine->setVR(false);
 		return;
 	}
 	enabled = true;
 	//CHECK_XRCMD(xrEnumerateInstanceExtensionProperties(layerName, 0, &instanceExtensionCount, nullptr));
-    if (engine.global.LIST_EXTENSIONS) {
+    if (engine->globalRendering.LIST_EXTENSIONS) {
         logLayersAndExtensions();
     }
     if (enabled) {
@@ -55,7 +56,7 @@ void VR::initVulkanEnable2(VkInstanceCreateInfo &instInfo)
     createInfo.pfnGetInstanceProcAddr = &vkGetInstanceProcAddr;
     createInfo.vulkanCreateInfo = &instInfo;
     createInfo.vulkanAllocator = nullptr;
-    CHECK_XRCMD(pfnCreateVulkanInstanceKHR(instance, &createInfo, &engine.global.vkInstance, &err));
+    CHECK_XRCMD(pfnCreateVulkanInstanceKHR(instance, &createInfo, &engine->globalRendering.vkInstance, &err));
     if (err != VK_SUCCESS) {
         Error("Could not initialize vulkan instance via OpenXR");
     }
@@ -63,11 +64,11 @@ void VR::initVulkanEnable2(VkInstanceCreateInfo &instInfo)
     // pick physical device
     XrVulkanGraphicsDeviceGetInfoKHR deviceInfo{ XR_TYPE_VULKAN_GRAPHICS_DEVICE_GET_INFO_KHR };
     deviceInfo.systemId = systemId;
-    deviceInfo.vulkanInstance = engine.global.vkInstance;
+    deviceInfo.vulkanInstance = engine->globalRendering.vkInstance;
     PFN_xrGetVulkanGraphicsDevice2KHR pfnGetVulkanGraphicsDevice2KHR = nullptr;
     CHECK_XRCMD(xrGetInstanceProcAddr(instance, "xrGetVulkanGraphicsDevice2KHR",
         reinterpret_cast<PFN_xrVoidFunction*>(&pfnGetVulkanGraphicsDevice2KHR)));
-    pfnGetVulkanGraphicsDevice2KHR(instance, &deviceInfo, &engine.global.physicalDevice);
+    pfnGetVulkanGraphicsDevice2KHR(instance, &deviceInfo, &engine->globalRendering.physicalDevice);
 
 }
 
@@ -81,10 +82,10 @@ void VR::initVulkanCreateDevice(VkDeviceCreateInfo& vkCreateInfo)
     XrVulkanDeviceCreateInfoKHR createInfo{ XR_TYPE_VULKAN_DEVICE_CREATE_INFO_KHR };
     createInfo.systemId = systemId;
     createInfo.pfnGetInstanceProcAddr = &vkGetInstanceProcAddr;
-    createInfo.vulkanPhysicalDevice = engine.global.physicalDevice;
+    createInfo.vulkanPhysicalDevice = engine->globalRendering.physicalDevice;
     createInfo.vulkanCreateInfo = &vkCreateInfo;
     createInfo.vulkanAllocator = nullptr;
-    CHECK_XRCMD(pfnCreateVulkanDeviceKHR(instance, &createInfo, &engine.global.device, &err));
+    CHECK_XRCMD(pfnCreateVulkanDeviceKHR(instance, &createInfo, &engine->globalRendering.device, &err));
     if (err != VK_SUCCESS) {
         Error("Could not initialize vulkan device via OpenXR");
     }
@@ -154,16 +155,29 @@ void VR::createInstanceInternal() {
     createInfo.enabledExtensionCount = (uint32_t)extensions.size();
     createInfo.enabledExtensionNames = extensions.data();
 
-    strcpy(createInfo.applicationInfo.applicationName, engine.appname.c_str());
-    strcpy(createInfo.applicationInfo.engineName, engine.engineName.c_str());
-    createInfo.applicationInfo.engineVersion = engine.engineVersionInt;
+    strcpy(createInfo.applicationInfo.applicationName, engine->appname.c_str());
+    strcpy(createInfo.applicationInfo.engineName, engine->engineName.c_str());
+    createInfo.applicationInfo.engineVersion = engine->engineVersionInt;
     createInfo.applicationInfo.apiVersion = XR_API_VERSION_1_0;//XR_CURRENT_API_VERSION;
 
     auto xrResult = xrCreateInstance(&createInfo, &instance);
     if (XR_FAILED(xrResult)) {
         enabled = false;
         Log("Failed to create Instance. Make sure your VR runtime and headset are working properly. Running without VR" << endl);
-        engine.enableVR(false);
+        engine->setVR(false);
+        return;
+    }
+    // check the hmd instance
+    XrSystemGetInfo sysGetInfo{ .type = XR_TYPE_SYSTEM_GET_INFO };
+    sysGetInfo.formFactor = XR_FORM_FACTOR_HEAD_MOUNTED_DISPLAY;
+    if (XR_FAILED(xrGetSystem(instance, &sysGetInfo, &systemId))) {
+        if (engine->isEnforceVR()) {
+            Error("Failed to access HMD after instance creation. Make sure your headset is switched on.");
+            return;
+        }
+        enabled = false;
+        Log("Failed to access HMD after instance creation. Make sure your headset is switched on. Running without VR" << endl);
+        engine->setVR(false);
         return;
     }
     Log("OpenXR instance created successfully!" << endl);
@@ -208,11 +222,11 @@ void VR::createSession()
     // xrCreateSession: failed to call xrGetVulkanGraphicsDevice before xrCreateSession
     // basic session creation:
     XrGraphicsBindingVulkanKHR binding = { XR_TYPE_GRAPHICS_BINDING_VULKAN_KHR };
-    binding.instance = engine.global.vkInstance;
-    binding.physicalDevice = engine.global.physicalDevice;
-    binding.device = engine.global.device;
-    binding.queueFamilyIndex = engine.global.presentQueueFamiliyIndex;
-    binding.queueIndex = engine.global.presentQueueIndex;
+    binding.instance = engine->globalRendering.vkInstance;
+    binding.physicalDevice = engine->globalRendering.physicalDevice;
+    binding.device = engine->globalRendering.device;
+    binding.queueFamilyIndex = engine->globalRendering.presentQueueFamiliyIndex;
+    binding.queueIndex = engine->globalRendering.presentQueueIndex;
     XrSessionCreateInfo sessionInfo = { XR_TYPE_SESSION_CREATE_INFO };
     sessionInfo.next = &binding;
     sessionInfo.systemId = systemId;
@@ -325,6 +339,11 @@ VkImage VR::GetSwapchainImage(XrSwapchain swapchain, uint32_t index) {
     return image;
 }
 
+HMDProperties& VR::getHMDProperties()
+{
+    return hmdProperties;
+}
+
 void VR::CreateSwapchains()
 {
     // Get the supported swapchain formats as an array of int64_t and ordered by runtime preference.
@@ -349,16 +368,19 @@ void VR::CreateSwapchains()
         swapchainCI.format = swapchainColorFormat;
         swapchainCI.sampleCount = m_viewConfigurationViews[i].recommendedSwapchainSampleCount;  // Use the recommended values from the XrViewConfigurationView.
         swapchainCI.width = m_viewConfigurationViews[i].recommendedImageRectWidth;
+        hmdProperties.recommendedImageSize.width = swapchainCI.width;
         swapchainCI.height = m_viewConfigurationViews[i].recommendedImageRectHeight;
+        hmdProperties.recommendedImageSize.height = swapchainCI.height;
+        hmdProperties.aspectRatio = static_cast<float>(swapchainCI.width) / static_cast<float>(swapchainCI.height);
         swapchainCI.faceCount = 1;
         swapchainCI.arraySize = 1;
         swapchainCI.mipCount = 1;
         // check for same aspect of render backbuffer and VR target:
-        auto exBackbuffer = engine.getBackBufferExtent();
+        auto exBackbuffer = engine->getBackBufferExtent();
         float aspectBackbuffer = (float)exBackbuffer.width / (float)exBackbuffer.height;
         float aspectHMD = (float)swapchainCI.width / (float)swapchainCI.height;
         if (aspectBackbuffer != aspectHMD) {
-            Error("Aspect ratio of render backbuffer and VR target are different. This may cause distortion.");
+            //Error("Aspect ratio of render backbuffer and VR target are different. This may cause distortion.");
         }
         OPENXR_CHECK(xrCreateSwapchain(session, &swapchainCI, &colorSwapchainInfo.swapchain), "Failed to create Color Swapchain");
         colorSwapchainInfo.swapchainFormat = swapchainCI.format;  // Save the swapchain format for later use.
@@ -487,10 +509,10 @@ void VR::DestroySwapchains()
 
         // Destroy the color and depth image views from GraphicsAPI.
         for (VkImageView& imageView : colorSwapchainInfo.imageViews) {
-            vkDestroyImageView(engine.global.device, imageView, nullptr);
+            vkDestroyImageView(engine->globalRendering.device, imageView, nullptr);
         }
         for (VkImageView& imageView : depthSwapchainInfo.imageViews) {
-            vkDestroyImageView(engine.global.device, imageView, nullptr);
+            vkDestroyImageView(engine->globalRendering.device, imageView, nullptr);
         }
 
         // Free the Swapchain Image Data.
@@ -651,7 +673,7 @@ void VR::frameWait() {
 
 }*/
 
-void VR::frameBegin(ThreadResources& tr)
+void VR::frameBegin(FrameResources& tr)
 {
     if (!enabled) return;
     //ThemedTimer::getInstance()->stop(TIMER_PART_OPENXR);
@@ -676,12 +698,12 @@ void VR::frameBegin(ThreadResources& tr)
     }
 }
 
-void VR::frameCopy(ThreadResources& tr)
+void VR::frameCopy(FrameResources& tr, WindowInfo* winfo)
 {
     if (!enabled) return;
     renderLayerInfo.tr = &tr;
     if (renderLayerInfo.renderStarted) {
-        bool rendered = RenderLayerCopyRenderedImage(renderLayerInfo);
+        bool rendered = RenderLayerCopyRenderedImage(renderLayerInfo, winfo);
         if (rendered) {
             renderLayerInfo.layers.push_back(reinterpret_cast<XrCompositionLayerBaseHeader*>(&renderLayerInfo.layerProjection));
         }
@@ -689,7 +711,7 @@ void VR::frameCopy(ThreadResources& tr)
     renderLayerInfo.renderStarted = false;
 }
 
-void VR::frameEnd(ThreadResources& tr)
+void VR::frameEnd(FrameResources& tr)
 {
     if (!enabled) return;
     renderLayerInfo.tr = &tr;
@@ -822,7 +844,7 @@ bool VR::RenderLayerPrepare(RenderLayerInfo& renderLayerInfo)
     return true;
 }
 
-bool VR::RenderLayerCopyRenderedImage(RenderLayerInfo& renderLayerInfo)
+bool VR::RenderLayerCopyRenderedImage(RenderLayerInfo& renderLayerInfo, WindowInfo* winfo)
 {
     for (uint32_t i = 0; i < renderLayerInfo.viewCount; i++) {
         SwapchainInfo& colorSwapchainInfo = m_colorSwapchainInfos[i];
@@ -841,8 +863,8 @@ bool VR::RenderLayerCopyRenderedImage(RenderLayerInfo& renderLayerInfo)
         }
         if (true) {
             VkOffset3D blitSizeSrc;
-            blitSizeSrc.x = engine.getBackBufferExtent().width;
-            blitSizeSrc.y = engine.getBackBufferExtent().height;
+            blitSizeSrc.x = engine->getBackBufferExtent().width;
+            blitSizeSrc.y = engine->getBackBufferExtent().height;
             blitSizeSrc.z = 1;
             VkOffset3D blitSizeDst;
             blitSizeDst.x = renderLayerInfo.width;
@@ -858,7 +880,7 @@ bool VR::RenderLayerCopyRenderedImage(RenderLayerInfo& renderLayerInfo)
             auto tr = renderLayerInfo.tr;
             //Log("VR mode blit back image num " << tr->frameNum << " swap idx " << renderLayerInfo.colorImageIndex << endl)
             // i == 0 is left eye. colorImageIndex is the swapchain image index we are currently working on
-            auto srcImage = i == 0 ? tr->colorAttachment.image : tr->colorAttachment2.image;
+            auto srcImage = i == 0 ? tr->colorImage.fba.image : tr->colorImage2.fba.image;
             auto destImage = GetSwapchainImage(colorSwapchainInfo.swapchain, renderLayerInfo.colorImageIndex);
             //Log("Blitting from " << srcImage << " to image " << destImage << endl);
             VkImageMemoryBarrier imageBarrier;
@@ -872,9 +894,9 @@ bool VR::RenderLayerCopyRenderedImage(RenderLayerInfo& renderLayerInfo)
             imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
             imageBarrier.image = destImage;
             imageBarrier.subresourceRange = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-            vkCmdPipelineBarrier(tr->commandBufferPresentBack, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VkDependencyFlagBits(0), 0, nullptr, 0, nullptr, 1, &imageBarrier);
+            vkCmdPipelineBarrier(winfo->commandBufferPresentBack, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VkDependencyFlagBits(0), 0, nullptr, 0, nullptr, 1, &imageBarrier);
             vkCmdBlitImage(
-                tr->commandBufferPresentBack,
+                winfo->commandBufferPresentBack,
                 srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                 destImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 1, &imageBlitRegion,
@@ -983,10 +1005,11 @@ VkImageView VR::CreateImageView(const ImageViewCreateInfo& imageViewCI) {
     vkImageViewCI.subresourceRange.levelCount = imageViewCI.levelCount;
     vkImageViewCI.subresourceRange.baseArrayLayer = imageViewCI.baseArrayLayer;
     vkImageViewCI.subresourceRange.layerCount = imageViewCI.layerCount;
-    if (vkCreateImageView(engine.global.device, &vkImageViewCI, nullptr, &imageView) != VK_SUCCESS) {
+    if (vkCreateImageView(engine->globalRendering.device, &vkImageViewCI, nullptr, &imageView) != VK_SUCCESS) {
         Error("failed to create texture image view!");
     }
 
     imageViewResources[imageView] = imageViewCI;
     return imageView;
 }
+#endif

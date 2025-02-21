@@ -34,17 +34,17 @@ void VulkanResources::createVertexBufferStatic(VkDeviceSize bufferSize, const vo
 {
     vector<VulkanResourceElement> &def = *resourceDefinition;
     size_t bufferId = getResourceDefIndex(VulkanResourceType::VertexBufferStatic);
-    this->engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, src, buffer, bufferMemory, "VertexBufferStatic");
+    this->engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, src, buffer, bufferMemory, "VertexBufferStatic");
 }
 
 void VulkanResources::createIndexBufferStatic(VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
     vector<VulkanResourceElement>& def = *resourceDefinition;
     size_t bufferId = getResourceDefIndex(VulkanResourceType::IndexBufferStatic);
-    this->engine->global.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, bufferSize, src, buffer, bufferMemory, "IndexBufferStatic");
+    this->engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, bufferSize, src, buffer, bufferMemory, "IndexBufferStatic");
 }
 
-void VulkanResources::createDescriptorSetResources(VkDescriptorSetLayout& layout, VkDescriptorPool& pool, int poolMaxSetsFactor)
+void VulkanResources::createDescriptorSetResources(VkDescriptorSetLayout& layout, VkDescriptorPool& pool, ShaderBase* shaderBase, int poolMaxSetsFactor)
 {
     vector<VulkanResourceElement>& def = *resourceDefinition;
 
@@ -64,7 +64,7 @@ void VulkanResources::createDescriptorSetResources(VkDescriptorSetLayout& layout
     layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
     layoutInfo.pBindings = bindings.data();
 
-    if (vkCreateDescriptorSetLayout(engine->global.device, &layoutInfo, nullptr, &layout) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(engine->globalRendering.device, &layoutInfo, nullptr, &layout) != VK_SUCCESS) {
         Error("failed to create descriptor set layout!");
     }
     VkDescriptorPoolCreateInfo poolInfo{};
@@ -83,12 +83,24 @@ void VulkanResources::createDescriptorSetResources(VkDescriptorSetLayout& layout
     }
 
     poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-
-    if (vkCreateDescriptorPool(engine->global.device, &poolInfo, nullptr, &pool) != VK_SUCCESS) {
-        Error("failed to create descriptor pool!");
+    shaderBase->poolAllocationMaxSet = poolInfo.maxSets;
+    // multiply each descriptor count by number of sets (strangely, Vulkan uses the single descriptor count for all sets)
+    for (auto& p : poolSizes) {
+        Log("pool add single descriptors " << shaderBase->getName() << ": " << p.descriptorCount << endl);
+        p.descriptorCount *= poolInfo.maxSets;
+        shaderBase->poolAllocationMaxSingleDescriptors += p.descriptorCount;
     }
-    this->layout = layout;
-    this->pool = pool;
+    Log("pool descriptor sets max count " << shaderBase->getName() << ": " << shaderBase->poolAllocationMaxSet << endl);
+    Log("pool total single descriptors " << shaderBase->getName() << ": " << shaderBase->poolAllocationMaxSingleDescriptors << endl);
+    shaderBase->poolAllocationMaxSet = poolInfo.maxSets;
+    if (vkCreateDescriptorPool(engine->globalRendering.device, &poolInfo, nullptr, &pool) != VK_SUCCESS) {
+        Error("failed to create descriptor pool! Look logs for descriptor couns. Former problem #define OVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT");
+    }
+    string name = shaderBase->getName() + " Descriptor Pool";
+    engine->util.debugNameObjectDescriptorPool(pool, name.c_str());
+    // each shader has its own descriptor set layout and pool, no need to assign here
+    //this->layout = layout;
+    //this->pool = pool;
 }
 
 void VulkanResources::addResourcesForElement(VulkanResourceElement el)
@@ -108,12 +120,8 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         bindings.push_back(layoutBinding);
         poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         // https://community.khronos.org/t/vk-error-out-of-pool-memory-when-allocating-second-descriptor-sets/104304/3
-        int uniformBufferFactor = 1;
-#       if (defined(OVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT))
-        Log("WARNING: OVERRIDE_UNIFORM_BUFFER_DESCRIPTOR_COUNT used. Look into resource management!" << endl);
-        uniformBufferFactor = 3;
-#       endif
-        poolSize.descriptorCount = uniformBufferFactor * engine->getFramesInFlight(); // TODO hack
+        // https://www.reddit.com/r/vulkan/comments/12nwl3i/out_of_pool_memory_when_allocating_multiple/
+        poolSize.descriptorCount = 1;
         poolSizes.push_back(poolSize);
         if (engine->isStereo()) {
             poolSizes.push_back(poolSize);
@@ -126,7 +134,7 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         layoutBinding.pImmutableSamplers = nullptr;
         bindings.push_back(layoutBinding);
         poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-        poolSize.descriptorCount = 1 * engine->getFramesInFlight(); // TODO hack
+        poolSize.descriptorCount = 1;
         poolSizes.push_back(poolSize);
 
     } else if (el.type == VulkanResourceType::SingleTexture) {
@@ -137,7 +145,7 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         layoutBinding.pImmutableSamplers = nullptr;
         bindings.push_back(layoutBinding);
         poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSize.descriptorCount = 1 * engine->getFramesInFlight(); // TODO hack
+        poolSize.descriptorCount = 1;
         poolSizes.push_back(poolSize);
     } else if (el.type == VulkanResourceType::GlobalTextureSet) {
         createDescriptorSetResourcesForTextures();
@@ -150,18 +158,25 @@ void VulkanResources::createThreadResources(VulkanHandoverResources& hdv)
     if (hdv.descriptorSet == nullptr) Error("Shader did not initialize needed Thread Resources: descriptorSet is missing");
     VkDescriptorSetAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = pool;
+    allocInfo.descriptorPool = hdv.shader->descriptorPool;
     allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &layout;
-    VkResult res = vkAllocateDescriptorSets(engine->global.device, &allocInfo, hdv.descriptorSet);
+    allocInfo.pSetLayouts = &hdv.shader->descriptorSetLayout;
+    hdv.shader->poolAllocationSetCount += allocInfo.descriptorSetCount;
+    Log("alloc descriptor set total " << hdv.shader->poolAllocationSetCount << endl);
+    VkResult res = vkAllocateDescriptorSets(engine->globalRendering.device, &allocInfo, hdv.descriptorSet);
     if ( res != VK_SUCCESS) {
+        if (res == VK_ERROR_OUT_OF_POOL_MEMORY) {
+            stringstream s;
+            s << "VK_ERROR_OUT_OF_POOL_MEMORY at descriptor allocation. Check your shader implemenation " << hdv.shader->getName();
+            Error(s.str().c_str());
+        }
         Error("failed to allocate descriptor sets!");
     }
     string dname = hdv.debugBaseName + " Descriptor Set 1";
     engine->util.debugNameObjectDescriptorSet(*hdv.descriptorSet, dname.c_str());
     if (engine->isStereo()) {
         if (hdv.descriptorSet2 == nullptr) Error("Shader did not initialize needed Thread Resources: descriptorSet 2 is missing");
-        if (vkAllocateDescriptorSets(engine->global.device, &allocInfo, hdv.descriptorSet2) != VK_SUCCESS) {
+        if (vkAllocateDescriptorSets(engine->globalRendering.device, &allocInfo, hdv.descriptorSet2) != VK_SUCCESS) {
             Error("failed to allocate descriptor sets!");
         }
         string dname = hdv.debugBaseName + " Descriptor Set 2";
@@ -171,7 +186,7 @@ void VulkanResources::createThreadResources(VulkanHandoverResources& hdv)
     for (auto& d : def) {
         addThreadResourcesForElement(d, hdv);
     }
-    vkUpdateDescriptorSets(engine->global.device, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
+    vkUpdateDescriptorSets(engine->globalRendering.device, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
     //if (engine->isStereo()) {
     //    vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
     //}
@@ -244,7 +259,7 @@ void VulkanResources::addThreadResourcesForElement(VulkanResourceElement el, Vul
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         imageInfo.imageView = hdv.imageView;
-        imageInfo.sampler = engine->global.textureSampler[(int)TextureType::TEXTURE_TYPE_MIPMAP_IMAGE];
+        imageInfo.sampler = engine->globalRendering.textureSampler[(int)TextureType::TEXTURE_TYPE_MIPMAP_IMAGE];
         imageInfos.push_back(imageInfo);
 
         descSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -291,7 +306,7 @@ void VulkanResources::createDescriptorSetResourcesForTextures()
     layoutInfo.bindingCount = static_cast<uint32_t>(textureBindings.size());
     layoutInfo.pBindings = textureBindings.data();
 
-    if (vkCreateDescriptorSetLayout(engine->global.device, &layoutInfo, nullptr, &engine->textureStore.layout) != VK_SUCCESS) {
+    if (vkCreateDescriptorSetLayout(engine->globalRendering.device, &layoutInfo, nullptr, &engine->textureStore.layout) != VK_SUCCESS) {
         Error("failed to create descriptor set layout for textures!");
     }
     VkDescriptorPoolCreateInfo poolInfo{};
@@ -301,7 +316,7 @@ void VulkanResources::createDescriptorSetResourcesForTextures()
     poolInfo.maxSets = 1; // only one global list for all shaders
     poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-    if (vkCreateDescriptorPool(engine->global.device, &poolInfo, nullptr, &engine->textureStore.pool) != VK_SUCCESS) {
+    if (vkCreateDescriptorPool(engine->globalRendering.device, &poolInfo, nullptr, &engine->textureStore.pool) != VK_SUCCESS) {
         Error("failed to create descriptor pool for textures!");
     }
 }
@@ -316,7 +331,7 @@ void VulkanResources::updateDescriptorSetForTextures() {
     allocInfo.descriptorPool = engine->textureStore.pool;
     allocInfo.descriptorSetCount = 1;
     allocInfo.pSetLayouts = &engine->textureStore.layout;
-    VkResult res = vkAllocateDescriptorSets(engine->global.device, &allocInfo, &engine->textureStore.descriptorSet);
+    VkResult res = vkAllocateDescriptorSets(engine->globalRendering.device, &allocInfo, &engine->textureStore.descriptorSet);
     if (res != VK_SUCCESS) {
         Error("failed to allocate descriptor sets!");
     }
@@ -333,7 +348,7 @@ void VulkanResources::updateDescriptorSetForTextures() {
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         imageInfo.imageView = tex.imageView;
-        imageInfo.sampler = engine->global.textureSampler[(int)tex.type];
+        imageInfo.sampler = engine->globalRendering.textureSampler[(int)tex.type];
         imageInfos[tex.index] = imageInfo;
         //imageInfos.push_back(imageInfo);
     }
@@ -351,11 +366,11 @@ void VulkanResources::updateDescriptorSetForTextures() {
 
         descriptorSets.push_back(descSet);
     //}
-    vkUpdateDescriptorSets(engine->global.device, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
+    vkUpdateDescriptorSets(engine->globalRendering.device, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
     globalTextureDescriptorSetValid = true;
 }
 
-void VulkanResources::updateDescriptorSets(ThreadResources& tr)
+void VulkanResources::updateDescriptorSets(FrameResources& tr)
 {
     vector<VulkanResourceElement>& def = *resourceDefinition;
     for (auto& d : def) {
@@ -370,7 +385,8 @@ void VulkanResources::updateDescriptorSets(ThreadResources& tr)
 // auto add set layout for global texture array if needed
 void VulkanResources::createPipelineLayout(VkPipelineLayout* pipelineLayout, ShaderBase* shaderBase, VkDescriptorSetLayout additionalLayout, size_t additionalLayoutPos) {
     vector<VkDescriptorSetLayout> sets;
-    sets.push_back(layout);
+    assert(shaderBase->descriptorSetLayout != nullptr);
+    sets.push_back(shaderBase->descriptorSetLayout);
     if (additionalLayout != nullptr) {
         assert(additionalLayoutPos = 1);
         sets.push_back(additionalLayout);
@@ -389,7 +405,7 @@ void VulkanResources::createPipelineLayout(VkPipelineLayout* pipelineLayout, Sha
         pipelineLayoutInfo.pPushConstantRanges = shaderBase->pushConstantRanges.data();
     }
 
-    if (vkCreatePipelineLayout(engine->global.device, &pipelineLayoutInfo, nullptr, pipelineLayout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(engine->globalRendering.device, &pipelineLayoutInfo, nullptr, pipelineLayout) != VK_SUCCESS) {
         Error("failed to create pipeline layout!");
     }
 }

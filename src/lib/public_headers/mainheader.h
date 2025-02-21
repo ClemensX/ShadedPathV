@@ -52,6 +52,10 @@
 #include <functional>
 #include <regex>
 #include <bitset>
+#include <future>
+#include <condition_variable>
+#include <unordered_set>
+#include <initializer_list>
 //using namespace std;
 
 // headers for used libraries
@@ -304,17 +308,20 @@ double static const PI_quarter = PI / 4.0;
 
 // engine headers
 
+#include "Threads_independent.h"
 #include "EngineParticipant.h"
+#include "GlobalDef.h"
+#include "Presentation.h"
+#include "DirectImage.h"
 #include "Files.h"
 #include "GameTime.h"
 #include "Util.h"
-#include "Threads.h"
-#include "Presentation.h"
-#include "Camera.h"
-#include "VR.h"
 #include "Texture.h"
 #include "GlobalRendering.h"
-#include "GlobalUpdate.h"
+#include "Threads.h"
+#include "ImageConsumer.h"
+#include "Camera.h"
+#include "VR.h"
 #include "VulkanResources.h"
 #include "ShaderBase.h"
 #include "ClearShader.h"
@@ -330,7 +337,6 @@ double static const PI_quarter = PI / 4.0;
 #include "ui.h"
 #include "UIShader.h"
 #include "Shaders.h"
-#include "ThreadResources.h"
 #include "ShadedPathEngine.h"
 #include "structs.h"
 #include "Path.h"

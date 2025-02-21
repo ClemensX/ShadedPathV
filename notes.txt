@@ -151,3 +151,25 @@ Jessica
 Nicole
 
 
+        auto gpui = engine.createImage("Test Image");
+        DirectImage di(&engine);
+        GPUImage directImage;
+        engine.globalRendering.createDumpImage(directImage);
+        di.openForCPUWriteAccess(gpui, &directImage);
+        engine.util.writeRawImageTestData(directImage, 0);
+        di.closeCPUWriteAccess(gpui, &directImage);
+        di.dumpToFile(gpui);
+
+
+C:\Program Files\PowerShell\7;C:\Program Files\Oculus\Support\oculus-runtime;C:\tools\vcpkg;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files\Microsoft VS Code\bin;C:\Program Files\Git\cmd;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;c:\Program Files\CMake\bin;C:\tools\maven\bin;C:\tools\UltraEdit;C:\Users\cleme\AppData\Roaming\nvm;C:\Program Files\nodejs;C:\Program Files\PowerShell\7\;C:\Program Files\NVIDIA Corporation\NVIDIA app\NvDLISR;C:\Program Files (x86)\Common Files\Acronis\SnapAPI\;C:\Program Files (x86)\Common Files\Acronis\VirtualFile\;C:\Program Files (x86)\Common Files\Acronis\VirtualFile64\;C:\Program Files (x86)\Common Files\Acronis\FileProtector\;C:\Program Files (x86)\Common Files\Acronis\FileProtector64\;C:\Program Files\dotnet\;C:\Users\cleme\AppData\Local\Programs\Python\Python312\Scripts\;C:\Users\cleme\AppData\Local\Programs\Python\Python312\;f:\secretsclient\run\bin;C:\Users\cleme\AppData\Local\Microsoft\WindowsApps;C:\Users\cleme\AppData\Roaming\nvm;C:\Program Files\nodejs;e:\secretsclient\run\bin;C:\Users\cleme\.dotnet\tools
+
+multi thread:
+each draw thread need it's own command pool to record command buffers in parallel
+we need a surrounding primary command buffer, the draw threads will use secondary cmd buffers
+
+we need another queue submit thread for rendering (added to the one for presenting) to execute
+and wait for submission
+OR we use global submit queue for everything. makes final copy of image easier...
+  main submit queue only doing presentation seems over-the-top
+--> use main submit queue for everything, also will nicely synchronize all submits...
+    (data upload and long running background task are another story...)

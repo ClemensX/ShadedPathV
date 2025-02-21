@@ -137,8 +137,8 @@ void MeshStore::uploadObject(MeshInfo* obj)
 	// upload vec3 vertex buffer:
 	size_t vertexBufferSize = obj->vertices.size() * sizeof(PBRShader::Vertex);
 	size_t indexBufferSize = obj->indices.size() * sizeof(obj->indices[0]);
-	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBufferSize, obj->vertices.data(), obj->vertexBuffer, obj->vertexBufferMemory, "GLTF object vertex buffer");
-	engine->global.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexBufferSize, obj->indices.data(), obj->indexBuffer, obj->indexBufferMemory, "GLTF object index buffer");
+	engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBufferSize, obj->vertices.data(), obj->vertexBuffer, obj->vertexBufferMemory, "GLTF object vertex buffer");
+	engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexBufferSize, obj->indices.data(), obj->indexBuffer, obj->indexBufferMemory, "GLTF object index buffer");
 }
 
 const vector<MeshInfo*> &MeshStore::getSortedList()
@@ -155,18 +155,29 @@ const vector<MeshInfo*> &MeshStore::getSortedList()
 	return sortedList;
 }
 
+// we either have single meshes in meshes or collections in meshCollections, delete all with flag available == true
 MeshStore::~MeshStore()
 {
+	for (auto& coll : meshCollections) {
+		if (coll.available) {
+            for (auto& obj : coll.meshInfos) {
+				vkDestroyBuffer(engine->globalRendering.device, obj->vertexBuffer, nullptr);
+				vkFreeMemory(engine->globalRendering.device, obj->vertexBufferMemory, nullptr);
+				vkDestroyBuffer(engine->globalRendering.device, obj->indexBuffer, nullptr);
+				vkFreeMemory(engine->globalRendering.device, obj->indexBufferMemory, nullptr);
+                obj->available = false;
+            }
+		}
+	}
 	for (auto& mapobj : meshes) {
 		if (mapobj.second.available) {
 			auto& obj = mapobj.second;
-			vkDestroyBuffer(engine->global.device, obj.vertexBuffer, nullptr);
-			vkFreeMemory(engine->global.device, obj.vertexBufferMemory, nullptr);
-			vkDestroyBuffer(engine->global.device, obj.indexBuffer, nullptr);
-			vkFreeMemory(engine->global.device, obj.indexBufferMemory, nullptr);
+			vkDestroyBuffer(engine->globalRendering.device, obj.vertexBuffer, nullptr);
+			vkFreeMemory(engine->globalRendering.device, obj.vertexBufferMemory, nullptr);
+			vkDestroyBuffer(engine->globalRendering.device, obj.indexBuffer, nullptr);
+			vkFreeMemory(engine->globalRendering.device, obj.indexBufferMemory, nullptr);
 		}
 	}
-
 }
 
 WorldObject::WorldObject() {

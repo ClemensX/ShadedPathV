@@ -2,7 +2,6 @@
 // enable dynamic indexing:
 // https://github.com/KhronosGroup/MoltenVK/issues/1696
 #extension GL_EXT_nonuniform_qualifier : require
-#extension GL_KHR_vulkan_glsl:enable
 
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 fragTexCoord;

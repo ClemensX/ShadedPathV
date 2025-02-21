@@ -33,11 +33,16 @@ public:
 	std::vector<BillboardDef> addBillboards;
 };
 
+// forward
+class BillboardSubShader;
+
 // Billboard shader draws billboards, it creates 2 pipelines, one for fixed (uploaded at start)
 // and one for dynamic billoards that change every frame
 class BillboardShader : public ShaderBase {
 public:
 	// max # billboards: we only allow adding billboards during init phase so we know the buffer size when reserving GPU memory
+
+	std::vector<BillboardSubShader> globalSubShaders;
 
 	std::vector<VulkanResourceElement> vulkanResourceDefinition = {
 		{ VulkanResourceType::MVPBuffer },
@@ -99,11 +104,9 @@ public:
 	// shader initialization, end result is a graphics pipeline for each ThreadResources instance
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
 	// thread resources initialization
-	virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) override;
-	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState) override;
-	virtual void createCommandBuffer(ThreadResources& tr) override;
-	virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
-	virtual void destroyThreadResources(ThreadResources& tr) override;
+	virtual void initSingle(FrameResources& tr, ShaderState& shaderState) override;
+	virtual void createCommandBuffer(FrameResources& tr) override;
+	virtual void addCommandBuffers(FrameResources* fr, DrawResult* drawResult) override;
 
 	// add billboards - they will never  be removed
 	void add(std::vector<BillboardDef>& billboardsToAdd);
@@ -121,30 +124,90 @@ public:
 	}
 
 	// per frame update of UBO / MVP
-	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
+	void uploadToGPU(FrameResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
 	// calc verstices around origin needed to display billboard (used e.g. for debugging)
 	// usually this is done in geom shader, not here
 	static void calcVertsOrigin(std::vector<glm::vec3>& verts);
+	// vertex buffer for fixed billboards (one buffer for all threads) 
+	VkBuffer vertexBuffer = nullptr;
+	int heightmapTextureIndex = -1;
+	std::vector<BillboardDef> billboards;
 private:
-
-	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
-
 	UniformBufferObject ubo = {};
 	UniformBufferObject updatedUBO = {};
 	bool disabled = false;
-	std::vector<BillboardDef> billboards;
 
-	// vertex buffer for fixed billboards (one buffer for all threads) 
-	VkBuffer vertexBuffer = nullptr;
 	// vertex buffer device memory
 	VkDeviceMemory vertexBufferMemory = nullptr;
 	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;
 	VkShaderModule geomShaderModule = nullptr;
-	int heightmapTextureIndex = -1;
 
 	// util methods
 public:
+};
+
+/*
+ * BillboardSubShader includes everything for one shader invocation.
+ * Currently only 1 sub shader
+ */
+class BillboardSubShader {
+public:
+	void init(BillboardShader* parent, std::string debugName);
+	void setVertShaderModule(VkShaderModule sm) {
+		vertShaderModule = sm;
+	}
+	void setGeomShaderModule(VkShaderModule sm) {
+		geomShaderModule = sm;
+	}
+	void setFragShaderModule(VkShaderModule sm) {
+		fragShaderModule = sm;
+	}
+	void initSingle(FrameResources& tr, ShaderState& shaderState);
+	void setVulkanResources(VulkanResources* vr) {
+		vulkanResources = vr;
+	}
+
+	// All sections need: buffer allocation and recording draw commands.
+	// Stage they are called at will be very different
+	void allocateCommandBuffer(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, const char* debugName);
+	void addRenderPassAndDrawCommands(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, VkBuffer vertexBuffer);
+
+	void createGlobalCommandBufferAndRenderPass(FrameResources& tr);
+	void recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
+	// per frame update of UBO / MVP
+	void uploadToGPU(FrameResources& tr, BillboardShader::UniformBufferObject& ubo, BillboardShader::UniformBufferObject& ubo2);
+
+	void destroy();
+	VkFramebuffer framebuffer = nullptr;
+	VkFramebuffer framebuffer2 = nullptr;
+	VkRenderPass renderPass = nullptr;
+	VkPipelineLayout pipelineLayout = nullptr;
+	VkPipeline graphicsPipeline = nullptr;
+	VkCommandBuffer commandBuffer = nullptr;
+	// vertex buffer for billboards 
+	// currently: only global buffer for all threads, no need to have per thread vertices
+	//VkBuffer billboardVertexBuffer = nullptr;
+	// vertex buffer device memory
+	//VkDeviceMemory billboardVertexBufferMemory = nullptr;
+	// MVP buffer
+	VkBuffer uniformBuffer = nullptr;
+	VkBuffer uniformBuffer2 = nullptr;
+	// MVP buffer device memory
+	VkDeviceMemory uniformBufferMemory = nullptr;
+	VkDeviceMemory uniformBufferMemory2 = nullptr;
+	VkDescriptorSet descriptorSet = nullptr;
+	VkDescriptorSet descriptorSet2 = nullptr;
+private:
+	BillboardShader* billboardShader = nullptr;
+	VulkanResources* vulkanResources = nullptr;
+	std::string name;
+	VkShaderModule vertShaderModule = nullptr;
+	VkShaderModule geomShaderModule = nullptr;
+	VkShaderModule fragShaderModule = nullptr;
+	ShadedPathEngine* engine = nullptr;
+	VkDevice device = nullptr;
+	FrameResources* frameResources = nullptr;
 };
 
 struct BillboardThreadResources : ShaderThreadResources {

@@ -25,22 +25,13 @@ struct SingleQueueTransferInfo {
 	VkSubmitInfo* submitInfoAddr;
 };
 
-// forward declarations
-class ShadedPathEngine;
-
 // global resources that are not changed in rendering threads.
-// shader code, meshes, etc.
-// all objects here are specific to shaders
-// shader independent global objects like framebuffer, swap chain, render passes are in ShadedPathEngine
-class GlobalRendering
+class GlobalRendering : public EngineParticipant
 {
-private:
-	// we need direct access to engine instance
-	ShadedPathEngine& engine;
-
 public:
-	GlobalRendering(ShadedPathEngine& s) : engine(s) {
+	GlobalRendering(ShadedPathEngine* s) {
 		Log("GlobalRendering c'tor\n");
+        setEngine(s);
 		// log vulkan version as string
 		Log("Vulkan API Version: " << getVulkanAPIString().c_str() << std::endl);
 	};
@@ -50,23 +41,24 @@ public:
 		shutdown();
 	};
 
-	// select vulkan profile and API version
-	VpProfileProperties profile{
-#		if defined(USE_SMALL_GRAPHICS)
-			VP_KHR_ROADMAP_2022_NAME,
-			VP_KHR_ROADMAP_2022_SPEC_VERSION
-#		else
-			//VP_LUNARG_DESKTOP_PORTABILITY_2021_NAME,
-			//VP_LUNARG_DESKTOP_PORTABILITY_2021_SPEC_VERSION
-			//VP_LUNARG_DESKTOP_BASELINE_2022_NAME,
-			//VP_LUNARG_DESKTOP_BASELINE_2022_SPEC_VERSION
-			VP_KHR_ROADMAP_2024_NAME,
-			VP_KHR_ROADMAP_2024_SPEC_VERSION
-#		endif
+	std::vector<const char*> instanceExtensions = {
+#   if defined(ENABLE_DEBUG_UTILS_EXTENSION)
+		VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
+#   endif
+#   if defined(__APPLE__)
+		VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME,
+#   endif
+#   if defined(_WIN64)
+        "VK_KHR_win32_surface",
+#   endif
+		VK_KHR_SURFACE_EXTENSION_NAME
 	};
-	//uint32_t API_VERSION = VP_KHR_ROADMAP_2022_MIN_API_VERSION;
 
-	static const bool USE_PROFILE_DYN_RENDERING = false;
+	std::vector<const char*> deviceExtensions = {
+		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+		VK_EXT_MESH_SHADER_EXTENSION_NAME//,
+		//VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
+	};
 
 	// flag for debug marker extension used
 #if defined(ENABLE_DEBUG_UTILS_EXTENSION)
@@ -88,9 +80,7 @@ public:
 
 	// initialize all global Vulkan stuff - engine configuration settings
 	// cannot be changed after calling this, because some settings influence Vulkan creation options
-	void initBeforePresentation();
-	// device selection and creation
-	void initAfterPresentation();
+	void init();
 
 	// destroy global resources, should only be called from engine dtor
 	void shutdown();
@@ -104,6 +94,7 @@ public:
 	uint32_t findMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags properties);
 	uint32_t presentQueueFamiliyIndex = -1;
 	uint32_t presentQueueIndex = -1;
+    VkSurfaceKHR surface = nullptr; // TODO not initialized before window creation, need to find a way to NOT use this
 
 	// Vulkan helper
 
@@ -121,18 +112,20 @@ public:
 	VkImageView createImageViewCube(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 	// create image and bound memory with default parameters - use layers == 6 for cube map
 	void createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format,
-		VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, uint32_t layers = 1);
+		VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, const char* debugName, uint32_t layers = 1);
 	// create cube image and bound memory with default parameters
 	void createImageCube(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format,
-		VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory) {
-		createImage(width, height, mipLevels, numSamples, format, tiling, usage, properties, image, imageMemory, 6);
+		VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, const char* debugName) {
+		createImage(width, height, mipLevels, numSamples, format, tiling, usage, properties, image, imageMemory, debugName, 6);
 	}
 	void createCubeMapFrom2dTexture(std::string textureName2d, std::string textureNameCube);
+	void destroyImage(VkImage image, VkDeviceMemory imageMemory);
+	void destroyImageView(VkImageView imageView);
 
 	// fill in viewport and scissor and create VkPipelineViewportStateCreateInfo with them
 	void createViewportState(ShaderState &shaderState);
 	// Vulkan entities
-	VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+	VkPhysicalDevice physicalDevice = nullptr;
 	VkDevice device = nullptr;
 	VkInstance vkInstance = nullptr;
 	VkQueue graphicsQueue = nullptr;
@@ -145,9 +138,10 @@ public:
 	void createCommandPools();
 	VkCommandPool commandPool = nullptr;
 	VkCommandPool commandPoolTransfer = nullptr;
+    std::vector<ThreadResources> workerThreadResources;
 	bool syncedOperations = false;
 	VkCommandBuffer commandBufferSingle = nullptr;
-	void createCommandPool(VkCommandPool& pool);
+	void createCommandPool(VkCommandPool& pool, std::string name = "");
 	void createCommandPoolTransfer(VkCommandPool& pool);
 	// single time commands with optional syncing
 	VkCommandBuffer beginSingleTimeCommands(bool sync = false, QueueSelector queue = QueueSelector::GRAPHICS);
@@ -171,69 +165,109 @@ public:
 
         return std::string(buffer);
     }
+
+	// low level graphics
+
+	// create image in GPU with default settings (render target, no mipmaps, not host visible)
+	GPUImage* createImage(std::vector<GPUImage>& list, const char* debugName, uint32_t width = 0, uint32_t height = 0);
+    // create image in GPU with direct memory access by host, can be used for dumping to file or CPU based image manipulation
+    void createDumpImage(GPUImage& gpui, uint32_t width = 0, uint32_t height = 0);
+	void destroyImage(GPUImage* image);
+	bool isDeviceExtensionRequested(const char* extensionName) {
+        return isExtensionAvailable(deviceExtensions, extensionName);
+	}
+	bool isMeshShading() {
+        return isDeviceExtensionRequested(VK_EXT_MESH_SHADER_EXTENSION_NAME);
+	}
+    bool isSynchronization2() {
+        return isDeviceExtensionRequested(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
+    }
+
+    // create GPU image from FrameBufferAttachment
+	void makeGPUImage(FrameBufferAttachment* fba, GPUImage& gpu);
+
+	// dump a rendered image to file
+	void dumpToFile(FrameBufferAttachment* fba, DirectImage& di);
+
+	// present a rendered image to file
+	void present(FrameResources* fr, DirectImage& di, WindowInfo* winfo);
+
+	// process finished render image (copy to app window, dump to file, etc.)
+	void processImage(FrameResources* fr);
+	// prepare next frame, wait for submit fences, etc.
+	void preFrame(FrameResources* fr);
+	// last action before submitting command buffers
+	void postFrame(FrameResources* fr);
+	// submit command buffers, can only be called from queue submit thread
+	void submit(FrameResources* fr);
 private:
-	std::vector<const char*> deviceExtensions = {
-		//VK_EXT_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME
-		//VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
-		//VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
-		// debug_utils is only an instance extension
-//#if defined(ENABLE_DEBUG_UTILS_EXTENSION)
-//		VK_EXT_DEBUG_UTILS_EXTENSION_NAME
-//#endif
+    // gather all cmd buffers from the DrawResults of the current frame and copy into single list cmdBufs
+	void consolidateCommandBuffers(CommandBufferArray& cmdBufs, FrameResources* fr);
+	// copy all cmd buffers here before calling vkQueueSubmit
+	CommandBufferArray submitCommandBuffers;
+    // chain device feature structures, pNext pointer has to be directly after type
+    void chainNextDeviceFeature(void* elder, void* child);
+    bool isExtensionAvailable(const std::vector<const char*>& availableExtensions, const char* extensionName) {
+        return std::find_if(availableExtensions.begin(), availableExtensions.end(),
+            [extensionName](const std::string& ext) {
+                return strcmp(ext.c_str(), extensionName) == 0;
+            }) != availableExtensions.end();
+    }
+
+    // check extension support and optionally return list of supported extensions
+	void getInstanceExtensionSupport(std::vector<std::string>* list) {
+		uint32_t extensionCount = 0;
+		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+		std::vector<VkExtensionProperties> extensions(extensionCount);
+		vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+		if (list != nullptr) {
+			for (const auto& extension : extensions) {
+				list->push_back(extension.extensionName);
+			}
+		}
+	}
+
+	struct DeviceInfo {
+		VkPhysicalDevice device;
+		VkPhysicalDeviceProperties properties;
+		VkPhysicalDeviceProperties2 properties2;
+		VkPhysicalDeviceFeatures features;
+        std::vector<std::string> extensions;
+        bool suitable = false;
 	};
 
-	void gatherDeviceExtensions();
+	bool checkFeatureMeshShader(DeviceInfo& info);
+    bool checkFeatureCompressedTextures(DeviceInfo& info);
+    bool checkFeatureDescriptorIndexSize(DeviceInfo& info);
+    // swap chain support check, only available after real device creation, not during device selection
+    bool checkFeatureSwapChain(VkPhysicalDevice physDevice);
+	// check extension support and optionally return list of supported extensions
+	void getDeviceExtensionSupport(VkPhysicalDevice device, std::vector<std::string>* list) {
+		uint32_t extensionCount = 0;
+		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+		std::vector<VkExtensionProperties> extensions(extensionCount);
+		vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, extensions.data());
+		if (list != nullptr) {
+			for (const auto& extension : extensions) {
+				list->push_back(extension.extensionName);
+			}
+		}
+	}
+
+	std::vector<DeviceInfo> deviceInfos;
+	void gatherDeviceInfos();
+    void pickDevice();
+	bool isDeviceSuitable(DeviceInfo& info);
+
+	// init vulkan instance, using no extensions is needed for gathering device info at startup
 	void initVulkanInstance();
 
-	std::vector<const char*> getRequiredExtensions();
-
-	// devices
-	void assignGlobals(VkPhysicalDevice phys);
-	void pickPhysicalDevice(bool listmode = false);
-	// list or select physical devices
-	bool isDeviceSuitable(VkPhysicalDevice device, bool listmode = false);
 	// list queue flags as text
 	std::string getQueueFlagsString(VkQueueFlags flags);
 
 	// swap chain query
-	bool checkDeviceExtensionSupport(VkPhysicalDevice phys_device, bool listmode);
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+	VkFence queueSubmitFence = nullptr;
 
-	// check if selected profile is supported, return false otherwise
-	bool checkProfileSupport() {
-		return true;
-		VkResult result = VK_SUCCESS;
-		VkBool32 supported = VK_FALSE;
-		result = vpGetInstanceProfileSupport(nullptr, &profile, &supported);
-		if (result != VK_SUCCESS) {
-			// something went wrong
-			Log("Vulkan profile not supported: " << profile.profileName << std::endl);
-			return false;
-		}
-		else if (supported != VK_TRUE) {
-			// profile is not supported at the instance level
-			Log("Vulkan profile instance not supported: " << profile.profileName << " instance: " << profile.specVersion << std::endl);
-			return false;
-		}
-		Log("Vulkan profile checked ok: " << profile.profileName << " instance: " << profile.specVersion << std::endl)
-			return true;
-	}
-	bool checkDeviceProfileSupport(VkInstance instance, VkPhysicalDevice physDevice) {
-		VkResult result = VK_SUCCESS;
-		VkBool32 supported = VK_FALSE;
-		result = vpGetPhysicalDeviceProfileSupport(instance, physDevice, &profile, &supported);
-		if (result != VK_SUCCESS) {
-			// something went wrong
-			Log("Vulkan device profile not supported: " << profile.profileName << std::endl);
-			return false;
-		}
-		else if (supported != VK_TRUE) {
-			// profile is not supported at the instance level
-			Log("Vulkan device profile not supported: " << profile.profileName << " instance: " << profile.specVersion << std::endl);
-			return false;
-		}
-		Log("Vulkan device profile checked ok: " << profile.profileName << " instance: " << profile.specVersion << std::endl)
-			return true;
-	}
 };
 

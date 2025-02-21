@@ -5,7 +5,7 @@ using namespace std;
 void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 {
 	ShaderBase::init(engine);
-	engine.globalUpdate.registerShader(this);
+	//engine.globalUpdate.registerShader(this);
 	resources.setResourceDefinition(&vulkanResourceDefinition);
 
 	// create shader modules
@@ -13,7 +13,7 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	fragShaderModule = resources.createShaderModule("line.frag.spv");
 
 	// descriptor set layout
-	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, 3);
+	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, this, 3); // allocate for 3 subshaders
 	resources.createPipelineLayout(&pipelineLayout, this);
 
 	int fl = engine.getFramesInFlight();
@@ -44,24 +44,20 @@ void LineShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	}
 }
 
-void LineShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
+void LineShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 {
-	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
+	LineSubShader& ug = globalUpdateLineSubShaders[tr.frameIndex];
 	ug.initSingle(tr, shaderState);
 	ug.allocateCommandBuffer(tr, &ug.commandBuffer, "LINE PERMANENT COMMAND BUFFER");
-	LineSubShader& pf = perFrameLineSubShaders[tr.threadResourcesIndex];
+	LineSubShader& pf = perFrameLineSubShaders[tr.frameIndex];
 	pf.initSingle(tr, shaderState);
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * LineShader::MAX_DYNAMIC_LINES;
 	createVertexBuffer(pf.vertexBufferLocal, bufferSize, pf.vertexBufferMemoryLocal);
-	pf.allocateCommandBuffer(tr, &pf.commandBuffer, "LINE ADD COMMAND BUFFER");
-	LineSubShader& sub = globalLineSubShaders[tr.threadResourcesIndex];
+    auto name = engine->util.createDebugName("LINE ADD COMMAND BUFFER", tr.frameIndex);
+	pf.allocateCommandBuffer(tr, &pf.commandBuffer, name.c_str());
+	LineSubShader& sub = globalLineSubShaders[tr.frameIndex];
 	sub.initSingle(tr, shaderState);
 }
-
-void LineShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
-{
-}
-
 
 void LineShader::uploadFixedGlobalLines()
 {
@@ -85,54 +81,60 @@ void LineShader::uploadFixedGlobalLines()
 
 	// create and copy vertex buffer in GPU
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * all.size();
-	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, all.data(), vertexBufferFixedGlobal, vertexBufferMemoryFixedGlobal, "LineShader Global Buffer");
+	engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, all.data(), vertexBufferFixedGlobal, vertexBufferMemoryFixedGlobal, "LineShader Global Buffer");
 }
 
-void LineShader::createCommandBuffer(ThreadResources& tr)
+void LineShader::createCommandBuffer(FrameResources& tr)
 {
-	LineSubShader& sub = globalLineSubShaders[tr.threadResourcesIndex];
+	LineSubShader& sub = globalLineSubShaders[tr.frameIndex];
 	sub.drawCount = lines.size() * 2;
 
 	sub.createGlobalCommandBufferAndRenderPass(tr);
 }
 
-void LineShader::addCurrentCommandBuffer(ThreadResources& tr) {
-	auto& perFrameSubShader = perFrameLineSubShaders[tr.threadResourcesIndex];
+void LineShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
+	if (!enabled) return;
+	int index = drawResult->getNextFreeCommandBufferIndex();
+	auto& perFrameSubShader = perFrameLineSubShaders[fr->frameIndex];
 	if (perFrameSubShader.drawCount != 0) {
-		tr.activeCommandBuffers.push_back(perFrameSubShader.commandBuffer);
+        drawResult->commandBuffers[index++] = perFrameSubShader.commandBuffer;
 	}
-	auto& globalSubShader = globalLineSubShaders[tr.threadResourcesIndex];
-	if (globalSubShader.drawCount != 0) {
-		tr.activeCommandBuffers.push_back(globalSubShader.commandBuffer);
+	auto& globalSubShader = globalLineSubShaders[fr->frameIndex];
+    if (globalSubShader.drawCount != 0) {
+        drawResult->commandBuffers[index++] = globalSubShader.commandBuffer;
 	}
-	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
+	LineSubShader& ug = globalUpdateLineSubShaders[fr->frameIndex];
 	if (ug.active) {
-		tr.activeCommandBuffers.push_back(ug.commandBuffer);
+        drawResult->commandBuffers[index++] = ug.commandBuffer;
 	}
 
-};
+}
 
-void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
+
+void LineShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, VkBuffer vertexBuffer, bool isRightEye)
 {
 }
 
-void LineShader::clearLocalLines(ThreadResources& tr)
+void LineShader::clearLocalLines(FrameResources& tr)
 {
-	LineSubShader& pf = perFrameLineSubShaders[tr.threadResourcesIndex];
+	if (!enabled) return;
+	LineSubShader& pf = perFrameLineSubShaders[tr.frameIndex];
 	pf.vertices.clear();
 }
 
 void LineShader::addFixedGlobalLines(vector<LineDef>& linesToAdd)
 {
+	if (!enabled) return;
 	if (linesToAdd.size() == 0 && lines.size() == 0)
 		return;
 
 	lines.insert(lines.end(), linesToAdd.begin(), linesToAdd.end());
 }
 
-void LineShader::addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& tr)
+void LineShader::addOneTime(std::vector<LineDef>& linesToAdd, FrameResources& tr)
 {
-	LineSubShader& pf = perFrameLineSubShaders[tr.threadResourcesIndex];
+	if (!enabled) return;
+	LineSubShader& pf = perFrameLineSubShaders[tr.frameIndex];
 	//auto& lines = getInactiveAppDataSet(user)->oneTimeLines;
 	if (linesToAdd.size() == 0)
 		return;
@@ -151,19 +153,8 @@ void LineShader::addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& t
 }
 
 // called from user code in drawing thread 
-void LineShader::addPermament(std::vector<LineDef>& linesToAdd, ThreadResources& tr)
+void LineShader::addPermament(std::vector<LineDef>& linesToAdd)
 {
-	//assert(engine->isUpdateThread() == false);
-	if (engine->globalUpdate.isRunning()) {
-		//Error("ERROR: trying to add permanent lines while global update is running\n");
-		Log("WARNING: trying to add permanent lines while global update is running\n");
-		return;
-	}
-	if (renderThreadUpdateRunning) {
-		Log("WARNING: trying to add permanent lines while another threads runs the same (should not happen)\n");
-		return;
-	}
-	renderThreadUpdateRunning = true;
 	verticesPermanent.clear();
 	if (linesToAdd.size() == 0)
 		return;
@@ -177,28 +168,31 @@ void LineShader::addPermament(std::vector<LineDef>& linesToAdd, ThreadResources&
 		verticesPermanent.push_back(v1);
 		verticesPermanent.push_back(v2);
 	}
-	triggerUpdateThread();
-	renderThreadUpdateRunning = false;
-	//ug.drawCount = ug.vertices.size();
+
+	// transfer to GPU
+	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * verticesPermanent.size();
+	VkDeviceMemory vertexBufferMemory = nullptr;
+	//Log("LineShader::updateGlobal wants to update to gen " << currentSet.updateNumber << " would delete, draw count " << updateElem->drawCount << endl);
+	updateElement.active = true;
+	engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, verticesPermanent.data(),
+		updateElement.vertexBuffer, updateElement.vertexBufferMemory, "LineShader Global UPDATE Buffer ", GlobalRendering::QueueSelector::TRANSFER);
+	updateElement.drawCount = verticesPermanent.size();
+	oldUpdateInUse = 2;
 }
 
-void LineShader::prepareAddLines(ThreadResources& tr)
+void LineShader::prepareAddLines(FrameResources& tr)
 {
 	if (!enabled) return;
-	LineSubShader& pf = perFrameLineSubShaders[tr.threadResourcesIndex];
+	LineSubShader& pf = perFrameLineSubShaders[tr.frameIndex];
 	pf.addRenderPassAndDrawCommands(tr, &pf.commandBuffer, pf.vertexBufferLocal);
 }
 
-void LineShader::assertUpdateThread() {
-	assert(engine->isUpdateThread() == true);
-}
-
 // called from user code in drawing thread
-void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
+void LineShader::uploadToGPU(FrameResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
 	if (!enabled) return;
-	LineSubShader& sub = globalLineSubShaders[tr.threadResourcesIndex];
+	LineSubShader& sub = globalLineSubShaders[tr.frameIndex];
 	sub.uploadToGPU(tr, ubo, ubo2);
-	LineSubShader& pf = perFrameLineSubShaders[tr.threadResourcesIndex];
+	LineSubShader& pf = perFrameLineSubShaders[tr.frameIndex];
 	pf.uploadToGPU(tr, ubo, ubo2);
 	// copy added lines to GPU:
 	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * LineShader::MAX_DYNAMIC_LINES;
@@ -212,30 +206,8 @@ void LineShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Unif
 		memcpy(data, pf.vertices.data(), copy_size);
 		vkUnmapMemory(device, pf.vertexBufferMemoryLocal);
 	}
-	LineSubShader& ug = globalUpdateLineSubShaders[tr.threadResourcesIndex];
-	// handle changed update sets:
-	auto* applyGlobalUpdateSet = engine->globalUpdate.getChangedGlobalUpdateSet(tr.currentGlobalUpdateElement, ug.updateNumber);
-	if (applyGlobalUpdateSet != nullptr) {
-		//Log("render thread " << tr.frameIndex << " should apply global update " << applyGlobalUpdateSet->updateNumber << " set " << applyGlobalUpdateSet->to_string() << endl);
-		applyGlobalUpdate(ug, tr, applyGlobalUpdateSet);
-	}
-	// if we have an active update set, we need to upload its MVP matrix to GPU
-	if (tr.currentGlobalUpdateElement != nullptr) {
-			ug.uploadToGPU(tr, ubo, ubo2);
-	}
-}
-
-void LineShader::triggerUpdateThread() {
-	engine->pushUpdate(0);
-}
-
-void LineShader::resourceSwitch(GlobalResourceSet set)
-{
-	if (set == GlobalResourceSet::SET_A) {
-		//LogCond(LOG_GLOBAL_UPDATE, "LineShader::resourceSwitch() to SET_A" << endl;)
-		//Log(LOG_GLOBAL_UPDATE, "LineShader::resourceSwitch() to SET_A" << endl;)
-	}
-	else Error("not implemented");
+	LineSubShader& ug = globalUpdateLineSubShaders[tr.frameIndex];
+    ug.uploadToGPU(tr, ubo, ubo2);
 }
 
 LineShader::~LineShader()
@@ -244,8 +216,6 @@ LineShader::~LineShader()
 	if (!enabled) {
 		return;
 	}
-	reuseUpdateElement(&globalUpdateElementA);
-	reuseUpdateElement(&globalUpdateElementB);
 	for (LineSubShader sub : globalLineSubShaders) {
 		sub.destroy();
 	}
@@ -254,6 +224,12 @@ LineShader::~LineShader()
 	}
 	for (LineSubShader sub : globalUpdateLineSubShaders) {
 		sub.destroy();
+	}
+	// destroy update element only once:
+    auto& sub = globalUpdateLineSubShaders[0];
+	if (sub.activeUpdateElement.vertexBuffer != nullptr) {
+		vkDestroyBuffer(device, sub.activeUpdateElement.vertexBuffer, nullptr);
+		vkFreeMemory(device, sub.activeUpdateElement.vertexBufferMemory, nullptr);
 	}
 	vkDestroyBuffer(device, vertexBufferFixedGlobal, nullptr);
 	vkFreeMemory(device, vertexBufferMemoryFixedGlobal, nullptr);
@@ -264,24 +240,19 @@ LineShader::~LineShader()
 	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 }
 
-void LineShader::destroyThreadResources(ThreadResources& tr)
-{
-	if (engine->isStereo()) {
-	}
-}
-
 // LineSubShader
 
 void LineSubShader::init(LineShader* parent, std::string debugName) {
 	lineShader = parent;
 	name = debugName;
 	engine = lineShader->engine;
-	device = &engine->global.device;
+	device = &engine->globalRendering.device;
 	Log("LineSubShader init: " << debugName.c_str() << std::endl);
 }
 
-void LineSubShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
+void LineSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 {
+	frameResources = &tr;
 	// MVP uniform buffer
 	lineShader->createUniformBuffer(uniformBuffer, sizeof(LineShader::UniformBufferObject),
 		uniformBufferMemory);
@@ -301,7 +272,10 @@ void LineSubShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	handover.descriptorSet2 = &descriptorSet2;
 	handover.dynBuffer = nullptr;
 	handover.dynBufferSize = 0;
-	handover.debugBaseName = engine->util.createDebugName("ThreadResources.lineShader", tr);
+	handover.debugBaseName = engine->util.createDebugName("ThreadResources.lineShader", tr.frameIndex);
+    assert(lineShader->descriptorSetLayout != nullptr);
+    assert(lineShader->descriptorPool != nullptr);
+	handover.shader = lineShader;
 	vulkanResources->createThreadResources(handover);
 
 	lineShader->createRenderPassAndFramebuffer(tr, shaderState, renderPass, framebuffer, framebuffer2);
@@ -365,18 +339,9 @@ void LineSubShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	if (vkCreateGraphicsPipelines(lineShader->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
 		Error("failed to create graphics pipeline!");
 	}
-	//pipelineInfo.renderPass = trl.renderPassAdd;
-	//if (vkCreateGraphicsPipelines(lineShader->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &trl.graphicsPipelineAdd) != VK_SUCCESS) {
-	//	Error("failed to create graphics pipeline!");
-	//}
-
-	// create and map vertex buffer in GPU (for lines added for a single frame)
-	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * LineShader::MAX_DYNAMIC_LINES;
-	//lineShader->createVertexBuffer(tr, trl.vertexBufferAdd, bufferSize, trl.vertexBufferAddMemory);
-	//createCommandBufferLineAdd(tr);
 }
 
-void LineSubShader::allocateCommandBuffer(ThreadResources& tr, VkCommandBuffer* cmdBuferPtr, const char* debugName)
+void LineSubShader::allocateCommandBuffer(FrameResources& tr, VkCommandBuffer* cmdBuferPtr, const char* debugName)
 {
 	vulkanResources->updateDescriptorSets(tr);
 	VkCommandBufferAllocateInfo allocInfo{};
@@ -391,13 +356,14 @@ void LineSubShader::allocateCommandBuffer(ThreadResources& tr, VkCommandBuffer* 
 	engine->util.debugNameObjectCommandBuffer(commandBuffer, debugName);
 }
 
-void LineSubShader::addRenderPassAndDrawCommands(ThreadResources& tr, VkCommandBuffer* cmdBufferPtr, VkBuffer vertexBuffer)
+void LineSubShader::addRenderPassAndDrawCommands(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, VkBuffer vertexBuffer)
 {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0; // Optional
 	beginInfo.pInheritanceInfo = nullptr; // Optional
 
+	//Log("LineSubShader begin cmd buffer: " << commandBuffer << endl);
 	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
 		Error("failed to begin recording triangle command buffer!");
 	}
@@ -424,13 +390,13 @@ void LineSubShader::addRenderPassAndDrawCommands(ThreadResources& tr, VkCommandB
 	}
 }
 
-void LineSubShader::createGlobalCommandBufferAndRenderPass(ThreadResources& tr)
+void LineSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr)
 {
 	allocateCommandBuffer(tr, &commandBuffer, "LINE COMMAND BUFFER");
 	addRenderPassAndDrawCommands(tr, &commandBuffer, lineShader->vertexBufferFixedGlobal);
 }
 
-void LineSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
+void LineSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, VkBuffer vertexBuffer, bool isRightEye)
 {
 	if (vertexBuffer == nullptr) return; // no fixed lines to draw
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
@@ -446,16 +412,14 @@ void LineSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadReso
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, lineShader->pipelineLayout, 0, 1, &descriptorSet2, 0, nullptr);
 	}
 
-	//vkCmdDraw(commandBuffer, static_cast<uint32_t>(lineShader->lines.size() * 2), 1, 0, 0);
 	vkCmdDraw(commandBuffer, static_cast<uint32_t>(drawCount), 1, 0, 0);
 }
 
-void LineSubShader::uploadToGPU(ThreadResources& tr, LineShader::UniformBufferObject& ubo, LineShader::UniformBufferObject& ubo2) {
+void LineSubShader::uploadToGPU(FrameResources& tr, LineShader::UniformBufferObject& ubo, LineShader::UniformBufferObject& ubo2) {
 	if (drawCount == 0) return;
 	// copy ubo to GPU:
 	auto& device = lineShader->device;
 	void* data;
-	//globalLineSubShader.uploadToGPU(tr, ubo);
 	vkMapMemory(device, uniformBufferMemory, 0, sizeof(ubo), 0, &data);
 	memcpy(data, &ubo, sizeof(ubo));
 	vkUnmapMemory(device, uniformBufferMemory);
@@ -467,10 +431,6 @@ void LineSubShader::uploadToGPU(ThreadResources& tr, LineShader::UniformBufferOb
 
 }
 
-void LineShader::createUpdateSet(GlobalUpdateElement& el)
-{
-}
-
 void LineSubShader::destroy() {
 	vkDestroyPipeline(*device, graphicsPipeline, nullptr);
 	vkDestroyFramebuffer(*device, framebuffer, nullptr);
@@ -478,58 +438,29 @@ void LineSubShader::destroy() {
 	vkDestroyRenderPass(*device, renderPass, nullptr);
 	vkDestroyBuffer(*device, uniformBuffer, nullptr);
 	vkDestroyBuffer(*device, uniformBuffer2, nullptr);
+    //vkFreeCommandBuffers(*device, frameResources->commandPool, 1, &commandBuffer);
 	vkFreeMemory(*device, uniformBufferMemory, nullptr);
 	vkFreeMemory(*device, uniformBufferMemory2, nullptr);
 	vkDestroyBuffer(*device, vertexBufferLocal, nullptr);
 	vkFreeMemory(*device, vertexBufferMemoryLocal, nullptr);
 }
 
-// called from update thread
-void LineShader::updateGlobal(GlobalUpdateElement& currentSet)
+void LineShader::applyGlobalUpdate(FrameResources& tr)
 {
-	assertUpdateThread();
-	//Log("LineShader::updateGlobal " << currentSet.updateNumber << " set " << currentSet.to_string() << endl);
-	VkDeviceSize bufferSize = sizeof(LineShader::Vertex) * verticesPermanent.size();
-	LineShaderUpdateElement* updateElem = nullptr;
-	VkDeviceMemory vertexBufferMemory = nullptr;
-	if (currentSet.updateDesignator == GlobalUpdateDesignator::SET_A) {
-		updateElem = &globalUpdateElementA;
-	} else {
-		updateElem = &globalUpdateElementB;
+    int index = tr.frameIndex;
+	//Log("update frame res " << index << endl);
+	auto& sub = globalUpdateLineSubShaders[index];
+	oldUpdateInUse--;
+	// cleanup old:
+	if (sub.active && oldUpdateInUse == 0) {
+		vkDestroyBuffer(device, sub.activeUpdateElement.vertexBuffer, nullptr);
+        sub.activeUpdateElement.vertexBuffer = nullptr;
+		vkFreeMemory(device, sub.activeUpdateElement.vertexBufferMemory, nullptr);
+        sub.activeUpdateElement.vertexBufferMemory = nullptr;
 	}
-	//Log("LineShader::updateGlobal wants to update to gen " << currentSet.updateNumber << " would delete, draw count " << updateElem->drawCount << endl);
-	updateElem->active = true;
-	engine->global.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, verticesPermanent.data(),
-		updateElem->vertexBuffer, updateElem->vertexBufferMemory, "LineShader Global UPDATE Buffer " + currentSet.to_string(), GlobalRendering::QueueSelector::TRANSFER);
-	updateElem->drawCount = verticesPermanent.size();
-	//this_thread::sleep_for(chrono::milliseconds(3000)); //test slow update
-}
-
-void LineShader::reuseUpdateElement(LineShaderUpdateElement* el)
-{
-	if (el->vertexBuffer == nullptr) return;
-	if (el->vertexBufferMemory == nullptr) return;
-	//LogCond(LOG_GLOBAL_UPDATE, "reuseUpdateElement:  destroy buffer " << hex << el->vertexBuffer << endl);
-	//Log("reuseUpdateElement:  destroy buffer " << hex << el->vertexBuffer << endl);
-	vkDestroyBuffer(device, el->vertexBuffer, nullptr);
-	el->vertexBuffer = nullptr;
-	vkFreeMemory(device, el->vertexBufferMemory, nullptr);
-	el->vertexBufferMemory = nullptr;
-}
-
-// called from drawing thread
-void LineShader::applyGlobalUpdate(LineSubShader& updateSubShader, ThreadResources& tr, GlobalUpdateElement* updateSet)
-{
-	auto* shaderResources = getMatchingShaderResources(updateSet);
-	updateSubShader.drawCount = shaderResources->drawCount;
-	updateSubShader.addRenderPassAndDrawCommands(tr, &updateSubShader.commandBuffer, shaderResources->vertexBuffer);
-	updateSubShader.active = true;
-	updateSubShader.updateNumber = updateSet->updateNumber;
-	engine->globalUpdate.markGlobalUpdateSetAsUsed(updateSet, tr);
-}
-
-void LineShader::freeUpdateResources(GlobalUpdateElement* updateSet)
-{
-	auto* shaderResources = getMatchingShaderResources(updateSet);
-	reuseUpdateElement(shaderResources);
+	// copy update element so sub shader element:
+	sub.activeUpdateElement = updateElement;
+	sub.drawCount = updateElement.drawCount;
+	sub.addRenderPassAndDrawCommands(tr, &sub.commandBuffer, sub.activeUpdateElement.vertexBuffer);
+    sub.active = true;
 }

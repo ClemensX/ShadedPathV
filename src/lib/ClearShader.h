@@ -13,11 +13,10 @@ class ClearShader : public ShaderBase
 public:
     // set up shader
     virtual void init(ShadedPathEngine& engine, ShaderState& shaderState) override;
-    virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) override;
+    virtual void initSingle(FrameResources& tr, ShaderState& shaderState) override;
     virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState) override;
-    virtual void createCommandBuffer(ThreadResources& tr) override;
-    virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
-    virtual void destroyThreadResources(ThreadResources& tr) override;
+    virtual void createCommandBuffer(FrameResources& tr) override;
+    virtual void addCommandBuffers(FrameResources* fr, DrawResult* drawResult) override;
     // override default black clear color
     void setClearColor(glm::vec4 color) { clearColor = color; };
     glm::vec4 getClearColor() { return clearColor; };
@@ -34,10 +33,10 @@ class ClearSubShader
 public:
     // name is used in shader debugging
     void init(ClearShader* parent, std::string debugName);
-    void initSingle(ThreadResources& tr, ShaderState& shaderState) {};
-    void allocateCommandBuffer(ThreadResources& tr, VkCommandBuffer* cmdBufferPtr, const char* debugName);
-    void createGlobalCommandBufferAndRenderPass(ThreadResources& tr);
-    void addRenderPassAndDrawCommands(ThreadResources& tr, VkCommandBuffer* cmdBufferPtr);
+    void initSingle(FrameResources& tr, ShaderState& shaderState) {};
+    void allocateCommandBuffer(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, const char* debugName);
+    void createGlobalCommandBufferAndRenderPass(FrameResources& tr);
+    void addRenderPassAndDrawCommands(FrameResources& tr, VkCommandBuffer* cmdBufferPtr);
     void destroy();
     VkCommandBuffer commandBuffer = nullptr;
     VkFramebuffer framebuffer = nullptr;
@@ -49,6 +48,7 @@ private:
     std::string name;
     ShadedPathEngine* engine = nullptr;
     VkDevice* device = nullptr;
+    FrameResources* frameResources = nullptr;
 };
 
 // use identical shader with new name for ending shader chain

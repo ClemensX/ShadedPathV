@@ -7,11 +7,11 @@
  * 3) local changes updated for each drawing thread. Only use for small line sets to bring dynamic element to line drawing. Lines have to be uploaded for each and every frame. Use rarely.
  */
 
- // basic line definitions
-struct LineDef {
-	glm::vec3 start, end;
-	glm::vec4 color;
-};
+ // basic line definitions, see globalDef.h
+//struct LineDef {
+//	glm::vec3 start, end;
+//	glm::vec4 color;
+//};
 
 // each execution needs one instance of ApplicationData
 struct LineShaderApplicationData {
@@ -29,7 +29,7 @@ struct LineShaderUpdateElement {
 // forward
 class LineSubShader;
 
-class LineShader : public ShaderBase, public GlobalUpdateBase {
+class LineShader : public ShaderBase {
 public:
 	std::vector<LineSubShader> globalLineSubShaders;
 	std::vector<LineSubShader> perFrameLineSubShaders;
@@ -74,43 +74,31 @@ public:
 		return attributeDescriptions;
 	}
 	virtual ~LineShader() override;
-	// shader initialization, end result is a graphics pipeline for each ThreadResources instance
 
 	// max # lines for dynamic adding for single frame
-	// we limit this to allow for pre-allocated vertex buffer in thread ressources
+	// we limit this to allow for pre-allocated vertex buffer in thread resources
 	//static const size_t MAX_DYNAMIC_LINES = 100000;
 	static const size_t MAX_DYNAMIC_LINES = 5000000;
 
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
 	// thread resources initialization
-	virtual void initSingle(ThreadResources& tr, ShaderState& shaderState) override;
-	virtual void finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState) override;
-	virtual void createCommandBuffer(ThreadResources& tr) override;
-	virtual void addCurrentCommandBuffer(ThreadResources& tr) override;
-	virtual void destroyThreadResources(ThreadResources& tr) override;
-
-	virtual void createUpdateSet(GlobalUpdateElement& el) override;
-	virtual void updateGlobal(GlobalUpdateElement& currentSet) override;
-	virtual void freeUpdateResources(GlobalUpdateElement* updateSet);
+	virtual void initSingle(FrameResources& tr, ShaderState& shaderState) override;
+	virtual void createCommandBuffer(FrameResources& tr) override;
+	virtual void addCommandBuffers(FrameResources* fr, DrawResult* drawResult) override;
 
 
 	// add lines - they will never  be removed
 	void addFixedGlobalLines(std::vector<LineDef>& linesToAdd);
-	// global update: initiate update of permanent line data in background
-	// might take several frames until effect is visible: old buffer will be used until new one is ready
-	void triggerUpdateThread();
 	// upload fixed global lines - only valid before first render
 	void uploadFixedGlobalLines();
 
 	// clear line buffer, has to be called at begin of each frame
 	// NOT after adding last group of lines
-	void clearLocalLines(ThreadResources& tr);
+	void clearLocalLines(FrameResources& tr);
 
 	// per frame update of UBO / MVP
-	void uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
+	void uploadToGPU(FrameResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
 
-	// resource switch after upload of new data has finished:
-	void resourceSwitch(GlobalResourceSet set) override;
 	std::vector<LineDef> lines;
 
 	// global resources used by all LineSubShaders:
@@ -121,28 +109,14 @@ public:
 	VkPipelineLayout pipelineLayout = nullptr;
 
 	// Resources for permamnent lines:
-	// line shader specific rersources
-	LineShaderUpdateElement globalUpdateElementA, globalUpdateElementB;
-	// for handling global updates (independent of sub shaders)
 
-	LineShaderUpdateElement* getMatchingShaderResources(GlobalUpdateElement* el) {
-		if (el->updateDesignator == GlobalUpdateDesignator::SET_A) {
-			return &globalUpdateElementA;
-		}
-		else {
-			return &globalUpdateElementB;
-		}
-	}
-
-	// free old resources:
-	void reuseUpdateElement(LineShaderUpdateElement* el);
-	// single thread methods to change current global update:
-	void applyGlobalUpdate(LineSubShader& updateShader, ThreadResources& tr, GlobalUpdateElement* updateSet);
+	// called from app.prepareFrame(), we are single threaded there
+	void applyGlobalUpdate(FrameResources& tr);
 	std::vector<LineShader::Vertex> verticesPermanent;
 
 private:
-	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
-
+	void recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
+    LineShaderUpdateElement updateElement = {}; // copied to activeUpdateElement in sub shader
 
 	int drawAddLinesSize = 0;
 
@@ -158,17 +132,18 @@ private:
 	VkDeviceMemory vertexBufferMemoryUpdates = nullptr;
 	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;
+    int oldUpdateInUse = 0; // count down from 2 to 0, then we can free old update resources because no old update element is still in use
 
 	// util methods
 public:
 	// add lines for just one frame
-	void addOneTime(std::vector<LineDef>& linesToAdd, ThreadResources& tr);
+	void addOneTime(std::vector<LineDef>& linesToAdd, FrameResources& tr);
 
 	// prepare command buffer for added lines
-	void prepareAddLines(ThreadResources& tr);
+	void prepareAddLines(FrameResources& tr);
 
 	// add lines permanently via update thread
-	void addPermament(std::vector<LineDef>& linesToAdd, ThreadResources& tr);
+	void addPermament(std::vector<LineDef>& linesToAdd);
 
 	static void addCross(std::vector<LineDef>& lines, glm::vec3 pos, glm::vec4 color) {
 		static float oDistance = 5.0f;
@@ -193,10 +168,6 @@ public:
 		lines.insert(lines.end(), crossLines, crossLines + std::size(crossLines));
 	}
 
-	public:
-		void assertUpdateThread();
-	private:
-		std::atomic<bool> renderThreadUpdateRunning = false;
 };
 
 /*
@@ -214,20 +185,20 @@ public:
 	void setFragShaderModule(VkShaderModule sm) {
 		fragShaderModule = sm;
 	}
-	void initSingle(ThreadResources& tr, ShaderState& shaderState);
+	void initSingle(FrameResources& tr, ShaderState& shaderState);
 	void setVulkanResources(VulkanResources* vr) {
 		vulkanResources = vr;
 	}
 
 	// All sections need: buffer allocation and recording draw commands.
 	// Stage they are called at will be very different
-	void allocateCommandBuffer(ThreadResources& tr, VkCommandBuffer* cmdBufferPtr, const char* debugName);
-	void addRenderPassAndDrawCommands(ThreadResources& tr, VkCommandBuffer* cmdBufferPtr, VkBuffer vertexBuffer);
+	void allocateCommandBuffer(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, const char* debugName);
+	void addRenderPassAndDrawCommands(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, VkBuffer vertexBuffer);
 
-	void createGlobalCommandBufferAndRenderPass(ThreadResources& tr);
-	void recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
+	void createGlobalCommandBufferAndRenderPass(FrameResources& tr);
+	void recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, VkBuffer vertexBuffer, bool isRightEye = false);
 	// per frame update of UBO / MVP
-	void uploadToGPU(ThreadResources& tr, LineShader::UniformBufferObject& ubo, LineShader::UniformBufferObject& ubo2);
+	void uploadToGPU(FrameResources& tr, LineShader::UniformBufferObject& ubo, LineShader::UniformBufferObject& ubo2);
 
 	void destroy();
 
@@ -253,7 +224,7 @@ public:
 	// vertex buffer device memory
 	VkDeviceMemory vertexBufferMemoryLocal = nullptr;
 	bool active = false;
-	long updateNumber = -1; // matches update number in GlobalUpdateElement, for knowing which global update has been applied
+	LineShaderUpdateElement activeUpdateElement = {}; // vertex buffer and memory in use for global update
 
 private:
 	LineShader* lineShader = nullptr;
@@ -263,5 +234,6 @@ private:
 	VkShaderModule fragShaderModule = nullptr;
 	ShadedPathEngine* engine = nullptr;
 	VkDevice* device = nullptr;
+	FrameResources* frameResources = nullptr;
 };
 

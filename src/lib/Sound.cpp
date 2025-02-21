@@ -36,16 +36,19 @@ ma_engine sound_engine;
 
 void Sound::init()
 {
+    if (enabled || !engine.isSoundEnabled()) {
+        return;
+    }
 	numDoNothingFrames = 1;
 	//HRESULT hr;
 	// init minaudio high level API engine
 	result = ma_engine_init(NULL, &sound_engine);
 	if (result != MA_SUCCESS) {
 		Log("Sound unavailable. Disabling.");
-		engine.enableSound(false);
 		return;  // Failed to initialize the engine.
 	}
 	Log("Sound initialized" << std::endl);
+    enabled = true;
 	openSoundFile(Sound::SHADED_PATH_JINGLE_FILE, Sound::SHADED_PATH_JINGLE);
 	playSound(Sound::SHADED_PATH_JINGLE, SoundCategory::MUSIC);
 }
@@ -53,7 +56,7 @@ void Sound::init()
 Sound::~Sound(void)
 {
 	Log("Sound d'tor" << std::endl);
-	if (!engine.isSoundEnabled()) return;
+	if (!enabled) return;
 	for (auto s : sounds) {
 		ma_sound_uninit(s.second.masound);
 		delete s.second.masound;
@@ -68,6 +71,7 @@ Sound::~Sound(void)
 
 void Sound::changeSound(WorldObject* wo, std::string soundId)
 {
+	if (!enabled) return;
 	assert(sounds.count(soundId) > 0);
 	SoundDef* sound = &sounds[soundId];
 	if (wo->playing) {
@@ -78,7 +82,7 @@ void Sound::changeSound(WorldObject* wo, std::string soundId)
 }
 
 void Sound::Update(Camera* camera) {
-	if (!engine.isSoundEnabled()) return;
+	if (!enabled) return;
 	glm::vec3 pos(camera->getPosition());
 	glm::vec3 lookAt(camera->getLookAt());
 	// TODO do we need up vector?
@@ -167,9 +171,10 @@ void Sound::Update(Camera* camera) {
 
 void Sound::openSoundFile(std::string fileName, std::string id, bool loop)
 {
-	if (engine.isRendering()) {
-		Log("WARNING: do not load sound files during rendering!");
-	}
+	if (!enabled) return;
+	//if (engine.isRendering()) {
+	//	Log("WARNING: do not load sound files during rendering!");
+	//}
 	std::string binFile;
 	binFile = engine.files.findFile(fileName.c_str(), FileCategory::SOUND);
 	SoundDef sd{};
@@ -180,7 +185,6 @@ void Sound::openSoundFile(std::string fileName, std::string id, bool loop)
 	}
 	sd.loop = loop;
 	sounds[id] = sd;
-	if (!engine.isSoundEnabled()) return;
 	ma_sound *m = new ma_sound;
 	sounds[id].masound = m;
 	auto mas = sounds[id].masound; // mas is a ptr
@@ -192,7 +196,7 @@ void Sound::openSoundFile(std::string fileName, std::string id, bool loop)
 }
 
 void Sound::playSound(std::string id, SoundCategory category, float volume, uint32_t delayMS) {
-	if (!engine.isSoundEnabled()) return;
+	if (!enabled) return;
 	//result = ma_engine_play_sound(&sound_engine, "C:\\\\dev\\vulkan\\data\\sound\\Free_Test_Data_100KB_OGG.ogg", NULL);
 	//if (result != MA_SUCCESS) {
 	//	Log("Cannot play sound " << result << std::endl);
@@ -248,6 +252,7 @@ void Sound::playSound(std::string id, SoundCategory category, float volume, uint
 
 void Sound::setSoundRolloff(std::string id, float rolloff)
 {
+	if (!enabled) return;
 	assert(sounds.count(id) > 0);
 	SoundDef* sound = &sounds[id];
 	ma_sound_set_rolloff(sound->masound, rolloff);
@@ -256,6 +261,7 @@ void Sound::setSoundRolloff(std::string id, float rolloff)
 }
 
 void Sound::lowBackgroundMusicVolume(bool volumeDown) {
+	if (!enabled) return;
 	//SoundDef *sound = &sounds[id];
 	if (volumeDown) {
 //		this->submixVoiceBackground->SetVolume(0.5f);
@@ -265,12 +271,14 @@ void Sound::lowBackgroundMusicVolume(bool volumeDown) {
 }
 
 void Sound::addWorldObject(WorldObject* wo) {
+	if (!enabled) return;
 	audibleWorldObjects.push_back(wo);
 }
 
 #define DO_NOTHING_FRAME_COUNT 5
 
 bool Sound::recalculateSound() {
+	if (!enabled) return false;
 	if (numDoNothingFrames <= 0) {
 		numDoNothingFrames = DO_NOTHING_FRAME_COUNT;
 		return true;

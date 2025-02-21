@@ -1,6 +1,5 @@
 #version 450
 #extension GL_EXT_debug_printf:enable
-#extension GL_KHR_vulkan_glsl:enable
 
 layout (location=0) in vec3 dir;
 

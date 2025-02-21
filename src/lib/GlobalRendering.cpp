@@ -21,18 +21,173 @@ string GlobalRendering::getVulkanAPIString()
     return vulkan_version.str();
 }
 
-void GlobalRendering::initBeforePresentation()
+void GlobalRendering::gatherDeviceInfos()
 {
-    gatherDeviceExtensions();
-    initVulkanInstance();
+    //Log("gathering physical device capabilities.\n");
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(vkInstance, &deviceCount, nullptr);
+    if (deviceCount == 0) {
+        Error("no physical vulkan device available");
+    }
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(vkInstance, &deviceCount, devices.data());
+    Log("Found " << deviceCount << " Vulkan - supported devices : " << std::endl);
+    for (const auto& device : devices) {
+        VkPhysicalDeviceProperties properties{};
+        VkPhysicalDeviceProperties2 properties2{};
+        properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+        VkPhysicalDeviceFeatures features;
+        vkGetPhysicalDeviceProperties(device, &properties);
+        vkGetPhysicalDeviceFeatures(device, &features);
+        vkGetPhysicalDeviceProperties2(device, &properties2);
+
+        DeviceInfo info;
+        info.device = device;
+        info.properties = properties;
+        info.properties2 = properties2;
+        info.features = features;
+        Log("  " << properties.deviceName << " API version: " << Util::decodeVulkanVersion(properties.apiVersion).c_str() << " driver version: " << Util::decodeVulkanVersion(properties.driverVersion).c_str() << " type: " << Util::decodeDeviceType(properties.deviceType) << endl);
+        // get available device extensions:
+        getDeviceExtensionSupport(device, &info.extensions);
+        if (LIST_EXTENSIONS) {
+            Log("  available device extensions:\n");
+            for (const auto& extension : info.extensions) {
+                Log("  " << extension << endl);
+            }
+        }
+        info.suitable = isDeviceSuitable(info);
+        deviceInfos.push_back(info);
+    }
 }
 
-void GlobalRendering::initAfterPresentation()
+bool GlobalRendering::checkFeatureMeshShader(DeviceInfo& info)
 {
-    // list available devices:
-    pickPhysicalDevice(true);
-    // pick device
-    pickPhysicalDevice();
+    // check mesh support:
+    // set extension details for mesh shader
+    VkPhysicalDeviceMeshShaderFeaturesEXT meshFeatures = {};
+    meshFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
+    meshFeatures.pNext = nullptr;
+    VkPhysicalDeviceFeatures2 feature2{};
+    feature2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    feature2.pNext = &meshFeatures;
+    vkGetPhysicalDeviceFeatures2(info.device, &feature2);
+    VkPhysicalDeviceMeshShaderFeaturesEXT* meshSupport = (VkPhysicalDeviceMeshShaderFeaturesEXT*)feature2.pNext;
+    //Log(meshSupport << endl);
+    if (!meshSupport->meshShader || !meshSupport->taskShader) {
+        Log("device does not support Mesh Shaders" << endl);
+        Log("You might try not to enable Mesh Shader in app code by removing: engine->enableMeshShader()" << endl);
+        return false;
+    }
+    return true;
+}
+
+bool GlobalRendering::checkFeatureCompressedTextures(DeviceInfo& info)
+{
+    // check compressed texture support:
+    VkFormatProperties fp{};
+    vkGetPhysicalDeviceFormatProperties(info.device, VK_FORMAT_BC7_SRGB_BLOCK, &fp);
+    // 0x01d401
+    VkFormatFeatureFlags flagsToCheck = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT | VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
+    if ((fp.linearTilingFeatures & flagsToCheck) == 0) {
+        Log("device does not support needed linearTilingFeatures" << endl);
+        return false;
+    }
+    if ((fp.optimalTilingFeatures & flagsToCheck) == 0) {
+        Log("device does not support needed optimalTilingFeatures" << endl);
+        return false;
+    }
+    return true;
+}
+
+bool GlobalRendering::checkFeatureDescriptorIndexSize(DeviceInfo& info)
+{
+    // check descriptor index size suitable for texture count:
+    if (info.properties.limits.maxDescriptorSetSampledImages < TextureStore::UPPER_LIMIT_TEXTURE_COUNT) {
+        Log("Device does not support enough texture slots in descriptors" << endl);
+        return false;
+    }
+    return true;
+}
+
+
+bool GlobalRendering::checkFeatureSwapChain(VkPhysicalDevice physDevice)
+{
+    SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physDevice);
+    if (swapChainSupport.formats.empty() || swapChainSupport.presentModes.empty()) return false;
+    return true;
+}
+
+bool GlobalRendering::isDeviceSuitable(DeviceInfo& info)
+{
+    // check device extensions support:
+    for (const auto& extensionName : deviceExtensions) {
+        if (std::find(info.extensions.begin(), info.extensions.end(), extensionName) == info.extensions.end()) {
+            return false;
+        }
+    }
+
+    // check device features support:
+    if (isExtensionAvailable(deviceExtensions, VK_EXT_MESH_SHADER_EXTENSION_NAME)) {
+        if (!checkFeatureMeshShader(info)) return false;
+    }
+    if (!checkFeatureCompressedTextures(info)) return false;
+    if (!checkFeatureDescriptorIndexSize(info)) return false;
+    //if (!checkFeatureSwapChain(info)) return false;
+    familyIndices = findQueueFamilies(info.device);
+    if (!familyIndices.isComplete(true)) return false;
+
+    return true;
+}
+
+void GlobalRendering::pickDevice()
+{
+    int fixedDeviceIndex = engine->getFixedPhysicalDeviceIndex();
+    if (fixedDeviceIndex >= 0) {
+        if (fixedDeviceIndex < deviceInfos.size()) {
+            physicalDevice = deviceInfos[fixedDeviceIndex].device;
+            physicalDeviceProperties = deviceInfos[fixedDeviceIndex].properties2;
+            Log("WARNING: Using fixed device without checking feature support: " << deviceInfos[fixedDeviceIndex].properties.deviceName << endl);
+        } else {
+            Error("Fixed device index out of range");
+        }
+        return;
+    }
+    for (auto& info : deviceInfos) {
+        if (info.suitable) {
+            physicalDevice = info.device;
+            physicalDeviceProperties = info.properties2;
+            Log("Picked device: " << info.properties.deviceName << endl);
+            return;
+        }
+    }
+    Error("No suitable physical device found. You might consider using setFixedPhysicalDeviceIndex(0) to pre-select a device without feature support checking.");
+}
+
+void GlobalRendering::init()
+{
+    if (LIST_EXTENSIONS) {
+        vector<string> instanceExtensionlist;
+        getInstanceExtensionSupport(&instanceExtensionlist);
+        Log("available Vulkan instance extensions:\n");
+        for (const auto& extension : instanceExtensionlist) {
+            Log("  " << extension << endl);
+        }
+    }
+    initVulkanInstance();
+    gatherDeviceInfos();
+    // list needed extensions:
+    Log("requested Vulkan instance extensions:" << endl)
+        Util::printCStringList(instanceExtensions);
+    Log("requested Vulkan device extensions:" << endl)
+        Util::printCStringList(deviceExtensions);
+    Log("suitable devices:\n");
+    for (auto& info : deviceInfos) {
+        if (info.suitable) {
+            Log("  " << info.properties.deviceName << endl);
+        }
+    }
+    pickDevice();
+    //checkFeatureSwapChain(physicalDevice);
     // list queue properties:
     findQueueFamilies(physicalDevice, true);
     createLogicalDevice();
@@ -45,16 +200,31 @@ void GlobalRendering::initAfterPresentation()
     if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &singleTimeCommandsSemaphore) != VK_SUCCESS) {
         Error("failed to create singleTimeCommandsSemaphore");
     }
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; // otherwise first wait() will wait forever
+
+    if (vkCreateFence(device, &fenceInfo, nullptr, &queueSubmitFence) != VK_SUCCESS) {
+        Error("failed to create inFlightFence for a frame");
+    }
+    engine->util.debugNameObjectFence(queueSubmitFence, "GlobalRendering.queueSubmitFence");
 }
 
 void GlobalRendering::shutdown()
 {
+    if (queueSubmitFence != nullptr) {
+        vkDestroyFence(device, queueSubmitFence, nullptr);
+    }
     for (auto& sam : textureSampler) {
         if (sam != nullptr) {
             vkDestroySampler(device, sam, nullptr);
         }
     }
     vkDestroySemaphore(device, singleTimeCommandsSemaphore, nullptr);
+    for (int i = 0; i < engine->numWorkerThreads; i++) {
+        auto& res = workerThreadResources[i];
+        vkDestroyCommandPool(device, res.commandPool, nullptr);
+    }
     vkDestroyCommandPool(device, commandPool, nullptr);
     vkDestroyCommandPool(device, commandPoolTransfer, nullptr);
     vkDestroyDevice(device, nullptr);
@@ -64,15 +234,17 @@ void GlobalRendering::shutdown()
     glfwTerminate();
 }
 
-void GlobalRendering::gatherDeviceExtensions()
-{
-    engine.presentation.possiblyAddDeviceExtensions(deviceExtensions);
-}
-
 void GlobalRendering::initVulkanInstance()
 {
-    if (!checkProfileSupport()) {
-        Error("required vulkan profile not available!");
+    if (vkInstance != nullptr) {
+        Error("Trying to re-init vulkan instance");
+    }
+    vector<string> instanceExtensionlist;
+    getInstanceExtensionSupport(&instanceExtensionlist);
+    for (const auto& extensionName : instanceExtensions) {
+        if (std::find(instanceExtensionlist.begin(), instanceExtensionlist.end(), extensionName) == instanceExtensionlist.end()) {
+            Error("instance extension not supported: " + string(extensionName));
+        }
     }
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -80,225 +252,27 @@ void GlobalRendering::initVulkanInstance()
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "ShadedPathV";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VP_KHR_ROADMAP_2022_MIN_API_VERSION;//API_VERSION;
+    appInfo.apiVersion = VK_API_VERSION_1_3;//VP_KHR_ROADMAP_2022_MIN_API_VERSION;//API_VERSION;
 
     VkInstanceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;
-    auto extensions = getRequiredExtensions();
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
-    createInfo.ppEnabledExtensionNames = extensions.data();
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(instanceExtensions.size());
+    createInfo.ppEnabledExtensionNames = instanceExtensions.data();
 #   if defined(__APPLE__)    
     createInfo.flags = VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #   endif
-    if (USE_PROFILE_DYN_RENDERING) {
-        VpInstanceCreateInfo vpCreateInfo{};
-        vpCreateInfo.pCreateInfo = &createInfo;
-        vpCreateInfo.enabledFullProfileCount = 1;
-        vpCreateInfo.pEnabledFullProfiles = &profile;
-        vpCreateInfo.flags = VP_INSTANCE_CREATE_FLAG_BITS_MAX_ENUM;
-
-        if (vpCreateInstance(&vpCreateInfo, nullptr, &vkInstance) != VK_SUCCESS) {
+    vkInstance = VK_NULL_HANDLE;
+    if (engine->isVR()) {
+        engine->vr.initVulkanEnable2(createInfo);
+    }
+    else {
+        if (vkCreateInstance(&createInfo, nullptr, &vkInstance) != VK_SUCCESS) {
             Error("failed to create instance!");
         }
     }
-    else {
-        vkInstance = VK_NULL_HANDLE;
-        if (engine.isVR()) {
-            engine.vr.initVulkanEnable2(createInfo);
-        } else {
-            if (vkCreateInstance(&createInfo, nullptr, &vkInstance) != VK_SUCCESS) {
-                Error("failed to create instance!");
-            }
-        }
-    }
-
-    // list available extensions:
-    if (LIST_EXTENSIONS) {
-        uint32_t extensionCount = 0;
-        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
-        std::vector<VkExtensionProperties> availExtensions(extensionCount);
-        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, availExtensions.data());
-
-        Log("available Vulkan instance extensions:\n");
-        for (const auto& extension : availExtensions) {
-            Log("  " << extension.extensionName << '\n');
-        }
-    }
 }
 
-std::vector<const char*> GlobalRendering::getRequiredExtensions() {
-    uint32_t glfwExtensionCount = 0;
-    const char** glfwExtensions;
-    glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-    // vector will be moved on return
-    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
-#   if defined(__APPLE__)
-        extensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-        deviceExtensions.push_back("VK_KHR_portability_subset");
-#   endif
-    //extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-    //extensions.push_back(VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME);
-    //extensions.push_back(VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME);
-    if (DEBUG_UTILS_EXTENSION) {
-        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    }
-    if (engine.isMeshShading()) {
-        deviceExtensions.push_back(VK_EXT_MESH_SHADER_EXTENSION_NAME);
-    }
-
-    Log("requested Vulkan instance extensions:" << endl)
-        Util::printCStringList(extensions);
-    Log("requested Vulkan device extensions:" << endl)
-        Util::printCStringList(deviceExtensions);
-
-    return extensions;
-}
-
-void GlobalRendering::pickPhysicalDevice(bool listmode)
-{
-    //Log("picking physical device listmode: " << listmode << endl);
-    uint32_t deviceCount = 0;
-    vkEnumeratePhysicalDevices(vkInstance, &deviceCount, nullptr);
-    if (deviceCount == 0) {
-        Error("no physical vulkan device available");
-    }
-    std::vector<VkPhysicalDevice> devices(deviceCount);
-    vkEnumeratePhysicalDevices(vkInstance, &deviceCount, devices.data());
-    if (engine.getFixedPhysicalDeviceIndex() >= 0) {
-        if (listmode) {
-            Log("Cannot list physical devices if a fixed device is selected" << endl);
-            return;
-        }
-        assert(engine.getFixedPhysicalDeviceIndex() < devices.size());
-        physicalDevice = devices[engine.getFixedPhysicalDeviceIndex()];
-        assignGlobals(physicalDevice);
-        return;
-    }
-    for (const auto& device : devices) {
-        Log("found physical device: " << device << endl);
-        if (isDeviceSuitable(device, listmode)) {
-            // check for same device (phys device may have been initialized by OpenXR
-            if (physicalDevice != nullptr) {
-                if (physicalDevice != device) {
-                    Error("Physical Device selected does not match pre-selected device from OpenXR");
-                } else {
-                    // all is fine - we already have our phys device
-                    return;
-                }
-            }
-            physicalDevice = device;
-            break;
-        }
-        if (!listmode) Log("   device not suitable" << endl);
-    }
-    if (listmode)
-        return;
-    if (physicalDevice == VK_NULL_HANDLE) {
-        Error("failed to find a suitable GPU!");
-    }
-    assignGlobals(physicalDevice);
-}
-
-void GlobalRendering::assignGlobals(VkPhysicalDevice device)
-{
-    VkPhysicalDeviceProperties deviceProperties;
-    VkPhysicalDeviceFeatures deviceFeatures;
-    vkGetPhysicalDeviceProperties(device, &deviceProperties);
-    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-    // query extension details (mesh shader)
-    VkPhysicalDeviceMeshShaderPropertiesEXT meshProperties = {};
-    meshProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
-    meshProperties.pNext = nullptr;
-    VkPhysicalDeviceProperties2 deviceProperties2 = {};
-    deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-    deviceProperties2.pNext = &meshProperties;
-    vkGetPhysicalDeviceProperties2(device, &deviceProperties2);
-    physicalDeviceProperties = deviceProperties2;
-    familyIndices = findQueueFamilies(device);
-}
-
-bool GlobalRendering::isDeviceSuitable(VkPhysicalDevice device, bool listmode)
-{
-    VkPhysicalDeviceProperties deviceProperties;
-    VkPhysicalDeviceFeatures deviceFeatures;
-    vkGetPhysicalDeviceProperties(device, &deviceProperties);
-    vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-    // query extension details (mesh shader)
-    VkPhysicalDeviceMeshShaderPropertiesEXT meshProperties = {};
-    meshProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
-    meshProperties.pNext = nullptr;
-    VkPhysicalDeviceProperties2 deviceProperties2 = {};
-    deviceProperties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-    deviceProperties2.pNext = &meshProperties;
-    vkGetPhysicalDeviceProperties2(device, &deviceProperties2);
-    physicalDeviceProperties = deviceProperties2;
-
-    if (listmode) {
-        Log("Physical Device properties: " << deviceProperties.deviceName << " Vulkan API Version: " << Util::decodeVulkanVersion(deviceProperties.apiVersion).c_str() << " type: " << Util::decodeDeviceType(deviceProperties.deviceType) << endl);
-        checkDeviceExtensionSupport(device, listmode);
-        return false;
-    }
-    // we just pick the first device for now
-    Log("picked physical device: " << deviceProperties.deviceName << " " << Util::decodeVulkanVersion(deviceProperties.apiVersion).c_str() << endl);
-
-    // now look for queue families:
-    familyIndices = findQueueFamilies(device);
-
-    bool extensionsSupported = checkDeviceExtensionSupport(device, false);
-    bool swapChainAdequate = false;
-    if (engine.presentation.enabled) {
-        if (extensionsSupported) {
-            SwapChainSupportDetails swapChainSupport = querySwapChainSupport(device);
-            swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
-        }
-    }
-    else {
-        swapChainAdequate = true;
-    }
-    // check mesh support:
-    // set extension details for mesh shader
-    VkPhysicalDeviceMeshShaderFeaturesEXT meshFeatures = {};
-    meshFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
-    meshFeatures.pNext = nullptr;
-    VkPhysicalDeviceFeatures2 feature2{};
-    feature2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    feature2.pNext = &meshFeatures;
-    vkGetPhysicalDeviceFeatures2(device, &feature2);
-    VkPhysicalDeviceMeshShaderFeaturesEXT* meshSupport = (VkPhysicalDeviceMeshShaderFeaturesEXT*)feature2.pNext;
-    if (engine.isMeshShading()) {
-        //Log(meshSupport << endl);
-        if (!meshSupport->meshShader || !meshSupport->taskShader) {
-            Log("device does not support Mesh Shaders" << endl);
-            Log("You might try not to enable Mesh Shader in app code by removing: engine.enableMeshShader()" << endl);
-            return false;
-        } else {
-            Log("Mesh Shader enabled!" << endl);
-        }
-    }
-    // check compressed texture support:
-    VkFormatProperties fp{};
-    vkGetPhysicalDeviceFormatProperties(device, VK_FORMAT_BC7_SRGB_BLOCK, &fp);
-    // 0x01d401
-    VkFormatFeatureFlags flagsToCheck = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT | VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
-    if ((fp.linearTilingFeatures & flagsToCheck) == 0) {
-        Log("device does not support needed linearTilingFeatures" << endl);
-        //return false;
-    }
-    if ((fp.optimalTilingFeatures & flagsToCheck) == 0) {
-        Log("device does not support needed optimalTilingFeatures" << endl);
-        return false;
-    }
-
-    // check descrtiptor index size suitable for texture count:
-    if (physicalDeviceProperties.properties.limits.maxDescriptorSetSampledImages < TextureStore::UPPER_LIMIT_TEXTURE_COUNT) {
-        Log("Device does not support enough texture slots in descriptors" << endl);
-        return false;
-    }
-    if (!extensionsSupported) Log("WARNING required extensions are not supported. Maybe problem with vpGetPhysicalDeviceProfileSupport().\nConsider disabling physical device checking by setFixedPhysicalDeviceIndex(0)" << endl);
-    return familyIndices.isComplete(engine.presentation.enabled) && extensionsSupported && swapChainAdequate && deviceFeatures.samplerAnisotropy && deviceFeatures.textureCompressionBC;
-}
 
 QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, bool listmode)
 {
@@ -313,6 +287,7 @@ QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, b
     for (const auto& queueFamily : queueFamilies) {
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphicsFamily = i;
+            indices.presentFamily = i; // all graohics queues are also presentation queues
             if (listmode) {
                 Log("found graphics queue at index " << i << ", max queues: " << queueFamily.queueCount << endl);
             }
@@ -324,14 +299,14 @@ QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, b
                 //Log("  other queue flags: " << getQueueFlagsString(queueFamily.queueFlags).c_str() << endl);
             }
         }
-        if (engine.presentation.enabled) {
-            VkBool32 presentSupport = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(device, i, engine.presentation.surface, &presentSupport);
+        if (engine->presentationMode) {
+            VkBool32 presentSupport = true; // TODO hack
+            //vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
             if (presentSupport) {
-                indices.presentFamily = i;
+                //indices.presentFamily = i;
             }
         }
-        if (!listmode && indices.isComplete(engine.presentation.enabled)) {
+        if (!listmode && indices.isComplete(engine->presentationMode)) {
             break;
         }
         i++;
@@ -405,12 +380,23 @@ uint32_t GlobalRendering::findMemoryTypeIndex(uint32_t typeBits, VkMemoryPropert
 }
 
 
+void GlobalRendering::chainNextDeviceFeature(void* elder, void* child)
+{
+    // cast so we can use pNext pointer:
+    VkBaseOutStructure* pElder = (VkBaseOutStructure*)elder;
+    VkBaseOutStructure* pChild = (VkBaseOutStructure*)child;
+    while (pElder->pNext != nullptr) {
+        pElder = pElder->pNext;
+    }
+    pElder->pNext = pChild;
+}
+
 void GlobalRendering::createLogicalDevice()
 {
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
     std::set<uint32_t> uniqueQueueFamilies = { familyIndices.graphicsFamily.value() };
     uniqueQueueFamilies.insert({ familyIndices.transferFamily.value() });
-    if (engine.presentation.enabled) {
+    if (engine->presentationMode) {
         uniqueQueueFamilies.insert({ familyIndices.presentFamily.value() });
     }
 
@@ -427,10 +413,14 @@ void GlobalRendering::createLogicalDevice()
 
     VkPhysicalDeviceFeatures deviceFeatures{
         // provoke validation layer warning by commenting out following line:
+        // https://registry.khronos.org/vulkan/specs/latest/man/html/VkPhysicalDeviceFeatures.html
         .geometryShader = VK_TRUE,
         .samplerAnisotropy = VK_TRUE,
         .textureCompressionBC = VK_TRUE,
+        .vertexPipelineStoresAndAtomics = VK_TRUE,
+        .fragmentStoresAndAtomics = VK_TRUE,
         .shaderSampledImageArrayDynamicIndexing = VK_TRUE,
+        .shaderInt64 = VK_TRUE,
         //deviceFeatures.textureCompressionETC2 = VK_TRUE; not supported on Quadro P2000 with Max-Q Design 1.3.194
         //deviceFeatures.textureCompressionASTC_LDR = VK_TRUE; not supported on Quadro P2000 with Max-Q Design 1.3.194
         //deviceFeatures.dynamicRendering
@@ -441,7 +431,6 @@ void GlobalRendering::createLogicalDevice()
     meshFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
     meshFeatures.meshShader = VK_TRUE;
     meshFeatures.taskShader = VK_FALSE;
-    meshFeatures.pNext = nullptr;
 
     VkPhysicalDevicePortabilitySubsetFeaturesKHR portability{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR,
@@ -450,19 +439,32 @@ void GlobalRendering::createLogicalDevice()
 
     VkPhysicalDeviceVulkan12Features deviceFeatures12{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+        .uniformAndStorageBuffer8BitAccess = VK_TRUE,
         .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
         .descriptorBindingPartiallyBound = VK_TRUE,
         .runtimeDescriptorArray = VK_TRUE,
+        .timelineSemaphore = VK_TRUE,
+        .bufferDeviceAddress = VK_TRUE,
+        .vulkanMemoryModel = VK_TRUE,
+        .vulkanMemoryModelDeviceScope = VK_TRUE,
 #       if defined(__APPLE__)
         .pNext = (void*)&portability,
 #       endif
     };
 
+    VkPhysicalDeviceVulkan13Features deviceFeatures13{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
+        .synchronization2 = VK_TRUE,
+    };
+
     VkPhysicalDeviceFeatures2 deviceFeatures2{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
-        .pNext = (void*)&deviceFeatures12,
         .features = deviceFeatures,
     };
+
+    VkPhysicalDeviceSynchronization2FeaturesKHR synchronization2Features{};
+    synchronization2Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SYNCHRONIZATION_2_FEATURES_KHR;
+    synchronization2Features.synchronization2 = VK_TRUE;
 
     // disable geom shaders for mac as they don't support them TODO remove geom shaders alltogether
     // and use compute shaders instead
@@ -476,26 +478,29 @@ void GlobalRendering::createLogicalDevice()
     //Log("MoltenVK useMetalArgumentBuffers: " << conf.useMetalArgumentBuffers << endl);
     //vkSetMoltenVKConfigurationMVK();
 #   endif
-
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    if (engine.isMeshShading()) {
-        createInfo.pNext = &meshFeatures;
+    chainNextDeviceFeature(&createInfo, &deviceFeatures2);
+    chainNextDeviceFeature(&createInfo, &deviceFeatures12);
+    chainNextDeviceFeature(&createInfo, &deviceFeatures13);
+    if (isMeshShading()) {
+        chainNextDeviceFeature(&createInfo, &meshFeatures);
     }
-    if (!USE_PROFILE_DYN_RENDERING) {
-        if (engine.isMeshShading()) {
-            meshFeatures.pNext = (void*)&deviceFeatures2;
-        } else {
-            //createInfo.pNext = &dynamic_rendering_feature;
-            createInfo.pNext = &deviceFeatures2;
-        }
-        //createInfo.pEnabledFeatures = &deviceFeatures;
+    if (isSynchronization2()) {
+        chainNextDeviceFeature(&createInfo, &synchronization2Features);
     }
+#   if defined(__APPLE__)
+    chainNextDeviceFeature(&createInfo, &portability);
+#   endif
+
+    //createInfo.pEnabledFeatures = &deviceFeatures;
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.enabledExtensionCount = 0;
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-    createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+    if (engine->presentationMode) {
+        createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
+        createInfo.ppEnabledExtensionNames = deviceExtensions.data();
+    }
     createInfo.enabledLayerCount = 0; // no longer used - validation layers handled in kvInstance
     if (false) {
         VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
@@ -506,99 +511,60 @@ void GlobalRendering::createLogicalDevice()
         bufferDeviceAddressFeatures.bufferDeviceAddressCaptureReplay = VK_TRUE;
         bufferDeviceAddressFeatures.bufferDeviceAddressMultiDevice = VK_TRUE;
     }
-    if (USE_PROFILE_DYN_RENDERING) {
-        VpDeviceCreateInfo vpCreateInfo{};
-        vpCreateInfo.pCreateInfo = &createInfo;
-        vpCreateInfo.enabledFullProfileCount = 1;
-        vpCreateInfo.pEnabledFullProfiles = &profile;
-        vpCreateInfo.flags = VP_INSTANCE_CREATE_FLAG_BITS_MAX_ENUM;
-
-        checkDeviceProfileSupport(vkInstance, physicalDevice);
-        if (vpCreateDevice(physicalDevice, &vpCreateInfo, nullptr, &device) != VK_SUCCESS) {
-            Error("failed to create logical device!");
-        }
-    } else {
-        if (engine.isVR()) {
-            engine.vr.initVulkanCreateDevice(createInfo);
-        } else {
-            VkResult res = vkCreateDevice(physicalDevice, &createInfo, nullptr, &device);
-            if (res != VK_SUCCESS) {
-                if (DEBUG_UTILS_EXTENSION) {
-                    Error("Enabled VK_EXT_DEBUG_UTILS needs Vulkan Configurator running. Did you start it ? ");
-                }
-                Error("Device Creation failed.");
+    if (engine->isVR()) {
+        engine->vr.initVulkanCreateDevice(createInfo);
+    }
+    else {
+        VkResult res = vkCreateDevice(physicalDevice, &createInfo, nullptr, &device);
+        if (res != VK_SUCCESS) {
+            if (DEBUG_UTILS_EXTENSION) {
+                Error("Enabled VK_EXT_DEBUG_UTILS needs Vulkan Configurator running. Did you start it ? ");
             }
+            Error("Device Creation failed.");
         }
     }
 
     vkGetDeviceQueue(device, familyIndices.graphicsFamily.value(), 0, &graphicsQueue);
-    engine.util.debugNameObject((uint64_t)graphicsQueue, VK_OBJECT_TYPE_QUEUE, "MAIN GRAPHICS QUEUE");
+    engine->util.debugNameObject((uint64_t)graphicsQueue, VK_OBJECT_TYPE_QUEUE, "MAIN GRAPHICS QUEUE");
     vkGetDeviceQueue(device, familyIndices.transferFamily.value(), 0, &transferQueue);
-    engine.util.debugNameObject((uint64_t)transferQueue, VK_OBJECT_TYPE_QUEUE, "TRANSFER QUEUE");
+    engine->util.debugNameObject((uint64_t)transferQueue, VK_OBJECT_TYPE_QUEUE, "TRANSFER QUEUE");
     // we normally rely on 2 different queues for multithreading (mainly global updates and render threads)
     // enable single queue rendering with a warning
     if (graphicsQueue == transferQueue) {
-        engine.setSingleQueueMode();
+        engine->setSingleQueueMode();
         Log("WARNING: Your device does only offer a single queue. Expect severe performance penalties\n");
     }
-    if (engine.presentation.enabled) {
-        engine.presentation.createPresentQueue(familyIndices.presentFamily.value());
+    if (TRUE) {
+        engine->presentation.createPresentQueue(familyIndices.presentFamily.value());
     }
-    if (engine.isVR()) {
-        engine.vr.create();
+    if (engine->isVR()) {
+        engine->vr.create();
     }
-}
-
-bool GlobalRendering::checkDeviceExtensionSupport(VkPhysicalDevice phys_device, bool listmode)
-{
-    uint32_t extensionCount;
-    vkEnumerateDeviceExtensionProperties(phys_device, nullptr, &extensionCount, nullptr);
-
-    std::vector<VkExtensionProperties> availableExtensions(extensionCount);
-    vkEnumerateDeviceExtensionProperties(phys_device, nullptr, &extensionCount, availableExtensions.data());
-
-    if (listmode && LIST_EXTENSIONS) {
-        Log("available Vulkan Device extensions:\n");
-        for (const auto& extension : availableExtensions) {
-            Log("  " << extension.extensionName << '\n');
-        }
-    }
-    VkBool32 supported = false;
-    auto result = vpGetPhysicalDeviceProfileSupport(vkInstance, phys_device, &profile, &supported);
-    if (result != VK_SUCCESS) {
-        Log("Cannot get physical device properties")
-        return false;
-    }
-    else if (supported != VK_TRUE) {
-        Log("Vulkan profile not supported: " << profile.profileName << std::endl);
-        return false;
-    }
-    return true;
 }
 
 SwapChainSupportDetails GlobalRendering::querySwapChainSupport(VkPhysicalDevice device) {
     SwapChainSupportDetails details{};
-    if (!engine.presentation.enabled) return details;
+    if (!engine->presentationMode) return details;
 
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, engine.presentation.surface, &details.capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
     uint32_t formatCount;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(device, engine.presentation.surface, &formatCount, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, nullptr);
 
     if (formatCount != 0) {
         details.formats.resize(formatCount);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(device, engine.presentation.surface, &formatCount, details.formats.data());
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &formatCount, details.formats.data());
     }
     uint32_t presentModeCount;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(device, engine.presentation.surface, &presentModeCount, nullptr);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, nullptr);
 
     if (presentModeCount != 0) {
         details.presentModes.resize(presentModeCount);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(device, engine.presentation.surface, &presentModeCount, details.presentModes.data());
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());
     }
     return details;
 }
 
-void GlobalRendering::createCommandPool(VkCommandPool& pool)
+void GlobalRendering::createCommandPool(VkCommandPool& pool, std::string name)
 {
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -606,6 +572,9 @@ void GlobalRendering::createCommandPool(VkCommandPool& pool)
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     if (vkCreateCommandPool(device, &poolInfo, nullptr, &pool) != VK_SUCCESS) {
         Error("failed to create command pool!");
+    }
+    if (!name.empty()) {
+        engine->util.debugNameObjectCommandPool(pool, name.c_str());
     }
 }
 
@@ -624,6 +593,11 @@ void GlobalRendering::createCommandPools()
 {
     createCommandPool(commandPool);
     createCommandPoolTransfer(commandPoolTransfer);
+    workerThreadResources.resize(engine->numWorkerThreads); // Initialize the vector with the appropriate size
+    for (int i = 0; i < engine->numWorkerThreads; i++) {
+        //workerThreadResources[i].threadResourcesIndex = i;
+        createCommandPool(workerThreadResources[i].commandPool, engine->util.createDebugName("WorkerThreadCommandPool_", i));
+    }
 }
 
 VkCommandBuffer GlobalRendering::beginSingleTimeCommands(bool sync, QueueSelector queue) {
@@ -639,7 +613,7 @@ VkCommandBuffer GlobalRendering::beginSingleTimeCommands(bool sync, QueueSelecto
     VkCommandBuffer commandBuffer;
     vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer);
     VkCommandBufferBeginInfo beginInfo{};
-    engine.util.debugNameObjectCommandBuffer(commandBuffer, "SINGLE TIME COMMAND BUFFER");
+    engine->util.debugNameObjectCommandBuffer(commandBuffer, "SINGLE TIME COMMAND BUFFER");
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
@@ -692,9 +666,9 @@ void GlobalRendering::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
     }
 
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
-    engine.util.debugNameObjectBuffer(buffer, bufferDebugName.c_str());
+    engine->util.debugNameObjectBuffer(buffer, bufferDebugName.c_str());
     string memName = bufferDebugName + " memory";
-    engine.util.debugNameObjectDeviceMmeory(bufferMemory, memName.c_str());
+    engine->util.debugNameObjectDeviceMmeory(bufferMemory, memName.c_str());
 }
 
 void GlobalRendering::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, QueueSelector queue, uint64_t flags) {
@@ -716,20 +690,20 @@ void GlobalRendering::uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize buf
         stagingBuffer, stagingBufferMemory, bufferDebugName + " Staging");
 
     void* data;
-    vkMapMemory(engine.global.device, stagingBufferMemory, 0, bufferSize, 0, &data);
+    vkMapMemory(engine->globalRendering.device, stagingBufferMemory, 0, bufferSize, 0, &data);
     memcpy(data, src, (size_t)bufferSize);
-    vkUnmapMemory(engine.global.device, stagingBufferMemory);
+    vkUnmapMemory(engine->globalRendering.device, stagingBufferMemory);
 
     createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | usage, VK_MEMORY_HEAP_DEVICE_LOCAL_BIT,
         buffer, bufferMemory, bufferDebugName);
 
     //for (int i = 0; i < 10000; i++)
-    engine.global.copyBuffer(stagingBuffer, buffer, bufferSize, queue);
+    engine->globalRendering.copyBuffer(stagingBuffer, buffer, bufferSize, queue);
 
-    vkDestroyBuffer(engine.global.device, stagingBuffer, nullptr);
-    vkFreeMemory(engine.global.device, stagingBufferMemory, nullptr);
-    //vkDestroyBuffer(engine.global.device, buffer, nullptr);
-    //vkFreeMemory(engine.global.device, bufferMemory, nullptr);
+    vkDestroyBuffer(engine->globalRendering.device, stagingBuffer, nullptr);
+    vkFreeMemory(engine->globalRendering.device, stagingBufferMemory, nullptr);
+    //vkDestroyBuffer(engine->global.device, buffer, nullptr);
+    //vkFreeMemory(engine->global.device, bufferMemory, nullptr);
 }
 
 void GlobalRendering::createTextureSampler()
@@ -813,7 +787,7 @@ VkImageView GlobalRendering::createImageViewCube(VkImage image, VkFormat format,
 }
 
 void GlobalRendering::createImage(uint32_t width, uint32_t height, uint32_t mipLevels, VkSampleCountFlagBits numSamples, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-                                  VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, uint32_t layers) {
+                                  VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory, const char* debugName, uint32_t layers) {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -838,6 +812,7 @@ void GlobalRendering::createImage(uint32_t width, uint32_t height, uint32_t mipL
     if (vkCreateImage(device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
         Error("failed to create image!");
     }
+    engine->util.debugNameObjectImage(image, debugName);
 
     VkMemoryRequirements memRequirements;
     vkGetImageMemoryRequirements(device, image, &memRequirements);
@@ -845,23 +820,26 @@ void GlobalRendering::createImage(uint32_t width, uint32_t height, uint32_t mipL
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = engine.global.findMemoryTypeIndex(memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = engine->globalRendering.findMemoryTypeIndex(memRequirements.memoryTypeBits, properties);
 
     if (vkAllocateMemory(device, &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
         Error("failed to allocate image memory!");
     }
 
     vkBindImageMemory(device, image, imageMemory, 0);
+    string memName = debugName;
+    memName += "_dev_mem";
+    engine->util.debugNameObjectDeviceMmeory(imageMemory, memName.c_str());
 }
 
 void GlobalRendering::createCubeMapFrom2dTexture(string textureName2d, string textureNameCube)
 {
     FrameBufferAttachment attachment{};
-    TextureInfo* twoD = engine.textureStore.getTexture(textureName2d);
+    TextureInfo* twoD = engine->textureStore.getTexture(textureName2d);
 
     createImageCube(twoD->vulkanTexture.width, twoD->vulkanTexture.height, twoD->vulkanTexture.levelCount, VK_SAMPLE_COUNT_1_BIT, twoD->vulkanTexture.imageFormat, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        attachment.image, attachment.memory);
+        attachment.image, attachment.memory, textureNameCube.c_str());
     auto cmd = beginSingleTimeCommands(true);
 
     auto subresourceRangeSrc = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, twoD->vulkanTexture.levelCount, 0, 1 };
@@ -940,7 +918,7 @@ void GlobalRendering::createCubeMapFrom2dTexture(string textureName2d, string te
 
     endSingleTimeCommands(cmd);
 
-    ::TextureInfo *texture = engine.textureStore.createTextureSlot(textureNameCube);
+    ::TextureInfo* texture = engine->textureStore.createTextureSlot(textureNameCube);
     // copy base ktx texture fields and the adapt for new cube map:
     texture->vulkanTexture = twoD->vulkanTexture;
     texture->vulkanTexture.deviceMemory = nullptr;
@@ -953,18 +931,29 @@ void GlobalRendering::createCubeMapFrom2dTexture(string textureName2d, string te
     texture->available = true;
 }
 
+void GlobalRendering::destroyImage(VkImage image, VkDeviceMemory imageMemory)
+{
+    vkDestroyImage(device, image, nullptr);
+    vkFreeMemory(device, imageMemory, nullptr);
+}
+
+void GlobalRendering::destroyImageView(VkImageView imageView)
+{
+    vkDestroyImageView(device, imageView, nullptr);
+}
+
 void GlobalRendering::createViewportState(ShaderState& shaderState) {
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)engine.getBackBufferExtent().width;
-    viewport.height = (float)engine.getBackBufferExtent().height;
+    viewport.width = (float)engine->getBackBufferExtent().width;
+    viewport.height = (float)engine->getBackBufferExtent().height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor{};
     scissor.offset = { 0, 0 };
-    scissor.extent = engine.getBackBufferExtent();
+    scissor.extent = engine->getBackBufferExtent();
 
     VkPipelineViewportStateCreateInfo viewportState{};
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -986,4 +975,138 @@ void GlobalRendering::logDeviceLimits()
     Log("maxDescriptorSetSampledImages " << physicalDeviceProperties.properties.limits.maxDescriptorSetSampledImages << endl);
     Log("maxPushConstantsSize " << physicalDeviceProperties.properties.limits.maxPushConstantsSize << endl);
     // maxDescriptorSetSampledImages
+}
+
+GPUImage* GlobalRendering::createImage(vector<GPUImage>& list, const char *debugName, uint32_t width, uint32_t height)
+{
+    GPUImage gpui;
+    if (width <= 0 || height <= 0) {
+        width = engine->getBackBufferExtent().width;
+        height = engine->getBackBufferExtent().height;
+    }
+    gpui.width = width;
+    gpui.height = height;
+    gpui.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    gpui.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    gpui.rendered = false;
+    gpui.consumed = false;
+    createImage(gpui.width, gpui.height, 1, VK_SAMPLE_COUNT_1_BIT, ImageFormat, VK_IMAGE_TILING_OPTIMAL,
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gpui.fba.image, gpui.fba.memory, debugName);
+    gpui.fba.view = createImageView(gpui.fba.image, ImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    list.push_back(gpui);
+    return &list.back();
+}
+
+void GlobalRendering::createDumpImage(GPUImage& gpui, uint32_t width, uint32_t height)
+{
+    assert(gpui.fba.image == nullptr);
+    if (width <= 0 || height <= 0) {
+        width = engine->getBackBufferExtent().width;
+        height = engine->getBackBufferExtent().height;
+    }
+    gpui.width = width;
+    gpui.height = height;
+    createImage(gpui.width, gpui.height, 1, VK_SAMPLE_COUNT_1_BIT, ImageFormat, VK_IMAGE_TILING_LINEAR,
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        gpui.fba.image, gpui.fba.memory, "dump image");
+    // Get layout of the image (including row pitch)
+    VkImageSubresource subResource{};
+    subResource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+    vkGetImageSubresourceLayout(device, gpui.fba.image, &subResource, &gpui.subResourceLayout);
+
+    // Map image memory so we can start copying from it
+    vkMapMemory(device, gpui.fba.memory, 0, VK_WHOLE_SIZE, 0, (void**)&gpui.imagedata);
+    gpui.imagedata += gpui.subResourceLayout.offset;
+}
+
+void GlobalRendering::consolidateCommandBuffers(CommandBufferArray& cmdBufs, FrameResources* fr)
+{
+    assert(fr->numCommandBuffers > 0);
+    assert(fr->numCommandBuffers < MAX_COMMAND_BUFFERS_PER_DRAW);
+    int index = 0;
+    fr->forEachCommandBuffer([&index, &cmdBufs](VkCommandBuffer b) {
+        //Log("cmd buffer " << b << endl);
+        cmdBufs[index++] = b;
+        });
+}
+
+void GlobalRendering::makeGPUImage(FrameBufferAttachment* fba, GPUImage& gpui)
+{
+    gpui.width = engine->getBackBufferExtent().width;
+    gpui.height = engine->getBackBufferExtent().height;
+    gpui.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    gpui.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    gpui.rendered = true;
+    gpui.consumed = false;
+    gpui.fba = *fba;
+}
+
+void GlobalRendering::dumpToFile(FrameBufferAttachment* fba, DirectImage& di)
+{
+    GPUImage gpui;
+    makeGPUImage(fba, gpui);
+    di.dumpToFile(&gpui);
+}
+
+void GlobalRendering::present(FrameResources* fr, DirectImage& di, WindowInfo* winfo)
+{
+    engine->presentation.presentImage(fr, winfo);
+}
+
+void GlobalRendering::preFrame(FrameResources* fr)
+{
+    if (engine->isVR()) {
+        engine->vr.pollEvent();
+        engine->vr.frameWait();
+        engine->vr.frameBegin(*fr);
+    }
+}
+
+void GlobalRendering::postFrame(FrameResources* fr)
+{
+}
+
+// submit to graphics queue, called only from queue submit thread
+// 1) finalize command buffers
+// 2) wait for last frame to be processed (last submit has finished)
+// 3) submit new command buffers
+// 4) call preocessImage to process last frame
+void GlobalRendering::submit(FrameResources* fr)
+{
+    //Log("submit thread submitting frame " << fr->frameNum << endl);
+    consolidateCommandBuffers(submitCommandBuffers, fr);
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    //VkSemaphore waitSemaphores[] = { tr.imageAvailableSemaphore };
+    //VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    //tr.waitStages[0] = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    submitInfo.waitSemaphoreCount = 0;
+    submitInfo.pWaitSemaphores = nullptr;//waitSemaphores;
+    //submitInfo.pWaitDstStageMask = &tr.waitStages[0];
+    submitInfo.commandBufferCount = static_cast<uint32_t>(fr->numCommandBuffers);
+    submitInfo.pCommandBuffers = &submitCommandBuffers[0];
+    //VkSemaphore signalSemaphores[] = { tr.renderFinishedSemaphore };
+    submitInfo.signalSemaphoreCount = 0;
+    submitInfo.pSignalSemaphores = nullptr; // signalSemaphores;
+    // wait for last submit to finish:
+    vkWaitForFences(device, 1, &queueSubmitFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(device, 1, &queueSubmitFence);
+    // submit next frame
+    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, queueSubmitFence) != VK_SUCCESS) {
+        Error("failed to submit draw command buffer!");
+    }
+    //Log("submit fence " << fr->inFlightFence << " index " << fr->frameIndex << endl);
+    fr->clearDrawResults();
+}
+
+void GlobalRendering::processImage(FrameResources* fr)
+{
+}
+
+void GlobalRendering::destroyImage(GPUImage* image)
+{
+    destroyImageView(image->fba.view);
+    destroyImage(image->fba.image, image->fba.memory);
 }

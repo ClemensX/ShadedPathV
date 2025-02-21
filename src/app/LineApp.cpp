@@ -5,49 +5,42 @@
 using namespace std;
 using namespace glm;
 
-void LineApp::run()
+void LineApp::run(ContinuationInfo* cont)
 {
-    Log("SimpleApp started" << endl);
-    {
-        Shaders& shaders = engine->shaders;
-        // camera initialization
-        createFirstPersonCameraPositioner(glm::vec3(-0.36f, 0.0f, 2.340f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        createHMDCameraPositioner(glm::vec3(-0.38f, 0.10f, 0.82f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        getFirstPersonCameraPositioner()->setMaxSpeed(15.0f);
-        initCamera();
-        // engine configuration
-        enableEventsAndModes();
-        engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
-        engine->files.findAssetFolder("data");
-        //engine->setFrameCountLimit(1000);
-        engine->setBackBufferResolution(ShadedPathEngine::Resolution::HMDIndex);
-        //engine->setBackBufferResolution(ShadedPathEngine::Resolution::FourK);
-        //engine->setBackBufferResolution(ShadedPathEngine::Resolution::OneK); // 960
-        int win_width = 960;// 960;//1800;// 800;//3700;
-        engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Vulkan Simple Line App");
-        camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);
+    Log("LineApp start\n");
+    AppSupport::setEngine(engine);
+    Shaders& shaders = engine->shaders;
 
-        engine->registerApp(this);
-        initEngine("LineApp");
+    // camera initialization
+    createFirstPersonCameraPositioner(glm::vec3(-0.36f, 0.0f, 2.340f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    createHMDCameraPositioner(glm::vec3(-0.38f, 0.10f, 0.82f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    getFirstPersonCameraPositioner()->setMaxSpeed(15.0f);
+    initCamera();
+    enableEventsAndModes();
+    engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
+    engine->files.findAssetFolder("data");
+    setHighBackbufferResolution();
+    camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);
+    //engine->enableStereoPresentation();
 
-        // add shaders used in this app
-        shaders
-            .addShader(shaders.clearShader)
-            .addShader(shaders.lineShader)
-            ;
-        // init shaders, e.g. one-time uploads before rendering cycle starts go here
-        shaders.initActiveShaders();
+    // add shaders used in this app
+    shaders
+        .addShader(shaders.uiShader)
+        .addShader(shaders.clearShader)
+        .addShader(shaders.lineShader)
+        ;
+    // init shaders, e.g. one-time uploads before rendering cycle starts go here
+    shaders.initActiveShaders();
 
-        // init app rendering:
-        init();
-        eventLoop();
-    }
-    Log("LineApp ended" << endl);
+    init();
+    engine->eventLoop();
+
+    // cleanup
 }
 
 void LineApp::init() {
     // add some lines:
-    float aspectRatio = engine->getAspect();
+    float aspectRatio = 1.0f; // engine->getAspect();
     float plus = 0.0f;
     LineDef myLines[] = {
         // start, end, color
@@ -60,9 +53,9 @@ void LineApp::init() {
     // loading objects
     // TODO currently wireframe rendering is bugged
     if (false) {
-        engine->meshStore.loadMeshWireframe("WaterBottle.glb", "WaterBottle", lines);
-        auto o = engine->meshStore.getMesh("WaterBottle");
-        Log("Object loaded: " << o->id.c_str() << endl);
+        //engine->meshStore.loadMeshWireframe("WaterBottle.glb", "WaterBottle", lines);
+        //auto o = engine->meshStore.getMesh("WaterBottle");
+        //Log("Object loaded: " << o->id.c_str() << endl);
     }
 
 
@@ -77,23 +70,25 @@ void LineApp::init() {
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     // Grid with 1m squares, floor on -10m, ceiling on 372m
 
-	engine->shaders.lineShader.uploadFixedGlobalLines();
+    engine->shaders.lineShader.uploadFixedGlobalLines();
+    engine->shaders.clearShader.setClearColor(vec4(0.1f, 0.1f, 0.9f, 1.0f));
+
+    prepareWindowOutput("Line App");
+    engine->presentation.startUI();
 }
 
-void LineApp::drawFrame(ThreadResources& tr) {
-    updatePerFrame(tr);
-    engine->shaders.submitFrame(tr);
-}
-
-void LineApp::updatePerFrame(ThreadResources& tr)
+void LineApp::mainThreadHook()
 {
+}
+
+// prepare drawing, guaranteed single thread
+void LineApp::prepareFrame(FrameResources* fr)
+{
+    frameNum = fr->frameNum;
+    FrameResources& tr = *fr;
     double seconds = engine->gameTime.getTimeSeconds();
-    if (old_seconds > 0.0f && old_seconds == seconds) {
-        Log("DOUBLE TIME" << endl);
-        return;
-    }
-    if (old_seconds > seconds) {
-        Log("INVERTED TIME" << endl);
+    if ((old_seconds > 0.0f && old_seconds == seconds) || old_seconds > seconds) {
+        Error("APP TIME ERROR - should not happen");
         return;
     }
     double deltaSeconds = seconds - old_seconds;
@@ -108,17 +103,17 @@ void LineApp::updatePerFrame(ThreadResources& tr)
     applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
 
     // dynamic lines:
-    float aspectRatio = engine->getAspect();
+    float aspectRatio = 1.0f; // engine->getAspect();
     LineDef myLines[] = {
         // start, end, color
         { glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
         { glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
         { glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f + plus), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
-        { glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f ), glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
+        { glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f), glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
         { glm::vec3(0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) },
         { glm::vec3(-0.25f, -0.25f * aspectRatio, 1.0f), glm::vec3(0.0f, 0.25f * aspectRatio, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f) }
     };
-    if (vr) plus += 0.0001f;
+    if (engine->isVR()) plus += 0.0001f;
     else plus += 0.00001f;
     //plus = 0.021f;
     vector<LineDef> oneTimelines;
@@ -134,30 +129,79 @@ void LineApp::updatePerFrame(ThreadResources& tr)
         if (tr.frameNum == 11) {
             // single update
             increaseLineStack(permlines);
-            engine->shaders.lineShader.addPermament(permlines, tr);
+            engine->shaders.lineShader.addPermament(permlines);
         }
         if (tr.frameNum == 100) {
             // single update
             increaseLineStack(permlines);
-            engine->shaders.lineShader.addPermament(permlines, tr);
+            engine->shaders.lineShader.addPermament(permlines);
         }
         if (tr.frameNum == 200) {
             // single update
             increaseLineStack(permlines);
-            engine->shaders.lineShader.addPermament(permlines, tr);
-        }
-    } else {
-        if ((tr.frameNum + 9) % 10 == 0) {
-            // global update
-            increaseLineStack(permlines);
-            engine->shaders.lineShader.addPermament(permlines, tr);
+            engine->shaders.lineShader.addPermament(permlines);
         }
     }
-
+    else {
+        if ((tr.frameNum + 9) % 10 == 0) {
+            bool back = engine->reserveBackgroundThread();
+            // global update
+            //increaseLineStack(permlines);
+            //engine->shaders.lineShader.addPermament(permlines, tr);
+        }
+        if (tr.frameNum == 100) {
+            //bool back = engine->reserveBackgroundThread();
+            //if (back) {
+            //    Log("LineApp background work reserved\n");
+            //}
+        }
+    }
+    if (updatesPending > 0) {
+        engine->shaders.lineShader.applyGlobalUpdate(tr);
+        updatesPending--;
+    }
     engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
-    
+
     //logCameraPosition();
     //this_thread::sleep_for(chrono::milliseconds(300));
+    engine->shaders.clearShader.addCommandBuffers(fr, &fr->drawResults[0]); // put clear shader first
+}
+
+// draw from multiple threads
+void LineApp::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
+{
+    if (topic == 0) {
+        // draw lines
+        engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
+    }
+}
+
+void LineApp::postFrame(FrameResources* fr)
+{
+    engine->shaders.endShader.addCommandBuffers(fr, fr->getLatestCommandBufferArray());
+}
+
+void LineApp::processImage(FrameResources* fr)
+{
+    //Log("LineApp postFrame " << fi->frameNum << endl);
+    if (false && fr->frameNum > 10 && fr->frameNum <= 12) {
+        Log("dump to file frame " << fr->frameNum << " " << fr->colorImage.fba.image << endl);
+        dumpToFile(fr);
+    }
+    if (false && fr->frameNum == 1000 ) {
+        Log("dump to file frame " << fr->frameNum << " " << fr->colorImage.fba.image << endl);
+        dumpToFile(fr);
+    }
+    if (false && fr->frameNum == 10) {
+        Log("sleep...");
+        this_thread::sleep_for(chrono::seconds(2));
+    }
+    present(fr);
+}
+
+bool LineApp::shouldClose()
+{
+    return shouldStopEngine;
 }
 
 void LineApp::increaseLineStack(std::vector<LineDef>& lines)
@@ -184,7 +228,26 @@ void LineApp::increaseLineStack(std::vector<LineDef>& lines)
 	//Log("Line stack increased to " << currentLineStackCount << endl);
 }
 
+void LineApp::backgroundWork()
+{
+    if (updatesPending > 0) {
+        Log("WARNING: LineApp backgroundWork update pending\n");
+        return;
+    }
+    //Log("LineApp backgroundWork\n");
+    //this_thread::sleep_for(chrono::milliseconds(4000));
+    vector<LineDef> permlines;
+    increaseLineStack(permlines);
+    engine->shaders.lineShader.addPermament(permlines);
+    updatesPending = 2; // each frame needs to update
+    //Log("LineApp backgroundWork done\n");
+}
+
 void LineApp::handleInput(InputState& inputState)
 {
+    if (inputState.windowClosed != nullptr) {
+        inputState.windowClosed = nullptr;
+        shouldStopEngine = true;
+    }
     AppSupport::handleInput(inputState);
 }

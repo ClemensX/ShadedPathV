@@ -11,11 +11,12 @@ enum GraphicsAPI_Type : uint8_t {
 };
 // include xr linear algebra for XrVector and XrMatrix classes.
 #include "xr_linear_algebra.h"
-class VR
+class VR : public EngineParticipant
 {
 public:
-	VR(ShadedPathEngine& s) : engine(s) {
+	VR(ShadedPathEngine* s) {
 		Log("VR c'tor\n");
+		setEngine(s);
 	};
 	~VR();
 
@@ -39,6 +40,7 @@ public:
 	const std::vector<std::string> REQUIRED_XR_EXTENSIONS{ "XR_KHR_vulkan_enable2", "XR_EXT_hand_tracking" };
 #   endif
 
+	HMDProperties& getHMDProperties();
 	// Transferred from Sample Code:
 	void logLayersAndExtensions();
 	void createInstanceInternal();
@@ -49,9 +51,9 @@ public:
 	// threaded frame generation
 	void pollEvent();
     void frameWait();
-	void frameBegin(ThreadResources& tr);
-	void frameCopy(ThreadResources& tr);
-	void frameEnd(ThreadResources& tr);
+	void frameBegin(FrameResources& tr);
+	void frameCopy(FrameResources& tr, WindowInfo* winfo);
+	void frameEnd(FrameResources& tr);
 	DebugOutput debugOutput;  // This redirects std::cerr and std::cout to the IDE's output or Android Studio's logcat.
 	enum class SwapchainType : uint8_t {
 		COLOR,
@@ -68,7 +70,6 @@ public:
 		positioner = newPositioner;
 	}
 private:
-	ShadedPathEngine& engine;
 	XrInstance instance = nullptr;
 	XrSystemId systemId;
 	XrSystemProperties xrProp{};
@@ -103,7 +104,7 @@ private:
 		std::vector<XrCompositionLayerBaseHeader*> layers;
 		XrCompositionLayerProjection layerProjection = { XR_TYPE_COMPOSITION_LAYER_PROJECTION };
 		std::vector<XrCompositionLayerProjectionView> layerProjectionViews;
-		ThreadResources* tr = nullptr;
+		FrameResources* tr = nullptr;
 		uint32_t viewCount = 0;
 		uint32_t width = 0;
 		uint32_t height = 0;
@@ -112,7 +113,7 @@ private:
 		//XrSwapchain colorSwapchain = XR_NULL_HANDLE;
 	};
 	bool RenderLayerPrepare(RenderLayerInfo& layerInfo);
-	bool RenderLayerCopyRenderedImage(RenderLayerInfo& layerInfo);
+	bool RenderLayerCopyRenderedImage(RenderLayerInfo& layerInfo, WindowInfo* winfo);
 	// init calls
 	void createSystem();
 	void GetEnvironmentBlendModes();
@@ -164,13 +165,15 @@ private:
 	CameraPositioner_HMD* positioner = nullptr;
 	XrFrameState frameState{ XR_TYPE_FRAME_STATE };
 	RenderLayerInfo renderLayerInfo;
+	HMDProperties hmdProperties{};
 };
 #else
-class VR
+class VR : public EngineParticipant
 {
 	public:
-		VR(ShadedPathEngine& s) : engine(s) {
+		VR(ShadedPathEngine* s) {
 			Log("VR c'tor\n");
+			setEngine(s);
 		};
 		~VR(){};
 	// VR has to be initialized before Vulkan instance creation
@@ -202,7 +205,6 @@ class VR
 	}
 	void create() {};
 private:
-		ShadedPathEngine& engine;
 		CameraPositioner_HMD* positioner = nullptr;
 };
 #endif

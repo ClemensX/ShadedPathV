@@ -20,7 +20,7 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
     resources.createIndexBufferStatic(bufferSize, indices.data(), indexBufferTriangle, indexBufferMemoryTriangle);
 
     // descriptor set layout
-    resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);
+    resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, this, 1);
 
     // load texture
 	engine.textureStore.loadTexture("debug.ktx", "debugTexture");
@@ -28,23 +28,32 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 	engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "pinetreeTexture");  // VK_IMAGE_VIEW_TYPE_CUBE will produce black texture color
 	//texture = engine.textureStore.getTexture("debugTexture");
 	texture = engine.textureStore.getTexture(engine.textureStore.BRDFLUT_TEXTURE_ID);
+
+	// per frame resources
+	int fl = engine.getFramesInFlight();
+	for (int i = 0; i < fl; i++) {
+		SimpleThreadResources sub;
+		subFrameResources.push_back(sub);
+	}
 }
 
-void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
+void SimpleShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 {
-	auto& str = tr.simpleResources; //shortcut to shader thread resources
+	auto& str = subFrameResources[tr.frameIndex]; //shortcut to shader thread resources
 	// MVP uniform buffer
 	createUniformBuffer(str.uniformBuffer, sizeof(UniformBufferObject), str.uniformBufferMemory);
 	if (engine->isStereo()) {
 		createUniformBuffer(str.uniformBuffer2, sizeof(UniformBufferObject), str.uniformBufferMemory2);
 	}
-	VulkanHandoverResources handover;
+	VulkanHandoverResources handover{};
 	handover.mvpBuffer = str.uniformBuffer;
 	handover.mvpBuffer2 = str.uniformBuffer2;
 	handover.mvpSize = sizeof(UniformBufferObject);
 	handover.imageView = texture->imageView;
 	handover.descriptorSet = &str.descriptorSet;
 	handover.descriptorSet2 = &str.descriptorSet2;
+	handover.debugBaseName = engine->util.createDebugName("ThreadResources.simpleShader", tr.frameIndex);
+	handover.shader = this;
 	resources.createThreadResources(handover);
 	createRenderPassAndFramebuffer(tr, shaderState, str.renderPass, str.framebuffer, str.framebuffer2);
 
@@ -113,13 +122,9 @@ void SimpleShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	}
 }
 
-void SimpleShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
-{
-}
-
-void SimpleShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
+void SimpleShader::uploadToGPU(FrameResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
 	if (!enabled) Error("Shader disabled. Calling methods on it is not allowed.");
-	auto& str = tr.simpleResources; // shortcut to simple shader resources
+	auto& str = subFrameResources[tr.frameIndex]; //shortcut to shader thread resources
 	// copy ubo to GPU:
     void* data;
 	vkMapMemory(device, str.uniformBufferMemory, 0, sizeof(ubo), 0, &data);
@@ -132,13 +137,13 @@ void SimpleShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, Un
 	}
 }
 
-void SimpleShader::createCommandBuffer(ThreadResources& tr)
+void SimpleShader::createCommandBuffer(FrameResources& tr)
 {
 	if (!enabled) return;
 	resources.updateDescriptorSets(tr);
-	auto& str = tr.simpleResources; //shortcut to shader thread resources
-	auto& device = this->engine->global.device;
-	auto& global = this->engine->global;
+	auto& str = subFrameResources[tr.frameIndex]; //shortcut to shader thread resources
+	auto& device = this->engine->globalRendering.device;
+	auto& global = this->engine->globalRendering;
 	auto& shaders = this->engine->shaders;
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -181,14 +186,14 @@ void SimpleShader::createCommandBuffer(ThreadResources& tr)
 	}
 }
 
-void SimpleShader::addCurrentCommandBuffer(ThreadResources& tr) {
-	tr.activeCommandBuffers.push_back(tr.simpleResources.commandBuffer);
-};
+void SimpleShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
+	int index = drawResult->getNextFreeCommandBufferIndex();
+    drawResult->commandBuffers[index++] = subFrameResources[fr->frameIndex].commandBuffer;
+}
 
-
-void SimpleShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, VkBuffer indexBuffer, bool isRightEye)
+void SimpleShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, VkBuffer vertexBuffer, VkBuffer indexBuffer, bool isRightEye)
 {
-	auto& str = tr.simpleResources; //shortcut to shader thread resources
+	auto& str = subFrameResources[tr.frameIndex]; //shortcut to shader thread resources
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.graphicsPipeline);
 	VkBuffer vertexBuffers[] = { vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
@@ -201,7 +206,7 @@ void SimpleShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResou
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet, 0, nullptr);
 	} else {
 		// right eye
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet2, 1, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet2, 0, nullptr);
 	}
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
 
@@ -224,9 +229,9 @@ SimpleShader::~SimpleShader()
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 }
 
-void SimpleShader::destroyThreadResources(ThreadResources& tr)
+void SimpleShader::destroyThreadResources(FrameResources& tr)
 {
-	auto& trl = tr.simpleResources;
+	auto& trl = subFrameResources[tr.frameIndex]; //shortcut to shader thread resources
 	vkDestroyFramebuffer(device, trl.framebuffer, nullptr);
 	vkDestroyRenderPass(device, trl.renderPass, nullptr);
 	vkDestroyPipeline(device, trl.graphicsPipeline, nullptr);

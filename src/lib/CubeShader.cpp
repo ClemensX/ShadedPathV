@@ -15,23 +15,38 @@ void CubeShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	resources.createVertexBufferStatic(bufferSize, &(verts_fake_buffer[0]), vertexBuffer, vertexBufferMemory);
 
 	// descriptor set layout
-	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);
+	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, this, 1);
+
+	int fl = engine.getFramesInFlight();
+	for (int i = 0; i < fl; i++) {
+		// global fixed lines (one common vertex buffer)
+		CubeSubShader sub;
+		sub.init(this, "CubeSubShader");
+		sub.setVertShaderModule(vertShaderModule);
+		sub.setFragShaderModule(fragShaderModule);
+		sub.setVulkanResources(&resources);
+		globalSubShaders.push_back(sub);
+	}
 }
 
-void CubeShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
+void CubeShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 {
-	auto& str = tr.cubeResources; // shortcut to cube resources
+	CubeSubShader& ug = globalSubShaders[tr.frameIndex];
+	ug.initSingle(tr, shaderState);
+}
 
+void CubeSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
+{
 	// uniform buffer
-	createUniformBuffer(str.uniformBuffer, sizeof(UniformBufferObject), str.uniformBufferMemory);
-	engine->util.debugNameObjectBuffer(str.uniformBuffer, "Cube UBO 1");
-	engine->util.debugNameObjectDeviceMmeory(str.uniformBufferMemory, "Cube Memory 1");
+	cubeShader->createUniformBuffer(uniformBuffer, sizeof(CubeShader::UniformBufferObject), uniformBufferMemory);
+	engine->util.debugNameObjectBuffer(uniformBuffer, "Cube UBO 1");
+	engine->util.debugNameObjectDeviceMmeory(uniformBufferMemory, "Cube Memory 1");
 	if (engine->isStereo()) {
-		createUniformBuffer(str.uniformBuffer2, sizeof(UniformBufferObject), str.uniformBufferMemory2);
-		engine->util.debugNameObjectBuffer(str.uniformBuffer2, "Cube UBO 2");
-		engine->util.debugNameObjectDeviceMmeory(str.uniformBufferMemory2, "Cube Memory 2");
+		cubeShader->createUniformBuffer(uniformBuffer2, sizeof(CubeShader::UniformBufferObject), uniformBufferMemory2);
+		engine->util.debugNameObjectBuffer(uniformBuffer2, "Cube UBO 2");
+		engine->util.debugNameObjectDeviceMmeory(uniformBufferMemory2, "Cube Memory 2");
 	}
-	createRenderPassAndFramebuffer(tr, shaderState, str.renderPass, str.framebuffer, str.framebuffer2);
+	cubeShader->createRenderPassAndFramebuffer(tr, shaderState, renderPass, framebuffer, framebuffer2);
 
 	// create shader stage
 	auto vertShaderStageInfo = engine->shaders.createVertexShaderCreateInfo(vertShaderModule);
@@ -39,9 +54,9 @@ void CubeShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
 	// vertex input
-	auto binding_desc = getBindingDescription();
-	auto attribute_desc = getAttributeDescriptions();
-	auto vertexInputInfo = createVertexInputCreateInfo(&binding_desc, attribute_desc.data(), attribute_desc.size());
+	auto binding_desc = cubeShader->getBindingDescription();
+	auto attribute_desc = cubeShader->getAttributeDescriptions();
+	auto vertexInputInfo = cubeShader->createVertexInputCreateInfo(&binding_desc, attribute_desc.data(), attribute_desc.size());
 
 	// input assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -53,20 +68,20 @@ void CubeShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	VkPipelineViewportStateCreateInfo viewportState = shaderState.viewportState;
 
 	// rasterizer
-	auto rasterizer = createStandardRasterizer();
+	auto rasterizer = cubeShader->createStandardRasterizer();
 
 	// multisampling
-	auto multisampling = createStandardMultisampling();
+	auto multisampling = cubeShader->createStandardMultisampling();
 
 	// color blending
 	VkPipelineColorBlendAttachmentState colorBlendAttachment;
-	auto colorBlending = createStandardColorBlending(colorBlendAttachment);
+	auto colorBlending = cubeShader->createStandardColorBlending(colorBlendAttachment);
 
 	// dynamic state
 	// empty for now...
 
 	// pipeline layout
-	resources.createPipelineLayout(&str.pipelineLayout, this);
+	vulkanResources->createPipelineLayout(&pipelineLayout, cubeShader);
 	//const std::vector<VkDescriptorSetLayout> setLayouts = {
 	//		descriptorSetLayout
 	//};
@@ -84,7 +99,7 @@ void CubeShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	//createPipelineLayout(&str.pipelineLayout);
 
 	// depth stencil
-	auto depthStencil = createStandardDepthStencil();
+	auto depthStencil = cubeShader->createStandardDepthStencil();
 
 	// create pipeline
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -99,116 +114,124 @@ void CubeShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	pipelineInfo.pDepthStencilState = &depthStencil;
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = nullptr; // Optional
-	pipelineInfo.layout = str.pipelineLayout;
-	pipelineInfo.renderPass = str.renderPass;
+	pipelineInfo.layout = pipelineLayout;
+	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional
-	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &str.graphicsPipeline) != VK_SUCCESS) {
+	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
 		Error("failed to create graphics pipeline!");
 	}
 }
 
-void CubeShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
+void CubeShader::createCommandBuffer(FrameResources& tr)
 {
+	CubeSubShader& sub = globalSubShaders[tr.frameIndex];
+	sub.createGlobalCommandBufferAndRenderPass(tr);
 }
 
-void CubeShader::createCommandBuffer(ThreadResources& tr)
+void CubeSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr)
 {
-	auto& str = tr.cubeResources; // shortcut to cube resources
-	auto& device = engine->global.device;
-	auto& global = engine->global;
+	auto& device = engine->globalRendering.device;
+	auto& global = engine->globalRendering;
 	auto& shaders = engine->shaders;
 	VulkanHandoverResources handover;
-	handover.mvpBuffer = str.uniformBuffer;
-	handover.mvpBuffer2 = str.uniformBuffer2;
-	handover.mvpSize = sizeof(UniformBufferObject);
-	handover.imageView = skybox->imageView;
-	handover.descriptorSet = &str.descriptorSet;
-	handover.descriptorSet2 = &str.descriptorSet2;
-	resources.createThreadResources(handover);
-	engine->util.debugNameObjectDescriptorSet(str.descriptorSet, "Cube Descriptor Set 1");
-	if (engine->isStereo())	engine->util.debugNameObjectDescriptorSet(str.descriptorSet2, "Cube Descriptor Set 2");
+	handover.mvpBuffer = uniformBuffer;
+	handover.mvpBuffer2 = uniformBuffer2;
+	handover.mvpSize = sizeof(CubeShader::UniformBufferObject);
+	handover.imageView = cubeShader->skybox->imageView;
+	handover.descriptorSet = &descriptorSet;
+	handover.descriptorSet2 = &descriptorSet2;
+	handover.shader = cubeShader;
+	vulkanResources->createThreadResources(handover);
+	engine->util.debugNameObjectDescriptorSet(descriptorSet, "Cube Descriptor Set 1");
+	if (engine->isStereo())	engine->util.debugNameObjectDescriptorSet(descriptorSet2, "Cube Descriptor Set 2");
 
-	resources.updateDescriptorSets(tr);
-	//createDescriptorSets(tr);
+	vulkanResources->updateDescriptorSets(tr);
+
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = tr.commandPool;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = (uint32_t)1;
 
-	if (vkAllocateCommandBuffers(device, &allocInfo, &str.commandBuffer) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer) != VK_SUCCESS) {
 		Error("failed to allocate command buffers!");
 	}
-	engine->util.debugNameObjectCommandBuffer(str.commandBuffer, "Cube COMMAND BUFFER");
+	engine->util.debugNameObjectCommandBuffer(commandBuffer, "Cube COMMAND BUFFER");
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0; // Optional
 	beginInfo.pInheritanceInfo = nullptr; // Optional
 
-	if (vkBeginCommandBuffer(str.commandBuffer, &beginInfo) != VK_SUCCESS) {
+	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
 		Error("failed to begin recording triangle command buffer!");
 	}
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = str.renderPass;
-	renderPassInfo.framebuffer = str.framebuffer;
+	renderPassInfo.renderPass = renderPass;
+	renderPassInfo.framebuffer = framebuffer;
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = engine->getBackBufferExtent();
 
 	renderPassInfo.clearValueCount = 0;
 
-	vkCmdBeginRenderPass(str.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	recordDrawCommand(str.commandBuffer, tr);
-	vkCmdEndRenderPass(str.commandBuffer);
+	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	recordDrawCommand(commandBuffer, tr);
+	vkCmdEndRenderPass(commandBuffer);
 	if (engine->isStereo()) {
-		renderPassInfo.framebuffer = str.framebuffer2;
-		vkCmdBeginRenderPass(str.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		recordDrawCommand(str.commandBuffer, tr, true);
-		vkCmdEndRenderPass(str.commandBuffer);
+		renderPassInfo.framebuffer = framebuffer2;
+		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		recordDrawCommand(commandBuffer, tr, true);
+		vkCmdEndRenderPass(commandBuffer);
 	}
-	if (vkEndCommandBuffer(str.commandBuffer) != VK_SUCCESS) {
+	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
 		Error("failed to record triangle command buffer!");
 	}
 }
 
-void CubeShader::addCurrentCommandBuffer(ThreadResources& tr) {
-	tr.activeCommandBuffers.push_back(tr.cubeResources.commandBuffer);
-};
+void CubeShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
+	if (!enabled) return;
+	int index = drawResult->getNextFreeCommandBufferIndex();
+	auto& sub = globalSubShaders[fr->frameIndex];
+	drawResult->commandBuffers[index++] = sub.commandBuffer;
+}
 
-void CubeShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, bool isRightEye)
+void CubeShader::uploadToGPU(FrameResources& fr, UniformBufferObject& ubo, UniformBufferObject& ubo2, bool outsideMode) {
+	if (!enabled) return;
+	auto& sub = globalSubShaders[fr.frameIndex];
+	sub.uploadToGPU(fr, ubo, ubo2, outsideMode);
+}
+
+void CubeSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, bool isRightEye)
 {
-	auto& str = tr.cubeResources; // shortcut to cube resources
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.graphicsPipeline);
-	VkBuffer vertexBuffers[] = { vertexBuffer };
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+	VkBuffer vertexBuffers[] = { cubeShader->vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
 	// bind descriptor set
 	if (!isRightEye) {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet, 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 	}
 	else {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet2, 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet2, 0, nullptr);
 	}
 	vkCmdDraw(commandBuffer, 36, 1, 0, 0);
 }
 
-void CubeShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2, bool outsideMode) {
-	if (!enabled) return;
-	auto& str = tr.cubeResources; // shortcut to cube resources
-	ubo2.farFactor = ubo.farFactor = bloatFactor;
+void CubeSubShader::uploadToGPU(FrameResources& tr, CubeShader::UniformBufferObject& ubo, CubeShader::UniformBufferObject& ubo2, bool outsideMode) {
+	ubo2.farFactor = ubo.farFactor = cubeShader->bloatFactor;
 	ubo2.outside = ubo.outside = outsideMode;
 	// copy ubo to GPU:
 	void* data;
-	vkMapMemory(device, str.uniformBufferMemory, 0, sizeof(ubo), 0, &data);
+	vkMapMemory(device, uniformBufferMemory, 0, sizeof(ubo), 0, &data);
 	memcpy(data, &ubo, sizeof(ubo));
-	vkUnmapMemory(device, str.uniformBufferMemory);
+	vkUnmapMemory(device, uniformBufferMemory);
 	if (engine->isStereo()) {
-		vkMapMemory(device, str.uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
+		vkMapMemory(device, uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
 		memcpy(data, &ubo2, sizeof(ubo2));
-		vkUnmapMemory(device, str.uniformBufferMemory2);
+		vkUnmapMemory(device, uniformBufferMemory2);
 	}
 }
 
@@ -221,41 +244,15 @@ void CubeShader::setSkybox(string texID)
 	}
 }
 
-void CubeShader::createSkyboxTextureDescriptors()
-{
-	VkDescriptorSetAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorPool = descriptorPool;
-	allocInfo.descriptorSetCount = 1;
-	//allocInfo.pSetLayouts = &descriptorSetLayoutTexture;
-	//VkResult res = vkAllocateDescriptorSets(device, &allocInfo, &mesh->descriptorSet);
-	//if (res != VK_SUCCESS) {
-	//	Error("failed to allocate descriptor sets!");
-	//}
-	//engine->util.debugNameObjectDescriptorSet(mesh->descriptorSet, "Mesh Texture Descriptor Set");
-	//// Descriptor
-	//array<VkWriteDescriptorSet, 1> descriptorWrites{};
-	//// populate descriptor set:
-	//VkDescriptorImageInfo imageInfo0{};
-	//imageInfo0.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	//imageInfo0.imageView = mesh->textureInfos[0]->imageView;
-	//imageInfo0.sampler = global->textureSampler;
-
-	//descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	//descriptorWrites[0].dstSet = mesh->descriptorSet;
-	//descriptorWrites[0].dstBinding = 0;
-	//descriptorWrites[0].dstArrayElement = 0;
-	//descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	//descriptorWrites[0].descriptorCount = 1;
-	//descriptorWrites[0].pImageInfo = &imageInfo0;
-	//vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
-}
-
 CubeShader::~CubeShader()
 {
+	if (!enabled) return;
 	Log("CubeShader destructor\n");
 	if (!enabled) {
 		return;
+	}
+	for (CubeSubShader& sub : globalSubShaders) {
+		sub.destroy();
 	}
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);
 	vkDestroyShaderModule(device, vertShaderModule, nullptr);
@@ -265,18 +262,25 @@ CubeShader::~CubeShader()
 	vkFreeMemory(device, vertexBufferMemory, nullptr);
 }
 
-void CubeShader::destroyThreadResources(ThreadResources& tr)
+void CubeSubShader::init(CubeShader* parent, std::string debugName) {
+	cubeShader = parent;
+	name = debugName;
+	engine = cubeShader->engine;
+	device = engine->globalRendering.device;
+	Log("CubeSubShader init: " << debugName.c_str() << std::endl);
+}
+
+void CubeSubShader::destroy()
 {
-	auto& str = tr.cubeResources; // shortcut to cube resources
-	vkDestroyFramebuffer(device, str.framebuffer, nullptr);
-	vkDestroyRenderPass(device, str.renderPass, nullptr);
-	vkDestroyPipeline(device, str.graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(device, str.pipelineLayout, nullptr);
-	vkDestroyBuffer(device, str.uniformBuffer, nullptr);
-	vkFreeMemory(device, str.uniformBufferMemory, nullptr);
+	vkDestroyFramebuffer(device, framebuffer, nullptr);
+	vkDestroyRenderPass(device, renderPass, nullptr);
+	vkDestroyPipeline(device, graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+	vkDestroyBuffer(device, uniformBuffer, nullptr);
+	vkFreeMemory(device, uniformBufferMemory, nullptr);
 	if (engine->isStereo()) {
-		vkDestroyFramebuffer(device, str.framebuffer2, nullptr);
-		vkDestroyBuffer(device, str.uniformBuffer2, nullptr);
-		vkFreeMemory(device, str.uniformBufferMemory2, nullptr);
+		vkDestroyFramebuffer(device, framebuffer2, nullptr);
+		vkDestroyBuffer(device, uniformBuffer2, nullptr);
+		vkFreeMemory(device, uniformBufferMemory2, nullptr);
 	}
 }

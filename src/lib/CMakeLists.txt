@@ -1,14 +1,33 @@
 set (SOURCES
-  VulkanResources.cpp
-  gltf.cpp
+  Util.cpp
+  ShadedPathEngine.cpp
+  ImageConsumer.cpp
+  Files.cpp
+  Texture.cpp
+  GlobalRendering.cpp
+  GameTime.cpp
+  DirectImage.cpp
+  Presentation.cpp
   CubeShader.cpp
   BillboardShader.cpp
-  TerrainShader.cpp
+  #TerrainShader.cpp
   UIShader.cpp
   UI.cpp
+  ShaderBase.cpp
   ClearShader.cpp
+  LineShader.cpp
   SimpleShader.cpp
   pbrShader.cpp
+  ThreadResources.cpp
+  Shaders.cpp
+  VulkanResources.cpp
+  World.cpp
+  Path.cpp
+  Game.cpp
+  Camera.cpp
+  Object.cpp
+  Sound.cpp
+  gltf.cpp
   imgui/imgui_demo.cpp
   imgui/imgui_draw.cpp
   imgui/imgui_impl_glfw.cpp
@@ -16,25 +35,6 @@ set (SOURCES
   imgui/imgui_tables.cpp
   imgui/imgui_widgets.cpp
   imgui/imgui.cpp
-  Util.cpp
-  ThreadResources.cpp
-  ShadedPathEngine.cpp
-  Files.cpp
-  GameTime.cpp
-  Texture.cpp
-  Object.cpp
-  Sound.cpp
-  LineShader.cpp
-  ShaderBase.cpp
-  Shaders.cpp
-  GlobalRendering.cpp
-  GlobalUpdate.cpp
-  Presentation.cpp
-  ShadedPathEngine.cpp
-  World.cpp
-  Path.cpp
-  Camera.cpp
-  Game.cpp
 )
 if (OPENXR_INC)
   list(APPEND SOURCES VR.cpp)

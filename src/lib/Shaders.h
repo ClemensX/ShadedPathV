@@ -1,20 +1,5 @@
 #pragma once
 
-// ShaderState will be used during initial shader setup only (not for regular frame rendering).
-// it tracks state that has to be accessed by more than one shader
-struct ShaderState
-{
-	VkViewport viewport{};
-	VkRect2D scissor{};
-	VkPipelineViewportStateCreateInfo viewportState{};
-
-	// various flags, usually set by shaders init() or initSingle()
-
-	// signal first shader that should clear depth and framebuffers
-	bool isClear = false;
-	bool isPresent = false;
-};
-
 class Shaders : public EngineParticipant
 {
 	class Config {
@@ -33,11 +18,10 @@ class Shaders : public EngineParticipant
 		// Initialize ShaderState and all shaders
 		Config& init();
 
-		void createCommandBuffers(ThreadResources& tr);
-		void gatherActiveCommandBuffers(ThreadResources& tr);
+		void createCommandBuffers(FrameResources& tr);
 
 		// destroy shader thread resources
-		void destroyThreadResources(ThreadResources& tr);
+		void destroyThreadResources(FrameResources& tr);
 
 		void setEngine(ShadedPathEngine* s) {
 			engine = s;
@@ -48,15 +32,16 @@ class Shaders : public EngineParticipant
 				Error("ShaderState not initialized. Did you run Shaders::initActiveShaders()?");
 			}
 		}
+		ShaderState shaderState;
 	private:
 		std::vector<ShaderBase*> shaderList;
 		ShadedPathEngine* engine = nullptr;
-		ShaderState shaderState;
 	};
 public:
-	Shaders(ShadedPathEngine& s) : engine(s) {
+	Shaders(ShadedPathEngine* s) {
 		Log("Shaders c'tor\n");
-		config.setEngine(&s);
+		setEngine(s);
+		config.setEngine(s);
 	};
 	~Shaders();
 
@@ -71,10 +56,18 @@ public:
 		return config.getShaders();
 	}
 
+    ShaderState& getShaderState() {
+        return config.shaderState;
+    }
+
 	// Initialize ShaderState and all added shaders
 	Shaders& initActiveShaders() {
+        FrameResources::initAll(engine);
 		auto& shaders = getShaders();
-		if (shaders.size() == 0) Error("No shaders added to Shaders object");
+		if (shaders.size() == 0) {
+			Log("WARNING: No shaders were added to global Shaders object");
+			return *this;
+		}
 		auto shaderInstance = shaders.back();
 		// check subclass for EndShader
 		EndShader* derivedPtr = dynamic_cast<EndShader*>(shaderInstance);
@@ -87,16 +80,16 @@ public:
 	}
 
 	// go through added shaders and initilaize thread local command buffers
-	void createCommandBuffers(ThreadResources& tr);
+	void createCommandBuffers(FrameResources& tr);
 
-	void gatherActiveCommandBuffers(ThreadResources& tr);
+	void gatherActiveCommandBuffers(FrameResources& tr);
 	void checkShaderState(ShadedPathEngine& engine);
 
 	// destroy all shader thread local resources
-	void destroyThreadResources(ThreadResources& tr);
+	void destroyThreadResources(FrameResources& tr);
 
 	// general methods
-	void queueSubmit(ThreadResources& tr);
+	void queueSubmit(FrameResources& tr);
 	VkShaderModule createShaderModule(const std::vector<std::byte>& code);
 
 	// SHADERS. All shaders instances are here, but each shader has to be activated in application code
@@ -109,23 +102,10 @@ public:
 	PBRShader pbrShader;
 	CubeShader cubeShader;
 	BillboardShader billboardShader;
-	TerrainShader terrainShader;
+	//TerrainShader terrainShader;
 
 	// submit command buffers for current frame
 	void submitFrame(ThreadResources& tr);
-
-	// BackBufferImageDump: copy backbuffer to image file
-	// initiate before rendering first frame
-	// either all frames will be dumped (mainly for automated tests)
-	// or a single frame after calling backBufferImageDumpNextFrame()
-	// engine should be in single thread mode for image dumps
-	void initiateShader_BackBufferImageDump(bool dumpAll = true); // default: dump all frames
-	// write backbuffer image to file (during frame creation)
-	void executeBufferImageDump(ThreadResources& tr);
-	// dump next frame only
-	void backBufferImageDumpNextFrame() {
-		enabledImageDumpForNextFrame = true;
-	}
 
 	VkPipelineShaderStageCreateInfo createVertexShaderCreateInfo(VkShaderModule& shaderModule) {
 		VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
@@ -167,7 +147,6 @@ private:
 	Config config;
 
 	void initiateShader_BackBufferImageDumpSingle(ThreadResources& res);
-	ShadedPathEngine& engine;
 
 	unsigned int imageCounter = 0;
 	bool enabledAllImageDump = false;

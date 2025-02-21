@@ -5,11 +5,13 @@
 using namespace std;
 using namespace glm;
 
-void LandscapeGenerator::run()
+void LandscapeGenerator::run(ContinuationInfo* cont)
 {
     Log("LandscapeGenerator started" << endl);
     {
+        AppSupport::setEngine(engine);
         auto& shaders = engine->shaders;
+
         // camera initialization
         createFirstPersonCameraPositioner(glm::vec3(241.638f, 732.069f, 2261.37f), glm::vec3(-0.108512f, -0.289912f, -0.950882f), glm::vec3(0.0f, 1.0f, 0.0f));
         createHMDCameraPositioner(glm::vec3(241.638f, 732.069f, 2261.37f), glm::vec3(-0.108512f, -0.289912f, -0.950882f), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -17,19 +19,13 @@ void LandscapeGenerator::run()
         this->autoMovePositioner = &autoMovePositioner;
         getFirstPersonCameraPositioner()->setMaxSpeed(25.0f);
         initCamera();
+
         // engine configuration
         enableEventsAndModes();
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine->files.findAssetFolder("data");
-        engine->setMaxTextures(20);
         setHighBackbufferResolution();
-        int win_width = 800;//480;// 960;//1800;// 800;//3700; // 2500
-        engine->enablePresentation(win_width, (int)(win_width / 1.77f), "Landscape Generator (Diamond Square Algorithm)");
-        //camera.saveProjection(perspective(glm::radians(45.0f), engine->getAspect(), 0.01f, 4300.0f));
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 4300.0f);
-
-        engine->registerApp(this);
-        initEngine("LandscapeGenerator");
 
         engine->textureStore.generateBRDFLUT();
 
@@ -41,7 +37,6 @@ void LandscapeGenerator::run()
             ;
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         shaders.initActiveShaders();
-        shaders.initiateShader_BackBufferImageDump(false); // enable image dumps upon request
 
         // init app rendering:
         init();
@@ -58,23 +53,22 @@ void LandscapeGenerator::init() {
     // add some lines:
     float aspectRatio = engine->getAspect();
 
-    //engine->shaders.lineShader.initialUpload();
+    prepareWindowOutput("Landscape Generator (Diamond Square Algorithm)");
+    engine->presentation.startUI();
 }
 
-void LandscapeGenerator::drawFrame(ThreadResources& tr) {
-    updatePerFrame(tr);
-    engine->shaders.submitFrame(tr);
-}
-
-void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
+void LandscapeGenerator::mainThreadHook()
 {
+}
+
+// prepare drawing, guaranteed single thread
+void LandscapeGenerator::prepareFrame(FrameResources* fr)
+{
+    frameNum = fr->frameNum;
+    FrameResources& tr = *fr;
     double seconds = engine->gameTime.getTimeSeconds();
-    if (old_seconds > 0.0f && old_seconds == seconds) {
-        Log("DOUBLE TIME" << endl);
-        return;
-    }
-    if (old_seconds > seconds) {
-        Log("INVERTED TIME" << endl);
+    if ((old_seconds > 0.0f && old_seconds == seconds) || old_seconds > seconds) {
+        Error("APP TIME ERROR - should not happen");
         return;
     }
     double deltaSeconds = seconds - old_seconds;
@@ -93,25 +87,17 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
             std::unique_lock<std::mutex> lock(monitorMutex);
             parameters.generate = false;
             //Log("Generate thread " << tr.frameIndex << endl);
-            int n2plus1 = (int)(pow(2, parameters.n) + 1);
-            heightmap.resetSize(n2plus1);
-            int lastPos = n2plus1 - 1;
-            // down left and right corner
-            heightmap.setHeight(0, 0, parameters.h_bl);
-            heightmap.setHeight(lastPos, 0, parameters.h_br);
-            // top left and right corner
-            heightmap.setHeight(0, lastPos, parameters.h_tl);
-            heightmap.setHeight(lastPos, lastPos, parameters.h_tr);
-            // do two iteration
-            heightmap.diamondSquare(parameters.magnitude, parameters.dampening, parameters.seed, parameters.generations);
-            lines.clear();
-            heightmap.getLines(lines);
-            heightmap.adaptLinesToWorld(lines, world);
+
             //engine->shaders.lineShader.updateGlobal(lines);
             //vector<vec3> plist;
             //heightmap.getPoints(plist);
             //Log("num points: " << plist.size() << endl);
-            engine->shaders.lineShader.addPermament(lines, tr);
+
+            //engine->shaders.lineShader.addPermament(lines);
+            bool back = engine->reserveBackgroundThread();
+            if (!back) {
+                Log("WARNING: Could not reserve background thread");
+            }
         }
     }
 
@@ -136,18 +122,52 @@ void LandscapeGenerator::updatePerFrame(ThreadResources& tr)
     lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
     engine->shaders.lineShader.prepareAddLines(tr);
+    if (updatesPending > 0) {
+        engine->shaders.lineShader.applyGlobalUpdate(tr);
+        updatesPending--;
+    }
     engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
+
+    engine->shaders.clearShader.addCommandBuffers(fr, &fr->drawResults[0]); // put clear shader first
+}
+
+// draw from multiple threads
+void LandscapeGenerator::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
+{
+    if (topic == 0) {
+        // draw lines
+        engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
+    }
+}
+
+void LandscapeGenerator::postFrame(FrameResources* fr)
+{
+    engine->shaders.endShader.addCommandBuffers(fr, fr->getLatestCommandBufferArray());
+}
+
+void LandscapeGenerator::processImage(FrameResources* fr)
+{
+    present(fr);
+}
+
+bool LandscapeGenerator::shouldClose()
+{
+    return shouldStopEngine;
 }
 
 void LandscapeGenerator::handleInput(InputState& inputState)
 {
+    if (inputState.windowClosed != nullptr) {
+        inputState.windowClosed = nullptr;
+        shouldStopEngine = true;
+    }
     if (useAutoCamera != useAutoCameraCheckbox) {
         // switch camera type
         useAutoCamera = useAutoCameraCheckbox;
         if (useAutoCamera) {
             camera->changePositioner(autoMovePositioner);
         } else {
-            if (vr) {
+            if (engine->isVR()) {
                 camera->changePositioner(getHMDCameraPositioner());
             } else {
                 camera->changePositioner(getFirstPersonCameraPositioner());
@@ -174,8 +194,10 @@ void LandscapeGenerator::handleInput(InputState& inputState)
         const bool press = action != GLFW_RELEASE;
         if (key == GLFW_KEY_H && press)
 			writeHeightmapToRawFile();
-        if (key == GLFW_KEY_P && press)
-			engine->shaders.backBufferImageDumpNextFrame();
+        if (key == GLFW_KEY_P && press) {
+            //engine->shaders.backBufferImageDumpNextFrame();
+            Log("WARNING: Image dump feature not implemented in LandscapeGenerator" << endl);
+        }
         if (key == GLFW_KEY_W) {
             fpPositioner->movement.forward_ = press;
             hmdPositioner->movement.forward_ = press;
@@ -249,7 +271,7 @@ void LandscapeGenerator::buildCustomUI()
         parameters.generate = true;
         localp = parameters;
     }
-    if (!vr) {
+    if (!engine->isVR()) {
         ImGui::Separator();
         ImGui::Text("Line count: %d", lines.size());
         ImGui::Separator();
@@ -260,7 +282,7 @@ void LandscapeGenerator::buildCustomUI()
     }
     if (ImGui::CollapsingHeader("Params"))
     {
-        if (!vr) {
+        if (!engine->isVR()) {
             ImGui::SameLine(); HelpMarker(helpText.c_str());
             ImGui::Separator();
             ImGui::Text("Diamond Square Parameters");
@@ -276,7 +298,7 @@ void LandscapeGenerator::buildCustomUI()
             n2plus1 = 0;
         }
 
-        if (!vr) {
+        if (!engine->isVR()) {
             ImGui::Text("pixel width: %d", n2plus1);
             ImGui::SameLine();
             ImGui::InputFloat("Dampening", &localp.dampening, 0.01f, 0.1f, "%.3f");
@@ -331,4 +353,32 @@ void LandscapeGenerator::writeHeightmapToRawFile()
     vector<glm::vec3> points;
     heightmap.getPoints(points);
     engine->util.writeHeightmapRaw(points);
+}
+
+void LandscapeGenerator::backgroundWork()
+{
+    if (updatesPending > 0) {
+        Log("WARNING: LineApp backgroundWork update pending\n");
+        return;
+    }
+    //Log("LineApp backgroundWork\n");
+    //this_thread::sleep_for(chrono::milliseconds(4000));
+    //increaseLineStack(permlines);
+    int n2plus1 = (int)(pow(2, parameters.n) + 1);
+    heightmap.resetSize(n2plus1);
+    int lastPos = n2plus1 - 1;
+    // down left and right corner
+    heightmap.setHeight(0, 0, parameters.h_bl);
+    heightmap.setHeight(lastPos, 0, parameters.h_br);
+    // top left and right corner
+    heightmap.setHeight(0, lastPos, parameters.h_tl);
+    heightmap.setHeight(lastPos, lastPos, parameters.h_tr);
+    // do two iteration
+    heightmap.diamondSquare(parameters.magnitude, parameters.dampening, parameters.seed, parameters.generations);
+    lines.clear();
+    heightmap.getLines(lines);
+    heightmap.adaptLinesToWorld(lines, world);
+    engine->shaders.lineShader.addPermament(lines);
+    updatesPending = 2; // each frame needs to update
+    //Log("LineApp backgroundWork done\n");
 }

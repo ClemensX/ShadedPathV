@@ -17,32 +17,51 @@ void BillboardShader::init(ShadedPathEngine& engine, ShaderState &shaderState)
 	engine.util.debugNameObjectShaderModule(fragShaderModule, "Billboard Frag Shader");
 
 	// descriptor
-	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool);
+	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, this, 1);
 
 	// push constants
 	pushConstantRanges.push_back(billboardPushConstantRange);
+
+	int fl = engine.getFramesInFlight();
+	for (int i = 0; i < fl; i++) {
+		// global fixed lines (one common vertex buffer)
+		BillboardSubShader sub;
+		sub.init(this, "BillboardSubShader");
+		sub.setVertShaderModule(vertShaderModule);
+        sub.setGeomShaderModule(geomShaderModule);
+		sub.setFragShaderModule(fragShaderModule);
+		sub.setVulkanResources(&resources);
+		globalSubShaders.push_back(sub);
+	}
 }
 
-void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
+void BillboardShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 {
-	auto& str = tr.billboardResources; // shortcut to shader thread resources
+	BillboardSubShader& ug = globalSubShaders[tr.frameIndex];
+	ug.initSingle(tr, shaderState);
+}
+void BillboardSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
+{
+	frameResources = &tr;
 	// uniform buffers for MVP
-	createUniformBuffer(str.uniformBuffer, sizeof(UniformBufferObject), str.uniformBufferMemory);
-	engine->util.debugNameObjectBuffer(str.uniformBuffer, "Billboard Uniform Buffer");
+	billboardShader->createUniformBuffer(uniformBuffer, sizeof(BillboardShader::UniformBufferObject), uniformBufferMemory);
+	engine->util.debugNameObjectBuffer(uniformBuffer, "Billboard Uniform Buffer");
 	if (engine->isStereo()) {
-		createUniformBuffer(str.uniformBuffer2, sizeof(UniformBufferObject), str.uniformBufferMemory2);
-		engine->util.debugNameObjectBuffer(str.uniformBuffer, "Billboard Uniform Stereo Buffer");
+		billboardShader->createUniformBuffer(uniformBuffer2, sizeof(BillboardShader::UniformBufferObject), uniformBufferMemory2);
+		engine->util.debugNameObjectBuffer(uniformBuffer2, "Billboard Uniform Stereo Buffer");
 	}
 
-	VulkanHandoverResources handover;
-	handover.mvpBuffer = str.uniformBuffer;
-	handover.mvpBuffer2 = str.uniformBuffer2;
-	handover.mvpSize = sizeof(UniformBufferObject);
+	VulkanHandoverResources handover{};
+	handover.mvpBuffer = uniformBuffer;
+	handover.mvpBuffer2 = uniformBuffer2;
+	handover.mvpSize = sizeof(BillboardShader::UniformBufferObject);
 	handover.imageView = nullptr;
-	handover.descriptorSet = &str.descriptorSet;
-	handover.descriptorSet2 = &str.descriptorSet2;
-	resources.createThreadResources(handover);
-	createRenderPassAndFramebuffer(tr, shaderState, str.renderPass, str.framebuffer, str.framebuffer2);
+	handover.descriptorSet = &descriptorSet;
+	handover.descriptorSet2 = &descriptorSet2;
+	handover.shader = billboardShader;
+	vulkanResources->createThreadResources(handover);
+	
+	billboardShader->createRenderPassAndFramebuffer(tr, shaderState, renderPass, framebuffer, framebuffer2);
 
 	// create shader stage
 	auto vertShaderStageInfo = engine->shaders.createVertexShaderCreateInfo(vertShaderModule);
@@ -51,9 +70,9 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, geomShaderStageInfo, fragShaderStageInfo };
 
 	// vertex input
-	auto binding_desc = getBindingDescription();
-	auto attribute_desc = getAttributeDescriptions();
-	auto vertexInputInfo = createVertexInputCreateInfo(&binding_desc, attribute_desc.data(), attribute_desc.size());
+	auto binding_desc = billboardShader->getBindingDescription();
+	auto attribute_desc = billboardShader->getAttributeDescriptions();
+	auto vertexInputInfo = billboardShader->createVertexInputCreateInfo(&binding_desc, attribute_desc.data(), attribute_desc.size());
 
 	// input assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -65,24 +84,24 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	VkPipelineViewportStateCreateInfo viewportState = shaderState.viewportState;
 
 	// rasterizer
-	auto rasterizer = createStandardRasterizer();
+	auto rasterizer = billboardShader->createStandardRasterizer();
 
 	// multisampling
-	auto multisampling = createStandardMultisampling();
+	auto multisampling = billboardShader->createStandardMultisampling();
 
 	// standard color blending (disabled), transparent pixels are discarded in fragment shader
 	VkPipelineColorBlendAttachmentState colorBlendAttachment;
-	auto colorBlending = createStandardColorBlending(colorBlendAttachment);
+	auto colorBlending = billboardShader->createStandardColorBlending(colorBlendAttachment);
 
 	// dynamic state
 	// empty for now...
 
 	// pipeline layout
 
-	resources.createPipelineLayout(&str.pipelineLayout, this);
+	vulkanResources->createPipelineLayout(&pipelineLayout, billboardShader);
 
 	// depth stencil
-	auto depthStencil = createStandardDepthStencil();
+	auto depthStencil = billboardShader->createStandardDepthStencil();
 
 	// create pipeline
 	VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -98,12 +117,12 @@ void BillboardShader::initSingle(ThreadResources& tr, ShaderState& shaderState)
 	pipelineInfo.pDepthStencilState = &depthStencil;
 	pipelineInfo.pColorBlendState = &colorBlending;
 	pipelineInfo.pDynamicState = nullptr; // Optional
-	pipelineInfo.layout = str.pipelineLayout;
-	pipelineInfo.renderPass = str.renderPass;
+	pipelineInfo.layout = pipelineLayout;
+	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0;
 	pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
 	pipelineInfo.basePipelineIndex = -1; // Optional
-	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &str.graphicsPipeline) != VK_SUCCESS) {
+	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) != VK_SUCCESS) {
 		Error("failed to create graphics pipeline!");
 	}
 }
@@ -120,12 +139,17 @@ void BillboardShader::initialUpload()
 	global->uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, bufferSize, billboards.data(), vertexBuffer, vertexBufferMemory, "BillboardShader Global Buffer");
 }
 
-void BillboardShader::createCommandBuffer(ThreadResources& tr)
+void BillboardShader::createCommandBuffer(FrameResources& tr)
 {
-	resources.updateDescriptorSets(tr);
-	auto& trl = tr.billboardResources;
-	auto& device = engine->global.device;
-	auto& global = engine->global;
+	BillboardSubShader& sub = globalSubShaders[tr.frameIndex];
+	sub.createGlobalCommandBufferAndRenderPass(tr);
+}
+
+void BillboardSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr)
+{
+	vulkanResources->updateDescriptorSets(tr);
+	auto& device = engine->globalRendering.device;
+	auto& global = engine->globalRendering;
 	auto& shaders = engine->shaders;
 
 	VkCommandBufferAllocateInfo allocInfo{};
@@ -134,90 +158,91 @@ void BillboardShader::createCommandBuffer(ThreadResources& tr)
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocInfo.commandBufferCount = (uint32_t)1;
 
-	if (vkAllocateCommandBuffers(device, &allocInfo, &trl.commandBuffer) != VK_SUCCESS) {
+	if (vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer) != VK_SUCCESS) {
 		Error("failed to allocate command buffers!");
 	}
-	engine->util.debugNameObjectCommandBuffer(trl.commandBuffer, "BILLBOARD COMMAND BUFFER");
+	engine->util.debugNameObjectCommandBuffer(commandBuffer, "BILLBOARD COMMAND BUFFER");
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0; // Optional
 	beginInfo.pInheritanceInfo = nullptr; // Optional
 
-	if (vkBeginCommandBuffer(trl.commandBuffer, &beginInfo) != VK_SUCCESS) {
+	if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
 		Error("failed to begin recording triangle command buffer!");
 	}
 	VkRenderPassBeginInfo renderPassInfo{};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = trl.renderPass;
-	renderPassInfo.framebuffer = trl.framebuffer;
+	renderPassInfo.renderPass = renderPass;
+	renderPassInfo.framebuffer = framebuffer;
 	renderPassInfo.renderArea.offset = { 0, 0 };
 	renderPassInfo.renderArea.extent = engine->getBackBufferExtent();
 
 	renderPassInfo.clearValueCount = 0;
 
-	vkCmdBeginRenderPass(trl.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-	recordDrawCommand(trl.commandBuffer, tr, vertexBuffer);
-	vkCmdEndRenderPass(trl.commandBuffer);
+	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+	recordDrawCommand(commandBuffer, tr, billboardShader->vertexBuffer);
+	vkCmdEndRenderPass(commandBuffer);
 	if (engine->isStereo()) {
-		renderPassInfo.framebuffer = trl.framebuffer2;
-		vkCmdBeginRenderPass(trl.commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		recordDrawCommand(trl.commandBuffer, tr, vertexBuffer, true);
-		vkCmdEndRenderPass(trl.commandBuffer);
+		renderPassInfo.framebuffer = framebuffer2;
+		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		recordDrawCommand(commandBuffer, tr, billboardShader->vertexBuffer, true);
+		vkCmdEndRenderPass(commandBuffer);
 	}
-	if (vkEndCommandBuffer(trl.commandBuffer) != VK_SUCCESS) {
+	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
 		Error("failed to record triangle command buffer!");
 	}
 }
 
-void BillboardShader::recordDrawCommand(VkCommandBuffer& commandBuffer, ThreadResources& tr, VkBuffer vertexBuffer, bool isRightEye)
+void BillboardSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, VkBuffer vertexBuffer, bool isRightEye)
 {
-	auto& str = tr.billboardResources;
 	if (vertexBuffer == nullptr) return; // no fixed billboards to draw
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.graphicsPipeline);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 	VkBuffer vertexBuffers[] = { vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 	// bind global texture array:
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
 
 	// bind descriptor sets:
 	if (!isRightEye) {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet, 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 	} else {
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, str.pipelineLayout, 0, 1, &str.descriptorSet2, 0, nullptr);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet2, 0, nullptr);
 	}
 
 	BillboardPushConstants pushConstants;
 	pushConstants.worldSizeOneEdge = engine->getWorld()->getWorldSize().x;
-	pushConstants.heightmapTextureIndex = heightmapTextureIndex;
-	if (heightmapTextureIndex < 0) Error("BillboardShader: app did not set heightmapTextureIndex");
-	vkCmdPushConstants(commandBuffer, str.pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(BillboardPushConstants), &pushConstants);
-	vkCmdDraw(commandBuffer, static_cast<uint32_t>(billboards.size()), 1, 0, 0);
+	pushConstants.heightmapTextureIndex = billboardShader->heightmapTextureIndex;
+	if (billboardShader->heightmapTextureIndex < 0) Error("BillboardShader: app did not set heightmapTextureIndex");
+	vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(BillboardPushConstants), &pushConstants);
+	vkCmdDraw(commandBuffer, static_cast<uint32_t>(billboardShader->billboards.size()), 1, 0, 0);
 }
 
 
-void BillboardShader::uploadToGPU(ThreadResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
+void BillboardShader::uploadToGPU(FrameResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
 	if (!enabled) return;
-	auto& trl = tr.billboardResources;
+	auto& sub = globalSubShaders[tr.frameIndex];
+	sub.uploadToGPU(tr, ubo, ubo2);
+}
+
+void BillboardSubShader::uploadToGPU(FrameResources& tr, BillboardShader::UniformBufferObject& ubo, BillboardShader::UniformBufferObject& ubo2) {
 	// copy ubo to GPU:
 	void* data;
-	vkMapMemory(device, trl.uniformBufferMemory, 0, sizeof(ubo), 0, &data);
+	vkMapMemory(device, uniformBufferMemory, 0, sizeof(ubo), 0, &data);
 	memcpy(data, &ubo, sizeof(ubo));
-	vkUnmapMemory(device, trl.uniformBufferMemory);
+	vkUnmapMemory(device, uniformBufferMemory);
 	if (engine->isStereo()) {
-		vkMapMemory(device, trl.uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
+		vkMapMemory(device, uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
 		memcpy(data, &ubo2, sizeof(ubo2));
-		vkUnmapMemory(device, trl.uniformBufferMemory2);
+		vkUnmapMemory(device, uniformBufferMemory2);
 	}
 
 }
 
-void BillboardShader::addCurrentCommandBuffer(ThreadResources& tr) {
-	tr.activeCommandBuffers.push_back(tr.billboardResources.commandBuffer);
-};
-
-void BillboardShader::finishInitialization(ShadedPathEngine& engine, ShaderState& shaderState)
-{
+void BillboardShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
+	int index = drawResult->getNextFreeCommandBufferIndex();
+	auto& sub = globalSubShaders[fr->frameIndex];
+	drawResult->commandBuffers[index++] = sub.commandBuffer;
 }
 
 void BillboardShader::add(std::vector<BillboardDef>& billboardsToAdd)
@@ -253,6 +278,9 @@ BillboardShader::~BillboardShader()
 	if (!enabled) {
 		return;
 	}
+	for (BillboardSubShader& sub : globalSubShaders) {
+		sub.destroy();
+	}
 	vkDestroyBuffer(device, vertexBuffer, nullptr);
 	vkFreeMemory(device, vertexBufferMemory, nullptr);
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);
@@ -262,20 +290,27 @@ BillboardShader::~BillboardShader()
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 }
 
-void BillboardShader::destroyThreadResources(ThreadResources& tr)
+void BillboardSubShader::init(BillboardShader* parent, std::string debugName) {
+	billboardShader = parent;
+	name = debugName;
+	engine = billboardShader->engine;
+	device = engine->globalRendering.device;
+	Log("BillboardSubShader init: " << debugName.c_str() << std::endl);
+}
+
+void BillboardSubShader::destroy()
 {
-	auto& trl = tr.billboardResources;
-	vkDestroyFramebuffer(device, trl.framebuffer, nullptr);
-	vkDestroyRenderPass(device, trl.renderPass, nullptr);
-	vkDestroyPipeline(device, trl.graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(device, trl.pipelineLayout, nullptr);
-	vkDestroyBuffer(device, trl.uniformBuffer, nullptr);
-	vkFreeMemory(device, trl.uniformBufferMemory, nullptr);
+	vkDestroyFramebuffer(device, framebuffer, nullptr);
+	vkDestroyRenderPass(device, renderPass, nullptr);
+	vkDestroyPipeline(device, graphicsPipeline, nullptr);
+	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+	vkDestroyBuffer(device, uniformBuffer, nullptr);
+	vkFreeMemory(device, uniformBufferMemory, nullptr);
 	//vkDestroyBuffer(device, trl.billboardVertexBuffer, nullptr);
 	//vkFreeMemory(device, trl.billboardVertexBufferMemory, nullptr);
 	if (engine->isStereo()) {
-		vkDestroyFramebuffer(device, trl.framebuffer2, nullptr);
-		vkDestroyBuffer(device, trl.uniformBuffer2, nullptr);
-		vkFreeMemory(device, trl.uniformBufferMemory2, nullptr);
+		vkDestroyFramebuffer(device, framebuffer2, nullptr);
+		vkDestroyBuffer(device, uniformBuffer2, nullptr);
+		vkFreeMemory(device, uniformBufferMemory2, nullptr);
 	}
 }
