@@ -6,9 +6,7 @@ ShadedPathV is a completely free C++ game engine built mainly on [Khronos standa
 
 Some features:
 
-- Rendering in multiple threads
-- Each thread renders to its own backbuffer image, using its own set of thread local resources.
-- Synchronization is done at presentation time, when the backbuffer image is copied to the app window
+- Multi-Thread Rendering
 - Support VR games via OpenXR
 - Sound support for ogg vorbis: Both background music and spatial sound attached to objects
 - Upload of GPU resources in a background thread for stutter free rendering
@@ -26,7 +24,20 @@ Some features:
 
 <a id="toc-state"></a>
 
-## Current State (Q3 / 2024)
+## Current State (Q1 / 2025)
+
+## Thread System Re-Write
+
+### Reasoning
+
+We sticked to the old thread system for quite some time and gathered a lot of experience with it. In the end, we were too ambitious.
+
+We implemented a complete free thread system, with the idea that each render thread would run as independent from each other as possible and the graphics HW would be ideally used all the time. 
+This worked out to a great deal, but we had to write a lot of synchronizing code to keep the system stable. While it is ok to have complicated code for complicated things, our neck was broken from an unexpected direction: VR headset input. Ideally, it should be easy to read position and orientation info from a headset and use this in any number of render threads. In practise, it is not possible. Or at least it was not possible for us. If you begin a frame in OpenXR you have to finish the frame includiong the final image copy to the headset. Just opening another frame in another thread is not allowed by OpenXR. We tried to program around that by beginning the OpenXR frame just before the final image copy, after the frame was already rendered internally (outside of OpenXR). But then we didn't have the right headset position and orientation prediction at the time we rendered the frame. After trying to fix that also, with more complicated code, we decided it is no longer worth it.
+
+We implemented a more traditional rendering engine, where we use multiple threads to speed up rendering of the current frame, but finish the frame before we start another. You can read a good summary of the ideas we used here at the great [Vulkan Guide](https://vkguide.dev/docs/extra-chapter/multithreading/).
+
+## Q3 / 2024
 
 ## Using World Creator &copy; terrain
 
