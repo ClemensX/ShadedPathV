@@ -29,7 +29,7 @@ struct LineShaderUpdateElement {
 // forward
 class LineSubShader;
 
-class LineShader : public ShaderBase, public GlobalUpdateBase {
+class LineShader : public ShaderBase {
 public:
 	std::vector<LineSubShader> globalLineSubShaders;
 	std::vector<LineSubShader> perFrameLineSubShaders;
@@ -85,16 +85,10 @@ public:
 	virtual void initSingle(FrameResources& tr, ShaderState& shaderState) override;
 	virtual void createCommandBuffer(FrameResources& tr) override;
 	virtual void addCommandBuffers(FrameResources* fr, DrawResult* drawResult) override;
-	virtual void createUpdateSet(GlobalUpdateElement& el) override;
-	virtual void updateGlobal(GlobalUpdateElement& currentSet) override;
-	virtual void freeUpdateResources(GlobalUpdateElement* updateSet);
 
 
 	// add lines - they will never  be removed
 	void addFixedGlobalLines(std::vector<LineDef>& linesToAdd);
-	// global update: initiate update of permanent line data in background
-	// might take several frames until effect is visible: old buffer will be used until new one is ready
-	void triggerUpdateThread();
 	// upload fixed global lines - only valid before first render
 	void uploadFixedGlobalLines();
 
@@ -105,8 +99,6 @@ public:
 	// per frame update of UBO / MVP
 	void uploadToGPU(FrameResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
 
-	// resource switch after upload of new data has finished:
-	void resourceSwitch(GlobalResourceSet set) override;
 	std::vector<LineDef> lines;
 
 	// global resources used by all LineSubShaders:
@@ -117,23 +109,7 @@ public:
 	VkPipelineLayout pipelineLayout = nullptr;
 
 	// Resources for permamnent lines:
-	// line shader specific rersources
-	LineShaderUpdateElement globalUpdateElementA, globalUpdateElementB;
-	// for handling global updates (independent of sub shaders)
 
-	LineShaderUpdateElement* getMatchingShaderResources(GlobalUpdateElement* el) {
-		if (el->updateDesignator == GlobalUpdateDesignator::SET_A) {
-			return &globalUpdateElementA;
-		}
-		else {
-			return &globalUpdateElementB;
-		}
-	}
-
-	// free old resources:
-	void reuseUpdateElement(LineShaderUpdateElement* el);
-	// single thread methods to change current global update:
-	void applyGlobalUpdate(LineSubShader& updateShader, FrameResources& tr, GlobalUpdateElement* updateSet);
 	// called from app.prepareFrame(), we are single threaded there
 	void applyGlobalUpdate(FrameResources& tr);
 	std::vector<LineShader::Vertex> verticesPermanent;
@@ -192,10 +168,6 @@ public:
 		lines.insert(lines.end(), crossLines, crossLines + std::size(crossLines));
 	}
 
-	public:
-		void assertUpdateThread();
-	private:
-		std::atomic<bool> renderThreadUpdateRunning = false;
 };
 
 /*
@@ -252,7 +224,6 @@ public:
 	// vertex buffer device memory
 	VkDeviceMemory vertexBufferMemoryLocal = nullptr;
 	bool active = false;
-	long updateNumber = -1; // matches update number in GlobalUpdateElement, for knowing which global update has been applied
 	LineShaderUpdateElement activeUpdateElement = {}; // vertex buffer and memory in use for global update
 
 private:

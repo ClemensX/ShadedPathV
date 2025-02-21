@@ -9,20 +9,6 @@ struct ShaderState;
 struct ShaderThreadResources {
 };
 
-// each shader has 2 resource sets A and B. They will be triggered to upload, enable and disable by engine
-enum class GlobalResourceState { INACTIVE, ACTIVE, UPLOADING }; // inactive --> uploading --> active --> inactive
-enum class GlobalResourceSet { SET_A, SET_B };
-
-// all shaders have to subclass this for their update array
-struct ShaderUpdateElement {
-	std::atomic<bool> free = true;   // can be reserved
-	bool inuse = false; // update process in progress
-	unsigned long num = 0; // count updates
-	size_t arrayIndex = 0; // we need to know array index into updateArray by having just a pointer to an element
-	GlobalResourceSet globalResourceSet;
-	ShaderBase* shaderInstance = nullptr;
-};
-		
 // Info needed to connect shaders during intialization.
 // Like DepthBuffer, sizes, image formats and states
 class ShaderBase
@@ -274,41 +260,5 @@ public:
 		depthStencil.back = {}; // Optional
 		return depthStencil;
 	}
-
-	// thread handling for global resource updates (for non-thread local resources)
-
-	// will only be called from global update thread to do the resource copy to GPU
-	virtual void uploadResourceSet(ShaderUpdateElement* resUpdateEl, GlobalResourceSet set) {};
-
-	// each shader class has its own update array. do this in shader:
-	//std::array<ShaderUpdateElement, 10> updateArray;
-
-private:
-	GlobalResourceState resourceSetA = GlobalResourceState::INACTIVE;
-	GlobalResourceState resourceSetB = GlobalResourceState::INACTIVE;
-
-public:
-	// allow access to updateArray without knowing the derived type
-	virtual ShaderUpdateElement* getUpdateElement(size_t i) {
-		return nullptr;
-	}
-	virtual size_t getUpdateArraySize() {
-		Error("Shader class did not implement getUpdateArraySize()");
-		return 0;
-	}
-	virtual void update(ShaderUpdateElement* el) {};
-	virtual void resourceSwitch(GlobalResourceSet set) {};
-
-	GlobalResourceSet getInactiveResourceSet() {
-		if (resourceSetA == GlobalResourceState::INACTIVE) {
-			return GlobalResourceSet::SET_A;
-		} else if (resourceSetB == GlobalResourceState::INACTIVE) {
-			return GlobalResourceSet::SET_B;
-		} else {
-			Error("ERROR: no resource slot available");
-			return GlobalResourceSet::SET_A; // keep compiler happy
-		}
-	}
-
 };
 
