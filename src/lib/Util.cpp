@@ -552,7 +552,6 @@ void Util::writePPM(std::string filename, const char* imagedata, uint64_t width,
     Log("written image dump file (PPM format): " << filename.c_str() << endl);
 }
 
-#if 0
 void Util::writeHeightmapRaw(std::vector<glm::vec3>& points)
 {
     stringstream name;
@@ -589,7 +588,6 @@ void Util::writeHeightmapRaw(std::vector<glm::vec3>& points)
 
     Log("written 32-bit float RAW heightmap file with ( " << roundedSquareRoot << " x " << roundedSquareRoot << " ) points: " << engine->files.absoluteFilePath(filename).c_str() << endl);
 }
-#endif
 
 void Util::drawBoxFromAxes(std::vector<LineDef>& boxes, vec3* axes)
 {

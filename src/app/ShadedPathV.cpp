@@ -1,20 +1,5 @@
 // ShadedPathV.cpp : This file contains the 'main' function. Program execution begins and ends there.
 
-/*
-old infos:
-        //Incoming app;
-        //gltfTerrainApp app; // vr ok
-        //LineApp app; // vr ok
-        //SimpleApp app; // vr ok (some stuttering - will not be investigated)
-        //DeviceCoordApp app; // vr not supported
-        //BillboardDemo app; // vr ok
-        //TextureViewer app; // vr ok
-        //GeneratedTexturesApp app; // TODO: does not even work in 2D
-        //gltfObjectsApp app; // vr ok, also skybox
-        //LandscapeDemo app; // vr ok
-        //LandscapeGenerator app; // vr ok with limited support
-
-*/
 #include "mainheader.h"
 #include "AppSupport.h"
 #include "SimpleMultiApp.h"
@@ -29,7 +14,7 @@ old infos:
 #include "TextureViewer.h"
 #include "LandscapeDemo1.h"
 #include "incoming.h"
-//#include "LandscapeGenerator.h"
+#include "LandscapeGenerator.h"
 
 
 int main()
@@ -37,7 +22,7 @@ int main()
     //mainSimpleMultiWin(); return 0; // use with care, see notes in SimpleMultiWin.h
     //mainSimpleMultiApp(); return 0;
 
-    LineApp app; // vr ok
+    //LineApp app; // vr ok
     //SimpleApp app; // vr ok (some stuttering - will not be investigated)
     //DeviceCoordApp app; // vr not supported
     //gltfTerrainApp app; // vr ok
@@ -47,6 +32,7 @@ int main()
     //TextureViewer app; // vr ok
     //LandscapeDemo app; // vr ok
     //Incoming app;
+    LandscapeGenerator app; // vr ok with limited support
 
     Log("main() start!\n");
     ShadedPathEngine engine;
