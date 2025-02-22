@@ -28,6 +28,8 @@ Some features:
 
 ## Thread System Re-Write
 
+![threads](images/thread_arch.drawio.svg)
+
 ### Reasoning
 
 We sticked to the old thread system for quite some time and gathered a lot of experience with it. In the end, we were too ambitious.
