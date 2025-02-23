@@ -54,7 +54,7 @@ void Loader::init() {
     // Grid with 1m squares, floor on -10m, ceiling on 372m
 
     // load skybox cube texture
-    engine->textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
+    engine->textureStore.loadTexture("nebula.ktx2", "skyboxTexture");
 
     engine->shaders.cubeShader.setSkybox("skyboxTexture");
     engine->shaders.cubeShader.setFarPlane(2000.0f);
@@ -63,10 +63,10 @@ void Loader::init() {
     engine->shaders.pbrShader.initialUpload();
     // load and play music
     engine->sound.openSoundFile("power.ogg", "BACKGROUND_MUSIC", true);
-    //engine->sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 1.0f, 6000);
+    engine->sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 1.0f, 6000);
     // add sound to object
-    engine->sound.addWorldObject(bottle);
-    engine->sound.changeSound(bottle, "BACKGROUND_MUSIC");
+    //engine->sound.addWorldObject(bottle);
+    //engine->sound.changeSound(bottle, "BACKGROUND_MUSIC");
     prepareWindowOutput("Loader (insert correct app name here)");
     engine->presentation.startUI();
 }
@@ -89,6 +89,10 @@ void Loader::prepareFrame(FrameResources* fr)
     updateCameraPositioners(deltaSeconds);
     old_seconds = seconds;
 
+    if (spinningBox == false && seconds > 4.0f) {
+        spinningBox = true; // start spinning the logo after 4s
+        spinTimeSeconds = seconds;
+    }
     // cube
     CubeShader::UniformBufferObject cubo{};
     CubeShader::UniformBufferObject cubo2{};
@@ -115,28 +119,16 @@ void Loader::prepareFrame(FrameResources* fr)
         //WorldObject *wo = obj.get();
         PBRShader::DynamicUniformBufferObject* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
         mat4 modeltransform;
-        bool moveObjects = false;
-        if (moveObjects) {
-            if (wo->objectNum == 0) {
-                modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f + (plus / 10.0f), 0.0f, 0.0f));
-            } else {
-                modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f + (plus / 100.0f), 0.0f, 0.0f));
-            }
+        if (spinningBox) {
+            // Define a constant rotation speed (radians per second)
+            const double rotationSpeed = glm::radians(45.0f); // 45 degrees per second
+
+            // Calculate the rotation angle based on the elapsed time
+            float rotationAngle = rotationSpeed * (seconds - spinTimeSeconds);
+
+            // Apply the rotation to the modeltransform matrix
+            modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
         } else {
-            if (wo->objectNum == 0) {
-                modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.1f, 0.0f, 0.0f));
-                // test overwriting default textures used:
-                //buf->indexes.baseColor = 0; // set basecolor to brdflut texture
-            }
-            else {
-                modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.2f, 0.0f, 0.0f));
-            }
-        }
-        // test model transforms:
-        if (wo->mesh->id.starts_with("Logo")) {
-            // scale to 1%:
-            //modeltransform = scale(mat4(1.0f), vec3(0.01f, 0.01f, 0.01f));
-            // scale from gltf:
             modeltransform = wo->mesh->baseTransform;
         }
         buf->model = modeltransform;

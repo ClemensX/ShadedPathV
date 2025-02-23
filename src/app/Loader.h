@@ -24,5 +24,7 @@ private:
     float plus = 0.0f;
     bool shouldStopEngine = false;
     bool enableUI = true;
+    bool spinningBox = false;
+    double spinTimeSeconds = 0.0;
 };
 
