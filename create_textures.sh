@@ -35,4 +35,5 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #gltf-transform uastc ../data/rocks.glb ../data/mesh/rocks_cmp.glb --level 4 --zstd 18 --verbose
 #gltf-transform uastc ../data/rocks.gltf ../data/mesh/rocks_cmp.gltf --level 4 --zstd 18 --verbose
 #gltf-transform uastc ../data/rocks.gltf ./test/rocks_cmp.gltf --level 1 --zstd 10 --verbose
-gltf-transform uastc ../data/rocks_multi.glb ../data/mesh/rocks_multi_cmp.glb --level 4 --zstd 18 --verbose
+#gltf-transform uastc ../data/rocks_multi.glb ../data/mesh/rocks_multi_cmp.glb --level 4 --zstd 18 --verbose
+gltf-transform uastc ../data/mesh/loadingbox.glb ../data/mesh/loadingbox_cmp.glb --level 4 --zstd 18 --verbose

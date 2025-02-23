@@ -15,14 +15,14 @@
 #include "LandscapeDemo1.h"
 #include "incoming.h"
 #include "LandscapeGenerator.h"
-
+#include "Loader.h"
 
 int main()
 {
     //mainSimpleMultiWin(); return 0; // use with care, see notes in SimpleMultiWin.h
     //mainSimpleMultiApp(); return 0;
 
-    LineApp app; // vr ok
+    //LineApp app; // vr ok
     //SimpleApp app; // vr ok (some stuttering - will not be investigated)
     //DeviceCoordApp app; // vr not supported
     //gltfTerrainApp app; // vr ok
@@ -33,6 +33,7 @@ int main()
     //LandscapeDemo app; // vr ok
     //Incoming app;
     //LandscapeGenerator app; // vr ok with limited support
+    Loader app;
 
     Log("main() start!\n");
     ShadedPathEngine engine;
@@ -40,7 +41,7 @@ int main()
         .setEnableLines(true)
         .setDebugWindowPosition(true)
         .setEnableUI(true)
-        .setEnableSound(true)
+        .setEnableSound(false)
         .setVR(false)
         //.setStereo(true)
         .failIfNoVR(true)

@@ -28,6 +28,7 @@ add_executable(app
   SimpleApp.cpp
   Incoming.cpp
   TextureViewer.cpp
+  Loader.cpp
   SimpleMultiApp.cpp
   SimpleMultiWin.cpp
   ShadedPathV.cpp
