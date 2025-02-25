@@ -5,6 +5,7 @@
 // forward declarations:
 namespace tinygltf {
 	class Model;
+	struct Sampler;
 }
 struct MeshInfo;
 struct MeshCollection;
@@ -23,6 +24,7 @@ public:
 		ShadedPathEngine* engine = nullptr;
 		MeshCollection* collection = nullptr;
 	};
+	void mapTinyGLTFSamplerToVulkan(const tinygltf::Sampler& gltfSampler, VkSamplerCreateInfo& vkSamplerInfo);
 private:
 	// load model from data pointer. Image data will also be parsed with results in MeshCollection->textureInfos[]
 	void loadModel(tinygltf::Model& model, const unsigned char* data, int size, MeshCollection* coll, std::string filename);
@@ -37,33 +39,33 @@ private:
 	void collectBaseTransform(tinygltf::Model& model, MeshInfo *mesh);
 	ShadedPathEngine* engine = nullptr;
 
-	VkSamplerAddressMode getVkWrapMode(int32_t wrapMode)
-	{
-		switch (wrapMode) {
-		case 10497:
-			return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-		case 33071:
-			return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-		case 33648:
-			return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-		}
-	}
+	//VkSamplerAddressMode getVkWrapMode(int32_t wrapMode)
+	//{
+	//	switch (wrapMode) {
+	//	case 10497:
+	//		return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	//	case 33071:
+	//		return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	//	case 33648:
+	//		return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+	//	}
+	//}
 
-	VkFilter getVkFilterMode(int32_t filterMode)
-	{
-		switch (filterMode) {
-		case 9728:
-			return VK_FILTER_NEAREST;
-		case 9729:
-			return VK_FILTER_LINEAR;
-		case 9984:
-			return VK_FILTER_NEAREST;
-		case 9985:
-			return VK_FILTER_NEAREST;
-		case 9986:
-			return VK_FILTER_LINEAR;
-		case 9987:
-			return VK_FILTER_LINEAR;
-		}
-	}
+	//VkFilter getVkFilterMode(int32_t filterMode)
+	//{
+	//	switch (filterMode) {
+	//	case 9728:
+	//		return VK_FILTER_NEAREST;
+	//	case 9729:
+	//		return VK_FILTER_LINEAR;
+	//	case 9984:
+	//		return VK_FILTER_NEAREST;
+	//	case 9985:
+	//		return VK_FILTER_NEAREST;
+	//	case 9986:
+	//		return VK_FILTER_LINEAR;
+	//	case 9987:
+	//		return VK_FILTER_LINEAR;
+	//	}
+	//}
 };

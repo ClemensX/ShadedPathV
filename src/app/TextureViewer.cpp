@@ -66,6 +66,9 @@ void TextureViewer::init() {
     // rocks
     //engine->objectStore.createGroup("rocks_group");
     //engine->meshStore.loadMesh("rocks_cmp.glb", "Rocks");
+    engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox");
+    engine->objectStore.createGroup("group");
+    //bottle = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 0.0f, 0.0f));
 
     // add some lines:
     //scale tree height to 10m

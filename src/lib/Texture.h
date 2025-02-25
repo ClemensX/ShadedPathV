@@ -6,19 +6,21 @@ class Util;
 struct MeshInfo;
 
 enum class TextureType : int {
+	// default texture types
 	TEXTURE_TYPE_MIPMAP_IMAGE = 0,
-	TEXTURE_TYPE_DIFFUSE = 1,
-	TEXTURE_TYPE_SPECULAR = 2,
-	TEXTURE_TYPE_NORMAL = 3,
-	TEXTURE_TYPE_HEIGHT = 4,
-	TEXTURE_TYPE_AMBIENT_OCCLUSION = 5,
-	TEXTURE_TYPE_EMISSIVE = 6,
-	TEXTURE_TYPE_BRDF_LUT = 7,
-	TEXTURE_TYPE_CUBEMAP = 8,
-	TEXTURE_TYPE_IRRADIANCE = 9,
-	TEXTURE_TYPE_PREFILTER = 10,
-	TEXTURE_TYPE_LUT = 11,
-	TEXTURE_TYPE_COUNT = 12 // always last, to be used as array size
+	TEXTURE_TYPE_HEIGHT = 1,
+	TEXTURE_TYPE_GLTF = 2//,
+	//TEXTURE_TYPE_DIFFUSE = 1,
+	//TEXTURE_TYPE_SPECULAR = 2,
+	//TEXTURE_TYPE_NORMAL = 3,
+	//TEXTURE_TYPE_AMBIENT_OCCLUSION = 5,
+	//TEXTURE_TYPE_EMISSIVE = 6,
+	//TEXTURE_TYPE_BRDF_LUT = 7,
+	//TEXTURE_TYPE_CUBEMAP = 8,
+	//TEXTURE_TYPE_IRRADIANCE = 9,
+	//TEXTURE_TYPE_PREFILTER = 10,
+	//TEXTURE_TYPE_LUT = 11,
+	//TEXTURE_TYPE_COUNT = 12 // always last, to be used as array size
 };
 
 // Texture flags, used to set special properties for textures
@@ -69,6 +71,7 @@ struct TextureInfo
 	bool isKtxCreated = true;
 	uint32_t index = 0; // index used for shaders to access the right texture in the global texture array
 	TextureType type = TextureType::TEXTURE_TYPE_MIPMAP_IMAGE;
+    VkSampler sampler = nullptr; // for texture type gltf we use the sampler directly
 	std::vector<float> float_buffer;
     TextureFlags flags = TextureFlags::NONE;
     bool hasFlag(TextureFlags flag) {

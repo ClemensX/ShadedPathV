@@ -21,7 +21,7 @@ public:
 		Log("Sound c'tor\n");
 	}
 	~Sound(void);
-	void init();
+	void init(bool playJingle = true);
 	void addWorldObject(WorldObject* wo);
 	std::unordered_map<std::string, SoundDef> sounds;
 	// engine jingle:

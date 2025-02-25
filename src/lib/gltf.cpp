@@ -302,39 +302,46 @@ void glTF::prepareTextures(tinygltf::Model& model, MeshCollection* coll, int glt
 	auto emissiveTextureIndex = mat.emissiveTexture.index;
 
 	MeshInfo* mesh = coll->meshInfos[gltfMeshIndex];
+
+	// create samplers
+	vector<VkSampler> samplers(model.samplers.size());
+	for (int i = 0; i < model.samplers.size(); i++) {
+        VkSamplerCreateInfo vkSamplerInfo{};
+        mapTinyGLTFSamplerToVulkan(model.samplers[i], vkSamplerInfo);
+        samplers[i] = engine->globalRendering.samplerCache.getOrCreateSampler(engine->globalRendering.device, vkSamplerInfo);
+        //Log("sampler: " << model.samplers[i].name.c_str() << endl);
+	}
+
 	// texture UV coords are likely the same, but we parse their mem location and stride for all textures anyway:
 	if (baseColorTextureIndex >= 0) {
 		mesh->baseColorTexture = coll->textureInfos[model.textures[baseColorTextureIndex].source];
 		getTextureUVCoordinates(model, primitive, mesh->baseColorTexture, mat.pbrMetallicRoughness.baseColorTexture.texCoord);
+        mesh->baseColorTexture->sampler = samplers[model.textures[baseColorTextureIndex].sampler];
+        mesh->baseColorTexture->type = TextureType::TEXTURE_TYPE_GLTF;
 	}
 	if (metallicRoughnessTextureIndex >= 0) {
 		mesh->metallicRoughnessTexture = coll->textureInfos[model.textures[metallicRoughnessTextureIndex].source];
 		getTextureUVCoordinates(model, primitive, mesh->metallicRoughnessTexture, mat.pbrMetallicRoughness.metallicRoughnessTexture.texCoord);
+        mesh->metallicRoughnessTexture->sampler = samplers[model.textures[metallicRoughnessTextureIndex].sampler];
+        mesh->metallicRoughnessTexture->type = TextureType::TEXTURE_TYPE_GLTF;
 	}
 	if (normalTextureIndex >= 0) {
 		mesh->normalTexture = coll->textureInfos[model.textures[normalTextureIndex].source ];
 		getTextureUVCoordinates(model, primitive, mesh->normalTexture, mat.normalTexture.texCoord);
+        mesh->normalTexture->sampler = samplers[model.textures[normalTextureIndex].sampler];
+        mesh->normalTexture->type = TextureType::TEXTURE_TYPE_GLTF;
 	}
 	if (occlusionTextureIndex >= 0) {
 		mesh->occlusionTexture = coll->textureInfos[model.textures[occlusionTextureIndex].source];
 		getTextureUVCoordinates(model, primitive, mesh->occlusionTexture, mat.occlusionTexture.texCoord);
+        mesh->occlusionTexture->sampler = samplers[model.textures[occlusionTextureIndex].sampler];
+        mesh->occlusionTexture->type = TextureType::TEXTURE_TYPE_GLTF;
 	}
 	if (emissiveTextureIndex >= 0) {
 		mesh->emissiveTexture = coll->textureInfos[model.textures[emissiveTextureIndex].source];
 		getTextureUVCoordinates(model, primitive, mesh->occlusionTexture, mat.emissiveTexture.texCoord);
-	}
-
-
-	// samplers TODO
-	for (tinygltf::Sampler smpl : model.samplers) {
-		//Log("sampler: " << smpl.name.c_str() << endl);
-		//vkglTF::TextureSampler sampler{};
-		//sampler.minFilter = getVkFilterMode(smpl.minFilter);
-		//sampler.magFilter = getVkFilterMode(smpl.magFilter);
-		//sampler.addressModeU = getVkWrapMode(smpl.wrapS);
-		//sampler.addressModeV = getVkWrapMode(smpl.wrapT);
-		//sampler.addressModeW = sampler.addressModeV;
-		//textureSamplers.push_back(sampler);
+        mesh->emissiveTexture->sampler = samplers[model.textures[emissiveTextureIndex].sampler];
+        mesh->emissiveTexture->type = TextureType::TEXTURE_TYPE_GLTF;
 	}
 }
 
@@ -455,4 +462,53 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
 		collectBaseTransform(model, mesh);
 		modelindex++;
 	}
+}
+
+void glTF::mapTinyGLTFSamplerToVulkan(const tinygltf::Sampler& gltfSampler, VkSamplerCreateInfo& vkSamplerInfo) {
+	vkSamplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	vkSamplerInfo.magFilter = (gltfSampler.magFilter == TINYGLTF_TEXTURE_FILTER_LINEAR) ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+	vkSamplerInfo.minFilter = (gltfSampler.minFilter == TINYGLTF_TEXTURE_FILTER_LINEAR) ? VK_FILTER_LINEAR : VK_FILTER_NEAREST;
+
+	switch (gltfSampler.wrapS) {
+	case TINYGLTF_TEXTURE_WRAP_REPEAT:
+		vkSamplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		break;
+	case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE:
+		vkSamplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		break;
+	case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT:
+		vkSamplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+		break;
+	default:
+		vkSamplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		break;
+	}
+
+	switch (gltfSampler.wrapT) {
+	case TINYGLTF_TEXTURE_WRAP_REPEAT:
+		vkSamplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		break;
+	case TINYGLTF_TEXTURE_WRAP_CLAMP_TO_EDGE:
+		vkSamplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+		break;
+	case TINYGLTF_TEXTURE_WRAP_MIRRORED_REPEAT:
+		vkSamplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+		break;
+	default:
+		vkSamplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+		break;
+	}
+
+	vkSamplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT; // Assuming wrapR is not used
+
+	vkSamplerInfo.anisotropyEnable = VK_FALSE; // Set to VK_TRUE if anisotropy is needed
+	vkSamplerInfo.maxAnisotropy = 1.0f; // Set to the maximum anisotropy level if anisotropy is enabled
+	vkSamplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	vkSamplerInfo.unnormalizedCoordinates = VK_FALSE;
+	vkSamplerInfo.compareEnable = VK_FALSE;
+	vkSamplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	vkSamplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+	vkSamplerInfo.mipLodBias = 0.0f;
+	vkSamplerInfo.minLod = 0.0f;
+	vkSamplerInfo.maxLod = VK_LOD_CLAMP_NONE;
 }

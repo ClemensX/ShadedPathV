@@ -43,9 +43,10 @@ void Loader::run(ContinuationInfo* cont)
 }
 
 void Loader::init() {
-    engine->sound.init();
+    engine->sound.init(false);
 
-    engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
+    //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
+    engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox");
     engine->objectStore.createGroup("group");
     bottle = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 0.0f, 0.0f));
 
@@ -61,14 +62,15 @@ void Loader::init() {
 
 
     engine->shaders.pbrShader.initialUpload();
-    // load and play music
-    engine->sound.openSoundFile("power.ogg", "BACKGROUND_MUSIC", true);
-    engine->sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 1.0f, 6000);
-    // add sound to object
-    //engine->sound.addWorldObject(bottle);
-    //engine->sound.changeSound(bottle, "BACKGROUND_MUSIC");
+    // window creation
     prepareWindowOutput("Loader (insert correct app name here)");
     engine->presentation.startUI();
+
+    // load and play music
+    engine->sound.openSoundFile(Sound::SHADED_PATH_JINGLE_FILE, Sound::SHADED_PATH_JINGLE);
+    engine->sound.playSound(Sound::SHADED_PATH_JINGLE, SoundCategory::MUSIC);
+    engine->sound.openSoundFile("loading_music.ogg", "BACKGROUND_MUSIC", true);
+    engine->sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 0.2f, 5000);
 }
 
 void Loader::mainThreadHook()

@@ -25,6 +25,92 @@ struct SingleQueueTransferInfo {
 	VkSubmitInfo* submitInfoAddr;
 };
 
+// sampler cache
+// Define a hash function for VkSamplerCreateInfo
+struct SamplerCreateInfoHash {
+	std::size_t operator()(const VkSamplerCreateInfo& info) const {
+		// Combine the hash values of relevant fields
+		std::size_t hash = std::hash<int>()(info.magFilter);
+		hash ^= std::hash<int>()(info.minFilter) << 1;
+		hash ^= std::hash<int>()(info.addressModeU) << 2;
+		hash ^= std::hash<int>()(info.addressModeV) << 3;
+		hash ^= std::hash<int>()(info.addressModeW) << 4;
+		hash ^= std::hash<int>()(info.mipmapMode) << 5;
+		hash ^= std::hash<int>()(info.flags) << 6;
+		hash ^= std::hash<int>()(info.mipLodBias) << 7;
+        hash ^= std::hash<int>()(info.anisotropyEnable) << 8;
+        hash ^= std::hash<int>()(info.maxAnisotropy) << 9;
+        hash ^= std::hash<int>()(info.compareEnable) << 10;
+        hash ^= std::hash<int>()(info.compareOp) << 11;
+        hash ^= std::hash<int>()(info.minLod) << 12;
+        hash ^= std::hash<int>()(info.maxLod) << 13;
+        hash ^= std::hash<int>()(info.borderColor) << 14;
+        hash ^= std::hash<int>()(info.unnormalizedCoordinates) << 15;
+
+		// Add more fields as needed
+		return hash;
+	}
+};
+
+// Define an equality function for VkSamplerCreateInfo
+struct SamplerCreateInfoEqual {
+	bool operator()(const VkSamplerCreateInfo& lhs, const VkSamplerCreateInfo& rhs) const {
+		return lhs.magFilter == rhs.magFilter &&
+			lhs.minFilter == rhs.minFilter &&
+			lhs.addressModeU == rhs.addressModeU &&
+			lhs.addressModeV == rhs.addressModeV &&
+			lhs.addressModeW == rhs.addressModeW &&
+            lhs.mipmapMode == rhs.mipmapMode &&
+            lhs.flags == rhs.flags &&
+            lhs.mipLodBias == rhs.mipLodBias &&
+            lhs.anisotropyEnable == rhs.anisotropyEnable &&
+            lhs.maxAnisotropy == rhs.maxAnisotropy &&
+            lhs.compareEnable == rhs.compareEnable &&
+            lhs.compareOp == rhs.compareOp &&
+            lhs.minLod == rhs.minLod &&
+            lhs.maxLod == rhs.maxLod &&
+            lhs.borderColor == rhs.borderColor &&
+            lhs.unnormalizedCoordinates == rhs.unnormalizedCoordinates;
+
+		// Add more fields as needed
+	}
+};
+
+class SamplerCache {
+public:
+	VkSampler getOrCreateSampler(VkDevice device, const VkSamplerCreateInfo& createInfo) {
+		this->device = device;
+		auto it = cache.find(createInfo);
+		if (it != cache.end()) {
+			return it->second;
+		}
+
+		VkSampler sampler;
+		if (vkCreateSampler(device, &createInfo, nullptr, &sampler) != VK_SUCCESS) {
+			Error("Failed to create Vulkan sampler");
+		}
+
+		cache[createInfo] = sampler;
+		return sampler;
+	}
+
+	void destroy() {
+		for (const auto& pair : cache) {
+			vkDestroySampler(device, pair.second, nullptr);
+		}
+	}
+
+	~SamplerCache() {
+		for (const auto& pair : cache) {
+			//vkDestroySampler(device, pair.second, nullptr);
+		}
+	}
+
+private:
+	VkDevice device;
+	std::unordered_map<VkSamplerCreateInfo, VkSampler, SamplerCreateInfoHash, SamplerCreateInfoEqual> cache;
+};
+
 // global resources that are not changed in rendering threads.
 class GlobalRendering : public EngineParticipant
 {
@@ -38,6 +124,7 @@ public:
 
 	~GlobalRendering() {
 		Log("GlobalRendering destructor\n");
+		//samplerCache.~SamplerCache();
 		shutdown();
 	};
 
@@ -130,7 +217,11 @@ public:
 	VkInstance vkInstance = nullptr;
 	VkQueue graphicsQueue = nullptr;
 	VkQueue transferQueue = nullptr;
-	VkSampler textureSampler[(int)TextureType::TEXTURE_TYPE_COUNT];
+	//VkSampler textureSampler[10];//(int)TextureType::TEXTURE_TYPE_COUNT];
+    // we use 2 fixed default samplers, rest comes from gltf files
+	VkSampler textureSampler_TEXTURE_TYPE_MIPMAP_IMAGE = nullptr;
+	VkSampler textureSampler_TEXTURE_TYPE_HEIGHT = nullptr;
+	SamplerCache samplerCache;
 	VkPhysicalDeviceProperties2 physicalDeviceProperties;
 	VkSemaphore singleTimeCommandsSemaphore = nullptr;
 	// create command pool for use outside rendering threads
@@ -268,6 +359,5 @@ private:
 	// swap chain query
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 	VkFence queueSubmitFence = nullptr;
-
 };
 

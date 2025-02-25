@@ -259,7 +259,8 @@ void VulkanResources::addThreadResourcesForElement(VulkanResourceElement el, Vul
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         imageInfo.imageView = hdv.imageView;
-        imageInfo.sampler = engine->globalRendering.textureSampler[(int)TextureType::TEXTURE_TYPE_MIPMAP_IMAGE];
+        //imageInfo.sampler = engine->globalRendering.textureSampler[(int)TextureType::TEXTURE_TYPE_MIPMAP_IMAGE];
+        imageInfo.sampler = engine->globalRendering.textureSampler_TEXTURE_TYPE_MIPMAP_IMAGE;
         imageInfos.push_back(imageInfo);
 
         descSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -348,7 +349,12 @@ void VulkanResources::updateDescriptorSetForTextures() {
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         imageInfo.imageView = tex.imageView;
-        imageInfo.sampler = engine->globalRendering.textureSampler[(int)tex.type];
+        //imageInfo.sampler = engine->globalRendering.textureSampler[(int)tex.type];
+        if (tex.type == TextureType::TEXTURE_TYPE_GLTF) {
+            imageInfo.sampler = tex.sampler;
+        } else {
+            imageInfo.sampler = engine->globalRendering.textureSampler_TEXTURE_TYPE_MIPMAP_IMAGE;
+        }
         imageInfos[tex.index] = imageInfo;
         //imageInfos.push_back(imageInfo);
     }

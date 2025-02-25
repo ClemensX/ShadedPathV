@@ -212,13 +212,9 @@ void GlobalRendering::init()
 
 void GlobalRendering::shutdown()
 {
+    samplerCache.destroy();
     if (queueSubmitFence != nullptr) {
         vkDestroyFence(device, queueSubmitFence, nullptr);
-    }
-    for (auto& sam : textureSampler) {
-        if (sam != nullptr) {
-            vkDestroySampler(device, sam, nullptr);
-        }
     }
     vkDestroySemaphore(device, singleTimeCommandsSemaphore, nullptr);
     for (int i = 0; i < engine->numWorkerThreads; i++) {
@@ -728,9 +724,30 @@ void GlobalRendering::createTextureSampler()
     samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
     //samplerInfo.minLod = 6.0f;
     //samplerInfo.maxLod = 6.0f;
-    if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler[(int)TextureType::TEXTURE_TYPE_MIPMAP_IMAGE]) != VK_SUCCESS) {
-        Error("failed to create texture sampler TEXTURE_TYPE_MIPMAP_IMAGE!");
-    }
+    textureSampler_TEXTURE_TYPE_MIPMAP_IMAGE = samplerCache.getOrCreateSampler(device, samplerInfo);
+    // test gltf sampler:
+    //samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    //samplerInfo.magFilter = VK_FILTER_NEAREST;
+    //samplerInfo.minFilter = VK_FILTER_NEAREST;
+    //samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    //samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    //samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    //samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    //samplerInfo.mipLodBias = 0.0f;
+    //samplerInfo.anisotropyEnable = VK_FALSE;
+    //samplerInfo.maxAnisotropy = 1;
+    //samplerInfo.compareEnable = VK_FALSE;
+    //samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+    //samplerInfo.minLod = 0.0f;
+    //samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
+    //samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    //samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    // float values mean mip level: 0.0 is most detailed e.g. 10.0 is single pixel if there are 11 mip levels
+
+
+    //if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler[(int)TextureType::TEXTURE_TYPE_MIPMAP_IMAGE]) != VK_SUCCESS) {
+    //    Error("failed to create texture sampler TEXTURE_TYPE_MIPMAP_IMAGE!");
+    //}
 
     // change for heightmaps:
     samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE; // makes border color irrelevant
@@ -741,9 +758,11 @@ void GlobalRendering::createTextureSampler()
     samplerInfo.magFilter = VK_FILTER_NEAREST; // this: do not interpolate heightmap values
     samplerInfo.minFilter = VK_FILTER_NEAREST;
 
-    if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler[(int)TextureType::TEXTURE_TYPE_HEIGHT]) != VK_SUCCESS) {
-        Error("failed to create texture sampler TEXTURE_TYPE_HEIGHT!");
-    }
+    textureSampler_TEXTURE_TYPE_HEIGHT = samplerCache.getOrCreateSampler(device, samplerInfo);
+
+    //if (vkCreateSampler(device, &samplerInfo, nullptr, &textureSampler[(int)TextureType::TEXTURE_TYPE_HEIGHT]) != VK_SUCCESS) {
+    //    Error("failed to create texture sampler TEXTURE_TYPE_HEIGHT!");
+    //}
 }
 
 VkImageView GlobalRendering::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels) {

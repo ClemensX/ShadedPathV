@@ -17,7 +17,16 @@
 #include "LandscapeGenerator.h"
 #include "Loader.h"
 
+int mainOne();
+int mainTwo();
+
 int main()
+{
+    mainOne();
+    //mainTwo();
+}
+
+int mainOne()
 {
     //mainSimpleMultiWin(); return 0; // use with care, see notes in SimpleMultiWin.h
     //mainSimpleMultiApp(); return 0;
@@ -41,7 +50,7 @@ int main()
         .setEnableLines(true)
         .setDebugWindowPosition(true)
         .setEnableUI(true)
-        .setEnableSound(true)
+        .setEnableSound(false)
         .setVR(false)
         //.setStereo(true)
         .failIfNoVR(true)
@@ -57,5 +66,43 @@ int main()
     ContinuationInfo cont;
     engine.registerApp((ShadedPathApplication*)&app);
     engine.app->run(&cont);
+    return 1;
 }
 
+void runEngine(ShadedPathApplication* app) {
+    ShadedPathEngine engine;
+    engine
+        .setEnableLines(true)
+        .setDebugWindowPosition(true)
+        .setEnableUI(true)
+        .setEnableSound(true)
+        .setVR(false)
+        .failIfNoVR(true)
+        .overrideCPUCores(4)
+        .configureParallelAppDrawCalls(2)
+        .setMaxTextures(50);
+
+    engine.initGlobal();
+    ContinuationInfo cont;
+    engine.registerApp(app);
+    engine.app->run(&cont);
+}
+
+void runLoader(Loader * ptr) {
+    //Loader app;
+    runEngine((ShadedPathApplication*)ptr);
+}
+
+int mainTwo()
+{
+    Loader app1;
+    Loader app2;
+
+    std::thread engineThread1(runLoader, &app1);
+    std::thread engineThread2(runEngine, (ShadedPathApplication*)&app2);
+
+    engineThread1.join();
+    engineThread2.join();
+
+    return 0;
+}

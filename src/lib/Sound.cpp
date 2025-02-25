@@ -34,7 +34,7 @@
 ma_result result;
 ma_engine sound_engine;
 
-void Sound::init()
+void Sound::init(bool playJingle)
 {
     if (enabled || !engine.isSoundEnabled()) {
         return;
@@ -49,8 +49,10 @@ void Sound::init()
 	}
 	Log("Sound initialized" << std::endl);
     enabled = true;
-	openSoundFile(Sound::SHADED_PATH_JINGLE_FILE, Sound::SHADED_PATH_JINGLE);
-	playSound(Sound::SHADED_PATH_JINGLE, SoundCategory::MUSIC);
+	if (playJingle) {
+		openSoundFile(Sound::SHADED_PATH_JINGLE_FILE, Sound::SHADED_PATH_JINGLE);
+		playSound(Sound::SHADED_PATH_JINGLE, SoundCategory::MUSIC);
+	}
 }
 
 Sound::~Sound(void)
