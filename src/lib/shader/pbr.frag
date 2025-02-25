@@ -2,10 +2,10 @@
 #extension GL_EXT_nonuniform_qualifier : require
 #extension GL_EXT_debug_printf : disable
 
-layout(location = 0) in vec3 fragColor;
+//layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec2 fragTexCoord;
-layout(location = 3) in vec4 fragColor0;
-layout(location = 4) flat in uint mode;
+layout(location = 0) in vec4 vertexColor;
+layout(location = 3) flat in uint mode;
 
 struct PBRTextureIndexes {
   uint baseColor;
@@ -21,9 +21,9 @@ void main() {
     //debugPrintfEXT("pbr frag render mode: %d\n", mode);
     uint baseIndex = textureIndexes.baseColor;
     if (mode == 1) {
-		outColor = fragColor0;
+		outColor = vertexColor;
 	} else {
-        outColor = texture(global_textures[nonuniformEXT(baseIndex)], fragTexCoord);
+        outColor = texture(global_textures[nonuniformEXT(baseIndex)], fragTexCoord) * vertexColor;
     }
     // discard transparent pixels (== do not write z-buffer)
     if (outColor.w < 0.8) {

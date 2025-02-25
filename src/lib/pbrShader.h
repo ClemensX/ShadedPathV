@@ -45,6 +45,7 @@ public:
 		glm::mat4 model;
 		glm::mat4 view;
 		glm::mat4 proj;
+		glm::vec4 baseColor = glm::vec4(1.0f);
 	};
 	// MUST match shader definition: pbr.vert, pbr.frag
 	struct PBRTextureIndexes {

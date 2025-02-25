@@ -205,9 +205,17 @@ void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, vector<PBRShader
 					indexBuffer[i + 2] = backup;
 				}
 			}
-
+			auto position_c = primitive.attributes.find("COLOR_0");
+			bool colorAvailable = primitive.attributes.end() != position_c;
+            Log("COLOR_0 available: " << colorAvailable << endl);
+            if (!colorAvailable) {
+				// set white for all vertex colors if not set by gltf file
+                for (auto& vert : verts) {
+                    vert.color = glm::vec4(1.0f);
+                }
+            }
 			// load color info:
-			if (mesh->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
+			if (colorAvailable/*mesh->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)*/) {
 				auto position = primitive.attributes.find("COLOR_0");
 				const tinygltf::Accessor& posAccessor = model.accessors[position->second];
 				assert(posAccessor.count == verts.size());
