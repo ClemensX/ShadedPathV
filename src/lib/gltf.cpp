@@ -103,66 +103,69 @@ void glTF::loadModel(Model &model, const unsigned char* data, int size, MeshColl
 	return;
 }
 
-void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, vector<PBRShader::Vertex>& verts, vector<uint32_t>& indexBuffer, int gltfMeshIndex)
-{
+void extractVertexAttribute(const tinygltf::Model& model, const tinygltf::Primitive& primitive, const std::string& attributeName, std::vector<float>& outData, int& stride) {
+	auto it = primitive.attributes.find(attributeName);
+	if (it != primitive.attributes.end()) {
+		const tinygltf::Accessor& accessor = model.accessors[it->second];
+		const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+		const float* bufferData = reinterpret_cast<const float*>(&(model.buffers[bufferView.buffer].data[accessor.byteOffset + bufferView.byteOffset]));
+		stride = accessor.ByteStride(bufferView) ? (accessor.ByteStride(bufferView) / sizeof(float)) : tinygltf::GetNumComponentsInType(accessor.type);
+		outData.assign(bufferData, bufferData + accessor.count * stride);
+	}
+}
+
+void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indexBuffer, int gltfMeshIndex) {
 	assert(mesh->gltfMeshIndex >= 0);
 	assert(mesh->gltfMeshIndex == gltfMeshIndex);
-	// should be sized of passed in vectors:
+
 	uint32_t indexStart = static_cast<uint32_t>(indexBuffer.size());
 	uint32_t vertexStart = static_cast<uint32_t>(verts.size());
 
-	//tinygltf::Material* mat = static_cast<tinygltf::Material*>(mesh->gltfMesh); // rubbish
-		// parse vertices, indexes:
 	if (model.meshes.size() > 0) {
-		const tinygltf::Mesh gltfMesh = model.meshes[gltfMeshIndex];
-		//const tinygltf::Mesh gltfMesh = *(tinygltf::Mesh*)mesh->gltfMesh;
+		const tinygltf::Mesh& gltfMesh = model.meshes[gltfMeshIndex];
 		if (gltfMesh.primitives.size() > 0) {
 			const tinygltf::Primitive& primitive = gltfMesh.primitives[0];
 			bool hasIndices = primitive.indices > -1;
 			if (!hasIndices) {
 				Error("Cannot parse mesh without indices");
 			}
-			// assert all the content we rely on:
-			assert(primitive.attributes.find("POSITION") != primitive.attributes.end());
-			assert(primitive.attributes.find("TEXCOORD_0") != primitive.attributes.end());
 
-			// parse vertices
-			const float* bufferPos = nullptr;
-			uint32_t vertexCount = 0;
-			glm::vec3 posMin{};
-			glm::vec3 posMax{};
-			int posByteStride;
+			// Extract positions
+			std::vector<float> positions;
+			int posStride;
+			extractVertexAttribute(model, primitive, "POSITION", positions, posStride);
 
-			auto position = primitive.attributes.find("POSITION");
-			const tinygltf::Accessor& posAccessor = model.accessors[position->second];
-			const tinygltf::BufferView& posView = model.bufferViews[posAccessor.bufferView];
-			bufferPos = reinterpret_cast<const float*>(&(model.buffers[posView.buffer].data[posAccessor.byteOffset + posView.byteOffset]));
-			posMin = glm::vec3(posAccessor.minValues[0], posAccessor.minValues[1], posAccessor.minValues[2]);
-			posMax = glm::vec3(posAccessor.maxValues[0], posAccessor.maxValues[1], posAccessor.maxValues[2]);
-			vertexCount = static_cast<uint32_t>(posAccessor.count);
-			auto str = posAccessor.ByteStride(posView);
-			//Log("stride " << str << endl);
-			posByteStride = posAccessor.ByteStride(posView) / sizeof(float);
-			Log("posByteStride " << posByteStride << endl);
-			for (size_t v = 0; v < posAccessor.count; v++) {
-				size_t pos = v * posByteStride;
+			// Extract colors
+			std::vector<float> colors;
+			int colorStride;
+			extractVertexAttribute(model, primitive, "COLOR_0", colors, colorStride);
+
+			// Extract texture coordinates
+			std::vector<float> texCoords;
+			int texCoordStride;
+			extractVertexAttribute(model, primitive, "TEXCOORD_0", texCoords, texCoordStride);
+
+			// Populate vertices
+			for (size_t v = 0; v < positions.size() / posStride; v++) {
 				PBRShader::Vertex vert;
-				vert.pos = glm::vec3(bufferPos[pos], bufferPos[pos + 1], bufferPos[pos + 2]);
-				//vert.pos.x /= 100;
-				//vert.pos.y /= 100;
-				//vert.pos.z /= 100;
-				if (mesh->baseColorTexture) {
-					const float* coordDataPtr = mesh->baseColorTexture->gltfTexCoordData;
-					int stride = mesh->baseColorTexture->gltfUVByteStride;
-					vert.uv0 = glm::vec2(coordDataPtr[v * stride], coordDataPtr[v * stride + 1]);
+				vert.pos = glm::vec3(positions[v * posStride], positions[v * posStride + 1], positions[v * posStride + 2]);
+
+				if (!colors.empty()) {
+					vert.color = glm::vec4(colors[v * colorStride], colors[v * colorStride + 1], colors[v * colorStride + 2], colors[v * colorStride + 3]);
 				}
+				else {
+					vert.color = glm::vec4(1.0f); // Default to white if no color attribute
+				}
+
+				if (!texCoords.empty()) {
+					vert.uv0 = glm::vec2(texCoords[v * texCoordStride], texCoords[v * texCoordStride + 1]);
+				}
+
 				verts.push_back(vert);
-				//verts.push_back(vert2);
-				//Log("vert " << vert.x << endl);
 			}
 
-			// parse indices:
-			const tinygltf::Accessor& accessor = model.accessors[primitive.indices > -1 ? primitive.indices : 0];
+			// Parse indices
+			const tinygltf::Accessor& accessor = model.accessors[primitive.indices];
 			const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
 			const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
 
@@ -194,54 +197,18 @@ void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, vector<PBRShader
 			default:
 				Error("Index component type not supported!");
 			}
+
 			Log("Verts loaded: " << verts.size() << endl);
 			Log("Indices loaded: " << indexBuffer.size() << endl);
-			assert(indexBuffer.size() % 3 == 0); // triangles?
+			assert(indexBuffer.size() % 3 == 0); // Ensure triangles
+
 			if (mesh->flags.hasFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER)) {
-				// revert index buffer (flip clockwise/ant-clockwise)
+				// Flip winding order
 				for (size_t i = 0; i < indexBuffer.size(); i += 3) {
-					auto backup = indexBuffer[i];
-					indexBuffer[i] = indexBuffer[i + 2];
-					indexBuffer[i + 2] = backup;
-				}
-			}
-			auto position_c = primitive.attributes.find("COLOR_0");
-			bool colorAvailable = primitive.attributes.end() != position_c;
-            Log("COLOR_0 available: " << colorAvailable << endl);
-            if (!colorAvailable) {
-				// set white for all vertex colors if not set by gltf file
-                for (auto& vert : verts) {
-                    vert.color = glm::vec4(1.0f);
-                }
-            }
-			// load color info:
-			if (colorAvailable/*mesh->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)*/) {
-				auto position = primitive.attributes.find("COLOR_0");
-				const tinygltf::Accessor& posAccessor = model.accessors[position->second];
-				assert(posAccessor.count == verts.size());
-				const tinygltf::BufferView& posView = model.bufferViews[posAccessor.bufferView];
-				bufferPos = reinterpret_cast<const float*>(&(model.buffers[posView.buffer].data[posAccessor.byteOffset + posView.byteOffset]));
-				posMin = glm::vec3(posAccessor.minValues[0], posAccessor.minValues[1], posAccessor.minValues[2]);
-				posMax = glm::vec3(posAccessor.maxValues[0], posAccessor.maxValues[1], posAccessor.maxValues[2]);
-				vertexCount = static_cast<uint32_t>(posAccessor.count);
-				auto str = posAccessor.ByteStride(posView);
-				//Log("stride " << str << endl);
-				posByteStride = posAccessor.ByteStride(posView) / sizeof(float);
-				Log("COLOR posByteStride " << posByteStride << endl);
-				for (size_t v = 0; v < posAccessor.count; v++) {
-					size_t pos = v * posByteStride;
-					PBRShader::Vertex vert;
-					glm::vec4 col = glm::vec4(bufferPos[pos], bufferPos[pos + 1], bufferPos[pos + 2], bufferPos[pos + 3]);
-					verts[v].color = col;
-					//Log("color " << col.x << " " << col.y << " " << col.z << " " << col.w << endl);
-					//verts.push_back(vert2);
-					//Log("vert " << vert.x << endl);
+					std::swap(indexBuffer[i], indexBuffer[i + 2]);
 				}
 			}
 		}
-		//if (primitive.indices > -1) {
-		//}
-		//}
 	}
 }
 

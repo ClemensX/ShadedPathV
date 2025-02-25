@@ -20,11 +20,12 @@ public:
     void handleInput(InputState& inputState) override;
 private:
     World world;
-    WorldObject *bottle = nullptr;
+    WorldObject *object = nullptr;
     float plus = 0.0f;
     bool shouldStopEngine = false;
     bool enableUI = true;
     bool spinningBox = false;
     double spinTimeSeconds = 0.0;
+    bool alterObjectCoords = false; // some gltf examples objects require fifferent object rotation params
 };
 

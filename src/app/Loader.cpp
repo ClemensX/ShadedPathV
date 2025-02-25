@@ -47,8 +47,14 @@ void Loader::init() {
 
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
     engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox");
+    alterObjectCoords = true;
     engine->objectStore.createGroup("group");
-    bottle = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 0.0f, 0.0f));
+    object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 0.0f, 0.0f));
+    if (alterObjectCoords) {
+        // turn upside down
+        object->mesh->baseTransform = glm::rotate(object->mesh->baseTransform, (float)PI, glm::vec3(0.0f, 1.0f, 0.0f));
+    }
+
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
@@ -124,13 +130,19 @@ void Loader::prepareFrame(FrameResources* fr)
         mat4 modeltransform;
         if (spinningBox) {
             // Define a constant rotation speed (radians per second)
-            const double rotationSpeed = glm::radians(45.0f); // 45 degrees per second
+            double rotationSpeed = glm::radians(45.0f); // 45 degrees per second
+            if (alterObjectCoords) {
+                rotationSpeed = glm::radians(56.2f); // 60 degrees per second   
+            }
 
             // Calculate the rotation angle based on the elapsed time
             float rotationAngle = rotationSpeed * (seconds - spinTimeSeconds);
 
             // Apply the rotation to the modeltransform matrix
             modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
+            if (alterObjectCoords) {
+                modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
+            }
         } else {
             modeltransform = wo->mesh->baseTransform;
         }

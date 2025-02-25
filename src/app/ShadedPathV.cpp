@@ -34,7 +34,7 @@ int mainOne()
     //LineApp app; // vr ok
     //SimpleApp app; // vr ok (some stuttering - will not be investigated)
     //DeviceCoordApp app; // vr not supported
-    gltfTerrainApp app; // vr ok
+    //gltfTerrainApp app; // vr ok
     //GeneratedTexturesApp app; // TODO: does not even work in 2D
     //gltfObjectsApp app; // vr ok, also skybox
     //BillboardDemo app; // vr ok
@@ -42,7 +42,7 @@ int mainOne()
     //LandscapeDemo app; // vr ok
     //Incoming app;
     //LandscapeGenerator app; // vr ok with limited support
-    //Loader app;
+    Loader app;
 
     Log("main() start!\n");
     ShadedPathEngine engine;
