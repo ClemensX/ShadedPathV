@@ -175,6 +175,83 @@ TextureInfo* TextureStore::internalCreateTextureSlot(string id)
 	return texture;
 }
 
+// brdflut, Irradiance and PrefilteredEnv generation taken from:
+// https://github.com/SaschaWillems/Vulkan-glTF-PBR/blob/master/src/main.cpp
+
+
+void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradiance, VkFormat formatIrradiance, int32_t dimPrefilteredEnv, VkFormat formatPrefilteredEnv)
+{
+	auto& global = engine->globalRendering;
+	auto& device = engine->globalRendering.device;
+	auto& texStore = engine->textureStore;
+
+	enum Target { IRRADIANCE = 0, PREFILTEREDENV = 1 };
+
+	for (uint32_t target = 0; target < PREFILTEREDENV + 1; target++) {
+		VkFormat format;
+		int32_t dim;
+        TextureInfo* ti = nullptr;
+		VkSampler cubemapSampler = nullptr;
+
+		switch (target) {
+		case IRRADIANCE:
+            format = formatIrradiance;
+			dim = dimIrradiance;
+            ti = texStore.createTextureSlot(IRRADIANCE_TEXTURE_ID);
+			break;
+		case PREFILTEREDENV:
+            format = formatPrefilteredEnv;
+			dim = dimPrefilteredEnv;
+			ti = texStore.createTextureSlot(PREFILTEREDENV_TEXTURE_ID);
+			break;
+		};
+
+		const uint32_t numMips = static_cast<uint32_t>(floor(log2(dim))) + 1;
+		// Create target cubemap
+		{
+			FrameBufferAttachment attachment{};
+
+			global.createImageCube(dim, dim, numMips, VK_SAMPLE_COUNT_1_BIT, format,
+				VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, //VK_IMAGE_USAGE_TRANSFER_SRC_BIT | /*VK_IMAGE_USAGE_TRANSFER_DST_BIT | */ VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+				VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, attachment.image, attachment.memory, ti->id.c_str());
+
+			// View
+			ti->vulkanTexture.deviceMemory = nullptr;
+			ti->vulkanTexture.layerCount = 6;
+			ti->vulkanTexture.imageFormat = format;
+			ti->vulkanTexture.image = attachment.image;
+			ti->vulkanTexture.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+			ti->vulkanTexture.deviceMemory = attachment.memory;
+			ti->vulkanTexture.depth = 1; // TODO check
+			//ti->vulkanTexture.imageLayout = 0; // TODO check
+			ti->vulkanTexture.height = dim;
+			ti->vulkanTexture.width = dim;
+			ti->vulkanTexture.levelCount = numMips;
+			ti->isKtxCreated = false;
+			ti->imageView = global.createImageView(ti->vulkanTexture.image, ti->vulkanTexture.imageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+
+			// Sampler
+			VkSamplerCreateInfo samplerCI{};
+			samplerCI.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+			samplerCI.magFilter = VK_FILTER_LINEAR;
+			samplerCI.minFilter = VK_FILTER_LINEAR;
+			samplerCI.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+			samplerCI.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			samplerCI.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			samplerCI.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+			samplerCI.minLod = 0.0f;
+			samplerCI.maxLod = static_cast<float>(numMips);
+			samplerCI.maxAnisotropy = 1.0f;
+			samplerCI.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
+			if (vkCreateSampler(device, &samplerCI, nullptr, &cubemapSampler) != VK_SUCCESS) {
+                Error("failed to create cubemap sampler!");
+			}
+		}
+        vkDestroySampler(device, cubemapSampler, nullptr);
+        ti->available = true;
+	}
+}
+
 void TextureStore::generateBRDFLUT()
 {
 	auto& global = engine->globalRendering;
@@ -183,8 +260,8 @@ void TextureStore::generateBRDFLUT()
 	const VkFormat format = VK_FORMAT_R16G16_SFLOAT;
 	const int32_t dim = 512;
 
-	// create entry in texture store:
 	FrameBufferAttachment attachment{};
+	// create entry in texture store:
 	auto ti = texStore.createTextureSlot(BRDFLUT_TEXTURE_ID);
 
 	//createImageCube(twoD->vulkanTexture.width, twoD->vulkanTexture.height, twoD->vulkanTexture.levelCount, VK_SAMPLE_COUNT_1_BIT, twoD->vulkanTexture.imageFormat, VK_IMAGE_TILING_OPTIMAL,

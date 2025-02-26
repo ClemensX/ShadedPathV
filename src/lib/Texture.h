@@ -97,6 +97,10 @@ public:
 	~TextureStore();
 	// texture id for brdf lookup table:
 	std::string BRDFLUT_TEXTURE_ID = "brdflut";
+	// texture id for brdf lookup table:
+	std::string IRRADIANCE_TEXTURE_ID = "irradiance";
+	// texture id for brdf lookup table:
+	std::string PREFILTEREDENV_TEXTURE_ID = "prefilteredenv";
 	// load texture upload to GPU, textures are referenced via id string
 	void loadTexture(std::string filename, std::string id, TextureType type = TextureType::TEXTURE_TYPE_MIPMAP_IMAGE, TextureFlags flags = TextureFlags::NONE);
 	::TextureInfo* getTexture(std::string id);
@@ -113,6 +117,7 @@ public:
 	// Generate a BRDF integration map storing roughness/NdotV as a look-up-table
 	// BRDF stands for Bidirectional Reflectance Distribution Function
 	void generateBRDFLUT();
+	void generateCubemaps(std::string skyboxTexture, int32_t dimIrradiance = 64, VkFormat formatIrradiance = VK_FORMAT_R32G32B32A32_SFLOAT, int32_t dimPrefilteredEnv = 512, VkFormat formatPrefilteredEnv = VK_FORMAT_R16G16B16A16_SFLOAT);
 	// actual max texture count as set by app. This many descriptor entries will be allocated
 	// trying to store more textures than this amount will create Error
 	size_t getMaxSize() {
