@@ -61,7 +61,9 @@ struct TextureInfo
 {
 	std::string id; // textures are usually access by their string name
 	std::string filename;
-	bool available = false; // true if this texture is ready for use in shader code
+    const bool isAvailable() const {
+        return available;
+    }
 	ktxVulkanTexture vulkanTexture = {};
 	VkImageView imageView = nullptr;
 	// following gltf attributes are only valid during gltf parsing!!
@@ -74,9 +76,13 @@ struct TextureInfo
     VkSampler sampler = nullptr; // for texture type gltf we use the sampler directly
 	std::vector<float> float_buffer;
     TextureFlags flags = TextureFlags::NONE;
-    bool hasFlag(TextureFlags flag) {
+    bool hasFlag(TextureFlags flag) const {
         return ::hasFlag(flags, flag);
     }
+private:
+	bool available = false; // only set by TextureStore
+    friend class TextureStore;
+
 };
 typedef ::TextureInfo* TextureID;
 
@@ -129,6 +135,8 @@ public:
 	VkDescriptorSetLayout layout = nullptr;
 	VkDescriptorPool pool = nullptr;
 	VkDescriptorSet descriptorSet = nullptr;
+	// activate / deactivate texture
+    void setTextureActive(std::string id, bool active);
 private:
 	std::unordered_map<std::string, ::TextureInfo> textures;
 	ShadedPathEngine* engine = nullptr;

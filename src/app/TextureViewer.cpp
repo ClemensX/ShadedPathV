@@ -71,7 +71,7 @@ void TextureViewer::init() {
     //bottle = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 0.0f, 0.0f));
     engine->textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
     engine->textureStore.generateBRDFLUT();
-    engine->textureStore.generateCubemaps("skyboxTexture");
+    //engine->textureStore.generateCubemaps("skyboxTexture");
 
     // add some lines:
     //scale tree height to 10m
@@ -99,7 +99,7 @@ void TextureViewer::init() {
     vector<BillboardDef> billboardsToAdd;
     for (auto& tex : allTex) {
         auto& ti = tex.second;
-        if (ti.available) {
+        if (ti.isAvailable()) {
             int i = textureNames.size();
             BillboardDef b;
             b.pos = vec4(0.0f + 10.2f * i, 6.0f, -4.0f, 1.0f);
@@ -124,6 +124,7 @@ void TextureViewer::init() {
     engine->shaders.cubeShader.setFarPlane(1.0f); // cube around center
     //engine->shaders.cubeShader.setSkybox("2dTextureCube");
     engine->shaders.cubeShader.setSkybox("skyboxTexture");
+    //engine->shaders.cubeShader.setSkybox(engine->textureStore.IRRADIANCE_TEXTURE_ID);
 
     //engine->shaders.lineShader.initialUpload();
     //engine->shaders.pbrShader.initialUpload();

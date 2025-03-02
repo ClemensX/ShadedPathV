@@ -947,7 +947,8 @@ void GlobalRendering::createCubeMapFrom2dTexture(string textureName2d, string te
     texture->vulkanTexture.deviceMemory = attachment.memory;
     texture->isKtxCreated = false;
     texture->imageView = createImageViewCube(texture->vulkanTexture.image, texture->vulkanTexture.imageFormat, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
-    texture->available = true;
+    engine->textureStore.setTextureActive(textureNameCube, true);
+    //texture->available = true;
 }
 
 void GlobalRendering::destroyImage(VkImage image, VkDeviceMemory imageMemory)

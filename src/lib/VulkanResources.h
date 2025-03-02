@@ -118,12 +118,12 @@ private:
 	// create resources for global texture descriptor set layout, independent of other descriptor sets
 	void createDescriptorSetResourcesForTextures();
 	// update texture descriptors, only once after init
-	void updateDescriptorSetForTextures();
+	static void updateDescriptorSetForTextures(ShadedPathEngine* engine);
 	//VkDescriptorSetLayout layout = nullptr;
 	//VkDescriptorPool pool = nullptr;
 	// resources for temporary store info objects between the various create... calls:
 	std::vector<VkDescriptorBufferInfo> bufferInfos;
 	std::vector<VkDescriptorImageInfo> imageInfos;
-	bool globalTextureDescriptorSetValid = false;
+	//bool globalTextureDescriptorSetValid = false;
 	bool addGeomShaderStageToMVP = false;
 };

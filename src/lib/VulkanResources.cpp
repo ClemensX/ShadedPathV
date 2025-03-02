@@ -322,8 +322,8 @@ void VulkanResources::createDescriptorSetResourcesForTextures()
     }
 }
 
-void VulkanResources::updateDescriptorSetForTextures() {
-    if (globalTextureDescriptorSetValid) return; // TODO: fix calling structure, maybe directly from engine, not from shaders
+void VulkanResources::updateDescriptorSetForTextures(ShadedPathEngine* engine) {
+    //if (globalTextureDescriptorSetValid) return; // TODO: fix calling structure, maybe directly from engine, not from shaders
     if (engine->textureStore.descriptorSet != nullptr) return;
 
     // create DescriptorSet
@@ -373,7 +373,7 @@ void VulkanResources::updateDescriptorSetForTextures() {
         descriptorSets.push_back(descSet);
     //}
     vkUpdateDescriptorSets(engine->globalRendering.device, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
-    globalTextureDescriptorSetValid = true;
+    //globalTextureDescriptorSetValid = true;
 }
 
 void VulkanResources::updateDescriptorSets(FrameResources& tr)
@@ -381,7 +381,7 @@ void VulkanResources::updateDescriptorSets(FrameResources& tr)
     vector<VulkanResourceElement>& def = *resourceDefinition;
     for (auto& d : def) {
         if (d.type == VulkanResourceType::GlobalTextureSet) {
-            updateDescriptorSetForTextures();
+            updateDescriptorSetForTextures(engine);
         }
 
     }
