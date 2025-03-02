@@ -129,6 +129,7 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 			texture->imageView = engine->globalRendering.createImageView(texture->vulkanTexture.image, format, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
 		}
 		texture->available = true;
+        setTextureActive(texture->id, true);
 		return;
 	} else {
 		// KTX 1 handling
@@ -851,6 +852,8 @@ void TextureStore::setTextureActive(std::string id, bool active)
     auto ti = textures.find(id);
     if (ti != textures.end()) {
         ti->second.available = active;
+		// recreate texture pool descriptor set
+		VulkanResources::updateDescriptorSetForTextures(engine);
     }
 }
 

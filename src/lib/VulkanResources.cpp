@@ -296,7 +296,9 @@ void VulkanResources::createDescriptorSetResourcesForTextures()
     poolSize.descriptorCount = layoutBinding.descriptorCount;
     texturePoolSizes.push_back(poolSize);
 
-    VkDescriptorBindingFlags flag = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT;
+    VkDescriptorBindingFlags flag = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+        VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
+        VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
     VkDescriptorSetLayoutBindingFlagsCreateInfo flag_info{};
     flag_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
     flag_info.bindingCount = 1;
@@ -304,6 +306,7 @@ void VulkanResources::createDescriptorSetResourcesForTextures()
     VkDescriptorSetLayoutCreateInfo layoutInfo{};
     layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layoutInfo.pNext = &flag_info;
+    layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
     layoutInfo.bindingCount = static_cast<uint32_t>(textureBindings.size());
     layoutInfo.pBindings = textureBindings.data();
 
@@ -315,7 +318,7 @@ void VulkanResources::createDescriptorSetResourcesForTextures()
     poolInfo.poolSizeCount = static_cast<uint32_t>(texturePoolSizes.size());
     poolInfo.pPoolSizes = texturePoolSizes.data();
     poolInfo.maxSets = 1; // only one global list for all shaders
-    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
 
     if (vkCreateDescriptorPool(engine->globalRendering.device, &poolInfo, nullptr, &engine->textureStore.pool) != VK_SUCCESS) {
         Error("failed to create descriptor pool for textures!");
@@ -324,17 +327,19 @@ void VulkanResources::createDescriptorSetResourcesForTextures()
 
 void VulkanResources::updateDescriptorSetForTextures(ShadedPathEngine* engine) {
     //if (globalTextureDescriptorSetValid) return; // TODO: fix calling structure, maybe directly from engine, not from shaders
-    if (engine->textureStore.descriptorSet != nullptr) return;
+    //if (engine->textureStore.descriptorSet != nullptr) return;
 
-    // create DescriptorSet
-    VkDescriptorSetAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    allocInfo.descriptorPool = engine->textureStore.pool;
-    allocInfo.descriptorSetCount = 1;
-    allocInfo.pSetLayouts = &engine->textureStore.layout;
-    VkResult res = vkAllocateDescriptorSets(engine->globalRendering.device, &allocInfo, &engine->textureStore.descriptorSet);
-    if (res != VK_SUCCESS) {
-        Error("failed to allocate descriptor sets!");
+    if (engine->textureStore.descriptorSet == nullptr) {
+        // create DescriptorSet
+        VkDescriptorSetAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = engine->textureStore.pool;
+        allocInfo.descriptorSetCount = 1;
+        allocInfo.pSetLayouts = &engine->textureStore.layout;
+        VkResult res = vkAllocateDescriptorSets(engine->globalRendering.device, &allocInfo, &engine->textureStore.descriptorSet);
+        if (res != VK_SUCCESS) {
+            Error("failed to allocate descriptor sets!");
+        }
     }
 
     // iterate over all textures and write descriptor sets

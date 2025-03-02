@@ -98,6 +98,8 @@ public:
 	void addGeometryShaderStageToMVPBuffer() {
 		this->addGeomShaderStageToMVP = true;
 	}
+    // update texture descriptors, after a texture has been added or removed
+	static void updateDescriptorSetForTextures(ShadedPathEngine* engine);
 
 private:
 	ShadedPathEngine* engine = nullptr;
@@ -117,8 +119,6 @@ private:
 	void addThreadResourcesForElement(VulkanResourceElement d, VulkanHandoverResources& res);
 	// create resources for global texture descriptor set layout, independent of other descriptor sets
 	void createDescriptorSetResourcesForTextures();
-	// update texture descriptors, only once after init
-	static void updateDescriptorSetForTextures(ShadedPathEngine* engine);
 	//VkDescriptorSetLayout layout = nullptr;
 	//VkDescriptorPool pool = nullptr;
 	// resources for temporary store info objects between the various create... calls:
