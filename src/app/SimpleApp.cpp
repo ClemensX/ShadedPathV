@@ -20,11 +20,8 @@ void SimpleApp::run(ContinuationInfo* cont)
         enableEventsAndModes();
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine->files.findAssetFolder("data");
-        engine->setMaxTextures(10);
         setHighBackbufferResolution();
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);
-
-        engine->textureStore.generateBRDFLUT();
 
         // add shaders used in this app
         shaders
@@ -44,6 +41,7 @@ void SimpleApp::run(ContinuationInfo* cont)
 }
 
 void SimpleApp::init() {
+    engine->textureStore.generateBRDFLUT();
     // add some lines:
     float aspectRatio = engine->getAspect();
     float plus = 0.0f;

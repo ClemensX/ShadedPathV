@@ -23,8 +23,6 @@ void TextureViewer::run(ContinuationInfo* cont)
         setHighBackbufferResolution();
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 2000.0f);
 
-        //engine->textureStore.generateBRDFLUT();
-
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
@@ -33,7 +31,6 @@ void TextureViewer::run(ContinuationInfo* cont)
             //.addShader(shaders.lineShader)  // enable to see zero cross and billboard debug lines
             //.addShader(shaders.pbrShader)
             ;
-
         if (enableUI) shaders.addShader(shaders.uiShader);
 
         // init shaders, e.g. one-time uploads before rendering cycle starts go here

@@ -22,8 +22,6 @@ void GeneratedTexturesApp::run(ContinuationInfo* cont)
         setHighBackbufferResolution();
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 2000.0f);
 
-        engine->textureStore.generateBRDFLUT();
-
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
@@ -108,6 +106,7 @@ void GeneratedTexturesApp::init() {
     // load skybox cube texture
     //engine->textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
     //engine->textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
+    engine->textureStore.generateBRDFLUT();
     engine->textureStore.loadTexture("debug.ktx", "2dTexture");
     engine->textureStore.loadTexture("eucalyptus.ktx2", "tree");
     unsigned int texIndex = engine->textureStore.getTexture("tree")->index;

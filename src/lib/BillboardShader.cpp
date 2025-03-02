@@ -147,7 +147,6 @@ void BillboardShader::createCommandBuffer(FrameResources& tr)
 
 void BillboardSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr)
 {
-	vulkanResources->updateDescriptorSets(tr);
 	auto& device = engine->globalRendering.device;
 	auto& global = engine->globalRendering;
 	auto& shaders = engine->shaders;

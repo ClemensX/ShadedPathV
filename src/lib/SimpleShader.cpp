@@ -26,8 +26,8 @@ void SimpleShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
 	engine.textureStore.loadTexture("debug.ktx", "debugTexture");
 	engine.textureStore.loadTexture("dump.ktx", "dumpTexture");
 	engine.textureStore.loadTexture("arches_pinetree_low.ktx2", "pinetreeTexture");  // VK_IMAGE_VIEW_TYPE_CUBE will produce black texture color
-	//texture = engine.textureStore.getTexture("debugTexture");
-	texture = engine.textureStore.getTexture(engine.textureStore.BRDFLUT_TEXTURE_ID);
+	texture = engine.textureStore.getTexture("debugTexture");
+    //texture = engine.textureStore.getTexture(engine.textureStore.BRDFLUT_TEXTURE_ID); brdflut not loaded yet
 
 	// per frame resources
 	int fl = engine.getFramesInFlight();
@@ -140,7 +140,6 @@ void SimpleShader::uploadToGPU(FrameResources& tr, UniformBufferObject& ubo, Uni
 void SimpleShader::createCommandBuffer(FrameResources& tr)
 {
 	if (!enabled) return;
-	resources.updateDescriptorSets(tr);
 	auto& str = subFrameResources[tr.frameIndex]; //shortcut to shader thread resources
 	auto& device = this->engine->globalRendering.device;
 	auto& global = this->engine->globalRendering;

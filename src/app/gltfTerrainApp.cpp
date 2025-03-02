@@ -30,8 +30,6 @@ void gltfTerrainApp::run(ContinuationInfo* cont)
         setHighBackbufferResolution();
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.10f, 2000.0f);
 
-        engine->textureStore.generateBRDFLUT();
-
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)

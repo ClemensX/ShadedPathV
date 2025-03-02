@@ -147,8 +147,6 @@ void CubeSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr)
 	engine->util.debugNameObjectDescriptorSet(descriptorSet, "Cube Descriptor Set 1");
 	if (engine->isStereo())	engine->util.debugNameObjectDescriptorSet(descriptorSet2, "Cube Descriptor Set 2");
 
-	vulkanResources->updateDescriptorSets(tr);
-
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = tr.commandPool;

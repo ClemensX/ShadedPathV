@@ -343,7 +343,6 @@ void LineSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 
 void LineSubShader::allocateCommandBuffer(FrameResources& tr, VkCommandBuffer* cmdBuferPtr, const char* debugName)
 {
-	vulkanResources->updateDescriptorSets(tr);
 	VkCommandBufferAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = tr.commandPool;

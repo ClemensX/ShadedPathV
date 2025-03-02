@@ -22,8 +22,6 @@ void LandscapeDemo::run(ContinuationInfo* cont)
         setHighBackbufferResolution();
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 4300.0f);
 
-        engine->textureStore.generateBRDFLUT();
-
         // add shaders used in this app
         shaders
             .addShader(shaders.uiShader)

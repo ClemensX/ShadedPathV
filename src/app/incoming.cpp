@@ -30,8 +30,6 @@ void Incoming::run(ContinuationInfo* cont)
         setHighBackbufferResolution();
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.10f, 2000.0f);
 
-        engine->textureStore.generateBRDFLUT();
-
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
@@ -97,6 +95,8 @@ void Incoming::init() {
     //world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     world.setWorldSize(1024.0f, 382.0f, 1024.0f);
     engine->setWorld(&world);
+
+    engine->textureStore.generateBRDFLUT();
 
     engine->meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
     engine->objectStore.createGroup(GroupTerrainName, GroupTerrain);

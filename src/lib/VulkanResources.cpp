@@ -326,9 +326,7 @@ void VulkanResources::createDescriptorSetResourcesForTextures()
 }
 
 void VulkanResources::updateDescriptorSetForTextures(ShadedPathEngine* engine) {
-    //if (globalTextureDescriptorSetValid) return; // TODO: fix calling structure, maybe directly from engine, not from shaders
-    //if (engine->textureStore.descriptorSet != nullptr) return;
-
+    if (engine->textureStore.pool == nullptr) Error("Adding textures requires initialized engine and shaders! Move to app.init()");
     if (engine->textureStore.descriptorSet == nullptr) {
         // create DescriptorSet
         VkDescriptorSetAllocateInfo allocInfo{};
@@ -348,9 +346,10 @@ void VulkanResources::updateDescriptorSetForTextures(ShadedPathEngine* engine) {
     vector<VkDescriptorImageInfo> imageInfos(numTextures);
     vector<VkWriteDescriptorSet> descriptorSets;
 
+    TextureInfo* lastTexture = nullptr;
     for (auto& texMapEntry : engine->textureStore.getTexturesMap()) {
         auto& tex = texMapEntry.second;
-        Log("tex: " << tex.id.c_str() << " index: " << tex.index << endl);
+        //Log("tex: " << tex.id.c_str() << " index: " << tex.index << endl);
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         imageInfo.imageView = tex.imageView;
@@ -361,35 +360,31 @@ void VulkanResources::updateDescriptorSetForTextures(ShadedPathEngine* engine) {
             imageInfo.sampler = engine->globalRendering.textureSampler_TEXTURE_TYPE_MIPMAP_IMAGE;
         }
         imageInfos[tex.index] = imageInfo;
-        //imageInfos.push_back(imageInfo);
+        lastTexture = (TextureInfo*) &tex;
     }
 
-    //for (auto& texMapEntry : engine->textureStore.getTexturesMap()) {
-        //auto& tex = texMapEntry.second;
-        VkWriteDescriptorSet descSet{};
-        descSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descSet.dstSet = engine->textureStore.descriptorSet;
-        descSet.dstBinding = 0;
-        descSet.dstArrayElement = 0;
-        descSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descSet.descriptorCount = static_cast<uint32_t>(imageInfos.size());
-        descSet.pImageInfo = &imageInfos[0];
+    VkWriteDescriptorSet descSet{};
+    descSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    descSet.dstSet = engine->textureStore.descriptorSet;
+    descSet.dstBinding = 0;
+    descSet.dstArrayElement = 0;
+    descSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    descSet.descriptorCount = static_cast<uint32_t>(imageInfos.size());
+    descSet.pImageInfo = &imageInfos[0];
 
-        descriptorSets.push_back(descSet);
-    //}
+    descriptorSets.push_back(descSet);
     vkUpdateDescriptorSets(engine->globalRendering.device, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
-    //globalTextureDescriptorSetValid = true;
 }
 
 void VulkanResources::updateDescriptorSets(FrameResources& tr)
 {
-    vector<VulkanResourceElement>& def = *resourceDefinition;
-    for (auto& d : def) {
-        if (d.type == VulkanResourceType::GlobalTextureSet) {
-            updateDescriptorSetForTextures(engine);
-        }
+    //vector<VulkanResourceElement>& def = *resourceDefinition;
+    //for (auto& d : def) {
+    //    if (d.type == VulkanResourceType::GlobalTextureSet) {
+    //        updateDescriptorSetForTextures(engine);
+    //    }
 
-    }
+    //}
 }
 
 // create pipeline layout and store in parameter.

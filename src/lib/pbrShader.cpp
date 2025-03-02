@@ -217,7 +217,6 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 
 void PBRSubShader::allocateCommandBuffer(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, const char* debugName)
 {
-	vulkanResources->updateDescriptorSets(tr);
 	pbrShader->prefillTextureIndexes(tr);
 
 	auto& device = engine->globalRendering.device;

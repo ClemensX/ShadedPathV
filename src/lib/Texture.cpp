@@ -27,10 +27,8 @@ TextureInfo* TextureStore::getTexture(string id)
             Error("Requested texture not available");
         }
 		//ret->available = true;
-	}
-	else {
+	} else {
 		Error("Requested texture not available");
-        ret->available = false; // obsolete
 	}
 	return ret;
 }
@@ -128,7 +126,6 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 		} else {
 			texture->imageView = engine->globalRendering.createImageView(texture->vulkanTexture.image, format, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
 		}
-		texture->available = true;
         setTextureActive(texture->id, true);
 		return;
 	} else {
@@ -142,7 +139,7 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 		}
 		// create image view and sampler:
 		texture->imageView = engine->globalRendering.createImageView(texture->vulkanTexture.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
-		texture->available = true;
+		setTextureActive(texture->id, true);
 	}
 }
 
@@ -561,7 +558,7 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 		//vkDestroyDescriptorSetLayout(device, descriptorsetlayout, nullptr);
 		//vkDestroyPipeline(device, pipeline, nullptr);
 		//vkDestroyPipelineLayout(device, pipelinelayout, nullptr);
-		ti->available = true;
+		setTextureActive(ti->id, true);
 	}
 }
 
@@ -830,7 +827,7 @@ void TextureStore::generateBRDFLUT()
 	vkDestroyDescriptorSetLayout(device, descriptorsetlayout, nullptr);
 	vkDestroySampler(device, brdfSampler, nullptr);
 
-	ti->available = true;
+    setTextureActive(ti->id, true);
 }
 
 void TextureStore::destroyKTXIntermediate(ktxTexture* ktxTex)
@@ -854,7 +851,10 @@ void TextureStore::setTextureActive(std::string id, bool active)
         ti->second.available = active;
 		// recreate texture pool descriptor set
 		VulkanResources::updateDescriptorSetForTextures(engine);
-    }
+		Log("tex added and descriptor set updated: " << ti->second.id.c_str() << " index: " << ti->second.index << endl);
+		return;
+	}
+    Error("Texture not found");
 }
 
 TextureStore::~TextureStore()
@@ -863,7 +863,7 @@ TextureStore::~TextureStore()
 	for (auto& tex : textures) {
 		auto &ti = tex.second;
 		Log("Texture found: " << ti.id.c_str() << " " << ti.filename.c_str() << " " << ti.vulkanTexture.deviceMemory << endl);
-		if (ti.available) {
+		if (ti.isAvailable()) {
 			vkDestroyImageView(engine->globalRendering.device, tex.second.imageView, nullptr);
 			if (ti.isKtxCreated) {
 				ktxVulkanTexture_Destruct(&ti.vulkanTexture, engine->globalRendering.device, nullptr);
