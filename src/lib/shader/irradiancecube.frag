@@ -10,7 +10,7 @@
 
 layout (location = 0) in vec3 inPos;
 layout (location = 0) out vec4 outColor;
-layout (binding = 0) uniform samplerCube samplerEnv;
+//layout (binding = 0) uniform samplerCube samplerEnv;
 
 layout(push_constant) uniform PushConsts {
 	layout (offset = 64) float deltaPhi;
@@ -35,7 +35,8 @@ void main()
 		for (float theta = 0.0; theta < HALF_PI; theta += consts.deltaTheta) {
 			vec3 tempVec = cos(phi) * right + sin(phi) * up;
 			vec3 sampleVector = cos(theta) * N + sin(theta) * tempVec;
-			color += texture(samplerEnv, sampleVector).rgb * cos(theta) * sin(theta);
+			//color += texture(samplerEnv, sampleVector).rgb * cos(theta) * sin(theta);
+			color += vec3(0.5, 0.7, 0.9).rgb * cos(theta) * sin(theta); // until we have access to global texture array
 			sampleCount++;
 		}
 	}

@@ -9,7 +9,7 @@
 layout (location = 0) in vec3 inPos;
 layout (location = 0) out vec4 outColor;
 
-layout (binding = 0) uniform samplerCube samplerEnv;
+//layout (binding = 0) uniform samplerCube samplerEnv;
 
 layout(push_constant) uniform PushConsts {
 	layout (offset = 64) float roughness;
@@ -75,7 +75,8 @@ vec3 prefilterEnvMap(vec3 R, float roughness)
 	vec3 V = R;
 	vec3 color = vec3(0.0);
 	float totalWeight = 0.0;
-	float envMapDim = float(textureSize(samplerEnv, 0).s);
+	//float envMapDim = float(textureSize(samplerEnv, 0).s);
+	float envMapDim = float(64); // until we have access to global texture array
 	for(uint i = 0u; i < consts.numSamples; i++) {
 		vec2 Xi = hammersley2d(i, consts.numSamples);
 		vec3 H = importanceSample_GGX(Xi, roughness, N);
@@ -95,7 +96,8 @@ vec3 prefilterEnvMap(vec3 R, float roughness)
 			float omegaP = 4.0 * PI / (6.0 * envMapDim * envMapDim);
 			// Biased (+1.0) mip level for better result
 			float mipLevel = roughness == 0.0 ? 0.0 : max(0.5 * log2(omegaS / omegaP) + 1.0, 0.0f);
-			color += textureLod(samplerEnv, L, mipLevel).rgb * dotNL;
+			//color += textureLod(samplerEnv, L, mipLevel).rgb * dotNL;
+			color += vec3(0.5, 0.7, 0.9).rgb * dotNL; // until we have access to global texture array
 			totalWeight += dotNL;
 
 		}

@@ -191,19 +191,19 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 	for (uint32_t target = 0; target < PREFILTEREDENV + 1; target++) {
 		VkFormat format;
 		int32_t dim;
-        TextureInfo* ti = nullptr;
+        TextureInfo* cubemap = nullptr;
 		VkSampler cubemapSampler = nullptr;
 
 		switch (target) {
 		case IRRADIANCE:
             format = formatIrradiance;
 			dim = dimIrradiance;
-            ti = texStore.createTextureSlot(IRRADIANCE_TEXTURE_ID);
+            cubemap = texStore.createTextureSlot(IRRADIANCE_TEXTURE_ID);
 			break;
 		case PREFILTEREDENV:
             format = formatPrefilteredEnv;
 			dim = dimPrefilteredEnv;
-			ti = texStore.createTextureSlot(PREFILTEREDENV_TEXTURE_ID);
+			cubemap = texStore.createTextureSlot(PREFILTEREDENV_TEXTURE_ID);
 			break;
 		};
 
@@ -214,22 +214,22 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 
 			global.createImageCube(dim, dim, numMips, VK_SAMPLE_COUNT_1_BIT, format,
 				VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, //VK_IMAGE_USAGE_TRANSFER_SRC_BIT | /*VK_IMAGE_USAGE_TRANSFER_DST_BIT | */ VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-				VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, attachment.image, attachment.memory, ti->id.c_str());
+				VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, attachment.image, attachment.memory, cubemap->id.c_str());
 
 			// View
-			ti->vulkanTexture.deviceMemory = nullptr;
-			ti->vulkanTexture.layerCount = 6;
-			ti->vulkanTexture.imageFormat = format;
-			ti->vulkanTexture.image = attachment.image;
-			ti->vulkanTexture.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
-			ti->vulkanTexture.deviceMemory = attachment.memory;
-			ti->vulkanTexture.depth = 1; // TODO check
-			//ti->vulkanTexture.imageLayout = 0; // TODO check
-			ti->vulkanTexture.height = dim;
-			ti->vulkanTexture.width = dim;
-			ti->vulkanTexture.levelCount = numMips;
-			ti->isKtxCreated = false;
-			ti->imageView = global.createImageView(ti->vulkanTexture.image, ti->vulkanTexture.imageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+			cubemap->vulkanTexture.deviceMemory = nullptr;
+			cubemap->vulkanTexture.layerCount = 6;
+			cubemap->vulkanTexture.imageFormat = format;
+			cubemap->vulkanTexture.image = attachment.image;
+			cubemap->vulkanTexture.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+			cubemap->vulkanTexture.deviceMemory = attachment.memory;
+			cubemap->vulkanTexture.depth = 1; // TODO check
+			//cubemap->vulkanTexture.imageLayout = 0; // TODO check
+			cubemap->vulkanTexture.height = dim;
+			cubemap->vulkanTexture.width = dim;
+			cubemap->vulkanTexture.levelCount = numMips;
+			cubemap->isKtxCreated = false;
+			cubemap->imageView = global.createImageView(cubemap->vulkanTexture.image, cubemap->vulkanTexture.imageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 
 			// Sampler
 			VkSamplerCreateInfo samplerCI{};
@@ -382,11 +382,11 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 
         // Descriptors
 		VkDescriptorSetLayout descriptorsetlayout;
-		VkDescriptorSetLayoutBinding setLayoutBinding = { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr };
+		//VkDescriptorSetLayoutBinding setLayoutBinding = { 0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1, VK_SHADER_STAGE_FRAGMENT_BIT, nullptr };
 		VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI{};
 		descriptorSetLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		descriptorSetLayoutCI.pBindings = &setLayoutBinding;
-		descriptorSetLayoutCI.bindingCount = 1;
+		//descriptorSetLayoutCI.pBindings = &setLayoutBinding;
+		//descriptorSetLayoutCI.bindingCount = 1;
         if (vkCreateDescriptorSetLayout(device, &descriptorSetLayoutCI, nullptr, &descriptorsetlayout) != VK_SUCCESS) {
             Error("Cannot create descriptor set layout in cubemap generation");
         }
@@ -510,10 +510,10 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 
 		VkPipelineVertexInputStateCreateInfo vertexInputStateCI{};
 		vertexInputStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		vertexInputStateCI.vertexBindingDescriptionCount = 1;
-		vertexInputStateCI.pVertexBindingDescriptions = &vertexInputBinding;
-		vertexInputStateCI.vertexAttributeDescriptionCount = 1;
-		vertexInputStateCI.pVertexAttributeDescriptions = &vertexInputAttribute;
+		//vertexInputStateCI.vertexBindingDescriptionCount = 0;
+		//vertexInputStateCI.pVertexBindingDescriptions = &vertexInputBinding;
+		//vertexInputStateCI.vertexAttributeDescriptionCount = 0;
+		//vertexInputStateCI.pVertexAttributeDescriptions = &vertexInputAttribute;
 
 		std::array<VkPipelineShaderStageCreateInfo, 2> shaderStages;
 
@@ -563,7 +563,164 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 			vkDestroyShaderModule(device, shaderStage.module, nullptr);
 		}
 
-		/**/
+		// Render cubemap
+		VkClearValue clearValues[1];
+		clearValues[0].color = { { 0.0f, 0.0f, 0.2f, 0.0f } };
+
+		VkRenderPassBeginInfo renderPassBeginInfo{};
+		renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassBeginInfo.renderPass = renderpass;
+		renderPassBeginInfo.framebuffer = offscreen.framebuffer;
+		renderPassBeginInfo.renderArea.extent.width = dim;
+		renderPassBeginInfo.renderArea.extent.height = dim;
+		renderPassBeginInfo.clearValueCount = 1;
+		renderPassBeginInfo.pClearValues = clearValues;
+
+		std::vector<glm::mat4> matrices = {
+			glm::rotate(glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f)), glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f)),
+			glm::rotate(glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f)), glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f)),
+			glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f)),
+			glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f)),
+			glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f)),
+			glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+		};
+
+		VkCommandBuffer cmdBuf = global.beginSingleTimeCommands();
+
+		VkViewport viewport{};
+		viewport.width = (float)dim;
+		viewport.height = (float)dim;
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+
+		VkRect2D scissor{};
+		scissor.extent.width = dim;
+		scissor.extent.height = dim;
+
+		VkImageSubresourceRange subresourceRange{};
+		subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		subresourceRange.baseMipLevel = 0;
+		subresourceRange.levelCount = numMips;
+		subresourceRange.layerCount = 6;
+
+		// Change image layout for all cubemap faces to transfer destination
+		{
+			//vulkanDevice->beginCommandBuffer(cmdBuf);
+			VkImageMemoryBarrier imageMemoryBarrier{};
+			imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+			imageMemoryBarrier.image = cubemap->vulkanTexture.image;
+			imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+			imageMemoryBarrier.srcAccessMask = 0;
+			imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			imageMemoryBarrier.subresourceRange = subresourceRange;
+			vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
+			//vulkanDevice->flushCommandBuffer(cmdBuf, queue, false);
+			global.endSingleTimeCommands(cmdBuf, true);
+		}
+
+		for (uint32_t m = 0; m < numMips; m++) {
+			for (uint32_t f = 0; f < 6; f++) {
+
+				//vulkanDevice->beginCommandBuffer(cmdBuf);
+				cmdBuf = global.beginSingleTimeCommands();
+
+				viewport.width = static_cast<float>(dim * std::pow(0.5f, m));
+				viewport.height = static_cast<float>(dim * std::pow(0.5f, m));
+				vkCmdSetViewport(cmdBuf, 0, 1, &viewport);
+				vkCmdSetScissor(cmdBuf, 0, 1, &scissor);
+
+				// Render scene from cube face's point of view
+				vkCmdBeginRenderPass(cmdBuf, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+				// Pass parameters for current pass using a push constant block
+				switch (target) {
+				case IRRADIANCE:
+					pushBlockIrradiance.mvp = glm::perspective((float)(PI / 2.0), 1.0f, 0.1f, 512.0f) * matrices[f];
+					vkCmdPushConstants(cmdBuf, pipelinelayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushBlockIrradiance), &pushBlockIrradiance);
+					break;
+				case PREFILTEREDENV:
+					pushBlockPrefilterEnv.mvp = glm::perspective((float)(PI / 2.0), 1.0f, 0.1f, 512.0f) * matrices[f];
+					pushBlockPrefilterEnv.roughness = (float)m / (float)(numMips - 1);
+					vkCmdPushConstants(cmdBuf, pipelinelayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushBlockPrefilterEnv), &pushBlockPrefilterEnv);
+					break;
+				};
+
+				vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+				//vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelinelayout, 0, 1, &descriptorset, 0, NULL); adapt for global array
+				// bind global texture array:
+				//vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelinelayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
+
+				VkDeviceSize offsets[1] = { 0 };
+
+//				models.skybox.draw(cmdBuf);
+				//vkCmdDrawIndexed(cmdBuf, 36, 1, 0, 0, 0);
+				vkCmdDraw(cmdBuf, 36, 1, 0, 0);
+
+				vkCmdEndRenderPass(cmdBuf);
+
+				VkImageSubresourceRange subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+				subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				subresourceRange.baseMipLevel = 0;
+				subresourceRange.levelCount = numMips;
+				subresourceRange.layerCount = 6;
+
+				{
+					VkImageMemoryBarrier imageMemoryBarrier{};
+					imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+					imageMemoryBarrier.image = offscreen.image;
+					imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+					imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+					imageMemoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+					imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+					imageMemoryBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+					vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
+				}
+
+				// Copy region for transfer from framebuffer to cube face
+				VkImageCopy copyRegion{};
+
+				copyRegion.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				copyRegion.srcSubresource.baseArrayLayer = 0;
+				copyRegion.srcSubresource.mipLevel = 0;
+				copyRegion.srcSubresource.layerCount = 1;
+				copyRegion.srcOffset = { 0, 0, 0 };
+
+				copyRegion.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+				copyRegion.dstSubresource.baseArrayLayer = f;
+				copyRegion.dstSubresource.mipLevel = m;
+				copyRegion.dstSubresource.layerCount = 1;
+				copyRegion.dstOffset = { 0, 0, 0 };
+
+				copyRegion.extent.width = static_cast<uint32_t>(viewport.width);
+				copyRegion.extent.height = static_cast<uint32_t>(viewport.height);
+				copyRegion.extent.depth = 1;
+
+				//vkCmdCopyImage(
+				//	cmdBuf,
+				//	offscreen.image,
+				//	VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+				//	cubemap.image,
+				//	VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+				//	1,
+				//	&copyRegion);
+
+				{
+					VkImageMemoryBarrier imageMemoryBarrier{};
+					imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+					imageMemoryBarrier.image = offscreen.image;
+					imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+					imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+					imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+					imageMemoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+					imageMemoryBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+					vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
+				}
+
+//				vulkanDevice->flushCommandBuffer(cmdBuf, queue, false);
+				global.endSingleTimeCommands(cmdBuf, true);
+			}
+		}
 
 		// cleanup
 		vkDestroySampler(device, cubemapSampler, nullptr);
@@ -576,7 +733,7 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 		vkDestroyDescriptorSetLayout(device, descriptorsetlayout, nullptr);
 		vkDestroyPipeline(device, pipeline, nullptr);
 		vkDestroyPipelineLayout(device, pipelinelayout, nullptr);
-		setTextureActive(ti->id, true);
+		setTextureActive(cubemap->id, true);
 	}
 }
 
@@ -607,7 +764,7 @@ void TextureStore::generateBRDFLUT()
 	ti->vulkanTexture.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
 	ti->vulkanTexture.deviceMemory = attachment.memory;
 	ti->vulkanTexture.depth = 1; // TODO check
-	//ti->vulkanTexture.imageLayout = 0; // TODO check
+	//cubemap->vulkanTexture.imageLayout = 0; // TODO check
 	ti->vulkanTexture.height = dim;
 	ti->vulkanTexture.width = dim;
 	ti->vulkanTexture.levelCount = 1;
