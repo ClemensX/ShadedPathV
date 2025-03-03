@@ -59,7 +59,7 @@ struct VulkanHandoverResources {
  * handle vulkan shader resources that relate to descriptors
  * specify shader resources and submit them for descriptor and binding set construction
  * 3 things can be bound to a command buffer: vertex buffers, index buffer and descriptor sets.
- * All 3 can be handled through this class. All internmediate structures like DescriptorSetLayout
+ * All 3 can be handled through this class. All intermediate structures like DescriptorSetLayout
  * and DescriptorSetLayoutCreateInfo will be created automatically
 */
 class VulkanResources

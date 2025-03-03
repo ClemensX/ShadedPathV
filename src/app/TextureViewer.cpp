@@ -68,7 +68,7 @@ void TextureViewer::init() {
     //bottle = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 0.0f, 0.0f));
     engine->textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
     engine->textureStore.generateBRDFLUT();
-    //engine->textureStore.generateCubemaps("skyboxTexture");
+    engine->textureStore.generateCubemaps("skyboxTexture");
 
     // add some lines:
     //scale tree height to 10m

@@ -148,3 +148,14 @@ private:
 	// all creation methods have to call this internally:
 	::TextureInfo* internalCreateTextureSlot(std::string id);
 };
+
+// vertex def for cubemaps calculation
+struct vkglTF_Model_Vertex {
+	glm::vec3 pos;
+	glm::vec3 normal;
+	glm::vec2 uv0;
+	glm::vec2 uv1;
+	glm::uvec4 joint0;
+	glm::vec4 weight0;
+	glm::vec4 color;
+};

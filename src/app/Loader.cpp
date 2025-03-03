@@ -24,8 +24,6 @@ void Loader::run(ContinuationInfo* cont)
         setHighBackbufferResolution();
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);
 
-        engine->textureStore.generateBRDFLUT();
-
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
@@ -44,6 +42,8 @@ void Loader::run(ContinuationInfo* cont)
 
 void Loader::init() {
     engine->sound.init(false);
+
+    engine->textureStore.generateBRDFLUT();
 
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
     engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox");

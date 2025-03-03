@@ -419,14 +419,15 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 		writeDescriptorSet.descriptorCount = 1;
 		writeDescriptorSet.dstSet = descriptorset;
 		writeDescriptorSet.dstBinding = 0;
-		TextureInfo* environmentCube = engine->textureStore.getTexture(skyboxTexture);
-/*		writeDescriptorSet.pImageInfo = &environmentCube->vulkanTexture..descriptor;
-		vkUpdateDescriptorSets(device, 1, &writeDescriptorSet, 0, nullptr);
+        TextureInfo* environmentCube = engine->textureStore.getTexture(skyboxTexture); // part of global texture array
+		// we don't write desc set for image - use from global array instead
+/**/		//writeDescriptorSet.pImageInfo = &environmentCube->vulkanTexture..descriptor;
+		//vkUpdateDescriptorSets(device, 1, &writeDescriptorSet, 0, nullptr);
 
 		struct PushBlockIrradiance {
 			glm::mat4 mvp;
-			float deltaPhi = (2.0f * float(M_PI)) / 180.0f;
-			float deltaTheta = (0.5f * float(M_PI)) / 64.0f;
+			float deltaPhi = (2.0f * float(PI)) / 180.0f;
+			float deltaTheta = (0.5f * float(PI)) / 64.0f;
 		} pushBlockIrradiance;
 
 		struct PushBlockPrefilterEnv {
@@ -455,7 +456,9 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 		pipelineLayoutCI.pSetLayouts = &descriptorsetlayout;
 		pipelineLayoutCI.pushConstantRangeCount = 1;
 		pipelineLayoutCI.pPushConstantRanges = &pushConstantRange;
-		VK_CHECK_RESULT(vkCreatePipelineLayout(device, &pipelineLayoutCI, nullptr, &pipelinelayout));
+        if (vkCreatePipelineLayout(device, &pipelineLayoutCI, nullptr, &pipelinelayout) != VK_SUCCESS) {
+            Error("Cannot create pipeline layout in cubemap generation");
+        }
 
 		// Pipeline
 		VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCI{};
@@ -502,7 +505,7 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 		dynamicStateCI.dynamicStateCount = static_cast<uint32_t>(dynamicStateEnables.size());
 
 		// Vertex input state
-		VkVertexInputBindingDescription vertexInputBinding = { 0, sizeof(vkglTF::Model::Vertex), VK_VERTEX_INPUT_RATE_VERTEX };
+		VkVertexInputBindingDescription vertexInputBinding = { 0, sizeof(vkglTF_Model_Vertex), VK_VERTEX_INPUT_RATE_VERTEX };
 		VkVertexInputAttributeDescription vertexInputAttribute = { 0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0 };
 
 		VkPipelineVertexInputStateCreateInfo vertexInputStateCI{};
@@ -530,22 +533,37 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 		pipelineCI.pStages = shaderStages.data();
 		pipelineCI.renderPass = renderpass;
 
-		shaderStages[0] = loadShader(device, "filtercube.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+		// load shader binary code
+		vector<byte> file_buffer_vert;
+		vector<byte> file_buffer_frag;
+		engine->files.readFile("filtercube.vert.spv", file_buffer_vert, FileCategory::FX);
+		//shaderStages[0] = loadShader(device, "filtercube.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		switch (target) {
 		case IRRADIANCE:
-			shaderStages[1] = loadShader(device, "irradiancecube.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+			//shaderStages[1] = loadShader(device, "irradiancecube.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+			engine->files.readFile("irradiancecube.frag.spv", file_buffer_frag, FileCategory::FX);
 			break;
 		case PREFILTEREDENV:
-			shaderStages[1] = loadShader(device, "prefilterenvmap.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+			//shaderStages[1] = loadShader(device, "prefilterenvmap.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+			engine->files.readFile("prefilterenvmap.frag.spv", file_buffer_frag, FileCategory::FX);
 			break;
 		};
+		auto vertShaderModule = engine->shaders.createShaderModule(file_buffer_vert);
+		auto fragShaderModule = engine->shaders.createShaderModule(file_buffer_frag);
+		// create shader stage
+		auto vertShaderModuleInfo = engine->shaders.createVertexShaderCreateInfo(vertShaderModule);
+		auto fragShaderModuleInfo = engine->shaders.createFragmentShaderCreateInfo(fragShaderModule);
+		// Look-up-table (from BRDF) pipeline		
+		shaderStages = { vertShaderModuleInfo, fragShaderModuleInfo };
 		VkPipeline pipeline;
-		VK_CHECK_RESULT(vkCreateGraphicsPipelines(device, pipelineCache, 1, &pipelineCI, nullptr, &pipeline));
+        if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineCI, nullptr, &pipeline) != VK_SUCCESS) {
+            Error("Cannot create graphics pipeline in cubemap generation");
+        }
 		for (auto shaderStage : shaderStages) {
 			vkDestroyShaderModule(device, shaderStage.module, nullptr);
 		}
 
-		*/
+		/**/
 
 		// cleanup
 		vkDestroySampler(device, cubemapSampler, nullptr);
@@ -554,10 +572,10 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 		vkFreeMemory(device, offscreen.memory, nullptr);
 		vkDestroyImageView(device, offscreen.view, nullptr);
 		vkDestroyImage(device, offscreen.image, nullptr);
-		//vkDestroyDescriptorPool(device, descriptorpool, nullptr);
-		//vkDestroyDescriptorSetLayout(device, descriptorsetlayout, nullptr);
-		//vkDestroyPipeline(device, pipeline, nullptr);
-		//vkDestroyPipelineLayout(device, pipelinelayout, nullptr);
+		vkDestroyDescriptorPool(device, descriptorpool, nullptr);
+		vkDestroyDescriptorSetLayout(device, descriptorsetlayout, nullptr);
+		vkDestroyPipeline(device, pipeline, nullptr);
+		vkDestroyPipelineLayout(device, pipelinelayout, nullptr);
 		setTextureActive(ti->id, true);
 	}
 }

@@ -13,6 +13,9 @@ file(GLOB VULKAN_SHADERS
   ${ShaderFolder}/pbr.frag
   ${ShaderFolder}/triangle.vert
   ${ShaderFolder}/triangle.frag
+  ${ShaderFolder}/filtercube.vert
+  ${ShaderFolder}/irradiancecube.frag
+  ${ShaderFolder}/prefilterenvmap.frag
 )
 
 add_executable(app
