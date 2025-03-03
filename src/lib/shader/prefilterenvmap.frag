@@ -97,7 +97,7 @@ vec3 prefilterEnvMap(vec3 R, float roughness)
 			// Biased (+1.0) mip level for better result
 			float mipLevel = roughness == 0.0 ? 0.0 : max(0.5 * log2(omegaS / omegaP) + 1.0, 0.0f);
 			//color += textureLod(samplerEnv, L, mipLevel).rgb * dotNL;
-			color += vec3(0.5, 0.7, 0.9).rgb * dotNL; // until we have access to global texture array
+			color += vec3(0.5, 0.7, 0.1).rgb * dotNL; // until we have access to global texture array
 			totalWeight += dotNL;
 
 		}

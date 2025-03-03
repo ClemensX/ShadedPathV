@@ -62,7 +62,8 @@ void main()
 {
     vec3 inPos = vertices[indices[gl_VertexIndex]];
     outUVW = inPos;
-    debugPrintfEXT("gl_VertexID: %d\n", gl_VertexIndex);
+    //debugPrintfEXT("gl_VertexID: %d\n", gl_VertexIndex);
+    debugPrintfEXT("index %d  vert: %f %f %f\n", gl_VertexIndex, inPos.x, inPos.y, inPos.z);
     gl_Position = pushConsts.mvp * vec4(inPos, 1.0);
 //
 //	outUVW = inPos;
