@@ -118,11 +118,11 @@ void TextureViewer::init() {
     //engine->globalRendering.createCubeMapFrom2dTexture("Knife1", "2dTextureCube");
     //engine->globalRendering.createCubeMapFrom2dTexture("WaterBottle2", "2dTextureCube");
     //engine->globalRendering.createCubeMapFrom2dTexture(engine->textureStore.BRDFLUT_TEXTURE_ID, "2dTextureCube"); // works ok now
-    engine->globalRendering.createCubeMapFrom2dTexture(engine->textureStore.PREFILTEREDENV_TEXTURE_ID, "2dTextureCube"); // works ok now
+    engine->globalRendering.createCubeMapFrom2dTexture(engine->textureStore.IRRADIANCE_TEXTURE_ID, "2dTextureCube"); // works ok now
     engine->shaders.cubeShader.setFarPlane(1.0f); // cube around center
-    engine->shaders.cubeShader.setSkybox("2dTextureCube");
+    //engine->shaders.cubeShader.setSkybox("2dTextureCube");
     //engine->shaders.cubeShader.setSkybox("skyboxTexture");
-    //engine->shaders.cubeShader.setSkybox(engine->textureStore.IRRADIANCE_TEXTURE_ID);
+    engine->shaders.cubeShader.setSkybox(engine->textureStore.IRRADIANCE_TEXTURE_ID);
 
     //engine->shaders.lineShader.initialUpload();
     //engine->shaders.pbrShader.initialUpload();

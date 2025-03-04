@@ -247,6 +247,7 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 			if (vkCreateSampler(device, &samplerCI, nullptr, &cubemapSampler) != VK_SUCCESS) {
                 Error("failed to create cubemap sampler!");
 			}
+            Log("Created cubemap sampler: " << hex << (void*)cubemapSampler << endl);
 		}
 		// FB, Att, RP, Pipe, etc.
 		VkAttachmentDescription attDesc{};
@@ -450,10 +451,17 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 			break;
 		};
 
+		vector<VkDescriptorSetLayout> sets;
+		sets.push_back(descriptorsetlayout);
+		if (engine->textureStore.layout) {
+			sets.push_back(engine->textureStore.layout);
+		}
 		VkPipelineLayoutCreateInfo pipelineLayoutCI{};
 		pipelineLayoutCI.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-		pipelineLayoutCI.setLayoutCount = 1;
-		pipelineLayoutCI.pSetLayouts = &descriptorsetlayout;
+		//pipelineLayoutCI.setLayoutCount = 1;
+		//pipelineLayoutCI.pSetLayouts = &descriptorsetlayout;
+		pipelineLayoutCI.setLayoutCount = static_cast<uint32_t>(sets.size());
+		pipelineLayoutCI.pSetLayouts = &sets[0];
 		pipelineLayoutCI.pushConstantRangeCount = 1;
 		pipelineLayoutCI.pPushConstantRanges = &pushConstantRange;
         if (vkCreatePipelineLayout(device, &pipelineLayoutCI, nullptr, &pipelinelayout) != VK_SUCCESS) {
@@ -649,7 +657,7 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 				vkCmdBindPipeline(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 				//vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelinelayout, 0, 1, &descriptorset, 0, NULL); adapt for global array
 				// bind global texture array:
-				//vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelinelayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
+				vkCmdBindDescriptorSets(cmdBuf, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelinelayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
 
 				VkDeviceSize offsets[1] = { 0 };
 
@@ -739,6 +747,7 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 		}
 		cubemap->sampler = cubemapSampler;
 		cubemap->vulkanTexture.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		//cubemap->type = TextureType::TEXTURE_TYPE_GLTF; // uses the sampler from above
 		setTextureActive(cubemap->id, true);
 
 		// cleanup

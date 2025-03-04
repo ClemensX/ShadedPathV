@@ -296,7 +296,9 @@ void VulkanResources::createDescriptorSetResourcesForTextures()
     poolSize.descriptorCount = layoutBinding.descriptorCount;
     texturePoolSizes.push_back(poolSize);
 
-    VkDescriptorBindingFlags flag = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
+    VkDescriptorBindingFlags flag =
+        //VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT |
+        VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT |
         VK_DESCRIPTOR_BINDING_UPDATE_UNUSED_WHILE_PENDING_BIT |
         VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
     VkDescriptorSetLayoutBindingFlagsCreateInfo flag_info{};
