@@ -21,6 +21,10 @@ namespace Colors {
 class Util : public EngineParticipant
 {
 public:
+    // get bytes per pixel from vulkan image format
+    uint32_t getBytesPerPixel(VkFormat format);
+    bool isCompressedFormat(VkFormat format);
+
     // write simple image formats
 
     // write ppm image (usually screenshots), can be opened with GIMP

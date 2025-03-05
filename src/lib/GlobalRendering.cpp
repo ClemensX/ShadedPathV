@@ -1160,10 +1160,23 @@ void GlobalRendering::writeCubemapToFile(TextureInfo* cubemap, const std::string
     }
 
     // Create a staging buffer
-    VkDeviceSize totalImageSize = 0;
+    uint32_t totalImageSize = 0;
+    uint32_t bpp = engine->util.getBytesPerPixel(cubemap->vulkanTexture.imageFormat);
+    bool isCompressed = engine->util.isCompressedFormat(cubemap->vulkanTexture.imageFormat);
+
     for (uint32_t level = 0; level < cubemap->vulkanTexture.levelCount; ++level) {
-        VkDeviceSize mipSize = (cubemap->vulkanTexture.width >> level) * (cubemap->vulkanTexture.height >> level) * 16; // Assuming 16 bytes per pixel (e.g., VK_FORMAT_R8G8B8A8_UNORM)
+        uint32_t width = cubemap->vulkanTexture.width >> level; 
+        uint32_t height = cubemap->vulkanTexture.height >> level;
+        uint32_t mipSize;
+        if (isCompressed) {
+            uint32_t numBlocksX = (width + 3) / 4;
+            uint32_t numBlocksY = (height + 3) / 4;
+            mipSize = numBlocksX * numBlocksY * bpp;
+        } else {
+            mipSize = width * height * bpp;
+        }
         totalImageSize += mipSize * 6; // 6 faces
+        Log("mipSize for width " << width << " " << mipSize << " totalImageSize " << totalImageSize << endl);
     }
 
     VkBuffer stagingBuffer;
@@ -1214,8 +1227,16 @@ void GlobalRendering::writeCubemapToFile(TextureInfo* cubemap, const std::string
             region.imageExtent = { cubemap->vulkanTexture.width >> level, cubemap->vulkanTexture.height >> level, 1 };
 
             vkCmdCopyImageToBuffer(commandBuffer, cubemap->vulkanTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, stagingBuffer, 1, &region);
+            Log("vkCmdCopyImageToBuffer offset " << bufferOffset << " extent " << region.imageExtent.width << endl);
 
-            bufferOffset += (cubemap->vulkanTexture.width >> level) * (cubemap->vulkanTexture.height >> level) * 16; // Assuming 4 bytes per pixel
+            if (isCompressed) {
+                uint32_t numBlocksX = (region.imageExtent.width + 3) / 4;
+                uint32_t numBlocksY = (region.imageExtent.height + 3) / 4;
+                bufferOffset += numBlocksX * numBlocksY * bpp;
+            }
+            else {
+                bufferOffset += region.imageExtent.width * region.imageExtent.height * bpp;
+            }
         }
     }
 
@@ -1229,8 +1250,19 @@ void GlobalRendering::writeCubemapToFile(TextureInfo* cubemap, const std::string
         for (uint32_t face = 0; face < 6; ++face) {
             ktx_size_t offset;
             ktxTexture_GetImageOffset(ktxTexture(kTexture), level, 0, face, &offset);
-            VkDeviceSize mipSize = (cubemap->vulkanTexture.width >> level) * (cubemap->vulkanTexture.height >> level) * 16; // Assuming 4 bytes per pixel
+            uint32_t mipWidth = cubemap->vulkanTexture.width >> level;
+            uint32_t mipHeight = cubemap->vulkanTexture.height >> level;
+            VkDeviceSize mipSize;
+            if (isCompressed) {
+                uint32_t numBlocksX = (mipWidth + 3) / 4;
+                uint32_t numBlocksY = (mipHeight + 3) / 4;
+                mipSize = numBlocksX * numBlocksY * bpp;
+            }
+            else {
+                mipSize = mipWidth * mipHeight * bpp;
+            }
             memcpy(ktxTexture_GetData(ktxTexture(kTexture)) + offset, static_cast<char*>(data) + offset, mipSize);
+            Log("memcpy offset " << offset << " mipsize " << mipSize << endl);
         }
     }
 
