@@ -66,9 +66,10 @@ void TextureViewer::init() {
     engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox");
     engine->objectStore.createGroup("group");
     //bottle = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 0.0f, 0.0f));
-    engine->textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
+    //engine->textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
+    engine->textureStore.loadTexture("irradiance.ktx2", "skyboxTexture");
     engine->textureStore.generateBRDFLUT();
-    engine->textureStore.generateCubemaps("skyboxTexture");
+    //engine->textureStore.generateCubemaps("skyboxTexture");
 
     // add some lines:
     //scale tree height to 10m
@@ -118,11 +119,11 @@ void TextureViewer::init() {
     //engine->globalRendering.createCubeMapFrom2dTexture("Knife1", "2dTextureCube");
     //engine->globalRendering.createCubeMapFrom2dTexture("WaterBottle2", "2dTextureCube");
     //engine->globalRendering.createCubeMapFrom2dTexture(engine->textureStore.BRDFLUT_TEXTURE_ID, "2dTextureCube"); // works ok now
-    engine->globalRendering.createCubeMapFrom2dTexture(engine->textureStore.IRRADIANCE_TEXTURE_ID, "2dTextureCube"); // works ok now
+    //engine->globalRendering.createCubeMapFrom2dTexture(engine->textureStore.IRRADIANCE_TEXTURE_ID, "2dTextureCube"); // works ok now
     engine->shaders.cubeShader.setFarPlane(1.0f); // cube around center
     //engine->shaders.cubeShader.setSkybox("2dTextureCube");
-    //engine->shaders.cubeShader.setSkybox("skyboxTexture");
-    engine->shaders.cubeShader.setSkybox(engine->textureStore.IRRADIANCE_TEXTURE_ID);
+    engine->shaders.cubeShader.setSkybox("skyboxTexture");
+    //engine->shaders.cubeShader.setSkybox(engine->textureStore.IRRADIANCE_TEXTURE_ID);
 
     //engine->shaders.lineShader.initialUpload();
     //engine->shaders.pbrShader.initialUpload();

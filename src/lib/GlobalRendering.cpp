@@ -1132,6 +1132,122 @@ void GlobalRendering::processImage(FrameResources* fr)
 {
 }
 
+void GlobalRendering::writeCubemapToFile(TextureInfo* cubemap, const std::string& filename) {
+    // Ensure the cubemap is valid
+    if (!cubemap || !cubemap->vulkanTexture.image) {
+        Error("Invalid cubemap texture");
+        return;
+    }
+
+    // Create a KTX2 texture object
+    ktxTextureCreateInfo createInfo = {};
+    createInfo.vkFormat = cubemap->vulkanTexture.imageFormat;
+    createInfo.baseWidth = cubemap->vulkanTexture.width;
+    createInfo.baseHeight = cubemap->vulkanTexture.height;
+    createInfo.baseDepth = 1;
+    createInfo.numDimensions = 2;
+    createInfo.numLevels = cubemap->vulkanTexture.levelCount;
+    createInfo.numLayers = 1;
+    createInfo.numFaces = 6;
+    createInfo.isArray = KTX_FALSE;
+    createInfo.generateMipmaps = KTX_FALSE;
+
+    ktxTexture2* kTexture;
+    KTX_error_code result = ktxTexture2_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &kTexture);
+    if (result != KTX_SUCCESS) {
+        Error("Failed to create KTX2 texture");
+        return;
+    }
+
+    // Create a staging buffer
+    VkDeviceSize totalImageSize = 0;
+    for (uint32_t level = 0; level < cubemap->vulkanTexture.levelCount; ++level) {
+        VkDeviceSize mipSize = (cubemap->vulkanTexture.width >> level) * (cubemap->vulkanTexture.height >> level) * 16; // Assuming 16 bytes per pixel (e.g., VK_FORMAT_R8G8B8A8_UNORM)
+        totalImageSize += mipSize * 6; // 6 faces
+    }
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    createBuffer(totalImageSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory, "Staging Buffer");
+
+
+    // Change image layout for all cubemap faces to transfer destination
+    {
+        VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+        VkImageSubresourceRange subresourceRange{};
+        subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        subresourceRange.baseMipLevel = 0;
+        subresourceRange.levelCount = cubemap->vulkanTexture.levelCount;
+        subresourceRange.layerCount = 6;
+
+        //vulkanDevice->beginCommandBuffer(cmdBuf);
+        VkImageMemoryBarrier imageMemoryBarrier{};
+        imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        imageMemoryBarrier.image = cubemap->vulkanTexture.image;
+        imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        imageMemoryBarrier.srcAccessMask = 0;
+        imageMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        imageMemoryBarrier.subresourceRange = subresourceRange;
+        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
+        //vulkanDevice->flushCommandBuffer(cmdBuf, queue, false);
+        endSingleTimeCommands(commandBuffer, true);
+    }
+
+    // Copy data from Vulkan cubemap to staging buffer
+    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+    VkDeviceSize bufferOffset = 0;
+    for (uint32_t level = 0; level < cubemap->vulkanTexture.levelCount; ++level) {
+        for (uint32_t face = 0; face < 6; ++face) {
+            VkImageSubresourceLayers subresourceLayers = {};
+            subresourceLayers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            subresourceLayers.mipLevel = level;
+            subresourceLayers.baseArrayLayer = face;
+            subresourceLayers.layerCount = 1;
+
+            VkBufferImageCopy region = {};
+            region.bufferOffset = bufferOffset;
+            region.bufferRowLength = 0;
+            region.bufferImageHeight = 0;
+            region.imageSubresource = subresourceLayers;
+            region.imageOffset = { 0, 0, 0 };
+            region.imageExtent = { cubemap->vulkanTexture.width >> level, cubemap->vulkanTexture.height >> level, 1 };
+
+            vkCmdCopyImageToBuffer(commandBuffer, cubemap->vulkanTexture.image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, stagingBuffer, 1, &region);
+
+            bufferOffset += (cubemap->vulkanTexture.width >> level) * (cubemap->vulkanTexture.height >> level) * 16; // Assuming 4 bytes per pixel
+        }
+    }
+
+    endSingleTimeCommands(commandBuffer, true);
+
+    // Map the staging buffer and copy data to KTX texture
+    void* data;
+    vkMapMemory(engine->globalRendering.device, stagingBufferMemory, 0, totalImageSize, 0, &data);
+
+    for (uint32_t level = 0; level < cubemap->vulkanTexture.levelCount; ++level) {
+        for (uint32_t face = 0; face < 6; ++face) {
+            ktx_size_t offset;
+            ktxTexture_GetImageOffset(ktxTexture(kTexture), level, 0, face, &offset);
+            VkDeviceSize mipSize = (cubemap->vulkanTexture.width >> level) * (cubemap->vulkanTexture.height >> level) * 16; // Assuming 4 bytes per pixel
+            memcpy(ktxTexture_GetData(ktxTexture(kTexture)) + offset, static_cast<char*>(data) + offset, mipSize);
+        }
+    }
+
+    vkUnmapMemory(engine->globalRendering.device, stagingBufferMemory);
+
+    // Write the KTX2 texture to a file
+    result = ktxTexture_WriteToNamedFile(ktxTexture(kTexture), filename.c_str());
+    if (result != KTX_SUCCESS) {
+        Error("Failed to write KTX2 texture to file");
+    }
+
+    // Clean up
+    ktxTexture_Destroy(ktxTexture(kTexture));
+    vkDestroyBuffer(engine->globalRendering.device, stagingBuffer, nullptr);
+    vkFreeMemory(engine->globalRendering.device, stagingBufferMemory, nullptr);
+}
+
 void GlobalRendering::destroyImage(GPUImage* image)
 {
     destroyImageView(image->fba.view);

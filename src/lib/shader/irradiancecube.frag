@@ -13,7 +13,8 @@
 layout (location = 0) in vec3 inPos;
 layout (location = 0) out vec4 outColor;
 //layout (binding = 0) uniform samplerCube samplerEnv;
-layout(set = 1, binding = 0) uniform sampler2D global_textures[];
+layout(set = 1, binding = 0) uniform sampler3D global_textures[];
+layout(set = 1, binding = 0) uniform sampler2D global_textures2d[];
 
 layout(push_constant) uniform PushConsts {
 	layout (offset = 64) float deltaPhi;
@@ -22,8 +23,12 @@ layout(push_constant) uniform PushConsts {
 
 #define PI 3.1415926535897932384626433832795
 
-vec4 textureBindless2D(uint textureid, vec2 uv) {
+vec4 textureBindless3D(uint textureid, vec3 uv) {
 	return texture(global_textures[nonuniformEXT(textureid)], uv);
+}
+
+vec4 textureBindless2D(uint textureid, vec2 uv) {
+	return texture(global_textures2d[nonuniformEXT(textureid)], uv);
 }
 
 void main()
@@ -43,7 +48,8 @@ void main()
 			vec3 tempVec = cos(phi) * right + sin(phi) * up;
 			vec3 sampleVector = cos(theta) * N + sin(theta) * tempVec;
 			//color += texture(samplerEnv, sampleVector).rgb * cos(theta) * sin(theta);
-			color +=  textureBindless2D(1, sampleVector.xy).rgb * cos(theta) * sin(theta);
+			//color +=  textureBindless3D(0, sampleVector).rgb * cos(theta) * sin(theta);
+			color +=  textureBindless2D(0, sampleVector.xy).rgb * cos(theta) * sin(theta);
 			//color += vec3(0.5, 0.7, 0.9).rgb * cos(theta) * sin(theta); // until we have access to global texture array
 			sampleCount++;
 		}

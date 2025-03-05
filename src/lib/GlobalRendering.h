@@ -291,6 +291,7 @@ public:
 	void postFrame(FrameResources* fr);
 	// submit command buffers, can only be called from queue submit thread
 	void submit(FrameResources* fr);
+	void writeCubemapToFile(TextureInfo* cubemap, const std::string& filename);
 private:
     // gather all cmd buffers from the DrawResults of the current frame and copy into single list cmdBufs
 	void consolidateCommandBuffers(CommandBufferArray& cmdBufs, FrameResources* fr);

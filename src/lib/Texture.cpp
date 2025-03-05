@@ -212,8 +212,10 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 		{
 			FrameBufferAttachment attachment{};
 
+			VkImageTiling tiling = VK_IMAGE_TILING_OPTIMAL;
+			//VkImageTiling tiling = VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
 			global.createImageCube(dim, dim, numMips, VK_SAMPLE_COUNT_1_BIT, format,
-				VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, //VK_IMAGE_USAGE_TRANSFER_SRC_BIT | /*VK_IMAGE_USAGE_TRANSFER_DST_BIT | */ VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+				tiling, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | /*VK_IMAGE_USAGE_TRANSFER_DST_BIT | */ VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 				VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT, attachment.image, attachment.memory, cubemap->id.c_str());
 
 			// View
@@ -318,7 +320,8 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 			imageCI.mipLevels = 1;
 			imageCI.arrayLayers = 1;
 			imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
-			imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
+			imageCI.tiling = VK_IMAGE_TILING_OPTIMAL; // do not use due to unable to write image
+			//imageCI.tiling = VK_IMAGE_TILING_LINEAR;
 			imageCI.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 			imageCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 			imageCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -749,6 +752,11 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 		cubemap->vulkanTexture.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		//cubemap->type = TextureType::TEXTURE_TYPE_GLTF; // uses the sampler from above
 		setTextureActive(cubemap->id, true);
+		switch (target) {
+        case IRRADIANCE:
+            global.writeCubemapToFile(cubemap, "irradiance.ktx");
+            break;
+		}
 
 		// cleanup
 		vkDestroySampler(device, cubemapSampler, nullptr);
