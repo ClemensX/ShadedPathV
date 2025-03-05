@@ -1246,10 +1246,11 @@ void GlobalRendering::writeCubemapToFile(TextureInfo* cubemap, const std::string
     void* data;
     vkMapMemory(engine->globalRendering.device, stagingBufferMemory, 0, totalImageSize, 0, &data);
 
+    uint32_t offsetSrc = 0;
     for (uint32_t level = 0; level < cubemap->vulkanTexture.levelCount; ++level) {
         for (uint32_t face = 0; face < 6; ++face) {
-            ktx_size_t offset;
-            ktxTexture_GetImageOffset(ktxTexture(kTexture), level, 0, face, &offset);
+            ktx_size_t offsetDest;
+            ktxTexture_GetImageOffset(ktxTexture(kTexture), level, 0, face, &offsetDest);
             uint32_t mipWidth = cubemap->vulkanTexture.width >> level;
             uint32_t mipHeight = cubemap->vulkanTexture.height >> level;
             VkDeviceSize mipSize;
@@ -1261,8 +1262,9 @@ void GlobalRendering::writeCubemapToFile(TextureInfo* cubemap, const std::string
             else {
                 mipSize = mipWidth * mipHeight * bpp;
             }
-            memcpy(ktxTexture_GetData(ktxTexture(kTexture)) + offset, static_cast<char*>(data) + offset, mipSize);
-            Log("memcpy offset " << offset << " mipsize " << mipSize << endl);
+            memcpy(ktxTexture_GetData(ktxTexture(kTexture)) + offsetDest, static_cast<char*>(data) + offsetSrc, mipSize);
+            offsetSrc += mipSize;
+            Log("memcpy offset " << offsetSrc << " mipsize " << mipSize << endl);
         }
     }
 
