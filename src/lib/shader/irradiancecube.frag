@@ -39,6 +39,9 @@ vec4 textureBindless2D(uint textureid, vec2 uv) {
 
 void main()
 {
+	//outColor = texture(global_textures2d[nonuniformEXT(9)], inPos.xy);
+	//outColor = textureBindless2D(8, inPos.xy);
+	//return;
 	vec3 N = normalize(inPos);
 	vec3 up = vec3(0.0, 1.0, 0.0);
 	vec3 right = normalize(cross(up, N));
@@ -54,12 +57,13 @@ void main()
 			vec3 tempVec = cos(phi) * right + sin(phi) * up;
 			vec3 sampleVector = cos(theta) * N + sin(theta) * tempVec;
 			//color += texture(samplerEnv, sampleVector).rgb * cos(theta) * sin(theta);
-			//color +=  textureBindless3D(8, sampleVector).rgb * cos(theta) * sin(theta);
-			color +=  textureBindless2D(8, sampleVector.xy).rgb * cos(theta) * sin(theta);
+			color +=  textureBindless3D(9, sampleVector).rgb * cos(theta) * sin(theta);
+			//color +=  textureBindless2D(9, sampleVector.xy).rgb * cos(theta) * sin(theta);
 			//color += vec3(0.5, 0.7, 0.9).rgb * cos(theta) * sin(theta); // until we have access to global texture array
 			sampleCount++;
 		}
 	}
 	outColor = vec4(PI * color / float(sampleCount), 1.0);
-	//outColor = vec4(1, 1, 1, 1);
+	//outColor = textureBindless2D(8, inPos.xy);
+	//outColor = vec4(1,0,1,1);
 }

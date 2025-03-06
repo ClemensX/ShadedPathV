@@ -72,7 +72,7 @@ void TextureViewer::init() {
     //engine->globalRendering.writeCubemapToFile(engine->textureStore.getTexture("skyboxTextureOrig"), "../../../../data/texture/wrt.ktx2");
     //engine->textureStore.loadTexture("wrt.ktx2", "skyboxTexture");
     engine->textureStore.generateBRDFLUT();
-    engine->textureStore.generateCubemaps("skyboxTextureOrig");
+    engine->textureStore.generateCubemaps("skyboxTextureOrig", 1024);
     //engine->globalRendering.writeCubemapToFile(engine->textureStore.getTexture("skyboxTexture"), "../../../../data/texture/wrt.ktx2");
     engine->textureStore.loadTexture("irradiance.ktx2", "skyboxTexture");
 
@@ -100,21 +100,33 @@ void TextureViewer::init() {
     //for_each(begin(myBillboards), end(myBillboards), [&billboards](BillboardDef l) {billboards.push_back(l); });
     auto& allTex = engine->textureStore.getTexturesMap();
     vector<BillboardDef> billboardsToAdd;
-    for (auto& tex : allTex) {
-        auto& ti = tex.second;
-        if (ti.isAvailable()) {
-            int i = textureNames.size();
-            BillboardDef b;
-            b.pos = vec4(0.0f + 10.2f * i, 6.0f, -4.0f, 1.0f);
-            b.dir = vec4(1.0f, 0.0f, 0.0f, 0.0f);
-            b.w = width;
-            b.h = height;
-            b.type = 2;
-            b.textureIndex = ti.index;
-            textureNames.push_back(ti.id.c_str());
-            billboards.push_back(b);
-        }
+    for (int i = 0; i < engine->textureStore.size(); i++) {
+        TextureInfo* ti = engine->textureStore.getTextureByIndex(i);
+        BillboardDef b;
+        b.pos = vec4(0.0f + 10.2f * i, 6.0f, -4.0f, 1.0f);
+        b.dir = vec4(1.0f, 0.0f, 0.0f, 0.0f);
+        b.w = width;
+        b.h = height;
+        b.type = 2;
+        b.textureIndex = ti->index;
+        textureNames.push_back(ti->id.c_str());
+        billboards.push_back(b);
     }
+    //for (auto& tex : allTex) {
+    //    auto& ti = tex.second;
+    //    if (ti.isAvailable()) {
+    //        int i = textureNames.size();
+    //        BillboardDef b;
+    //        b.pos = vec4(0.0f + 10.2f * i, 6.0f, -4.0f, 1.0f);
+    //        b.dir = vec4(1.0f, 0.0f, 0.0f, 0.0f);
+    //        b.w = width;
+    //        b.h = height;
+    //        b.type = 2;
+    //        b.textureIndex = ti.index;
+    //        textureNames.push_back(ti.id.c_str());
+    //        billboards.push_back(b);
+    //    }
+    //}
 
     engine->shaders.billboardShader.add(billboards);
 

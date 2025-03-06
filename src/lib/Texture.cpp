@@ -17,17 +17,32 @@ void TextureStore::init(ShadedPathEngine* engine, size_t maxTextures) {
 	}
 }
 
+TextureInfo* TextureStore::getTextureByIndex(uint32_t index)
+{
+	auto& allTex = getTexturesMap();
+	for (auto& tex : allTex) {
+		auto& ti = tex.second;
+		if (ti.isAvailable()) {
+            if (ti.index == index) {
+                return getTexture(ti.id);
+            }
+		}
+	}
+    Error("Texture not found by index");
+}
+
 TextureInfo* TextureStore::getTexture(string id)
 {
-	TextureInfo *ret = &textures[id];
+	TextureInfo* ret = &textures[id];
 	// simple validity check for now:
 	if (ret->id.size() > 0) {
 		// if there is no id the texture could not be loaded (wrong filename?)
-        if (!ret->isAvailable()) {
-            Error("Requested texture not available");
-        }
+		if (!ret->isAvailable()) {
+			Error("Requested texture not available");
+		}
 		//ret->available = true;
-	} else {
+	}
+	else {
 		Error("Requested texture not available");
 	}
 	return ret;

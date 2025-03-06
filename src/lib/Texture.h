@@ -109,7 +109,14 @@ public:
 	std::string PREFILTEREDENV_TEXTURE_ID = "prefilteredenv";
 	// load texture upload to GPU, textures are referenced via id string
 	void loadTexture(std::string filename, std::string id, TextureType type = TextureType::TEXTURE_TYPE_MIPMAP_IMAGE, TextureFlags flags = TextureFlags::NONE);
+	// count currently avilable textures
+    int size() {
+        return static_cast<int>(textures.size());
+    }
+	// get texture by name
 	::TextureInfo* getTexture(std::string id);
+	// get texture by index to global descriptor table (== index)
+	::TextureInfo* getTextureByIndex(uint32_t index);
 	// create texture slot for named texture
 	::TextureInfo* createTextureSlot(std::string id);
 	// create texture id and slot for mesh texture with index

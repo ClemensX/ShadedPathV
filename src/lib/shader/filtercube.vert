@@ -63,8 +63,10 @@ void main()
     vec3 inPos = vertices[indices[gl_VertexIndex]];
     outUVW = inPos;
     //debugPrintfEXT("gl_VertexID: %d\n", gl_VertexIndex);
-    debugPrintfEXT("index %d  vert: %f %f %f\n", gl_VertexIndex, inPos.x, inPos.y, inPos.z);
+    //debugPrintfEXT("index %d  vert: %f %f %f\n", gl_VertexIndex, inPos.x, inPos.y, inPos.z);
     gl_Position = pushConsts.mvp * vec4(inPos, 1.0);
+    //gl_Position = vec4(inPos.x + .5, inPos.y + .5, inPos.z + .5, 1.0);
+    //debugPrintfEXT("gl_Position %f %f %f\n", gl_Position.x, gl_Position.y, gl_Position.z, gl_Position.w);
 //
 //	outUVW = inPos;
 //	debugPrintfEXT("bin do, hajo\n");
