@@ -7,7 +7,7 @@
 // Generates an irradiance cube from an environment map using convolution
 
 #version 460
-#extension GL_EXT_debug_printf:enable
+#extension GL_EXT_debug_printf:disable
 #extension GL_EXT_nonuniform_qualifier : require
 
 layout (location = 0) in vec3 inPos;
@@ -17,8 +17,10 @@ layout(set = 1, binding = 0) uniform samplerCube global_textures[];
 layout(set = 1, binding = 0) uniform sampler2D global_textures2d[];
 
 layout(push_constant) uniform PushConsts {
-	layout (offset = 64) float deltaPhi;
-	layout (offset = 68) float deltaTheta;
+	layout (offset = 0) mat4 mvp;
+	layout (offset = 64) uint textureIndex;
+	layout (offset = 68) float deltaPhi;
+	layout (offset = 72) float deltaTheta;
 } consts;
 
 #define PI 3.1415926535897932384626433832795
@@ -57,7 +59,7 @@ void main()
 			vec3 tempVec = cos(phi) * right + sin(phi) * up;
 			vec3 sampleVector = cos(theta) * N + sin(theta) * tempVec;
 			//color += texture(samplerEnv, sampleVector).rgb * cos(theta) * sin(theta);
-			color +=  textureBindless3D(9, sampleVector).rgb * cos(theta) * sin(theta);
+			color +=  textureBindless3D(consts.textureIndex, sampleVector).rgb * cos(theta) * sin(theta);
 			//color +=  textureBindless2D(9, sampleVector.xy).rgb * cos(theta) * sin(theta);
 			//color += vec3(0.5, 0.7, 0.9).rgb * cos(theta) * sin(theta); // until we have access to global texture array
 			sampleCount++;

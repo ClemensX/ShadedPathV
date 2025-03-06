@@ -5,12 +5,13 @@
  */
 
 #version 460
-#extension GL_EXT_debug_printf : enable
+#extension GL_EXT_debug_printf : disable
 
 //layout (location = 0) in vec3 inPos;
 
 layout(push_constant) uniform PushConsts {
 	layout (offset = 0) mat4 mvp;
+	layout (offset = 64) uint textureIndex;
 } pushConsts;
 
 layout (location = 0) out vec3 outUVW;

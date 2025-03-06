@@ -29,6 +29,7 @@ TextureInfo* TextureStore::getTextureByIndex(uint32_t index)
 		}
 	}
     Error("Texture not found by index");
+    return nullptr; // keep compiler happy
 }
 
 TextureInfo* TextureStore::getTexture(string id)
@@ -445,15 +446,18 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 
 		struct PushBlockIrradiance {
 			glm::mat4 mvp;
+			uint32_t textureIndex;
 			float deltaPhi = (2.0f * float(PI)) / 180.0f;
 			float deltaTheta = (0.5f * float(PI)) / 64.0f;
 		} pushBlockIrradiance;
-
+        pushBlockIrradiance.textureIndex = environmentCube->index;
 		struct PushBlockPrefilterEnv {
 			glm::mat4 mvp;
+			uint32_t textureIndex;
 			float roughness;
 			uint32_t numSamples = 32u;
 		} pushBlockPrefilterEnv;
+        pushBlockPrefilterEnv.textureIndex = environmentCube->index;
 
 		// Pipeline layout
 		VkPipelineLayout pipelinelayout;

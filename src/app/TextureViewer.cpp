@@ -73,7 +73,8 @@ void TextureViewer::init() {
     //engine->textureStore.loadTexture("wrt.ktx2", "skyboxTexture");
     engine->textureStore.generateBRDFLUT();
     engine->textureStore.generateCubemaps("skyboxTextureOrig", 1024);
-    //engine->globalRendering.writeCubemapToFile(engine->textureStore.getTexture("skyboxTexture"), "../../../../data/texture/wrt.ktx2");
+    //engine->globalRendering.writeCubemapToFile(engine->textureStore.getTexture("skyboxTexture"), "../../../../data/texture/wrt.ktx2");d
+    //this_thread::sleep_for(chrono::milliseconds(100));
     engine->textureStore.loadTexture("irradiance.ktx2", "skyboxTexture");
 
     // add some lines:
