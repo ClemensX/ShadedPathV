@@ -773,9 +773,12 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 		//cubemap->type = TextureType::TEXTURE_TYPE_GLTF; // uses the sampler from above
 		setTextureActive(cubemap->id, true);
 		switch (target) {
-        case IRRADIANCE:
-            global.writeCubemapToFile(cubemap, "../../../../data/texture/irradiance.ktx2");
-            break;
+		case IRRADIANCE:
+			global.writeCubemapToFile(cubemap, "../../../../data/texture/irradiance.ktx2");
+			break;
+		case PREFILTEREDENV:
+			global.writeCubemapToFile(cubemap, "../../../../data/texture/prefilter.ktx2");
+			break;
 		}
 
 		// cleanup
