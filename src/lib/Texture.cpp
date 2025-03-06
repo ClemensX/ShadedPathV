@@ -596,7 +596,6 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 			glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
 		};
 
-		VkCommandBuffer cmdBuf = global.beginSingleTimeCommands();
 
 		VkViewport viewport{};
 		viewport.width = (float)dim;
@@ -614,9 +613,11 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 		subresourceRange.levelCount = numMips;
 		subresourceRange.layerCount = 6;
 
+		VkCommandBuffer cmdBuf;
 		// Change image layout for all cubemap faces to transfer destination
 		{
 			//vulkanDevice->beginCommandBuffer(cmdBuf);
+			cmdBuf = global.beginSingleTimeCommands();
 			VkImageMemoryBarrier imageMemoryBarrier{};
 			imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 			imageMemoryBarrier.image = cubemap->vulkanTexture.image;
@@ -754,7 +755,7 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 		setTextureActive(cubemap->id, true);
 		switch (target) {
         case IRRADIANCE:
-            global.writeCubemapToFile(cubemap, "irradiance.ktx");
+            global.writeCubemapToFile(cubemap, "../../../../data/texture/irradiance.ktx2");
             break;
 		}
 

@@ -1121,7 +1121,9 @@ void GlobalRendering::submit(FrameResources* fr)
     vkWaitForFences(device, 1, &queueSubmitFence, VK_TRUE, UINT64_MAX);
     vkResetFences(device, 1, &queueSubmitFence);
     // submit next frame
-    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, queueSubmitFence) != VK_SUCCESS) {
+    VkResult res = vkQueueSubmit(graphicsQueue, 1, &submitInfo, queueSubmitFence);
+    if (res != VK_SUCCESS) {
+        Log("submit failed " << res << endl);
         Error("failed to submit draw command buffer!");
     }
     //Log("submit fence " << fr->inFlightFence << " index " << fr->frameIndex << endl);
