@@ -262,10 +262,9 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 			samplerCI.maxLod = static_cast<float>(numMips);
 			samplerCI.maxAnisotropy = 1.0f;
 			samplerCI.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
-			if (vkCreateSampler(device, &samplerCI, nullptr, &cubemapSampler) != VK_SUCCESS) {
-                Error("failed to create cubemap sampler!");
-			}
-            Log("Created cubemap sampler: " << hex << (void*)cubemapSampler << endl);
+
+			cubemapSampler = engine->globalRendering.samplerCache.getOrCreateSampler(engine->globalRendering.device, samplerCI);
+            //Log("Created cubemap sampler: " << hex << (void*)cubemapSampler << endl);
 		}
 		// FB, Att, RP, Pipe, etc.
 		VkAttachmentDescription attDesc{};
@@ -770,19 +769,23 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 		}
 		cubemap->sampler = cubemapSampler;
 		cubemap->vulkanTexture.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		//cubemap->type = TextureType::TEXTURE_TYPE_GLTF; // uses the sampler from above
+		cubemap->type = TextureType::TEXTURE_TYPE_GLTF; // uses the sampler from above
 		setTextureActive(cubemap->id, true);
+		string filepath;
 		switch (target) {
 		case IRRADIANCE:
-			global.writeCubemapToFile(cubemap, "../../../../data/texture/irradiance.ktx2");
+			filepath = engine->files.findFileForCreation("irradiance.ktx2", FileCategory::TEXTURE);
+            //Log("Writing irradiance to " << filepath << endl);
+			global.writeCubemapToFile(cubemap, filepath);
 			break;
 		case PREFILTEREDENV:
-			global.writeCubemapToFile(cubemap, "../../../../data/texture/prefilter.ktx2");
+			filepath = engine->files.findFileForCreation("prefilter.ktx2", FileCategory::TEXTURE);
+			global.writeCubemapToFile(cubemap, filepath);
 			break;
 		}
 
 		// cleanup
-		vkDestroySampler(device, cubemapSampler, nullptr);
+        //vkDestroySampler(device, cubemapSampler, nullptr); // destroyed in sampler cache
 		vkDestroyRenderPass(device, renderpass, nullptr);
 		vkDestroyFramebuffer(device, offscreen.framebuffer, nullptr);
 		vkFreeMemory(device, offscreen.memory, nullptr);
@@ -844,9 +847,9 @@ void TextureStore::generateBRDFLUT()
 	samplerCI.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
 	VkSampler brdfSampler = nullptr;
 
-	if (vkCreateSampler(device, &samplerCI, nullptr, &brdfSampler) != VK_SUCCESS) {
-		Error("failed to create brdflut sampler!");
-	}
+	brdfSampler = engine->globalRendering.samplerCache.getOrCreateSampler(engine->globalRendering.device, samplerCI);
+    ti->sampler = brdfSampler;
+    ti->type = TextureType::TEXTURE_TYPE_GLTF; // uses the sampler from above
 
 	// FB, Att, RP, Pipe, etc.
 	VkAttachmentDescription attDesc{};
@@ -1058,7 +1061,7 @@ void TextureStore::generateBRDFLUT()
 	vkDestroyRenderPass(device, renderpass, nullptr);
 	vkDestroyFramebuffer(device, framebuffer, nullptr);
 	vkDestroyDescriptorSetLayout(device, descriptorsetlayout, nullptr);
-	vkDestroySampler(device, brdfSampler, nullptr);
+    //vkDestroySampler(device, brdfSampler, nullptr); // destroyed in sampler cache
 
     setTextureActive(ti->id, true);
 }

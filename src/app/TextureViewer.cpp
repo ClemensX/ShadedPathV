@@ -66,14 +66,17 @@ void TextureViewer::init() {
     engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox");
     engine->objectStore.createGroup("group");
     //bottle = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 0.0f, 0.0f));
+
     engine->textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTextureOrig");
     //engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTextureOrig");
+    //engine->textureStore.loadTexture("nebula.ktx2", "skyboxTextureOrig");
+
     //engine->textureStore.loadTexture("irradiance.ktx2", "skyboxTexture");
     //engine->globalRendering.writeCubemapToFile(engine->textureStore.getTexture("skyboxTextureOrig"), "../../../../data/texture/wrt.ktx2");
     //engine->textureStore.loadTexture("wrt.ktx2", "skyboxTexture");
     engine->textureStore.generateBRDFLUT();
     //engine->textureStore.generateCubemaps("skyboxTextureOrig", 1024);
-    engine->textureStore.generateCubemaps("skyboxTextureOrig", 64);
+    engine->textureStore.generateCubemaps("skyboxTextureOrig");
     //engine->globalRendering.writeCubemapToFile(engine->textureStore.getTexture("skyboxTexture"), "../../../../data/texture/wrt.ktx2");d
     //this_thread::sleep_for(chrono::milliseconds(100));
 

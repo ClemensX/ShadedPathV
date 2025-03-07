@@ -364,7 +364,6 @@ void VulkanResources::updateDescriptorSetForTextures(ShadedPathEngine* engine) {
         imageInfos[tex.index] = imageInfo;
         lastTexture = (TextureInfo*) &tex;
     }
-
     VkWriteDescriptorSet descSet{};
     descSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
     descSet.dstSet = engine->textureStore.descriptorSet;

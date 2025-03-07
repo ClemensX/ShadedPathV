@@ -100,7 +100,7 @@ string Files::findFile(string filename, FileCategory cat, bool errorIfNotFound, 
 		break;
 	}
 	if (generateFilenameMode) {
-		return filename.c_str();
+        return asset_path.generic_string();
 	}
 	ifstream bfile(asset_path.c_str(), ios::in | ios::binary);
 	if (!bfile && cat == FileCategory::TEXTURE) {
