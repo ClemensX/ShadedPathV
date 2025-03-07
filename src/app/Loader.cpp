@@ -128,7 +128,7 @@ void Loader::prepareFrame(FrameResources* fr)
         //WorldObject *wo = obj.get();
         PBRShader::DynamicUniformBufferObject* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
         mat4 modeltransform;
-        if (spinningBox) {
+        if (spinningBox && !firstPersonMode) {
             // Define a constant rotation speed (radians per second)
             double rotationSpeed = glm::radians(45.0f); // 45 degrees per second
             if (alterObjectCoords) {

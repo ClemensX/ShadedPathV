@@ -26,6 +26,7 @@ private:
     bool enableUI = true;
     bool spinningBox = false;
     double spinTimeSeconds = 0.0;
-    bool alterObjectCoords = false; // some gltf examples objects require fifferent object rotation params
+    bool alterObjectCoords = false; // some gltf examples objects require different object rotation params
+    bool firstPersonMode = true; // disable rotation and use first person camera
 };
 
