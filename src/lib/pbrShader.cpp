@@ -13,7 +13,7 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 
 	// descriptor
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, this, 1);
-	alignedDynamicUniformBufferSize = global->calcConstantBufferSize(sizeof(DynamicUniformBufferObject));
+	alignedDynamicUniformBufferSize = global->calcConstantBufferSize(sizeof(DynamicModelUBO));
 	//resources.createPipelineLayout(&pipelineLayout, this);
 
 	// push constants
@@ -57,7 +57,7 @@ void PBRShader::prefillTextureIndexes(FrameResources& fr)
             continue;
         }
 		uint32_t idx = obj->mesh->baseColorTexture->index;
-		PBRShader::DynamicUniformBufferObject* buf = engine->shaders.pbrShader.getAccessToModel(fr, obj->objectNum);
+		PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(fr, obj->objectNum);
 		buf->indexes.baseColor = idx;
 	}
 
@@ -80,12 +80,12 @@ void PBRShader::uploadToGPU(FrameResources& fr, UniformBufferObject& ubo, Unifor
     sub.uploadToGPU(fr, ubo, ubo2);
 }
 
-PBRShader::DynamicUniformBufferObject* PBRShader::getAccessToModel(FrameResources& fr, UINT num)
+PBRShader::DynamicModelUBO* PBRShader::getAccessToModel(FrameResources& fr, UINT num)
 {
 	auto& sub = globalSubShaders[fr.frameIndex];
 	char* c_ptr = static_cast<char*>(sub.dynamicUniformBufferCPUMemory);
 	c_ptr += num * alignedDynamicUniformBufferSize;
-	return (DynamicUniformBufferObject*)c_ptr;
+	return (DynamicModelUBO*)c_ptr;
 }
 
 PBRShader::~PBRShader()
@@ -144,7 +144,7 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
     handover.descriptorSet = &descriptorSet;
     handover.descriptorSet2 = &descriptorSet2;
 	handover.dynBuffer = dynamicUniformBuffer;
-	handover.dynBufferSize = sizeof(PBRShader::DynamicUniformBufferObject);
+	handover.dynBufferSize = sizeof(PBRShader::DynamicModelUBO);
 	handover.debugBaseName = engine->util.createDebugName("ThreadResources.pbrShader", tr.frameIndex);
     assert(pbrShader->descriptorSetLayout != nullptr);
     assert(pbrShader->descriptorPool != nullptr);

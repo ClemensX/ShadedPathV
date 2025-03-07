@@ -180,7 +180,7 @@ void gltfObjectsApp::prepareFrame(FrameResources* fr)
     for (auto& wo : engine->objectStore.getSortedList()) {
         //Log(" adapt object " << obj.get()->objectNum << endl);
         //WorldObject *wo = obj.get();
-        PBRShader::DynamicUniformBufferObject* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
+        PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
         mat4 modeltransform;
         bool moveObjects = false;
         if (moveObjects) {

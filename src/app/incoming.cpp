@@ -257,7 +257,7 @@ void Incoming::prepareFrame(FrameResources* fr)
     vector<LineDef> boundingBoxes;
     vec3 finalGunPos(1000, 1000, 1000);
     for (auto& wo : engine->objectStore.getSortedList()) {
-        PBRShader::DynamicUniformBufferObject* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
+        PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
         mat4 modeltransform;
         if (wo->userGroupId == GroupTerrain) {
             //terrain

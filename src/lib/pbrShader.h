@@ -34,28 +34,29 @@ public:
 
 	struct Vertex {
 		glm::vec3 pos;
-		//glm::vec3 normal;
+		glm::vec3 normal;
 		glm::vec2 uv0;
+		glm::vec2 uv1;
+		glm::uvec4 joint0;
+		glm::vec4 weight0;
 		glm::vec4 color;
-		//glm::vec2 uv1;
-		//glm::vec4 joint0;
-		//glm::vec4 weight0;
 	};
 	struct UniformBufferObject {
 		glm::mat4 model;
 		glm::mat4 view;
 		glm::mat4 proj;
 		glm::vec4 baseColor = glm::vec4(1.0f);
+		glm::vec3 camPos = glm::vec3(1.0f);
 	};
 	// MUST match shader definition: pbr.vert, pbr.frag
 	struct PBRTextureIndexes {
 		unsigned int baseColor; // uint in shader
 	};
-	struct DynamicUniformBufferObject {
+	struct DynamicModelUBO {
 		glm::mat4 model;
 		PBRTextureIndexes indexes;
 	};
-	// Array entries of DynamicUniformBufferObject have to respect hardware alignment rules
+	// Array entries of DynamicModelUBO have to respect hardware alignment rules
 	uint64_t alignedDynamicUniformBufferSize = 0;
 
 	static VkVertexInputBindingDescription getBindingDescription() {
@@ -66,27 +67,54 @@ public:
 		return bindingDescription;
 	}
 	// get static std::array of attribute desciptions, make sure to copy to local array, otherwise you get dangling pointers!
-	static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescriptions() {
-		std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
-		// layout(location = 0) in vec3 inPosition;
+	static std::array<VkVertexInputAttributeDescription, 7> getAttributeDescriptions() {
+		std::array<VkVertexInputAttributeDescription, 7> attributeDescriptions{};
+
+		// layout(location = 0) in vec3 inPos;
 		attributeDescriptions[0].binding = 0;
 		attributeDescriptions[0].location = 0;
 		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
 		attributeDescriptions[0].offset = offsetof(Vertex, pos);
-		// layout(location = 1) in vec3 inColor;
+
+		// layout(location = 1) in vec3 inNormal;
 		attributeDescriptions[1].binding = 0;
 		attributeDescriptions[1].location = 1;
-		attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
-		attributeDescriptions[1].offset = offsetof(Vertex, uv0);
-		// layout(location = 2) in vec4 inColor0;
+		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+		attributeDescriptions[1].offset = offsetof(Vertex, normal);
+
+		// layout(location = 2) in vec2 inUV0;
 		attributeDescriptions[2].binding = 0;
 		attributeDescriptions[2].location = 2;
-		attributeDescriptions[2].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-		attributeDescriptions[2].offset = offsetof(Vertex, color);
+		attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescriptions[2].offset = offsetof(Vertex, uv0);
 
+		// layout(location = 3) in vec2 inUV1;
+		attributeDescriptions[3].binding = 0;
+		attributeDescriptions[3].location = 3;
+		attributeDescriptions[3].format = VK_FORMAT_R32G32_SFLOAT;
+		attributeDescriptions[3].offset = offsetof(Vertex, uv1);
+
+		// layout(location = 4) in uvec4 inJoint0;
+		attributeDescriptions[4].binding = 0;
+		attributeDescriptions[4].location = 4;
+		attributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_UINT;
+		attributeDescriptions[4].offset = offsetof(Vertex, joint0);
+
+		// layout(location = 5) in vec4 inWeight0;
+		attributeDescriptions[5].binding = 0;
+		attributeDescriptions[5].location = 5;
+		attributeDescriptions[5].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		attributeDescriptions[5].offset = offsetof(Vertex, weight0);
+
+		// layout(location = 6) in vec4 inColor0;
+		attributeDescriptions[6].binding = 0;
+		attributeDescriptions[6].location = 6;
+		attributeDescriptions[6].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		attributeDescriptions[6].offset = offsetof(Vertex, color);
 
 		return attributeDescriptions;
 	}
+
 	virtual ~PBRShader() override;
 
 	// shader initialization, end result is a shader sub resource for each worker thread
@@ -100,7 +128,7 @@ public:
 	virtual void addCommandBuffers(FrameResources* fr, DrawResult* drawResult) override;
 
 	// get access to dynamic uniform buffer for an object
-	DynamicUniformBufferObject* getAccessToModel(FrameResources& tr, UINT num);
+	DynamicModelUBO* getAccessToModel(FrameResources& tr, UINT num);
 	
 	// upload of all objects to GPU - only valid before first render
 	void initialUpload();
