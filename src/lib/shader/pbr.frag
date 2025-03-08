@@ -29,6 +29,9 @@ void main() {
     //debugPrintfEXT("pbr frag render mode: %d\n", mode);
     //uint baseIndex = metallicRoughnessIndex;//baseColorIndex; // test indexes
     uint baseIndex = baseColorIndex;
+    if (occlusionIndex == -1) { // just a test :-)
+        baseIndex = 0;
+    }
     if (mode == 1) {
 		outColor = vertexColor;
 	} else {

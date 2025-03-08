@@ -60,9 +60,9 @@ void PBRShader::prefillTextureIndexes(FrameResources& fr)
 		uint32_t idx = obj->mesh->baseColorTexture->index;
 		buf->indexes.baseColor = idx;
         buf->indexes.metallicRoughness = obj->mesh->metallicRoughnessTexture->index;
-        buf->indexes.normal = obj->mesh->normalTexture->index;
-        buf->indexes.occlusion = obj->mesh->occlusionTexture->index;
-        buf->indexes.emissive = obj->mesh->emissiveTexture->index;
+        buf->indexes.normal = obj->mesh->normalTexture ? obj->mesh->normalTexture->index : -1;
+        buf->indexes.occlusion = obj->mesh->occlusionTexture ? obj->mesh->occlusionTexture->index : -1;
+        buf->indexes.emissive = obj->mesh->emissiveTexture ? obj->mesh->emissiveTexture->index : -1;
 		buf->jointcount = 0;
 	}
 

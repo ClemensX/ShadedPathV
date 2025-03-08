@@ -345,17 +345,17 @@ void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
 			texIndex = mat.normalTexture.index;
 			if (texIndex < 0) {
 				s << "gltf normalTexture not found: " << coll->filename << ". try gltf-transform metalrough infile outfile, or mark mesh as MESH_TYPE_NO_TEXTURES to load without textures" << endl;
-				Error(s.str());
+				Log(s.str());
 			}
 			texIndex = mat.occlusionTexture.index;
 			if (texIndex < 0) {
 				s << "gltf occlusionTexture not found: " << coll->filename << ". try gltf-transform metalrough infile outfile, or mark mesh as MESH_TYPE_NO_TEXTURES to load without textures" << endl;
-				Error(s.str());
+				Log(s.str());
 			}
 			texIndex = mat.emissiveTexture.index;
 			if (texIndex < 0) {
 				s << "gltf emissiveTexture not found: " << coll->filename << ". try gltf-transform metalrough infile outfile, or mark mesh as MESH_TYPE_NO_TEXTURES to load without textures" << endl;
-				Error(s.str());
+				Log(s.str());
 			}
 		}
 		if (mat.doubleSided != true) {
