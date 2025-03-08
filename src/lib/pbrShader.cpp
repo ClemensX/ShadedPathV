@@ -56,9 +56,14 @@ void PBRShader::prefillTextureIndexes(FrameResources& fr)
 		if (obj->mesh->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
             continue;
         }
-		uint32_t idx = obj->mesh->baseColorTexture->index;
 		PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(fr, obj->objectNum);
+		uint32_t idx = obj->mesh->baseColorTexture->index;
 		buf->indexes.baseColor = idx;
+        buf->indexes.metallicRoughness = obj->mesh->metallicRoughnessTexture->index;
+        buf->indexes.normal = obj->mesh->normalTexture->index;
+        buf->indexes.occlusion = obj->mesh->occlusionTexture->index;
+        buf->indexes.emissive = obj->mesh->emissiveTexture->index;
+		buf->jointcount = 0;
 	}
 
 }

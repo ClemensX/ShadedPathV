@@ -329,11 +329,34 @@ void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
 	//size_t index = 0;
 	// verify Metallic Roughness format 
 	for (auto& mat : model.materials) {
-		auto pbrbaseColorIndex = mat.pbrMetallicRoughness.baseColorTexture.index;
 		//Log("pbr base Color index: " << pbrbaseColorIndex << endl);
-		if (pbrbaseColorIndex < 0 && !coll->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
-			s << "gltf baseColorTexture not found: " << coll->filename << ". try gltf-transform metalrough infile outfile, or mark mesh as MESH_TYPE_NO_TEXTURES to load without textures" << endl;
-			Error(s.str());
+		// check pbr textures availability
+		if (!coll->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
+			auto texIndex = mat.pbrMetallicRoughness.baseColorTexture.index;
+			if (texIndex < 0) {
+				s << "gltf baseColorTexture not found: " << coll->filename << ". try gltf-transform metalrough infile outfile, or mark mesh as MESH_TYPE_NO_TEXTURES to load without textures" << endl;
+				Error(s.str());
+			}
+			texIndex = mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
+			if (texIndex < 0) {
+				s << "gltf metallicRoughnessTexture not found: " << coll->filename << ". try gltf-transform metalrough infile outfile, or mark mesh as MESH_TYPE_NO_TEXTURES to load without textures" << endl;
+				Error(s.str());
+			}
+			texIndex = mat.normalTexture.index;
+			if (texIndex < 0) {
+				s << "gltf normalTexture not found: " << coll->filename << ". try gltf-transform metalrough infile outfile, or mark mesh as MESH_TYPE_NO_TEXTURES to load without textures" << endl;
+				Error(s.str());
+			}
+			texIndex = mat.occlusionTexture.index;
+			if (texIndex < 0) {
+				s << "gltf occlusionTexture not found: " << coll->filename << ". try gltf-transform metalrough infile outfile, or mark mesh as MESH_TYPE_NO_TEXTURES to load without textures" << endl;
+				Error(s.str());
+			}
+			texIndex = mat.emissiveTexture.index;
+			if (texIndex < 0) {
+				s << "gltf emissiveTexture not found: " << coll->filename << ". try gltf-transform metalrough infile outfile, or mark mesh as MESH_TYPE_NO_TEXTURES to load without textures" << endl;
+				Error(s.str());
+			}
 		}
 		if (mat.doubleSided != true) {
 			Log("PERFORANCE WARNING: gltf material is single sided, but rendered doublesided! " << mat.name.c_str())
@@ -399,6 +422,9 @@ void glTF::collectBaseTransform(tinygltf::Model& model, MeshInfo* mesh)
 	int curIndex = found;
 	do {
 		Node& node = model.nodes[curIndex];
+        if (node.skin > -1) {
+            Error("gltf model has skinning, not supported");
+        }
 		if (node.scale.size() == 3) {
 			glm::vec3 scaleVec(node.scale[0], node.scale[1], node.scale[2]);
 			transform = glm::scale(transform, scaleVec);
@@ -416,7 +442,7 @@ void glTF::collectBaseTransform(tinygltf::Model& model, MeshInfo* mesh)
 void glTF::load(const unsigned char* data, int size, MeshCollection* coll, string filename)
 {
 	Model model;
-	// parse full gltf file with all meshes and textures. Textures are already pre-loaded into out texture store
+	// parse full gltf file with all meshes and textures. Textures are already pre-loaded into texture store
 	loadModel(model, data, size, coll, filename);
 	validateModel(model, coll);
 	// at this point all textures of gltf file are loaded. info: mesh->textureInfos[]

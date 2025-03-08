@@ -48,13 +48,23 @@ public:
 		glm::vec4 baseColor = glm::vec4(1.0f);
 		glm::vec3 camPos = glm::vec3(1.0f);
 	};
+
 	// MUST match shader definition: pbr.vert, pbr.frag
+    // DO NOT USE arrays for padding on glsl side! only single variables like uint pad0, uint pad1, ...
+#define MAX_NUM_JOINTS 128
 	struct PBRTextureIndexes {
-		unsigned int baseColor; // uint in shader
+		uint32_t baseColor; // uint in shader
+		uint32_t metallicRoughness; // uint in shader
+		uint32_t normal; // uint in shader
+		uint32_t occlusion; // uint in shader
+		uint32_t emissive; // uint in shader
 	};
-	struct DynamicModelUBO {
-		glm::mat4 model;
-		PBRTextureIndexes indexes;
+	struct alignas(16) DynamicModelUBO {
+		glm::mat4 model; // 16-byte aligned
+		glm::mat4 jointMatrix[MAX_NUM_JOINTS]; // 16-byte aligned
+		uint32_t jointcount; // 4-byte aligned
+		uint32_t pad0[3]; // 12 bytes of padding to align the next member to 16 bytes. Do not use array on glsl side!!!
+		PBRTextureIndexes indexes; // 4-byte aligned
 	};
 	// Array entries of DynamicModelUBO have to respect hardware alignment rules
 	uint64_t alignedDynamicUniformBufferSize = 0;
