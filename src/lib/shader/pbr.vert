@@ -41,14 +41,17 @@ layout (binding = 1) uniform UboInstance {
 } model_ubo;
  
 
-layout(location = 0) out vec4 vertexColor;
-layout(location = 1) out vec2 fragTexCoord;
-layout(location = 2) out uint baseColorIndex;
-layout(location = 3) out uint metallicRoughnessIndex;
-layout(location = 4) out uint normalIndex;
-layout(location = 5) out uint occlusionIndex;
-layout(location = 6) out uint emissiveIndex;
-layout(location = 7) out uint mode_out;
+layout (location = 0) out vec3 outWorldPos;
+layout (location = 1) out vec3 outNormal;
+layout (location = 2) out vec2 outUV0;
+layout (location = 3) out vec2 outUV1;
+layout (location = 4) out vec4 outColor0;
+layout (location = 5) out uint baseColorIndex;
+layout (location = 6) out uint metallicRoughnessIndex;
+layout (location = 7) out uint normalIndex;
+layout (location = 8) out uint occlusionIndex;
+layout (location = 9) out uint emissiveIndex;
+layout (location = 10) out uint mode_out;
 
 // sync with pbrPushConstants in pbrShader.h
 layout(push_constant) uniform pbrPushConstants {
@@ -77,6 +80,7 @@ void check_inputs() {
     //debugPrintfEXT("inUV0 %f %f\n", c.x, c.y);
     c = inUV1;
     //debugPrintfEXT("inUV1 %f %f\n", c.x, c.y);
+
 }
 
 void main() {
@@ -103,10 +107,10 @@ void main() {
 //    baseColorIndex = model_ubo.indexes.metallicRoughness;
 //    metallicRoughnessIndex = model_ubo.indexes.baseColor;
 
-    vertexColor = inColor0 * ubo.baseColor;
-    fragTexCoord = inUV0;
-    vertexColor = inColor0 * ubo.baseColor;
+    outColor0 = inColor0 * ubo.baseColor;
+    outUV0 = inUV0;
+    outColor0 = inColor0 * ubo.baseColor;
     //fragColor = vec3(1, 1, 1);
     //debugPrintfEXT("final device coord PBR: %f %f %f\n", gl_Position.x, gl_Position.y, gl_Position.z);
-    fragTexCoord = inUV0;
+    outUV0 = inUV0;
 }

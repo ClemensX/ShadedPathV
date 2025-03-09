@@ -338,7 +338,6 @@ void glTF::prepareTextures(tinygltf::Model& model, MeshCollection* coll, int glt
 
 void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
 {
-	stringstream s;
 	//assert(model.materials.size() == 1);
 	//assert(model.meshes.size() == 1);
 	// link back from our mesh to gltf mesh:
@@ -350,26 +349,31 @@ void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
 		if (!coll->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
 			auto texIndex = mat.pbrMetallicRoughness.baseColorTexture.index;
 			if (texIndex < 0) {
+				stringstream s;
 				s << "gltf baseColorTexture not found: " << coll->filename << ". try gltf-transform metalrough infile outfile, or mark mesh as MESH_TYPE_NO_TEXTURES to load without textures" << endl;
 				Error(s.str());
 			}
 			texIndex = mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
 			if (texIndex < 0) {
+				stringstream s;
 				s << "gltf metallicRoughnessTexture not found: " << coll->filename << ". try gltf-transform metalrough infile outfile, or mark mesh as MESH_TYPE_NO_TEXTURES to load without textures" << endl;
-				Error(s.str());
+				Log(s.str());
 			}
 			texIndex = mat.normalTexture.index;
 			if (texIndex < 0) {
+				stringstream s;
 				s << "gltf normalTexture not found: " << coll->filename << ". try gltf-transform metalrough infile outfile, or mark mesh as MESH_TYPE_NO_TEXTURES to load without textures" << endl;
 				Log(s.str());
 			}
 			texIndex = mat.occlusionTexture.index;
 			if (texIndex < 0) {
+				stringstream s;
 				s << "gltf occlusionTexture not found: " << coll->filename << ". try gltf-transform metalrough infile outfile, or mark mesh as MESH_TYPE_NO_TEXTURES to load without textures" << endl;
 				Log(s.str());
 			}
 			texIndex = mat.emissiveTexture.index;
 			if (texIndex < 0) {
+				stringstream s;
 				s << "gltf emissiveTexture not found: " << coll->filename << ". try gltf-transform metalrough infile outfile, or mark mesh as MESH_TYPE_NO_TEXTURES to load without textures" << endl;
 				Log(s.str());
 			}
@@ -383,6 +387,7 @@ void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
 		size_t size = m.primitives.size();
 		//Log("  primitives: " << size << endl);
 		if (size != 1) {
+			stringstream s;
 			s << "gltf meshes need to have exactly one primitive: " << coll->filename << " " << m.name.c_str() << endl;
 			Error(s.str());
 		}
