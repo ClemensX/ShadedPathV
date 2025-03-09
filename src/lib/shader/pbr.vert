@@ -1,5 +1,5 @@
 #version 460
-#extension GL_EXT_debug_printf : disable
+#extension GL_EXT_debug_printf : enable
 
 layout (location = 0) in vec3 inPos;
 layout (location = 1) in vec3 inNormal;
@@ -55,7 +55,32 @@ layout(push_constant) uniform pbrPushConstants {
     uint mode; // 0: standard pbr metallicRoughness, 1: pre-light vertices with color in vertex structure
 } push;
 
+
+void check_inputs() {
+    vec4 v = inColor0;
+    vec3 x;
+    vec2 c;
+    //debugPrintfEXT("inColor0 %f %f %f %f\n", v.x, v.y, v.z, v.w);
+    v = ubo.model[0];
+    //debugPrintfEXT("model %f %f %f %f\n", v.x, v.y, v.z, v.w);
+    v = model_ubo.model[0];
+    //debugPrintfEXT("model_ubo %f %f %f %f\n", v.x, v.y, v.z, v.w);
+    v = ubo.view[0];
+    //debugPrintfEXT("view %f %f %f %f\n", v.x, v.y, v.z, v.w);
+    v = ubo.proj[0];
+    //debugPrintfEXT("proj %f %f %f %f\n", v.x, v.y, v.z, v.w);
+    x = inPos;
+    //debugPrintfEXT("inPos %f %f %f\n", x.x, x.y, x.z);
+    x = inNormal;
+    //debugPrintfEXT("inNormal %f %f %f\n", x.x, x.y, x.z);
+    c = inUV0;
+    //debugPrintfEXT("inUV0 %f %f\n", c.x, c.y);
+    c = inUV1;
+    //debugPrintfEXT("inUV1 %f %f\n", c.x, c.y);
+}
+
 void main() {
+    check_inputs();
     vec3 n = inNormal;
     vec2 uv = inUV1;
     uvec4 joint = inJoint0;

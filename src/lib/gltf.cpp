@@ -145,9 +145,19 @@ void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, std::vector<PBRS
 			int texCoordStride;
 			extractVertexAttribute(model, primitive, "TEXCOORD_0", texCoords, texCoordStride);
 
-			// Populate vertices
+			// Extract 2nd texture coordinates
+			std::vector<float> texCoords2;
+			int texCoordStride2;
+			extractVertexAttribute(model, primitive, "TEXCOORD_1", texCoords2, texCoordStride2);
+
+			// Extract normals
+			std::vector<float> normals;
+			int normalStride;
+			extractVertexAttribute(model, primitive, "NORMAL", normals, normalStride);
+
+            // Populate vertices, all floats are auto initialized to 0.0f
 			for (size_t v = 0; v < positions.size() / posStride; v++) {
-				PBRShader::Vertex vert;
+				PBRShader::Vertex vert{};
 				vert.pos = glm::vec3(positions[v * posStride], positions[v * posStride + 1], positions[v * posStride + 2]);
 
 				if (!colors.empty()) {
@@ -160,6 +170,12 @@ void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, std::vector<PBRS
 				if (!texCoords.empty()) {
 					vert.uv0 = glm::vec2(texCoords[v * texCoordStride], texCoords[v * texCoordStride + 1]);
 				}
+				if (!texCoords2.empty()) {
+					vert.uv1 = glm::vec2(texCoords2[v * texCoordStride2], texCoords2[v * texCoordStride2 + 1]);
+				}
+				if (!normals.empty()) {
+                    vert.normal = glm::vec3(normals[v * normalStride], normals[v * normalStride + 1], normals[v * normalStride + 2]);
+                }
 
 				verts.push_back(vert);
 			}
