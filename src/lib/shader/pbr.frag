@@ -40,6 +40,9 @@ vec4 textureBindless2D(uint textureid, vec2 uv) {
 	return texture(global_textures2d[nonuniformEXT(textureid)], uv);
 }
 
+#include "shadermaterial.glsl"
+
+
 void main() {
     float f = uboParams.gamma;
     //debugPrintfEXT("frag uboParams.gamma %f\n", f);
