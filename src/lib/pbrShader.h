@@ -29,7 +29,8 @@ public:
 		{ VulkanResourceType::MVPBuffer },
 		{ VulkanResourceType::UniformBufferDynamic },
 		{ VulkanResourceType::GlobalTextureSet },
-		{ VulkanResourceType::VertexBufferStatic }
+		{ VulkanResourceType::VertexBufferStatic },
+        { VulkanResourceType::AdditionalUniformBuffer }
 	};
 
 	struct Vertex {
@@ -41,6 +42,16 @@ public:
 		glm::vec4 weight0;
 		glm::vec4 color;
 	};
+	struct shaderValuesParams {
+		glm::vec4 lightDir;
+		float exposure = 4.5f;
+		float gamma = 2.2f;
+		float prefilteredCubeMipLevels;
+		float scaleIBLAmbient = 1.0f;
+		float debugViewInputs = 0;
+		float debugViewEquation = 0;
+	} shaderValuesParams;
+
 	struct UniformBufferObject {
 		glm::mat4 model;
 		glm::mat4 view;
@@ -202,6 +213,10 @@ public:
 	// VP buffer device memory
 	VkDeviceMemory uniformBufferMemory = nullptr;
 	VkDeviceMemory uniformBufferMemory2 = nullptr;
+	// shaderValuesParams buffer
+	VkBuffer uniformBufferShaderValues = nullptr;
+	VkDeviceMemory uniformBufferShaderValuesMemory = nullptr;
+
 	VkDescriptorSet descriptorSet = nullptr;
 	VkDescriptorSet descriptorSet2 = nullptr;
 	// M buffer device memory

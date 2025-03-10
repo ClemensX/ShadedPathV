@@ -9,6 +9,16 @@ layout (location = 4) in uvec4 inJoint0;
 layout (location = 5) in vec4 inWeight0;
 layout (location = 6) in vec4 inColor0;
 
+layout (set = 0, binding = 2) uniform UBOParams {
+	vec4 lightDir;
+	float exposure;
+	float gamma;
+	float prefilteredCubeMipLevels;
+	float scaleIBLAmbient;
+	float debugViewInputs;
+	float debugViewEquation;
+} uboParams;
+
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
@@ -80,7 +90,8 @@ void check_inputs() {
     //debugPrintfEXT("inUV0 %f %f\n", c.x, c.y);
     c = inUV1;
     //debugPrintfEXT("inUV1 %f %f\n", c.x, c.y);
-
+    float f = uboParams.gamma;
+    //debugPrintfEXT("uboParams.gamma %f\n", f);
 }
 
 void main() {

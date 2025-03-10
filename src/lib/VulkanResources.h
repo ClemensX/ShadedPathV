@@ -9,6 +9,7 @@ enum class VulkanResourceType {
 	MVPBuffer, // base matrices, renewed every frame (will be stored in desciptor set)
 	UniformBufferDynamic, // dynamic buffer that can be indexed in shader code or during cmd binding
 	SingleTexture, // single read-only texture (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER), stored in descriptor set
+	AdditionalUniformBuffer, // another UBO, independent form MVP, stored in descriptor set
 	// vertex and index buffers
 	VertexBufferStatic, // vertex buffer, once uplodaded during init phase, only read during frame rendering (will be bound to command buffer)
 	IndexBufferStatic, // index buffer, once uplodaded during init phase, only read during frame rendering (will be bound to command buffer)
@@ -49,6 +50,9 @@ struct VulkanHandoverResources {
 	VkBuffer dynBuffer = nullptr;
 	VkDeviceSize dynBufferSize = 0L;
 	ShaderBase* shader = nullptr;
+	// additional buffer:
+	VkBuffer addBuffer = nullptr;
+	VkDeviceSize addBufferSize = 0L;
 	// debug
 	std::string debugBaseName = "no_name_given";
     uint32_t debugDescriptorCount = 0;

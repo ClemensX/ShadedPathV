@@ -137,6 +137,17 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         poolSize.descriptorCount = 1;
         poolSizes.push_back(poolSize);
 
+    } else if (el.type == VulkanResourceType::AdditionalUniformBuffer) {
+        layoutBinding.binding = bindingCount;
+        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        layoutBinding.descriptorCount = 1;
+        layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT|VK_SHADER_STAGE_FRAGMENT_BIT;
+        layoutBinding.pImmutableSamplers = nullptr;
+        bindings.push_back(layoutBinding);
+        poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSize.descriptorCount = 1;
+        poolSizes.push_back(poolSize);
+
     } else if (el.type == VulkanResourceType::SingleTexture) {
         layoutBinding.binding = bindingCount;
         layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -275,6 +286,21 @@ void VulkanResources::addThreadResourcesForElement(VulkanResourceElement el, Vul
             descSet.dstSet = *hdv.descriptorSet2;
             descriptorSets.push_back(descSet);
         }
+    } else if (el.type == VulkanResourceType::AdditionalUniformBuffer) {
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = hdv.addBuffer;
+        bufferInfo.offset = 0;
+        bufferInfo.range = hdv.addBufferSize;
+        bufferInfos.push_back(bufferInfo);
+
+        descSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descSet.dstSet = *hdv.descriptorSet;
+        descSet.dstBinding = 2; // after UniformBufferDynamic
+        descSet.dstArrayElement = 0;
+        descSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descSet.descriptorCount = 1;
+        descSet.pBufferInfo = &bufferInfos[bufferInfos.size() - 1];
+        descriptorSets.push_back(descSet);
     }
 }
 

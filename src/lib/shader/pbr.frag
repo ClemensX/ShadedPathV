@@ -1,11 +1,6 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier : require
-#extension GL_EXT_debug_printf : disable
-
-////layout(location = 0) in vec3 fragColor;
-//layout(location = 1) in vec2 fragTexCoord;
-//layout(location = 0) in vec4 vertexColor;
-//layout(location = 3) flat in uint mode;
+#extension GL_EXT_debug_printf : enable
 
 layout (location = 0) in vec3 inWorldPos;
 layout (location = 1) in vec3 inNormal;
@@ -19,26 +14,45 @@ layout (location = 8) flat in uint occlusionIndex;
 layout (location = 9) flat in uint emissiveIndex;
 layout (location = 10) flat in uint mode;
 
+// mode 0: pbr metallic roughness
+// mode 1: only use vertex color
 
-struct PBRTextureIndexes {
-  uint baseColor;
-};
+layout (set = 0, binding = 2) uniform UBOParams {
+	vec4 lightDir;
+	float exposure;
+	float gamma;
+	float prefilteredCubeMipLevels;
+	float scaleIBLAmbient;
+	float debugViewInputs;
+	float debugViewEquation;
+} uboParams;
 
 layout(location = 0) out vec4 outColor;
 
-layout(set = 1, binding = 0) uniform sampler2D global_textures[];
+layout(set = 1, binding = 0) uniform samplerCube global_textures3d[];
+layout(set = 1, binding = 0) uniform sampler2D global_textures2d[];
+
+vec4 textureBindless3D(uint textureid, vec3 uv) {
+	return texture(global_textures3d[nonuniformEXT(textureid)], uv);
+}
+
+vec4 textureBindless2D(uint textureid, vec2 uv) {
+	return texture(global_textures2d[nonuniformEXT(textureid)], uv);
+}
 
 void main() {
+    float f = uboParams.gamma;
+    //debugPrintfEXT("frag uboParams.gamma %f\n", f);
     //debugPrintfEXT("pbr frag render mode: %d\n", mode);
-    //uint baseIndex = metallicRoughnessIndex;//baseColorIndex; // test indexes
-    uint baseIndex = baseColorIndex;
+    uint baseIndex = emissiveIndex;//baseColorIndex; // test indexes
+    //uint baseIndex = baseColorIndex;
     //if (occlusionIndex == -1) { // just a test :-)
     //    baseIndex = 0;
     //}
     if (mode == 1) {
 		outColor = inColor0;
 	} else {
-        outColor = texture(global_textures[nonuniformEXT(baseIndex)], inUV0) * inColor0;
+        outColor = textureBindless2D(baseIndex, inUV0) * inColor0;
     }
     // discard transparent pixels (== do not write z-buffer)
     if (outColor.w < 0.8) {
