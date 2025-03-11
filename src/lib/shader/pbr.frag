@@ -78,12 +78,13 @@ void main() {
 	ShaderMaterial material = model_ubo.material;
     float f = uboParams.gamma;
     //debugPrintfEXT("uboParams.gamma %f\n", f);
-    f = material.alphaMask;
+    f = material.roughnessFactor;
+    debugPrintfEXT("frag material.roughnessFactor %f\n", f);
 
     f = uboParams.debugViewEquation;
     //debugPrintfEXT("frag uboParams.debugvieweq %f\n", f);
     f = uboParams.gamma;
-    debugPrintfEXT("frag uboParams.gamma %f\n", f);
+    //debugPrintfEXT("frag uboParams.gamma %f\n", f);
     //debugPrintfEXT("pbr frag render mode: %d\n", mode);
     uint baseIndex = emissiveIndex;//baseColorIndex; // test indexes
     //uint baseIndex = baseColorIndex;

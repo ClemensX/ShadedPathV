@@ -66,6 +66,7 @@ void PBRShader::prefillModelParameters(FrameResources& fr)
 		buf->jointcount = 0;
 		shaderValuesParams params;
         buf->params = params;
+        buf->material = obj->mesh->material;
 	}
 
 }

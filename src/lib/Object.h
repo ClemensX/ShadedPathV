@@ -77,6 +77,7 @@ struct MeshInfo
 
 	// link back to collection
 	MeshCollection* collection = nullptr;
+	PBRShader::ShaderMaterial material;
 };
 typedef MeshInfo* ObjectID;
 

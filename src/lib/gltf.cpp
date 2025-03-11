@@ -260,7 +260,7 @@ void getTextureUVCoordinates(tinygltf::Model& model, tinygltf::Primitive& primit
 	getUVCoordinates(model, primitive, texInfo, texCoordSelector);
 }
 
-void glTF::prepareTextures(tinygltf::Model& model, MeshCollection* coll, int gltfMeshIndex)
+void glTF::prepareTexturesAndMaterials(tinygltf::Model& model, MeshCollection* coll, int gltfMeshIndex)
 {
 	// make sure textures are already loded
 	assert(coll->textureInfos.size() >= model.samplers.size());
@@ -334,6 +334,38 @@ void glTF::prepareTextures(tinygltf::Model& model, MeshCollection* coll, int glt
         mesh->emissiveTexture->sampler = samplers[model.textures[emissiveTextureIndex].sampler];
         mesh->emissiveTexture->type = TextureType::TEXTURE_TYPE_GLTF;
 	}
+	// now set the shaderMaterial fields from gltf material:
+	PBRShader::ShaderMaterial m{};
+	m.emissiveFactor = glm::vec4(mat.emissiveFactor[0], mat.emissiveFactor[1], mat.emissiveFactor[2], 1.0f);
+	m.baseColorTextureSet = baseColorTextureIndex;
+	m.normalTextureSet = normalTextureIndex;
+	m.occlusionTextureSet = occlusionTextureIndex;
+	m.emissiveTextureSet = emissiveTextureIndex;
+    m.alphaMask = static_cast<float>(mat.alphaMode == "MASK");
+    m.alphaMaskCutoff = mat.alphaCutoff;
+	// values from possible extensions:
+	if (mat.extensions.find("KHR_materials_unlit") != mat.extensions.end()) {
+		//m.unlit = true;
+	}
+	m.emissiveStrength = 1.0f; // default
+	if (mat.extensions.find("KHR_materials_emissive_strength") != mat.extensions.end()) {
+		auto ext = mat.extensions.find("KHR_materials_emissive_strength");
+		if (ext->second.Has("emissiveStrength")) {
+			auto value = ext->second.Get("emissiveStrength");
+			m.emissiveStrength = (float)value.Get<double>();
+		}
+	}
+	if (mesh->metallicRoughnessTexture != nullptr) {
+        m.workflow = 0.0f; // metallic roughness workflow
+        m.baseColorFactor = glm::vec4(mat.pbrMetallicRoughness.baseColorFactor[0], mat.pbrMetallicRoughness.baseColorFactor[1], mat.pbrMetallicRoughness.baseColorFactor[2], mat.pbrMetallicRoughness.baseColorFactor[3]);
+        m.metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
+        m.roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
+        m.physicalDescriptorTextureSet = metallicRoughnessTextureIndex;
+        m.baseColorTextureSet = baseColorTextureIndex;
+	}
+	else Error("only metallic roughness workflow supported");
+	mesh->material = m;
+    //shaderMaterial.emissiveFactor = mat.emissiveFactor;
 }
 
 void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
@@ -479,7 +511,7 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
 			mesh = coll->meshInfos[0];
 		}
 		mesh->gltfMeshIndex = modelindex;
-		prepareTextures(model, coll, modelindex);
+		prepareTexturesAndMaterials(model, coll, modelindex);
 		loadVertices(model, mesh, mesh->vertices, mesh->indices, modelindex);
 		collectBaseTransform(model, mesh);
 		modelindex++;
