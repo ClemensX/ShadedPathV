@@ -48,7 +48,7 @@ void PBRShader::initialUpload()
 	}
 }
 
-void PBRShader::prefillTextureIndexes(FrameResources& fr)
+void PBRShader::prefillModelParameters(FrameResources& fr)
 {
 	auto& objs = engine->objectStore.getSortedList();
 	for (auto obj : objs) {
@@ -131,10 +131,6 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
         engine->util.debugNameObjectBuffer(uniformBuffer2, "PBR UBO 2");
         engine->util.debugNameObjectDeviceMmeory(uniformBufferMemory2, "PBR Memory 2");
     }
-	// shader params buffer
-	pbrShader->createUniformBuffer(uniformBufferShaderValues, sizeof(PBRShader::shaderValuesParams), uniformBufferShaderValuesMemory);
-	engine->util.debugNameObjectBuffer(uniformBufferShaderValues, "PBR UBO Shader Values");
-	engine->util.debugNameObjectDeviceMmeory(uniformBufferShaderValuesMemory, "PBR Memory Shader Values");
 	// dynamic uniform buffer
 	auto bufSize = pbrShader->alignedDynamicUniformBufferSize * pbrShader->MaxObjects;
 	pbrShader->createUniformBuffer(dynamicUniformBuffer, bufSize, dynamicUniformBufferMemory);
@@ -154,8 +150,6 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	handover.dynBuffer = dynamicUniformBuffer;
 	handover.dynBufferSize = sizeof(PBRShader::DynamicModelUBO);
 	handover.debugBaseName = engine->util.createDebugName("ThreadResources.pbrShader", tr.frameIndex);
-    handover.addBuffer = uniformBufferShaderValues;
-    handover.addBufferSize = sizeof(PBRShader::shaderValuesParams);
     assert(pbrShader->descriptorSetLayout != nullptr);
     assert(pbrShader->descriptorPool != nullptr);
     handover.shader = pbrShader;
@@ -227,7 +221,7 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 
 void PBRSubShader::allocateCommandBuffer(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, const char* debugName)
 {
-	pbrShader->prefillTextureIndexes(tr);
+	pbrShader->prefillModelParameters(tr);
 
 	auto& device = engine->globalRendering.device;
 	auto& global = engine->globalRendering;
@@ -293,15 +287,10 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr)
 void PBRSubShader::uploadToGPU(FrameResources& tr, PBRShader::UniformBufferObject& ubo, PBRShader::UniformBufferObject& ubo2) {
 	// copy ubo to GPU:
 	void* data;
-	//memcpy(&ubo2.proj, &ubo.proj, sizeof(ubo.proj)); // left wrong, right ok if commented
 	if (true) {
 		vkMapMemory(device, uniformBufferMemory, 0, sizeof(ubo), 0, &data);
 		memcpy(data, &ubo, sizeof(ubo));
 		vkUnmapMemory(device, uniformBufferMemory);
-		//pbrShader->shaderValuesParams.gamma = 2.4f;
-		vkMapMemory(device, uniformBufferShaderValuesMemory, 0, sizeof(pbrShader->shaderValuesParams), 0, &data);
-		memcpy(data, &pbrShader->shaderValuesParams, sizeof(pbrShader->shaderValuesParams));
-		vkUnmapMemory(device, uniformBufferShaderValuesMemory);
 	}
 	if (engine->isStereo() && true) {
 		vkMapMemory(device, uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
@@ -355,8 +344,4 @@ void PBRSubShader::destroy()
 		vkDestroyBuffer(device, uniformBuffer2, nullptr);
 		vkFreeMemory(device, uniformBufferMemory2, nullptr);
 	}
-    if (uniformBufferShaderValues) {
-        vkDestroyBuffer(device, uniformBufferShaderValues, nullptr);
-        vkFreeMemory(device, uniformBufferShaderValuesMemory, nullptr);
-    }
 }

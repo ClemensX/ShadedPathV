@@ -9,7 +9,7 @@ layout (location = 4) in uvec4 inJoint0;
 layout (location = 5) in vec4 inWeight0;
 layout (location = 6) in vec4 inColor0;
 
-layout (set = 0, binding = 2) uniform UBOParams {
+struct UBOParams {
 	vec4 lightDir;
 	float exposure;
 	float gamma;
@@ -17,7 +17,7 @@ layout (set = 0, binding = 2) uniform UBOParams {
 	float scaleIBLAmbient;
 	float debugViewInputs;
 	float debugViewEquation;
-} uboParams;
+};
 
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
@@ -33,6 +33,9 @@ struct PBRTextureIndexes {
     uint normal;
     uint occlusion;
     uint emissive;
+    uint pad0;
+    uint pad1;
+    uint pad2;
 };
 
 #define MAX_NUM_JOINTS 128
@@ -49,6 +52,7 @@ layout (binding = 1) uniform UboInstance {
     uint pad2;
     //uint padding[2]; // 8 bytes of padding to align the next member to 16 bytes
     PBRTextureIndexes indexes;
+    UBOParams params;
 } model_ubo;
  
 
@@ -91,7 +95,7 @@ void check_inputs() {
     //debugPrintfEXT("inUV0 %f %f\n", c.x, c.y);
     c = inUV1;
     //debugPrintfEXT("inUV1 %f %f\n", c.x, c.y);
-    float f = uboParams.gamma;
+    float f = model_ubo.params.gamma;
     //debugPrintfEXT("uboParams.gamma %f\n", f);
 }
 
@@ -106,7 +110,7 @@ void main() {
     //textureIndexes = model_ubo.indexes;
     //textureIndexes.baseColor = model_ubo.jointcount;
     //textureIndexes.baseColor = model_ubo.indexes.baseColor;
-    //debugPrintfEXT("ubo.model tex index is %d\n", model_ubo.indexes.baseColor);
+    //debugPrintfEXT("ubo.model tex index is %d\n", model_ubo.indexes.emissive);
     //debugPrintfEXT("ubo.model tex index is %d %d %d %d\n", model_ubo.jointcount, model_ubo.pad0, model_ubo.pad1, model_ubo.pad2);
 
     baseColorIndex = model_ubo.indexes.baseColor;

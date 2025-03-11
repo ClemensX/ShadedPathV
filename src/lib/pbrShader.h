@@ -29,8 +29,7 @@ public:
 		{ VulkanResourceType::MVPBuffer },
 		{ VulkanResourceType::UniformBufferDynamic },
 		{ VulkanResourceType::GlobalTextureSet },
-		{ VulkanResourceType::VertexBufferStatic },
-        { VulkanResourceType::AdditionalUniformBuffer }
+		{ VulkanResourceType::VertexBufferStatic }
 	};
 
 	struct Vertex {
@@ -50,7 +49,7 @@ public:
 		float scaleIBLAmbient = 1.0f;
 		float debugViewInputs = 0;
 		float debugViewEquation = 0;
-	} shaderValuesParams;
+	};
 
 	struct UniformBufferObject {
 		glm::mat4 model;
@@ -69,6 +68,7 @@ public:
 		uint32_t normal; // uint in shader
 		uint32_t occlusion; // uint in shader
 		uint32_t emissive; // uint in shader
+		uint32_t pad0[3]; // 12 bytes of padding to align the next member to 16 bytes. Do not use array on glsl side!!!
 	};
 	struct ShaderMaterial {
 		glm::vec4 baseColorFactor;
@@ -87,12 +87,15 @@ public:
 		float alphaMaskCutoff;
 		float emissiveStrength;
 	};
+    // the dynamic uniform buffer is peramnently mapped to CPU memory for fast updates
 	struct alignas(16) DynamicModelUBO {
 		glm::mat4 model; // 16-byte aligned
 		glm::mat4 jointMatrix[MAX_NUM_JOINTS]; // 16-byte aligned
 		uint32_t jointcount; // 4-byte aligned
 		uint32_t pad0[3]; // 12 bytes of padding to align the next member to 16 bytes. Do not use array on glsl side!!!
 		PBRTextureIndexes indexes; // 4-byte aligned
+        shaderValuesParams params; // 16-byte aligned
+        ShaderMaterial material; // 16-byte aligned
 	};
 	// Array entries of DynamicModelUBO have to respect hardware alignment rules
 	uint64_t alignedDynamicUniformBufferSize = 0;
@@ -173,9 +176,9 @@ public:
 
 	// per frame update of UBOs / MVPs
 	void uploadToGPU(FrameResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO
-	// preset PBR texture indexes in the dynamic Uniform Buffer.
-	// Application code can overwrite the setting in drawFrame()
-	void prefillTextureIndexes(FrameResources& tr);
+	// one-time prefill PBR parameters in the dynamic Uniform Buffer.
+    // Called once before rendering starts. Apps can change settings anytime by accessing the dynamic buffer via getAccessToModel()
+	void prefillModelParameters(FrameResources& tr);
 
 private:
 	UniformBufferObject ubo = {};
@@ -230,9 +233,6 @@ public:
 	// VP buffer device memory
 	VkDeviceMemory uniformBufferMemory = nullptr;
 	VkDeviceMemory uniformBufferMemory2 = nullptr;
-	// shaderValuesParams buffer
-	VkBuffer uniformBufferShaderValues = nullptr;
-	VkDeviceMemory uniformBufferShaderValuesMemory = nullptr;
 
 	VkDescriptorSet descriptorSet = nullptr;
 	VkDescriptorSet descriptorSet2 = nullptr;

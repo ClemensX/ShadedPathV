@@ -17,7 +17,7 @@ layout (location = 10) flat in uint mode;
 // mode 0: pbr metallic roughness
 // mode 1: only use vertex color
 
-layout (set = 0, binding = 2) uniform UBOParams {
+struct UBOParams {
 	vec4 lightDir;
 	float exposure;
 	float gamma;
@@ -25,7 +25,7 @@ layout (set = 0, binding = 2) uniform UBOParams {
 	float scaleIBLAmbient;
 	float debugViewInputs;
 	float debugViewEquation;
-} uboParams;
+};
 
 layout(location = 0) out vec4 outColor;
 
@@ -48,7 +48,7 @@ void main() {
 	//ShaderMaterial material = materials[pushConstants.materialIndex];
     debugPrintfEXT("material alphaMask %f\n", material.alphaMask);
 
-    float f = uboParams.gamma;
+    //float f = uboParams.gamma;
     //debugPrintfEXT("frag uboParams.gamma %f\n", f);
     //debugPrintfEXT("pbr frag render mode: %d\n", mode);
     uint baseIndex = emissiveIndex;//baseColorIndex; // test indexes
