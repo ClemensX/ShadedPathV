@@ -39,6 +39,7 @@ struct PBRTextureIndexes {
 
 // info for this model instance
 // see 	struct PBRTextureIndexes and struct DynamicModelUBO in pbrShader.h
+// one element of the large object material buffer (descriptor updated for each model group before rednering)
 layout (binding = 1) uniform UboInstance {
     mat4 model; 
     mat4 jointMatrix[MAX_NUM_JOINTS];

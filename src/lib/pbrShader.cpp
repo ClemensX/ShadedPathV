@@ -300,7 +300,7 @@ void PBRSubShader::uploadToGPU(FrameResources& tr, PBRShader::UniformBufferObjec
 		vkUnmapMemory(device, uniformBufferMemory);
 		//pbrShader->shaderValuesParams.gamma = 2.4f;
 		vkMapMemory(device, uniformBufferShaderValuesMemory, 0, sizeof(pbrShader->shaderValuesParams), 0, &data);
-		memcpy(data, &pbrShader->shaderValuesParams, sizeof(ubo));
+		memcpy(data, &pbrShader->shaderValuesParams, sizeof(pbrShader->shaderValuesParams));
 		vkUnmapMemory(device, uniformBufferShaderValuesMemory);
 	}
 	if (engine->isStereo() && true) {

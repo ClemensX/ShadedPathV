@@ -70,6 +70,23 @@ public:
 		uint32_t occlusion; // uint in shader
 		uint32_t emissive; // uint in shader
 	};
+	struct ShaderMaterial {
+		glm::vec4 baseColorFactor;
+		glm::vec4 emissiveFactor;
+		glm::vec4 diffuseFactor;
+		glm::vec4 specularFactor;
+		float workflow;
+		int baseColorTextureSet;
+		int physicalDescriptorTextureSet;
+		int normalTextureSet;
+		int occlusionTextureSet;
+		int emissiveTextureSet;
+		float metallicFactor;
+		float roughnessFactor;
+		float alphaMask;
+		float alphaMaskCutoff;
+		float emissiveStrength;
+	};
 	struct alignas(16) DynamicModelUBO {
 		glm::mat4 model; // 16-byte aligned
 		glm::mat4 jointMatrix[MAX_NUM_JOINTS]; // 16-byte aligned

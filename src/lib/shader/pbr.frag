@@ -44,6 +44,10 @@ vec4 textureBindless2D(uint textureid, vec2 uv) {
 
 
 void main() {
+	ShaderMaterial material;
+	//ShaderMaterial material = materials[pushConstants.materialIndex];
+    debugPrintfEXT("material alphaMask %f\n", material.alphaMask);
+
     float f = uboParams.gamma;
     //debugPrintfEXT("frag uboParams.gamma %f\n", f);
     //debugPrintfEXT("pbr frag render mode: %d\n", mode);
