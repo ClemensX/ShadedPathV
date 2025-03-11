@@ -17,7 +17,11 @@ struct UBOParams {
 	float scaleIBLAmbient;
 	float debugViewInputs;
 	float debugViewEquation;
+		float pad0;
+		float pad1;
 };
+
+#include "shadermaterial.glsl"
 
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
@@ -53,6 +57,7 @@ layout (binding = 1) uniform UboInstance {
     //uint padding[2]; // 8 bytes of padding to align the next member to 16 bytes
     PBRTextureIndexes indexes;
     UBOParams params;
+    ShaderMaterial material;
 } model_ubo;
  
 
@@ -97,10 +102,14 @@ void check_inputs() {
     //debugPrintfEXT("inUV1 %f %f\n", c.x, c.y);
     float f = model_ubo.params.gamma;
     //debugPrintfEXT("uboParams.gamma %f\n", f);
+    f = model_ubo.material.alphaMask;
+    //debugPrintfEXT("material alphaMask %f\n", f);
 }
 
 void main() {
     check_inputs();
+    //outParams = model_ubo.params;
+    //outMaterial = model_ubo.material;
     vec3 n = inNormal;
     vec2 uv = inUV1;
     uvec4 joint = inJoint0;

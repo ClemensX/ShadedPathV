@@ -64,6 +64,8 @@ void PBRShader::prefillModelParameters(FrameResources& fr)
         buf->indexes.occlusion = obj->mesh->occlusionTexture ? obj->mesh->occlusionTexture->index : -1;
         buf->indexes.emissive = obj->mesh->emissiveTexture ? obj->mesh->emissiveTexture->index : -1;
 		buf->jointcount = 0;
+		shaderValuesParams params;
+        buf->params = params;
 	}
 
 }

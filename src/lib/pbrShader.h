@@ -49,6 +49,8 @@ public:
 		float scaleIBLAmbient = 1.0f;
 		float debugViewInputs = 0;
 		float debugViewEquation = 0;
+		float pad0;
+		float pad1;
 	};
 
 	struct UniformBufferObject {

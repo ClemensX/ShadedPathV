@@ -147,7 +147,9 @@ void Loader::prepareFrame(FrameResources* fr)
             modeltransform = wo->mesh->baseTransform;
         }
         buf->model = modeltransform;
-        buf->params.gamma = 2.2f;
+        //buf->params.gamma = 2.2f;
+        //buf->params.debugViewEquation = 0.5f;
+        //buf->material.alphaMask = 0.8f;
     }
     postUpdatePerFrame(tr);
     engine->shaders.clearShader.addCommandBuffers(fr, &fr->drawResults[0]); // put clear shader first
