@@ -334,6 +334,9 @@ void glTF::prepareTexturesAndMaterials(tinygltf::Model& model, MeshCollection* c
         mesh->emissiveTexture->sampler = samplers[model.textures[emissiveTextureIndex].sampler];
         mesh->emissiveTexture->type = TextureType::TEXTURE_TYPE_GLTF;
 	}
+	if (mesh->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
+		return;
+	}
 	// now set the shaderMaterial fields from gltf material:
 	PBRShader::ShaderMaterial m{};
 	m.texCoordSets.baseColor = mat.pbrMetallicRoughness.baseColorTexture.texCoord;

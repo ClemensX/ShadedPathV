@@ -40,9 +40,9 @@ int mainOne()
     //BillboardDemo app; // vr ok
     //TextureViewer app; // vr ok
     //LandscapeDemo app; // vr ok
-    //Incoming app;
+    Incoming app;
     //LandscapeGenerator app; // vr ok with limited support
-    Loader app;
+    //Loader app;
 
     Log("main() start!\n");
     ShadedPathEngine engine;

@@ -110,12 +110,6 @@ void main() {
     check_inputs();
     //outParams = model_ubo.params;
     //outMaterial = model_ubo.material;
-    vec3 n = inNormal;
-    vec2 uv = inUV1;
-    uvec4 joint = inJoint0;
-    //vec4 weight = inWeight0;
-    mode_out = push.mode;
-    gl_Position = ubo.proj * ubo.view * model_ubo.model * vec4(inPos, 1.0);
     //textureIndexes = model_ubo.indexes;
     //textureIndexes.baseColor = model_ubo.jointcount;
     //textureIndexes.baseColor = model_ubo.indexes.baseColor;
@@ -132,10 +126,16 @@ void main() {
 //    baseColorIndex = model_ubo.indexes.metallicRoughness;
 //    metallicRoughnessIndex = model_ubo.indexes.baseColor;
 
-    outColor0 = inColor0 * ubo.baseColor;
-    outUV0 = inUV0;
-    outColor0 = inColor0 * ubo.baseColor;
-    //fragColor = vec3(1, 1, 1);
-    //debugPrintfEXT("final device coord PBR: %f %f %f\n", gl_Position.x, gl_Position.y, gl_Position.z);
-    outUV0 = inUV0;
+	outColor0 = inColor0;
+    mode_out = push.mode;
+
+    vec4 locPos;
+	locPos = ubo.view * model_ubo.model * vec4(inPos, 1.0);
+	outNormal = normalize(transpose(inverse(mat3(ubo.view * model_ubo.model))) * inNormal);
+	//locPos.y = -locPos.y;
+	outWorldPos = locPos.xyz / locPos.w;
+	outUV0 = inUV0;
+	outUV1 = inUV1;
+	gl_Position =  ubo.proj * ubo.view * vec4(outWorldPos, 1.0);
+
 }
