@@ -130,12 +130,12 @@ void main() {
     mode_out = push.mode;
 
     vec4 locPos;
-	locPos = ubo.view * model_ubo.model * vec4(inPos, 1.0);
+	locPos = model_ubo.model * vec4(inPos, 1.0);
 	outNormal = normalize(transpose(inverse(mat3(ubo.view * model_ubo.model))) * inNormal);
 	//locPos.y = -locPos.y;
 	outWorldPos = locPos.xyz / locPos.w;
 	outUV0 = inUV0;
 	outUV1 = inUV1;
-	gl_Position =  ubo.proj * ubo.view * vec4(outWorldPos, 1.0);
-
+    //debugPrintfEXT("loc.w %f\n", locPos.w);
+    gl_Position =  ubo.proj * ubo.view * vec4(outWorldPos, 1.0);
 }

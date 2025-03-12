@@ -138,7 +138,7 @@ void main() {
 	uint u2 = material.texCoordSets.specularGlossiness;
 	//debugPrintfEXT("coord sets %d %d %d\n", u0, u1, u2);
 	vec3 w = inWorldPos;
-	debugPrintfEXT("world pos %f %f %f\n", w.x, w.y, w.z);
+	//debugPrintfEXT("world pos %f %f %f\n", w.x, w.y, w.z);
     f = uboParams.debugViewEquation;
     //debugPrintfEXT("frag uboParams.debugvieweq %f\n", f);
     f = uboParams.gamma;
@@ -159,7 +159,9 @@ void main() {
 //    if (outColor.w < 0.8) {
 //        discard;
 //    }
-//
+//	return;
+
+
     // from https://github.com/SaschaWillems/Vulkan-glTF-PBR/blob/master/data/shaders/material_pbr.frag
 	float perceptualRoughness;
 	float metallic;
