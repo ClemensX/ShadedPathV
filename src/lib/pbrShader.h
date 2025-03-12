@@ -72,6 +72,15 @@ public:
 		uint32_t emissive; // uint in shader
 		uint32_t pad0[3]; // 12 bytes of padding to align the next member to 16 bytes. Do not use array on glsl side!!!
 	};
+	struct TexCoordSets {
+		uint32_t baseColor = 0;
+		uint32_t metallicRoughness = 0;
+		uint32_t specularGlossiness = 0;
+		uint32_t normal = 0;
+		uint32_t occlusion = 0;
+		uint32_t emissive = 0;
+	};
+
 	struct ShaderMaterial {
 		glm::vec4 baseColorFactor;
 		glm::vec4 emissiveFactor;
@@ -88,6 +97,8 @@ public:
 		float alphaMask;
 		float alphaMaskCutoff;
 		float emissiveStrength;
+		uint32_t pad0;
+        TexCoordSets texCoordSets;
 	};
     // the dynamic uniform buffer is peramnently mapped to CPU memory for fast updates
 	struct alignas(16) DynamicModelUBO {

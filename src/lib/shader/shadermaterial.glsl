@@ -4,6 +4,15 @@
  *
  */
 
+struct TexCoordSets {
+	uint baseColor;
+	uint metallicRoughness;
+	uint specularGlossiness;
+	uint normal;
+	uint occlusion;
+	uint emissive;
+};
+
 struct ShaderMaterial {
 	vec4 baseColorFactor;
 	vec4 emissiveFactor;
@@ -20,4 +29,6 @@ struct ShaderMaterial {
 	float alphaMask;	
 	float alphaMaskCutoff;
 	float emissiveStrength;
+	uint pad0;
+	TexCoordSets texCoordSets;
 };

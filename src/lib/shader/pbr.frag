@@ -74,14 +74,49 @@ vec4 textureBindless2D(uint textureid, vec2 uv) {
 
 UBOParams uboParams = model_ubo.params;
 
+// Encapsulate the various inputs used by the various functions in the shading equation
+// We store values in this struct to simplify the integration of alternative implementations
+// of the shading terms, outlined in the Readme.MD Appendix.
+struct PBRInfo
+{
+	float NdotL;                  // cos angle between normal and light direction
+	float NdotV;                  // cos angle between normal and view direction
+	float NdotH;                  // cos angle between normal and half vector
+	float LdotH;                  // cos angle between light direction and half vector
+	float VdotH;                  // cos angle between view direction and half vector
+	float perceptualRoughness;    // roughness value, as authored by the model creator (input to shader)
+	float metalness;              // metallic value at the surface
+	vec3 reflectance0;            // full reflectance color (normal incidence angle)
+	vec3 reflectance90;           // reflectance color at grazing angle
+	float alphaRoughness;         // roughness mapped to a more linear change in the roughness (proposed by [2])
+	vec3 diffuseColor;            // color contribution from diffuse lighting
+	vec3 specularColor;           // color contribution from specular lighting
+};
+
+const float M_PI = 3.141592653589793;
+const float c_MinRoughness = 0.04;
+
+const float PBR_WORKFLOW_METALLIC_ROUGHNESS = 0.0;
+const float PBR_WORKFLOW_SPECULAR_GLOSSINESS = 1.0;
+
+#include "tonemapping.glsl"
+#include "srgbtolinear.glsl"
+
 void main() {
 	ShaderMaterial material = model_ubo.material;
     float f = uboParams.gamma;
     //debugPrintfEXT("uboParams.gamma %f\n", f);
     f = material.roughnessFactor;
     //debugPrintfEXT("frag material.roughnessFactor %f\n", f);
-    debugPrintfEXT("frag base set indexes direct / ubo:  %d / %d\n", baseColorIndex, material.baseColorTextureSet);
-
+    //debugPrintfEXT("frag base set indexes direct / ubo:  %d / %d\n", baseColorIndex, material.baseColorTextureSet);
+	f = material.alphaMask;
+	//debugPrintfEXT("alphaMask %f\n", f);
+	f = material.workflow;
+	//debugPrintfEXT("workflow %f\n", f);
+	uint u0 = material.texCoordSets.baseColor;
+	uint u1 = material.texCoordSets.metallicRoughness;
+	uint u2 = material.texCoordSets.specularGlossiness;
+	debugPrintfEXT("coord sets %d %d %d\n", u0, u1, u2);
     f = uboParams.debugViewEquation;
     //debugPrintfEXT("frag uboParams.debugvieweq %f\n", f);
     f = uboParams.gamma;
@@ -94,11 +129,61 @@ void main() {
     //}
     if (mode == 1) {
 		outColor = inColor0;
-	} else {
-        outColor = textureBindless2D(baseIndex, inUV0) * inColor0;
-    }
-    // discard transparent pixels (== do not write z-buffer)
-    if (outColor.w < 0.8) {
-        discard;
-    }
+        return;
+	} 
+
+//    outColor = textureBindless2D(baseIndex, inUV0) * inColor0;
+//    // discard transparent pixels (== do not write z-buffer)
+//    if (outColor.w < 0.8) {
+//        discard;
+//    }
+//
+    // from https://github.com/SaschaWillems/Vulkan-glTF-PBR/blob/master/data/shaders/material_pbr.frag
+	float perceptualRoughness;
+	float metallic;
+	vec3 diffuseColor;
+	vec4 baseColor;
+
+	vec3 f0 = vec3(0.04);
+
+	if (material.alphaMask == 1.0f) {
+		if (material.baseColorTextureSet > -1) {
+			// we only handle metallic roughness workflow, so we can simplify the next line
+			// baseColor = SRGBtoLINEAR(texture(colorMap, material.baseColorTextureSet == 0 ? inUV0 : inUV1)) * material.baseColorFactor;
+			baseColor = SRGBtoLINEAR(textureBindless2D(material.baseColorTextureSet, material.texCoordSets.baseColor == 0 ? inUV0 : inUV1)) * material.baseColorFactor;
+		} else {
+			baseColor = material.baseColorFactor;
+		}
+		if (baseColor.a < material.alphaMaskCutoff) {
+			discard;
+		}
+	}
+
+	if (true /*material.workflow == PBR_WORKFLOW_METALLIC_ROUGHNESS*/) { // always true
+		// Metallic and Roughness material properties are packed together
+		// In glTF, these factors can be specified by fixed scalar values
+		// or from a metallic-roughness map
+		perceptualRoughness = material.roughnessFactor;
+		metallic = material.metallicFactor;
+		if (material.physicalDescriptorTextureSet > -1) {
+			// Roughness is stored in the 'g' channel, metallic is stored in the 'b' channel.
+			// This layout intentionally reserves the 'r' channel for (optional) occlusion map data
+			vec4 mrSample = textureBindless2D(material.physicalDescriptorTextureSet, material.texCoordSets.metallicRoughness == 0 ? inUV0 : inUV1);
+			perceptualRoughness = mrSample.g * perceptualRoughness;
+			metallic = mrSample.b * metallic;
+		} else {
+			perceptualRoughness = clamp(perceptualRoughness, c_MinRoughness, 1.0);
+			metallic = clamp(metallic, 0.0, 1.0);
+		}
+		// Roughness is authored as perceptual roughness; as is convention,
+		// convert to material roughness by squaring the perceptual roughness [2].
+
+		// The albedo may be defined from a base texture or a flat color
+		if (material.baseColorTextureSet > -1) {
+			baseColor = SRGBtoLINEAR(textureBindless2D(material.baseColorTextureSet, material.texCoordSets.baseColor == 0 ? inUV0 : inUV1)) * material.baseColorFactor;
+		} else {
+			baseColor = material.baseColorFactor;
+		}
+	}
+		outColor = baseColor;
 }

@@ -336,6 +336,15 @@ void glTF::prepareTexturesAndMaterials(tinygltf::Model& model, MeshCollection* c
 	}
 	// now set the shaderMaterial fields from gltf material:
 	PBRShader::ShaderMaterial m{};
+	m.texCoordSets.baseColor = mat.pbrMetallicRoughness.baseColorTexture.texCoord;
+    m.texCoordSets.metallicRoughness = mat.pbrMetallicRoughness.metallicRoughnessTexture.texCoord;
+    m.texCoordSets.normal = mat.normalTexture.texCoord;
+    m.texCoordSets.occlusion = mat.occlusionTexture.texCoord;
+    m.texCoordSets.emissive = mat.emissiveTexture.texCoord;
+
+	//m.texCoordSets.baseColor = 1;
+	//m.texCoordSets.metallicRoughness = 2;
+	//m.texCoordSets.specularGlossiness = 3;
 	m.emissiveFactor = glm::vec4(mat.emissiveFactor[0], mat.emissiveFactor[1], mat.emissiveFactor[2], 1.0f);
     // these are the local texture indexes (within the mesh). Will be overwritten with global texture indexes in prefillModelParameters()
 	m.baseColorTextureSet = baseColorTextureIndex;
