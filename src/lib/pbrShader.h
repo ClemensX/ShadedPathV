@@ -182,6 +182,8 @@ public:
     // Called once before rendering starts. Apps can change settings anytime by accessing the dynamic buffer via getAccessToModel()
 	void prefillModelParameters(FrameResources& tr);
 
+	void fillTextureIndexesFromMesh(PBRTextureIndexes& ind, MeshInfo* mesh);
+
 private:
 	UniformBufferObject ubo = {};
 	UniformBufferObject updatedUBO = {};

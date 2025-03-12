@@ -10,8 +10,8 @@ struct UBOParams {
 	float scaleIBLAmbient;
 	float debugViewInputs;
 	float debugViewEquation;
-		float pad0;
-		float pad1;
+	float pad0;
+	float pad1;
 };
 
 #include "shadermaterial.glsl"
@@ -79,14 +79,15 @@ void main() {
     float f = uboParams.gamma;
     //debugPrintfEXT("uboParams.gamma %f\n", f);
     f = material.roughnessFactor;
-    debugPrintfEXT("frag material.roughnessFactor %f\n", f);
+    //debugPrintfEXT("frag material.roughnessFactor %f\n", f);
+    debugPrintfEXT("frag base set indexes direct / ubo:  %d / %d\n", baseColorIndex, material.baseColorTextureSet);
 
     f = uboParams.debugViewEquation;
     //debugPrintfEXT("frag uboParams.debugvieweq %f\n", f);
     f = uboParams.gamma;
     //debugPrintfEXT("frag uboParams.gamma %f\n", f);
     //debugPrintfEXT("pbr frag render mode: %d\n", mode);
-    uint baseIndex = emissiveIndex;//baseColorIndex; // test indexes
+    uint baseIndex = material.baseColorTextureSet;//emissiveIndex;//baseColorIndex; // test indexes
     //uint baseIndex = baseColorIndex;
     //if (occlusionIndex == -1) { // just a test :-)
     //    baseIndex = 0;

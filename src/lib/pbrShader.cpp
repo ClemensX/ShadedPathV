@@ -48,6 +48,15 @@ void PBRShader::initialUpload()
 	}
 }
 
+void PBRShader::fillTextureIndexesFromMesh(PBRTextureIndexes& ind, MeshInfo* mesh)
+{
+	ind.baseColor = mesh->baseColorTexture ? mesh->baseColorTexture->index : -1;
+	ind.metallicRoughness = mesh->metallicRoughnessTexture ? mesh->metallicRoughnessTexture->index : -1;
+	ind.normal = mesh->normalTexture ? mesh->normalTexture->index : -1;
+	ind.occlusion = mesh->occlusionTexture ? mesh->occlusionTexture->index : -1;
+	ind.emissive = mesh->emissiveTexture ? mesh->emissiveTexture->index : -1;
+}
+
 void PBRShader::prefillModelParameters(FrameResources& fr)
 {
 	auto& objs = engine->objectStore.getSortedList();
@@ -57,16 +66,18 @@ void PBRShader::prefillModelParameters(FrameResources& fr)
             continue;
         }
 		PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(fr, obj->objectNum);
-		uint32_t idx = obj->mesh->baseColorTexture->index;
-		buf->indexes.baseColor = idx;
-        buf->indexes.metallicRoughness = obj->mesh->metallicRoughnessTexture ? obj->mesh->metallicRoughnessTexture->index : -1;
-        buf->indexes.normal = obj->mesh->normalTexture ? obj->mesh->normalTexture->index : -1;
-        buf->indexes.occlusion = obj->mesh->occlusionTexture ? obj->mesh->occlusionTexture->index : -1;
-        buf->indexes.emissive = obj->mesh->emissiveTexture ? obj->mesh->emissiveTexture->index : -1;
+        PBRTextureIndexes ind;
+        fillTextureIndexesFromMesh(ind, obj->mesh);
+        buf->indexes = ind;
 		buf->jointcount = 0;
 		shaderValuesParams params;
         buf->params = params;
         buf->material = obj->mesh->material;
+        buf->material.baseColorTextureSet = ind.baseColor;
+        buf->material.physicalDescriptorTextureSet = ind.metallicRoughness;
+        buf->material.normalTextureSet = ind.normal;
+        buf->material.occlusionTextureSet = ind.occlusion;
+        buf->material.emissiveTextureSet = ind.emissive;
 	}
 
 }

@@ -337,6 +337,7 @@ void glTF::prepareTexturesAndMaterials(tinygltf::Model& model, MeshCollection* c
 	// now set the shaderMaterial fields from gltf material:
 	PBRShader::ShaderMaterial m{};
 	m.emissiveFactor = glm::vec4(mat.emissiveFactor[0], mat.emissiveFactor[1], mat.emissiveFactor[2], 1.0f);
+    // these are the local texture indexes (within the mesh). Will be overwritten with global texture indexes in prefillModelParameters()
 	m.baseColorTextureSet = baseColorTextureIndex;
 	m.normalTextureSet = normalTextureIndex;
 	m.occlusionTextureSet = occlusionTextureIndex;
