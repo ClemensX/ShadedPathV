@@ -92,13 +92,17 @@ public:
 		int normalTextureSet;
 		int occlusionTextureSet;
 		int emissiveTextureSet;
+		int brdflut;
+		int irradiance;
+		int envcube;
 		float metallicFactor;
 		float roughnessFactor;
 		float alphaMask;
 		float alphaMaskCutoff;
 		float emissiveStrength;
 		uint32_t pad0;
-        TexCoordSets texCoordSets;
+		uint32_t pad1;
+		TexCoordSets texCoordSets;
 	};
     // the dynamic uniform buffer is peramnently mapped to CPU memory for fast updates
 	struct alignas(16) DynamicModelUBO {

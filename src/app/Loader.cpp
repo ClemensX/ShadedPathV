@@ -43,8 +43,6 @@ void Loader::run(ContinuationInfo* cont)
 void Loader::init() {
     engine->sound.init(false);
 
-    engine->textureStore.generateBRDFLUT();
-
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
     engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox");
     alterObjectCoords = true;
@@ -60,12 +58,16 @@ void Loader::init() {
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     // Grid with 1m squares, floor on -10m, ceiling on 372m
 
-    // load skybox cube texture
+    // load skybox cube texture and generate cubemaps
     engine->textureStore.loadTexture("nebula.ktx2", "skyboxTexture");
+    engine->textureStore.generateBRDFLUT();
+    // genearting cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
+    //engine->textureStore.generateCubemaps("skyboxTexture");
+    engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);
+    engine->textureStore.loadTexture("prefilter.ktx2", engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
 
     engine->shaders.cubeShader.setSkybox("skyboxTexture");
     engine->shaders.cubeShader.setFarPlane(2000.0f);
-
 
     engine->shaders.pbrShader.initialUpload();
     // window creation

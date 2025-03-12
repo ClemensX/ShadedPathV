@@ -24,11 +24,15 @@ struct ShaderMaterial {
 	int normalTextureSet;	
 	int occlusionTextureSet;
 	int emissiveTextureSet;
+	int brdflut;
+	int irradiance;
+	int envcube;
 	float metallicFactor;	
 	float roughnessFactor;	
 	float alphaMask;	
 	float alphaMaskCutoff;
 	float emissiveStrength;
 	uint pad0;
+	uint pad1;
 	TexCoordSets texCoordSets;
 };

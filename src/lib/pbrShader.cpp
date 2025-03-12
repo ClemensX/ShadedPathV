@@ -59,6 +59,9 @@ void PBRShader::fillTextureIndexesFromMesh(PBRTextureIndexes& ind, MeshInfo* mes
 
 void PBRShader::prefillModelParameters(FrameResources& fr)
 {
+	TextureInfo* tiBrdflut = engine->textureStore.getTexture(engine->textureStore.BRDFLUT_TEXTURE_ID);
+	TextureInfo* tiIrradiance = engine->textureStore.getTexture(engine->textureStore.IRRADIANCE_TEXTURE_ID);
+	TextureInfo* tiPrefileterdEnv = engine->textureStore.getTexture(engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
 	auto& objs = engine->objectStore.getSortedList();
 	for (auto obj : objs) {
 		//Log(" WorldObject texture count: " << obj->mesh->textureInfos.size() << endl);
@@ -78,6 +81,10 @@ void PBRShader::prefillModelParameters(FrameResources& fr)
         buf->material.normalTextureSet = ind.normal;
         buf->material.occlusionTextureSet = ind.occlusion;
         buf->material.emissiveTextureSet = ind.emissive;
+		buf->material.brdflut = tiBrdflut->index;
+        buf->material.irradiance = tiIrradiance->index;
+		buf->material.envcube = tiPrefileterdEnv->index;
+		//buf->material.texCoordSets.specularGlossiness = 27;
 	}
 
 }

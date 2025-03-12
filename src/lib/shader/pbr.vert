@@ -66,13 +66,8 @@ layout (location = 1) out vec3 outNormal;
 layout (location = 2) out vec2 outUV0;
 layout (location = 3) out vec2 outUV1;
 layout (location = 4) out vec4 outColor0;
-layout (location = 5) out uint baseColorIndex;
-layout (location = 6) out uint metallicRoughnessIndex;
-layout (location = 7) out uint normalIndex;
-layout (location = 8) out uint occlusionIndex;
-layout (location = 9) out uint emissiveIndex;
-layout (location = 10) out uint mode_out;
-layout (location = 11) out vec3 outCamPos;
+layout (location = 5) out uint mode_out;
+layout (location = 6) out vec3 outCamPos;
 
 // sync with pbrPushConstants in pbrShader.h
 layout(push_constant) uniform pbrPushConstants {
@@ -105,6 +100,9 @@ void check_inputs() {
     //debugPrintfEXT("uboParams.gamma %f\n", f);
     f = model_ubo.material.alphaMask;
     //debugPrintfEXT("material alphaMask %f\n", f);
+    int b = model_ubo.material.brdflut;
+    int e = model_ubo.material.envcube;
+    //debugPrintfEXT("material brdflut envcube %d %d\n", b, e);
 }
 
 void main() {
@@ -117,12 +115,12 @@ void main() {
     //debugPrintfEXT("ubo.model tex index is %d\n", model_ubo.indexes.emissive);
     //debugPrintfEXT("ubo.model tex index is %d %d %d %d\n", model_ubo.jointcount, model_ubo.pad0, model_ubo.pad1, model_ubo.pad2);
 
-    baseColorIndex = model_ubo.indexes.baseColor;
-    metallicRoughnessIndex = model_ubo.indexes.metallicRoughness;
-    normalIndex = model_ubo.indexes.normal;
-    occlusionIndex = model_ubo.indexes.occlusion;
-    emissiveIndex = model_ubo.indexes.emissive;
-
+//    baseColorIndex = model_ubo.indexes.baseColor;
+//    metallicRoughnessIndex = model_ubo.indexes.metallicRoughness;
+//    normalIndex = model_ubo.indexes.normal;
+//    occlusionIndex = model_ubo.indexes.occlusion;
+//    emissiveIndex = model_ubo.indexes.emissive;
+//
 //    test indexes
 //    baseColorIndex = model_ubo.indexes.metallicRoughness;
 //    metallicRoughnessIndex = model_ubo.indexes.baseColor;

@@ -21,13 +21,8 @@ layout (location = 1) in vec3 inNormal;
 layout (location = 2) in vec2 inUV0;
 layout (location = 3) in vec2 inUV1;
 layout (location = 4) in vec4 inColor0;
-layout (location = 5) flat in uint baseColorIndex;
-layout (location = 6) flat in uint metallicRoughnessIndex;
-layout (location = 7) flat in uint normalIndex;
-layout (location = 8) flat in uint occlusionIndex;
-layout (location = 9) flat in uint emissiveIndex;
-layout (location = 10) flat in uint mode;
-layout (location = 11) in vec3 camPos;
+layout (location = 5) flat in uint mode;
+layout (location = 6) in vec3 camPos;
 // mode 0: pbr metallic roughness
 // mode 1: only use vertex color
 
@@ -64,6 +59,10 @@ layout(location = 0) out vec4 outColor;
 
 layout(set = 1, binding = 0) uniform samplerCube global_textures3d[];
 layout(set = 1, binding = 0) uniform sampler2D global_textures2d[];
+
+vec4 textureBindless3DLod(uint textureid, vec3 uv, float lod) {
+	return textureLod(global_textures3d[nonuniformEXT(textureid)], uv, lod);
+}
 
 vec4 textureBindless3D(uint textureid, vec3 uv) {
 	return texture(global_textures3d[nonuniformEXT(textureid)], uv);
@@ -128,13 +127,14 @@ vec3 getNormal(ShaderMaterial material)
 // See our README.md on Environment Maps [3] for additional discussion.
 vec3 getIBLContribution(PBRInfo pbrInputs, vec3 n, vec3 reflection)
 {
+	ShaderMaterial material = model_ubo.material;
 	float lod = (pbrInputs.perceptualRoughness * uboParams.prefilteredCubeMipLevels);
 	// retrieve a scale and bias to F0. See [1], Figure 3
 	//textureBindless2D(material.baseColorTextureSet
-	vec3 brdf; // = (texture(samplerBRDFLUT, vec2(pbrInputs.NdotV, 1.0 - pbrInputs.perceptualRoughness))).rgb;
-	vec3 diffuseLight; // = SRGBtoLINEAR(tonemap(texture(samplerIrradiance, n))).rgb;
+	vec3 brdf = (textureBindless2D(material.brdflut, vec2(pbrInputs.NdotV, 1.0 - pbrInputs.perceptualRoughness))).rgb;
+	vec3 diffuseLight = SRGBtoLINEAR(tonemap(textureBindless3D(material.irradiance, n))).rgb;
 
-	vec3 specularLight; // = SRGBtoLINEAR(tonemap(textureLod(prefilteredMap, reflection, lod))).rgb;
+	vec3 specularLight = SRGBtoLINEAR(tonemap(textureBindless3DLod(material.envcube, reflection, lod))).rgb;
 
 	vec3 diffuse = diffuseLight * pbrInputs.diffuseColor;
 	vec3 specular = specularLight * (pbrInputs.specularColor * brdf.x + brdf.y);
@@ -202,6 +202,10 @@ void main() {
 	uint u1 = material.texCoordSets.metallicRoughness;
 	uint u2 = material.texCoordSets.specularGlossiness;
 	//debugPrintfEXT("coord sets %d %d %d\n", u0, u1, u2);
+	uint t0 = material.brdflut;
+	uint t1 = material.irradiance;
+	uint t2 = material.envcube;
+	//debugPrintfEXT("tex index brdflut irr env %d %d %d\n", t0, t1, t2);
 	vec3 w = inWorldPos;
 	w = camPos;
 	//debugPrintfEXT("cam pos %f %f %f\n", w.x, w.y, w.z);
@@ -339,6 +343,17 @@ void main() {
 	color += getIBLContribution(pbrInputs, n, reflection);
 
 	const float u_OcclusionStrength = 1.0f;
+	// Apply optional PBR terms for additional (optional) shading
+	if (material.occlusionTextureSet > -1) {
+		float ao = textureBindless2D(material.occlusionTextureSet, (material.texCoordSets.occlusion == 0 ? inUV0 : inUV1)).r;
+		color = mix(color, color * ao, u_OcclusionStrength);
+	}
 
-	outColor = baseColor;
+	vec3 emissive = material.emissiveFactor.rgb * material.emissiveStrength;
+	if (material.emissiveTextureSet > -1) {
+		emissive *= SRGBtoLINEAR(textureBindless2D(material.emissiveTextureSet, material.texCoordSets.emissive == 0 ? inUV0 : inUV1)).rgb;
+	};
+	color += emissive;
+	
+	outColor = vec4(color, baseColor.a);
 }
