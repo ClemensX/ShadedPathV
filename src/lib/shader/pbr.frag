@@ -27,6 +27,7 @@ layout (location = 7) flat in uint normalIndex;
 layout (location = 8) flat in uint occlusionIndex;
 layout (location = 9) flat in uint emissiveIndex;
 layout (location = 10) flat in uint mode;
+layout (location = 11) in vec3 camPos;
 // mode 0: pbr metallic roughness
 // mode 1: only use vertex color
 
@@ -138,7 +139,8 @@ void main() {
 	uint u2 = material.texCoordSets.specularGlossiness;
 	//debugPrintfEXT("coord sets %d %d %d\n", u0, u1, u2);
 	vec3 w = inWorldPos;
-	//debugPrintfEXT("world pos %f %f %f\n", w.x, w.y, w.z);
+	w = camPos;
+	debugPrintfEXT("cam pos %f %f %f\n", w.x, w.y, w.z);
     f = uboParams.debugViewEquation;
     //debugPrintfEXT("frag uboParams.debugvieweq %f\n", f);
     f = uboParams.gamma;

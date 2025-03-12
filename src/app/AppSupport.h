@@ -87,7 +87,7 @@ protected:
 
 	// provide input handling for regular first person and HMD cameras
     void handleInput(InputState& inputState);
-    void applyViewProjection(glm::mat4& view1, glm::mat4& proj1, glm::mat4& view2, glm::mat4& proj2) {
+    void applyViewProjection(glm::mat4& view1, glm::mat4& proj1, glm::mat4& view2, glm::mat4& proj2, glm::vec3* camPos1 = nullptr, glm::vec3* camPos2 = nullptr) {
         if (activePositionerIsHMD) {
             view1 = hmdPositioner.getViewMatrixLeft();
             proj1 = hmdPositioner.getProjectionLeft();
@@ -100,6 +100,13 @@ protected:
             view2 = camera->getViewMatrix();
             proj2 = *getProjection();
 
+        }
+        // for now, we use only one cam position for both eyes. This camPos should be used for coloring calculations only.
+        if (camPos1 != nullptr) {
+            *camPos1 = camera->getPosition();
+        }
+        if (camPos2 != nullptr) {
+            *camPos2 = camera->getPosition();
         }
     }
     void enableEventsAndModes() {

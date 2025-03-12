@@ -118,8 +118,11 @@ void Loader::prepareFrame(FrameResources* fr)
     mat4 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     pubo.model = modeltransform;
     pubo2.model = modeltransform;
-    //pubo.baseColor = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f); 
-    applyViewProjection(pubo.view, pubo.proj, pubo2.view, pubo2.proj);
+    //pubo.baseColor = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+
+    // be sure to add cam pos to UBO for PBR shader!!!
+    applyViewProjection(pubo.view, pubo.proj, pubo2.view, pubo2.proj, &pubo.camPos, &pubo2.camPos);
+
     engine->shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
     // change individual objects position:
     //auto grp = engine->objectStore.getGroup("knife_group");
@@ -152,6 +155,7 @@ void Loader::prepareFrame(FrameResources* fr)
         //buf->material.alphaMask = 0.8f;
     }
     postUpdatePerFrame(tr);
+    camera->log();
     engine->shaders.clearShader.addCommandBuffers(fr, &fr->drawResults[0]); // put clear shader first
 }
 

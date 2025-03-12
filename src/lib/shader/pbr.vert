@@ -17,8 +17,8 @@ struct UBOParams {
 	float scaleIBLAmbient;
 	float debugViewInputs;
 	float debugViewEquation;
-		float pad0;
-		float pad1;
+	float pad0;
+	float pad1;
 };
 
 #include "shadermaterial.glsl"
@@ -72,6 +72,7 @@ layout (location = 7) out uint normalIndex;
 layout (location = 8) out uint occlusionIndex;
 layout (location = 9) out uint emissiveIndex;
 layout (location = 10) out uint mode_out;
+layout (location = 11) out vec3 outCamPos;
 
 // sync with pbrPushConstants in pbrShader.h
 layout(push_constant) uniform pbrPushConstants {
@@ -128,6 +129,7 @@ void main() {
 
 	outColor0 = inColor0;
     mode_out = push.mode;
+    outCamPos = ubo.camPos;
 
     vec4 locPos;
 	locPos = model_ubo.model * vec4(inPos, 1.0);
