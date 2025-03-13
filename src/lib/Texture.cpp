@@ -146,15 +146,20 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 		return;
 	} else {
 		// KTX 1 handling
-		//auto format = ktxTexture_GetVkFormat(kTexture);
-		//Log("format: " << format << endl);
+		auto format = ktxTexture_GetVkFormat(kTexture);
+		Log("format: " << format << endl);
 		auto ktxresult = ktxTexture_VkUploadEx(kTexture, &vdi, &texture->vulkanTexture, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		if (ktxresult != KTX_SUCCESS) {
 			Log("ERROR: in ktxTexture_VkUploadEx " << ktxresult);
 			Error("Could not upload texture to GPU ktxTexture_VkUploadEx");
 		}
 		// create image view and sampler:
-		texture->imageView = engine->globalRendering.createImageView(texture->vulkanTexture.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
+		if (kTexture->isCubemap) {
+			texture->imageView = engine->globalRendering.createImageViewCube(texture->vulkanTexture.image, format, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
+		} else {
+			//texture->imageView = engine->globalRendering.createImageView(texture->vulkanTexture.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
+			texture->imageView = engine->globalRendering.createImageView(texture->vulkanTexture.image, format, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
+		}
 		setTextureActive(texture->id, true);
 	}
 }

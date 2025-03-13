@@ -265,6 +265,8 @@ void main() {
 			vec4 mrSample = textureBindless2D(material.physicalDescriptorTextureSet, material.texCoordSets.metallicRoughness == 0 ? inUV0 : inUV1);
 			perceptualRoughness = mrSample.g * perceptualRoughness;
 			metallic = mrSample.b * metallic;
+			//debugPrintfEXT("metallic %f\n", metallic);
+			//debugPrintfEXT("metallic %f sample %f rough %f\n", metallic, mrSample.b, perceptualRoughness);
 		} else {
 			perceptualRoughness = clamp(perceptualRoughness, c_MinRoughness, 1.0);
 			metallic = clamp(metallic, 0.0, 1.0);
@@ -299,11 +301,13 @@ void main() {
 	vec3 specularEnvironmentR90 = vec3(1.0, 1.0, 1.0) * reflectance90;
 
 	vec3 n = (material.normalTextureSet > -1) ? getNormal(material) : normalize(inNormal);
-	n.y *= -1.0f;
+	//n.y *= -1.0f;
 	vec3 v = normalize(camPos - inWorldPos);    // Vector from surface point to camera
+	//vec3 v = normalize(inWorldPos - camPos);    // Vector from surface point to camera
 	vec3 l = normalize(uboParams.lightDir.xyz);     // Vector from surface point to light
 	vec3 h = normalize(l+v);                        // Half vector between both l and v
 	vec3 reflection = normalize(reflect(-v, n));
+	//debugPrintfEXT("light %f %f %f\n", uboParams.lightDir.x, uboParams.lightDir.y, uboParams.lightDir.z);
 
 	float NdotL = clamp(dot(n, l), 0.001, 1.0);
 	float NdotV = clamp(abs(dot(n, v)), 0.001, 1.0);

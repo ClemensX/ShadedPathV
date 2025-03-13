@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+# cube maps: pz front, nz back, nx left, px right, ny bottom, py top
+#        top 
+# left   front    right   back
+#        bottom
+
+#        py 
+# nx     pz       px      nz
+#        ny
+
 # Windows: run in git bash from /c/dev/cpp/ShadedPathV
 # path to ktx tools: C:\tools\vcpkg\packages\ktx_x64-windows\tools\ktx\ktx
 # if newer version is needed you might need to manually install locally, as vcpkg does not seem to get the right version:
@@ -37,6 +46,6 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #gltf-transform uastc ../data/rocks.gltf ./test/rocks_cmp.gltf --level 1 --zstd 10 --verbose
 #gltf-transform uastc ../data/rocks_multi.glb ../data/mesh/rocks_multi_cmp.glb --level 4 --zstd 18 --verbose
 #gltf-transform uastc ../data/mesh/loadingbox.glb ../data/mesh/loadingbox_cmp.glb --level 4 --zstd 18 --verbose
-#toktx --genmipmap --uastc 3 --zcmp 18 --verbose --t2 --cubemap cube.ktx2 px.png nx.png py.png ny.png pz.png nz.png
+toktx --genmipmap --uastc 3 --zcmp 18 --verbose --t2 --cubemap cube.ktx2 px.png nx.png py.png ny.png pz.png nz.png
 #gltf-transform uastc ../data/mesh/DamagedHelmet.glb ../data/mesh/DamagedHelmet_cmp.glb --level 4 --zstd 18 --verbose
-toktx --genmipmap --uastc 3 --zcmp 18 --verbose --t2 --cubemap ../data/texture/irr.ktx2 ./build/src/app/irradiance.ktx 
+#toktx --genmipmap --uastc 3 --zcmp 18 --verbose --t2 --cubemap ../data/texture/irr.ktx2 ./build/src/app/irradiance.ktx 

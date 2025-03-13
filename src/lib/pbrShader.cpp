@@ -59,6 +59,10 @@ void PBRShader::fillTextureIndexesFromMesh(PBRTextureIndexes& ind, MeshInfo* mes
 
 void PBRShader::prefillModelParameters(FrameResources& fr)
 {
+	struct LightSource {
+		glm::vec3 color = glm::vec3(1.0f);
+		glm::vec3 rotation = glm::vec3(75.0f, -40.0f, 0.0f);
+	} lightSource;
 	TextureInfo* tiBrdflut = engine->textureStore.getTexture(engine->textureStore.BRDFLUT_TEXTURE_ID);
 	TextureInfo* tiIrradiance = engine->textureStore.getTexture(engine->textureStore.IRRADIANCE_TEXTURE_ID);
 	TextureInfo* tiPrefileterdEnv = engine->textureStore.getTexture(engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
@@ -74,7 +78,13 @@ void PBRShader::prefillModelParameters(FrameResources& fr)
         buf->indexes = ind;
 		buf->jointcount = 0;
 		shaderValuesParams params;
-        buf->params = params;
+		params.prefilteredCubeMipLevels = tiPrefileterdEnv->vulkanTexture.levelCount;
+		params.lightDir = glm::vec4(
+			sin(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
+			sin(glm::radians(lightSource.rotation.y)),
+			cos(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
+			0.0f);
+		buf->params = params;
         buf->material = obj->mesh->material;
         buf->material.baseColorTextureSet = ind.baseColor;
         buf->material.physicalDescriptorTextureSet = ind.metallicRoughness;
@@ -199,7 +209,8 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 
 	// rasterizer
 	auto rasterizer = pbrShader->createStandardRasterizer();
-	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;//VK_CULL_MODE_NONE;
+	//rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;//VK_CULL_MODE_NONE;
+	rasterizer.cullMode = VK_CULL_MODE_NONE;
 
 	// multisampling
 	auto multisampling = pbrShader->createStandardMultisampling();

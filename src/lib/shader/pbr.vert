@@ -132,7 +132,7 @@ void main() {
     vec4 locPos;
 	locPos = model_ubo.model * vec4(inPos, 1.0);
 	outNormal = normalize(transpose(inverse(mat3(ubo.view * model_ubo.model))) * inNormal);
-	//locPos.y = -locPos.y;
+	locPos.y = -locPos.y;
 	outWorldPos = locPos.xyz / locPos.w;
 	outUV0 = inUV0;
 	outUV1 = inUV1;

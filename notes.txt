@@ -173,3 +173,7 @@ OR we use global submit queue for everything. makes final copy of image easier..
   main submit queue only doing presentation seems over-the-top
 --> use main submit queue for everything, also will nicely synchronize all submits...
     (data upload and long running background task are another story...)
+
+redo shader in willems code example:
+clemens@ShadedPathV MINGW64 /c/dev/cpp/Vulkan-glTF-PBR/data/shaders (master)
+$ glslc -g material_pbr.frag -o material_pbr.frag.spv

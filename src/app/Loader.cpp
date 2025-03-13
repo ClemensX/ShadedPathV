@@ -45,7 +45,7 @@ void Loader::init() {
 
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
     engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox");
-    alterObjectCoords = true;
+    alterObjectCoords = false;
     engine->objectStore.createGroup("group");
     object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 0.0f, 0.0f));
     if (alterObjectCoords) {
@@ -59,12 +59,16 @@ void Loader::init() {
     // Grid with 1m squares, floor on -10m, ceiling on 372m
 
     // load skybox cube texture and generate cubemaps
-    engine->textureStore.loadTexture("nebula.ktx2", "skyboxTexture");
+    //engine->textureStore.loadTexture("nebula.ktx2", "skyboxTexture");
+    //engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
+    engine->textureStore.loadTexture("papermill.ktx2", "skyboxTexture");
     engine->textureStore.generateBRDFLUT();
-    // genearting cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
+    // generating cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
     //engine->textureStore.generateCubemaps("skyboxTexture");
     engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);
+    //piazza_bologni_1k_prefilter.ktx
     engine->textureStore.loadTexture("prefilter.ktx2", engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
+    //engine->textureStore.loadTexture("piazza_bologni_1k_prefilter.ktx", engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
 
     engine->shaders.cubeShader.setSkybox("skyboxTexture");
     engine->shaders.cubeShader.setFarPlane(2000.0f);
@@ -133,7 +137,7 @@ void Loader::prepareFrame(FrameResources* fr)
         //WorldObject *wo = obj.get();
         PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
         mat4 modeltransform;
-        if (spinningBox && !firstPersonMode) {
+        if (spinningBox  && doRotation) {
             // Define a constant rotation speed (radians per second)
             double rotationSpeed = glm::radians(45.0f); // 45 degrees per second
             if (alterObjectCoords) {
@@ -145,7 +149,7 @@ void Loader::prepareFrame(FrameResources* fr)
 
             // Apply the rotation to the modeltransform matrix
             modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
-            if (alterObjectCoords) {
+            if (!alterObjectCoords) {
                 modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
             }
         } else {
@@ -157,7 +161,7 @@ void Loader::prepareFrame(FrameResources* fr)
         //buf->material.alphaMask = 0.8f;
     }
     postUpdatePerFrame(tr);
-    camera->log();
+    //camera->log();
     engine->shaders.clearShader.addCommandBuffers(fr, &fr->drawResults[0]); // put clear shader first
 }
 

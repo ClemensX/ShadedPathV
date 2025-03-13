@@ -96,9 +96,9 @@ void Incoming::init() {
     world.setWorldSize(1024.0f, 382.0f, 1024.0f);
     engine->setWorld(&world);
 
-    engine->textureStore.generateBRDFLUT();
-
-    engine->meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
+    MeshFlagsCollection meshFlags = MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES);
+    meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
+    engine->meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", meshFlags);
     engine->objectStore.createGroup(GroupTerrainName, GroupTerrain);
     if (debugObjects) {
         engine->objectStore.createGroup(GroupDebugName, GroupDebug);
@@ -154,6 +154,11 @@ void Incoming::init() {
 
     // skybox
     engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
+    engine->textureStore.generateBRDFLUT();
+    // generating cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
+    //engine->textureStore.generateCubemaps("skyboxTexture");
+    engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);
+    engine->textureStore.loadTexture("prefilter.ktx2", engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
     engine->shaders.cubeShader.setSkybox("skyboxTexture");
     engine->shaders.cubeShader.setFarPlane(2000.0f);
 
