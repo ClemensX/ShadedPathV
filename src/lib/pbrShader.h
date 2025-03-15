@@ -198,6 +198,11 @@ public:
 	void prefillModelParameters(FrameResources& tr);
 
 	void fillTextureIndexesFromMesh(PBRTextureIndexes& ind, MeshInfo* mesh);
+    void changeLightSource(glm::vec3 color, glm::vec3 rotation) {
+		if (commandBuffersCreated) Error("cannot change light source after command buffers have been created. Change for each model in app code!");
+        lightSource.color = color;
+        lightSource.rotation = rotation;
+    }
 
 private:
 	UniformBufferObject ubo = {};
@@ -206,6 +211,11 @@ private:
 
 	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;
+	struct LightSource {
+		glm::vec3 color = glm::vec3(1.0f);
+		glm::vec3 rotation = glm::vec3(75.0f, 40.0f, 0.0f);
+	} lightSource;
+    bool commandBuffersCreated = false;
 };
 
 /*

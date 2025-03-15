@@ -59,10 +59,6 @@ void PBRShader::fillTextureIndexesFromMesh(PBRTextureIndexes& ind, MeshInfo* mes
 
 void PBRShader::prefillModelParameters(FrameResources& fr)
 {
-	struct LightSource {
-		glm::vec3 color = glm::vec3(1.0f);
-		glm::vec3 rotation = glm::vec3(75.0f, 40.0f, 0.0f);
-	} lightSource;
 	TextureInfo* tiBrdflut = engine->textureStore.getTexture(engine->textureStore.BRDFLUT_TEXTURE_ID);
 	TextureInfo* tiIrradiance = engine->textureStore.getTexture(engine->textureStore.IRRADIANCE_TEXTURE_ID);
 	TextureInfo* tiPrefileterdEnv = engine->textureStore.getTexture(engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
@@ -211,6 +207,7 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	auto rasterizer = pbrShader->createStandardRasterizer();
 	//rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;//VK_CULL_MODE_NONE;
 	rasterizer.cullMode = VK_CULL_MODE_NONE;
+	//rasterizer.cullMode = VK_DYNAMIC_STATE_CULL_MODE;
 
 	// multisampling
 	auto multisampling = pbrShader->createStandardMultisampling();
@@ -220,6 +217,14 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	auto colorBlending = pbrShader->createStandardColorBlending(colorBlendAttachment);
 
 	// dynamic state
+	std::vector<VkDynamicState> dynamicStates = {
+		VK_DYNAMIC_STATE_CULL_MODE_EXT
+	};
+	VkPipelineDynamicStateCreateInfo dynamicState{};
+	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
+	dynamicState.pDynamicStates = dynamicStates.data();
+
 	// empty for now...
 
 	// pipeline layout
@@ -240,7 +245,7 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	pipelineInfo.pMultisampleState = &multisampling;
 	pipelineInfo.pDepthStencilState = &depthStencil;
 	pipelineInfo.pColorBlendState = &colorBlending;
-	pipelineInfo.pDynamicState = nullptr; // Optional
+	pipelineInfo.pDynamicState = &dynamicState; // Optional
 	pipelineInfo.layout = pipelineLayout;
 	pipelineInfo.renderPass = renderPass;
 	pipelineInfo.subpass = 0;
@@ -334,6 +339,9 @@ void PBRSubShader::uploadToGPU(FrameResources& tr, PBRShader::UniformBufferObjec
 void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& fr, WorldObject* obj, bool isRightEye)
 {
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+	// Set the cull mode dynamically
+	VkCullModeFlags cullMode = obj->mesh->isDoubleSided ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT;
+	vkCmdSetCullMode(commandBuffer, cullMode);
 	VkBuffer vertexBuffers[] = { obj->mesh->vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);

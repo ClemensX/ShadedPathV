@@ -294,6 +294,7 @@ void glTF::prepareTexturesAndMaterials(tinygltf::Model& model, MeshCollection* c
 
 	MeshInfo* mesh = coll->meshInfos[gltfMeshIndex];
     mesh->metallicRoughness = true; // default to metallic roughness workflow
+    mesh->isDoubleSided = mat.doubleSided;
 
 	// create samplers
 	vector<VkSampler> samplers(model.samplers.size());
@@ -424,8 +425,8 @@ void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
 				Log(s.str());
 			}
 		}
-		if (mat.doubleSided != true) {
-			Log("PERFORANCE WARNING: gltf material is single sided, but rendered doublesided! " << mat.name.c_str())
+		if (mat.doubleSided == true) {
+			Log("INFO: double sided gltf material used " << mat.name.c_str())
 		}
 	}
 	for (auto& m : model.meshes) {

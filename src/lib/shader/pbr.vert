@@ -110,7 +110,7 @@ void check_inputs() {
 }
 
 void main() {
-    check_inputs();
+    //check_inputs();
     //outParams = model_ubo.params;
     //outMaterial = model_ubo.material;
     //textureIndexes = model_ubo.indexes;
@@ -135,11 +135,6 @@ void main() {
 
     vec4 locPos;
 	locPos = model_ubo.model * vec4(inPos, 1.0);
-	//if (inPos.y >= 0.812845) {
-	if (locPos.y >= 0.900974) {
-        vec4 x = locPos;
-		//debugPrintfEXT("vert pos %f %f %f %f\n", x.x, x.y, x.z, x.w);
-	}
 	outNormal = normalize(transpose(inverse(mat3(model_ubo.model))) * inNormal);
 	//locPos.y = -locPos.y;
 	outWorldPos = locPos.xyz / locPos.w;

@@ -84,6 +84,8 @@ struct MeshInfo
 	}
 	// during gltf model load, this flag is enabled. do not call from somwehere else
 	bool metallicRoughness = false;
+	// copy gltf material info here, may also be overwritten in app code
+	bool isDoubleSided = false;
 };
 typedef MeshInfo* ObjectID;
 

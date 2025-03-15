@@ -270,6 +270,10 @@ public:
         backgroundThreadQueue.push(&backRes);
         return true;
     }
+    // some global settings can only be done before rendering starts
+    bool isBeforeRendering() {
+        return !eventLoopRunning;
+    }
 private:
 
     // bool configuration flags:
@@ -290,6 +294,7 @@ private:
     size_t maxTextures = 5;
     bool limitFrameCountEnabled = false;
     bool initialized = false;
+    bool eventLoopRunning = false;
     bool threadsAreFinished();
     bool enabledKeyEvents = false;
     bool enabledMouseMoveEvents = false;

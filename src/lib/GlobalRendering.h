@@ -129,6 +129,7 @@ public:
 	};
 
 	std::vector<const char*> instanceExtensions = {
+		//VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
 #   if defined(ENABLE_DEBUG_UTILS_EXTENSION)
 		VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
 #   endif
@@ -142,6 +143,7 @@ public:
 	};
 
 	std::vector<const char*> deviceExtensions = {
+		VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 		VK_EXT_MESH_SHADER_EXTENSION_NAME//,
 		//VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME

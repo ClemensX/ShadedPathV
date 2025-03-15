@@ -152,6 +152,7 @@ void ShadedPathEngine::eventLoop()
 {
     // some shaders may need additional preparation
     prepareDrawing();
+    eventLoopRunning = true;
 
     // rendering
     while (!shouldClose()) {
