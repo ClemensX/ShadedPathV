@@ -293,6 +293,7 @@ void glTF::prepareTexturesAndMaterials(tinygltf::Model& model, MeshCollection* c
 	auto emissiveTextureIndex = mat.emissiveTexture.index;
 
 	MeshInfo* mesh = coll->meshInfos[gltfMeshIndex];
+    mesh->metallicRoughness = true; // default to metallic roughness workflow
 
 	// create samplers
 	vector<VkSampler> samplers(model.samplers.size());
@@ -368,7 +369,7 @@ void glTF::prepareTexturesAndMaterials(tinygltf::Model& model, MeshCollection* c
 			m.emissiveStrength = (float)value.Get<double>();
 		}
 	}
-	if (mesh->metallicRoughnessTexture != nullptr) {
+	if (mesh->isMetallicRoughness()) {
         m.workflow = 0.0f; // metallic roughness workflow
         m.baseColorFactor = glm::vec4(mat.pbrMetallicRoughness.baseColorFactor[0], mat.pbrMetallicRoughness.baseColorFactor[1], mat.pbrMetallicRoughness.baseColorFactor[2], mat.pbrMetallicRoughness.baseColorFactor[3]);
         m.metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
@@ -396,7 +397,7 @@ void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
 			if (texIndex < 0) {
 				stringstream s;
 				s << "gltf baseColorTexture not found: " << coll->filename << ". try gltf-transform metalrough infile outfile, or mark mesh as MESH_TYPE_NO_TEXTURES to load without textures" << endl;
-				Error(s.str());
+				Log(s.str());
 			}
 			texIndex = mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
 			if (texIndex < 0) {

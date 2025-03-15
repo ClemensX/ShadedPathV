@@ -103,6 +103,10 @@ void check_inputs() {
     int b = model_ubo.material.brdflut;
     int e = model_ubo.material.envcube;
     //debugPrintfEXT("material brdflut envcube %d %d\n", b, e);
+    x = inPos;
+	if (x.y >= 0.812845) {
+		//debugPrintfEXT("vert pos %f %f %f\n", x.x, x.y, x.z);
+	}
 }
 
 void main() {
@@ -131,8 +135,13 @@ void main() {
 
     vec4 locPos;
 	locPos = model_ubo.model * vec4(inPos, 1.0);
-	outNormal = normalize(transpose(inverse(mat3(ubo.view * model_ubo.model))) * inNormal);
-	locPos.y = -locPos.y;
+	//if (inPos.y >= 0.812845) {
+	if (locPos.y >= 0.900974) {
+        vec4 x = locPos;
+		//debugPrintfEXT("vert pos %f %f %f %f\n", x.x, x.y, x.z, x.w);
+	}
+	outNormal = normalize(transpose(inverse(mat3(model_ubo.model))) * inNormal);
+	//locPos.y = -locPos.y;
 	outWorldPos = locPos.xyz / locPos.w;
 	outUV0 = inUV0;
 	outUV1 = inUV1;

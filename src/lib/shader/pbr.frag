@@ -61,7 +61,9 @@ layout(set = 1, binding = 0) uniform samplerCube global_textures3d[];
 layout(set = 1, binding = 0) uniform sampler2D global_textures2d[];
 
 vec4 textureBindless3DLod(uint textureid, vec3 uv, float lod) {
-	return textureLod(global_textures3d[nonuniformEXT(textureid)], uv, lod);
+	vec3 myuv = uv;
+	//myuv.y = 1.0 - myuv.y;
+	return textureLod(global_textures3d[nonuniformEXT(textureid)], myuv, lod);
 }
 
 vec4 textureBindless3D(uint textureid, vec3 uv) {
@@ -135,6 +137,7 @@ vec3 getIBLContribution(PBRInfo pbrInputs, vec3 n, vec3 reflection)
 	vec3 diffuseLight = SRGBtoLINEAR(tonemap(textureBindless3D(material.irradiance, n))).rgb;
 
 	vec3 specularLight = SRGBtoLINEAR(tonemap(textureBindless3DLod(material.envcube, reflection, lod))).rgb;
+	//specularLight = vec3(0.0); // disable IBL for now
 
 	vec3 diffuse = diffuseLight * pbrInputs.diffuseColor;
 	vec3 specular = specularLight * (pbrInputs.specularColor * brdf.x + brdf.y);
@@ -293,6 +296,7 @@ void main() {
 
 	// Compute reflectance.
 	float reflectance = max(max(specularColor.r, specularColor.g), specularColor.b);
+	//debugPrintfEXT("reflectance %f\n", reflectance);
 
 	// For typical incident reflectance range (between 4% to 100%) set the grazing reflectance to 100% for typical fresnel effect.
 	// For very low reflectance range on highly diffuse objects (below 4%), incrementally reduce grazing reflecance to 0%.
@@ -300,14 +304,37 @@ void main() {
 	vec3 specularEnvironmentR0 = specularColor.rgb;
 	vec3 specularEnvironmentR90 = vec3(1.0, 1.0, 1.0) * reflectance90;
 
+	// one hardcoded light source
+	vec3 lightPos = vec3(0, 500, -500);
+	vec3 lightDir = normalize(lightPos - inWorldPos);
+
+
 	vec3 n = (material.normalTextureSet > -1) ? getNormal(material) : normalize(inNormal);
-	//n.y *= -1.0f;
-	vec3 v = normalize(camPos - inWorldPos);    // Vector from surface point to camera
+	n.y *= -1.0f;
+	//n = normalize(vec3(0.964335, -0.95209, 0.98863));
+	//n = normalize(inNormal);
+	//n *= -1.0;
+	vec3 rel = camPos - inWorldPos;
+	//rel = vec3(0.043954 -0.089709 -0.070879);
+	vec3 v = normalize(rel);    // Vector from surface point to camera
 	//vec3 v = normalize(inWorldPos - camPos);    // Vector from surface point to camera
 	vec3 l = normalize(uboParams.lightDir.xyz);     // Vector from surface point to light
+	l = lightDir;
 	vec3 h = normalize(l+v);                        // Half vector between both l and v
 	vec3 reflection = normalize(reflect(-v, n));
-	//debugPrintfEXT("light %f %f %f\n", uboParams.lightDir.x, uboParams.lightDir.y, uboParams.lightDir.z);
+	vec3 myv = uboParams.lightDir.xyz;
+	myv = camPos;
+	myv = inWorldPos;
+	//debugPrintfEXT("pos %f %f %f\n", myv.x, myv.y, myv.z);
+	if (myv.y >= 0.9009734) {
+	    myv = camPos - inWorldPos;
+		//debugPrintfEXT("surf --> cam %f %f %f\n", myv.x, myv.y, myv.z);
+		vec3 p = inWorldPos;
+		//debugPrintfEXT("N  %f %f %f    at %f %f %f\n", n.x, n.y, n.z, p.x, p.y, p.z);
+		vec3 l = uboParams.lightDir.xyz;
+		l = reflection;
+	    debugPrintfEXT("reflection %f %f %f\n", l.x, l.y, l.z);
+	}
 
 	float NdotL = clamp(dot(n, l), 0.001, 1.0);
 	float NdotV = clamp(abs(dot(n, v)), 0.001, 1.0);

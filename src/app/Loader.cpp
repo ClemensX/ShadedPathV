@@ -13,7 +13,8 @@ void Loader::run(ContinuationInfo* cont)
         auto& shaders = engine->shaders;
         // camera initialization
         //initCamera(glm::vec3([-0.0386716 0.57298 1.71695]), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        initCamera(glm::vec3(-0.0386716f,  0.5f, 1.71695f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        initCamera(glm::vec3(-0.0386716f, 0.5f, 1.71695f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        //initCamera(glm::vec3(-2.10783f, 0.56567f, -0.129275f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         getFirstPersonCameraPositioner()->setMaxSpeed(0.1f);
         getHMDCameraPositioner()->setMaxSpeed(0.1f);
 
@@ -29,6 +30,7 @@ void Loader::run(ContinuationInfo* cont)
             .addShader(shaders.clearShader)
             .addShader(shaders.cubeShader)
             .addShader(shaders.pbrShader)
+            .addShader(shaders.lineShader)
             ;
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         shaders.initActiveShaders();
@@ -44,7 +46,9 @@ void Loader::init() {
     engine->sound.init(false);
 
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
+    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
     engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox");
+    //engine->meshStore.loadMesh("SimpleMaterial.gltf", "LogoBox");
     alterObjectCoords = false;
     engine->objectStore.createGroup("group");
     object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 0.0f, 0.0f));
@@ -53,6 +57,9 @@ void Loader::init() {
         object->mesh->baseTransform = glm::rotate(object->mesh->baseTransform, (float)PI, glm::vec3(0.0f, 1.0f, 0.0f));
     }
 
+    BoundingBox box;
+    object->getBoundingBox(box);
+    Log(" object max values: " << box.max.x << " " << box.max.y << " " << box.max.z << std::endl);
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
@@ -83,6 +90,32 @@ void Loader::init() {
     engine->sound.playSound(Sound::SHADED_PATH_JINGLE, SoundCategory::MUSIC);
     engine->sound.openSoundFile("loading_music.ogg", "BACKGROUND_MUSIC", true);
     engine->sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 0.2f, 5000);
+
+    // 0.054417 17.445881 12.587227
+    float aspectRatio = 10.0f; // engine->getAspect();
+    LineDef myLines[] = {
+        // start, end, color
+        //{ glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) },
+        { glm::vec3(0.026825, -0.900974, 0.545404), glm::vec3(0.054417f, 17.445881f, 12.587227f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) },
+        { glm::vec3(0.026825, 0.900974, 0.545404), glm::vec3(0.054417f, 17.445881f, 12.587227f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) },
+        { glm::vec3(-0.017894, 0.900974, 0.545404), glm::vec3(0.943287, 0.097692, -0.317280), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) },
+        { glm::vec3(0.026474, 0.900974, 0.545403), glm::vec3(-0.190582, -0.924082, -0.331288), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) },
+        { glm::vec3(0.025699, 0.900974, 0.545403), glm::vec3(-0.190814, -0.926022, -0.325689), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) },
+        { glm::vec3(0.017435, 0.900974, 0.545404), glm::vec3(0.950813, 0.133715, -0.279420), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) },
+        { glm::vec3(-0.020320, 0.900974, 0.545404), glm::vec3(0.961352, 0.093620, -0.258915), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) },
+        { glm::vec3(-0.020326, 0.900974, 0.545402), glm::vec3(-0.184916, -0.938009, -0.293163), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) },
+        { glm::vec3(-0.017938, 0.900974, 0.545404), glm::vec3(0.964335, 0.055209, -0.258863), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) },
+        { glm::vec3(-0.021625, 0.900974, 0.545403), glm::vec3(-0.185608, -0.962647, -0.197130), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) },
+        { glm::vec3(-0.021622, 0.900974, 0.545404), glm::vec3(0.965867, 0.061166, -0.251712), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) },
+        { glm::vec3(-0.017982, 0.900974, 0.545404), glm::vec3(0.966822, 0.019318, -0.254719), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) }
+    };
+    for (int i = 2; i < 12; i++) {
+        myLines[i].end = myLines[i].start + myLines[i].end;
+    }
+    vector<LineDef> lines;
+    for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
+    engine->shaders.lineShader.addFixedGlobalLines(lines);
+    engine->shaders.lineShader.uploadFixedGlobalLines();
 }
 
 void Loader::mainThreadHook()
@@ -160,6 +193,14 @@ void Loader::prepareFrame(FrameResources* fr)
         //buf->params.debugViewEquation = 0.5f;
         //buf->material.alphaMask = 0.8f;
     }
+    // lines
+    LineShader::UniformBufferObject lubo{};
+    LineShader::UniformBufferObject lubo2{};
+    lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
+    engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
+
     postUpdatePerFrame(tr);
     //camera->log();
     engine->shaders.clearShader.addCommandBuffers(fr, &fr->drawResults[0]); // put clear shader first
@@ -174,6 +215,8 @@ void Loader::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
         if (engine->sound.enabled) {
             engine->sound.Update(camera);
         }
+        // draw lines
+        engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
     }
     else if (topic == 1) {
         engine->shaders.pbrShader.addCommandBuffers(fr, drawResult);

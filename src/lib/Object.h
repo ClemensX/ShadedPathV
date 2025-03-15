@@ -78,6 +78,12 @@ struct MeshInfo
 	// link back to collection
 	MeshCollection* collection = nullptr;
 	PBRShader::ShaderMaterial material;
+    // gltf loaded models are (currently) always PBR metallic roughness
+	bool isMetallicRoughness() {
+		return metallicRoughness;
+	}
+	// during gltf model load, this flag is enabled. do not call from somwehere else
+	bool metallicRoughness = false;
 };
 typedef MeshInfo* ObjectID;
 
