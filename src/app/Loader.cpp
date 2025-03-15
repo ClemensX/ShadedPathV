@@ -51,10 +51,10 @@ void Loader::init() {
     //engine->meshStore.loadMesh("SimpleMaterial.gltf", "LogoBox");
     alterObjectCoords = true;
     engine->objectStore.createGroup("group");
-    object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 0.0f, 0.0f));
+    object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.5f, -1.0f, -1.0f));
     if (alterObjectCoords) {
         // turn upside down
-        object->mesh->baseTransform = glm::rotate(object->mesh->baseTransform, (float)PI, glm::vec3(0.0f, 1.0f, 0.0f));
+        object->rot() = vec3(PI_half, 0.0, 0.0f);
     }
 
     BoundingBox box;
@@ -172,8 +172,8 @@ void Loader::prepareFrame(FrameResources* fr)
         mat4 modeltransform;
         if (spinningBox  && doRotation) {
             // Define a constant rotation speed (radians per second)
-            double rotationSpeed = glm::radians(45.0f); // 45 degrees per second
-            if (alterObjectCoords) {
+            double rotationSpeed = glm::radians(5.0f); // 45 degrees per second
+            if (!alterObjectCoords) {
                 rotationSpeed = glm::radians(56.2f); // 60 degrees per second   
             }
 
@@ -182,12 +182,25 @@ void Loader::prepareFrame(FrameResources* fr)
 
             // Apply the rotation to the modeltransform matrix
             modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
-            if (!alterObjectCoords) {
+            if (alterObjectCoords) {
                 modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
             }
+            object->rot().y = rotationAngle;
         } else {
             modeltransform = wo->mesh->baseTransform;
         }
+        // standard model matrix
+        auto pos = wo->pos();
+        auto rot = wo->rot();
+        auto scale = wo->scale();
+        glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), rot.x, glm::vec3(1.0f, 0.0f, 0.0f));
+        glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), rot.y, glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), rot.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+        glm::mat4 rotationMatrix = rotationZ * rotationY * rotationX;
+        glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
+        glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
+        modeltransform = trans * scaled * rotationMatrix;
         buf->model = modeltransform;
         //buf->params.gamma = 2.2f;
         //buf->params.debugViewEquation = 0.5f;

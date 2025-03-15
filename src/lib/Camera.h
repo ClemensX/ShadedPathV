@@ -33,8 +33,10 @@ struct Movement {
 	glm::vec3 forward = glm::vec3();
 	glm::vec3 right = glm::vec3();
 	glm::vec3 up = glm::vec3();
-    glm::vec3 lastFinalPosition = glm::vec3(); // store last final position (e.g. camera + head movement)
-    MovementWalkingSubtype walkingSubtype = MovementWalkingSubtype::NoGradient;
+	glm::vec3 lastFinalPosition = glm::vec3(); // store last final position (e.g. camera + head movement)
+	glm::vec3 lastFinalPositionLeft = glm::vec3(); // last final position left eye
+	glm::vec3 lastFinalPositionRight = glm::vec3(); // last final position right eye
+	MovementWalkingSubtype walkingSubtype = MovementWalkingSubtype::NoGradient;
 };
 
 class CameraPositionerInterface : public EngineParticipant {
@@ -427,6 +429,14 @@ public:
 
 	virtual glm::vec3 getLastFinalPosition() override {
 		return movement.lastFinalPosition;
+	};
+
+	virtual glm::vec3 getLastFinalPositionLeft() {
+		return movement.lastFinalPositionLeft;
+	};
+
+	virtual glm::vec3 getLastFinalPositionRight() {
+		return movement.lastFinalPositionRight;
 	};
 
 	// look at vector is the same for both eyes

@@ -73,6 +73,13 @@ void CameraPositioner_HMD::update(int viewNum, glm::vec3 pos, glm::quat ori, glm
 		engine->getWorld()->paths.updateCameraPosition(this, movement, deltaSeconds/2.0f);
 	}
 	auto finalPos = cameraPosition + pos;
+	if (viewNum == 0) {
+        movement.lastFinalPositionLeft = finalPos;
+        //Log("HMD detail pos left eye " << finalPos.x << " " << finalPos.y << " " << finalPos.z << " " << std::endl);
+    } else {
+		movement.lastFinalPositionRight = finalPos;
+		//Log("HMD detail pos right eye " << finalPos.x << " " << finalPos.y << " " << finalPos.z << " " << std::endl);
+	}
     movement.lastFinalPosition = finalPos;
 	const glm::mat4 t = glm::translate(glm::mat4(1.0f), -finalPos);
 	const glm::mat4 r = glm::mat4_cast(normori);

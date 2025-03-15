@@ -225,3 +225,6 @@ specularLight _468.xyz float3 0.59577, 0.6154, 0.64903
 eid36 prim 5950
 vtx 17850 6110
 
+		x	0.739942	float
+		y	-0.642788	float
+		z	0.198267	float

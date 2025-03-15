@@ -330,6 +330,9 @@ void PBRSubShader::uploadToGPU(FrameResources& tr, PBRShader::UniformBufferObjec
 		vkUnmapMemory(device, uniformBufferMemory);
 	}
 	if (engine->isStereo() && true) {
+        // this gives a nice flat effect for mirror-like objects, but it is not correct, as the camera position is different for each eye.
+		// So we comment this line for physical correctness...
+		//ubo2.camPos = ubo.camPos; 
 		vkMapMemory(device, uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
 		memcpy(data, &ubo2, sizeof(ubo2));
 		vkUnmapMemory(device, uniformBufferMemory2);

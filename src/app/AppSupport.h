@@ -24,7 +24,7 @@ protected:
     //bool singleThreadMode = false;
     //bool debugWindowPosition = true; // if true try to open app window in right screen part
     //bool enableRenderDoc = true;
-    int win_width = 1800;// 480; 960;//1800;// 800;//3700;
+    int win_width = 960;// 480; 960;//1800;// 800;//3700;
 
     bool firstPersonCameraAlwayUpright = true;
     Camera* camera = nullptr;
@@ -94,21 +94,27 @@ protected:
             view2 = hmdPositioner.getViewMatrixRight();
             proj2 = hmdPositioner.getProjectionRight();
             //Log("VR mode back image num" << tr.frameNum << endl)
+            // for now, we use only one left eye cam position for both eyes. This camPos should be used for coloring calculations only.
+            if (camPos1 != nullptr) {
+                *camPos1 = hmdPositioner.getLastFinalPositionLeft();
+            }
+            if (camPos2 != nullptr) {
+                *camPos2 = hmdPositioner.getLastFinalPositionRight();
+            }
         } else {
             view1 = camera->getViewMatrix();
             proj1 = *getProjection();
             view2 = camera->getViewMatrix();
             proj2 = *getProjection();
-
-        }
-        // for now, we use only one cam position for both eyes. This camPos should be used for coloring calculations only.
-        if (camPos1 != nullptr) {
-            *camPos1 = camera->getPosition();
-            //camPos1->x *= -1.0f; // flip z axis
-        }
-        if (camPos2 != nullptr) {
-            *camPos2 = camera->getPosition();
-            //camPos2->x *= -1.0f; // flip z axis
+            // for now, we use only one cam position for both eyes. This camPos should be used for coloring calculations only.
+            if (camPos1 != nullptr) {
+                *camPos1 = camera->getPosition();
+                //camPos1->x *= -1.0f; // flip z axis
+            }
+            if (camPos2 != nullptr) {
+                *camPos2 = camera->getPosition();
+                //camPos2->x *= -1.0f; // flip z axis
+            }
         }
     }
     void enableEventsAndModes() {

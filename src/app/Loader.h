@@ -24,10 +24,10 @@ private:
     float plus = 0.0f;
     bool shouldStopEngine = false;
     bool enableUI = true;
-    bool spinningBox = false;
+    bool spinningBox = false; // do not change - time dependent value
     double spinTimeSeconds = 0.0;
     bool alterObjectCoords = false; // some gltf examples objects require different object rotation params
     bool firstPersonMode = true;
-    bool doRotation = false;
+    bool doRotation = true;
 };
 
