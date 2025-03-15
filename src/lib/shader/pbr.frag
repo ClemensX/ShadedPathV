@@ -133,10 +133,13 @@ vec3 getIBLContribution(PBRInfo pbrInputs, vec3 n, vec3 reflection)
 	float lod = (pbrInputs.perceptualRoughness * uboParams.prefilteredCubeMipLevels);
 	// retrieve a scale and bias to F0. See [1], Figure 3
 	//textureBindless2D(material.baseColorTextureSet
+	//n.y -= n.y;
 	vec3 brdf = (textureBindless2D(material.brdflut, vec2(pbrInputs.NdotV, 1.0 - pbrInputs.perceptualRoughness))).rgb;
 	vec3 diffuseLight = SRGBtoLINEAR(tonemap(textureBindless3D(material.irradiance, n))).rgb;
 
-	vec3 specularLight = SRGBtoLINEAR(tonemap(textureBindless3DLod(material.envcube, reflection, lod))).rgb;
+	vec3 myref = reflection;
+	//myref.y = -myref.y;
+	vec3 specularLight = SRGBtoLINEAR(tonemap(textureBindless3DLod(material.envcube, myref, lod))).rgb;
 	//specularLight = vec3(0.0); // disable IBL for now
 
 	vec3 diffuse = diffuseLight * pbrInputs.diffuseColor;
@@ -310,31 +313,13 @@ void main() {
 
 
 	vec3 n = (material.normalTextureSet > -1) ? getNormal(material) : normalize(inNormal);
-	n.y *= -1.0f;
-	//n = normalize(vec3(0.964335, -0.95209, 0.98863));
-	//n = normalize(inNormal);
-	//n *= -1.0;
-	vec3 rel = camPos - inWorldPos;
-	//rel = vec3(0.043954 -0.089709 -0.070879);
-	vec3 v = normalize(rel);    // Vector from surface point to camera
-	//vec3 v = normalize(inWorldPos - camPos);    // Vector from surface point to camera
+	//n.y *= -1.0f;
+	vec3 v = normalize(camPos - inWorldPos);    // Vector from surface point to camera
+	//vec3 v = normalize(inWorldPos - ubo.camPos);    // Vector from surface point to camera
 	vec3 l = normalize(uboParams.lightDir.xyz);     // Vector from surface point to light
-	l = lightDir;
 	vec3 h = normalize(l+v);                        // Half vector between both l and v
 	vec3 reflection = normalize(reflect(-v, n));
-	vec3 myv = uboParams.lightDir.xyz;
-	myv = camPos;
-	myv = inWorldPos;
-	//debugPrintfEXT("pos %f %f %f\n", myv.x, myv.y, myv.z);
-	if (myv.y >= 0.9009734) {
-	    myv = camPos - inWorldPos;
-		//debugPrintfEXT("surf --> cam %f %f %f\n", myv.x, myv.y, myv.z);
-		vec3 p = inWorldPos;
-		//debugPrintfEXT("N  %f %f %f    at %f %f %f\n", n.x, n.y, n.z, p.x, p.y, p.z);
-		vec3 l = uboParams.lightDir.xyz;
-		l = reflection;
-	    debugPrintfEXT("reflection %f %f %f\n", l.x, l.y, l.z);
-	}
+	//reflection.y = -reflection.y;
 
 	float NdotL = clamp(dot(n, l), 0.001, 1.0);
 	float NdotV = clamp(abs(dot(n, v)), 0.001, 1.0);

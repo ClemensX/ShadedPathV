@@ -30,7 +30,7 @@ void Loader::run(ContinuationInfo* cont)
             .addShader(shaders.clearShader)
             .addShader(shaders.cubeShader)
             .addShader(shaders.pbrShader)
-            .addShader(shaders.lineShader)
+            //.addShader(shaders.lineShader)
             ;
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         shaders.initActiveShaders();
@@ -49,7 +49,7 @@ void Loader::init() {
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
     engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox");
     //engine->meshStore.loadMesh("SimpleMaterial.gltf", "LogoBox");
-    alterObjectCoords = false;
+    alterObjectCoords = true;
     engine->objectStore.createGroup("group");
     object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 0.0f, 0.0f));
     if (alterObjectCoords) {
