@@ -356,8 +356,6 @@ void glTF::prepareTexturesAndMaterials(tinygltf::Model& model, MeshCollection* c
 	m.normalTextureSet = normalTextureIndex;
 	m.occlusionTextureSet = occlusionTextureIndex;
 	m.emissiveTextureSet = emissiveTextureIndex;
-    m.alphaMask = static_cast<float>(mat.alphaMode == "MASK");
-    m.alphaMaskCutoff = mat.alphaCutoff;
 	// values from possible extensions:
 	if (mat.extensions.find("KHR_materials_unlit") != mat.extensions.end()) {
 		//m.unlit = true;
@@ -379,8 +377,23 @@ void glTF::prepareTexturesAndMaterials(tinygltf::Model& model, MeshCollection* c
         m.baseColorTextureSet = baseColorTextureIndex;
 	}
 	else Error("only metallic roughness workflow supported");
+
+    // handle alpha mode
+	if (mat.alphaMode == "MASK") {
+		m.alphaMask = 1.0f;
+		m.alphaMaskCutoff = mat.alphaCutoff;
+	} else if (mat.alphaMode == "BLEND") {
+		// Approximate BLEND mode by setting a low alphaCutoff value
+		m.alphaMask = 1.0f;
+		m.alphaMaskCutoff = 0.1; // Set a low cutoff value for blending approximation
+        Log("WARNING: BLEND alpha mode not supported in " << mesh->id << ", approximated as MASK with alpha cutoff of 0.1" << endl);
+	} else {
+        assert(mat.alphaMode == "OPAQUE");
+        m.alphaMask = 0.0f; // disables alpha masking in shader
+    }
+
+
 	mesh->material = m;
-    //shaderMaterial.emissiveFactor = mat.emissiveFactor;
 }
 
 void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)

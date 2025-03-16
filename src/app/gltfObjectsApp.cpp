@@ -95,6 +95,9 @@ void gltfObjectsApp::init() {
 
     engine->shaders.cubeShader.setSkybox("skyboxTexture");
     engine->shaders.cubeShader.setFarPlane(2000.0f);
+    engine->textureStore.generateBRDFLUT();
+    engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);
+    engine->textureStore.loadTexture("prefilter.ktx2", engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
 
 
     //engine->shaders.lineShader.initialUpload();

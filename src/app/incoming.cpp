@@ -88,7 +88,7 @@ void Incoming::addRandomRockFormations(RockWave waveName, std::vector<WorldObjec
 
 void Incoming::init() {
     engine->sound.init();
-    bool debugObjects = false; // false to disable all helper objects
+    bool debugObjects = true; // false to disable all helper objects
     float aspectRatio = engine->getAspect();
 
     // 2 square km world size
@@ -97,7 +97,7 @@ void Incoming::init() {
     engine->setWorld(&world);
 
     MeshFlagsCollection meshFlags = MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES);
-    meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
+    //meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     engine->meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", meshFlags);
     engine->objectStore.createGroup(GroupTerrainName, GroupTerrain);
     if (debugObjects) {
