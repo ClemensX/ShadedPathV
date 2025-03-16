@@ -58,23 +58,20 @@ void gltfObjectsApp::init() {
     //engine->objectStore.loadMeshWireframe("small_knife_dagger/scene.gltf", "Knife", lines);
 
     // loading objects:
-    //engine->meshStore.loadMesh("WaterBottle.glb", "WaterBottle");
-    //engine->meshStore.loadMesh("bottle2.glb", "WaterBottle");
-    //engine->meshStore.loadMesh("t01_cmp.glb", "world");
+    engine->meshStore.loadMesh("WaterBottle_cmp.glb", "WaterBottle");
     engine->meshStore.loadMesh("grass.glb", "Grass");
     engine->meshStore.loadMesh("small_knife_dagger2/scene.gltf", "Knife");
     //engine->meshStore.loadMesh("terrain_orig/Terrain_Mesh_0_0.gltf", "Knife", MeshType::MESH_TYPE_NO_TEXTURES);
 
-    //auto o = engine->meshStore.getMesh("Knife");
-    // add bottle and knife to the scene:
+    // add bottle and grass to the scene:
     engine->objectStore.createGroup("ground_group");
-    bottle = engine->objectStore.addObject("ground_group", "Grass.7", vec3(0.0f, 0.0f, 0.0f));
-    //bottle = engine->objectStore.addObject("ground_group", "world", vec3(0.0f, 0.0f, 0.0f));
+    grass = engine->objectStore.addObject("ground_group", "Grass.7", vec3(0.0f, 0.0f, 1000.0f));
     engine->objectStore.createGroup("knife_group");
-    engine->objectStore.addObject("knife_group", "Knife", vec3(0.3f, 0.0f, 0.0f));
+    bottleX = engine->objectStore.addObject("knife_group", "Knife", vec3(0.3f, 0.0f, 0.0f));
     //engine->objectStore.addObject("knife_group", "WaterBottle", vec3(0.3f, 0.0f, 0.0f));
     //Log("Object loaded: " << o->id.c_str() << endl);
 
+    bottleX->mesh->logInfo();
 
     // add all intializer objects to vector:
     for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
@@ -89,7 +86,7 @@ void gltfObjectsApp::init() {
 
     // load skybox cube texture
     //engine->textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
-    //engine->textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
+    //engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
     engine->textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
     //engine->globalRendering.createCubeMapFrom2dTexture(engine->textureStore.BRDFLUT_TEXTURE_ID, "skyboxTexture");
 
@@ -106,8 +103,8 @@ void gltfObjectsApp::init() {
     engine->sound.openSoundFile("power.ogg", "BACKGROUND_MUSIC", true);
     //engine->sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 1.0f, 6000);
     // add sound to object
-    engine->sound.addWorldObject(bottle);
-    engine->sound.changeSound(bottle, "BACKGROUND_MUSIC");
+    engine->sound.addWorldObject(bottleX);
+    engine->sound.changeSound(bottleX, "BACKGROUND_MUSIC");
     prepareWindowOutput("glTF Objects App");
     engine->presentation.startUI();
 }
@@ -176,7 +173,7 @@ void gltfObjectsApp::prepareFrame(FrameResources* fr)
     mat4 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     pubo.model = modeltransform;
     pubo2.model = modeltransform;
-    applyViewProjection(pubo.view, pubo.proj, pubo2.view, pubo2.proj);
+    applyViewProjection(pubo.view, pubo.proj, pubo2.view, pubo2.proj, &pubo.camPos, &pubo2.camPos);
     engine->shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
     // change individual objects position:
     //auto grp = engine->objectStore.getGroup("knife_group");
@@ -206,6 +203,7 @@ void gltfObjectsApp::prepareFrame(FrameResources* fr)
         if (wo->mesh->id.starts_with("Grass")) {
             // scale to 1%:
             //modeltransform = scale(mat4(1.0f), vec3(0.01f, 0.01f, 0.01f));
+            //modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 1000.0f));
             // scale from gltf:
             modeltransform = wo->mesh->baseTransform;
         }

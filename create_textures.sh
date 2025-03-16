@@ -51,4 +51,5 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #toktx --genmipmap --uastc 3 --zcmp 18 --verbose --t2 --cubemap ../data/texture/irr.ktx2 ./build/src/app/irradiance.ktx 
 #gltf-transform uastc ../data/mesh/SimpleMaterial.gltf ../data/mesh/SimpleMaterial_cmp.gltf --level 4 --zstd 18 --verbose
 #gltf-transform metalrough ../data/mesh/Material_MetallicRoughness/Material_MetallicRoughness_04.gltf ../data/mesh/mirror.glb
-gltf-transform uastc ../data/mesh/mirror.glb ../data/mesh/mirror_cmp.glb --level 4 --zstd 18 --verbose
+#gltf-transform uastc ../data/mesh/mirror.glb ../data/mesh/mirror_cmp.glb --level 4 --zstd 18 --verbose
+gltf-transform uastc ../data/mesh/WaterBottle.glb ../data/mesh/WaterBottle_cmp.glb --level 4 --zstd 18 --verbose

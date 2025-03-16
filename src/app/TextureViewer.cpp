@@ -50,20 +50,21 @@ void TextureViewer::init() {
     // load skybox cube texture
     //engine->textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
     //engine->textureStore.loadTexture("arches_pinetree_low.ktx2", "skyboxTexture");
-    engine->textureStore.loadTexture("debug.ktx", "2dTexture");
-    engine->textureStore.loadTexture("eucalyptus.ktx2", "tree");
-    unsigned int texIndexTree = engine->textureStore.getTexture("tree")->index;
-    engine->textureStore.loadTexture("shadedpath_logo.ktx2", "logo");
-    unsigned int texIndexLogo = engine->textureStore.getTexture("logo")->index;
+    //engine->textureStore.loadTexture("debug.ktx", "2dTexture");
+    //engine->textureStore.loadTexture("eucalyptus.ktx2", "tree");
+    //unsigned int texIndexTree = engine->textureStore.getTexture("tree")->index;
+    //engine->textureStore.loadTexture("shadedpath_logo.ktx2", "logo");
+    //unsigned int texIndexLogo = engine->textureStore.getTexture("logo")->index;
     engine->textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
     //engine->textureStore.loadTexture("heightbig.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT);
-    unsigned int texIndex = texIndexTree;
+    //unsigned int texIndex = texIndexTree;
     unsigned int texIndexHeightmap = engine->textureStore.getTexture("heightmap")->index;
     engine->shaders.billboardShader.setHeightmapTextureIndex(texIndexHeightmap);
     // rocks
     //engine->objectStore.createGroup("rocks_group");
     //engine->meshStore.loadMesh("rocks_cmp.glb", "Rocks");
     engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox");
+    engine->meshStore.loadMesh("WaterBottle_cmp.glb", "Bottle");
     engine->objectStore.createGroup("group");
     //bottle = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 0.0f, 0.0f));
 

@@ -24,7 +24,8 @@ protected:
     //bool singleThreadMode = false;
     //bool debugWindowPosition = true; // if true try to open app window in right screen part
     //bool enableRenderDoc = true;
-    int win_width = 960;// 480; 960;//1800;// 800;//3700;
+    bool autoHalfResForVR = true;
+    int win_width = 1800;// 480; 960;//1800;// 800;//3700;
 
     bool firstPersonCameraAlwayUpright = true;
     Camera* camera = nullptr;
@@ -188,6 +189,9 @@ protected:
             Error("backbuffer extent not set");
         }
         if (app_engine->isVR()) {
+            if (autoHalfResForVR) {
+                win_width /= 2;
+            }
             if (app_engine->vr.getHMDProperties().recommendedImageSize.width == 0) {
                 Error("HMD image size not available.");
             }

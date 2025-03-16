@@ -106,7 +106,7 @@ void Incoming::init() {
         engine->meshStore.loadMesh("box1_cmp.glb", "Box1");
         engine->meshStore.loadMesh("box10_cmp.glb", "Box10");
         engine->meshStore.loadMesh("box100_cmp.glb", "Box100");
-        engine->meshStore.loadMesh("bottle2.glb", "WaterBottle");
+        engine->meshStore.loadMesh("WaterBottle_cmp.glb", "WaterBottle");
     }
 
     // terrain (has to be first object in world)
@@ -132,6 +132,7 @@ void Incoming::init() {
         knife->rot().x = 3.14159f / 2;
         knife->rot().y = -3.14159f / 4;
         auto bottle = engine->objectStore.addObject(GroupDebugName, "WaterBottle", vec3(5.77332f, 58.43f, 3.6));
+        bottle->mesh->logInfo();
         auto box1 = engine->objectStore.addObject(GroupDebugName, "Box1", vec3(5.57332f, 57.3f, 3.70005));
         auto box10 = engine->objectStore.addObject(GroupDebugName, "Box10", vec3(-5.57332f, 57.3f, 3.70005));
         auto box100 = engine->objectStore.addObject(GroupDebugName, "Box100", vec3(120.57332f, 57.3f, 3.70005));
@@ -256,7 +257,7 @@ void Incoming::prepareFrame(FrameResources* fr)
     mat4 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
     pubo.model = modeltransform;
     pubo2.model = modeltransform;
-    applyViewProjection(pubo.view, pubo.proj, pubo2.view, pubo2.proj);
+    applyViewProjection(pubo.view, pubo.proj, pubo2.view, pubo2.proj, &pubo.camPos, &pubo2.camPos);
     engine->shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
     // change individual objects position:
     vector<LineDef> boundingBoxes;

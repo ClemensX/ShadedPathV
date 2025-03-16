@@ -47,11 +47,13 @@ void Loader::init() {
 
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
-    engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox");
+    engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox"); alterObjectCoords = true;
+    //engine->meshStore.loadMesh("WaterBottle_cmp.glb", "LogoBox"); alterObjectCoords = false;
+    //engine->meshStore.loadMesh("mirror_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("SimpleMaterial.gltf", "LogoBox");
-    alterObjectCoords = true;
     engine->objectStore.createGroup("group");
-    object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.5f, -1.0f, -1.0f));
+    //object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.5f, -1.0f, -1.0f));
+    object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.2f, 0.2f, 0.2f));
     if (alterObjectCoords) {
         // turn upside down
         object->rot() = vec3(PI_half, 0.0, 0.0f);
@@ -67,15 +69,13 @@ void Loader::init() {
 
     // load skybox cube texture and generate cubemaps
     //engine->textureStore.loadTexture("nebula.ktx2", "skyboxTexture");
-    //engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
-    engine->textureStore.loadTexture("papermill.ktx2", "skyboxTexture");
+    engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
+    //engine->textureStore.loadTexture("papermill.ktx2", "skyboxTexture");
     engine->textureStore.generateBRDFLUT();
     // generating cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
     //engine->textureStore.generateCubemaps("skyboxTexture");
     engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);
-    //piazza_bologni_1k_prefilter.ktx
     engine->textureStore.loadTexture("prefilter.ktx2", engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
-    //engine->textureStore.loadTexture("piazza_bologni_1k_prefilter.ktx", engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
 
     engine->shaders.cubeShader.setSkybox("skyboxTexture");
     engine->shaders.cubeShader.setFarPlane(2000.0f);

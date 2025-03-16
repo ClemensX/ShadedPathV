@@ -20,7 +20,8 @@ public:
     void handleInput(InputState& inputState) override;
 private:
     World world;
-    WorldObject *bottle = nullptr;
+    WorldObject *bottleX = nullptr;
+    WorldObject* grass = nullptr;
     float plus = 0.0f;
     bool shouldStopEngine = false;
     bool enableLines = true;

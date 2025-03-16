@@ -86,6 +86,27 @@ struct MeshInfo
 	bool metallicRoughness = false;
 	// copy gltf material info here, may also be overwritten in app code
 	bool isDoubleSided = false;
+
+    void logInfo() const {
+        Log("Mesh ID: " << id << "\n");
+        if (baseColorTexture) {
+            Log("Base Color Texture ID: " << baseColorTexture->id << ", Index: " << baseColorTexture->index << "\n");
+        }
+        if (metallicRoughnessTexture) {
+            Log("Metallic Roughness Texture ID: " << metallicRoughnessTexture->id << ", Index: " << metallicRoughnessTexture->index << "\n");
+        }
+        if (normalTexture) {
+            Log("Normal Texture ID: " << normalTexture->id << ", Index: " << normalTexture->index << "\n");
+        }
+        if (occlusionTexture) {
+            Log("Occlusion Texture ID: " << occlusionTexture->id << ", Index: " << occlusionTexture->index << "\n");
+        }
+        if (emissiveTexture) {
+            Log("Emissive Texture ID: " << emissiveTexture->id << ", Index: " << emissiveTexture->index << "\n");
+        }
+        Log("Number of Vertices: " << vertices.size() << "\n");
+        Log("Number of Indices: " << indices.size() << "\n");
+    }
 };
 typedef MeshInfo* ObjectID;
 
