@@ -47,8 +47,8 @@ void Loader::init() {
 
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
-    engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox"); alterObjectCoords = true;
-    //engine->meshStore.loadMesh("WaterBottle_cmp.glb", "LogoBox"); alterObjectCoords = false;
+    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox"); alterObjectCoords = true;
+    engine->meshStore.loadMesh("WaterBottle_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("mirror_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("SimpleMaterial.gltf", "LogoBox");
     engine->objectStore.createGroup("group");
@@ -170,7 +170,7 @@ void Loader::prepareFrame(FrameResources* fr)
         //WorldObject *wo = obj.get();
         PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
         mat4 modeltransform;
-        if (spinningBox  && doRotation) {
+        if (spinningBox) {
             // Define a constant rotation speed (radians per second)
             double rotationSpeed = glm::radians(5.0f); // 45 degrees per second
             if (!alterObjectCoords) {
@@ -178,14 +178,17 @@ void Loader::prepareFrame(FrameResources* fr)
             }
 
             // Calculate the rotation angle based on the elapsed time
-            float rotationAngle = rotationSpeed * (seconds - spinTimeSeconds);
+            //float rotationAngle = rotationSpeed * (seconds - spinTimeSeconds);
+            float rotationAngle = rotationSpeed * deltaSeconds;
 
             // Apply the rotation to the modeltransform matrix
-            modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
-            if (alterObjectCoords) {
-                modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
+            if (doRotation) {
+                //modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
+                //if (alterObjectCoords) {
+                //    modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
+                //}
+                object->rot().y += rotationAngle;
             }
-            object->rot().y = rotationAngle;
         } else {
             modeltransform = wo->mesh->baseTransform;
         }
@@ -256,6 +259,15 @@ void Loader::handleInput(InputState& inputState)
     if (inputState.windowClosed != nullptr) {
         inputState.windowClosed = nullptr;
         shouldStopEngine = true;
+    }
+    auto key = inputState.key;
+    auto action = inputState.action;
+    auto mods = inputState.mods;
+    // spacebar to stop animation
+    if (inputState.keyEvent) {
+        if (key == GLFW_KEY_SPACE && action == GLFW_RELEASE) {
+            doRotation = !doRotation;
+        }
     }
     AppSupport::handleInput(inputState);
 }

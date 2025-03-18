@@ -228,3 +228,7 @@ vtx 17850 6110
 		x	0.739942	float
 		y	-0.642788	float
 		z	0.198267	float
+
+terrain:
+desert preset 1024m ^2, res .25m (4096^2 pixel)
+old valley: 2048m ^2, res .5 m (4096^2 pixel)

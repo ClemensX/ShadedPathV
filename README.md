@@ -26,6 +26,18 @@ Some features:
 
 ## Current State (Q1 / 2025)
 
+## PBR Render
+
+We finished the glTF 2.0 based Physically Based Render System for the metallic-roughness workflow. This means lighting objects now correctly uses material properties and lighting conditions set by the skybox.
+
+#### Daylight Cloudy Sky
+
+![pbr daylight](images/pbr04.png)
+
+#### Dark Space
+
+![pbr space](images/pbr05.png)
+
 ## Thread System Re-Write
 
 ![threads](images/thread_arch.drawio.svg)
