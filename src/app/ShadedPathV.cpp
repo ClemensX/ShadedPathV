@@ -48,9 +48,9 @@ int mainOne()
     ShadedPathEngine engine;
     engine
         .setEnableLines(true)
-        .setDebugWindowPosition(true)
+        //.setDebugWindowPosition(true)
         .setEnableUI(true)
-        .setEnableSound(false)
+        .setEnableSound(true)
         .setVR(false)
         //.setStereo(true)
         .failIfNoVR(true)

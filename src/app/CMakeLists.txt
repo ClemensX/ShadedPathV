@@ -96,7 +96,7 @@ function(compile_glsl run_target_name)
         # -O option is optimization
         add_custom_command(
             OUTPUT ${out_file}
-            COMMAND Vulkan::glslc -g ${in_file} -o ${out_file}
+            COMMAND Vulkan::glslc -O ${in_file} -o ${out_file}
             DEPENDS ${dependencies}
         )
         list(APPEND glsl_output_files ${out_file})

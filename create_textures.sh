@@ -53,5 +53,6 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #gltf-transform metalrough ../data/mesh/Material_MetallicRoughness/Material_MetallicRoughness_04.gltf ../data/mesh/mirror.glb
 #gltf-transform uastc ../data/mesh/mirror.glb ../data/mesh/mirror_cmp.glb --level 4 --zstd 18 --verbose
 #gltf-transform uastc ../data/mesh/WaterBottle.glb ../data/mesh/WaterBottle_cmp.glb --level 4 --zstd 18 --verbose
-gltf-transform uastc ../data/raw/desert.glb ../data/mesh/desert_cmp.glb --level 1 --zstd 10 --verbose
+#gltf-transform uastc ../data/raw/desert.glb ../data/mesh/desert_cmp.glb --level 1 --zstd 10 --verbose
+gltf-transform uastc ../data/raw/desert3.glb ../data/mesh/desert3_cmp.glb --level 4 --zstd 18 --verbose
 

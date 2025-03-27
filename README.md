@@ -47,7 +47,7 @@ We finished the glTF 2.0 based Physically Based Render System for the metallic-r
 We sticked to the old thread system for quite some time and gathered a lot of experience with it. In the end, we were too ambitious.
 
 We implemented a complete free thread system, with the idea that each render thread would run as independent from each other as possible and the graphics HW would be ideally used all the time. 
-This worked out to a great deal, but we had to write a lot of synchronizing code to keep the system stable. While it is ok to have complicated code for complicated things, our neck was broken from an unexpected direction: VR headset input. Ideally, it should be easy to read position and orientation info from a headset and use this in any number of render threads. In practise, it is not possible. Or at least it was not possible for us. If you begin a frame in OpenXR you have to finish the frame includiong the final image copy to the headset. Just opening another frame in another thread is not allowed by OpenXR. We tried to program around that by beginning the OpenXR frame just before the final image copy, after the frame was already rendered internally (outside of OpenXR). But then we didn't have the right headset position and orientation prediction at the time we rendered the frame. After trying to fix that also, with more complicated code, we decided it is no longer worth it.
+This worked out to a great deal, but we had to write a lot of synchronizing code to keep the system stable. While it is ok to have complicated code for complicated things, our neck was broken from an unexpected direction: VR headset input. Ideally, it should be easy to read position and orientation info from a headset and use this in any number of render threads. In practise, it is not possible. Or at least it was not possible for us. If you begin a frame in OpenXR you have to finish the frame including the final image copy to the headset. Just opening another frame in another thread is not allowed by OpenXR. We tried to program around that by beginning the OpenXR frame just before the final image copy, after the frame was already rendered internally (outside of OpenXR). But then we didn't have the right headset position and orientation prediction at the time we rendered the frame. After trying to fix that also, with more complicated code, we decided it is no longer worth it.
 
 We implemented a more traditional rendering engine, where we use multiple threads to speed up rendering of the current frame, but finish the frame before we start another. You can read a good summary of the ideas we used here at the great [Vulkan Guide](https://vkguide.dev/docs/extra-chapter/multithreading/).
 
@@ -337,10 +337,10 @@ Current main topics we are working on:
 ## TODO List
 Things finished and things to do. Both very small and very large things, just as they come to my mind. 
 
-- [ ] Rework engine to allow multiple instances (remove static fields, apply manager pattern)
-- [ ] rework FP object placement relative to cam (gun stuttering in *incoming* demo)
-- [ ] Rest of PBR stages
-- [ ] Environment maps
+- [x] Rework engine to allow multiple instances (remove static fields, apply manager pattern)
+- [x] rework FP object placement relative to cam (gun stuttering in *incoming* demo)
+- [x] Rest of PBR stages
+- [x] Environment maps
 - [ ] BRDFLUT_TEXTURE cannot be used as cube map (all black). probably needs format conversion
 - [ ] image based tests
 - [ ] fix line shader backbuffer2 image wrong format in stereo mode if no dynamic add lines
@@ -367,7 +367,7 @@ Things finished and things to do. Both very small and very large things, just as
 - [ ] Switch to V 1.3 API and get rid of framebuffer and renderpasses
 - [ ] LineText Shader with coordinate system display and dynamic text
 - [x] finalize thread architecture
-- [ ] optimze thread performance
+- [x] optimze thread performance
 - [x] vr view
 - [x] asset loading (library)
 - [ ] Shaders

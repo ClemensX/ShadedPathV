@@ -25,7 +25,7 @@ protected:
     //bool debugWindowPosition = true; // if true try to open app window in right screen part
     //bool enableRenderDoc = true;
     bool autoHalfResForVR = true;
-    int win_width = 1800;// 480; 960;//1800;// 800;//3700;
+    int win_width = 1800;// 480; 960;//1800;// 800;//3700; // 2500 // 3796
 
     bool firstPersonCameraAlwayUpright = true;
     Camera* camera = nullptr;

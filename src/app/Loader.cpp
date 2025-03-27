@@ -11,11 +11,13 @@ void Loader::run(ContinuationInfo* cont)
     {
         AppSupport::setEngine(engine);
         auto& shaders = engine->shaders;
+        engine->appname = "Loader";
         // camera initialization
         //initCamera(glm::vec3([-0.0386716 0.57298 1.71695]), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         initCamera(glm::vec3(-0.0386716f, 0.5f, 1.71695f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         //initCamera(glm::vec3(-2.10783f, 0.56567f, -0.129275f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        getFirstPersonCameraPositioner()->setMaxSpeed(0.1f);
+        //getFirstPersonCameraPositioner()->setMaxSpeed(0.1f);
+        getFirstPersonCameraPositioner()->setMaxSpeed(10.1f);
         getHMDCameraPositioner()->setMaxSpeed(0.1f);
 
         // engine configuration
@@ -23,7 +25,7 @@ void Loader::run(ContinuationInfo* cont)
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine->files.findAssetFolder("data");
         setHighBackbufferResolution();
-        camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 2000.0f);
+        camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 5000.0f);
 
         // add shaders used in this app
         shaders
@@ -45,12 +47,15 @@ void Loader::run(ContinuationInfo* cont)
 void Loader::init() {
     engine->sound.init(false);
 
+    //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox"); alterObjectCoords = true;
-    engine->meshStore.loadMesh("WaterBottle_cmp.glb", "LogoBox"); alterObjectCoords = false;
+    //engine->meshStore.loadMesh("WaterBottle_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("mirror_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("SimpleMaterial.gltf", "LogoBox");
+    engine->meshStore.loadMesh("desert3_cmp.glb", "LogoBox"); alterObjectCoords = false;
+    //engine->meshStore.loadMesh("output.glb", "LogoBox"); alterObjectCoords = false;
     engine->objectStore.createGroup("group");
     //object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.5f, -1.0f, -1.0f));
     object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.2f, 0.2f, 0.2f));
@@ -82,7 +87,7 @@ void Loader::init() {
 
     engine->shaders.pbrShader.initialUpload();
     // window creation
-    prepareWindowOutput("Loader (insert correct app name here)");
+    prepareWindowOutput("Loader");
     engine->presentation.startUI();
 
     // load and play music
@@ -172,9 +177,9 @@ void Loader::prepareFrame(FrameResources* fr)
         mat4 modeltransform;
         if (spinningBox) {
             // Define a constant rotation speed (radians per second)
-            double rotationSpeed = glm::radians(5.0f); // 45 degrees per second
+            double rotationSpeed = glm::radians(5.0f);
             if (!alterObjectCoords) {
-                rotationSpeed = glm::radians(56.2f); // 60 degrees per second   
+                rotationSpeed = glm::radians(15.0f);
             }
 
             // Calculate the rotation angle based on the elapsed time

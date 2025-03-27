@@ -1,6 +1,9 @@
 Debug Printf:
 Don't forget to enalble in Configurator as VK_LAYER_KHRONOS_validation preset
 
+record video:
+disable HDR in Settings: System->Display
+
 bing ai:
 To enable `GL_EXT_nonuniform_qualifier` using MoltenVK, you can follow the steps below:
 
@@ -232,3 +235,25 @@ vtx 17850 6110
 terrain:
 desert preset 1024m ^2, res .25m (4096^2 pixel)
 old valley: 2048m ^2, res .5 m (4096^2 pixel)
+
+I need to write a program that can import maps created by WorldCreator and export as glTF 2.0.
+I want to write glTF metal-roughness workflow. WorldCreator can export these Map Types:
+Height Map, Color Map, Normal Map, Roughness Map, Metalness Map and Ambient Occlusion Map.
+
+
+-		[0]	{name="" width=512 height=512 ...}	tinygltf::Image
++		name	""	std::string
+		width	512	int
+		height	512	int
+		component	4	int
+		bits	8	int
+		pixel_type	5121	int
++		image	{ size=1048576 }	std::vector<unsigned char,std::allocator<unsigned char>>
+		bufferView	-1	int
++		mimeType	""	std::string
++		uri	"Cube_BaseColor.png"	std::string
++		extras	{type_=0 int_value_=0 real_value_=0.0000000000000000 ...}	tinygltf::Value
++		extensions	{ size=0 }	std::map<std::string,tinygltf::Value,std::less<std::string>,std::allocator<std::pair<std::string const ,tinygltf::Value>>>
++		extras_json_string	""	std::string
++		extensions_json_string	""	std::string
+		as_is	false	bool

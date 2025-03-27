@@ -28,6 +28,6 @@ private:
     double spinTimeSeconds = 0.0;
     bool alterObjectCoords = false; // some gltf examples objects require different object rotation params
     bool firstPersonMode = true;
-    bool doRotation = true;
+    bool doRotation = false;
 };
 
