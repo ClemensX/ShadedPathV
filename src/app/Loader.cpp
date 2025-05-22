@@ -25,7 +25,7 @@ void Loader::run(ContinuationInfo* cont)
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
         engine->files.findAssetFolder("data");
         setHighBackbufferResolution();
-        camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.1f, 5000.0f);
+        camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 5000.0f);
 
         // add shaders used in this app
         shaders
@@ -35,6 +35,7 @@ void Loader::run(ContinuationInfo* cont)
             //.addShader(shaders.lineShader)
             ;
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
+        shaders.pbrShader.setWireframe();
         shaders.initActiveShaders();
 
         // init app rendering:

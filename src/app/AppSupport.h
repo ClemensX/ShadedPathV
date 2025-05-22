@@ -16,14 +16,6 @@ public:
         imageConsumerWindow.setEngine(e);
     }
 protected:
-    //bool enableLines = true;
-    //bool enableUI = false;
-    //bool vr = false;
-    //bool stereo = false;
-    //bool enableSound = false;
-    //bool singleThreadMode = false;
-    //bool debugWindowPosition = true; // if true try to open app window in right screen part
-    //bool enableRenderDoc = true;
     bool autoHalfResForVR = true;
     int win_width = 1800;// 480; 960;//1800;// 800;//3700; // 2500 // 3796
 

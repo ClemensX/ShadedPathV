@@ -48,7 +48,7 @@ int mainOne()
     ShadedPathEngine engine;
     engine
         .setEnableLines(true)
-        //.setDebugWindowPosition(true)
+        .setDebugWindowPosition(true)
         .setEnableUI(true)
         .setEnableSound(true)
         .setVR(false)
@@ -60,6 +60,7 @@ int mainOne()
         .configureParallelAppDrawCalls(2)
         .setMaxTextures(50)
         //.setFixedPhysicalDeviceIndex(1) // if GPU card is available it should be device 0. device 1 is usually the integrated Intel/AMD GPU
+        //.enableGlobalWireframe()
         ;
 
     engine.initGlobal();

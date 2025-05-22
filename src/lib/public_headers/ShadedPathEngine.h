@@ -83,6 +83,8 @@ public:
     ShadedPathEngine& setContinuationInfo(ContinuationInfo* cont) { continuationInfo = cont; return *this; }
     // enable stereo presentation mode that shows left and right eye output in main window
     ShadedPathEngine& enableStereoPresentation() { fii(); if (isStereo()) { stereoPresentation = true; } return *this; }
+    // enable global wireframe mode. This will set the rasterizer state for all shaders to wireframe mode.
+    ShadedPathEngine& enableGlobalWireframe() { fii(); globalWireframe = true; return *this; }
 
 
     // getters
@@ -93,6 +95,7 @@ public:
     bool isEnableUI() { return enableUI; }
     bool isEnforceVR() { return vrEnforce; }
     bool isSoundEnabled() { return enableSound; }
+    bool isGlobalWireframeEnabled() { return globalWireframe; }
 
     bool isMainThread();
     void log_current_thread();
@@ -284,6 +287,7 @@ private:
     bool debugWindowPosition = false; // if true try to open app window in right screen part
     bool enableRenderDoc = true;
     bool stereoMode = false;
+    bool globalWireframe = false; // everything relying on ShaderBase::createStandardRasterizer() will have wireframe enabled
     ImageConsumer* imageConsumer = nullptr;
     ImageConsumerNullify imageConsumerNullify;
 
