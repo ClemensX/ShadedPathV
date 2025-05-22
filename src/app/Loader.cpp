@@ -16,8 +16,8 @@ void Loader::run(ContinuationInfo* cont)
         //initCamera(glm::vec3([-0.0386716 0.57298 1.71695]), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         initCamera(glm::vec3(-0.0386716f, 0.5f, 1.71695f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         //initCamera(glm::vec3(-2.10783f, 0.56567f, -0.129275f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        //getFirstPersonCameraPositioner()->setMaxSpeed(0.1f);
-        getFirstPersonCameraPositioner()->setMaxSpeed(10.1f);
+        getFirstPersonCameraPositioner()->setMaxSpeed(0.1f);
+        //getFirstPersonCameraPositioner()->setMaxSpeed(10.1f);
         getHMDCameraPositioner()->setMaxSpeed(0.1f);
 
         // engine configuration
@@ -54,11 +54,14 @@ void Loader::init() {
     //engine->meshStore.loadMesh("WaterBottle_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("mirror_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("SimpleMaterial.gltf", "LogoBox");
-    engine->meshStore.loadMesh("desert3_cmp.glb", "LogoBox"); alterObjectCoords = false;
+    //engine->meshStore.loadMesh("desert3_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("output.glb", "LogoBox"); alterObjectCoords = false;
+    //engine->meshStore.loadMesh("cc_facial_exp_cmp.glb", "LogoBox"); alterObjectCoords = false;
+    engine->meshStore.loadMesh("delphini6.glb", "LogoBox"); alterObjectCoords = false;
     engine->objectStore.createGroup("group");
     //object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.5f, -1.0f, -1.0f));
     object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.2f, 0.2f, 0.2f));
+    //object = engine->objectStore.addObject("group", "LogoBox.2", vec3(-0.2f, 0.2f, 0.2f)); // cc_facial body legs
     if (alterObjectCoords) {
         // turn upside down
         object->rot() = vec3(PI_half, 0.0, 0.0f);

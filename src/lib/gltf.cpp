@@ -504,8 +504,9 @@ void glTF::collectBaseTransform(tinygltf::Model& model, MeshInfo* mesh)
 	do {
 		Node& node = model.nodes[curIndex];
         if (node.skin > -1) {
-            Error("gltf model has skinning, not supported");
-        }
+			Log("----> WARNING: gltf model has skinning, not supported\n");
+			;// Error("gltf model has skinning, not supported");
+		}
 		if (node.scale.size() == 3) {
 			glm::vec3 scaleVec(node.scale[0], node.scale[1], node.scale[2]);
 			transform = glm::scale(transform, scaleVec);

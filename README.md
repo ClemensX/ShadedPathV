@@ -24,6 +24,15 @@ Some features:
 
 <a id="toc-state"></a>
 
+## Animation
+
+Preliminary animation workflow:
+- Create in CC
+- Export to fbx (do not use blender bridge)
+- basically use this tutorial: https://www.youtube.com/watch?v=uaiyQVq0JXU
+- for exporting use 'Models with Motion' and enable every export option w/o 'Motion only'
+
+
 ## Current State (Q1 / 2025)
 
 ## PBR Render

@@ -54,5 +54,6 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #gltf-transform uastc ../data/mesh/mirror.glb ../data/mesh/mirror_cmp.glb --level 4 --zstd 18 --verbose
 #gltf-transform uastc ../data/mesh/WaterBottle.glb ../data/mesh/WaterBottle_cmp.glb --level 4 --zstd 18 --verbose
 #gltf-transform uastc ../data/raw/desert.glb ../data/mesh/desert_cmp.glb --level 1 --zstd 10 --verbose
-gltf-transform uastc ../data/raw/desert3.glb ../data/mesh/desert3_cmp.glb --level 4 --zstd 18 --verbose
-
+#gltf-transform uastc ../data/raw/desert3.glb ../data/mesh/desert3_cmp.glb --level 4 --zstd 18 --verbose
+#gltf-transform uastc ../data/raw/Terrain.glb ../data/mesh/Terrain_cmp.glb --level 4 --zstd 18 --verbose
+gltf-transform uastc ../data/mesh/cc_facial_exp.glb ../data/mesh/cc_facial_exp_cmp.glb --level 4 --zstd 18 --verbose
