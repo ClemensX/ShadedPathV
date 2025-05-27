@@ -199,23 +199,28 @@ vec3& WorldObject::scale() {
 	return _scale;
 }
 
-void WorldObject::getBoundingBox(BoundingBox& box)
+void MeshInfo::getBoundingBox(BoundingBox& box)
 {
 	if (boundingBoxAlreadySet) {
 		box = boundingBox;
 		return;
 	}
 	// iterate through vertices and find min/max:
-	for (auto & v : mesh->vertices) {
-        if (v.pos.x < box.min.x) box.min.x = v.pos.x;
-        if (v.pos.y < box.min.y) box.min.y = v.pos.y;
-        if (v.pos.z < box.min.z) box.min.z = v.pos.z;
-        if (v.pos.x > box.max.x) box.max.x = v.pos.x;
-        if (v.pos.y > box.max.y) box.max.y = v.pos.y;
-        if (v.pos.z > box.max.z) box.max.z = v.pos.z;
-    }
+	for (auto& v : this->vertices) {
+		if (v.pos.x < box.min.x) box.min.x = v.pos.x;
+		if (v.pos.y < box.min.y) box.min.y = v.pos.y;
+		if (v.pos.z < box.min.z) box.min.z = v.pos.z;
+		if (v.pos.x > box.max.x) box.max.x = v.pos.x;
+		if (v.pos.y > box.max.y) box.max.y = v.pos.y;
+		if (v.pos.z > box.max.z) box.max.z = v.pos.z;
+	}
 	boundingBox = box;
 	boundingBoxAlreadySet = true;
+}
+
+void WorldObject::getBoundingBox(BoundingBox& box)
+{
+    return mesh->getBoundingBox(box);
 }
 
 void WorldObjectStore::createGroup(string groupname, int groupId) {
@@ -429,4 +434,54 @@ bool WorldObject::isLineIntersectingBoundingBox(const vec3& lineStart, const vec
 
 float WorldObject::distanceTo(glm::vec3 pos) {
     return glm::length(pos - _pos);
+}
+
+void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t primitiveLimit)
+{
+	assert(primitiveLimit <= 255); // we need one more primitive for adding the 'rest'
+	assert(vertexLimit <= 256);
+
+	MeshInfo* mesh = getMesh(id);
+	//mesh->
+	// min	[-0.040992 -0.046309 -0.053326]	glm::vec<3,float,0>
+	// max	[0.040992 0.067943 0.132763]	glm::vec<3,float,0>
+    BoundingBox box;
+    mesh->getBoundingBox(box);
+    Log("bounding box min: " << box.min.x << " " << box.min.y << " " << box.min.z << endl);
+    Log("bounding box max: " << box.max.x << " " << box.max.y << " " << box.max.z << endl);
+
+    // initiate meshlets: build MeshletTriangles and MeshletVertInfos from global indices
+
+	std::unordered_map<unsigned int, Meshlet::MeshletVertInfo> indexVertexMap;
+	std::vector<Meshlet::MeshletTriangle> triangles;
+
+    triangles.resize(mesh->indices.size() / 3);
+	int unique = 0;
+	int reused = 0;
+
+	for (uint32_t triangleIndex = 0; triangleIndex < mesh->indices.size() / 3; triangleIndex ++) {
+        uint32_t vertIndex = triangleIndex * 3;
+		Meshlet::MeshletTriangle t;
+		t.id = triangleIndex;
+		for (uint32_t j = 0; j < 3; ++j) {
+			auto lookup = indexVertexMap.find(mesh->indices[vertIndex + j]);
+			if (lookup != indexVertexMap.end()) {
+				lookup->second.neighbours.push_back(t.id);
+				lookup->second.degree++;
+				t.vertices.push_back(lookup->second.index);
+				reused++;
+			}
+			else {
+				Meshlet::MeshletVertInfo v;
+				v.index = mesh->indices[vertIndex + j];
+				v.degree = 1;
+				v.neighbours.push_back(t.id);
+				indexVertexMap[v.index] = v;
+				t.vertices.push_back(v.index);
+				unique++;
+			}
+		}
+		triangles.push_back(t);
+	}
+
 }

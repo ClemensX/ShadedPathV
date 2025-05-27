@@ -167,6 +167,10 @@ public:
 
 	static const VkColorSpaceKHR ImageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 
+	// mesh shader preferred limits (should work reasonably well for all GPU vendors):
+	static int const MESH_SHADER_PREFERRED_VERTEX_COUNT = 64;
+	static int const MESH_SHADER_PREFERRED_PRIMITIVE_COUNT = 126;
+
 	// initialize all global Vulkan stuff - engine configuration settings
 	// cannot be changed after calling this, because some settings influence Vulkan creation options
 	void init();
@@ -327,6 +331,7 @@ private:
 		VkPhysicalDeviceProperties2 properties2;
 		VkPhysicalDeviceFeatures features;
         std::vector<std::string> extensions;
+        VkPhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties;
         bool suitable = false;
 	};
 

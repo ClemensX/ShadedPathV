@@ -35,7 +35,7 @@ void Loader::run(ContinuationInfo* cont)
             //.addShader(shaders.lineShader)
             ;
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
-        shaders.pbrShader.setWireframe();
+        //shaders.pbrShader.setWireframe();
         shaders.initActiveShaders();
 
         // init app rendering:
@@ -43,6 +43,34 @@ void Loader::run(ContinuationInfo* cont)
         engine->eventLoop();
     }
     Log("Loader ended" << endl);
+}
+
+void Loader::debugColors(std::string meshName)
+{
+    engine->meshStore.calculateMeshlets(meshName);
+    static auto col = engine->util.generateColorPalette256();
+    assert(col.size() == 256); //  Color palette must have 256 colors!
+    MeshInfo* mesh = engine->meshStore.getMesh(meshName);
+    Log("Debug colors for mesh " << meshName << " with " << mesh->vertices.size() << " vertices" << std::endl);
+    // vert based coloring
+    //for (long i = 0; i < mesh->vertices.size(); i++) {
+    //    auto& v = mesh->vertices[i];
+    //    v.color = vec4(1.0f, 1.0f, 0.0f, 1.0f);
+    //    v.color = col[i%25];
+    //    //Log("Vertex " << i << ": " << v.pos.x << " " << v.pos.y << " " << v.pos.z << " color: " << v.color.x << " " << v.color.y << " " << v.color.z << std::endl);
+    //}
+
+    // index based coloring
+    for (long i = 0; i < mesh->indices.size(); i += 3) {
+        // triangle is v[0], v[1], v[2]
+        auto& v0 = mesh->vertices[mesh->indices[i + 0]];
+        auto& v1 = mesh->vertices[mesh->indices[i + 1]];
+        auto& v2 = mesh->vertices[mesh->indices[i + 2]];
+        v0.color = col[i % 25]; // use modulo to cycle through colors
+        v1.color = col[i % 25]; // use modulo to cycle through colors
+        v2.color = col[i % 25]; // use modulo to cycle through colors
+    }
+
 }
 
 void Loader::init() {
@@ -58,7 +86,8 @@ void Loader::init() {
     //engine->meshStore.loadMesh("desert3_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("output.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("cc_facial_exp_cmp.glb", "LogoBox"); alterObjectCoords = false;
-    engine->meshStore.loadMesh("delphini6.glb", "LogoBox"); alterObjectCoords = false;
+    engine->meshStore.loadMesh("delphini6.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES)); alterObjectCoords = false;
+    debugColors("LogoBox");
     engine->objectStore.createGroup("group");
     //object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.5f, -1.0f, -1.0f));
     object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.2f, 0.2f, 0.2f));

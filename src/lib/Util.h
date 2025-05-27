@@ -142,7 +142,20 @@ public:
     }
 
     void warn(std::string msg);
+
+    // Generate 256 diverse colors
+    std::vector<glm::vec4> generateColorPalette256();
+    // Helper: HSV to RGB conversion
+    glm::vec3 hsv2rgb(float h, float s, float v);
+    // Bit-reversal permutation for 8 bits
+
 private:
+    static uint8_t bit_reverse8(uint8_t n) {
+        n = (n & 0xF0) >> 4 | (n & 0x0F) << 4;
+        n = (n & 0xCC) >> 2 | (n & 0x33) << 2;
+        n = (n & 0xAA) >> 1 | (n & 0x55) << 1;
+        return n;
+    }
     void initializeDebugFunctionPointers();
     //PFN_vkDebugMarkerSetObjectNameEXT pfnDebugMarkerSetObjectNameEXT = nullptr;
     PFN_vkSetDebugUtilsObjectNameEXT pfnDebugUtilsObjectNameEXT = nullptr;

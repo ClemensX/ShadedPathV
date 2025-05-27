@@ -50,7 +50,7 @@ int mainOne()
         .setEnableLines(true)
         .setDebugWindowPosition(true)
         .setEnableUI(true)
-        .setEnableSound(true)
+        //.setEnableSound(true)
         .setVR(false)
         //.setStereo(true)
         .failIfNoVR(true)
@@ -61,6 +61,7 @@ int mainOne()
         .setMaxTextures(50)
         //.setFixedPhysicalDeviceIndex(1) // if GPU card is available it should be device 0. device 1 is usually the integrated Intel/AMD GPU
         //.enableGlobalWireframe()
+        .enableMeshShader()
         ;
 
     engine.initGlobal();

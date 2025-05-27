@@ -779,3 +779,33 @@ bool Util::isCompressedFormat(VkFormat format) {
         return false;
     }
 }
+
+glm::vec3 Util::hsv2rgb(float h, float s, float v)
+{
+    float c = v * s;
+    float x = c * (1 - std::fabs(fmod(h * 6.0f, 2) - 1));
+    float m = v - c;
+    float r, g, b;
+    if (h < 1.0f / 6.0f) { r = c; g = x; b = 0; }
+    else if (h < 2.0f / 6.0f) { r = x; g = c; b = 0; }
+    else if (h < 3.0f / 6.0f) { r = 0; g = c; b = x; }
+    else if (h < 4.0f / 6.0f) { r = 0; g = x; b = c; }
+    else if (h < 5.0f / 6.0f) { r = x; g = 0; b = c; }
+    else { r = c; g = 0; b = x; }
+    return glm::vec3(r + m, g + m, b + m);
+}
+
+std::vector<glm::vec4> Util::generateColorPalette256()
+{
+    std::vector<glm::vec4> palette;
+    palette.reserve(256);
+    for (int i = 0; i < 256; ++i) {
+        // Use bit-reversed index for hue
+        float h = bit_reverse8(i) / 256.0f;
+        float s = 0.75f;
+        float v = 0.95f;
+        glm::vec3 rgb = hsv2rgb(h, s, v);
+        palette.emplace_back(rgb, 1.0f);
+    }
+    return palette;
+}

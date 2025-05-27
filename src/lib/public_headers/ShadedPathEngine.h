@@ -85,6 +85,9 @@ public:
     ShadedPathEngine& enableStereoPresentation() { fii(); if (isStereo()) { stereoPresentation = true; } return *this; }
     // enable global wireframe mode. This will set the rasterizer state for all shaders to wireframe mode.
     ShadedPathEngine& enableGlobalWireframe() { fii(); globalWireframe = true; return *this; }
+    // enable mesh shaders. Will fail to create vulkan device if no suitable GPU is found
+    ShadedPathEngine& enableMeshShader() { fii(); meshShaderEnabled = true; return *this; }
+
 
 
     // getters
@@ -146,13 +149,8 @@ public:
         return stereoPresentation;
     }
 
-    // enable mesh shaders. Will fail to create vulkan device if no suitable GPU is found
-    //void enableMeshShader() {
-    //    meshShaderEnabled = true;
-    //}
-
     bool isMeshShading() {
-        return false; //TODO remove
+        return meshShaderEnabled;
     }
 
     void enableKeyEvents() {
@@ -288,6 +286,7 @@ private:
     bool enableRenderDoc = true;
     bool stereoMode = false;
     bool globalWireframe = false; // everything relying on ShaderBase::createStandardRasterizer() will have wireframe enabled
+    bool meshShaderEnabled = false; // enable mesh shaders, if supported by GPU
     ImageConsumer* imageConsumer = nullptr;
     ImageConsumerNullify imageConsumerNullify;
 

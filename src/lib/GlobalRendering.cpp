@@ -39,12 +39,22 @@ void GlobalRendering::gatherDeviceInfos()
         VkPhysicalDeviceFeatures features;
         vkGetPhysicalDeviceProperties(device, &properties);
         vkGetPhysicalDeviceFeatures(device, &features);
+
+        VkPhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties = {};
+        meshShaderProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
+        properties2.pNext = &meshShaderProperties;
+
         vkGetPhysicalDeviceProperties2(device, &properties2);
+
+        Log("Mesh Shader max output vertices: " << meshShaderProperties.maxMeshOutputVertices << endl);
+        Log("Mesh Shader max output primitives: " << meshShaderProperties.maxMeshOutputPrimitives << endl);
+        //Log("Mesh Shader max output per vertex attributes: " << meshShaderProperties.maxMeshOutputVertexAttributes << endl);
 
         DeviceInfo info;
         info.device = device;
         info.properties = properties;
         info.properties2 = properties2;
+        info.meshShaderProperties = meshShaderProperties;
         info.features = features;
         Log("  " << properties.deviceName << " API version: " << Util::decodeVulkanVersion(properties.apiVersion).c_str() << " driver version: " << Util::decodeVulkanVersion(properties.driverVersion).c_str() << " type: " << Util::decodeDeviceType(properties.deviceType) << endl);
         // get available device extensions:

@@ -46,6 +46,154 @@ struct MeshCollection {
 		MeshFlagsCollection flags;
 };
 
+// meshlet organization:
+// vertex buffer is unchanged, all meshlet operations work on indices only
+class Meshlet {
+public:
+	Meshlet() {
+		meshIndicesGlobal.reserve(256);
+		meshTriangles.reserve(256);
+	}
+	Meshlet(const Meshlet&) = default;
+	Meshlet(Meshlet&&) = default;
+	Meshlet& operator=(const Meshlet&) = default;
+	Meshlet& operator=(Meshlet&&) = default;
+	// meshlet data
+
+	// indices of the meshlet (index into global vertex buffer)
+	// actual vertex coord are globalVertexBuffer[meshIndicesGlobal[i]], if i is local 8 bit index
+	std::vector<uint32_t> meshIndicesGlobal;
+	struct MeshletVertInfo;
+	struct MeshletTriangle {
+		// local indices of the meshlet, fit into one byte
+		uint8_t a, b, c; // vertices, defined by local index into meshIndicesGlobal
+		std::vector<uint32_t> vertices; // vertex index
+		std::vector<MeshletTriangle*> neighbours;
+		float centroid[3]{};
+		uint32_t id;
+		uint32_t flag = -1;
+		uint32_t dist;
+	};
+	struct MeshletVertInfo {
+		std::vector<uint32_t> neighbours; // vertex index
+		unsigned int index;
+		unsigned int degree;
+	};
+	std::vector<MeshletTriangle> meshTriangles;
+
+	bool empty() const { return meshIndicesGlobal.empty(); }
+
+	void reset() {
+		meshIndicesGlobal.clear(); // clear but retain allocated memory
+		meshTriangles.clear();
+	}
+
+	// check if cache can hold one more triangle
+	bool cannotInsert(const uint32_t* indices, uint32_t maxVertexSize, uint32_t maxPrimitiveSize) const
+	{
+		// skip degenerate
+		if (indices[0] == indices[1] || indices[0] == indices[2] || indices[1] == indices[2])
+		{
+			return false;
+		}
+
+		uint32_t found = 0;
+
+		// check if any of the incoming three indices are already in meshlet
+		for (auto ind : meshIndicesGlobal) {
+			for (int i = 0; i < 3; ++i) {
+				uint32_t idx = indices[i];
+				if (meshIndicesGlobal[ind] == idx) {
+					found++;
+				}
+			}
+		}
+		// out of bounds
+		bool ret = (meshIndicesGlobal.size() + 3 - found) > maxVertexSize || (meshTriangles.size() + 1) > maxPrimitiveSize;
+		if (ret) {
+			assert(meshIndicesGlobal.size() <= maxVertexSize);
+			assert(meshTriangles.size() <= maxPrimitiveSize);
+		}
+	}
+
+	// insert new triangle
+	void insert(const uint32_t* indices) {
+		uint32_t triangle[3];
+
+		// skip degenerate
+		if (indices[0] == indices[1] || indices[0] == indices[2] || indices[1] == indices[2])
+		{
+			return;
+		}
+
+		for (int i = 0; i < 3; ++i) {
+			// take out an index
+			uint32_t idx = indices[i];
+			bool found = false;
+
+			// check if idx is already in cache
+			for (auto v : meshIndicesGlobal) {
+				if (idx == v)
+				{
+					triangle[i] = v;
+					found = true;
+					break;
+				}
+			}
+			// if idx is not in cache add it
+			if (!found)
+			{
+				meshIndicesGlobal.push_back(idx);
+				//actualVertices[numVertices] = verts[idx]; we do not have actual vertices here, only indices
+				triangle[i] = meshIndicesGlobal.size() - 1;
+
+				//if (numVertices)
+				//{
+				//	numVertexDeltaBits = std::max(findMSB((idx ^ vertices[0]) | 1) + 1, numVertexDeltaBits);
+				//}
+				//numVertexAllBits = std::max(numVertexAllBits, findMSB(idx) + 1);
+
+				//numVertices++;
+			}
+		}
+
+		MeshletTriangle prim;
+		prim.a = static_cast<uint8_t>(triangle[0]);
+		prim.b = static_cast<uint8_t>(triangle[1]);
+		prim.c = static_cast<uint8_t>(triangle[2]);
+		meshTriangles.push_back(prim);
+	}
+};
+
+class BoundingBox {
+public:
+	// initialize min to larges value and vice-versa, simplifies calculations
+	glm::vec3 min = glm::vec3(FLT_MAX, FLT_MAX, FLT_MAX);
+	glm::vec3 max = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+};
+
+struct BoundingBoxCorners {
+	glm::vec3 corners[8];
+};
+
+
+enum class Axis { X, Y, Z };
+
+// Generic sort for any struct with a 'pos' member of type glm::vec3, by axis
+template<typename T>
+void sortByPosAxis(std::vector<T>& vertices, Axis axis) {
+	std::sort(vertices.begin(), vertices.end(),
+		[axis](const T& lhs, const T& rhs) {
+			switch (axis) {
+			case Axis::X: return lhs.pos.x < rhs.pos.x;
+			case Axis::Y: return lhs.pos.y < rhs.pos.y;
+			case Axis::Z: return lhs.pos.z < rhs.pos.z;
+			default:      return false;
+			}
+		}
+	);
+}
+
 // Describe a single loaded mesh. mesh IDs are unique, several Objects may be instantiated backed by the same mesh
 struct MeshInfo
 {
@@ -56,6 +204,7 @@ struct MeshInfo
 	// gltf data: valid after object load, should be cleared after upload
 	std::vector<PBRShader::Vertex> vertices;
 	std::vector<uint32_t> indices;
+    std::vector<Meshlet> meshlets; // meshlets for this mesh, for use in MeshShader
 	// named accessors for textures in above vector:
 	::TextureInfo* baseColorTexture = nullptr;
 	::TextureInfo* metallicRoughnessTexture = nullptr;
@@ -87,7 +236,10 @@ struct MeshInfo
 	// copy gltf material info here, may also be overwritten in app code
 	bool isDoubleSided = false;
 
-    void logInfo() const {
+	// get bounding box either from mesh data, will only be called once
+	void getBoundingBox(BoundingBox& box);
+	
+	void logInfo() const {
         Log("Mesh ID: " << id << "\n");
         if (baseColorTexture) {
             Log("Base Color Texture ID: " << baseColorTexture->id << ", Index: " << baseColorTexture->index << "\n");
@@ -107,6 +259,8 @@ struct MeshInfo
         Log("Number of Vertices: " << vertices.size() << "\n");
         Log("Number of Indices: " << indices.size() << "\n");
     }
+	bool boundingBoxAlreadySet = false;
+	BoundingBox boundingBox;
 };
 typedef MeshInfo* ObjectID;
 
@@ -135,6 +289,8 @@ public:
 	MeshInfo* initMeshInfo(MeshCollection* coll, std::string id);
 
 	MeshInfo* getMesh(std::string id);
+	void calculateMeshlets(std::string id, uint32_t vertexLimit = 64, uint32_t primitiveLimit = 125);
+
 private:
 	MeshCollection* loadMeshFile(std::string filename, std::string id, std::vector<std::byte> &fileBuffer, MeshFlagsCollection flags);
 	std::unordered_map<std::string, MeshInfo> meshes;
@@ -144,19 +300,6 @@ private:
 	std::vector<MeshInfo*> sortedList;
 	glTF gltf;
 };
-
-
-class BoundingBox {
-public:
-	// initialize min to larges value and vice-versa, simplifies calculations
-	glm::vec3 min = glm::vec3(FLT_MAX, FLT_MAX, FLT_MAX);
-	glm::vec3 max = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-};
-
-struct BoundingBoxCorners {
-	glm::vec3 corners[8];
-};
-
 
 // 
 class WorldObject {
@@ -206,8 +349,6 @@ private:
     glm::vec3 _scale = glm::vec3(1.0f, 1.0f, 1.0f);
 	glm::vec3 bboxVertexMin = glm::vec3(FLT_MAX, FLT_MAX, FLT_MAX);
 	glm::vec3 bboxVertexMax = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-	bool boundingBoxAlreadySet = false;
-	BoundingBox boundingBox;
 
 	// 8 corners of bounding box in world coords:
 	// low y in first 4 corners, in clockwise order
