@@ -436,6 +436,14 @@ float WorldObject::distanceTo(glm::vec3 pos) {
     return glm::length(pos - _pos);
 }
 
+bool CompareTriangles(const Meshlet::MeshletTriangle* t1, const Meshlet::MeshletTriangle* t2, const int idx) {
+	return (t1->centroid[idx] < t2->centroid[idx]);
+}
+
+bool compareVerts(const Meshlet::MeshletVertInfo* v1, const Meshlet::MeshletVertInfo* v2, const PBRShader::Vertex* vertexBuffer, const int idx) {
+	return (vertexBuffer[v1->index].pos[idx] < vertexBuffer[v2->index].pos[idx]);
+}
+
 void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t primitiveLimit)
 {
 	assert(primitiveLimit <= 255); // we need one more primitive for adding the 'rest'
@@ -450,38 +458,169 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
     Log("bounding box min: " << box.min.x << " " << box.min.y << " " << box.min.z << endl);
     Log("bounding box max: " << box.max.x << " " << box.max.y << " " << box.max.z << endl);
 
-    // initiate meshlets: build MeshletTriangles and MeshletVertInfos from global indices
+    // make vertices and indices unique:
+    unordered_map<PBRShader::Vertex, uint32_t> uniqueVertexMap; // map vertex to index
+	vector<PBRShader::Vertex> uniqueVertices;
+	vector<uint32_t> uniqueIndices;
 
-	std::unordered_map<unsigned int, Meshlet::MeshletVertInfo> indexVertexMap;
+    uint32_t uniqueIndex = 0;
+	uint32_t indexNum = 0; // count iterations over indices
+	for (auto& index : mesh->indices) {
+		auto& v = mesh->vertices[index];
+		if (indexNum == 108620) {
+			auto& p = v.pos;
+		}
+		auto lookup = uniqueVertexMap.find(v);
+		if (lookup != uniqueVertexMap.end()) {
+			// vertex already exists, reuse index
+			uniqueIndex = lookup->second;
+			auto& p = v.pos;
+			//std::cout << "indexNum " << indexNum << " v index " << uniqueIndex << " reused vertex " << p.x << " " << p.y << " " << p.z << std::endl;
+		}
+		else {
+			// new vertex, add to map
+			uint32_t newIndex = uniqueVertices.size();
+			uniqueVertices.push_back(v);
+			if (uniqueVertices.size() == 18640) {
+				//std::cout << "Too many vertices, stopping at " << uniqueVertices.size() << std::endl;
+			}
+			uniqueVertexMap[v] = newIndex;
+			uniqueIndex = newIndex;
+		}
+        uniqueIndices.push_back(uniqueIndex);
+		indexNum++;
+    }
+
+	// initiate meshlets: build MeshletTriangles and MeshletVertInfos from global indices
+
+	std::unordered_map<uint32_t, Meshlet::MeshletVertInfo> indexVertexMap;
 	std::vector<Meshlet::MeshletTriangle> triangles;
+    //std::vector<Meshlet::MeshletVertInfo> vertices;
 
-    triangles.resize(mesh->indices.size() / 3);
+	// Generate mesh structure
+	triangles.resize(uniqueIndices.size() / 3);
 	int unique = 0;
 	int reused = 0;
-
-	for (uint32_t triangleIndex = 0; triangleIndex < mesh->indices.size() / 3; triangleIndex ++) {
-        uint32_t vertIndex = triangleIndex * 3;
+	for (uint32_t i = 0; i < uniqueIndices.size() / 3; i++) {
 		Meshlet::MeshletTriangle t;
-		t.id = triangleIndex;
-		for (uint32_t j = 0; j < 3; ++j) {
-			auto lookup = indexVertexMap.find(mesh->indices[vertIndex + j]);
+		t.id = i;
+		triangles[i] = t; // do not use t after this
+		for (uint32_t j = 0; j < 3; j++) {
+			auto lookup = indexVertexMap.find(uniqueIndices[i * 3 + j]);
 			if (lookup != indexVertexMap.end()) {
-				lookup->second.neighbours.push_back(t.id);
+				// vertex already exists, reuse it
+				lookup->second.neighbours.push_back(&triangles[i]);
 				lookup->second.degree++;
-				t.vertices.push_back(lookup->second.index);
+				triangles[i].vertices.push_back(&lookup->second);
 				reused++;
+                //std::cout << "reused vertex " << lookup->second.index << std::endl;
 			}
 			else {
-				Meshlet::MeshletVertInfo v;
-				v.index = mesh->indices[vertIndex + j];
-				v.degree = 1;
-				v.neighbours.push_back(t.id);
-				indexVertexMap[v.index] = v;
-				t.vertices.push_back(v.index);
+                Meshlet::MeshletVertInfo v;
+                v.index = uniqueIndices[i * 3 + j];
+                v.degree = 1;
+                v.neighbours.push_back(&triangles[i]);
+                indexVertexMap[v.index] = v;
+                triangles[i].vertices.push_back(&indexVertexMap[v.index]);
 				unique++;
 			}
+
 		}
-		triangles.push_back(t);
+	}
+	Log("Mesh structure initialised" << std::endl);
+	Log(unique << " vertices added " << reused << " reused " << (unique + reused) << " total" << std::endl);
+
+	// Connect vertices
+	uint32_t found;
+	Meshlet::MeshletTriangle* t;
+	Meshlet::MeshletTriangle* c;
+	Meshlet::MeshletVertInfo* v;
+	Meshlet::MeshletVertInfo* p;
+	for (uint32_t i = 0; i < triangles.size(); ++i) { // For each triangle
+		t = &triangles[i];
+		// Find adjacent triangles
+		found = 0;
+		for (uint32_t j = 0; j < 3; ++j) { // For each vertex of each triangle
+			v = t->vertices[j];
+			for (uint32_t k = 0; k < v->neighbours.size(); ++k) { // For each triangle containing each vertex of each triangle
+				c = v->neighbours[k];
+				if (c->id == t->id) continue; // You are yourself a neighbour of your neighbours
+				for (uint32_t l = 0; l < 3; ++l) { // For each vertex of each triangle containing ...
+					p = c->vertices[l];
+					if (p->index == t->vertices[(j + 1) % 3]->index) {
+						found++;
+						t->neighbours.push_back(c);
+						break;
+					}
+				}
+			}
+
+		}
+		//if (found != 3) {
+		//	std::cout << "Failed to find 3 adjacent triangles found " << found << " idx: " << t->id << std::endl;
+		//}
 	}
 
+    // calculate cetroids and bounding boxes for triangles
+	std::vector<Meshlet> meshlets;
+	std::vector<Meshlet::MeshletVertInfo*> vertsVector;
+    auto& vertexBuffer = mesh->vertices; // use the original vertex buffer for sorting
+	glm::vec3 min{ FLT_MAX };
+	glm::vec3 max{ FLT_MIN };
+	for (Meshlet::MeshletTriangle& tri : triangles) {
+		//glm::vec3 v1 = vertexBuffer[tri->vertices[0]->index].pos;
+		//glm::vec3 v2 = vertexBuffer[tri->vertices[1]->index].pos;
+		//glm::vec3 v3 = vertexBuffer[tri->vertices[2]->index].pos;
+
+		min = glm::min(min, vertexBuffer[tri.vertices[0]->index].pos);
+		min = glm::min(min, vertexBuffer[tri.vertices[1]->index].pos);
+		min = glm::min(min, vertexBuffer[tri.vertices[2]->index].pos);
+		max = glm::max(max, vertexBuffer[tri.vertices[0]->index].pos);
+		max = glm::max(max, vertexBuffer[tri.vertices[1]->index].pos);
+		max = glm::max(max, vertexBuffer[tri.vertices[2]->index].pos);
+
+		//min = glm::min(min, v1);
+		//min = glm::min(min, v2);
+		//min = glm::min(min, v3);
+		//max = glm::max(max, v1);
+		//max = glm::max(max, v2);
+		//max = glm::max(max, v3);
+
+		glm::vec3 centroid = (vertexBuffer[tri.vertices[0]->index].pos + vertexBuffer[tri.vertices[1]->index].pos + vertexBuffer[tri.vertices[2]->index].pos) / 3.0f;
+		//glm::vec3 centroid = (v1 + v2 + v3) / 3.0f;
+		tri.centroid[0] = centroid.x;
+		tri.centroid[1] = centroid.y;
+		tri.centroid[2] = centroid.z;
+	}
+
+	// use the same axis info to sort vertices
+	glm::vec3 axis = glm::abs(max - min);
+
+
+	vertsVector.reserve(indexVertexMap.size());
+	for (int i = 0; i < indexVertexMap.size(); ++i) {
+		vertsVector.push_back(&indexVertexMap[i]);
+	}
+
+	if (axis.x > axis.y && axis.x > axis.z) {
+        sortByPosAxis(vertsVector, vertexBuffer, Axis::X);
+		//std::sort(vertsVector.begin(), vertsVector.end(), std::bind(compareVerts, std::placeholders::_1, std::placeholders::_2, vertexBuffer, 0));
+		//std::sort(triangles.begin(), triangles.end(), std::bind(CompareTriangles, std::placeholders::_1, std::placeholders::_2, 0));
+		std::cout << "x sorted" << std::endl;
+	}
+	else if (axis.y > axis.z && axis.y > axis.x) {
+		sortByPosAxis(vertsVector, vertexBuffer, Axis::Y);
+		//std::sort(vertsVector.begin(), vertsVector.end(), std::bind(compareVerts, std::placeholders::_1, std::placeholders::_2, vertexBuffer, 1));
+		//std::sort(triangles.begin(), triangles.end(), std::bind(CompareTriangles, std::placeholders::_1, std::placeholders::_2, 1));
+		std::cout << "y sorted" << std::endl;
+	}
+	else {
+		sortByPosAxis(vertsVector, vertexBuffer, Axis::Z);
+		//std::sort(vertsVector.begin(), vertsVector.end(), std::bind(compareVerts, std::placeholders::_1, std::placeholders::_2, vertexBuffer, 2));
+		//std::sort(triangles.begin(), triangles.end(), std::bind(CompareTriangles, std::placeholders::_1, std::placeholders::_2, 2));
+		std::cout << "z sorted" << std::endl;
+	}
+	for (auto& v : vertsVector) {
+		std::cout << "vertex " << v->index << " pos: " << vertexBuffer[v->index].pos.x << " " << vertexBuffer[v->index].pos.y << " " << vertexBuffer[v->index].pos.z << std::endl;
+    }
 }

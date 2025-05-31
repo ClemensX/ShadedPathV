@@ -3,6 +3,8 @@
 struct MeshInfo;
 class WorldObject;
 
+#define GLTF_SUPPRESS_NORMALS_FOR_MESHLETS 1 // if set, normals are not used for meshlets
+
 // make sure to match the push_constant layout in the shader
 struct pbrPushConstants {
 	unsigned int mode; // 0: standard pbr metallicRoughness, 1: pre-light vertices with color in vertex structure
@@ -40,7 +42,19 @@ public:
 		glm::uvec4 joint0;
 		glm::vec4 weight0;
 		glm::vec4 color;
-	};
+		bool operator==(const Vertex& other) const {
+			return pos == other.pos &&
+#if !defined(GLTF_SUPPRESS_NORMALS_FOR_MESHLETS)
+				normal == other.normal &&
+#endif
+				uv0 == other.uv0 &&
+				uv1 == other.uv1 &&
+				joint0 == other.joint0 &&
+				weight0 == other.weight0 &&
+				color == other.color;
+		}
+    };
+
 	struct shaderValuesParams {
 		glm::vec4 lightDir;
 		float exposure = 4.5f;
@@ -217,6 +231,46 @@ private:
 	} lightSource;
     bool commandBuffersCreated = false;
 };
+
+// Hash combine utility
+inline void hash_combine(std::size_t& seed, std::size_t v) {
+	seed ^= v + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+}
+
+// Specialize std::hash for PBRShader::Vertex
+namespace std {
+	template<>
+	struct hash<PBRShader::Vertex> {
+		std::size_t operator()(const PBRShader::Vertex& v) const {
+			std::size_t seed = 0;
+			hash_combine(seed, std::hash<float>{}(v.pos.x));
+			hash_combine(seed, std::hash<float>{}(v.pos.y));
+			hash_combine(seed, std::hash<float>{}(v.pos.z));
+#if !defined(GLTF_SUPPRESS_NORMALS_FOR_MESHLETS)
+			hash_combine(seed, std::hash<float>{}(v.normal.x));
+			hash_combine(seed, std::hash<float>{}(v.normal.y));
+			hash_combine(seed, std::hash<float>{}(v.normal.z));
+#endif
+			hash_combine(seed, std::hash<float>{}(v.uv0.x));
+			hash_combine(seed, std::hash<float>{}(v.uv0.y));
+			hash_combine(seed, std::hash<float>{}(v.uv1.x));
+			hash_combine(seed, std::hash<float>{}(v.uv1.y));
+			hash_combine(seed, std::hash<uint32_t>{}(v.joint0.x));
+			hash_combine(seed, std::hash<uint32_t>{}(v.joint0.y));
+			hash_combine(seed, std::hash<uint32_t>{}(v.joint0.z));
+			hash_combine(seed, std::hash<uint32_t>{}(v.joint0.w));
+			hash_combine(seed, std::hash<float>{}(v.weight0.x));
+			hash_combine(seed, std::hash<float>{}(v.weight0.y));
+			hash_combine(seed, std::hash<float>{}(v.weight0.z));
+			hash_combine(seed, std::hash<float>{}(v.weight0.w));
+			hash_combine(seed, std::hash<float>{}(v.color.x));
+			hash_combine(seed, std::hash<float>{}(v.color.y));
+			hash_combine(seed, std::hash<float>{}(v.color.z));
+			hash_combine(seed, std::hash<float>{}(v.color.w));
+			return seed;
+		}
+	};
+}
 
 /*
  * PBRSubShader includes everything for one shader invocation.

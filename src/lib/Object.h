@@ -66,8 +66,8 @@ public:
 	struct MeshletVertInfo;
 	struct MeshletTriangle {
 		// local indices of the meshlet, fit into one byte
-		uint8_t a, b, c; // vertices, defined by local index into meshIndicesGlobal
-		std::vector<uint32_t> vertices; // vertex index
+		//uint8_t a, b, c; // vertices, defined by local index into meshIndicesGlobal
+		std::vector<MeshletVertInfo*> vertices;
 		std::vector<MeshletTriangle*> neighbours;
 		float centroid[3]{};
 		uint32_t id;
@@ -75,7 +75,7 @@ public:
 		uint32_t dist;
 	};
 	struct MeshletVertInfo {
-		std::vector<uint32_t> neighbours; // vertex index
+		std::vector<MeshletTriangle*> neighbours; // vertex index
 		unsigned int index;
 		unsigned int degree;
 	};
@@ -158,9 +158,9 @@ public:
 		}
 
 		MeshletTriangle prim;
-		prim.a = static_cast<uint8_t>(triangle[0]);
-		prim.b = static_cast<uint8_t>(triangle[1]);
-		prim.c = static_cast<uint8_t>(triangle[2]);
+		//prim.a = static_cast<uint8_t>(triangle[0]);
+		//prim.b = static_cast<uint8_t>(triangle[1]);
+		//prim.c = static_cast<uint8_t>(triangle[2]);
 		meshTriangles.push_back(prim);
 	}
 };
@@ -179,19 +179,37 @@ struct BoundingBoxCorners {
 
 enum class Axis { X, Y, Z };
 
-// Generic sort for any struct with a 'pos' member of type glm::vec3, by axis
+// Sort vector<Meshlet::MeshletVertInfo*> by the position in the base vertex buffer, along the given axis.
 template<typename T>
-void sortByPosAxis(std::vector<T>& vertices, Axis axis) {
-	std::sort(vertices.begin(), vertices.end(),
-		[axis](const T& lhs, const T& rhs) {
+void sortByPosAxis(std::vector<Meshlet::MeshletVertInfo*>& verticesMeshletInfoVector, std::vector<T>& verticesBaseVector, Axis axis) {
+	std::sort(verticesMeshletInfoVector.begin(), verticesMeshletInfoVector.end(),
+		[&verticesBaseVector, axis](const Meshlet::MeshletVertInfo* lhs, const Meshlet::MeshletVertInfo* rhs) {
+			const glm::vec3& posL = verticesBaseVector[lhs->index].pos;
+			const glm::vec3& posR = verticesBaseVector[rhs->index].pos;
 			switch (axis) {
-			case Axis::X: return lhs.pos.x < rhs.pos.x;
-			case Axis::Y: return lhs.pos.y < rhs.pos.y;
-			case Axis::Z: return lhs.pos.z < rhs.pos.z;
+			case Axis::X: return posL.x < posR.x;
+			case Axis::Y: return posL.y < posR.y;
+			case Axis::Z: return posL.z < posR.z;
 			default:      return false;
 			}
 		}
 	);
+}
+
+// Sort vector<Meshlet::VertInfo> by visiting the underlying vert buffer and check the actual vertices positions.
+// Generic sort for any vert buffer based on a struct with a 'pos' member of type glm::vec3
+template<typename T>
+void sortByPosAxisOld(std::vector<Meshlet::MeshletVertInfo*>& verticesMeshletInfoVector, std::vector<T>& verticesBaseVector, Axis axis) {
+	//std::sort(verticesMeshletInfoVector.begin(), verticesMeshletInfoVector.end(),
+	//	[axis](const Meshlet::MeshletVertInfo&& lhs, const Meshlet::MeshletVertInfo&& rhs) {
+	//		switch (axis) {
+	//		case Axis::X: return true;//lhs.pos.x < rhs.pos.x;
+	//		//case Axis::Y: return lhs.pos.y < rhs.pos.y;
+	//		//case Axis::Z: return lhs.pos.z < rhs.pos.z;
+	//		default:      return false;
+	//		}
+	//	}
+	//);
 }
 
 // Describe a single loaded mesh. mesh IDs are unique, several Objects may be instantiated backed by the same mesh
