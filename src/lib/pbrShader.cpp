@@ -372,7 +372,10 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	//if (isRightEye) pushConstants.mode = 2;
 	vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pbrPushConstants), &pushConstants);
 	//if (isRightEye) vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);
+	if (obj->mesh->meshletVertexIndices.size() > 0)
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->meshletVertexIndices.size()), 1, 0, 0, 0);
+	else
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);
 }
 
 void PBRSubShader::destroy()

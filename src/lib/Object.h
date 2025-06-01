@@ -58,7 +58,6 @@ public:
 	Meshlet(Meshlet&&) = default;
 	Meshlet& operator=(const Meshlet&) = default;
 	Meshlet& operator=(Meshlet&&) = default;
-	// meshlet data
 
 	// indices of the meshlet (index into global vertex buffer)
 	// actual vertex coord are globalVertexBuffer[meshIndicesGlobal[i]], if i is local 8 bit index
@@ -80,6 +79,15 @@ public:
 		unsigned int degree;
 	};
 	std::vector<MeshletTriangle> meshTriangles;
+
+	// meshletmaker: https://github.com/Senbyo/meshletmaker
+	static void applyMeshletAlgorithmGreedyVerts(
+		std::unordered_map<uint32_t, Meshlet::MeshletVertInfo>& indexVertexMap, // 117008
+		std::vector<Meshlet::MeshletTriangle>& triangles, // 231256
+		std::vector<Meshlet>& meshlets, // 0
+		const std::vector<PBRShader::Vertex>& vertexBuffer, // 117008 vertices
+		uint32_t primitiveLimit, uint32_t vertexLimit // 125, 64
+	);
 
 	bool empty() const { return meshIndicesGlobal.empty(); }
 
@@ -196,20 +204,21 @@ void sortByPosAxis(std::vector<Meshlet::MeshletVertInfo*>& verticesMeshletInfoVe
 	);
 }
 
-// Sort vector<Meshlet::VertInfo> by visiting the underlying vert buffer and check the actual vertices positions.
-// Generic sort for any vert buffer based on a struct with a 'pos' member of type glm::vec3
+// Sort vector<Meshlet::MeshletVertInfo*> by the position in the base vertex buffer, along the given axis.
 template<typename T>
-void sortByPosAxisOld(std::vector<Meshlet::MeshletVertInfo*>& verticesMeshletInfoVector, std::vector<T>& verticesBaseVector, Axis axis) {
-	//std::sort(verticesMeshletInfoVector.begin(), verticesMeshletInfoVector.end(),
-	//	[axis](const Meshlet::MeshletVertInfo&& lhs, const Meshlet::MeshletVertInfo&& rhs) {
-	//		switch (axis) {
-	//		case Axis::X: return true;//lhs.pos.x < rhs.pos.x;
-	//		//case Axis::Y: return lhs.pos.y < rhs.pos.y;
-	//		//case Axis::Z: return lhs.pos.z < rhs.pos.z;
-	//		default:      return false;
-	//		}
-	//	}
-	//);
+void sortTrianglesByPosAxis(std::vector<Meshlet::MeshletTriangle>& verticesMeshletInfoVector, std::vector<T>& verticesBaseVector, Axis axis) {
+	std::sort(verticesMeshletInfoVector.begin(), verticesMeshletInfoVector.end(),
+		[&verticesBaseVector, axis](const Meshlet::MeshletTriangle& lhs, const Meshlet::MeshletTriangle& rhs) {
+			float l, r;
+			switch (axis) {
+            case Axis::X: l = lhs.centroid[0]; r = rhs.centroid[0]; break;
+            case Axis::Y: l = lhs.centroid[1]; r = rhs.centroid[1]; break;
+            case Axis::Z: l = lhs.centroid[2]; r = rhs.centroid[2]; break;
+			default:      return false;
+			}
+            return l < r;
+		}
+	);
 }
 
 // Describe a single loaded mesh. mesh IDs are unique, several Objects may be instantiated backed by the same mesh
@@ -222,6 +231,7 @@ struct MeshInfo
 	// gltf data: valid after object load, should be cleared after upload
 	std::vector<PBRShader::Vertex> vertices;
 	std::vector<uint32_t> indices;
+    std::vector<uint32_t> meshletVertexIndices; // indices into vertices, used for meshlets
     std::vector<Meshlet> meshlets; // meshlets for this mesh, for use in MeshShader
 	// named accessors for textures in above vector:
 	::TextureInfo* baseColorTexture = nullptr;

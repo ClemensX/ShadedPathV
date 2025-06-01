@@ -27,3 +27,6 @@ ShadedPath logo created by OpenAI: https://labs.openai.com/
 "Stylised Rocks Asset Pack" (https://skfb.ly/pqzWP) by Bl4ckGh0st is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
 "FREE - SkyBox Space Nebula" (https://skfb.ly/oIIYS) by Paul is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
 
+meshletmaker: https://github.com/Senbyo/meshletmaker
+https://jcgt.org/published/0012/02/01/
+If you use the work then please cite us: Mark Bo Jensen, Jeppe Revall Frisvad, and J. Andreas Bærentzen, Performance Comparison of Meshlet Generation Strategies, Journal of Computer Graphics Techniques (JCGT), vol. 12, no. 2, 1-27, 2023

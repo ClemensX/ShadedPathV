@@ -51,7 +51,7 @@ void Loader::debugColors(std::string meshName)
     static auto col = engine->util.generateColorPalette256();
     assert(col.size() == 256); //  Color palette must have 256 colors!
     MeshInfo* mesh = engine->meshStore.getMesh(meshName);
-    Log("Debug colors for mesh " << meshName << " with " << mesh->vertices.size() << " vertices" << std::endl);
+    //Log("Debug colors for mesh " << meshName << " with " << mesh->vertices.size() << " vertices" << std::endl);
     // vert based coloring
     //for (long i = 0; i < mesh->vertices.size(); i++) {
     //    auto& v = mesh->vertices[i];
@@ -61,15 +61,15 @@ void Loader::debugColors(std::string meshName)
     //}
 
     // index based coloring
-    for (long i = 0; i < mesh->indices.size(); i += 3) {
-        // triangle is v[0], v[1], v[2]
-        auto& v0 = mesh->vertices[mesh->indices[i + 0]];
-        auto& v1 = mesh->vertices[mesh->indices[i + 1]];
-        auto& v2 = mesh->vertices[mesh->indices[i + 2]];
-        v0.color = col[i % 25]; // use modulo to cycle through colors
-        v1.color = col[i % 25]; // use modulo to cycle through colors
-        v2.color = col[i % 25]; // use modulo to cycle through colors
-    }
+    //for (long i = 0; i < mesh->indices.size(); i += 3) {
+    //    // triangle is v[0], v[1], v[2]
+    //    auto& v0 = mesh->vertices[mesh->indices[i + 0]];
+    //    auto& v1 = mesh->vertices[mesh->indices[i + 1]];
+    //    auto& v2 = mesh->vertices[mesh->indices[i + 2]];
+    //    //v0.color = col[i % 25]; // use modulo to cycle through colors
+    //    //v1.color = col[i % 25]; // use modulo to cycle through colors
+    //    //v2.color = col[i % 25]; // use modulo to cycle through colors
+    //}
 
 }
 

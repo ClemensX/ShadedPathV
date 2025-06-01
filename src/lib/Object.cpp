@@ -137,8 +137,12 @@ void MeshStore::uploadObject(MeshInfo* obj)
 	// upload vec3 vertex buffer:
 	size_t vertexBufferSize = obj->vertices.size() * sizeof(PBRShader::Vertex);
 	size_t indexBufferSize = obj->indices.size() * sizeof(obj->indices[0]);
+	size_t meshletIndexBufferSize = obj->meshletVertexIndices.size() * sizeof(obj->meshletVertexIndices[0]);
 	engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBufferSize, obj->vertices.data(), obj->vertexBuffer, obj->vertexBufferMemory, "GLTF object vertex buffer");
-	engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexBufferSize, obj->indices.data(), obj->indexBuffer, obj->indexBufferMemory, "GLTF object index buffer");
+	if (obj->meshletVertexIndices.size() > 0)
+		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, meshletIndexBufferSize, obj->meshletVertexIndices.data(), obj->indexBuffer, obj->indexBufferMemory, "GLTF object index buffer");
+	else 
+		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexBufferSize, obj->indices.data(), obj->indexBuffer, obj->indexBufferMemory, "GLTF object index buffer");
 }
 
 const vector<MeshInfo*> &MeshStore::getSortedList()
@@ -561,6 +565,14 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 		//}
 	}
 
+    // replace vertexBuffer with unique vertices:
+    mesh->vertices.clear();
+    mesh->vertices.reserve(uniqueVertices.size());
+	for (auto& v : uniqueVertices) {
+		mesh->vertices.push_back(v);
+    }
+
+
     // calculate cetroids and bounding boxes for triangles
 	std::vector<Meshlet> meshlets;
 	std::vector<Meshlet::MeshletVertInfo*> vertsVector;
@@ -604,23 +616,82 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 
 	if (axis.x > axis.y && axis.x > axis.z) {
         sortByPosAxis(vertsVector, vertexBuffer, Axis::X);
+        sortTrianglesByPosAxis(triangles, vertexBuffer, Axis::X);
 		//std::sort(vertsVector.begin(), vertsVector.end(), std::bind(compareVerts, std::placeholders::_1, std::placeholders::_2, vertexBuffer, 0));
 		//std::sort(triangles.begin(), triangles.end(), std::bind(CompareTriangles, std::placeholders::_1, std::placeholders::_2, 0));
 		std::cout << "x sorted" << std::endl;
 	}
 	else if (axis.y > axis.z && axis.y > axis.x) {
 		sortByPosAxis(vertsVector, vertexBuffer, Axis::Y);
+		sortTrianglesByPosAxis(triangles, vertexBuffer, Axis::Y);
 		//std::sort(vertsVector.begin(), vertsVector.end(), std::bind(compareVerts, std::placeholders::_1, std::placeholders::_2, vertexBuffer, 1));
 		//std::sort(triangles.begin(), triangles.end(), std::bind(CompareTriangles, std::placeholders::_1, std::placeholders::_2, 1));
 		std::cout << "y sorted" << std::endl;
 	}
 	else {
 		sortByPosAxis(vertsVector, vertexBuffer, Axis::Z);
+		sortTrianglesByPosAxis(triangles, vertexBuffer, Axis::Z);
 		//std::sort(vertsVector.begin(), vertsVector.end(), std::bind(compareVerts, std::placeholders::_1, std::placeholders::_2, vertexBuffer, 2));
 		//std::sort(triangles.begin(), triangles.end(), std::bind(CompareTriangles, std::placeholders::_1, std::placeholders::_2, 2));
 		std::cout << "z sorted" << std::endl;
 	}
+	static auto col = engine->util.generateColorPalette256();
+	mesh->meshletVertexIndices.reserve(vertsVector.size());
+	int vertCount = 0, colIndex = 0;
+	uint32_t vIndexMax = 0;
+    uint32_t vIndexMin = UINT32_MAX;
 	for (auto& v : vertsVector) {
-		std::cout << "vertex " << v->index << " pos: " << vertexBuffer[v->index].pos.x << " " << vertexBuffer[v->index].pos.y << " " << vertexBuffer[v->index].pos.z << std::endl;
+		vertCount++;
+		//std::cout << "vertex " << v->index << " pos: " << vertexBuffer[v->index].pos.x << " " << vertexBuffer[v->index].pos.y << " " << vertexBuffer[v->index].pos.z << std::endl;
+        if (vertCount % 1000 == 0) {
+			colIndex++;
+        }
+        mesh->meshletVertexIndices.push_back(v->index);
+        vertexBuffer[v->index].color = col[colIndex % 256]; // assign color from palette
+		//vertexBuffer[v->index].color = vec4(1.0f, 0.0f, 0.0f, 1.0f); // mark vertices as meshlet vertices
+		if (v->index > vIndexMax) {
+			vIndexMax = v->index;
+        }
+		if (v->index < vIndexMin) {
+			vIndexMin = v->index;
+		}
+	}
+    Log("Meshlet vertex indices min: " << vIndexMin << " max: " << vIndexMax << " out of total vertices from file: " << vertexBuffer.size() << endl);
+	//return;
+	mesh->meshletVertexIndices.clear();
+	mesh->meshletVertexIndices.reserve(triangles.size()*3);
+    int triCount = 0;
+    int triColIndex = 0;
+	for (auto& tri : triangles) {
+        triCount++;
+        //Log("Triangle " << tri.id << " centroid: " << tri.centroid[0] << " " << tri.centroid[1] << " " << tri.centroid[2] << endl);
+        assert(tri.vertices.size() == 3);
+		auto idx = tri.vertices[0]->index;
+        auto& v0 = vertexBuffer[idx];
+		mesh->meshletVertexIndices.push_back(idx);
+		idx = tri.vertices[1]->index;
+		auto& v1 = vertexBuffer[idx];
+		mesh->meshletVertexIndices.push_back(idx);
+		idx = tri.vertices[2]->index;
+		auto& v2 = vertexBuffer[idx];
+		mesh->meshletVertexIndices.push_back(idx);
+		if (triCount % 1000 == 0) {
+			triColIndex++;
+        }
+        auto color = col[triColIndex % 256]; // assign color from palette
+        v0.color = color;
+        v1.color = color;
+        v2.color = color;
     }
+}
+
+void Meshlet::applyMeshletAlgorithmGreedyVerts(
+	std::unordered_map<uint32_t, Meshlet::MeshletVertInfo>& indexVertexMap, // 117008
+	std::vector<Meshlet::MeshletTriangle>& triangles, // 231256
+	std::vector<Meshlet>& meshlets, // 0
+	const std::vector<PBRShader::Vertex>& vertexBuffer, // 117008 vertices
+	uint32_t primitiveLimit, uint32_t vertexLimit // 125, 64
+)
+{
+
 }
