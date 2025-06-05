@@ -498,24 +498,26 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 	// initiate meshlets: build MeshletTriangles and MeshletVertInfos from global indices
 
 	std::unordered_map<uint32_t, Meshlet::MeshletVertInfo> indexVertexMap;
-	std::vector<Meshlet::MeshletTriangle> triangles;
-    //std::vector<Meshlet::MeshletVertInfo> vertices;
+    std::vector<Meshlet::MeshletTriangle*> triangles; // pointers to triangles, used in algorithms
+    std::vector<Meshlet::MeshletTriangle> trianglesVector; // base storage for triangles
+	//std::vector<Meshlet::MeshletVertInfo> vertices;
 
 	// Generate mesh structure
 	triangles.resize(uniqueIndices.size() / 3);
+	trianglesVector.resize(triangles.size());
 	int unique = 0;
 	int reused = 0;
 	for (uint32_t i = 0; i < uniqueIndices.size() / 3; i++) {
-		Meshlet::MeshletTriangle t;
-		t.id = i;
-		triangles[i] = t; // do not use t after this
+		Meshlet::MeshletTriangle* t = &trianglesVector[i];
+		t->id = i;
+		triangles[i] = t;
 		for (uint32_t j = 0; j < 3; j++) {
 			auto lookup = indexVertexMap.find(uniqueIndices[i * 3 + j]);
 			if (lookup != indexVertexMap.end()) {
 				// vertex already exists, reuse it
-				lookup->second.neighbours.push_back(&triangles[i]);
+				lookup->second.neighbours.push_back(t);
 				lookup->second.degree++;
-				triangles[i].vertices.push_back(&lookup->second);
+				t->vertices.push_back(&lookup->second);
 				reused++;
                 //std::cout << "reused vertex " << lookup->second.index << std::endl;
 			}
@@ -523,9 +525,9 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
                 Meshlet::MeshletVertInfo v;
                 v.index = uniqueIndices[i * 3 + j];
                 v.degree = 1;
-                v.neighbours.push_back(&triangles[i]);
+                v.neighbours.push_back(t);
                 indexVertexMap[v.index] = v;
-                triangles[i].vertices.push_back(&indexVertexMap[v.index]);
+                t->vertices.push_back(&indexVertexMap[v.index]);
 				unique++;
 			}
 
@@ -541,7 +543,7 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 	Meshlet::MeshletVertInfo* v;
 	Meshlet::MeshletVertInfo* p;
 	for (uint32_t i = 0; i < triangles.size(); ++i) { // For each triangle
-		t = &triangles[i];
+		t = triangles[i];
 		// Find adjacent triangles
 		found = 0;
 		for (uint32_t j = 0; j < 3; ++j) { // For each vertex of each triangle
@@ -579,7 +581,7 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
     auto& vertexBuffer = mesh->vertices; // use the original vertex buffer for sorting
 	glm::vec3 min{ FLT_MAX };
 	glm::vec3 max{ FLT_MIN };
-	for (Meshlet::MeshletTriangle& tri : triangles) {
+	for (Meshlet::MeshletTriangle& tri : trianglesVector) {
 		//glm::vec3 v1 = vertexBuffer[tri->vertices[0]->index].pos;
 		//glm::vec3 v2 = vertexBuffer[tri->vertices[1]->index].pos;
 		//glm::vec3 v3 = vertexBuffer[tri->vertices[2]->index].pos;
@@ -662,7 +664,7 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 	mesh->meshletVertexIndices.reserve(triangles.size()*3);
     int triCount = 0;
     int triColIndex = 0;
-	for (auto& tri : triangles) {
+	for (auto& tri : trianglesVector) {
         triCount++;
         //Log("Triangle " << tri.id << " centroid: " << tri.centroid[0] << " " << tri.centroid[1] << " " << tri.centroid[2] << endl);
         assert(tri.vertices.size() == 3);
@@ -676,22 +678,109 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 		auto& v2 = vertexBuffer[idx];
 		mesh->meshletVertexIndices.push_back(idx);
 		if (triCount % 1000 == 0) {
-			triColIndex++;
+			//triColIndex++;
         }
         auto color = col[triColIndex % 256]; // assign color from palette
         v0.color = color;
         v1.color = color;
         v2.color = color;
     }
+	Meshlet::applyMeshletAlgorithmGreedyVerts(
+		indexVertexMap, vertsVector, triangles, meshlets, vertexBuffer, primitiveLimit, vertexLimit
+    );
+
+	// color the meshlets:
+    int meshletCount = 0;
+	for (auto& m : meshlets) {
+		auto color = col[meshletCount % 256]; // assign color from palette
+		meshletCount++;
+		for (auto& v : m.verticesIndices) {
+			vertexBuffer[v].color = color; // assign color to vertices in meshlet
+		}
+    }
 }
 
 void Meshlet::applyMeshletAlgorithmGreedyVerts(
 	std::unordered_map<uint32_t, Meshlet::MeshletVertInfo>& indexVertexMap, // 117008
-	std::vector<Meshlet::MeshletTriangle>& triangles, // 231256
+	std::vector<Meshlet::MeshletVertInfo*>& vertsVector, // 117008
+	std::vector<Meshlet::MeshletTriangle*>& triangles, // 231256
 	std::vector<Meshlet>& meshlets, // 0
 	const std::vector<PBRShader::Vertex>& vertexBuffer, // 117008 vertices
 	uint32_t primitiveLimit, uint32_t vertexLimit // 125, 64
 )
 {
+    std::queue<Meshlet::MeshletVertInfo*> priorityQueue;
+	std::unordered_map<uint32_t, unsigned char> used;
+    Meshlet cache;
+	for (uint32_t i = 0; i < vertsVector.size(); i++) {
+		MeshletVertInfo* vert = vertsVector[i];
+		if (used.find(vert->index) != used.end()) continue;
+		// reset
+        priorityQueue.push(vert);
 
+		// add triangles to cache until it is full
+		while (!priorityQueue.empty()) {
+			// pop current triangle
+			MeshletVertInfo* vert = priorityQueue.front();
+
+			for (MeshletTriangle* tri : vert->neighbours) {
+				if (tri->flag == 1) continue; // already used
+
+				// get all vertices of current triangle
+				uint32_t candidateIndices[3];
+				for (uint32_t j = 0; j < 3; j++) {
+					uint32_t idx = tri->vertices[j]->index;
+					candidateIndices[j] = idx;
+					if (used.find(idx) == used.end()) priorityQueue.push(tri->vertices[j]); // add to queue if not used
+				}
+				// break if cache is full
+				if (cache.cannotInsert(candidateIndices, vertexLimit, primitiveLimit)) {
+					// we run out of verts but could push prims more so we do a pass of prims here to see if we can maximize 
+					// so we run through all triangles to see if the meshlet already has the required verts
+					// we try to do this in a dum way to test if it is worth it
+					for (int v = 0; v < cache.verticesIndices.size(); ++v) {
+						for (MeshletTriangle* tri : indexVertexMap[cache.verticesIndices[v]].neighbours) {
+							if (tri->flag == 1) continue;
+
+							uint32_t candidateIndices[3];
+							for (uint32_t j = 0; j < 3; ++j) {
+								uint32_t idx = tri->vertices[j]->index;
+								candidateIndices[j] = idx;
+								if (used.find(idx) == used.end()) priorityQueue.push(tri->vertices[j]);
+							}
+
+							if (!cache.cannotInsert(candidateIndices, vertexLimit, primitiveLimit)) {
+								cache.insert(candidateIndices/*, vertexBuffer*/);
+
+								tri->flag = 1;
+							}
+						}
+					}
+					meshlets.push_back(cache);
+
+					// reset cache and empty priority queue
+					priorityQueue = {};
+					priorityQueue.push(vert); // re-add the current vertex to the queue
+					cache.reset();
+					continue;
+					// start over again but from the fringe of the current cluster
+				}
+
+				cache.insert(candidateIndices/*, vertexBuffer*/);
+
+				// if triangle is inserted set flag to used
+				tri->flag = 1;
+			}
+
+			// pop vertex if we make it through all its neighbors
+			priorityQueue.pop();
+			used[vert->index] = 1; // mark vertex as used
+		}; // end while
+	}
+    // add remaining triangles to a meshlets
+	if (!cache.empty()) {
+		meshlets.push_back(cache);
+		cache.reset();
+
+	}
 }

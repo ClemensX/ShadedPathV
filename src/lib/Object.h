@@ -51,8 +51,8 @@ struct MeshCollection {
 class Meshlet {
 public:
 	Meshlet() {
-		meshIndicesGlobal.reserve(256);
-		meshTriangles.reserve(256);
+		verticesIndices.reserve(256);
+		primitives.reserve(256);
 	}
 	Meshlet(const Meshlet&) = default;
 	Meshlet(Meshlet&&) = default;
@@ -60,12 +60,14 @@ public:
 	Meshlet& operator=(Meshlet&&) = default;
 
 	// indices of the meshlet (index into global vertex buffer)
-	// actual vertex coord are globalVertexBuffer[meshIndicesGlobal[i]], if i is local 8 bit index
-	std::vector<uint32_t> meshIndicesGlobal;
+	// actual vertex coord are globalVertexBuffer[verticesIndices[i]], if i is local 8 bit index
+    std::vector<uint32_t> verticesIndices; // actual index buffer, map meshlet vert index 0..255 to global index
+	using uvec3 = std::array<uint32_t, 3>;
+	std::vector<uvec3> primitives;
 	struct MeshletVertInfo;
 	struct MeshletTriangle {
 		// local indices of the meshlet, fit into one byte
-		//uint8_t a, b, c; // vertices, defined by local index into meshIndicesGlobal
+		//uint8_t a, b, c; // vertices, defined by local index into verticesIndices
 		std::vector<MeshletVertInfo*> vertices;
 		std::vector<MeshletTriangle*> neighbours;
 		float centroid[3]{};
@@ -78,22 +80,22 @@ public:
 		unsigned int index;
 		unsigned int degree;
 	};
-	std::vector<MeshletTriangle> meshTriangles;
 
 	// meshletmaker: https://github.com/Senbyo/meshletmaker
 	static void applyMeshletAlgorithmGreedyVerts(
 		std::unordered_map<uint32_t, Meshlet::MeshletVertInfo>& indexVertexMap, // 117008
-		std::vector<Meshlet::MeshletTriangle>& triangles, // 231256
+		std::vector<Meshlet::MeshletVertInfo*>& vertsVector, // 117008
+		std::vector<Meshlet::MeshletTriangle*>& triangles, // 231256
 		std::vector<Meshlet>& meshlets, // 0
 		const std::vector<PBRShader::Vertex>& vertexBuffer, // 117008 vertices
 		uint32_t primitiveLimit, uint32_t vertexLimit // 125, 64
 	);
 
-	bool empty() const { return meshIndicesGlobal.empty(); }
+	bool empty() const { return verticesIndices.empty(); }
 
 	void reset() {
-		meshIndicesGlobal.clear(); // clear but retain allocated memory
-		meshTriangles.clear();
+		verticesIndices.clear(); // clear but retain allocated memory
+		primitives.clear();
 	}
 
 	// check if cache can hold one more triangle
@@ -108,20 +110,21 @@ public:
 		uint32_t found = 0;
 
 		// check if any of the incoming three indices are already in meshlet
-		for (auto ind : meshIndicesGlobal) {
+		for (auto vert_idx : verticesIndices) {
 			for (int i = 0; i < 3; ++i) {
 				uint32_t idx = indices[i];
-				if (meshIndicesGlobal[ind] == idx) {
+				if (vert_idx == idx) {
 					found++;
 				}
 			}
 		}
 		// out of bounds
-		bool ret = (meshIndicesGlobal.size() + 3 - found) > maxVertexSize || (meshTriangles.size() + 1) > maxPrimitiveSize;
+		bool ret = (verticesIndices.size() + 3 - found) > maxVertexSize || (primitives.size() + 1) > maxPrimitiveSize;
 		if (ret) {
-			assert(meshIndicesGlobal.size() <= maxVertexSize);
-			assert(meshTriangles.size() <= maxPrimitiveSize);
+			assert(verticesIndices.size() <= maxVertexSize);
+			assert(primitives.size() <= maxPrimitiveSize);
 		}
+		return ret;
 	}
 
 	// insert new triangle
@@ -140,8 +143,8 @@ public:
 			bool found = false;
 
 			// check if idx is already in cache
-			for (auto v : meshIndicesGlobal) {
-				if (idx == v)
+			for (uint32_t v = 0; v < verticesIndices.size(); ++v) {
+				if (idx == verticesIndices[v])
 				{
 					triangle[i] = v;
 					found = true;
@@ -151,9 +154,9 @@ public:
 			// if idx is not in cache add it
 			if (!found)
 			{
-				meshIndicesGlobal.push_back(idx);
+				verticesIndices.push_back(idx);
 				//actualVertices[numVertices] = verts[idx]; we do not have actual vertices here, only indices
-				triangle[i] = meshIndicesGlobal.size() - 1;
+				triangle[i] = verticesIndices.size() - 1;
 
 				//if (numVertices)
 				//{
@@ -165,11 +168,8 @@ public:
 			}
 		}
 
-		MeshletTriangle prim;
-		//prim.a = static_cast<uint8_t>(triangle[0]);
-		//prim.b = static_cast<uint8_t>(triangle[1]);
-		//prim.c = static_cast<uint8_t>(triangle[2]);
-		meshTriangles.push_back(prim);
+        uvec3 tri = { triangle[0], triangle[1], triangle[2] };
+        primitives.push_back(tri);
 	}
 };
 
@@ -206,14 +206,14 @@ void sortByPosAxis(std::vector<Meshlet::MeshletVertInfo*>& verticesMeshletInfoVe
 
 // Sort vector<Meshlet::MeshletVertInfo*> by the position in the base vertex buffer, along the given axis.
 template<typename T>
-void sortTrianglesByPosAxis(std::vector<Meshlet::MeshletTriangle>& verticesMeshletInfoVector, std::vector<T>& verticesBaseVector, Axis axis) {
-	std::sort(verticesMeshletInfoVector.begin(), verticesMeshletInfoVector.end(),
-		[&verticesBaseVector, axis](const Meshlet::MeshletTriangle& lhs, const Meshlet::MeshletTriangle& rhs) {
+void sortTrianglesByPosAxis(std::vector<Meshlet::MeshletTriangle*>& triangles, std::vector<T>& verticesBaseVector, Axis axis) {
+	std::sort(triangles.begin(), triangles.end(),
+		[&verticesBaseVector, axis](const Meshlet::MeshletTriangle* lhs, const Meshlet::MeshletTriangle* rhs) {
 			float l, r;
 			switch (axis) {
-            case Axis::X: l = lhs.centroid[0]; r = rhs.centroid[0]; break;
-            case Axis::Y: l = lhs.centroid[1]; r = rhs.centroid[1]; break;
-            case Axis::Z: l = lhs.centroid[2]; r = rhs.centroid[2]; break;
+            case Axis::X: l = lhs->centroid[0]; r = rhs->centroid[0]; break;
+            case Axis::Y: l = lhs->centroid[1]; r = rhs->centroid[1]; break;
+            case Axis::Z: l = lhs->centroid[2]; r = rhs->centroid[2]; break;
 			default:      return false;
 			}
             return l < r;
