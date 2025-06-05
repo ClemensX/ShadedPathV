@@ -515,7 +515,9 @@ void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo)
     imageBlitRegion.dstOffsets[1] = blitSizeDst;
 
     if (engine->isVR()) {
+#if defined(OPENXR_AVAILABLE)
         engine->vr.frameCopy(*fr, winfo);
+#endif
     }
 
     vkCmdBlitImage(
@@ -569,7 +571,9 @@ void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo)
     //vkQueueWaitIdle(global.graphicsQueue);
 
     if (engine->isVR()) {
+#if defined(OPENXR_AVAILABLE)
         engine->vr.frameEnd(*fr);
+#endif
     }
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;

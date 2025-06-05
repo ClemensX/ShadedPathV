@@ -184,12 +184,14 @@ protected:
             if (autoHalfResForVR) {
                 win_width /= 2;
             }
+#if defined(OPENXR_AVAILABLE)
             if (app_engine->vr.getHMDProperties().recommendedImageSize.width == 0) {
                 Error("HMD image size not available.");
             }
             if (app_engine->vr.getHMDProperties().aspectRatio != 0.0f) {
                 win_height = (int)(win_width / app_engine->vr.getHMDProperties().aspectRatio);
             }
+#endif
         } else {
             win_height = (int)(win_width / app_engine->getAspect());
         }

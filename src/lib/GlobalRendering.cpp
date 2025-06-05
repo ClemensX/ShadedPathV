@@ -1094,9 +1094,11 @@ void GlobalRendering::present(FrameResources* fr, DirectImage& di, WindowInfo* w
 void GlobalRendering::preFrame(FrameResources* fr)
 {
     if (engine->isVR()) {
+#if defined(OPENXR_AVAILABLE)
         engine->vr.pollEvent();
         engine->vr.frameWait();
         engine->vr.frameBegin(*fr);
+#endif
     }
 }
 
