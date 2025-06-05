@@ -199,7 +199,7 @@ void GlobalRendering::init()
     pickDevice();
     //checkFeatureSwapChain(physicalDevice);
     // list queue properties:
-    findQueueFamilies(physicalDevice, true);
+    familyIndices = findQueueFamilies(physicalDevice, true);
     createLogicalDevice();
     createCommandPools();
     createTextureSampler();
