@@ -24,7 +24,17 @@ Some features:
 
 <a id="toc-state"></a>
 
-## Animation
+## Meshlets
+
+Before going deeper into animation we decided to come back to mesh rendering. This topic has matured a lot than last we tested some years ago. Mening that mesh rendering is now supported by many NVIDIA and AMD GPUs and even mid-price laptops, e.g. on Intel Arc offer it.
+
+See details about meshlet rendering in this NVIDIA article: https://developer.nvidia.com/blog/introduction-turing-mesh-shaders/
+
+We implemented the meshlet generation algorithm **Greedy (vertex based)** from here: https://github.com/Senbyo/meshletmaker
+
+![meshlet 1](images/dolphin_meshlet_1.png)
+
+## Animation (to be picked up later)
 
 Preliminary animation workflow:
 - Create in CC
