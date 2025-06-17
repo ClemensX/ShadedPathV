@@ -3,7 +3,7 @@
 struct MeshInfo;
 class WorldObject;
 
-#define GLTF_SUPPRESS_NORMALS_FOR_MESHLETS 1 // if set, normals are not used for meshlets
+//#define GLTF_SUPPRESS_NORMALS_FOR_MESHLETS 1 // if set, normals are not used for meshlet generation
 
 // make sure to match the push_constant layout in the shader
 struct pbrPushConstants {

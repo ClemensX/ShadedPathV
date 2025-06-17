@@ -187,6 +187,23 @@ struct BoundingBoxCorners {
 
 enum class Axis { X, Y, Z };
 
+// Lexicographical comparison for glm::vec3
+inline bool lessVec3(const glm::vec3& a, const glm::vec3& b) {
+	if (a.x != b.x) return a.x < b.x;
+	if (a.y != b.y) return a.y < b.y;
+	return a.z < b.z;
+}
+
+// Sort vertices by the position (first x, then y, then z). afterwards all equal positions are grouped together
+template<typename T>
+void sortByPos(std::vector<T>& vertices) {
+	std::sort(vertices.begin(), vertices.end(),
+		[](const T& lhs, const T& rhs) {
+			return lessVec3(lhs.pos, rhs.pos);
+		}
+	);
+}
+
 // Sort vector<Meshlet::MeshletVertInfo*> by the position in the base vertex buffer, along the given axis.
 template<typename T>
 void sortByPosAxis(std::vector<Meshlet::MeshletVertInfo*>& verticesMeshletInfoVector, std::vector<T>& verticesBaseVector, Axis axis) {
@@ -318,6 +335,15 @@ public:
 
 	MeshInfo* getMesh(std::string id);
 	void calculateMeshlets(std::string id, uint32_t vertexLimit = 64, uint32_t primitiveLimit = 125);
+    const float VERTEX_REUSE_THRESHOLD = 1.3f; // if vertex position duplication ratio is greater than this, log a warning
+    // check if loaded mesh has many vertices that are identical in position, color and uv coords but differ in normal direction.
+    // this is a common problem with glTF files that were exported from Blender, where the normals are not recomputed.
+    // •	In edit mode, select all vertices of the mesh, then press "Alt+N" to display normal menu, then merge normals. 
+	//      you might want to add normals view in mesh edit mode overlay (use "Display Split Normals")
+	// •	Export Settings : When exporting(e.g., to glTF), ensure normals are exported and modifiers are applied
+    void checkVertexNormalConsistency(std::string id);
+	// debug graphics, usually means bounding box and normals are added to line shader
+	void debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 color = Colors::Red, float normalLineLength = 0.001f);
 
 private:
 	MeshCollection* loadMeshFile(std::string filename, std::string id, std::vector<std::byte> &fileBuffer, MeshFlagsCollection flags);
@@ -366,7 +392,7 @@ public:
 	int maxListeningDistance; // disable sound if farther away than this
 	// no longer used - see Sound.h //int soundListIndex;  // index into audibleWorldObjects, used to get the 3d sound settings for this object, see Sound.h
 
-	bool drawNormals;
+	bool enableDebugGraphics;
     bool enabled = true;
 	UINT objectNum; // must be unique for all objects
     void addVerticesToLineList(std::vector<LineDef>& lines, glm::vec3 offset, float sizeFactor = 1.0f);

@@ -300,7 +300,7 @@ void Incoming::prepareFrame(FrameResources* fr)
                         wo->drawBoundingBox(boundingBoxes, modeltransform, Colors::Red);
                     }
                 } else {
-                    if (wo->drawNormals) {
+                    if (wo->enableDebugGraphics) {
                         wo->drawBoundingBox(boundingBoxes, modeltransform, Colors::Red);
                     }
                 }

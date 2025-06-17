@@ -32,7 +32,7 @@ void Loader::run(ContinuationInfo* cont)
             .addShader(shaders.clearShader)
             .addShader(shaders.cubeShader)
             .addShader(shaders.pbrShader)
-            //.addShader(shaders.lineShader)
+            .addShader(shaders.lineShader)
             ;
         // init shaders, e.g. one-time uploads before rendering cycle starts go here
         //shaders.pbrShader.setWireframe();
@@ -87,7 +87,7 @@ void Loader::init() {
     //engine->meshStore.loadMesh("output.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("cc_facial_exp_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("delphini6.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES)); alterObjectCoords = false;
-    engine->meshStore.loadMesh("delphini6.glb", "LogoBox"); alterObjectCoords = false;
+    engine->meshStore.loadMesh("delphini7.glb", "LogoBox"); alterObjectCoords = false;
     debugColors("LogoBox");
     engine->objectStore.createGroup("group");
     //object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.5f, -1.0f, -1.0f));
@@ -97,7 +97,7 @@ void Loader::init() {
         // turn upside down
         object->rot() = vec3(PI_half, 0.0, 0.0f);
     }
-
+    object->enableDebugGraphics = true;
     BoundingBox box;
     object->getBoundingBox(box);
     Log(" object max values: " << box.max.x << " " << box.max.y << " " << box.max.z << std::endl);
@@ -153,8 +153,8 @@ void Loader::init() {
     }
     vector<LineDef> lines;
     for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
-    engine->shaders.lineShader.addFixedGlobalLines(lines);
-    engine->shaders.lineShader.uploadFixedGlobalLines();
+    //engine->shaders.lineShader.addFixedGlobalLines(lines);
+    //engine->shaders.lineShader.uploadFixedGlobalLines();
 }
 
 void Loader::mainThreadHook()
@@ -179,6 +179,7 @@ void Loader::prepareFrame(FrameResources* fr)
         spinningBox = true; // start spinning the logo after 4s
         spinTimeSeconds = seconds;
     }
+    engine->shaders.lineShader.clearLocalLines(tr);
     // cube
     CubeShader::UniformBufferObject cubo{};
     CubeShader::UniformBufferObject cubo2{};
@@ -204,6 +205,7 @@ void Loader::prepareFrame(FrameResources* fr)
     engine->shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
     // change individual objects position:
     //auto grp = engine->objectStore.getGroup("knife_group");
+    vector<LineDef> boundingBoxes;
     for (auto& wo : engine->objectStore.getSortedList()) {
         //Log(" adapt object " << obj.get()->objectNum << endl);
         //WorldObject *wo = obj.get();
@@ -244,6 +246,9 @@ void Loader::prepareFrame(FrameResources* fr)
         glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
         modeltransform = trans * scaled * rotationMatrix;
         buf->model = modeltransform;
+        engine->meshStore.debugGraphics(wo, tr, modeltransform);
+        //wo->calculateBoundingBoxWorld(modeltransform);
+        //wo->drawBoundingBox(boundingBoxes, modeltransform, Colors::Red);
         //buf->params.gamma = 2.2f;
         //buf->params.debugViewEquation = 0.5f;
         //buf->material.alphaMask = 0.8f;

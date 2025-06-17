@@ -185,7 +185,7 @@ MeshStore::~MeshStore()
 }
 
 WorldObject::WorldObject() {
-	drawNormals = false;
+	enableDebugGraphics = false;
 }
 
 WorldObject::~WorldObject() {
@@ -364,6 +364,32 @@ void WorldObject::drawBoundingBox(std::vector<LineDef>& boxes, glm::mat4 modelTo
     boxes.push_back(l);
 }
 
+void MeshStore::debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, vec4 color, float normalLineLength)
+{
+	// get access to line shader
+	auto& lineShader = engine->shaders.lineShader;
+	if (!lineShader.enabled) return;
+    if (!obj->enableDebugGraphics) return;
+
+	vector<LineDef> addLines;
+	obj->drawBoundingBox(addLines, modelToWorld, color);
+
+	// add normals:
+	for (auto& v : obj->mesh->vertices) {
+		LineDef l;
+		l.color = color;
+		l.start = vec3(modelToWorld * vec4(v.pos, 1.0f));
+		l.end = l.start + v.normal * normalLineLength;
+		addLines.push_back(l);
+    }
+	
+	//corner = vec3(modelToWorld * vec4(corner, 1.0f));
+
+
+	lineShader.prepareAddLines(fr);
+	lineShader.addOneTime(addLines, fr);
+}
+
 void WorldObject::addVerticesToLineList(std::vector<LineDef>& lines, glm::vec3 offset, float sizeFactor)
 {
 	LineDef l;
@@ -450,6 +476,9 @@ bool compareVerts(const Meshlet::MeshletVertInfo* v1, const Meshlet::MeshletVert
 
 void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t primitiveLimit)
 {
+#   if defined(DEBUG)
+    checkVertexNormalConsistency(id);
+#   endif
 	assert(primitiveLimit <= 255); // we need one more primitive for adding the 'rest'
 	assert(vertexLimit <= 256);
 
@@ -783,4 +812,44 @@ void Meshlet::applyMeshletAlgorithmGreedyVerts(
 		cache.reset();
 
 	}
+}
+
+void MeshStore::checkVertexNormalConsistency(std::string id)
+{
+	MeshInfo* mesh = getMesh(id);
+
+	// copy vertex vector
+    vector<PBRShader::Vertex> vsort = mesh->vertices;
+    // sort vertices by position
+	sortByPos(vsort);
+    // count normals per vertex:
+    unordered_map<uint32_t, vec3> vertexNormals; // map vertex index to normal
+	int count = 1;
+    long separateVertexPos = 1; // count vertices with different positions
+    long totalVertices = 0;
+    int maxVertexResuse = 1;
+	for (size_t i = 1; i < vsort.size(); i++) {
+		auto& v = vsort[i];
+		auto& vlast = vsort[i-1];
+        totalVertices++;
+		if (v.pos == vlast.pos) {
+			// vertex is duplicate, count
+			count++;
+		}
+		else {
+            separateVertexPos++;
+            if (count > maxVertexResuse) {
+                maxVertexResuse = count;
+            }
+            count = 1; // reset count
+		}
+    }
+	float ratio = (float)totalVertices / (float)separateVertexPos;
+	Log("MeshStore ratio " << ratio << " total vertices: " << totalVertices << " separate vertices: " << separateVertexPos << " max single vertex reuse: " << maxVertexResuse << endl);
+	if (ratio > VERTEX_REUSE_THRESHOLD) {
+		Log("WARNING: MeshStore: Mesh " << id << " has a high ratio of total vertices to separate vertices, consider optimizing the mesh." << endl);
+	}
+	else {
+		Log("MeshStore: Mesh " << id << " has a good ratio of total vertices to separate vertices." << endl);
+    }
 }
