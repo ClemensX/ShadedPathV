@@ -34,6 +34,17 @@ We implemented the meshlet generation algorithm **Greedy (vertex based)** from h
 
 ![meshlet 1](images/dolphin_meshlet_1.png)
 
+It is important to use a properly defined base mesh for use with meshlets. Often, vertices are duplicated and differ only in normal values. To help seeing that problem you can enable debug graphics on any object. Here is an example of a bad base mesh, with many vertices duplicated:
+
+![meshlet 2](images/dolphin_meshlet_2.png) 
+
+Detail view: ![meshlet 3](images/dolphin_meshlet_3.png)
+
+The same model, but all vertices at the same position merged into one:
+![meshlet 4](images/dolphin_meshlet_4.png) 
+
+In Blender, this can be achieved by going into edit mode, selecting all vertices, then open the *Normal Menu* (Alt-N) and select **Merge**.
+
 ## Animation (to be picked up later)
 
 Preliminary animation workflow:

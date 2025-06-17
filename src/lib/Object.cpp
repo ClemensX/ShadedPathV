@@ -382,12 +382,23 @@ void MeshStore::debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 mo
 		l.end = l.start + v.normal * normalLineLength;
 		addLines.push_back(l);
     }
-	
-	//corner = vec3(modelToWorld * vec4(corner, 1.0f));
-
-
 	lineShader.prepareAddLines(fr);
 	lineShader.addOneTime(addLines, fr);
+}
+
+void MeshStore::applyDebugMeshletColorsToVertices(MeshInfo* mesh)
+{
+
+	// color the meshlets:
+	int meshletCount = 0;
+	static auto col = engine->util.generateColorPalette256();
+	for (auto& m : mesh->meshlets) {
+		auto color = col[meshletCount % 256]; // assign color from palette
+		meshletCount++;
+		for (auto& v : m.verticesIndices) {
+			mesh->vertices[v].color = color; // assign color to vertices in meshlet
+		}
+	}
 }
 
 void WorldObject::addVerticesToLineList(std::vector<LineDef>& lines, glm::vec3 offset, float sizeFactor)
@@ -409,14 +420,6 @@ void WorldObject::addVerticesToLineList(std::vector<LineDef>& lines, glm::vec3 o
 		l.end = v0.pos * sizeFactor + offset;
 		lines.push_back(l);
 	}
-	//for (long i = 0; i < mesh->vertices.size() - 1; i++) {
-	//	l.color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
-	//	auto& v1 = mesh->vertices[i];
-	//	auto& v2 = mesh->vertices[i+1];
-	//	l.start = v1.pos * sizeFactor + offset;
-	//	l.end = v2.pos * sizeFactor + offset;
-	//	lines.push_back(l);
-	//}
 }
 
 bool WorldObject::isLineIntersectingBoundingBox(const vec3& lineStart, const vec3& lineEnd) {
@@ -529,7 +532,6 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 	std::unordered_map<uint32_t, Meshlet::MeshletVertInfo> indexVertexMap;
     std::vector<Meshlet::MeshletTriangle*> triangles; // pointers to triangles, used in algorithms
     std::vector<Meshlet::MeshletTriangle> trianglesVector; // base storage for triangles
-	//std::vector<Meshlet::MeshletVertInfo> vertices;
 
 	// Generate mesh structure
 	triangles.resize(uniqueIndices.size() / 3);
@@ -605,16 +607,10 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 
 
     // calculate cetroids and bounding boxes for triangles
-	std::vector<Meshlet> meshlets;
-	std::vector<Meshlet::MeshletVertInfo*> vertsVector;
     auto& vertexBuffer = mesh->vertices; // use the original vertex buffer for sorting
 	glm::vec3 min{ FLT_MAX };
 	glm::vec3 max{ FLT_MIN };
 	for (Meshlet::MeshletTriangle& tri : trianglesVector) {
-		//glm::vec3 v1 = vertexBuffer[tri->vertices[0]->index].pos;
-		//glm::vec3 v2 = vertexBuffer[tri->vertices[1]->index].pos;
-		//glm::vec3 v3 = vertexBuffer[tri->vertices[2]->index].pos;
-
 		min = glm::min(min, vertexBuffer[tri.vertices[0]->index].pos);
 		min = glm::min(min, vertexBuffer[tri.vertices[1]->index].pos);
 		min = glm::min(min, vertexBuffer[tri.vertices[2]->index].pos);
@@ -622,15 +618,7 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 		max = glm::max(max, vertexBuffer[tri.vertices[1]->index].pos);
 		max = glm::max(max, vertexBuffer[tri.vertices[2]->index].pos);
 
-		//min = glm::min(min, v1);
-		//min = glm::min(min, v2);
-		//min = glm::min(min, v3);
-		//max = glm::max(max, v1);
-		//max = glm::max(max, v2);
-		//max = glm::max(max, v3);
-
 		glm::vec3 centroid = (vertexBuffer[tri.vertices[0]->index].pos + vertexBuffer[tri.vertices[1]->index].pos + vertexBuffer[tri.vertices[2]->index].pos) / 3.0f;
-		//glm::vec3 centroid = (v1 + v2 + v3) / 3.0f;
 		tri.centroid[0] = centroid.x;
 		tri.centroid[1] = centroid.y;
 		tri.centroid[2] = centroid.z;
@@ -640,46 +628,40 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 	glm::vec3 axis = glm::abs(max - min);
 
 
-	vertsVector.reserve(indexVertexMap.size());
+	mesh->vertsVector.reserve(indexVertexMap.size());
 	for (int i = 0; i < indexVertexMap.size(); ++i) {
-		vertsVector.push_back(&indexVertexMap[i]);
+		mesh->vertsVector.push_back(&indexVertexMap[i]);
 	}
 
 	if (axis.x > axis.y && axis.x > axis.z) {
-        sortByPosAxis(vertsVector, vertexBuffer, Axis::X);
+        sortByPosAxis(mesh->vertsVector, vertexBuffer, Axis::X);
         sortTrianglesByPosAxis(triangles, vertexBuffer, Axis::X);
 		//std::sort(vertsVector.begin(), vertsVector.end(), std::bind(compareVerts, std::placeholders::_1, std::placeholders::_2, vertexBuffer, 0));
 		//std::sort(triangles.begin(), triangles.end(), std::bind(CompareTriangles, std::placeholders::_1, std::placeholders::_2, 0));
 		std::cout << "x sorted" << std::endl;
 	}
 	else if (axis.y > axis.z && axis.y > axis.x) {
-		sortByPosAxis(vertsVector, vertexBuffer, Axis::Y);
+		sortByPosAxis(mesh->vertsVector, vertexBuffer, Axis::Y);
 		sortTrianglesByPosAxis(triangles, vertexBuffer, Axis::Y);
 		//std::sort(vertsVector.begin(), vertsVector.end(), std::bind(compareVerts, std::placeholders::_1, std::placeholders::_2, vertexBuffer, 1));
 		//std::sort(triangles.begin(), triangles.end(), std::bind(CompareTriangles, std::placeholders::_1, std::placeholders::_2, 1));
 		std::cout << "y sorted" << std::endl;
 	}
 	else {
-		sortByPosAxis(vertsVector, vertexBuffer, Axis::Z);
+		sortByPosAxis(mesh->vertsVector, vertexBuffer, Axis::Z);
 		sortTrianglesByPosAxis(triangles, vertexBuffer, Axis::Z);
 		//std::sort(vertsVector.begin(), vertsVector.end(), std::bind(compareVerts, std::placeholders::_1, std::placeholders::_2, vertexBuffer, 2));
 		//std::sort(triangles.begin(), triangles.end(), std::bind(CompareTriangles, std::placeholders::_1, std::placeholders::_2, 2));
 		std::cout << "z sorted" << std::endl;
 	}
-	static auto col = engine->util.generateColorPalette256();
-	mesh->meshletVertexIndices.reserve(vertsVector.size());
-	int vertCount = 0, colIndex = 0;
+	mesh->meshletVertexIndices.reserve(mesh->vertsVector.size());
+	//int vertCount = 0, colIndex = 0;
 	uint32_t vIndexMax = 0;
     uint32_t vIndexMin = UINT32_MAX;
-	for (auto& v : vertsVector) {
-		vertCount++;
+	for (auto& v : mesh->vertsVector) {
+		//vertCount++;
 		//std::cout << "vertex " << v->index << " pos: " << vertexBuffer[v->index].pos.x << " " << vertexBuffer[v->index].pos.y << " " << vertexBuffer[v->index].pos.z << std::endl;
-        if (vertCount % 1000 == 0) {
-			colIndex++;
-        }
         mesh->meshletVertexIndices.push_back(v->index);
-        vertexBuffer[v->index].color = col[colIndex % 256]; // assign color from palette
-		//vertexBuffer[v->index].color = vec4(1.0f, 0.0f, 0.0f, 1.0f); // mark vertices as meshlet vertices
 		if (v->index > vIndexMax) {
 			vIndexMax = v->index;
         }
@@ -691,10 +673,7 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 	//return;
 	mesh->meshletVertexIndices.clear();
 	mesh->meshletVertexIndices.reserve(triangles.size()*3);
-    int triCount = 0;
-    int triColIndex = 0;
 	for (auto& tri : trianglesVector) {
-        triCount++;
         //Log("Triangle " << tri.id << " centroid: " << tri.centroid[0] << " " << tri.centroid[1] << " " << tri.centroid[2] << endl);
         assert(tri.vertices.size() == 3);
 		auto idx = tri.vertices[0]->index;
@@ -706,27 +685,11 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 		idx = tri.vertices[2]->index;
 		auto& v2 = vertexBuffer[idx];
 		mesh->meshletVertexIndices.push_back(idx);
-		if (triCount % 1000 == 0) {
-			//triColIndex++;
-        }
-        auto color = col[triColIndex % 256]; // assign color from palette
-        v0.color = color;
-        v1.color = color;
-        v2.color = color;
     }
 	Meshlet::applyMeshletAlgorithmGreedyVerts(
-		indexVertexMap, vertsVector, triangles, meshlets, vertexBuffer, primitiveLimit, vertexLimit
+		indexVertexMap, mesh->vertsVector, triangles, mesh->meshlets, vertexBuffer, primitiveLimit, vertexLimit
     );
-
-	// color the meshlets:
-    int meshletCount = 0;
-	for (auto& m : meshlets) {
-		auto color = col[meshletCount % 256]; // assign color from palette
-		meshletCount++;
-		for (auto& v : m.verticesIndices) {
-			vertexBuffer[v].color = color; // assign color to vertices in meshlet
-		}
-    }
+    applyDebugMeshletColorsToVertices(mesh);
 }
 
 void Meshlet::applyMeshletAlgorithmGreedyVerts(
@@ -850,6 +813,6 @@ void MeshStore::checkVertexNormalConsistency(std::string id)
 		Log("WARNING: MeshStore: Mesh " << id << " has a high ratio of total vertices to separate vertices, consider optimizing the mesh." << endl);
 	}
 	else {
-		Log("MeshStore: Mesh " << id << " has a good ratio of total vertices to separate vertices." << endl);
+		Log("MeshStore: Mesh " << id << " has a good ratio of total vertices to separate vertices: " << ratio << endl);
     }
 }

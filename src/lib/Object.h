@@ -250,6 +250,7 @@ struct MeshInfo
 	std::vector<uint32_t> indices;
     std::vector<uint32_t> meshletVertexIndices; // indices into vertices, used for meshlets
     std::vector<Meshlet> meshlets; // meshlets for this mesh, for use in MeshShader
+    std::vector<Meshlet::MeshletVertInfo*> vertsVector; // meshlet vertex info, used to store vertex indices and neighbours
 	// named accessors for textures in above vector:
 	::TextureInfo* baseColorTexture = nullptr;
 	::TextureInfo* metallicRoughnessTexture = nullptr;
@@ -344,6 +345,7 @@ public:
     void checkVertexNormalConsistency(std::string id);
 	// debug graphics, usually means bounding box and normals are added to line shader
 	void debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 color = Colors::Red, float normalLineLength = 0.001f);
+	void applyDebugMeshletColorsToVertices(MeshInfo* mesh);
 
 private:
 	MeshCollection* loadMeshFile(std::string filename, std::string id, std::vector<std::byte> &fileBuffer, MeshFlagsCollection flags);
