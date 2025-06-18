@@ -346,6 +346,9 @@ public:
 	// debug graphics, usually means bounding box and normals are added to line shader
 	void debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 color = Colors::Red, float normalLineLength = 0.001f);
 	void applyDebugMeshletColorsToVertices(MeshInfo* mesh);
+    // draw object from lines using its meshlet information only
+    // also servers as a debug function to visualize meshlets and to document meshlet structure
+    void debugRenderMeshlet(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 color = Colors::Red);
 
 private:
 	MeshCollection* loadMeshFile(std::string filename, std::string id, std::vector<std::byte> &fileBuffer, MeshFlagsCollection flags);

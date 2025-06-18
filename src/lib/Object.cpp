@@ -364,28 +364,6 @@ void WorldObject::drawBoundingBox(std::vector<LineDef>& boxes, glm::mat4 modelTo
     boxes.push_back(l);
 }
 
-void MeshStore::debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, vec4 color, float normalLineLength)
-{
-	// get access to line shader
-	auto& lineShader = engine->shaders.lineShader;
-	if (!lineShader.enabled) return;
-    if (!obj->enableDebugGraphics) return;
-
-	vector<LineDef> addLines;
-	obj->drawBoundingBox(addLines, modelToWorld, color);
-
-	// add normals:
-	for (auto& v : obj->mesh->vertices) {
-		LineDef l;
-		l.color = color;
-		l.start = vec3(modelToWorld * vec4(v.pos, 1.0f));
-		l.end = l.start + v.normal * normalLineLength;
-		addLines.push_back(l);
-    }
-	lineShader.prepareAddLines(fr);
-	lineShader.addOneTime(addLines, fr);
-}
-
 void MeshStore::applyDebugMeshletColorsToVertices(MeshInfo* mesh)
 {
 
@@ -815,4 +793,72 @@ void MeshStore::checkVertexNormalConsistency(std::string id)
 	else {
 		Log("MeshStore: Mesh " << id << " has a good ratio of total vertices to separate vertices: " << ratio << endl);
     }
+}
+
+void MeshStore::debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, vec4 color, float normalLineLength)
+{
+	// get access to line shader
+	auto& lineShader = engine->shaders.lineShader;
+	if (!lineShader.enabled) return;
+	if (!obj->enableDebugGraphics) return;
+
+	vector<LineDef> addLines;
+	obj->drawBoundingBox(addLines, modelToWorld, color);
+
+	// add normals:
+	for (auto& v : obj->mesh->vertices) {
+		LineDef l;
+		l.color = color;
+		l.start = vec3(modelToWorld * vec4(v.pos, 1.0f));
+		l.end = l.start + v.normal * normalLineLength;
+		addLines.push_back(l);
+	}
+	lineShader.prepareAddLines(fr);
+	lineShader.addOneTime(addLines, fr);
+}
+
+void MeshStore::debugRenderMeshlet(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 color)
+{
+	// get access to line shader
+	auto& lineShader = engine->shaders.lineShader;
+	if (!lineShader.enabled) return;
+	if (!obj->enableDebugGraphics) return;
+
+	vector<LineDef> addLines;
+
+	int meshletCount = 0;
+	static auto col = engine->util.generateColorPalette256();
+
+	for (auto& m : obj->mesh->meshlets) {
+		auto color = col[meshletCount % 256]; // assign color from palette
+		meshletCount++;
+		for (auto& v : m.primitives) {
+			// v is a triangle
+            assert(v[0] < m.verticesIndices.size() && v[1] < m.verticesIndices.size() && v[2] < m.verticesIndices.size());
+            auto& v0 = m.verticesIndices[v[0]];
+            auto& v1 = m.verticesIndices[v[1]];
+            auto& v2 = m.verticesIndices[v[2]];
+            assert(v0 < obj->mesh->vertices.size() && v1 < obj->mesh->vertices.size() && v2 < obj->mesh->vertices.size());
+            auto& v0pos = obj->mesh->vertices[v0].pos;
+            auto& v1pos = obj->mesh->vertices[v1].pos;
+            auto& v2pos = obj->mesh->vertices[v2].pos;
+			vec3 v0posWorld = vec3(modelToWorld * vec4(v0pos, 1.0f));
+            vec3 v1posWorld = vec3(modelToWorld * vec4(v1pos, 1.0f));
+            vec3 v2posWorld = vec3(modelToWorld * vec4(v2pos, 1.0f));
+			LineDef l;
+			l.color = color;
+			l.start = v0posWorld;
+            l.end = v1posWorld;
+            addLines.push_back(l);
+            l.start = v1posWorld;
+            l.end = v2posWorld;
+            addLines.push_back(l);
+            l.start = v2posWorld;
+            l.end = v0posWorld;
+            addLines.push_back(l);
+		}
+	}
+
+	lineShader.prepareAddLines(fr);
+	lineShader.addOneTime(addLines, fr);
 }

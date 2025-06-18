@@ -248,7 +248,8 @@ void Loader::prepareFrame(FrameResources* fr)
         modeltransform = trans * scaled * rotationMatrix;
         buf->model = modeltransform;
         buf->flags |= 0x1; // set flag for dicard rendering
-        engine->meshStore.debugGraphics(wo, tr, modeltransform);
+        engine->meshStore.debugRenderMeshlet(wo, tr, modeltransform);
+        //engine->meshStore.debugGraphics(wo, tr, modeltransform);
         //wo->calculateBoundingBoxWorld(modeltransform);
         //wo->drawBoundingBox(boundingBoxes, modeltransform, Colors::Red);
         //buf->params.gamma = 2.2f;
