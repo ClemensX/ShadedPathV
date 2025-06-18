@@ -123,7 +123,8 @@ public:
 		glm::mat4 model; // 16-byte aligned
 		glm::mat4 jointMatrix[MAX_NUM_JOINTS]; // 16-byte aligned
 		uint32_t jointcount; // 4-byte aligned
-		uint32_t pad0[3]; // 12 bytes of padding to align the next member to 16 bytes. Do not use array on glsl side!!!
+		uint32_t flags = 0; // 4-byte aligned
+		uint32_t pad0[2]; // 12 bytes of padding to align the next member to 16 bytes. Do not use array on glsl side!!!
 		PBRTextureIndexes indexes; // 4-byte aligned
         shaderValuesParams params; // 16-byte aligned
         ShaderMaterial material; // 16-byte aligned

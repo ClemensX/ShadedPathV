@@ -247,6 +247,7 @@ void Loader::prepareFrame(FrameResources* fr)
         glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
         modeltransform = trans * scaled * rotationMatrix;
         buf->model = modeltransform;
+        buf->flags |= 0x1; // set flag for dicard rendering
         engine->meshStore.debugGraphics(wo, tr, modeltransform);
         //wo->calculateBoundingBoxWorld(modeltransform);
         //wo->drawBoundingBox(boundingBoxes, modeltransform, Colors::Red);

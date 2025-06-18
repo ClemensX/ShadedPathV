@@ -51,7 +51,7 @@ layout (binding = 1) uniform UboInstance {
     mat4 model; 
     mat4 jointMatrix[MAX_NUM_JOINTS];
     uint jointcount;
-    uint pad0;
+    uint flags;
     uint pad1;
     uint pad2;
     //uint padding[2]; // 8 bytes of padding to align the next member to 16 bytes
@@ -141,5 +141,10 @@ void main() {
 	outUV0 = inUV0;
 	outUV1 = inUV1;
     //debugPrintfEXT("loc.w %f\n", locPos.w);
-    gl_Position =  ubo.proj * ubo.view * vec4(outWorldPos, 1.0);
+    if ((model_ubo.flags & 0x1) != 0) { // if model_ubo.flags & MODEL_FLAG_PRELIGHT_VERTICES
+    // bit 0 is set
+        gl_Position = vec4(0.0, 0.0, 0.0, 0.0); // W=0, will be clipped
+    } else {
+        gl_Position =  ubo.proj * ubo.view * vec4(outWorldPos, 1.0);
+    }
 }
