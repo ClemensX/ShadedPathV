@@ -31,7 +31,8 @@ public:
 		{ VulkanResourceType::MVPBuffer },
 		{ VulkanResourceType::UniformBufferDynamic },
 		{ VulkanResourceType::GlobalTextureSet },
-		{ VulkanResourceType::VertexBufferStatic }
+		{ VulkanResourceType::VertexBufferStatic },
+		{ VulkanResourceType::MeshShader }
 	};
 
 	struct Vertex {
@@ -131,6 +132,70 @@ public:
 	};
 	// Array entries of DynamicModelUBO have to respect hardware alignment rules
 	uint64_t alignedDynamicUniformBufferSize = 0;
+
+	// Meshlet descriptor, from NVIDIA Descriptor B in https://jcgt.org/published/0012/02/01/
+	// 128 bits = 16 bytes
+	struct alignas(16) PackedMeshletDesc {
+		uint8_t data[16];
+
+		// Packing function
+		static PackedMeshletDesc pack(
+			uint64_t boundingBox,      // 48 bits
+			uint8_t numVertices,       // 8 bits
+			uint8_t numPrimitives,     // 8 bits
+			uint8_t vertexPack,        // 8 bits
+			uint32_t indexBufferOffset,// 32 bits
+			uint32_t normalCone        // 24 bits (store in lower 24 bits)
+		) {
+			PackedMeshletDesc p{};
+			uint64_t* u64 = reinterpret_cast<uint64_t*>(p.data);
+			uint64_t low = 0, high = 0;
+
+			// Layout:
+			// | boundingBox (48) | numVertices (8) | numPrimitives (8) | vertexPack (8) | indexBufferOffset (32) | normalCone (24) |
+			// [0:47]             [48:55]           [56:63]             [64:71]         [72:103]                [104:127]
+
+			// Pack lower 64 bits
+			low |= (boundingBox & 0xFFFFFFFFFFFFULL);           // 48 bits
+			low |= (uint64_t(numVertices) & 0xFF) << 48;        // 8 bits
+			low |= (uint64_t(numPrimitives) & 0xFF) << 56;      // 8 bits
+
+			// Pack upper 64 bits
+			high |= (uint64_t(vertexPack) & 0xFF);              // 8 bits
+			high |= (uint64_t(indexBufferOffset) & 0xFFFFFFFF) << 8; // 32 bits
+			high |= (uint64_t(normalCone) & 0xFFFFFF) << 40;    // 24 bits
+
+			u64[0] = low;
+			u64[1] = high;
+			return p;
+		}
+
+		// Unpacking functions
+		uint64_t getBoundingBox() const {
+			const uint64_t* u64 = reinterpret_cast<const uint64_t*>(data);
+			return u64[0] & 0xFFFFFFFFFFFFULL;
+		}
+		uint8_t getNumVertices() const {
+			const uint64_t* u64 = reinterpret_cast<const uint64_t*>(data);
+			return (u64[0] >> 48) & 0xFF;
+		}
+		uint8_t getNumPrimitives() const {
+			const uint64_t* u64 = reinterpret_cast<const uint64_t*>(data);
+			return (u64[0] >> 56) & 0xFF;
+		}
+		uint8_t getVertexPack() const {
+			const uint64_t* u64 = reinterpret_cast<const uint64_t*>(data);
+			return u64[1] & 0xFF;
+		}
+		uint32_t getIndexBufferOffset() const {
+			const uint64_t* u64 = reinterpret_cast<const uint64_t*>(data);
+			return (u64[1] >> 8) & 0xFFFFFFFF;
+		}
+		uint32_t getNormalCone() const {
+			const uint64_t* u64 = reinterpret_cast<const uint64_t*>(data);
+			return (u64[1] >> 40) & 0xFFFFFF;
+		}
+	};
 
 	static VkVertexInputBindingDescription getBindingDescription() {
 		VkVertexInputBindingDescription bindingDescription{};

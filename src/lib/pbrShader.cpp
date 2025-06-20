@@ -352,6 +352,24 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 	vkCmdBindIndexBuffer(commandBuffer, obj->mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+	// meshlet resources:
+    // update descriptor set for mesh shader:
+	VkDescriptorBufferInfo bufferInfo{};
+	bufferInfo.buffer = obj->mesh->meshletDescBuffer; // Your VkBuffer handle
+	bufferInfo.offset = 0;
+	bufferInfo.range = VK_WHOLE_SIZE;
+
+	VkWriteDescriptorSet write{};
+	write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	//write.dstSet = descriptorSet;
+	write.dstBinding = 2;
+	write.dstArrayElement = 0;
+	write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	write.descriptorCount = 1;
+	write.pBufferInfo = &bufferInfo;
+
+
 	// bind global texture array:
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
 
@@ -361,10 +379,14 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	uint32_t dynamicOffset = static_cast<uint32_t>(objId * pbrShader->alignedDynamicUniformBufferSize);
 	if (!isRightEye) {
 		// left eye
+		write.dstSet = descriptorSet;
+		vkUpdateDescriptorSets(device, 1, &write, 0, nullptr);
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 1, &dynamicOffset);
 	}
 	else {
 		// right eye
+		write.dstSet = descriptorSet2;
+		vkUpdateDescriptorSets(device, 1, &write, 0, nullptr);
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet2, 1, &dynamicOffset);
 	}
 	pbrPushConstants pushConstants;

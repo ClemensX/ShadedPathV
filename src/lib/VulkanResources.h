@@ -10,6 +10,7 @@ enum class VulkanResourceType {
 	UniformBufferDynamic, // dynamic buffer that can be indexed in shader code or during cmd binding
 	SingleTexture, // single read-only texture (VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER), stored in descriptor set
 	AdditionalUniformBuffer, // another UBO, independent form MVP, stored in descriptor set
+	MeshShader, // meshlet descriptor storage buffer, ...
 	// vertex and index buffers
 	VertexBufferStatic, // vertex buffer, once uplodaded during init phase, only read during frame rendering (will be bound to command buffer)
 	IndexBufferStatic, // index buffer, once uplodaded during init phase, only read during frame rendering (will be bound to command buffer)
@@ -53,6 +54,9 @@ struct VulkanHandoverResources {
 	// additional buffer:
 	VkBuffer addBuffer = nullptr;
 	VkDeviceSize addBufferSize = 0L;
+    // mesh shader: (needs to be per object, we cannot globally create a mesh shader buffer)
+	//VkBuffer meshDescBuffer = nullptr;
+	//VkDeviceSize meshDescBufferSize = 0L;
 	// debug
 	std::string debugBaseName = "no_name_given";
     uint32_t debugDescriptorCount = 0;
@@ -119,7 +123,9 @@ private:
 	size_t getResourceDefIndex(VulkanResourceType t);
 	// add resources for element af specific type.
 	// option to overide if more sets needed (e.g. 2x uniform buffers for LineShader)
+    // used to define the descriptor set layout
 	void addResourcesForElement(VulkanResourceElement el);
+    // used to create the actual resources in preparation for vkUpdateDescriptorSets
 	void addThreadResourcesForElement(VulkanResourceElement d, VulkanHandoverResources& res);
 	// create resources for global texture descriptor set layout, independent of other descriptor sets
 	void createDescriptorSetResourcesForTextures();

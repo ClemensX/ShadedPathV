@@ -248,6 +248,7 @@ struct MeshInfo
 	// gltf data: valid after object load, should be cleared after upload
 	std::vector<PBRShader::Vertex> vertices;
 	std::vector<uint32_t> indices;
+	std::vector<PBRShader::PackedMeshletDesc> meshletDesc;
     std::vector<uint32_t> meshletVertexIndices; // indices into vertices, used for meshlets
     std::vector<Meshlet> meshlets; // meshlets for this mesh, for use in MeshShader
     std::vector<Meshlet::MeshletVertInfo*> vertsVector; // meshlet vertex info, used to store vertex indices and neighbours
@@ -263,6 +264,8 @@ struct MeshInfo
 	VkDeviceMemory vertexBufferMemory = nullptr;
 	VkBuffer indexBuffer = nullptr;
 	VkDeviceMemory indexBufferMemory = nullptr;
+	VkBuffer meshletDescBuffer = nullptr;
+	VkDeviceMemory meshletDescBufferMemory = nullptr;
 	//VkDescriptorSet descriptorSet = nullptr;
 
 	// gltf mesh index, only valid during gltf parsing. -1 if not yet set

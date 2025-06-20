@@ -148,7 +148,20 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         poolSize.descriptorCount = 1;
         poolSizes.push_back(poolSize);
 
-    } else if (el.type == VulkanResourceType::SingleTexture) {
+    }
+    else if (el.type == VulkanResourceType::MeshShader) {
+        layoutBinding.binding = bindingCount;
+        layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        layoutBinding.descriptorCount = 1;
+        layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        layoutBinding.pImmutableSamplers = nullptr;
+        bindings.push_back(layoutBinding);
+        poolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        poolSize.descriptorCount = 1;
+        poolSizes.push_back(poolSize);
+
+    }
+    else if (el.type == VulkanResourceType::SingleTexture) {
         layoutBinding.binding = bindingCount;
         layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         layoutBinding.descriptorCount = 1;
@@ -301,6 +314,27 @@ void VulkanResources::addThreadResourcesForElement(VulkanResourceElement el, Vul
         descSet.descriptorCount = 1;
         descSet.pBufferInfo = &bufferInfos[bufferInfos.size() - 1];
         descriptorSets.push_back(descSet);
+    }
+    else if (el.type == VulkanResourceType::MeshShader) {
+        // storage buffer for mesh shader descriptors is a per object resource, so we cannot create a global mesh shader buffer
+        // instead, we create a storage buffer for each object that uses the mesh shader.
+        // then we update the descriptor set with the buffer info.
+        //assert(hdv.meshDescBuffer != nullptr);
+        //assert(hdv.meshDescBufferSize > 0L);
+        //VkDescriptorBufferInfo bufferInfo{};
+        //bufferInfo.buffer = hdv.meshDescBuffer;
+        //bufferInfo.offset = 0;
+        //bufferInfo.range = hdv.meshDescBufferSize;
+        //bufferInfos.push_back(bufferInfo);
+
+        //descSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        //descSet.dstSet = *hdv.descriptorSet;
+        //descSet.dstBinding = 2; // after AdditionalUniformBuffer
+        //descSet.dstArrayElement = 0;
+        //descSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        //descSet.descriptorCount = 1;
+        //descSet.pBufferInfo = nullptr;
+        //descriptorSets.push_back(descSet);
     }
 }
 

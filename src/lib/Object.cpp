@@ -138,6 +138,9 @@ void MeshStore::uploadObject(MeshInfo* obj)
 	size_t vertexBufferSize = obj->vertices.size() * sizeof(PBRShader::Vertex);
 	size_t indexBufferSize = obj->indices.size() * sizeof(obj->indices[0]);
 	size_t meshletIndexBufferSize = obj->meshletVertexIndices.size() * sizeof(obj->meshletVertexIndices[0]);
+    size_t meshletDescBufferSize = obj->meshletDesc.size() * sizeof(PBRShader::PackedMeshletDesc);
+	if (meshletDescBufferSize > 0)
+		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, meshletDescBufferSize, obj->meshletDesc.data(), obj->meshletDescBuffer, obj->meshletDescBufferMemory, "meshlet desc array buffer");
 	engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBufferSize, obj->vertices.data(), obj->vertexBuffer, obj->vertexBufferMemory, "GLTF object vertex buffer");
 	if (obj->meshletVertexIndices.size() > 0)
 		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, meshletIndexBufferSize, obj->meshletVertexIndices.data(), obj->indexBuffer, obj->indexBufferMemory, "GLTF object index buffer");
@@ -576,7 +579,10 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 		//}
 	}
 
-    // replace vertexBuffer with unique vertices:
+    // replace vertexBuffer with unique vertices: TODO if unique vertex count is same we could skip this, check once we have more models tested
+    if (uniqueVertices.size() == mesh->vertices.size()) {
+		Log("WARNING: Mesh " << id << " has same vertex count as unique vertices, replacement should be skipped." << endl);
+	}
     mesh->vertices.clear();
     mesh->vertices.reserve(uniqueVertices.size());
 	for (auto& v : uniqueVertices) {
@@ -668,6 +674,15 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 		indexVertexMap, mesh->vertsVector, triangles, mesh->meshlets, vertexBuffer, primitiveLimit, vertexLimit
     );
     applyDebugMeshletColorsToVertices(mesh);
+    // create meshlet descriptors:
+    mesh->meshletDesc.resize(mesh->meshlets.size());
+	for (size_t i = 0; i < mesh->meshlets.size(); ++i) {
+		auto& m = mesh->meshlets[i];
+		PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x123456789ABC, 12, 34, 56, 100, 0xABCDEF);
+		//PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x00, 0, 0, 0, 0x00, 0x00);
+		//PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(-1, -1, -1, -1, -1, -1);
+		mesh->meshletDesc[i] = packed;
+    }
 }
 
 void Meshlet::applyMeshletAlgorithmGreedyVerts(

@@ -22,6 +22,49 @@ struct UBOParams {
 };
 
 #include "shadermaterial.glsl"
+// #include "meshlet_support.glsl"
+// GLSL: Struct for unpacked meshlet data
+struct MeshletDesc {
+    uint boundingBoxLow;   // lower 32 bits of boundingBox
+    uint boundingBoxHigh;  // upper 16 bits of boundingBox (for 48 bits total)
+    uint numVertices;
+    uint numPrimitives;
+    uint vertexPack;
+    uint indexBufferOffset;
+    uint normalCone;
+};
+
+// Unpack a uvec4 into MeshletDesc
+MeshletDesc unpackMeshletDesc(uvec4 packed) {
+    MeshletDesc desc;
+
+    // Reconstruct 64-bit words from uvec4
+    uint low0 = packed.x; // bits 0..31
+    uint low1 = packed.y; // bits 32..63
+    uint high0 = packed.z; // bits 64..95
+    uint high1 = packed.w; // bits 96..127
+
+    // boundingBox: bits 0..47
+    desc.boundingBoxLow  = low0; // bits 0..31
+    desc.boundingBoxHigh = low1 & 0xFFFF; // bits 32..47
+
+    // numVertices: bits 48..55
+    desc.numVertices = (low1 >> 16) & 0xFF;
+
+    // numPrimitives: bits 56..63
+    desc.numPrimitives = (low1 >> 24) & 0xFF;
+
+    // vertexPack: bits 64..71
+    desc.vertexPack = high0 & 0xFF;
+
+    // indexBufferOffset: bits 72..103
+    desc.indexBufferOffset = (high0 >> 8) | ((high1 & 0xFF) << 24);
+
+    // normalCone: bits 104..127
+    desc.normalCone = (high1 >> 8) & 0xFFFFFF;
+
+    return desc;
+}
 
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
@@ -46,7 +89,7 @@ struct PBRTextureIndexes {
 
 // info for this model instance
 // see 	struct PBRTextureIndexes and struct DynamicModelUBO in pbrShader.h
-// one element of the large object material buffer (descriptor updated for each model group before rednering)
+// one element of the large object material buffer (descriptor updated for each model group before rendering)
 layout (binding = 1) uniform UboInstance {
     mat4 model; 
     mat4 jointMatrix[MAX_NUM_JOINTS];
@@ -75,7 +118,16 @@ layout(push_constant) uniform pbrPushConstants {
 } push;
 
 
+layout(std430, binding = 2) buffer MeshletBuffer {
+    uvec4 packedMeshlets[];
+} meshletDescs;
+
 void check_inputs() {
+    uvec4 uv = meshletDescs.packedMeshlets[0];
+    //debugPrintfEXT("meshlet uvec4[0] %f %f %f %f\n", uv.x, uv.y, uv.z, uv.w);
+    MeshletDesc meshlet = unpackMeshletDesc(uv);
+    uint indexBufferOffset = meshlet.indexBufferOffset;
+    debugPrintfEXT("meshlet indexBufferOffset %d\n", indexBufferOffset);
     vec4 v = inColor0;
     vec3 x;
     vec2 c;
@@ -110,7 +162,7 @@ void check_inputs() {
 }
 
 void main() {
-    //check_inputs();
+    check_inputs();
     //outParams = model_ubo.params;
     //outMaterial = model_ubo.material;
     //textureIndexes = model_ubo.indexes;
