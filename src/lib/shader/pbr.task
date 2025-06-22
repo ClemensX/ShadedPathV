@@ -1,0 +1,55 @@
+#version 460
+#extension GL_EXT_mesh_shader : enable
+
+// Bindings must match your descriptor set layout
+layout(std430, binding = 0) buffer MeshletBuffer {
+    uvec4 packedMeshlets[];
+} meshletDescs;
+
+// Struct and unpack function as in your vertex shader
+struct MeshletDesc {
+    uint boundingBoxLow;
+    uint boundingBoxHigh;
+    uint numVertices;
+    uint numPrimitives;
+    uint vertexPack;
+    uint indexBufferOffset;
+    uint normalCone;
+};
+
+MeshletDesc unpackMeshletDesc(uvec4 packed) {
+    MeshletDesc desc;
+    uint low0 = packed.x;
+    uint low1 = packed.y;
+    uint high0 = packed.z;
+    uint high1 = packed.w;
+    desc.boundingBoxLow  = low0;
+    desc.boundingBoxHigh = low1 & 0xFFFF;
+    desc.numVertices = (low1 >> 16) & 0xFF;
+    desc.numPrimitives = (low1 >> 24) & 0xFF;
+    desc.vertexPack = high0 & 0xFF;
+    desc.indexBufferOffset = (high0 >> 8) | ((high1 & 0xFF) << 24);
+    desc.normalCone = (high1 >> 8) & 0xFFFFFF;
+    return desc;
+}
+
+// Define the maximum number of meshlets to dispatch
+// (You may want to pass this as a push constant or specialization constant)
+#define NUM_MESHLETS 128
+
+layout(local_size_x = 32) in; // 32 threads per workgroup
+
+void main() {
+    uint meshletIndex = gl_GlobalInvocationID.x;
+    if (meshletIndex >= NUM_MESHLETS)
+        return;
+
+    // Read and unpack meshlet
+    uvec4 packed = meshletDescs.packedMeshlets[meshletIndex];
+    MeshletDesc meshlet = unpackMeshletDesc(packed);
+
+    // Example: Dispatch a mesh shader workgroup for this meshlet
+    // (You would typically call EmitMeshTasksEXT here)
+    // For demonstration, emit one mesh task per meshlet
+    EmitMeshTasksEXT(meshletIndex, 1, 1); // (groupX, groupY, groupZ)
+}

@@ -11,6 +11,8 @@ file(GLOB VULKAN_SHADERS
   ${ShaderFolder}/line.frag
   ${ShaderFolder}/pbr.vert
   ${ShaderFolder}/pbr.frag
+  ${ShaderFolder}/pbr.task
+  ${ShaderFolder}/pbr.mesh
   ${ShaderFolder}/triangle.vert
   ${ShaderFolder}/triangle.frag
   ${ShaderFolder}/filtercube.vert
@@ -23,6 +25,7 @@ set(SHADER_DEPENDENCIES
   "${ShaderFolder}/pbr.vert|${ShaderFolder}/shadermaterial.glsl"
   "${ShaderFolder}/pbr.vert|${ShaderFolder}/srgbtolinear.glsl"
   "${ShaderFolder}/pbr.vert|${ShaderFolder}/tonemapping.glsl"
+  "${ShaderFolder}/pbr.task|${ShaderFolder}/pbr_mesh_common.glsl"
 )
 
 # Function to get dependencies for a shader file
@@ -91,12 +94,12 @@ function(compile_glsl run_target_name)
         get_shader_dependencies(${in_file} dependencies)
 
         # Run glslc if we can find it
-        message(STATUS "command: Vulkan::glslc in: ${in_file} -o out: ${out_file}")
+        message(STATUS "command: Vulkan::glslc --target-env=vulkan1.4 -g ${in_file} -o out: ${out_file}")
         # -g option is debug info
         # -O option is optimization
         add_custom_command(
             OUTPUT ${out_file}
-            COMMAND Vulkan::glslc -O ${in_file} -o ${out_file}
+            COMMAND Vulkan::glslc --target-env=vulkan1.4 -g ${in_file} -o ${out_file}
             DEPENDS ${dependencies}
         )
         list(APPEND glsl_output_files ${out_file})
