@@ -172,6 +172,8 @@ MeshStore::~MeshStore()
 				vkFreeMemory(engine->globalRendering.device, obj->vertexBufferMemory, nullptr);
 				vkDestroyBuffer(engine->globalRendering.device, obj->indexBuffer, nullptr);
 				vkFreeMemory(engine->globalRendering.device, obj->indexBufferMemory, nullptr);
+                vkDestroyBuffer(engine->globalRendering.device, obj->meshletDescBuffer, nullptr);
+                vkFreeMemory(engine->globalRendering.device, obj->meshletDescBufferMemory, nullptr);
                 obj->available = false;
             }
 		}
@@ -183,6 +185,8 @@ MeshStore::~MeshStore()
 			vkFreeMemory(engine->globalRendering.device, obj.vertexBufferMemory, nullptr);
 			vkDestroyBuffer(engine->globalRendering.device, obj.indexBuffer, nullptr);
 			vkFreeMemory(engine->globalRendering.device, obj.indexBufferMemory, nullptr);
+			vkDestroyBuffer(engine->globalRendering.device, obj.meshletDescBuffer, nullptr);
+			vkFreeMemory(engine->globalRendering.device, obj.meshletDescBufferMemory, nullptr);
 		}
 	}
 }

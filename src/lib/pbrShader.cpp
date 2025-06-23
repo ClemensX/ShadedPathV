@@ -10,6 +10,8 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	// create shader modules
 	vertShaderModule = resources.createShaderModule("pbr.vert.spv");
 	fragShaderModule = resources.createShaderModule("pbr.frag.spv");
+	taskShaderModule = resources.createShaderModule("pbr.task.spv");
+	meshShaderModule = resources.createShaderModule("pbr.mesh.spv");
 
 	// descriptor
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, this, 1);
@@ -26,6 +28,8 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 		sub.init(this, "PBRLineSubshader");
 		sub.setVertShaderModule(vertShaderModule);
 		sub.setFragShaderModule(fragShaderModule);
+        sub.setTaskShaderModule(taskShaderModule);
+        sub.setMeshShaderModule(meshShaderModule);
 		sub.setVulkanResources(&resources);
 		globalSubShaders.push_back(sub);
 	}
@@ -135,6 +139,8 @@ PBRShader::~PBRShader()
 	//vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);
 	vkDestroyShaderModule(device, vertShaderModule, nullptr);
+    vkDestroyShaderModule(device, taskShaderModule, nullptr);
+    vkDestroyShaderModule(device, meshShaderModule, nullptr);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
 	vkDestroyDescriptorPool(device, descriptorPool, nullptr);
 }
@@ -189,8 +195,11 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 
 	// create shader stage
 	auto vertShaderStageInfo = engine->shaders.createVertexShaderCreateInfo(vertShaderModule);
+    auto taskShaderStageInfo = engine->shaders.createTaskShaderCreateInfo(taskShaderModule);
+    auto meshShaderStageInfo = engine->shaders.createMeshShaderCreateInfo(meshShaderModule);
 	auto fragShaderStageInfo = engine->shaders.createFragmentShaderCreateInfo(fragShaderModule);
-	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+	//VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+	VkPipelineShaderStageCreateInfo shaderStages[] = { taskShaderStageInfo, meshShaderStageInfo, fragShaderStageInfo };
 
 	// vertex input
 	auto binding_desc = pbrShader->getBindingDescription();
@@ -394,8 +403,11 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	//if (isRightEye) pushConstants.mode = 2;
 	vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pbrPushConstants), &pushConstants);
 	//if (isRightEye) vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);
-	if (obj->mesh->meshletVertexIndices.size() > 0)
+	if (obj->mesh->meshletVertexIndices.size() > 0) {
+		// groupCountX, groupCountY, groupCountZ: number of workgroups to dispatch
+		//vkCmdDrawMeshTasksEXT(commandBuffer, 1, 1, 1);
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->meshletVertexIndices.size()), 1, 0, 0, 0);
+	}
 	else
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);
 }

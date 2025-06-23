@@ -33,9 +33,18 @@ struct OutputVertex {
 
 layout(location = 0) out OutputVertex outVert[];
 
+void check_inputs() {
+    uvec4 uv = meshletDescs.packedMeshlets[0];
+    //debugPrintfEXT("meshlet uvec4[0] %f %f %f %f\n", uv.x, uv.y, uv.z, uv.w);
+    MeshletDesc meshlet = unpackMeshletDesc(uv);
+    uint indexBufferOffset = meshlet.indexBufferOffset;
+    debugPrintfEXT("MESH SHADER meshlet indexBufferOffset %d\n", indexBufferOffset);
+}
+
 // Main mesh shader entry
 void main()
 {
+    check_inputs();
     // Get meshlet index from task shader or workgroup
     uint meshletIndex = gl_WorkGroupID.x;
 

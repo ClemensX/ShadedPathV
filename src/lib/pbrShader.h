@@ -291,6 +291,8 @@ private:
 
 	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;
+	VkShaderModule taskShaderModule = nullptr;
+	VkShaderModule meshShaderModule = nullptr;
 	struct LightSource {
 		glm::vec3 color = glm::vec3(1.0f);
 		glm::vec3 rotation = glm::vec3(75.0f, 40.0f, 0.0f);
@@ -352,6 +354,12 @@ public:
 	void setFragShaderModule(VkShaderModule sm) {
 		fragShaderModule = sm;
 	}
+	void setTaskShaderModule(VkShaderModule sm) {
+		taskShaderModule = sm;
+	}
+	void setMeshShaderModule(VkShaderModule sm) {
+		meshShaderModule = sm;
+	}
 	void initSingle(FrameResources& tr, ShaderState& shaderState);
 	void setVulkanResources(VulkanResources* vr) {
 		vulkanResources = vr;
@@ -396,6 +404,8 @@ private:
 	std::string name;
 	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;
+	VkShaderModule taskShaderModule = nullptr;
+	VkShaderModule meshShaderModule = nullptr;
 	ShadedPathEngine* engine = nullptr;
 	VkDevice device = nullptr;
 	FrameResources* frameResources = nullptr;

@@ -465,6 +465,7 @@ void GlobalRendering::createLogicalDevice()
     VkPhysicalDeviceVulkan13Features deviceFeatures13{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
         .synchronization2 = VK_TRUE,
+        .maintenance4 = VK_TRUE,
     };
     VkPhysicalDeviceDescriptorIndexingFeatures descriptorIndexingFeatures{};
     descriptorIndexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
