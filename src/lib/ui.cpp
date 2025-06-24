@@ -102,13 +102,14 @@ void UI::init(ShadedPathEngine* engine)
     init_info.Allocator = nullptr;
     init_info.MinImageCount = winfo->imageCount - 1;
     init_info.ImageCount = winfo->imageCount;
+    init_info.RenderPass = imGuiRenderPass;
     //init_info.CheckVkResultFn = check_vk_result;
-    ImGui_ImplVulkan_Init(&init_info, imGuiRenderPass);
+    ImGui_ImplVulkan_Init(&init_info);
 
     // upload fonts to GPU
-    VkCommandBuffer command_buffer = engine->globalRendering.beginSingleTimeCommands();
-    ImGui_ImplVulkan_CreateFontsTexture(command_buffer);
-    engine->globalRendering.endSingleTimeCommands(command_buffer);
+    //VkCommandBuffer command_buffer = engine->globalRendering.beginSingleTimeCommands();
+    ImGui_ImplVulkan_CreateFontsTexture();
+    //engine->globalRendering.endSingleTimeCommands(command_buffer);
 }
 
 void UI::update()
@@ -140,7 +141,8 @@ void UI::beginFrame()
         return;
     WindowInfo* winfo = engine->presentation.windowInfo;
     ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame(winfo->width, winfo->height);
+    //ImGui_ImplGlfw_NewFrame(winfo->width, winfo->height);
+    ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 }
 
@@ -221,9 +223,9 @@ UI::~UI()
 {
     if (!enabled)
         return;
-    vkDestroyRenderPass(engine->globalRendering.device, imGuiRenderPass, nullptr);
-    vkDestroyDescriptorPool(engine->globalRendering.device, g_DescriptorPool, nullptr);
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
+    vkDestroyRenderPass(engine->globalRendering.device, imGuiRenderPass, nullptr);
+    vkDestroyDescriptorPool(engine->globalRendering.device, g_DescriptorPool, nullptr);
 }
