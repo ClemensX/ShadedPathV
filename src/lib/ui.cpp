@@ -10,10 +10,7 @@ void UI::init(ShadedPathEngine* engine)
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    //io.DisplayFramebufferScale = ImVec2(2.0f, 2.0f);
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    ImGuiIO& io = ImGui::GetIO();
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
@@ -56,7 +53,7 @@ void UI::init(ShadedPathEngine* engine)
         colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         colorAttachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;//VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 
         // subpasses and attachment references
         VkAttachmentReference colorAttachmentRef{};
@@ -120,6 +117,7 @@ void UI::update()
         return;
     unique_lock<mutex> lock(monitorMutex);
     beginFrame();
+    //ImGui::ShowDemoWindow();
     buildUI();
     endFrame();
     uiRenderAvailable = true;
@@ -140,8 +138,9 @@ void UI::beginFrame()
 {
     if (!enabled)
         return;
+    WindowInfo* winfo = engine->presentation.windowInfo;
     ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame(engine->getBackBufferExtent().width, engine->getBackBufferExtent().height);
+    ImGui_ImplGlfw_NewFrame(winfo->width, winfo->height);
     ImGui::NewFrame();
 }
 

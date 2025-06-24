@@ -28,6 +28,12 @@ Presentation::Presentation(ShadedPathEngine* s) {
 Presentation::~Presentation()
 {
 	Log("Presentation destructor\n");
+    for (auto& gpui : gpuImages) {
+        if (gpui.fba.image != nullptr) {
+            vkDestroyImageView(engine->globalRendering.device, gpui.fba.view, nullptr);
+            vkDestroyFramebuffer(engine->globalRendering.device, gpui.framebuffer, nullptr);
+        }
+    }
 }
 
 // handle key callback
@@ -444,7 +450,20 @@ VkExtent2D Presentation::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabi
     }
 }
 
-
+GPUImage& Presentation::getCreateGPUImage(uint32_t index, WindowInfo* winfo)
+{
+    if (index < gpuImages.size()) {
+        return gpuImages[index];
+    }
+    gpuImages.resize(index + 1);
+    GPUImage& dstImage = gpuImages[index];
+    dstImage.access = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
+    dstImage.stage = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dstImage.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    dstImage.fba.image = winfo->swapChainImages[index];
+    dstImage.fba.view = engine->globalRendering.createImageView(dstImage.fba.image, winfo->swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    return dstImage;
+}
 
 void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo)
 {
@@ -482,11 +501,12 @@ void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo)
     // Transition image formats
 
     // set src values for access, layout and image
-    GPUImage dstImage{};
-    dstImage.access = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
-    dstImage.stage = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-    dstImage.layout = VK_IMAGE_LAYOUT_UNDEFINED;
-    dstImage.fba.image = winfo->swapChainImages[imageIndex];
+    //GPUImage dstImage{};
+    //dstImage.access = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT;
+    //dstImage.stage = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    //dstImage.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    //dstImage.fba.image = winfo->swapChainImages[imageIndex];
+    auto& dstImage = getCreateGPUImage(imageIndex, winfo);
     DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT, winfo->commandBufferPresentBack, &dstImage);
     if (engine->shaders.uiShader.enabled) {
         // NEW
@@ -548,16 +568,32 @@ void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo)
         );
     }
 
+    if (engine->shaders.uiShader.enabled) {
+        // NEW
+        // acquireCompleteInfo.semaphore = fr->imageAvailableSemaphore;
+        engine->ui.update();
+        DirectImage::toLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT, winfo->commandBufferPresentBack, &dstImage);
+        if (dstImage.framebuffer == nullptr) {
+            engine->shaders.uiShader.initFramebuffer(dstImage.fba.view, dstImage.framebuffer);
+        }
+        VkRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = engine->ui.imGuiRenderPass;//tr.renderPassDraw;
+        renderPassInfo.framebuffer = dstImage.framebuffer;
+        renderPassInfo.renderArea.offset = { 0, 0 };
+        VkExtent2D extent{(uint32_t)winfo->width, (uint32_t)winfo->height};
+        renderPassInfo.renderArea.extent = extent;//engine->getBackBufferExtent();
+        renderPassInfo.clearValueCount = 0;
+        vkCmdBeginRenderPass(winfo->commandBufferPresentBack, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), winfo->commandBufferPresentBack);
+        vkCmdEndRenderPass(winfo->commandBufferPresentBack);
+    }
     DirectImage::toLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, VK_ACCESS_2_MEMORY_READ_BIT, winfo->commandBufferPresentBack, &dstImage);
 
     if (vkEndCommandBuffer(winfo->commandBufferPresentBack) != VK_SUCCESS) {
         Error("failed to record back buffer copy command buffer!");
     }
 
-    if (engine->shaders.uiShader.enabled) {
-        // NEW
-        // acquireCompleteInfo.semaphore = fr->imageAvailableSemaphore;
-    }
     VkSubmitInfo2 renderingSubmitInfo{};
     renderingSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
     renderingSubmitInfo.waitSemaphoreInfoCount = 1;

@@ -66,6 +66,7 @@ struct GPUImage {
     bool rendered = false;
     bool consumed = false;
     bool isRightEye = false;
+    VkFramebuffer framebuffer = nullptr;
 };
 
 using CommandBufferArray = std::array<VkCommandBuffer, MAX_COMMAND_BUFFERS_PER_DRAW>;

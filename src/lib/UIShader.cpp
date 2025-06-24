@@ -137,6 +137,25 @@ void UISubShader::init(UIShader * parent, std::string debugName) {
     Log("UIubShader init: " << debugName.c_str() << std::endl);
 }
     
+void UIShader::initFramebuffer(VkImageView view, VkFramebuffer& framebuffer)
+{
+    VkFramebufferCreateInfo framebufferInfo{};
+    VkImageView attachmentsUI[] = {
+        view
+    };
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass = engine->ui.imGuiRenderPass;// renderPassDraw;
+    framebufferInfo.attachmentCount = 1;
+    framebufferInfo.pAttachments = attachmentsUI;
+    framebufferInfo.width = engine->presentation.windowInfo->width;
+    framebufferInfo.height = engine->presentation.windowInfo->height;
+    framebufferInfo.layers = 1;
+
+    if (vkCreateFramebuffer(engine->globalRendering.device, &framebufferInfo, nullptr, &framebuffer) != VK_SUCCESS) {
+        Error("failed to create framebuffer!");
+    }
+}
+
 void UISubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 {
     VkFramebufferCreateInfo framebufferInfo{};

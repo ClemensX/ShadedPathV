@@ -82,6 +82,7 @@ public:
 	static void setCursorPosCallback(std::function<void(GLFWwindow* window, double x, double y)> callback);
 	static void cursorPosCallback(GLFWwindow* window, double x, double y);
 	void callbackCursorPos(GLFWwindow* window, double x, double y);
+    GPUImage& getCreateGPUImage(uint32_t index, WindowInfo* winfo);
 private:
 	static std::function<void(GLFWwindow*, int, int, int, int)> currentKeyCallback;
 	static std::function<void(GLFWwindow* window, int button, int action, int mods)> currentMouseButtonCallback;
@@ -94,5 +95,6 @@ private:
 	// Input will be handled via one instance - application code needs to copy if needed, not referenced
 	InputState inputState;
 	void createSwapChain(WindowInfo* winfo);
+    std::vector<GPUImage> gpuImages; // store GPU images for presentation
 };
 
