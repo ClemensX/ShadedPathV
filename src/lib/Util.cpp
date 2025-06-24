@@ -41,29 +41,18 @@ int LogfileScanner::searchForLine(string line, int startline)
     return -1;
 }
 
-void Util::initializeDebugFunctionPointers() {
-    pfnDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(engine->globalRendering.vkInstance, "vkSetDebugUtilsObjectNameEXT");
-}
-
 std::string Util::createDebugName(const char* name, int number) {
     return std::string(name) + "_" + std::to_string(number);
 }
 
 // vulkan will copy the name string, so we can use a temporary string
 void Util::debugNameObject(uint64_t object, VkObjectType objectType, const char* name) {
-    if (pfnDebugUtilsObjectNameEXT == nullptr) {
-        initializeDebugFunctionPointers();
-    }
-    // Check for a valid function pointer
-    if (pfnDebugUtilsObjectNameEXT)
-    {
-        VkDebugUtilsObjectNameInfoEXT nameInfo = {};
-        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-        nameInfo.objectType = objectType;
-        nameInfo.objectHandle = object;
-        nameInfo.pObjectName = name;
-        pfnDebugUtilsObjectNameEXT(engine->globalRendering.device, &nameInfo);
-    }
+    VkDebugUtilsObjectNameInfoEXT nameInfo = {};
+    nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+    nameInfo.objectType = objectType;
+    nameInfo.objectHandle = object;
+    nameInfo.pObjectName = name;
+    vkSetDebugUtilsObjectNameEXT(engine->globalRendering.device, &nameInfo);
 }
 
 void Util::warn(std::string msg)

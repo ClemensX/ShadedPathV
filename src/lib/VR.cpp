@@ -53,13 +53,14 @@ void VR::initVulkanEnable2(VkInstanceCreateInfo &instInfo)
         reinterpret_cast<PFN_xrVoidFunction*>(&pfnCreateVulkanInstanceKHR)));
     XrVulkanInstanceCreateInfoKHR createInfo{ XR_TYPE_VULKAN_INSTANCE_CREATE_INFO_KHR };
     createInfo.systemId = systemId;
-    createInfo.pfnGetInstanceProcAddr = &vkGetInstanceProcAddr;
+    createInfo.pfnGetInstanceProcAddr = vkGetInstanceProcAddr;
     createInfo.vulkanCreateInfo = &instInfo;
     createInfo.vulkanAllocator = nullptr;
     CHECK_XRCMD(pfnCreateVulkanInstanceKHR(instance, &createInfo, &engine->globalRendering.vkInstance, &err));
     if (err != VK_SUCCESS) {
         Error("Could not initialize vulkan instance via OpenXR");
     }
+    volkLoadInstance(engine->globalRendering.vkInstance);
 
     // pick physical device
     XrVulkanGraphicsDeviceGetInfoKHR deviceInfo{ XR_TYPE_VULKAN_GRAPHICS_DEVICE_GET_INFO_KHR };
@@ -81,7 +82,7 @@ void VR::initVulkanCreateDevice(VkDeviceCreateInfo& vkCreateInfo)
         reinterpret_cast<PFN_xrVoidFunction*>(&pfnCreateVulkanDeviceKHR)));
     XrVulkanDeviceCreateInfoKHR createInfo{ XR_TYPE_VULKAN_DEVICE_CREATE_INFO_KHR };
     createInfo.systemId = systemId;
-    createInfo.pfnGetInstanceProcAddr = &vkGetInstanceProcAddr;
+    createInfo.pfnGetInstanceProcAddr = vkGetInstanceProcAddr;
     createInfo.vulkanPhysicalDevice = engine->globalRendering.physicalDevice;
     createInfo.vulkanCreateInfo = &vkCreateInfo;
     createInfo.vulkanAllocator = nullptr;

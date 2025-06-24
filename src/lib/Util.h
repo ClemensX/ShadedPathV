@@ -156,9 +156,6 @@ private:
         n = (n & 0xAA) >> 1 | (n & 0x55) << 1;
         return n;
     }
-    void initializeDebugFunctionPointers();
-    //PFN_vkDebugMarkerSetObjectNameEXT pfnDebugMarkerSetObjectNameEXT = nullptr;
-    PFN_vkSetDebugUtilsObjectNameEXT pfnDebugUtilsObjectNameEXT = nullptr;
     int imageCounter = 0;
     std::string last_warn_msg;
 };
