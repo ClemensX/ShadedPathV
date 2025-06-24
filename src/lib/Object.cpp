@@ -682,7 +682,7 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
     mesh->meshletDesc.resize(mesh->meshlets.size());
 	for (size_t i = 0; i < mesh->meshlets.size(); ++i) {
 		auto& m = mesh->meshlets[i];
-		PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x123456789ABC, 12, 34, 56, 100, 0xABCDEF);
+		PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x123456789ABC, 12, 34, 56, 101, 0xABCDEF);
 		//PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x00, 0, 0, 0, 0x00, 0x00);
 		//PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(-1, -1, -1, -1, -1, -1);
 		mesh->meshletDesc[i] = packed;

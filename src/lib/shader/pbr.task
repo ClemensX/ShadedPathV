@@ -5,7 +5,7 @@
 #include "pbr_mesh_common.glsl"
 
 // Bindings must match your descriptor set layout
-layout(std430, binding = 0) buffer MeshletBuffer {
+layout(std430, binding = 2) buffer MeshletBuffer {
     uvec4 packedMeshlets[];
 } meshletDescs;
 
@@ -17,14 +17,14 @@ layout(local_size_x = 32) in; // 32 threads per workgroup
 
 void check_inputs() {
     uvec4 uv = meshletDescs.packedMeshlets[0];
-    debugPrintfEXT("meshlet uvec4[0] %f %f %f %f\n", uv.x, uv.y, uv.z, uv.w);
+    //debugPrintfEXT("meshlet uvec4[0] %f %f %f %f\n", uv.x, uv.y, uv.z, uv.w);
     MeshletDesc meshlet = unpackMeshletDesc(uv);
     uint indexBufferOffset = meshlet.indexBufferOffset;
-    debugPrintfEXT("task shader meshlet indexBufferOffset %d\n", indexBufferOffset);
+    debugPrintfEXT("meshlet indexBufferOffset %d\n", indexBufferOffset);
 }
 
 void main() {
-    check_inputs();
+    //check_inputs();
     uint meshletIndex = gl_GlobalInvocationID.x;
 //    if (meshletIndex >= NUM_MESHLETS) {
 //        debugPrintfEXT("task shader meshlet index out-of-range: %d\n", meshletIndex);
@@ -39,5 +39,6 @@ void main() {
     // Example: Dispatch a mesh shader workgroup for this meshlet
     // (You would typically call EmitMeshTasksEXT here)
     // For demonstration, emit one mesh task per meshlet
-    EmitMeshTasksEXT(meshletIndex, 1, 1); // (groupX, groupY, groupZ)
+    //EmitMeshTasksEXT(meshletIndex, 1, 1); // (groupX, groupY, groupZ)
+    EmitMeshTasksEXT(1, 1, 1); // (groupX, groupY, groupZ)
 }
