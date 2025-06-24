@@ -1,29 +1,9 @@
 #pragma once
 
 // forward
-class UISubShader;
+class UIShader;
 
 // UIShader is used to render Dear ImGui UI.
-class UIShader : public ShaderBase
-{
-public:
-    // set up shader
-    virtual void init(ShadedPathEngine& engine, ShaderState& shaderState) override;
-    virtual void initSingle(FrameResources& tr, ShaderState& shaderState) override;
-    virtual void createCommandBuffer(FrameResources& tr) override;
-    virtual void addCommandBuffers(FrameResources* fr, DrawResult* drawResult) override;
-    std::vector<UISubShader> perFrameSubShaders;
-
-
-    // render UI, only to be called from Presentation::presentBackBufferImage() because ImGUI is not thread save
-    // will only render for left eye in stereo or vr mode
-    void draw(FrameResources* fr, WindowInfo* winfo, GPUImage* srcImage);
-
-    virtual ~UIShader() override;
-
-private:
-};
-
 class UISubShader
 {
 public:
@@ -41,4 +21,25 @@ private:
     std::string name;
     ShadedPathEngine* engine = nullptr;
     VkDevice device = nullptr;
+}; 
+
+class UIShader : public ShaderBase
+{
+public:
+    // set up shader
+    virtual void init(ShadedPathEngine& engine, ShaderState& shaderState) override;
+    virtual void initSingle(FrameResources& tr, ShaderState& shaderState) override;
+    virtual void createCommandBuffer(FrameResources& tr) override;
+    virtual void addCommandBuffers(FrameResources* fr, DrawResult* drawResult) override;
+    //std::vector<UISubShader> perFrameSubShaders;
+    UISubShader subShader; // single subshader for UI, as it is not used in stereo or vr mode
+
+
+    // render UI, only to be called from Presentation::presentBackBufferImage() because ImGUI is not thread save
+    // will only render for left eye in stereo or vr mode
+    void draw(FrameResources* fr, WindowInfo* winfo, GPUImage* srcImage);
+
+    virtual ~UIShader() override;
+
+private:
 };

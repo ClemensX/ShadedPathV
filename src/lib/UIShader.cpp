@@ -9,16 +9,16 @@ void UIShader::init(ShadedPathEngine &engine, ShaderState& shaderState)
     }
 	ShaderBase::init(engine);
 	engine.ui.init(&engine);
-    int fl = engine.getFramesInFlight();
-    for (int i = 0; i < fl; i++) {
-        // per frame
-        UISubShader pf;
-        pf.init(this, "PerFrameUISubshader");
-        perFrameSubShaders.push_back(pf);
-    }
-    for (auto& fi : engine.getFrameResources()) {
-        initSingle(fi, shaderState);
-    }
+    //int fl = engine.getFramesInFlight();
+    //for (int i = 0; i < fl; i++) {
+    //    // per frame
+    //    UISubShader pf;
+    //    pf.init(this, "PerFrameUISubshader");
+    //    perFrameSubShaders.push_back(pf);
+    //}
+    //for (auto& fi : engine.getFrameResources()) {
+    //    initSingle(fi, shaderState);
+    //}
 
 }
 
@@ -27,10 +27,10 @@ void UIShader::initSingle(FrameResources& tr, ShaderState& shaderState)
     if (!enabled) {
         return;
     }
-    UISubShader& pf = perFrameSubShaders[tr.frameIndex];
-    pf.initSingle(tr, shaderState);
-    auto name = engine->util.createDebugName("UI COMMAND BUFFER", tr.frameIndex);
-    pf.allocateCommandBuffer(tr, name.c_str());
+    //UISubShader& pf = perFrameSubShaders[tr.frameIndex];
+    //pf.initSingle(tr, shaderState);
+    //auto name = engine->util.createDebugName("UI COMMAND BUFFER", tr.frameIndex);
+    //pf.allocateCommandBuffer(tr, name.c_str());
 }
 
 void UIShader::createCommandBuffer(FrameResources& tr)
@@ -47,21 +47,21 @@ UIShader::~UIShader()
 	if (!enabled) {
 		return;
 	}
-	//vkDestroyDescriptorPool(device, descriptorPool, nullptr);
-    for (UISubShader& sub : perFrameSubShaders) {
-        sub.destroy();
-    }
+    //for (UISubShader& sub : perFrameSubShaders) {
+    //    sub.destroy();
+    //}
 }
 
 void UIShader::draw(FrameResources* fr, WindowInfo* winfo, GPUImage* srcImage)
 {
+    return;
     if (enabled)
     {
         if (srcImage->isRightEye) {
             return;
         }
         auto& tr = *fr;
-        UISubShader& pf = perFrameSubShaders[tr.frameIndex];
+        UISubShader& pf = subShader; // perFrameSubShaders[tr.frameIndex];
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.flags = 0; // Optional

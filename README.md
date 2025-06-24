@@ -298,6 +298,7 @@ Same scene with camera moved back. You see lines resembling floor level and ceil
 Prerequisites that need to installed before dev setup:
 * C++ 20 supported by CMake (VisualStudio 2022, gcc, clang,...)
 * Vulkan SDK https://vulkan.lunarg.com/
+  * install Vulkan with at least these options: Volk, Shader Toolchain Debug Symbols, Vulkan Memory Allocation Header
 * git
 * cmake
 

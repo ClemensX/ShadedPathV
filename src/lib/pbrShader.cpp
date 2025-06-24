@@ -198,8 +198,8 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
     auto taskShaderStageInfo = engine->shaders.createTaskShaderCreateInfo(taskShaderModule);
     auto meshShaderStageInfo = engine->shaders.createMeshShaderCreateInfo(meshShaderModule);
 	auto fragShaderStageInfo = engine->shaders.createFragmentShaderCreateInfo(fragShaderModule);
-	//VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
-	VkPipelineShaderStageCreateInfo shaderStages[] = { taskShaderStageInfo, meshShaderStageInfo, fragShaderStageInfo };
+	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+	//VkPipelineShaderStageCreateInfo shaderStages[] = { taskShaderStageInfo, meshShaderStageInfo, fragShaderStageInfo };
 
 	// vertex input
 	auto binding_desc = pbrShader->getBindingDescription();

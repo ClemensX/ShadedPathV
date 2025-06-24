@@ -489,7 +489,8 @@ void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo)
     dstImage.fba.image = winfo->swapChainImages[imageIndex];
     DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT, winfo->commandBufferPresentBack, &dstImage);
     if (engine->shaders.uiShader.enabled) {
-        DirectImage::toLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT, winfo->commandBufferPresentBack, &fr->colorImage);
+        // NEW
+        //DirectImage::toLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT, winfo->commandBufferPresentBack, &fr->colorImage);
     }
     DirectImage::toLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_2_TRANSFER_READ_BIT, winfo->commandBufferPresentBack, &fr->colorImage);
 
@@ -554,7 +555,8 @@ void Presentation::presentImage(FrameResources* fr, WindowInfo* winfo)
     }
 
     if (engine->shaders.uiShader.enabled) {
-        acquireCompleteInfo.semaphore = fr->imageAvailableSemaphore;
+        // NEW
+        // acquireCompleteInfo.semaphore = fr->imageAvailableSemaphore;
     }
     VkSubmitInfo2 renderingSubmitInfo{};
     renderingSubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
