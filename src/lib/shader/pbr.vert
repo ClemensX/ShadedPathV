@@ -22,49 +22,7 @@ struct UBOParams {
 };
 
 #include "shadermaterial.glsl"
-// #include "meshlet_support.glsl"
-// GLSL: Struct for unpacked meshlet data
-struct MeshletDesc {
-    uint boundingBoxLow;   // lower 32 bits of boundingBox
-    uint boundingBoxHigh;  // upper 16 bits of boundingBox (for 48 bits total)
-    uint numVertices;
-    uint numPrimitives;
-    uint vertexPack;
-    uint indexBufferOffset;
-    uint normalCone;
-};
-
-// Unpack a uvec4 into MeshletDesc
-MeshletDesc unpackMeshletDesc(uvec4 packed) {
-    MeshletDesc desc;
-
-    // Reconstruct 64-bit words from uvec4
-    uint low0 = packed.x; // bits 0..31
-    uint low1 = packed.y; // bits 32..63
-    uint high0 = packed.z; // bits 64..95
-    uint high1 = packed.w; // bits 96..127
-
-    // boundingBox: bits 0..47
-    desc.boundingBoxLow  = low0; // bits 0..31
-    desc.boundingBoxHigh = low1 & 0xFFFF; // bits 32..47
-
-    // numVertices: bits 48..55
-    desc.numVertices = (low1 >> 16) & 0xFF;
-
-    // numPrimitives: bits 56..63
-    desc.numPrimitives = (low1 >> 24) & 0xFF;
-
-    // vertexPack: bits 64..71
-    desc.vertexPack = high0 & 0xFF;
-
-    // indexBufferOffset: bits 72..103
-    desc.indexBufferOffset = (high0 >> 8) | ((high1 & 0xFF) << 24);
-
-    // normalCone: bits 104..127
-    desc.normalCone = (high1 >> 8) & 0xFFFFFF;
-
-    return desc;
-}
+#include "pbr_mesh_common.glsl"
 
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
@@ -162,7 +120,7 @@ void check_inputs() {
 }
 
 void main() {
-    check_inputs();
+    //check_inputs();
     //outParams = model_ubo.params;
     //outMaterial = model_ubo.material;
     //textureIndexes = model_ubo.indexes;
