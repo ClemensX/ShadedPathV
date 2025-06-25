@@ -198,8 +198,8 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
     auto taskShaderStageInfo = engine->shaders.createTaskShaderCreateInfo(taskShaderModule);
     auto meshShaderStageInfo = engine->shaders.createMeshShaderCreateInfo(meshShaderModule);
 	auto fragShaderStageInfo = engine->shaders.createFragmentShaderCreateInfo(fragShaderModule);
-	//VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
-	VkPipelineShaderStageCreateInfo shaderStages[] = { taskShaderStageInfo, meshShaderStageInfo, fragShaderStageInfo };
+	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
+	//VkPipelineShaderStageCreateInfo shaderStages[] = { taskShaderStageInfo, meshShaderStageInfo, fragShaderStageInfo };
 
 	// vertex input
 	auto binding_desc = pbrShader->getBindingDescription();
@@ -403,10 +403,10 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	//if (isRightEye) pushConstants.mode = 2;
 	vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pbrPushConstants), &pushConstants);
 	//if (isRightEye) vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);
-	if (obj->mesh->meshletVertexIndices.size() > 0) {
+	if (obj->mesh->meshletVertexIndices.size() > 0 && false) {
 		// groupCountX, groupCountY, groupCountZ: number of workgroups to dispatch
-		vkCmdDrawMeshTasksEXT(commandBuffer, 1, 1, 1);
-		//vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->meshletVertexIndices.size()), 1, 0, 0, 0);
+		//vkCmdDrawMeshTasksEXT(commandBuffer, 1, 1, 1);
+		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->meshletVertexIndices.size()), 1, 0, 0, 0);
 	}
 	else
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);

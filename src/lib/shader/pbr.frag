@@ -194,6 +194,9 @@ float microfacetDistribution(PBRInfo pbrInputs)
 }
 
 void main() {
+	debugPrintfEXT("pbr.frag main\n");
+	outColor = vec4(1.0,0.0,0.0,1.0);
+	return;
 	ShaderMaterial material = model_ubo.material;
     float f = uboParams.gamma;
     //debugPrintfEXT("uboParams.gamma %f\n", f);

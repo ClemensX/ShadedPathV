@@ -85,10 +85,12 @@ void check_inputs() {
     //debugPrintfEXT("meshlet uvec4[0] %f %f %f %f\n", uv.x, uv.y, uv.z, uv.w);
     MeshletDesc meshlet = unpackMeshletDesc(uv);
     uint indexBufferOffset = meshlet.indexBufferOffset;
-    debugPrintfEXT("meshlet indexBufferOffset %d\n", indexBufferOffset);
+    //debugPrintfEXT("meshlet indexBufferOffset %d\n", indexBufferOffset);
     vec4 v = inColor0;
     vec3 x;
     vec2 c;
+    uint flags = model_ubo.flags;
+    //debugPrintfEXT("model_ubo flags %d\n", flags);
     //debugPrintfEXT("inColor0 %f %f %f %f\n", v.x, v.y, v.z, v.w);
     v = ubo.model[0];
     //debugPrintfEXT("model %f %f %f %f\n", v.x, v.y, v.z, v.w);

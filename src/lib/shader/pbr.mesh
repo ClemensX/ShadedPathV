@@ -3,77 +3,93 @@
 #extension GL_EXT_mesh_shader : enable
 
 
-#include "pbr_mesh_common.glsl"
+//#include "pbr_mesh_common.glsl"
+//
+//// Meshlet descriptor buffer (binding = 2)
+//layout(std430, binding = 2) buffer MeshletBuffer {
+//    uvec4 packedMeshlets[];
+//} meshletDescs;
+//
+//// Vertex buffer (binding = 3)
+//layout(std430, binding = 3) buffer VertexBuffer {
+//    vec3 positions[];
+//    // Add other attributes as needed (normals, uvs, etc.)
+//} vertexBuffer;
+//
+//// Index buffer (binding = 4)
+//layout(std430, binding = 4) buffer IndexBuffer {
+//    uint indices[];
+//} indexBuffer;
+//
+//
+//// Output: up to 256 vertices and 512 primitives per meshlet (adjust as needed)
+//layout(local_size_x = 1) in;
+//layout(max_vertices = NVMESHLET_VERTEX_COUNT, max_primitives = NVMESHLET_PRIMITIVE_COUNT) out;
+//layout(triangles) out;
+//
+//struct OutputVertex {
+//    vec3 pos;
+//};
+//
+//layout(location = 0) out OutputVertex outVert[];
+//
+//void check_inputs() {
+//    uvec4 uv = meshletDescs.packedMeshlets[0];
+//    //debugPrintfEXT("meshlet uvec4[0] %f %f %f %f\n", uv.x, uv.y, uv.z, uv.w);
+//    MeshletDesc meshlet = unpackMeshletDesc(uv);
+//    uint indexBufferOffset = meshlet.indexBufferOffset;
+//    debugPrintfEXT("MESH SHADER meshlet indexBufferOffset %d\n", indexBufferOffset);
+//}
+//
+//// Main mesh shader entry
+//void main()
+//{
+//    //check_inputs();
+//    // Get meshlet index from task shader or workgroup
+//    uint meshletIndex = gl_WorkGroupID.x;
+//
+//    // Read and unpack meshlet
+//    uvec4 packed = meshletDescs.packedMeshlets[meshletIndex];
+//    MeshletDesc meshlet = unpackMeshletDesc(packed);
+//
+//    // Set meshlet output counts
+//    uint vertexCount = meshlet.numVertices;
+//    uint primCount = meshlet.numPrimitives;
+//    //SetMeshOutputsEXT(vertexCount, primCount);
+//    SetMeshOutputsEXT(3, 1);
+//
+//    // For each meshlet vertex, fetch position (expand for normals, uvs, etc.)
+//    for (uint v = 0; v < vertexCount; ++v) {
+//        // You may need a meshlet-local-to-global vertex index mapping if using meshlet-local indices
+//        outVert[v].pos = vertexBuffer.positions[v];
+//    }
+//
+//    // For each primitive, emit triangle using index buffer
+//    for (uint p = 0; p < primCount; ++p) {
+//        // Each primitive is a triangle: 3 indices per primitive
+//        uint idx0 = indexBuffer.indices[meshlet.indexBufferOffset + p * 3 + 0];
+//        uint idx1 = indexBuffer.indices[meshlet.indexBufferOffset + p * 3 + 1];
+//        uint idx2 = indexBuffer.indices[meshlet.indexBufferOffset + p * 3 + 2];
+//        //EmitMeshPrimitiveEXT(idx0, idx1, idx2, 0);
+//        //EmitMeshPrimitiveEXT(0, 1, 2, 0);
+//    }
+//    gl_MeshVerticesEXT[0].gl_Position = vec4(0.5,-0.5, 0, 1);
+//    gl_MeshVerticesEXT[1].gl_Position = vec4(0.5, 0.5, 0, 1);
+//    gl_MeshVerticesEXT[2].gl_Position = vec4(-0.5, 0.5, 0, 1);
+//    gl_PrimitiveTriangleIndicesEXT[0] =  uvec3(0, 1, 2);
+//}
+//
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(triangles, max_vertices = 3, max_primitives = 1) out;
 
-// Meshlet descriptor buffer (binding = 2)
-layout(std430, binding = 2) buffer MeshletBuffer {
-    uvec4 packedMeshlets[];
-} meshletDescs;
-
-// Vertex buffer (binding = 3)
-layout(std430, binding = 3) buffer VertexBuffer {
-    vec3 positions[];
-    // Add other attributes as needed (normals, uvs, etc.)
-} vertexBuffer;
-
-// Index buffer (binding = 4)
-layout(std430, binding = 4) buffer IndexBuffer {
-    uint indices[];
-} indexBuffer;
-
-
-// Output: up to 256 vertices and 512 primitives per meshlet (adjust as needed)
-layout(local_size_x = 1) in;
-layout(max_vertices = NVMESHLET_VERTEX_COUNT, max_primitives = NVMESHLET_PRIMITIVE_COUNT) out;
-layout(triangles) out;
-
-struct OutputVertex {
-    vec3 pos;
-};
-
-layout(location = 0) out OutputVertex outVert[];
-
-void check_inputs() {
-    uvec4 uv = meshletDescs.packedMeshlets[0];
-    //debugPrintfEXT("meshlet uvec4[0] %f %f %f %f\n", uv.x, uv.y, uv.z, uv.w);
-    MeshletDesc meshlet = unpackMeshletDesc(uv);
-    uint indexBufferOffset = meshlet.indexBufferOffset;
-    debugPrintfEXT("MESH SHADER meshlet indexBufferOffset %d\n", indexBufferOffset);
-}
-
-// Main mesh shader entry
 void main()
 {
-    check_inputs();
-    // Get meshlet index from task shader or workgroup
-    uint meshletIndex = gl_WorkGroupID.x;
-
-    // Read and unpack meshlet
-    uvec4 packed = meshletDescs.packedMeshlets[meshletIndex];
-    MeshletDesc meshlet = unpackMeshletDesc(packed);
-
-    // Set meshlet output counts
-    uint vertexCount = meshlet.numVertices;
-    uint primCount = meshlet.numPrimitives;
-    SetMeshOutputsEXT(vertexCount, primCount);
-
-    // For each meshlet vertex, fetch position (expand for normals, uvs, etc.)
-    for (uint v = 0; v < vertexCount; ++v) {
-        // You may need a meshlet-local-to-global vertex index mapping if using meshlet-local indices
-        outVert[v].pos = vertexBuffer.positions[v];
-    }
-
-    // For each primitive, emit triangle using index buffer
-    for (uint p = 0; p < primCount; ++p) {
-        // Each primitive is a triangle: 3 indices per primitive
-        uint idx0 = indexBuffer.indices[meshlet.indexBufferOffset + p * 3 + 0];
-        uint idx1 = indexBuffer.indices[meshlet.indexBufferOffset + p * 3 + 1];
-        uint idx2 = indexBuffer.indices[meshlet.indexBufferOffset + p * 3 + 2];
-        //EmitMeshPrimitiveEXT(idx0, idx1, idx2, 0);
-        //EmitMeshPrimitiveEXT(0, 1, 2, 0);
-    }
-    gl_MeshVerticesEXT[0].gl_Position = vec4(0.5,-0.5, 0, 1);
-    gl_MeshVerticesEXT[1].gl_Position = vec4(0.5, 0.5, 0, 1);
-    gl_MeshVerticesEXT[2].gl_Position = vec4(-0.5, 0.5, 0, 1);
-    gl_PrimitiveTriangleIndicesEXT[0] =  uvec3(0, 1, 2);
+  uint vertexCount = 3;
+  uint triangleCount = 1;
+  SetMeshOutputsEXT(vertexCount, triangleCount);
+  gl_MeshVerticesEXT[0].gl_Position = vec4(0.5,-0.5, 0, 1);
+  gl_MeshVerticesEXT[1].gl_Position = vec4(0.5, 0.5, 0, 1);
+  gl_MeshVerticesEXT[2].gl_Position = vec4(-0.5, 0.5, 0, 1);
+  gl_PrimitiveTriangleIndicesEXT[0] =  uvec3(0, 1, 2);
+  //debugPrintfEXT("mesh shader main end\n");
 }

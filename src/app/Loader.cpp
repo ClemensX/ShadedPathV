@@ -48,7 +48,7 @@ void Loader::run(ContinuationInfo* cont)
 
 void Loader::debugColors(std::string meshName)
 {
-    engine->meshStore.calculateMeshlets(meshName);
+    //engine->meshStore.calculateMeshlets(meshName);
     static auto col = engine->util.generateColorPalette256();
     assert(col.size() == 256); //  Color palette must have 256 colors!
     MeshInfo* mesh = engine->meshStore.getMesh(meshName);
@@ -98,7 +98,7 @@ void Loader::init() {
         // turn upside down
         object->rot() = vec3(PI_half, 0.0, 0.0f);
     }
-    object->enableDebugGraphics = true;
+    object->enableDebugGraphics = false;
     BoundingBox box;
     object->getBoundingBox(box);
     Log(" object max values: " << box.max.x << " " << box.max.y << " " << box.max.z << std::endl);
@@ -247,7 +247,7 @@ void Loader::prepareFrame(FrameResources* fr)
         glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
         modeltransform = trans * scaled * rotationMatrix;
         buf->model = modeltransform;
-        buf->flags |= 0x1; // set flag for dicard rendering
+        //buf->flags |= 0x1; // set flag for dicard rendering
         engine->meshStore.debugRenderMeshlet(wo, tr, modeltransform);
         //engine->meshStore.debugGraphics(wo, tr, modeltransform);
         //wo->calculateBoundingBoxWorld(modeltransform);
