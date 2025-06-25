@@ -153,7 +153,7 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         layoutBinding.binding = bindingCount;
         layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         layoutBinding.descriptorCount = 1;
-        layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_FRAGMENT_BIT;
+        layoutBinding.stageFlags = VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_FRAGMENT_BIT;
         layoutBinding.pImmutableSamplers = nullptr;
         bindings.push_back(layoutBinding);
         poolSize.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;

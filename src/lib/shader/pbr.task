@@ -1,13 +1,14 @@
 #version 460
-#extension GL_EXT_mesh_shader : enable
 #extension GL_EXT_debug_printf : enable
+#extension GL_EXT_mesh_shader : enable
 
 #include "pbr_mesh_common.glsl"
 
-// Bindings must match your descriptor set layout
+// Meshlet descriptor buffer (binding = 2)
 layout(std430, binding = 2) buffer MeshletBuffer {
     uvec4 packedMeshlets[];
 } meshletDescs;
+
 
 // Define the maximum number of meshlets to dispatch
 // (You may want to pass this as a push constant or specialization constant)
@@ -20,11 +21,12 @@ void check_inputs() {
     //debugPrintfEXT("meshlet uvec4[0] %f %f %f %f\n", uv.x, uv.y, uv.z, uv.w);
     MeshletDesc meshlet = unpackMeshletDesc(uv);
     uint indexBufferOffset = meshlet.indexBufferOffset;
-    debugPrintfEXT("meshlet indexBufferOffset %d\n", indexBufferOffset);
+    debugPrintfEXT("TASK SHADER meshlet indexBufferOffset %d\n", indexBufferOffset);
 }
 
 void main() {
-    //check_inputs();
+    //meshletDescs.packedMeshlets[0] = uvec4(-1, -1, -1, -1);
+    check_inputs();
     uint meshletIndex = gl_GlobalInvocationID.x;
 //    if (meshletIndex >= NUM_MESHLETS) {
 //        debugPrintfEXT("task shader meshlet index out-of-range: %d\n", meshletIndex);
