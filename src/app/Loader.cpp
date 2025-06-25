@@ -48,7 +48,7 @@ void Loader::run(ContinuationInfo* cont)
 
 void Loader::debugColors(std::string meshName)
 {
-    //engine->meshStore.calculateMeshlets(meshName);
+    engine->meshStore.calculateMeshlets(meshName);
     static auto col = engine->util.generateColorPalette256();
     assert(col.size() == 256); //  Color palette must have 256 colors!
     MeshInfo* mesh = engine->meshStore.getMesh(meshName);

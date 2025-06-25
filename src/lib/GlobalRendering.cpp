@@ -437,7 +437,7 @@ void GlobalRendering::createLogicalDevice()
     VkPhysicalDeviceMeshShaderFeaturesEXT meshFeatures = {};
     meshFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_FEATURES_EXT;
     meshFeatures.meshShader = VK_TRUE;
-    meshFeatures.taskShader = VK_FALSE;
+    meshFeatures.taskShader = VK_TRUE;
 
     VkPhysicalDevicePortabilitySubsetFeaturesKHR portability{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR,

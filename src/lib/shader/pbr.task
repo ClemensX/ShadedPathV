@@ -33,12 +33,14 @@ void main() {
 //
     //debugPrintfEXT("task shader still thereX\n");
     // Read and unpack meshlet
-    uvec4 packed = meshletDescs.packedMeshlets[meshletIndex];
-    MeshletDesc meshlet = unpackMeshletDesc(packed);
+    //uvec4 packed = meshletDescs.packedMeshlets[meshletIndex];
+    //MeshletDesc meshlet = unpackMeshletDesc(packed);
 
     // Example: Dispatch a mesh shader workgroup for this meshlet
     // (You would typically call EmitMeshTasksEXT here)
     // For demonstration, emit one mesh task per meshlet
     //EmitMeshTasksEXT(meshletIndex, 1, 1); // (groupX, groupY, groupZ)
+    //debugPrintfEXT("task shader b4 emit\n");
     EmitMeshTasksEXT(1, 1, 1); // (groupX, groupY, groupZ)
+    //debugPrintfEXT("task shader emitted\n");
 }
