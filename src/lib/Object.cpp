@@ -138,9 +138,9 @@ void MeshStore::uploadObject(MeshInfo* obj)
 	size_t vertexBufferSize = obj->vertices.size() * sizeof(PBRShader::Vertex);
 	size_t indexBufferSize = obj->indices.size() * sizeof(obj->indices[0]);
 	size_t meshletIndexBufferSize = obj->meshletVertexIndices.size() * sizeof(obj->meshletVertexIndices[0]);
-    size_t meshletDescBufferSize = obj->meshletDesc.size() * sizeof(PBRShader::PackedMeshletDesc);
+    size_t meshletDescBufferSize = obj->outMeshletDesc.size() * sizeof(PBRShader::PackedMeshletDesc);
 	if (meshletDescBufferSize > 0)
-		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, meshletDescBufferSize, obj->meshletDesc.data(), obj->meshletDescBuffer, obj->meshletDescBufferMemory, "meshlet desc array buffer");
+		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, meshletDescBufferSize, obj->outMeshletDesc.data(), obj->meshletDescBuffer, obj->meshletDescBufferMemory, "meshlet desc array buffer");
 	engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBufferSize, obj->vertices.data(), obj->vertexBuffer, obj->vertexBufferMemory, "GLTF object vertex buffer");
 	if (obj->meshletVertexIndices.size() > 0)
 		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, meshletIndexBufferSize, obj->meshletVertexIndices.data(), obj->indexBuffer, obj->indexBufferMemory, "GLTF object index buffer");
@@ -471,6 +471,7 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 	assert(vertexLimit <= 256);
 
 	MeshInfo* mesh = getMesh(id);
+    mesh->meshletVerticesLimit = vertexLimit;
 	//mesh->
 	// min	[-0.040992 -0.046309 -0.053326]	glm::vec<3,float,0>
 	// max	[0.040992 0.067943 0.132763]	glm::vec<3,float,0>
@@ -678,15 +679,68 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 		indexVertexMap, mesh->vertsVector, triangles, mesh->meshlets, vertexBuffer, primitiveLimit, vertexLimit
     );
     applyDebugMeshletColorsToVertices(mesh);
-    // create meshlet descriptors:
-    mesh->meshletDesc.resize(mesh->meshlets.size());
+	logMeshletStats(mesh);
+    // create meshlet descriptors and buffers:
+    // first, we count how many indices we need for the meshlets:
+    uint32_t totalIndices = 0;
+	for (auto& m : mesh->meshlets) {
+        assert(m.verticesIndices.size() <= vertexLimit); // we limit the number of vertices per meshlet to 256
+        totalIndices += m.verticesIndices.size();
+	}
+    //Log("Total indices needed for meshlets: " << totalIndices << endl);
+	// create meshlet descriptor buffer and global index buffer and local index buffer
+	mesh->outMeshletDesc.resize(mesh->meshlets.size());
+    mesh->outGlobalIndexBuffer.resize(totalIndices);
+    mesh->outLocalIndexBuffer.resize(totalIndices);
+	uint32_t indexBufferOffset = 0;
 	for (size_t i = 0; i < mesh->meshlets.size(); ++i) {
 		auto& m = mesh->meshlets[i];
-		PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x123456789ABC, 12, 34, 56, 101, 0xABCDEF);
+		//PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x123456789ABC, 12, 34, 56, 101, 0xABCDEF);
 		//PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x00, 0, 0, 0, 0x00, 0x00);
 		//PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(-1, -1, -1, -1, -1, -1);
-		mesh->meshletDesc[i] = packed;
-    }
+		PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x123456789ABC, m.verticesIndices.size(), m.primitives.size(), 56, indexBufferOffset, 0xABCDEF);
+		mesh->outMeshletDesc[i] = packed;
+        // fill global and local index buffers:
+		for (size_t j = 0; j < m.verticesIndices.size(); ++j) {
+			assert(j < 256);
+			mesh->outGlobalIndexBuffer[indexBufferOffset + j] = m.verticesIndices[j];
+			mesh->outLocalIndexBuffer[indexBufferOffset + j] = j; // local index is just the index in the meshlet
+		}
+		indexBufferOffset += m.verticesIndices.size();
+	}
+}
+
+void MeshStore::logMeshletStats(MeshInfo* mesh)
+{
+	Log("Meshlet stats for mesh " << mesh->id << endl);
+	Log("  Meshlets: " << mesh->meshlets.size() << endl);
+	//Log("  Meshlet descriptors: " << mesh->outMeshletDesc.size() << endl);
+    //Log("  Meshlet triangles: " << mesh->meshlets.size() * 12 << endl); // each meshlet has 12 triangles
+    int localIndexCount = 0; // count indices used for all meshlets
+	static auto col = engine->util.generateColorPalette256();
+
+	for (auto& m : mesh->meshlets) {
+        localIndexCount += m.verticesIndices.size();
+        assert(m.verticesIndices.size() <= 64); // we limit the number of vertices per meshlet to 256
+		//for (auto& v : m.primitives) {
+		//	// v is a triangle
+		//	assert(v[0] < m.verticesIndices.size() && v[1] < m.verticesIndices.size() && v[2] < m.verticesIndices.size());
+  //          localIndexCount += m.verticesIndices.size();
+		//	auto& v0 = m.verticesIndices[v[0]];
+		//	auto& v1 = m.verticesIndices[v[1]];
+		//	auto& v2 = m.verticesIndices[v[2]];
+		//	assert(v0 < mesh->vertices.size() && v1 < mesh->vertices.size() && v2 < mesh->vertices.size());
+		//	auto& v0pos = mesh->vertices[v0].pos;
+		//	auto& v1pos = mesh->vertices[v1].pos;
+		//	auto& v2pos = mesh->vertices[v2].pos;
+		//	//vec3 v0posWorld = vec3(modelToWorld * vec4(v0pos, 1.0f));
+		//	//vec3 v1posWorld = vec3(modelToWorld * vec4(v1pos, 1.0f));
+		//	//vec3 v2posWorld = vec3(modelToWorld * vec4(v2pos, 1.0f));
+		//}
+	}
+	Log("  local Vertex indices (b4 greedy alg): " << mesh->meshletVertexIndices.size() << endl);
+	Log("  local Vertex indices needed         : " << localIndexCount << endl);
+	Log("  vertices: " << mesh->vertices.size() << endl);
 }
 
 void Meshlet::applyMeshletAlgorithmGreedyVerts(
@@ -849,32 +903,95 @@ void MeshStore::debugRenderMeshlet(WorldObject* obj, FrameResources& fr, glm::ma
 	static auto col = engine->util.generateColorPalette256();
 
 	for (auto& m : obj->mesh->meshlets) {
+        uint32_t minIndex = UINT32_MAX;
+        uint32_t maxIndex = 0;
 		auto color = col[meshletCount % 256]; // assign color from palette
 		meshletCount++;
 		for (auto& v : m.primitives) {
 			// v is a triangle
-            assert(v[0] < m.verticesIndices.size() && v[1] < m.verticesIndices.size() && v[2] < m.verticesIndices.size());
-            auto& v0 = m.verticesIndices[v[0]];
-            auto& v1 = m.verticesIndices[v[1]];
-            auto& v2 = m.verticesIndices[v[2]];
-            assert(v0 < obj->mesh->vertices.size() && v1 < obj->mesh->vertices.size() && v2 < obj->mesh->vertices.size());
-            auto& v0pos = obj->mesh->vertices[v0].pos;
-            auto& v1pos = obj->mesh->vertices[v1].pos;
-            auto& v2pos = obj->mesh->vertices[v2].pos;
+			assert(v[0] < m.verticesIndices.size() && v[1] < m.verticesIndices.size() && v[2] < m.verticesIndices.size());
+			auto& v0 = m.verticesIndices[v[0]];
+            if (v0 < minIndex) minIndex = v0;
+            if (v0 > maxIndex) maxIndex = v0;
+			auto& v1 = m.verticesIndices[v[1]];
+            if (v1 < minIndex) minIndex = v1;
+            if (v1 > maxIndex) maxIndex = v1;
+			auto& v2 = m.verticesIndices[v[2]];
+			if (v2 < minIndex) minIndex = v2;
+            if (v2 > maxIndex) maxIndex = v2;
+			assert(v0 < obj->mesh->vertices.size() && v1 < obj->mesh->vertices.size() && v2 < obj->mesh->vertices.size());
+			auto& v0pos = obj->mesh->vertices[v0].pos;
+			auto& v1pos = obj->mesh->vertices[v1].pos;
+			auto& v2pos = obj->mesh->vertices[v2].pos;
 			vec3 v0posWorld = vec3(modelToWorld * vec4(v0pos, 1.0f));
-            vec3 v1posWorld = vec3(modelToWorld * vec4(v1pos, 1.0f));
-            vec3 v2posWorld = vec3(modelToWorld * vec4(v2pos, 1.0f));
+			vec3 v1posWorld = vec3(modelToWorld * vec4(v1pos, 1.0f));
+			vec3 v2posWorld = vec3(modelToWorld * vec4(v2pos, 1.0f));
 			LineDef l;
 			l.color = color;
 			l.start = v0posWorld;
-            l.end = v1posWorld;
-            addLines.push_back(l);
-            l.start = v1posWorld;
-            l.end = v2posWorld;
-            addLines.push_back(l);
-            l.start = v2posWorld;
-            l.end = v0posWorld;
-            addLines.push_back(l);
+			l.end = v1posWorld;
+			addLines.push_back(l);
+			l.start = v1posWorld;
+			l.end = v2posWorld;
+			addLines.push_back(l);
+			l.start = v2posWorld;
+			l.end = v0posWorld;
+			addLines.push_back(l);
+		}
+		if (maxIndex - minIndex +1 > 256) {
+			//Log("WARNING: Meshlet " << meshletCount << " local index spans more than 256 continuous indices, this is not allowed! Min index: " << minIndex << " Max index: " << maxIndex << endl);
+		}
+	}
+
+	lineShader.prepareAddLines(fr);
+	lineShader.addOneTime(addLines, fr);
+}
+
+void MeshStore::debugRenderMeshletFromBuffers(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 colorNix)
+{
+	// get access to line shader
+	auto& lineShader = engine->shaders.lineShader;
+	if (!lineShader.enabled) return;
+	if (!obj->enableDebugGraphics) return;
+
+	vector<LineDef> addLines;
+
+	int meshletCount = 0;
+	static auto col = engine->util.generateColorPalette256();
+
+	auto color = col[meshletCount % 256]; // assign color from palette
+	for (int meshletIndex = 0; meshletIndex < obj->mesh->outMeshletDesc.size(); meshletIndex++) {
+        PBRShader::PackedMeshletDesc& packed = obj->mesh->outMeshletDesc[meshletIndex];
+		auto meshletOffset = packed.getIndexBufferOffset();
+		auto color = col[meshletCount++ % 256]; // assign color from palette
+		for (int i = 0; i < obj->mesh->meshlets[meshletIndex].primitives.size(); ++i) {
+			//Log("Meshlet offset " << meshletOffset << endl);
+			// get first triangle:
+			auto localIndex0 = obj->mesh->meshlets[meshletIndex].primitives[i][0];
+            auto localIndex1 = obj->mesh->meshlets[meshletIndex].primitives[i][1];
+            auto localIndex2 = obj->mesh->meshlets[meshletIndex].primitives[i][2];
+
+            auto v0 = obj->mesh->outGlobalIndexBuffer[meshletOffset + localIndex0];
+			auto v1 = obj->mesh->outGlobalIndexBuffer[meshletOffset + localIndex1];
+			auto v2 = obj->mesh->outGlobalIndexBuffer[meshletOffset + localIndex2];
+			// v0, v1, v2 are now absolute indices in the vertex buffer
+			auto& v0pos = obj->mesh->vertices[v0].pos;
+			auto& v1pos = obj->mesh->vertices[v1].pos;
+			auto& v2pos = obj->mesh->vertices[v2].pos;
+			vec3 v0posWorld = vec3(modelToWorld * vec4(v0pos, 1.0f));
+			vec3 v1posWorld = vec3(modelToWorld * vec4(v1pos, 1.0f));
+			vec3 v2posWorld = vec3(modelToWorld * vec4(v2pos, 1.0f));
+			LineDef l;
+			l.color = color;
+			l.start = v0posWorld;
+			l.end = v1posWorld;
+			addLines.push_back(l);
+			l.start = v1posWorld;
+			l.end = v2posWorld;
+			addLines.push_back(l);
+			l.start = v2posWorld;
+			l.end = v0posWorld;
+			addLines.push_back(l);
 		}
 	}
 

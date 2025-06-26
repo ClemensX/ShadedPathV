@@ -244,14 +244,19 @@ struct MeshInfo
 	std::string id;
 	bool available = false; // true if this object is ready for use in shader code
 	MeshFlagsCollection flags;
+    uint32_t meshletVerticesLimit = 0; // limit for meshlet vertices, we need to a fixed value for index buffer alignment
 
 	// gltf data: valid after object load, should be cleared after upload
 	std::vector<PBRShader::Vertex> vertices;
 	std::vector<uint32_t> indices;
-	std::vector<PBRShader::PackedMeshletDesc> meshletDesc;
     std::vector<uint32_t> meshletVertexIndices; // indices into vertices, used for meshlets
     std::vector<Meshlet> meshlets; // meshlets for this mesh, for use in MeshShader
     std::vector<Meshlet::MeshletVertInfo*> vertsVector; // meshlet vertex info, used to store vertex indices and neighbours
+	// output: needed on GPU side
+	std::vector<PBRShader::PackedMeshletDesc> outMeshletDesc;
+	std::vector<uint8_t> outLocalIndexBuffer;
+	std::vector<uint32_t> outGlobalIndexBuffer;
+
 	// named accessors for textures in above vector:
 	::TextureInfo* baseColorTexture = nullptr;
 	::TextureInfo* metallicRoughnessTexture = nullptr;
@@ -338,7 +343,11 @@ public:
 	MeshInfo* initMeshInfo(MeshCollection* coll, std::string id);
 
 	MeshInfo* getMesh(std::string id);
-	void calculateMeshlets(std::string id, uint32_t vertexLimit = 64, uint32_t primitiveLimit = 125);
+	// to render an object using meshlets we need:
+    // 1. meshlet desc buffer, most important: get global index start for each meshlet
+    // 2. global index buffer, which contains indices into the global vertex buffer
+    // 3. local index buffer, byte buffer which maps local meshlet vertex index to global index buffer: byte val + global index start is the index where the actualk vertex is found
+	void calculateMeshlets(std::string id, uint32_t vertexLimit = 64, uint32_t primitiveLimit = 126);
     const float VERTEX_REUSE_THRESHOLD = 1.3f; // if vertex position duplication ratio is greater than this, log a warning
     // check if loaded mesh has many vertices that are identical in position, color and uv coords but differ in normal direction.
     // this is a common problem with glTF files that were exported from Blender, where the normals are not recomputed.
@@ -351,7 +360,10 @@ public:
 	void applyDebugMeshletColorsToVertices(MeshInfo* mesh);
     // draw object from lines using its meshlet information only
     // also servers as a debug function to visualize meshlets and to document meshlet structure
-    void debugRenderMeshlet(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 color = Colors::Red);
+	void debugRenderMeshlet(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 color = Colors::Red);
+	void debugRenderMeshletFromBuffers(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 color = Colors::Red);
+	// log meshlet info buffer sizes
+    void logMeshletStats(MeshInfo* mesh);
 
 private:
 	MeshCollection* loadMeshFile(std::string filename, std::string id, std::vector<std::byte> &fileBuffer, MeshFlagsCollection flags);
