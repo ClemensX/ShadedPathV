@@ -254,8 +254,8 @@ struct MeshInfo
     std::vector<Meshlet::MeshletVertInfo*> vertsVector; // meshlet vertex info, used to store vertex indices and neighbours
 	// output: needed on GPU side
 	std::vector<PBRShader::PackedMeshletDesc> outMeshletDesc;
-	std::vector<uint8_t> outLocalIndexBuffer;
-	std::vector<uint32_t> outGlobalIndexBuffer;
+	std::vector<uint8_t> outLocalIndexPrimitivesBuffer;   // local indices for primitives (3 indices per triangle)
+	std::vector<uint32_t> outGlobalIndexBuffer; // vertex indices into vertex buffer
 
 	// named accessors for textures in above vector:
 	::TextureInfo* baseColorTexture = nullptr;

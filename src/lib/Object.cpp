@@ -685,13 +685,17 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
     uint32_t totalIndices = 0;
 	for (auto& m : mesh->meshlets) {
         assert(m.verticesIndices.size() <= vertexLimit); // we limit the number of vertices per meshlet to 256
-        totalIndices += m.verticesIndices.size();
+        //Log("Meshlet " << " has " << m.verticesIndices.size() << " vertices and " << m.primitives.size() << " primitives." << endl);
+		// we need to align global and local indeex buffers, so we just use the bigger size of them.
+        // local index buffer size has to be multiplied by 3 to make room for 3 indices per triangle
+        uint32_t additionalIndices = m.verticesIndices.size() < m.primitives.size() ? m.primitives.size() : m.verticesIndices.size();
+        totalIndices += additionalIndices;
 	}
     //Log("Total indices needed for meshlets: " << totalIndices << endl);
 	// create meshlet descriptor buffer and global index buffer and local index buffer
 	mesh->outMeshletDesc.resize(mesh->meshlets.size());
     mesh->outGlobalIndexBuffer.resize(totalIndices);
-    mesh->outLocalIndexBuffer.resize(totalIndices);
+    mesh->outLocalIndexPrimitivesBuffer.resize(totalIndices * 3);
 	uint32_t indexBufferOffset = 0;
 	for (size_t i = 0; i < mesh->meshlets.size(); ++i) {
 		auto& m = mesh->meshlets[i];
@@ -700,13 +704,22 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 		//PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(-1, -1, -1, -1, -1, -1);
 		PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x123456789ABC, m.verticesIndices.size(), m.primitives.size(), 56, indexBufferOffset, 0xABCDEF);
 		mesh->outMeshletDesc[i] = packed;
-        // fill global and local index buffers:
+		// fill global index buffers:
 		for (size_t j = 0; j < m.verticesIndices.size(); ++j) {
 			assert(j < 256);
 			mesh->outGlobalIndexBuffer[indexBufferOffset + j] = m.verticesIndices[j];
-			mesh->outLocalIndexBuffer[indexBufferOffset + j] = j; // local index is just the index in the meshlet
+			//mesh->outLocalIndexPrimitivesBuffer[indexBufferOffset + j] = j; // local index is just the index in the meshlet
 		}
-		indexBufferOffset += m.verticesIndices.size();
+		// fill local primitives index buffers:
+		for (size_t j = 0; j < m.primitives.size(); ++j) {
+			assert(j < 256);
+            auto& triangle = m.primitives[j];
+			mesh->outLocalIndexPrimitivesBuffer[(indexBufferOffset + j) * 3] = triangle[0];
+			mesh->outLocalIndexPrimitivesBuffer[(indexBufferOffset + j) * 3 + 1] = triangle[1];
+			mesh->outLocalIndexPrimitivesBuffer[(indexBufferOffset + j) * 3 + 2] = triangle[2];
+		}
+		uint32_t additionalIndices = m.verticesIndices.size() < m.primitives.size() ? m.primitives.size() : m.verticesIndices.size();
+		indexBufferOffset += additionalIndices;
 	}
 }
 
@@ -964,16 +977,25 @@ void MeshStore::debugRenderMeshletFromBuffers(WorldObject* obj, FrameResources& 
         PBRShader::PackedMeshletDesc& packed = obj->mesh->outMeshletDesc[meshletIndex];
 		auto meshletOffset = packed.getIndexBufferOffset();
 		auto color = col[meshletCount++ % 256]; // assign color from palette
-		for (int i = 0; i < obj->mesh->meshlets[meshletIndex].primitives.size(); ++i) {
+		for (int i = 0; i < packed.getNumPrimitives(); ++i) {
 			//Log("Meshlet offset " << meshletOffset << endl);
 			// get first triangle:
-			auto localIndex0 = obj->mesh->meshlets[meshletIndex].primitives[i][0];
-            auto localIndex1 = obj->mesh->meshlets[meshletIndex].primitives[i][1];
-            auto localIndex2 = obj->mesh->meshlets[meshletIndex].primitives[i][2];
+			//auto localIndex0 = obj->mesh->meshlets[meshletIndex].primitives[i][0];
+   //         auto localIndex1 = obj->mesh->meshlets[meshletIndex].primitives[i][1];
+   //         auto localIndex2 = obj->mesh->meshlets[meshletIndex].primitives[i][2];
 
-            auto v0 = obj->mesh->outGlobalIndexBuffer[meshletOffset + localIndex0];
-			auto v1 = obj->mesh->outGlobalIndexBuffer[meshletOffset + localIndex1];
-			auto v2 = obj->mesh->outGlobalIndexBuffer[meshletOffset + localIndex2];
+            // index into local index buffer:
+            auto localPrimBufferIndex = meshletOffset * 3 + i * 3;
+			auto localPrimIndex0 = obj->mesh->outLocalIndexPrimitivesBuffer[localPrimBufferIndex    ];
+			auto localPrimIndex1 = obj->mesh->outLocalIndexPrimitivesBuffer[localPrimBufferIndex + 1];
+			auto localPrimIndex2 = obj->mesh->outLocalIndexPrimitivesBuffer[localPrimBufferIndex + 2];
+
+            // test if local indices match:
+            //assert(localIndex0 == localPrimIndex0 && localIndex1 == localPrimIndex1 && localIndex2 == localPrimIndex2);
+
+            auto v0 = obj->mesh->outGlobalIndexBuffer[meshletOffset + localPrimIndex0];
+			auto v1 = obj->mesh->outGlobalIndexBuffer[meshletOffset + localPrimIndex1];
+			auto v2 = obj->mesh->outGlobalIndexBuffer[meshletOffset + localPrimIndex2];
 			// v0, v1, v2 are now absolute indices in the vertex buffer
 			auto& v0pos = obj->mesh->vertices[v0].pos;
 			auto& v1pos = obj->mesh->vertices[v1].pos;
