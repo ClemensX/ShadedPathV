@@ -271,6 +271,12 @@ struct MeshInfo
 	VkDeviceMemory indexBufferMemory = nullptr;
 	VkBuffer meshletDescBuffer = nullptr;
 	VkDeviceMemory meshletDescBufferMemory = nullptr;
+	VkBuffer globalIndexBuffer = nullptr;
+	VkDeviceMemory globalIndexBufferMemory = nullptr;
+	VkBuffer localIndexBuffer = nullptr;
+	VkDeviceMemory localIndexBufferMemory = nullptr;
+	VkBuffer vertexStorageBuffer = nullptr;
+	VkDeviceMemory vertexStorageBufferMemory = nullptr;
 	//VkDescriptorSet descriptorSet = nullptr;
 
 	// gltf mesh index, only valid during gltf parsing. -1 if not yet set
@@ -362,7 +368,12 @@ public:
     // also servers as a debug function to visualize meshlets and to document meshlet structure
 	void debugRenderMeshlet(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 color = Colors::Red);
 	void debugRenderMeshletFromBuffers(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 color = Colors::Red);
-	// log meshlet info buffer sizes
+	void debugRenderMeshletFromBuffers(FrameResources& fr, glm::mat4 modelToWorld,
+		std::vector<PBRShader::PackedMeshletDesc>& meshletDesc,
+		std::vector<uint8_t>& localIndexPrimitivesBuffer,
+		std::vector<uint32_t>& globalIndexBuffer,
+		std::vector<PBRShader::Vertex>& vertices
+	);
     void logMeshletStats(MeshInfo* mesh);
 
 private:

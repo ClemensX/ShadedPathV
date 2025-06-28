@@ -50,3 +50,63 @@ MeshletDesc unpackMeshletDesc(uvec4 packed) {
     return desc;
 }
 
+struct PBRVertex {
+    vec3 position;
+    vec3 normal;
+    vec2 uv0;
+    vec2 uv1;
+    uvec4 joint0;
+    vec4 weight0;
+    vec4 color0;
+};
+
+struct UBOParams {
+	vec4 lightDir;
+	float exposure;
+	float gamma;
+	float prefilteredCubeMipLevels;
+	float scaleIBLAmbient;
+	float debugViewInputs;
+	float debugViewEquation;
+	float pad0;
+	float pad1;
+};
+
+struct PBRTextureIndexes {
+    uint baseColor;
+    uint metallicRoughness;
+    uint normal;
+    uint occlusion;
+    uint emissive;
+    uint pad0;
+    uint pad1;
+    uint pad2;
+};
+
+#define MAX_NUM_JOINTS 128
+
+// info for this model instance
+// see 	struct PBRTextureIndexes and struct DynamicModelUBO in pbrShader.h
+// one element of the large object material buffer (descriptor updated for each model group before rendering)
+layout (binding = 1) uniform UboInstance {
+    mat4 model; 
+    mat4 jointMatrix[MAX_NUM_JOINTS];
+    uint jointcount;
+    uint flags;
+    uint pad1;
+    uint pad2;
+    //uint padding[2]; // 8 bytes of padding to align the next member to 16 bytes
+    PBRTextureIndexes indexes;
+    UBOParams params;
+    ShaderMaterial material;
+} model_ubo;
+
+layout(binding = 0) uniform UniformBufferObject {
+    mat4 model;
+    mat4 view;
+    mat4 proj;
+    vec4 baseColor;
+    vec3 camPos;
+} ubo;
+
+

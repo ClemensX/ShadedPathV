@@ -138,9 +138,15 @@ void MeshStore::uploadObject(MeshInfo* obj)
 	size_t vertexBufferSize = obj->vertices.size() * sizeof(PBRShader::Vertex);
 	size_t indexBufferSize = obj->indices.size() * sizeof(obj->indices[0]);
 	size_t meshletIndexBufferSize = obj->meshletVertexIndices.size() * sizeof(obj->meshletVertexIndices[0]);
-    size_t meshletDescBufferSize = obj->outMeshletDesc.size() * sizeof(PBRShader::PackedMeshletDesc);
-	if (meshletDescBufferSize > 0)
+	size_t meshletDescBufferSize = obj->outMeshletDesc.size() * sizeof(PBRShader::PackedMeshletDesc);
+	if (meshletDescBufferSize > 0) {
+		size_t localIndexBufferSize = obj->outLocalIndexPrimitivesBuffer.size() * sizeof(obj->outLocalIndexPrimitivesBuffer[0]);
+		size_t globalIndexBufferSize = obj->outGlobalIndexBuffer.size()         * sizeof(obj->outGlobalIndexBuffer[0]);
 		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, meshletDescBufferSize, obj->outMeshletDesc.data(), obj->meshletDescBuffer, obj->meshletDescBufferMemory, "meshlet desc array buffer");
+		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, localIndexBufferSize, obj->outLocalIndexPrimitivesBuffer.data(), obj->localIndexBuffer, obj->localIndexBufferMemory, "meshlet local index buffer");
+		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, globalIndexBufferSize, obj->outGlobalIndexBuffer.data(), obj->globalIndexBuffer, obj->globalIndexBufferMemory, "meshlet global index buffer");
+		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vertexBufferSize, obj->vertices.data(), obj->vertexStorageBuffer, obj->vertexStorageBufferMemory, "meshlet vertex buffer");
+	}
 	engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBufferSize, obj->vertices.data(), obj->vertexBuffer, obj->vertexBufferMemory, "GLTF object vertex buffer");
 	if (obj->meshletVertexIndices.size() > 0)
 		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, meshletIndexBufferSize, obj->meshletVertexIndices.data(), obj->indexBuffer, obj->indexBufferMemory, "GLTF object index buffer");
@@ -174,6 +180,12 @@ MeshStore::~MeshStore()
 				vkFreeMemory(engine->globalRendering.device, obj->indexBufferMemory, nullptr);
                 vkDestroyBuffer(engine->globalRendering.device, obj->meshletDescBuffer, nullptr);
                 vkFreeMemory(engine->globalRendering.device, obj->meshletDescBufferMemory, nullptr);
+                vkDestroyBuffer(engine->globalRendering.device, obj->globalIndexBuffer, nullptr);
+                vkFreeMemory(engine->globalRendering.device, obj->globalIndexBufferMemory, nullptr);
+                vkDestroyBuffer(engine->globalRendering.device, obj->localIndexBuffer, nullptr);
+                vkFreeMemory(engine->globalRendering.device, obj->localIndexBufferMemory, nullptr);
+                vkDestroyBuffer(engine->globalRendering.device, obj->vertexStorageBuffer, nullptr);
+                vkFreeMemory(engine->globalRendering.device, obj->vertexStorageBufferMemory, nullptr);
                 obj->available = false;
             }
 		}
@@ -187,6 +199,12 @@ MeshStore::~MeshStore()
 			vkFreeMemory(engine->globalRendering.device, obj.indexBufferMemory, nullptr);
 			vkDestroyBuffer(engine->globalRendering.device, obj.meshletDescBuffer, nullptr);
 			vkFreeMemory(engine->globalRendering.device, obj.meshletDescBufferMemory, nullptr);
+			vkDestroyBuffer(engine->globalRendering.device, obj.globalIndexBuffer, nullptr);
+			vkFreeMemory(engine->globalRendering.device, obj.globalIndexBufferMemory, nullptr);
+			vkDestroyBuffer(engine->globalRendering.device, obj.localIndexBuffer, nullptr);
+			vkFreeMemory(engine->globalRendering.device, obj.localIndexBufferMemory, nullptr);
+			vkDestroyBuffer(engine->globalRendering.device, obj.vertexStorageBuffer, nullptr);
+			vkFreeMemory(engine->globalRendering.device, obj.vertexStorageBufferMemory, nullptr);
 		}
 	}
 }
@@ -962,10 +980,22 @@ void MeshStore::debugRenderMeshlet(WorldObject* obj, FrameResources& fr, glm::ma
 
 void MeshStore::debugRenderMeshletFromBuffers(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 colorNix)
 {
+	if (!obj->enableDebugGraphics) return;
+
+    debugRenderMeshletFromBuffers(fr, modelToWorld, obj->mesh->outMeshletDesc, obj->mesh->outLocalIndexPrimitivesBuffer, obj->mesh->outGlobalIndexBuffer, obj->mesh->vertices);
+	return;
+}
+
+void MeshStore::debugRenderMeshletFromBuffers(
+	FrameResources& fr, glm::mat4 modelToWorld,
+	std::vector<PBRShader::PackedMeshletDesc>& meshletDesc,
+	std::vector<uint8_t>& localIndexPrimitivesBuffer,
+	std::vector<uint32_t>& globalIndexBuffer,
+	std::vector<PBRShader::Vertex>& vertices
+) {
 	// get access to line shader
 	auto& lineShader = engine->shaders.lineShader;
 	if (!lineShader.enabled) return;
-	if (!obj->enableDebugGraphics) return;
 
 	vector<LineDef> addLines;
 
@@ -973,33 +1003,25 @@ void MeshStore::debugRenderMeshletFromBuffers(WorldObject* obj, FrameResources& 
 	static auto col = engine->util.generateColorPalette256();
 
 	auto color = col[meshletCount % 256]; // assign color from palette
-	for (int meshletIndex = 0; meshletIndex < obj->mesh->outMeshletDesc.size(); meshletIndex++) {
-        PBRShader::PackedMeshletDesc& packed = obj->mesh->outMeshletDesc[meshletIndex];
+	for (int meshletIndex = 0; meshletIndex < meshletDesc.size(); meshletIndex++) {
+		PBRShader::PackedMeshletDesc& packed = meshletDesc[meshletIndex];
 		auto meshletOffset = packed.getIndexBufferOffset();
 		auto color = col[meshletCount++ % 256]; // assign color from palette
 		for (int i = 0; i < packed.getNumPrimitives(); ++i) {
-			//Log("Meshlet offset " << meshletOffset << endl);
-			// get first triangle:
-			//auto localIndex0 = obj->mesh->meshlets[meshletIndex].primitives[i][0];
-   //         auto localIndex1 = obj->mesh->meshlets[meshletIndex].primitives[i][1];
-   //         auto localIndex2 = obj->mesh->meshlets[meshletIndex].primitives[i][2];
 
-            // index into local index buffer:
-            auto localPrimBufferIndex = meshletOffset * 3 + i * 3;
-			auto localPrimIndex0 = obj->mesh->outLocalIndexPrimitivesBuffer[localPrimBufferIndex    ];
-			auto localPrimIndex1 = obj->mesh->outLocalIndexPrimitivesBuffer[localPrimBufferIndex + 1];
-			auto localPrimIndex2 = obj->mesh->outLocalIndexPrimitivesBuffer[localPrimBufferIndex + 2];
+			// index into local index buffer:
+			auto localPrimBufferIndex = meshletOffset * 3 + i * 3;
+			auto localPrimIndex0 = localIndexPrimitivesBuffer[localPrimBufferIndex];
+			auto localPrimIndex1 = localIndexPrimitivesBuffer[localPrimBufferIndex + 1];
+			auto localPrimIndex2 = localIndexPrimitivesBuffer[localPrimBufferIndex + 2];
 
-            // test if local indices match:
-            //assert(localIndex0 == localPrimIndex0 && localIndex1 == localPrimIndex1 && localIndex2 == localPrimIndex2);
-
-            auto v0 = obj->mesh->outGlobalIndexBuffer[meshletOffset + localPrimIndex0];
-			auto v1 = obj->mesh->outGlobalIndexBuffer[meshletOffset + localPrimIndex1];
-			auto v2 = obj->mesh->outGlobalIndexBuffer[meshletOffset + localPrimIndex2];
+			auto v0 = globalIndexBuffer[meshletOffset + localPrimIndex0];
+			auto v1 = globalIndexBuffer[meshletOffset + localPrimIndex1];
+			auto v2 = globalIndexBuffer[meshletOffset + localPrimIndex2];
 			// v0, v1, v2 are now absolute indices in the vertex buffer
-			auto& v0pos = obj->mesh->vertices[v0].pos;
-			auto& v1pos = obj->mesh->vertices[v1].pos;
-			auto& v2pos = obj->mesh->vertices[v2].pos;
+			auto& v0pos = vertices[v0].pos;
+			auto& v1pos = vertices[v1].pos;
+			auto& v2pos = vertices[v2].pos;
 			vec3 v0posWorld = vec3(modelToWorld * vec4(v0pos, 1.0f));
 			vec3 v1posWorld = vec3(modelToWorld * vec4(v1pos, 1.0f));
 			vec3 v2posWorld = vec3(modelToWorld * vec4(v2pos, 1.0f));

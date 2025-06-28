@@ -2,24 +2,13 @@
 #extension GL_EXT_debug_printf : enable
 #extension GL_EXT_mesh_shader : enable
 
+#include "shadermaterial.glsl"
 #include "pbr_mesh_common.glsl"
 
 // Meshlet descriptor buffer (binding = 2)
 layout(std430, binding = 2) buffer MeshletBuffer {
     uvec4 packedMeshlets[];
 } meshletDescs;
-
-// Vertex buffer (binding = 3)
-layout(std430, binding = 3) buffer VertexBuffer {
-    vec3 positions[];
-    // Add other attributes as needed (normals, uvs, etc.)
-} vertexBuffer;
-
-// Index buffer (binding = 4)
-layout(std430, binding = 4) buffer IndexBuffer {
-    uint indices[];
-} indexBuffer;
-
 
 // Output: up to 256 vertices and 512 primitives per meshlet (adjust as needed)
 layout(local_size_x = 1) in;
@@ -60,15 +49,15 @@ void main()
     // For each meshlet vertex, fetch position (expand for normals, uvs, etc.)
     for (uint v = 0; v < vertexCount; ++v) {
         // You may need a meshlet-local-to-global vertex index mapping if using meshlet-local indices
-        outVert[v].pos = vertexBuffer.positions[v];
+        //outVert[v].pos = vertexBuffer.positions[v];
     }
 
     // For each primitive, emit triangle using index buffer
     for (uint p = 0; p < primCount; ++p) {
         // Each primitive is a triangle: 3 indices per primitive
-        uint idx0 = indexBuffer.indices[meshlet.indexBufferOffset + p * 3 + 0];
-        uint idx1 = indexBuffer.indices[meshlet.indexBufferOffset + p * 3 + 1];
-        uint idx2 = indexBuffer.indices[meshlet.indexBufferOffset + p * 3 + 2];
+        //uint idx0 = indexBuffer.indices[meshlet.indexBufferOffset + p * 3 + 0];
+        //uint idx1 = indexBuffer.indices[meshlet.indexBufferOffset + p * 3 + 1];
+        //uint idx2 = indexBuffer.indices[meshlet.indexBufferOffset + p * 3 + 2];
         //EmitMeshPrimitiveEXT(idx0, idx1, idx2, 0);
         //EmitMeshPrimitiveEXT(0, 1, 2, 0);
     }

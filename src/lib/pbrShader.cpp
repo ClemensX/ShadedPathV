@@ -379,7 +379,42 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	write.descriptorCount = 1;
 	write.pBufferInfo = &bufferInfo;
 
+	// more storage buffers:
+	VkDescriptorBufferInfo bufferInfo3{};
+	bufferInfo3.buffer = obj->mesh->localIndexBuffer;
+	bufferInfo3.offset = 0;
+	bufferInfo3.range = VK_WHOLE_SIZE;
 
+	VkDescriptorBufferInfo bufferInfo4{};
+	bufferInfo4.buffer = obj->mesh->globalIndexBuffer;
+	bufferInfo4.offset = 0;
+	bufferInfo4.range = VK_WHOLE_SIZE;
+
+	VkDescriptorBufferInfo bufferInfo5{};
+	bufferInfo5.buffer = obj->mesh->vertexStorageBuffer;
+	bufferInfo5.offset = 0;
+	bufferInfo5.range = VK_WHOLE_SIZE;
+
+	// 2. Prepare VkWriteDescriptorSet for each new buffer
+	VkWriteDescriptorSet write3{};
+	write3.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	write3.dstSet = descriptorSet;
+	write3.dstBinding = 3; // Binding index in the shader
+	write3.dstArrayElement = 0;
+	write3.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	write3.descriptorCount = 1;
+	write3.pBufferInfo = &bufferInfo3;
+
+	VkWriteDescriptorSet write4 = write3;
+	write4.dstBinding = 4;
+	write4.pBufferInfo = &bufferInfo4;
+
+	VkWriteDescriptorSet write5 = write3;
+	write5.dstBinding = 5;
+	write5.pBufferInfo = &bufferInfo5;
+
+	// 3. Update the descriptor set
+	std::array<VkWriteDescriptorSet, 4> writes = { write, write3, write4, write5 };
 	// bind global texture array:
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
 
@@ -389,14 +424,14 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	uint32_t dynamicOffset = static_cast<uint32_t>(objId * pbrShader->alignedDynamicUniformBufferSize);
 	if (!isRightEye) {
 		// left eye
-		write.dstSet = descriptorSet;
-		vkUpdateDescriptorSets(device, 1, &write, 0, nullptr);
+		writes[0].dstSet = writes[1].dstSet = writes[2].dstSet = writes[3].dstSet = descriptorSet;
+		vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 1, &dynamicOffset);
 	}
 	else {
 		// right eye
-		write.dstSet = descriptorSet2;
-		vkUpdateDescriptorSets(device, 1, &write, 0, nullptr);
+		writes[0].dstSet = writes[1].dstSet = writes[2].dstSet = writes[3].dstSet = descriptorSet2;
+		vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet2, 1, &dynamicOffset);
 	}
 	pbrPushConstants pushConstants;

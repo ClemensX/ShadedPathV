@@ -2,19 +2,20 @@
 #extension GL_EXT_nonuniform_qualifier : require
 #extension GL_EXT_debug_printf : enable
 
-struct UBOParams {
-	vec4 lightDir;
-	float exposure;
-	float gamma;
-	float prefilteredCubeMipLevels;
-	float scaleIBLAmbient;
-	float debugViewInputs;
-	float debugViewEquation;
-	float pad0;
-	float pad1;
-};
+//struct UBOParams {
+//	vec4 lightDir;
+//	float exposure;
+//	float gamma;
+//	float prefilteredCubeMipLevels;
+//	float scaleIBLAmbient;
+//	float debugViewInputs;
+//	float debugViewEquation;
+//	float pad0;
+//	float pad1;
+//};
 
 #include "shadermaterial.glsl"
+#include "pbr_mesh_common.glsl"
 
 layout (location = 0) in vec3 inWorldPos;
 layout (location = 1) in vec3 inNormal;
@@ -26,34 +27,34 @@ layout (location = 6) in vec3 camPos;
 // mode 0: pbr metallic roughness
 // mode 1: only use vertex color
 
-struct PBRTextureIndexes {
-    uint baseColor;
-    uint metallicRoughness;
-    uint normal;
-    uint occlusion;
-    uint emissive;
-    uint pad0;
-    uint pad1;
-    uint pad2;
-};
-
-#define MAX_NUM_JOINTS 128
-
-// info for this model instance
-// see 	struct PBRTextureIndexes and struct DynamicModelUBO in pbrShader.h
-// one element of the large object material buffer (descriptor updated for each model group before rednering)
-layout (binding = 1) uniform UboInstance {
-    mat4 model; 
-    mat4 jointMatrix[MAX_NUM_JOINTS];
-    uint jointcount;
-    uint pad0;
-    uint pad1;
-    uint pad2;
-    //uint padding[2]; // 8 bytes of padding to align the next member to 16 bytes
-    PBRTextureIndexes indexes;
-    UBOParams params;
-    ShaderMaterial material;
-} model_ubo;
+//struct PBRTextureIndexes {
+//    uint baseColor;
+//    uint metallicRoughness;
+//    uint normal;
+//    uint occlusion;
+//    uint emissive;
+//    uint pad0;
+//    uint pad1;
+//    uint pad2;
+//};
+//
+//#define MAX_NUM_JOINTS 128
+//
+//// info for this model instance
+//// see 	struct PBRTextureIndexes and struct DynamicModelUBO in pbrShader.h
+//// one element of the large object material buffer (descriptor updated for each model group before rednering)
+//layout (binding = 1) uniform UboInstance {
+//    mat4 model; 
+//    mat4 jointMatrix[MAX_NUM_JOINTS];
+//    uint jointcount;
+//    uint pad0;
+//    uint pad1;
+//    uint pad2;
+//    //uint padding[2]; // 8 bytes of padding to align the next member to 16 bytes
+//    PBRTextureIndexes indexes;
+//    UBOParams params;
+//    ShaderMaterial material;
+//} model_ubo;
 
 layout(location = 0) out vec4 outColor;
 
