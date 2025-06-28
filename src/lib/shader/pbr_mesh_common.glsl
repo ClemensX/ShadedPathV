@@ -93,8 +93,8 @@ layout (binding = 1) uniform UboInstance {
     mat4 jointMatrix[MAX_NUM_JOINTS];
     uint jointcount;
     uint flags;
+    uint meshletsCount;
     uint pad1;
-    uint pad2;
     //uint padding[2]; // 8 bytes of padding to align the next member to 16 bytes
     PBRTextureIndexes indexes;
     UBOParams params;

@@ -364,6 +364,11 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	vkCmdBindIndexBuffer(commandBuffer, obj->mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 	// meshlet resources:
+	// set meshlet count, not the best code location here, but should do
+	if (obj->mesh->outMeshletDesc.size() > 0) {
+		auto buf = pbrShader->getAccessToModel(fr, obj->objectNum);
+        buf->meshletsCount = static_cast<uint32_t>(obj->mesh->outMeshletDesc.size());
+	}
     // update descriptor set for mesh shader:
 	VkDescriptorBufferInfo bufferInfo{};
 	bufferInfo.buffer = obj->mesh->meshletDescBuffer; // Your VkBuffer handle
