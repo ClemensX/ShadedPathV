@@ -11,6 +11,8 @@ struct TexCoordSets {
 	uint normal;
 	uint occlusion;
 	uint emissive;
+	uint pad0;
+	uint pad1;
 };
 
 struct ShaderMaterial {

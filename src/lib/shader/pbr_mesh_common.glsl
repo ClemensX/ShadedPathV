@@ -83,6 +83,13 @@ struct PBRTextureIndexes {
     uint pad2;
 };
 
+struct BoundingBox {
+	vec3 min;
+    float pad0; // padding to align to vec4
+	vec3 max;
+    float pad1; // padding to align to vec4
+};
+
 #define MAX_NUM_JOINTS 128
 
 // info for this model instance
@@ -99,6 +106,7 @@ layout (binding = 1) uniform UboInstance {
     PBRTextureIndexes indexes;
     UBOParams params;
     ShaderMaterial material;
+    BoundingBox boundingBox; // AABB axis aligned bounding box
 } model_ubo;
 
 layout(binding = 0) uniform UniformBufferObject {

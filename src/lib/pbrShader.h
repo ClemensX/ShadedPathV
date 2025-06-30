@@ -94,6 +94,7 @@ public:
 		uint32_t normal = 0;
 		uint32_t occlusion = 0;
 		uint32_t emissive = 0;
+		uint32_t pad0[2]; // 8 bytes of padding to align the next member to 16 bytes. Do not use array on glsl side!!!
 	};
 
 	struct ShaderMaterial {
@@ -130,6 +131,7 @@ public:
 		PBRTextureIndexes indexes; // 4-byte aligned
         shaderValuesParams params; // 16-byte aligned
         ShaderMaterial material; // 16-byte aligned
+        BoundingBox boundingBox; // AABB in local object space
 	};
 	// Array entries of DynamicModelUBO have to respect hardware alignment rules
 	uint64_t alignedDynamicUniformBufferSize = 0;

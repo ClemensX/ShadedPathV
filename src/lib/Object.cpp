@@ -929,6 +929,8 @@ void MeshStore::debugRenderMeshlet(WorldObject* obj, FrameResources& fr, glm::ma
 	if (!obj->enableDebugGraphics) return;
 
 	vector<LineDef> addLines;
+	
+	obj->drawBoundingBox(addLines, modelToWorld, color);
 
 	int meshletCount = 0;
 	static auto col = engine->util.generateColorPalette256();

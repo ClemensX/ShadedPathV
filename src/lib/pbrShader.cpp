@@ -95,6 +95,10 @@ void PBRShader::prefillModelParameters(FrameResources& fr)
         buf->material.irradiance = tiIrradiance->index;
 		buf->material.envcube = tiPrefileterdEnv->index;
 		//buf->material.texCoordSets.specularGlossiness = 27;
+        // calc and set bounding box
+        BoundingBox box;
+		obj->getBoundingBox(box);
+        buf->boundingBox = box;
 	}
 
 }
@@ -368,6 +372,8 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	if (obj->mesh->outMeshletDesc.size() > 0) {
 		auto buf = pbrShader->getAccessToModel(fr, obj->objectNum);
         buf->meshletsCount = static_cast<uint32_t>(obj->mesh->outMeshletDesc.size());
+        // assert that the meshlet count is less than the max task work group count
+        assert(buf->meshletsCount < engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxTaskWorkGroupCount[0]);
 	}
     // update descriptor set for mesh shader:
 	VkDescriptorBufferInfo bufferInfo{};
@@ -444,10 +450,11 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	//if (isRightEye) pushConstants.mode = 2;
 	vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pbrPushConstants), &pushConstants);
 	//if (isRightEye) vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);
-	if (obj->mesh->meshletVertexIndices.size() > 0 && true) {
+	if (obj->mesh->outMeshletDesc.size() > 0) {
 		// groupCountX, groupCountY, groupCountZ: number of workgroups to dispatch
+		//vkCmdDrawMeshTasksEXT(commandBuffer, obj->mesh->outMeshletDesc.size(), 1, 1);
+		// only 1 workgroup: we implement object culling and LOD object selection in task shader
 		vkCmdDrawMeshTasksEXT(commandBuffer, 1, 1, 1);
-		//vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->meshletVertexIndices.size()), 1, 0, 0, 0);
 	}
 	else
 		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);

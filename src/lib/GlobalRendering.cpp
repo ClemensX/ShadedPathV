@@ -155,7 +155,7 @@ void GlobalRendering::pickDevice()
     if (fixedDeviceIndex >= 0) {
         if (fixedDeviceIndex < deviceInfos.size()) {
             physicalDevice = deviceInfos[fixedDeviceIndex].device;
-            physicalDeviceProperties = deviceInfos[fixedDeviceIndex].properties2;
+            globalDeviceInfo = deviceInfos[fixedDeviceIndex];
             Log("WARNING: Using fixed device without checking feature support: " << deviceInfos[fixedDeviceIndex].properties.deviceName << endl);
         } else {
             Error("Fixed device index out of range");
@@ -165,7 +165,7 @@ void GlobalRendering::pickDevice()
     for (auto& info : deviceInfos) {
         if (info.suitable) {
             physicalDevice = info.device;
-            physicalDeviceProperties = info.properties2;
+            globalDeviceInfo = info;
             Log("Picked device: " << info.properties.deviceName << endl);
             return;
         }
@@ -732,7 +732,7 @@ void GlobalRendering::createTextureSampler()
     samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     samplerInfo.anisotropyEnable = VK_TRUE;
-    samplerInfo.maxAnisotropy = physicalDeviceProperties.properties.limits.maxSamplerAnisotropy;
+    samplerInfo.maxAnisotropy = globalDeviceInfo.properties.limits.maxSamplerAnisotropy;
     samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     samplerInfo.unnormalizedCoordinates = VK_FALSE;
     samplerInfo.compareEnable = VK_FALSE;
@@ -1009,11 +1009,11 @@ void GlobalRendering::createViewportState(ShaderState& shaderState) {
 
 void GlobalRendering::logDeviceLimits()
 {
-    Log("maxUniformBufferRange (width of one buffer) " << physicalDeviceProperties.properties.limits.maxUniformBufferRange << endl);
-    Log("minMemoryMapAlignment " << physicalDeviceProperties.properties.limits.minMemoryMapAlignment << endl);
-    Log("minUniformBufferOffsetAlignment " << physicalDeviceProperties.properties.limits.minUniformBufferOffsetAlignment << endl);
-    Log("maxDescriptorSetSampledImages " << physicalDeviceProperties.properties.limits.maxDescriptorSetSampledImages << endl);
-    Log("maxPushConstantsSize " << physicalDeviceProperties.properties.limits.maxPushConstantsSize << endl);
+    Log("maxUniformBufferRange (width of one buffer) " << globalDeviceInfo.properties.limits.maxUniformBufferRange << endl);
+    Log("minMemoryMapAlignment " << globalDeviceInfo.properties.limits.minMemoryMapAlignment << endl);
+    Log("minUniformBufferOffsetAlignment " << globalDeviceInfo.properties.limits.minUniformBufferOffsetAlignment << endl);
+    Log("maxDescriptorSetSampledImages " << globalDeviceInfo.properties.limits.maxDescriptorSetSampledImages << endl);
+    Log("maxPushConstantsSize " << globalDeviceInfo.properties.limits.maxPushConstantsSize << endl);
     // maxDescriptorSetSampledImages
 }
 

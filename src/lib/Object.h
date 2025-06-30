@@ -173,13 +173,6 @@ public:
 	}
 };
 
-class BoundingBox {
-public:
-	// initialize min to larges value and vice-versa, simplifies calculations
-	glm::vec3 min = glm::vec3(FLT_MAX, FLT_MAX, FLT_MAX);
-	glm::vec3 max = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-};
-
 struct BoundingBoxCorners {
 	glm::vec3 corners[8];
 };

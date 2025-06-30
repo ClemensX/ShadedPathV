@@ -220,3 +220,14 @@ struct HMDProperties {
     VkExtent2D recommendedImageSize{};
     float aspectRatio = 0.0f;
 };
+
+// classig AABB, extra padding for passing to shaders
+class BoundingBox {
+public:
+    // initialize min to larges value and vice-versa, simplifies calculations
+    glm::vec3 min = glm::vec3(FLT_MAX, FLT_MAX, FLT_MAX);
+    float pad0;
+    glm::vec3 max = glm::vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+    float pad1;
+};
+

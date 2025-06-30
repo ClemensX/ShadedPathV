@@ -32,7 +32,7 @@ void check_inputs() {
 // Main mesh shader entry
 void main()
 {
-    check_inputs();
+    //check_inputs();
     // Get meshlet index from task shader or workgroup
     uint meshletIndex = gl_WorkGroupID.x;
 

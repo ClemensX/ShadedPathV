@@ -232,7 +232,7 @@ public:
 	VkSampler textureSampler_TEXTURE_TYPE_MIPMAP_IMAGE = nullptr;
 	VkSampler textureSampler_TEXTURE_TYPE_HEIGHT = nullptr;
 	SamplerCache samplerCache;
-	VkPhysicalDeviceProperties2 physicalDeviceProperties;
+	//VkPhysicalDeviceProperties2 physicalDeviceProperties;
 	VkSemaphore singleTimeCommandsSemaphore = nullptr;
 	// create command pool for use outside rendering threads
 
@@ -248,10 +248,6 @@ public:
 	VkCommandBuffer beginSingleTimeCommands(bool sync = false, QueueSelector queue = QueueSelector::GRAPHICS);
 	void endSingleTimeCommands(VkCommandBuffer commandBuffer, bool sync = false, QueueSelector queue = QueueSelector::GRAPHICS, uint64_t flags = 0L);
 	void createTextureSampler();
-	inline uint64_t calcConstantBufferSize(uint64_t originalSize) {
-		VkDeviceSize align = physicalDeviceProperties.properties.limits.minUniformBufferOffsetAlignment;
-		return (originalSize + (align - 1)) & ~(align - 1); // must be a multiple of align bytes
-	};
 	static std::string getVulkanAPIString();
 
 	// AI method to return current time as UTC string
@@ -371,5 +367,11 @@ private:
 	// swap chain query
 	SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 	VkFence queueSubmitFence = nullptr;
+public:
+		DeviceInfo globalDeviceInfo;
+		inline uint64_t calcConstantBufferSize(uint64_t originalSize) {
+			VkDeviceSize align = globalDeviceInfo.properties2.properties.limits.minUniformBufferOffsetAlignment;
+			return (originalSize + (align - 1)) & ~(align - 1); // must be a multiple of align bytes
+		};
 };
 
