@@ -36,13 +36,19 @@ public:
 	};
 
 	struct Vertex {
-		glm::vec3 pos;
-		glm::vec3 normal;
-		glm::vec2 uv0;
-		glm::vec2 uv1;
-		glm::uvec4 joint0;
-		glm::vec4 weight0;
-		glm::vec4 color;
+		glm::vec3 pos; // 12 bytes
+		float pad0;
+        glm::vec3 normal; // 12 bytes
+		float pad1;
+        glm::vec2 uv0; // 8 bytes
+        glm::vec2 uv1; // 8 bytes
+        glm::uvec4 joint0; // 16 bytes, 4 joints per vertex
+        glm::vec4 weight0; // 16 bytes, 4 weights per vertex
+        glm::vec4 color; // 16 bytes, color in vertex structure
+        //uint32_t pad[2]; // 8 bytes of padding to align the next member to 16 bytes. Do not use array on glsl side!!!
+
+        // total size: 12 + 12 + 8 + 8 + 16 + 16 + 16 = 88 bytes
+
 		bool operator==(const Vertex& other) const {
 			return pos == other.pos &&
 #if !defined(GLTF_SUPPRESS_NORMALS_FOR_MESHLETS)

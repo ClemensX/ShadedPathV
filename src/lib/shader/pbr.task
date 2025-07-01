@@ -62,8 +62,8 @@ void check_inputs() {
     uint indexBufferOffset = meshlet.indexBufferOffset;
     //debugPrintfEXT("TASK SHADER meshlet indexBufferOffset %d\n", indexBufferOffset);
 
-    PBRVertex vert = vertices.vertex[0];
-    //debugPrintfEXT("TASK SHADER vertex[0] position %f %f %f\n", vert.position.x, vert.position.y, vert.position.z);
+    PBRVertex vert = vertices.vertex[1];
+    debugPrintfEXT("TASK SHADER vertex[1] position %f %f %f\n", vert.position.x, vert.position.y, vert.position.z);
 
 	vec3 w = ubo.camPos;
 	//debugPrintfEXT("cam pos %f %f %f\n", w.x, w.y, w.z);
@@ -117,6 +117,7 @@ void main() {
     uint meshletIndex = gl_GlobalInvocationID.x;
     payload.meshletIndex = meshletIndex;
     payload.mvp = mvp;
+    //EmitMeshTasksEXT(1, 1, 1);
     EmitMeshTasksEXT(model_ubo.meshletsCount, 1, 1);
     //debugPrintfEXT("TASK SHADER mvp %f %f %f %f\n", mvp[0][0], mvp[1][1], mvp[2][2], mvp[3][3]);
 

@@ -249,7 +249,7 @@ void Loader::prepareFrame(FrameResources* fr)
         modeltransform = trans * scaled * rotationMatrix;
         buf->model = modeltransform;
         //buf->flags |= 0x1; // set flag for dicard rendering
-        engine->meshStore.debugRenderMeshlet(wo, tr, modeltransform);
+        //engine->meshStore.debugRenderMeshlet(wo, tr, modeltransform);
         //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
 
         //engine->meshStore.debugGraphics(wo, tr, modeltransform);
