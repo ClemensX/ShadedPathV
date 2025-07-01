@@ -118,6 +118,12 @@ layout(binding = 0) uniform UniformBufferObject {
 } ubo;
 
 
+struct TaskPayload {
+    mat4 mvp;
+    uint meshletIndex;
+    // Add more fields as needed (e.g., LOD, culling flags, etc.)
+};
+
 // utility functions
 
 // check if object AABB is completely outside view frustrum

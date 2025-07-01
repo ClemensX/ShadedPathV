@@ -31,6 +31,8 @@ layout(std430, binding = 5) buffer VertexStorageBuffer {
 
 layout(local_size_x = 1) in; // not using the usual 32 threads per workgroup, but only 1 as we implement object culling and LOD object selection here
 
+taskPayloadSharedEXT TaskPayload payload;
+
 void check_inputs() {
 //    vec4 v = ubo.model[0];
 //    //debugPrintfEXT("model %f %f %f %f\n", v.x, v.y, v.z, v.w);
@@ -102,11 +104,22 @@ void main() {
     if (isOutside) {
         // Don't emit mesh tasks for this object
         BoundingBox bb = model_ubo.boundingBox;
-        debugPrintfEXT("WARNING: OUTSIDE bb min %f %f %f\n", bb.min.x, bb.min.y, bb.min.z);
+        //debugPrintfEXT("WARNING: OUTSIDE bb min %f %f %f\n", bb.min.x, bb.min.y, bb.min.z);
         return;
     }
-
+/*
+| Mechanism                | Use for passing...        | Notes                                 | 
+|--------------------------|---------------------------|---------------------------------------| 
+| taskPayloadSharedEXT     | Custom per-dispatch data  | Most efficient, direct, and standard  | 
+| SSBO/UBO                 | Large, static data        | Use for mesh/vertex/index buffers     | 
+| Built-in variables       | System info (IDs, etc.)   | Provided by Vulkan/GLSL               |
+*/
     uint meshletIndex = gl_GlobalInvocationID.x;
+    payload.meshletIndex = meshletIndex;
+    payload.mvp = mvp;
+    EmitMeshTasksEXT(model_ubo.meshletsCount, 1, 1);
+    //debugPrintfEXT("TASK SHADER mvp %f %f %f %f\n", mvp[0][0], mvp[1][1], mvp[2][2], mvp[3][3]);
+
 //    if (meshletIndex >= NUM_MESHLETS) {
 //        debugPrintfEXT("task shader meshlet index out-of-range: %d\n", meshletIndex);
 //        return;
@@ -122,6 +135,6 @@ void main() {
     // For demonstration, emit one mesh task per meshlet
     //EmitMeshTasksEXT(meshletIndex, 1, 1); // (groupX, groupY, groupZ)
     //debugPrintfEXT("task shader b4 emit\n");
-    EmitMeshTasksEXT(1, 1, 1); // (groupX, groupY, groupZ)
+    //EmitMeshTasksEXT(1, 1, 1); // (groupX, groupY, groupZ)
     //debugPrintfEXT("task shader emitted\n");
 }

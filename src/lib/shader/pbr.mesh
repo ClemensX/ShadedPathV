@@ -10,6 +10,23 @@ layout(std430, binding = 2) buffer MeshletBuffer {
     uvec4 packedMeshlets[];
 } meshletDescs;
 
+// local primitive index buffer:
+layout(std430, binding = 3) buffer PrimitiveIndexBuffer {
+    uint primitiveIndices[];
+} primitiveIndexBuffer;
+
+// global index buffer:
+layout(std430, binding = 4) buffer GlobalIndexBuffer {
+    uint index[];
+} globalIndexBuffer;
+
+// vertex storage buffer (NOT vertex buffer)
+layout(std430, binding = 5) buffer VertexStorageBuffer {
+    PBRVertex vertex[];
+} vertices;
+
+taskPayloadSharedEXT TaskPayload payload;
+
 // Output: up to 256 vertices and 512 primitives per meshlet (adjust as needed)
 layout(local_size_x = 1) in;
 layout(max_vertices = NVMESHLET_VERTEX_COUNT, max_primitives = NVMESHLET_PRIMITIVE_COUNT) out;
@@ -26,7 +43,10 @@ void check_inputs() {
     //debugPrintfEXT("meshlet uvec4[0] %f %f %f %f\n", uv.x, uv.y, uv.z, uv.w);
     MeshletDesc meshlet = unpackMeshletDesc(uv);
     uint indexBufferOffset = meshlet.indexBufferOffset;
-    debugPrintfEXT("MESH SHADER meshlet indexBufferOffset %d\n", indexBufferOffset);
+    //debugPrintfEXT("MESH SHADER meshlet indexBufferOffset %d\n", indexBufferOffset);
+
+    mat4 mvp = payload.mvp;
+    debugPrintfEXT("MESH SHADER mvp %f %f %f %f\n", mvp[0][0], mvp[1][1], mvp[2][2], mvp[3][3]);
 }
 
 // Main mesh shader entry
@@ -35,6 +55,7 @@ void main()
     //check_inputs();
     // Get meshlet index from task shader or workgroup
     uint meshletIndex = gl_WorkGroupID.x;
+    //if (meshletIndex < 1) debugPrintfEXT("MESH SHADER meshletIndex %d\n", meshletIndex);
 
     // Read and unpack meshlet
     uvec4 packed = meshletDescs.packedMeshlets[meshletIndex];
@@ -43,28 +64,33 @@ void main()
     // Set meshlet output counts
     uint vertexCount = meshlet.numVertices;
     uint primCount = meshlet.numPrimitives;
-    //SetMeshOutputsEXT(vertexCount, primCount);
-    SetMeshOutputsEXT(3, 1);
+    uint indexBufferOffset = meshlet.indexBufferOffset;
 
-    // For each meshlet vertex, fetch position (expand for normals, uvs, etc.)
+    SetMeshOutputsEXT(vertexCount, primCount);
+
+    // 1. Fetch meshlet-local to global vertex mapping
     for (uint v = 0; v < vertexCount; ++v) {
-        // You may need a meshlet-local-to-global vertex index mapping if using meshlet-local indices
-        //outVert[v].pos = vertexBuffer.positions[v];
+        uint globalVertexIndex = globalIndexBuffer.index[indexBufferOffset + v];
+        PBRVertex vert = vertices.vertex[globalVertexIndex];
+        outVert[v].pos = vert.position;
+        // Set more attributes as needed
+        gl_MeshVerticesEXT[v].gl_Position = payload.mvp * vec4(vert.position, 1.0);
     }
 
-    // For each primitive, emit triangle using index buffer
+    // 2. Emit triangles using local indices from primitiveIndexBuffer
+    // Each triangle is 3 bytes (local indices into meshlet vertex array)
+    uint primOffset = meshlet.indexBufferOffset; // Offset for primitives (may differ in your packing)
     for (uint p = 0; p < primCount; ++p) {
-        // Each primitive is a triangle: 3 indices per primitive
-        //uint idx0 = indexBuffer.indices[meshlet.indexBufferOffset + p * 3 + 0];
-        //uint idx1 = indexBuffer.indices[meshlet.indexBufferOffset + p * 3 + 1];
-        //uint idx2 = indexBuffer.indices[meshlet.indexBufferOffset + p * 3 + 2];
-        //EmitMeshPrimitiveEXT(idx0, idx1, idx2, 0);
-        //EmitMeshPrimitiveEXT(0, 1, 2, 0);
+        // Each primitive is 3 bytes packed into uints (4 per uint)
+        uint i0 = primitiveIndexBuffer.primitiveIndices[primOffset + p * 3 + 0] & 0xFFu;
+        uint i1 = primitiveIndexBuffer.primitiveIndices[primOffset + p * 3 + 1] & 0xFFu;
+        uint i2 = primitiveIndexBuffer.primitiveIndices[primOffset + p * 3 + 2] & 0xFFu;
+        gl_PrimitiveTriangleIndicesEXT[p] = uvec3(i0, i1, i2);
     }
-    gl_MeshVerticesEXT[0].gl_Position = vec4(0.5,-0.5, 0, 1);
-    gl_MeshVerticesEXT[1].gl_Position = vec4(0.5, 0.5, 0, 1);
-    gl_MeshVerticesEXT[2].gl_Position = vec4(-0.5, 0.5, 0, 1);
-    gl_PrimitiveTriangleIndicesEXT[0] =  uvec3(0, 1, 2);
+//    gl_MeshVerticesEXT[0].gl_Position = vec4(0.5,-0.5, 0, 1);
+//    gl_MeshVerticesEXT[1].gl_Position = vec4(0.5, 0.5, 0, 1);
+//    gl_MeshVerticesEXT[2].gl_Position = vec4(-0.5, 0.5, 0, 1);
+//    gl_PrimitiveTriangleIndicesEXT[0] =  uvec3(0, 1, 2);
 }
 
 //layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
