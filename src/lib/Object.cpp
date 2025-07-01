@@ -711,8 +711,17 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 	}
     //Log("Total indices needed for meshlets: " << totalIndices << endl);
 	// create meshlet descriptor buffer and global index buffer and local index buffer
+
+	// DEBUG remove all but first element of mesh->meshlets
+	// Remove all but the n-th element of mesh->meshlets
+	//int n = 500;
+	//if (mesh->meshlets.size() > 1 && n < mesh->meshlets.size()) {
+	//	auto keep = mesh->meshlets[n];
+	//	mesh->meshlets.clear();
+	//	mesh->meshlets.push_back(keep);
+	//}
 	mesh->outMeshletDesc.resize(mesh->meshlets.size());
-    mesh->outGlobalIndexBuffer.resize(totalIndices);
+	mesh->outGlobalIndexBuffer.resize(totalIndices);
     mesh->outLocalIndexPrimitivesBuffer.resize(totalIndices * 3);
 	uint32_t indexBufferOffset = 0;
 	for (size_t i = 0; i < mesh->meshlets.size(); ++i) {

@@ -32,11 +32,12 @@ layout(local_size_x = 1) in;
 layout(max_vertices = NVMESHLET_VERTEX_COUNT, max_primitives = NVMESHLET_PRIMITIVE_COUNT) out;
 layout(triangles) out;
 
-struct OutputVertex {
-    vec3 pos;
-};
-
-layout(location = 0) out OutputVertex outVert[];
+//struct OutputVertex {
+//    vec3 pos;
+//};
+//
+//layout(location = 0) out OutputVertex outVert[];
+layout(location = 4) out vec4 outColor[];
 
 void check_inputs() {
     uvec4 uv = meshletDescs.packedMeshlets[0];
@@ -65,8 +66,14 @@ void main()
     uint vertexCount = meshlet.numVertices;
     uint primCount = meshlet.numPrimitives;
     uint indexBufferOffset = meshlet.indexBufferOffset;
-    //vertexCount = 6;
-    //primCount = 2;
+    //primCount = 10;
+    uint primStart = 0;
+
+    // sanity check
+    if (vertexCount > NVMESHLET_VERTEX_COUNT || primCount > NVMESHLET_PRIMITIVE_COUNT) {
+        debugPrintfEXT("MESH SHADER ERROR: vertexCount %d or primCount %d exceeds limits\n", vertexCount, primCount);
+        return;
+    }
 
     SetMeshOutputsEXT(vertexCount, primCount);
 
@@ -76,15 +83,20 @@ void main()
         PBRVertex vert = vertices.vertex[globalVertexIndex];
         //outVert[v].pos = vert.position;
         // Set more attributes as needed
-        if(v == 0) debugPrintfEXT("MESH SHADER globIndexBuffer %d pos %f %f %f\n", globalVertexIndex, vert.position.x, vert.position.y, vert.position.z);
+        //if(v == 0) debugPrintfEXT("MESH SHADER globIndexBuffer %d pos %f %f %f\n", globalVertexIndex, vert.position.x, vert.position.y, vert.position.z);
         gl_MeshVerticesEXT[v].gl_Position = payload.mvp * vec4(vert.position, 1.0);
+        outColor[v] = vec4(vert.color0);
     }
+
+//    gl_PrimitiveTriangleIndicesEXT[0] = uvec3(0, 1, 2);
+//    gl_PrimitiveTriangleIndicesEXT[1] = uvec3(0, 3, 1);
+//    gl_PrimitiveTriangleIndicesEXT[2] = uvec3(2, 1, 4);
 
     // 2. Emit triangles using local indices from primitiveIndexBuffer
     // Each triangle is 3 bytes (local indices into meshlet vertex array)
-    for (uint p = 0; p < primCount; ++p) {
+    for (uint p = primStart; p < primStart + primCount; ++p) {
         uint localPrimBufferIndex = indexBufferOffset * 3 + p * 3;
-        if (meshletIndex < 1 && p == 0) debugPrintfEXT("MESH SHADER localPrimBufferIndex %d\n", localPrimBufferIndex);
+        //if (meshletIndex < 1 && p == 0) debugPrintfEXT("MESH SHADER localPrimBufferIndex %d\n", localPrimBufferIndex);
         // unpack prim index from uint to byte:
         uint byteValue0 = (primitiveIndexBuffer.primitiveIndices[localPrimBufferIndex / 4] >> ((localPrimBufferIndex % 4) * 8)) & 0xFFu;
         localPrimBufferIndex++;
@@ -96,9 +108,9 @@ void main()
         //uint i0 = primitiveIndexBuffer.primitiveIndices[p] & 0xFFu;
         //uint i1 = primitiveIndexBuffer.primitiveIndices[p + 1] & 0xFFu;
         //uint i2 = primitiveIndexBuffer.primitiveIndices[p + 2] & 0xFFu;
-        //if (meshletIndex < 1 && p == 0)
-        gl_PrimitiveTriangleIndicesEXT[p] = uvec3(byteValue0, byteValue1, byteValue2);
-        if (meshletIndex < 1) debugPrintfEXT("MESH SHADER X count %d prim %d %d %d\n", primCount, byteValue0, byteValue1, byteValue2);
+        //if (meshletIndex < 1 && p < primCount)
+        gl_PrimitiveTriangleIndicesEXT[p-primStart] = uvec3(byteValue0, byteValue1, byteValue2);
+        //if (meshletIndex < 1 && p == 90) debugPrintfEXT("MESH SHADER X count %d prim %d %d %d\n", primCount, byteValue0, byteValue1, byteValue2);
     }
 
 //    gl_MeshVerticesEXT[0].gl_Position = vec4(0.5,-0.5, 0, 1);

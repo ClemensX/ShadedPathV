@@ -13,7 +13,7 @@
 //    vertex attribute scenarios for NV
 //
 #define NVMESHLET_VERTEX_COUNT 64
-#define NVMESHLET_PRIMITIVE_COUNT 64
+#define NVMESHLET_PRIMITIVE_COUNT 126
 // must be multiple of SUBGROUP_SIZE
 #define NVMESHLET_PER_TASK 32
 #endif
