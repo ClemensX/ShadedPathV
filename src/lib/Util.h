@@ -3,6 +3,12 @@ class ThreadResources;
 struct LineDef;
 class World;
 
+// vulkan extensions function pointers:
+/* Put this somewhere in a header file and include it alongside (and after) vulkan.h: */
+extern PFN_vkCmdDrawMeshTasksEXT vkCmdDrawMeshTasksEXT_;
+// This #define lets you call the function the same way as if it was coming from the vulkan.h header
+#define vkCmdDrawMeshTasksEXT vkCmdDrawMeshTasksEXT_
+
 namespace Colors {
     const glm::vec4 xm{ 1.0f, 0.0f, 1.0f, 1.0f };
     const glm::vec4 White = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -156,6 +162,9 @@ private:
         n = (n & 0xAA) >> 1 | (n & 0x55) << 1;
         return n;
     }
+    void initializeDebugFunctionPointers();
+    //PFN_vkDebugMarkerSetObjectNameEXT pfnDebugMarkerSetObjectNameEXT = nullptr;Add commentMore actions
+    PFN_vkSetDebugUtilsObjectNameEXT pfnDebugUtilsObjectNameEXT = nullptr;
     int imageCounter = 0;
     std::string last_warn_msg;
 };

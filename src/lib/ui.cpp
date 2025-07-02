@@ -104,6 +104,7 @@ void UI::init(ShadedPathEngine* engine)
     init_info.ImageCount = winfo->imageCount;
     init_info.RenderPass = imGuiRenderPass;
     //init_info.CheckVkResultFn = check_vk_result;
+    //ImGui_ImplVulkan_LoadFunctions
     ImGui_ImplVulkan_Init(&init_info);
 
     // upload fonts to GPU

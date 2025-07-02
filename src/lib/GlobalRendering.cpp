@@ -276,7 +276,7 @@ void GlobalRendering::initVulkanInstance()
         if (vkCreateInstance(&createInfo, nullptr, &vkInstance) != VK_SUCCESS) {
             Error("failed to create instance!");
         }
-        volkLoadInstance(vkInstance);
+        //volkLoadInstance(vkInstance);
     }
 }
 
@@ -537,7 +537,7 @@ void GlobalRendering::createLogicalDevice()
             }
             Error("Device Creation failed.");
         }
-        volkLoadDevice(device);
+        //volkLoadDevice(device);
     }
 
     vkGetDeviceQueue(device, familyIndices.graphicsFamily.value(), 0, &graphicsQueue);

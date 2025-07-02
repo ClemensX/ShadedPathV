@@ -24,7 +24,6 @@
 #define TIMER_PART_OPENXR "PartOpenXR"
 
 // Windows headers
-
 #if defined(_WIN64)
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
@@ -60,10 +59,9 @@
 
 // headers for used libraries
 #define VK_ENABLE_BETA_EXTENSIONS
-#include "volk/volk.h"
-//#include <vulkan/vulkan.h>
-//#include <vulkan/vulkan_beta.h>
-//#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_beta.h>
+#include <vulkan/vulkan.hpp>
 //#define GLFW_INCLUDE_VULKAN
 
 // vulkan profile support (SDK 1.3 needed)
@@ -74,7 +72,6 @@
 
 // Dear ImGui headers:
 #define IMGUI_DEFINE_MATH_OPERATORS
-#define IMGUI_IMPL_VULKAN_USE_VOLK
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw.h"
 #include "imgui/imgui_impl_vulkan.h"

@@ -2,6 +2,10 @@
 
 using namespace std;
 
+
+/* Put this in a single .cpp file that's vulkan related: */
+PFN_vkCmdDrawMeshTasksEXT vkCmdDrawMeshTasksEXT_ = nullptr;
+
 LogfileScanner::LogfileScanner()
 {
     string line;
@@ -41,18 +45,31 @@ int LogfileScanner::searchForLine(string line, int startline)
     return -1;
 }
 
+void Util::initializeDebugFunctionPointers() {
+        pfnDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(engine->globalRendering.vkInstance, "vkSetDebugUtilsObjectNameEXT");
+        /* Put this in your code that initializes Vulkan (after you create your VkInstance and VkDevice): */
+        vkCmdDrawMeshTasksEXT_ = (PFN_vkCmdDrawMeshTasksEXT)vkGetInstanceProcAddr(engine->globalRendering.vkInstance, "vkCmdDrawMeshTasksEXT");
+}
+
 std::string Util::createDebugName(const char* name, int number) {
     return std::string(name) + "_" + std::to_string(number);
 }
 
 // vulkan will copy the name string, so we can use a temporary string
 void Util::debugNameObject(uint64_t object, VkObjectType objectType, const char* name) {
-    VkDebugUtilsObjectNameInfoEXT nameInfo = {};
-    nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    nameInfo.objectType = objectType;
-    nameInfo.objectHandle = object;
-    nameInfo.pObjectName = name;
-    vkSetDebugUtilsObjectNameEXT(engine->globalRendering.device, &nameInfo);
+    if (pfnDebugUtilsObjectNameEXT == nullptr) {
+        initializeDebugFunctionPointers();
+    }
+    // Check for a valid function pointer
+    if (pfnDebugUtilsObjectNameEXT)
+    {
+        VkDebugUtilsObjectNameInfoEXT nameInfo = {};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType = objectType;
+        nameInfo.objectHandle = object;
+        nameInfo.pObjectName = name;
+        pfnDebugUtilsObjectNameEXT(engine->globalRendering.device, &nameInfo);
+    }
 }
 
 void Util::warn(std::string msg)
