@@ -34,7 +34,6 @@ vec3 inWorldPos = inVert.position;
 vec3 inNormal = inVert.normal;
 vec3 camPos = vec3(0,0,0);
 vec4 inColor0 = inVert.color0;
-uint mode = 0;
 
 //struct PBRTextureIndexes {
 //    uint baseColor;
@@ -238,7 +237,7 @@ void main() {
     //if (occlusionIndex == -1) { // just a test :-)
     //    baseIndex = 0;
     //}
-    if (mode == 1) {
+    if (model_ubo.mode == 1) {
 		outColor = inColor0;
         return;
 	} 

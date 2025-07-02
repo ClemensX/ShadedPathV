@@ -32,12 +32,7 @@ layout(local_size_x = 1) in;
 layout(max_vertices = NVMESHLET_VERTEX_COUNT, max_primitives = NVMESHLET_PRIMITIVE_COUNT) out;
 layout(triangles) out;
 
-//struct OutputVertex {
-//    vec3 pos;
-//};
-//
 layout(location = 0) out PBRVertex outVert[];
-//layout(location = 4) out vec4 outColor[];
 
 void check_inputs() {
     uvec4 uv = meshletDescs.packedMeshlets[0];
@@ -47,13 +42,15 @@ void check_inputs() {
     //debugPrintfEXT("MESH SHADER meshlet indexBufferOffset %d\n", indexBufferOffset);
 
     mat4 mvp = payload.mvp;
-    debugPrintfEXT("MESH SHADER mvp %f %f %f %f\n", mvp[0][0], mvp[1][1], mvp[2][2], mvp[3][3]);
+    //debugPrintfEXT("MESH SHADER mvp %f %f %f %f\n", mvp[0][0], mvp[1][1], mvp[2][2], mvp[3][3]);
+
+    //debugPrintfEXT("MESH SHADER object render mode: mode == %d\n", model_ubo.mode);
 }
 
 // Main mesh shader entry
 void main()
 {
-    //check_inputs();
+    check_inputs();
     // Get meshlet index from task shader or workgroup
     uint meshletIndex = gl_WorkGroupID.x;
     //if (meshletIndex < 1) debugPrintfEXT("MESH SHADER meshletIndex %d\n", meshletIndex);

@@ -5,17 +5,6 @@ class WorldObject;
 
 //#define GLTF_SUPPRESS_NORMALS_FOR_MESHLETS 1 // if set, normals are not used for meshlet generation
 
-// make sure to match the push_constant layout in the shader
-struct pbrPushConstants {
-	unsigned int mode; // 0: standard pbr metallicRoughness, 1: pre-light vertices with color in vertex structure
-};
-
-const VkPushConstantRange pbrPushConstantRange = {
-	VK_SHADER_STAGE_VERTEX_BIT, // stageFlags
-	0, // offset
-	sizeof(pbrPushConstants) // size
-};
-
 // forward
 class PBRSubShader;
 
@@ -133,7 +122,7 @@ public:
 		uint32_t jointcount; // 4-byte aligned
 		uint32_t flags = 0; // 4-byte aligned
 		uint32_t meshletsCount = 0; // 4-byte aligned
-		uint32_t pad0; // 4 bytes of padding to align the next member to 16 bytes. Do not use array on glsl side!!!
+		uint32_t mode; // 4 bytes mode: 1 == use vertex color only, 0 == regular BPR rendering
 		PBRTextureIndexes indexes; // 4-byte aligned
         shaderValuesParams params; // 16-byte aligned
         ShaderMaterial material; // 16-byte aligned

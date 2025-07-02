@@ -103,8 +103,7 @@ layout (binding = 1) uniform UboInstance {
     uint jointcount;
     uint flags;
     uint meshletsCount;
-    uint pad1;
-    //uint padding[2]; // 8 bytes of padding to align the next member to 16 bytes
+	uint mode; // object render mode: 1 == use vertex color only, 0 == regular BPR rendering
     PBRTextureIndexes indexes;
     UBOParams params;
     ShaderMaterial material;

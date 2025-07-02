@@ -18,9 +18,6 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	alignedDynamicUniformBufferSize = global->calcConstantBufferSize(sizeof(DynamicModelUBO));
 	//resources.createPipelineLayout(&pipelineLayout, this);
 
-	// push constants
-	pushConstantRanges.push_back(pbrPushConstantRange);
-
 	int fl = engine.getFramesInFlight();
 	for (int i = 0; i < fl; i++) {
 		// global fixed lines (one common vertex buffer)
@@ -367,10 +364,12 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 	vkCmdBindIndexBuffer(commandBuffer, obj->mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
+	auto buf = pbrShader->getAccessToModel(fr, obj->objectNum);
+	buf->mode = obj->mesh->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES) ? 1 : 0;
+
 	// meshlet resources:
 	// set meshlet count, not the best code location here, but should do
 	if (obj->mesh->outMeshletDesc.size() > 0) {
-		auto buf = pbrShader->getAccessToModel(fr, obj->objectNum);
         buf->meshletsCount = static_cast<uint32_t>(obj->mesh->outMeshletDesc.size());
         // assert that the meshlet count is less than the max task work group count
         assert(buf->meshletsCount < engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxTaskWorkGroupCount[0]);
@@ -445,10 +444,6 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 		vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet2, 1, &dynamicOffset);
 	}
-	pbrPushConstants pushConstants;
-	pushConstants.mode = obj->mesh->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES) ? 1 : 0;
-	//if (isRightEye) pushConstants.mode = 2;
-	vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pbrPushConstants), &pushConstants);
 	//if (isRightEye) vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);
 	if (obj->mesh->outMeshletDesc.size() > 0) {
 		// groupCountX, groupCountY, groupCountZ: number of workgroups to dispatch
