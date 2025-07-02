@@ -17,7 +17,7 @@
 #include "shadermaterial.glsl"
 #include "pbr_mesh_common.glsl"
 
-layout(location = 0) flat in PBRVertex inVert; 
+layout(location = 0) flat in PBRVertexOut inVert; 
 //layout (location = 0) in vec3 inWorldPos;
 //layout (location = 1) in vec3 inNormal;
 //layout (location = 2) in vec2 inUV0;
@@ -30,9 +30,9 @@ layout(location = 0) flat in PBRVertex inVert;
 
 vec2 inUV0 = inVert.uv0;
 vec2 inUV1 = inVert.uv1;
-vec3 inWorldPos = inVert.position;
+vec3 inWorldPos = inVert.worldPos;
 vec3 inNormal = inVert.normal;
-vec3 camPos = vec3(0,0,0);
+vec3 camPos = ubo.camPos;
 vec4 inColor0 = inVert.color0;
 
 //struct PBRTextureIndexes {

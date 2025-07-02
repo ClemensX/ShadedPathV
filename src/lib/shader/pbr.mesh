@@ -32,7 +32,7 @@ layout(local_size_x = 1) in;
 layout(max_vertices = NVMESHLET_VERTEX_COUNT, max_primitives = NVMESHLET_PRIMITIVE_COUNT) out;
 layout(triangles) out;
 
-layout(location = 0) out PBRVertex outVert[];
+layout(location = 0) out PBRVertexOut outVert[];
 
 void check_inputs() {
     uvec4 uv = meshletDescs.packedMeshlets[0];
@@ -50,7 +50,7 @@ void check_inputs() {
 // Main mesh shader entry
 void main()
 {
-    check_inputs();
+    //check_inputs();
     // Get meshlet index from task shader or workgroup
     uint meshletIndex = gl_WorkGroupID.x;
     //if (meshletIndex < 1) debugPrintfEXT("MESH SHADER meshletIndex %d\n", meshletIndex);
@@ -82,7 +82,22 @@ void main()
         // Set more attributes as needed
         //if(v == 0) debugPrintfEXT("MESH SHADER globIndexBuffer %d pos %f %f %f\n", globalVertexIndex, vert.position.x, vert.position.y, vert.position.z);
         gl_MeshVerticesEXT[v].gl_Position = payload.mvp * vec4(vert.position, 1.0);
-        outVert[v] = vert;
+        outVert[v].color0 = vert.color0;
+        outVert[v].uv0 = vert.uv0;
+        outVert[v].uv1 = vert.uv1;
+
+        vec4 locPos;
+	    locPos = model_ubo.model * vec4(vert.position, 1.0);
+	    outVert[v].normal = normalize(transpose(inverse(mat3(model_ubo.model))) * vert.normal);
+	    //locPos.y = -locPos.y;
+	    outVert[v].worldPos = locPos.xyz / locPos.w;
+        //debugPrintfEXT("loc.w %f\n", locPos.w);
+        if ((model_ubo.flags & 0x1) != 0) { // if model_ubo.flags & MODEL_FLAG_PRELIGHT_VERTICES
+        // bit 0 is set
+            gl_MeshVerticesEXT[v].gl_Position = vec4(0.0, 0.0, 0.0, 0.0); // W=0, will be clipped
+        } else {
+            gl_MeshVerticesEXT[v].gl_Position =  ubo.proj * ubo.view * vec4(outVert[v].worldPos, 1.0);
+        }
     }
 
 //    gl_PrimitiveTriangleIndicesEXT[0] = uvec3(0, 1, 2);

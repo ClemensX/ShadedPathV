@@ -112,7 +112,7 @@ void VulkanResources::addResourcesForElement(VulkanResourceElement el)
         layoutBinding.binding = bindingCount;
         layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         layoutBinding.descriptorCount = 1;
-        layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT| VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT;
+        layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT| VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_FRAGMENT_BIT;
         if (addGeomShaderStageToMVP) {
             layoutBinding.stageFlags |= VK_SHADER_STAGE_GEOMETRY_BIT;
         }

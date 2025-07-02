@@ -62,6 +62,17 @@ struct PBRVertex {
     vec4 color0;
 };
 
+struct PBRVertexOut {
+    vec3 worldPos;
+    vec3 normal;
+    float pad1;
+    vec2 uv0;
+    vec2 uv1;
+    uvec4 joint0;
+    vec4 weight0;
+    vec4 color0;
+};
+
 struct UBOParams {
 	vec4 lightDir;
 	float exposure;
