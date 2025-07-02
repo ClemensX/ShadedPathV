@@ -17,15 +17,24 @@
 #include "shadermaterial.glsl"
 #include "pbr_mesh_common.glsl"
 
-layout (location = 0) in vec3 inWorldPos;
-layout (location = 1) in vec3 inNormal;
-layout (location = 2) in vec2 inUV0;
-layout (location = 3) in vec2 inUV1;
-layout (location = 4) in vec4 inColor0;
-layout (location = 5) flat in uint mode;
-layout (location = 6) in vec3 camPos;
-// mode 0: pbr metallic roughness
+layout(location = 0) flat in PBRVertex inVert; 
+//layout (location = 0) in vec3 inWorldPos;
+//layout (location = 1) in vec3 inNormal;
+//layout (location = 2) in vec2 inUV0;
+//layout (location = 3) in vec2 inUV1;
+//layout (location = 4) in vec4 inColor0;
+//layout (location = 5) flat in uint mode;
+//layout (location = 6) in vec3 camPos;
+//// mode 0: pbr metallic roughness
 // mode 1: only use vertex color
+
+vec2 inUV0 = inVert.uv0;
+vec2 inUV1 = inVert.uv1;
+vec3 inWorldPos = inVert.position;
+vec3 inNormal = inVert.normal;
+vec3 camPos = vec3(0,0,0);
+vec4 inColor0 = inVert.color0;
+uint mode = 0;
 
 //struct PBRTextureIndexes {
 //    uint baseColor;
@@ -196,7 +205,7 @@ float microfacetDistribution(PBRInfo pbrInputs)
 
 void main() {
 	//debugPrintfEXT("pbr.frag main\n");
-	outColor = vec4(1.0,0.0,0.0,1.0);
+	//outColor = vec4(1.0,0.0,0.0,1.0);
 	//return;
 	ShaderMaterial material = model_ubo.material;
     float f = uboParams.gamma;

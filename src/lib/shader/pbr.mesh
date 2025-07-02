@@ -36,8 +36,8 @@ layout(triangles) out;
 //    vec3 pos;
 //};
 //
-//layout(location = 0) out OutputVertex outVert[];
-layout(location = 4) out vec4 outColor[];
+layout(location = 0) out PBRVertex outVert[];
+//layout(location = 4) out vec4 outColor[];
 
 void check_inputs() {
     uvec4 uv = meshletDescs.packedMeshlets[0];
@@ -85,7 +85,7 @@ void main()
         // Set more attributes as needed
         //if(v == 0) debugPrintfEXT("MESH SHADER globIndexBuffer %d pos %f %f %f\n", globalVertexIndex, vert.position.x, vert.position.y, vert.position.z);
         gl_MeshVerticesEXT[v].gl_Position = payload.mvp * vec4(vert.position, 1.0);
-        outColor[v] = vec4(vert.color0);
+        outVert[v] = vert;
     }
 
 //    gl_PrimitiveTriangleIndicesEXT[0] = uvec3(0, 1, 2);
