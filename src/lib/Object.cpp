@@ -606,11 +606,33 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
     if (uniqueVertices.size() == mesh->vertices.size()) {
 		Log("WARNING: Mesh " << id << " has same vertex count as unique vertices, replacement should be skipped." << endl);
 	}
-    mesh->vertices.clear();
-    mesh->vertices.reserve(uniqueVertices.size());
-	for (auto& v : uniqueVertices) {
-		mesh->vertices.push_back(v);
+	// TODO rethink greedy algo: probably need to keep the 3 verts that form triangle together while creating 'unique' vertices :-)
+	for (auto& v : mesh->vertices) {
+		for (auto& uv : uniqueVertices) {
+			if (v.pos == uv.pos) {
+				if (v.color != uv.color) {
+					Log("Mesh " << id << " has different color for the same position" << endl);
+				}
+				if (v.normal != uv.normal) {
+					Log("Mesh " << id << " has different normal for the same position" << endl);
+				}
+				if (v.uv0 != uv.uv0) {
+					Log("Mesh " << id << " has different uv0 for the same position" << endl);
+				}
+				if (v.uv1 != uv.uv1) {
+					Log("Mesh " << id << " has different uv1 for the same position" << endl);
+				}
+			}
+		}
     }
+	bool use_Old_Vert = true;
+	if (!use_Old_Vert) {
+		mesh->vertices.clear();
+		mesh->vertices.reserve(uniqueVertices.size());
+		for (auto& v : uniqueVertices) {
+			mesh->vertices.push_back(v);
+		}
+	}
 
 
     // calculate cetroids and bounding boxes for triangles
@@ -696,7 +718,7 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t
 	Meshlet::applyMeshletAlgorithmGreedyVerts(
 		indexVertexMap, mesh->vertsVector, triangles, mesh->meshlets, vertexBuffer, primitiveLimit, vertexLimit
     );
-    applyDebugMeshletColorsToVertices(mesh);
+    //applyDebugMeshletColorsToVertices(mesh);
 	logMeshletStats(mesh);
     // create meshlet descriptors and buffers:
     // first, we count how many indices we need for the meshlets:

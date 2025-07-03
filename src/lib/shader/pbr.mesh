@@ -45,6 +45,8 @@ void check_inputs() {
     //debugPrintfEXT("MESH SHADER mvp %f %f %f %f\n", mvp[0][0], mvp[1][1], mvp[2][2], mvp[3][3]);
 
     //debugPrintfEXT("MESH SHADER object render mode: mode == %d\n", model_ubo.mode);
+    ShaderMaterial material = model_ubo.material;
+    //debugPrintfEXT("mesh shader material workflow %f base set %d\n", material.workflow, material.baseColorTextureSet);
 }
 
 // Main mesh shader entry

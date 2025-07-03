@@ -207,6 +207,8 @@ void main() {
 	//outColor = vec4(1.0,0.0,0.0,1.0);
 	//return;
 	ShaderMaterial material = model_ubo.material;
+    //debugPrintfEXT("frag shader material workflow %f base set %d\n", material.workflow, material.baseColorTextureSet);
+    //debugPrintfEXT("frag shader material workflow %f normal set %d\n", material.workflow, material.normalTextureSet);
     float f = uboParams.gamma;
     //debugPrintfEXT("uboParams.gamma %f\n", f);
     f = material.roughnessFactor;
@@ -299,6 +301,8 @@ void main() {
 			baseColor = material.baseColorFactor;
 		}
 	}
+	outColor = baseColor;// test
+	return;
 
 	baseColor *= inColor0;
 

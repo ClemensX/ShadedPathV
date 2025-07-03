@@ -63,7 +63,7 @@ void check_inputs() {
     //debugPrintfEXT("TASK SHADER meshlet indexBufferOffset %d\n", indexBufferOffset);
 
     PBRVertex vert = vertices.vertex[1];
-    debugPrintfEXT("TASK SHADER vertex[1] position %f %f %f\n", vert.position.x, vert.position.y, vert.position.z);
+    //debugPrintfEXT("TASK SHADER vertex[1] position %f %f %f\n", vert.position.x, vert.position.y, vert.position.z);
 
 	vec3 w = ubo.camPos;
 	//debugPrintfEXT("cam pos %f %f %f\n", w.x, w.y, w.z);
@@ -72,8 +72,8 @@ void check_inputs() {
     //debugPrintfEXT("model_ubo %f %f %f %f\n", v.x, v.y, v.z, v.w);
 
     BoundingBox bb = model_ubo.boundingBox;
-    debugPrintfEXT("bb min %f %f %f\n", bb.min.x, bb.min.y, bb.min.z);
-    debugPrintfEXT("bb max %f %f %f\n", bb.max.x, bb.max.y, bb.max.z);
+    //debugPrintfEXT("bb min %f %f %f\n", bb.min.x, bb.min.y, bb.min.z);
+    //debugPrintfEXT("bb max %f %f %f\n", bb.max.x, bb.max.y, bb.max.z);
 
 
     uint meshletsCount = model_ubo.meshletsCount;
@@ -82,6 +82,14 @@ void check_inputs() {
     uint localIndex = gl_LocalInvocationID.x;
     //if (meshletIndex > 2506)
     //debugPrintfEXT("TASK SHADER WrkGrop.x %d localIndex %d meshletsCount %d\n", meshletIndex, localIndex, meshletsCount);
+
+	ShaderMaterial material = model_ubo.material;
+	uint u0 = material.texCoordSets.baseColor;
+	uint u1 = material.texCoordSets.normal;
+	uint u2 = material.texCoordSets.occlusion;
+	//debugPrintfEXT("task coord sets base %d normal %d occlusion %d\n", u0, u1, u2);
+    //debugPrintfEXT("task coord base %f %f %f %f spec %f %f %f %f\n", material.baseColorFactor.x, material.baseColorFactor.y, material.baseColorFactor.z, material.baseColorFactor.w, material.specularFactor.x, material.specularFactor.y, material.specularFactor.z, material.specularFactor.w);
+    //debugPrintfEXT("task shader material workflow %f base set %d\n", material.workflow, material.baseColorTextureSet);
 }
 
 /*
@@ -94,7 +102,7 @@ void check_inputs() {
 
 */
 void main() {
-    //check_inputs();
+    check_inputs();
 
     mat4 model = model_ubo.model;
     mat4 view = ubo.view;

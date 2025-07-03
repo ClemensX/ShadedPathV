@@ -14,8 +14,8 @@ void Loader::run(ContinuationInfo* cont)
         engine->appname = "Loader";
         // camera initialization
         //initCamera(glm::vec3([-0.0386716 0.57298 1.71695]), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        //initCamera(glm::vec3(-0.0386716f, 0.5f, 1.71695f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        initCamera(glm::vec3(-0.0386716f, 0.2f, 0.51695f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        initCamera(glm::vec3(-0.0386716f, 0.5f, 1.71695f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        //initCamera(glm::vec3(-0.0386716f, 0.2f, 0.51695f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         //initCamera(glm::vec3(-2.10783f, 0.56567f, -0.129275f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         getFirstPersonCameraPositioner()->setMaxSpeed(0.1f);
         //getFirstPersonCameraPositioner()->setMaxSpeed(10.1f);
@@ -80,7 +80,7 @@ void Loader::init() {
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
-    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox"); alterObjectCoords = true;
+    engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox"); alterObjectCoords = true;
     //engine->meshStore.loadMesh("WaterBottle_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("mirror_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("SimpleMaterial.gltf", "LogoBox");
@@ -88,7 +88,7 @@ void Loader::init() {
     //engine->meshStore.loadMesh("output.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("cc_facial_exp_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("delphini6.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES)); alterObjectCoords = false;
-    engine->meshStore.loadMesh("delphini7.glb", "LogoBox"); alterObjectCoords = false;
+    //engine->meshStore.loadMesh("delphini7.glb", "LogoBox"); alterObjectCoords = false;
     debugColors("LogoBox");
     engine->objectStore.createGroup("group");
     //object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.5f, -1.0f, -1.0f));
@@ -248,6 +248,9 @@ void Loader::prepareFrame(FrameResources* fr)
         glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
         modeltransform = trans * scaled * rotationMatrix;
         buf->model = modeltransform;
+        //buf->material.specularFactor = vec4(30.0f);
+        //buf->material.workflow = 1.3f;
+        //buf->material.baseColorTextureSet = 4;
         //buf->flags |= 0x1; // set flag for dicard rendering
         //engine->meshStore.debugRenderMeshlet(wo, tr, modeltransform);
         //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
