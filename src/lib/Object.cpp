@@ -480,7 +480,106 @@ bool compareVerts(const Meshlet::MeshletVertInfo* v1, const Meshlet::MeshletVert
 	return (vertexBuffer[v1->index].pos[idx] < vertexBuffer[v2->index].pos[idx]);
 }
 
-void MeshStore::calculateMeshlets(std::string id, uint32_t vertexLimit, uint32_t primitiveLimit)
+void MeshStore::calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32_t vertexLimit, uint32_t primitiveLimit)
+{
+#   if defined(DEBUG)
+	checkVertexNormalConsistency(id);
+#   endif
+	assert(primitiveLimit <= 255); // we need one more primitive for adding the 'rest'
+	assert(vertexLimit <= 256);
+
+	MeshInfo* mesh = getMesh(id);
+	mesh->meshletVerticesLimit = vertexLimit;
+	//mesh->
+	// min	[-0.040992 -0.046309 -0.053326]	glm::vec<3,float,0>
+	// max	[0.040992 0.067943 0.132763]	glm::vec<3,float,0>
+	BoundingBox box;
+	mesh->getBoundingBox(box);
+	Log("bounding box min: " << box.min.x << " " << box.min.y << " " << box.min.z << endl);
+	Log("bounding box max: " << box.max.x << " " << box.max.y << " " << box.max.z << endl);
+
+	MeshletIn in { mesh->vertices, mesh->indices, 126, 64 };
+	MeshletOut out { mesh->meshlets , mesh->outMeshletDesc, mesh->outLocalIndexPrimitivesBuffer, mesh->outGlobalIndexBuffer};
+
+	if (meshlet_flags & static_cast<uint32_t>(MeshletFlags::MESHLET_ALG_SIMPLE)) {
+        applyMeshletAlgorithmSimple(in, out);
+    }
+	logMeshletStats(mesh);
+    fillMeshletOutputBuffers(in, out);
+}
+
+void MeshStore::fillMeshletOutputBuffers(MeshletIn& in, MeshletOut& out)
+{
+	// first, we count how many indices we need for the meshlets:
+	uint32_t totalIndices = 0;
+	for (auto& m : out.meshlets) {
+		assert(m.verticesIndices.size() <= in.vertexLimit); // we limit the number of vertices per meshlet to 256
+		//Log("Meshlet " << " has " << m.verticesIndices.size() << " vertices and " << m.primitives.size() << " primitives." << endl);
+		// we need to align global and local index buffers, so we just use the bigger size of them.
+		// local index buffer size has to be multiplied by 3 to make room for 3 indices per triangle
+		uint32_t additionalIndices = m.verticesIndices.size() < m.primitives.size() ? m.primitives.size() : m.verticesIndices.size();
+		totalIndices += additionalIndices;
+	}
+	//Log("Total indices needed for meshlets: " << totalIndices << endl);
+	// create meshlet descriptor buffer and global index buffer and local index buffer
+
+	// DEBUG remove all but first element of mesh->meshlets
+	// Remove all but the n-th element of mesh->meshlets
+	//int n = 500;
+	//if (mesh->meshlets.size() > 1 && n < mesh->meshlets.size()) {
+	//	auto keep = mesh->meshlets[n];
+	//	mesh->meshlets.clear();
+	//	mesh->meshlets.push_back(keep);
+	//}
+	out.outMeshletDesc.resize(out.meshlets.size());
+	out.outGlobalIndexBuffer.resize(totalIndices);
+	out.outLocalIndexPrimitivesBuffer.resize(totalIndices * 3);
+	uint32_t indexBufferOffset = 0;
+	for (size_t i = 0; i < out.meshlets.size(); ++i) {
+		auto& m = out.meshlets[i];
+		//PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x123456789ABC, 12, 34, 56, 101, 0xABCDEF);
+		//PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x00, 0, 0, 0, 0x00, 0x00);
+		//PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(-1, -1, -1, -1, -1, -1);
+		PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x123456789ABC, m.verticesIndices.size(), m.primitives.size(), 56, indexBufferOffset, 0xABCDEF);
+		out.outMeshletDesc[i] = packed;
+		// fill global index buffers:
+		for (size_t j = 0; j < m.verticesIndices.size(); ++j) {
+			assert(j < 256);
+			out.outGlobalIndexBuffer[indexBufferOffset + j] = m.verticesIndices[j];
+			//mesh->outLocalIndexPrimitivesBuffer[indexBufferOffset + j] = j; // local index is just the index in the meshlet
+		}
+		// fill local primitives index buffers:
+		for (size_t j = 0; j < m.primitives.size(); ++j) {
+			assert(j < 256);
+			auto& triangle = m.primitives[j];
+			out.outLocalIndexPrimitivesBuffer[(indexBufferOffset + j) * 3] = triangle[0];
+			out.outLocalIndexPrimitivesBuffer[(indexBufferOffset + j) * 3 + 1] = triangle[1];
+			out.outLocalIndexPrimitivesBuffer[(indexBufferOffset + j) * 3 + 2] = triangle[2];
+		}
+		uint32_t additionalIndices = m.verticesIndices.size() < m.primitives.size() ? m.primitives.size() : m.verticesIndices.size();
+		indexBufferOffset += additionalIndices;
+	}
+}
+
+void MeshStore::applyMeshletAlgorithmSimple(MeshletIn& in, MeshletOut& out)
+{
+    Log("Meshlet algorithm simple started for " << in.vertices.size() << " vertices and " << in.indices.size() << " indices" << std::endl);
+	// assert that we have an indices consistent with triangle layout (must be multiple of 3)
+	assert(in.indices.size() % 3 == 0);
+	const int NUM_TRIANGLES_IN_MESHLET = 4;
+    uint32_t indexBufferPos = 0; // current position in index buffer
+	while (indexBufferPos < in.indices.size()) {
+		Meshlet m;
+		for (int i = 0; i < NUM_TRIANGLES_IN_MESHLET; i++) {
+			if (indexBufferPos >= in.indices.size()) continue;
+			m.insert(&in.indices[indexBufferPos]);
+			indexBufferPos += 3;
+		}
+		out.meshlets.push_back(m);
+	}
+}
+
+void MeshStore::calculateMeshletsX(std::string id, uint32_t vertexLimit, uint32_t primitiveLimit)
 {
 #   if defined(DEBUG)
     checkVertexNormalConsistency(id);

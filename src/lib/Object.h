@@ -46,7 +46,7 @@ struct MeshCollection {
 		MeshFlagsCollection flags;
 };
 
-// meshlet organization:
+// meshlet class holds data for a single meshlet, contains collection of vertices and primitives (triangles).
 // vertex buffer is unchanged, all meshlet operations work on indices only
 class Meshlet {
 public:
@@ -171,6 +171,25 @@ public:
         uvec3 tri = { triangle[0], triangle[1], triangle[2] };
         primitives.push_back(tri);
 	}
+};
+
+// input for meshlet calculations, basically the raw data from glTF:
+struct MeshletIn {
+	const std::vector<PBRShader::Vertex>& vertices;
+	const std::vector<uint32_t>& indices;
+	const uint32_t primitiveLimit; // usually 126
+	const uint32_t vertexLimit; // usually 64
+};
+
+struct MeshletOut {
+	std::vector<Meshlet>& meshlets;
+	// output: needed on GPU side
+	std::vector<PBRShader::PackedMeshletDesc>& outMeshletDesc;
+	std::vector<uint8_t>& outLocalIndexPrimitivesBuffer;   // local indices for primitives (3 indices per triangle)
+	std::vector<uint32_t>& outGlobalIndexBuffer; // vertex indices into vertex buffer
+	//std::vector<Meshlet::MeshletVertInfo> indexVertexMap; // 117008
+	//std::vector<Meshlet::MeshletVertInfo*> vertsVector; // 117008
+	//std::vector<Meshlet::MeshletTriangle*> triangles; // 231256
 };
 
 struct BoundingBoxCorners {
@@ -318,6 +337,13 @@ struct MeshInfo
 typedef MeshInfo* ObjectID;
 
 // Mesh Store to organize objects loaded from gltf files.
+enum class MeshletFlags : uint32_t {
+	MESHLET_SORT = 1,
+	MESHLET_ALG_SIMPLE = 2,
+	MESHLET_ALG_GREEDY_VERT = 4,
+    MESHLET_SIMPLIFY_MESH = 8, // remove duplicate vertices and triangles
+};
+
 class MeshStore {
 public:
 	// init object store
@@ -345,9 +371,10 @@ public:
 	// to render an object using meshlets we need:
     // 1. meshlet desc buffer, most important: get global index start for each meshlet
     // 2. global index buffer, which contains indices into the global vertex buffer
-    // 3. local index buffer, byte buffer which maps local meshlet vertex index to global index buffer: byte val + global index start is the index where the actualk vertex is found
-	void calculateMeshlets(std::string id, uint32_t vertexLimit = 64, uint32_t primitiveLimit = 126);
-    const float VERTEX_REUSE_THRESHOLD = 1.3f; // if vertex position duplication ratio is greater than this, log a warning
+    // 3. local index buffer, byte buffer which maps local meshlet vertex index to global index buffer: byte val + global index start is the index where the actual vertex is found
+	void calculateMeshletsX(std::string id, uint32_t vertexLimit = 64, uint32_t primitiveLimit = 126);
+	void calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32_t vertexLimit = 64, uint32_t primitiveLimit = 126);
+	const float VERTEX_REUSE_THRESHOLD = 1.3f; // if vertex position duplication ratio is greater than this, log a warning
     // check if loaded mesh has many vertices that are identical in position, color and uv coords but differ in normal direction.
     // this is a common problem with glTF files that were exported from Blender, where the normals are not recomputed.
     // •	In edit mode, select all vertices of the mesh, then press "Alt+N" to display normal menu, then merge normals. 
@@ -377,6 +404,10 @@ private:
 	Util* util = nullptr;
 	std::vector<MeshInfo*> sortedList;
 	glTF gltf;
+    // iterate through index buffer and place a fixed number of triangles into meshlets
+    static void applyMeshletAlgorithmSimple(MeshletIn& in, MeshletOut& out);
+    // go through meshlets and create the buffers needed on GPU side
+	static void fillMeshletOutputBuffers(MeshletIn& in, MeshletOut& out);
 };
 
 // 

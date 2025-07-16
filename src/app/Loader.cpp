@@ -48,7 +48,8 @@ void Loader::run(ContinuationInfo* cont)
 
 void Loader::debugColors(std::string meshName)
 {
-    engine->meshStore.calculateMeshlets(meshName);
+    uint32_t meshletFlags = (uint32_t) MeshletFlags::MESHLET_ALG_SIMPLE | (uint32_t) MeshletFlags::MESHLET_SORT;
+    engine->meshStore.calculateMeshlets(meshName, meshletFlags);
     static auto col = engine->util.generateColorPalette256();
     assert(col.size() == 256); //  Color palette must have 256 colors!
     MeshInfo* mesh = engine->meshStore.getMesh(meshName);
@@ -252,6 +253,7 @@ void Loader::prepareFrame(FrameResources* fr)
         //buf->material.workflow = 1.3f;
         //buf->material.baseColorTextureSet = 4;
         //buf->flags |= 0x1; // set flag for dicard rendering
+
         //engine->meshStore.debugRenderMeshlet(wo, tr, modeltransform);
         //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
 
