@@ -504,8 +504,106 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32
 	if (meshlet_flags & static_cast<uint32_t>(MeshletFlags::MESHLET_ALG_SIMPLE)) {
         applyMeshletAlgorithmSimple(in, out);
     }
+    int from = 0;
+    int to = 9;
+	// only keep meshlets from .. to
+	if (false) {
+		Log("Meshlets created with simple algorithm, keeping meshlets " << from << " to " << to << endl);
+		out.meshlets.erase(out.meshlets.begin(), out.meshlets.begin() + from);
+		out.meshlets.erase(out.meshlets.begin() + to, out.meshlets.end());
+	}
 	logMeshletStats(mesh);
     fillMeshletOutputBuffers(in, out);
+
+	int n = 14500;
+	n = 185 * 4;
+    markVertexOfTriangle(n, mesh);
+    logTriangleFromGlTF(n, mesh);
+    logTriangleFromMeshlets(n, mesh);
+    logTriangleFromMeshletBuffers(n, mesh);
+}
+
+void MeshStore::logVertex(PBRShader::Vertex& v)
+{
+	Log("Vertex: pos: " << v.pos.x << " " << v.pos.y << " " << v.pos.z
+		<< ", normal: " << v.normal.x << " " << v.normal.y << " " << v.normal.z
+		<< ", color: " << v.color.x << " " << v.color.y << " " << v.color.z
+		<< ", uv: " << v.uv0.x << " " << v.uv0.y
+        << endl);
+}
+
+void MeshStore::markVertexOfTriangle(int num, MeshInfo* mesh)
+{
+	for (int i = 0; i < 3; ++i) {
+		auto& v = mesh->vertices[mesh->indices[num * 3 + i]];
+        v.color.x = 0.21f * (i+1); // just mark the vertex with a color
+	}
+}
+
+void MeshStore::logTriangleFromGlTF(int num, MeshInfo* mesh)
+{
+	Log("Triangle " << num << ":" << endl);
+	for (int i = 0; i < 3; ++i) {
+		auto& v = mesh->vertices[mesh->indices[num * 3 + i]];
+		Log("  Vertex " << i << " "); logVertex(v);
+	}
+}
+
+void MeshStore::logTriangleFromMeshletBuffers(int num, MeshInfo* mesh)
+{
+	// iterate through triangles to find triangle number num.
+	// use only info from mesh->outMeshletDesc, mesh->outLocalIndexPrimitivesBuffer, mesh->outGlobalIndexBuffer
+	//obj->mesh->outMeshletDesc, obj->mesh->outLocalIndexPrimitivesBuffer, obj->mesh->outGlobalIndexBuffer, obj->mesh->vertices
+    auto& meshletDesc = mesh->outMeshletDesc;
+    auto& localIndexPrimitivesBuffer = mesh->outLocalIndexPrimitivesBuffer;
+    auto& globalIndexBuffer = mesh->outGlobalIndexBuffer;
+    auto& vertices = mesh->vertices;
+	int count = 0;
+	for (int meshletIndex = 0; meshletIndex < meshletDesc.size(); meshletIndex++) {
+		PBRShader::PackedMeshletDesc& packed = meshletDesc[meshletIndex];
+		auto meshletOffset = packed.getIndexBufferOffset();
+		for (int i = 0; i < packed.getNumPrimitives(); ++i) {
+			if (count++ != num) {
+                continue; // not the triangle we are looking for
+            }
+			// index into local index buffer:
+			auto localPrimBufferIndex = meshletOffset * 3 + i * 3;
+			auto localPrimIndex0 = localIndexPrimitivesBuffer[localPrimBufferIndex];
+			auto localPrimIndex1 = localIndexPrimitivesBuffer[localPrimBufferIndex + 1];
+			auto localPrimIndex2 = localIndexPrimitivesBuffer[localPrimBufferIndex + 2];
+
+			auto v0 = globalIndexBuffer[meshletOffset + localPrimIndex0];
+			auto v1 = globalIndexBuffer[meshletOffset + localPrimIndex1];
+			auto v2 = globalIndexBuffer[meshletOffset + localPrimIndex2];
+			// v0, v1, v2 are now absolute indices in the vertex buffer
+            Log("Triangle " << num << " in meshlet " << meshletIndex << ":" << endl);
+            Log("  Vertex 0 "); logVertex(vertices[v0]);
+            Log("  Vertex 1 "); logVertex(vertices[v1]);
+            Log("  Vertex 2 "); logVertex(vertices[v2]);
+		}
+	}
+
+
+}
+
+void MeshStore::logTriangleFromMeshlets(int num, MeshInfo* mesh)
+{
+    // iterate through meshlets and find the triangle with the given number
+	int i = 0;
+	for (auto& m : mesh->meshlets) {
+		if (num < i + m.primitives.size()) {
+			// found the meshlet containing the triangle
+			int localIndex = num - i;
+			auto& triangle = m.primitives[localIndex];
+			Log("Triangle " << num << " in meshlet " << &m << ":" << endl);
+			for (int j = 0; j < 3; ++j) {
+				auto& v = mesh->vertices[m.verticesIndices[triangle[j]]];
+				Log("  Vertex " << j << " "); logVertex(v);
+			}
+			return;
+		}
+		i += m.primitives.size();
+    }
 }
 
 void MeshStore::fillMeshletOutputBuffers(MeshletIn& in, MeshletOut& out)

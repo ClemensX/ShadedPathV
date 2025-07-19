@@ -408,6 +408,11 @@ private:
     static void applyMeshletAlgorithmSimple(MeshletIn& in, MeshletOut& out);
     // go through meshlets and create the buffers needed on GPU side
 	static void fillMeshletOutputBuffers(MeshletIn& in, MeshletOut& out);
+    static void logVertex(PBRShader::Vertex& v);
+	static void logTriangleFromGlTF(int num, MeshInfo* mesh);
+	static void logTriangleFromMeshlets(int num, MeshInfo* mesh);
+	static void logTriangleFromMeshletBuffers(int num, MeshInfo* mesh);
+	static void markVertexOfTriangle(int num, MeshInfo* mesh);
 };
 
 // 

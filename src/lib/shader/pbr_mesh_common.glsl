@@ -64,6 +64,7 @@ struct PBRVertex {
 
 struct PBRVertexOut {
     vec3 worldPos;
+    float pad0; // strange that we need padding for structure passed from mesh to frag shader...
     vec3 normal;
     float pad1;
     vec2 uv0;

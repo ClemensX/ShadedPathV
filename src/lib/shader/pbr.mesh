@@ -73,13 +73,37 @@ void main()
         debugPrintfEXT("MESH SHADER ERROR: vertexCount %d or primCount %d exceeds limits\n", vertexCount, primCount);
         return;
     }
+    if (meshletIndex < 185 || meshletIndex > 185){
+        SetMeshOutputsEXT(0, 0);
+        return; // for testing, skip all but meshlet 1000
+    }
 
     SetMeshOutputsEXT(vertexCount, primCount);
 
     // 1. Fetch meshlet-local to global vertex mapping
+    uint use = 0;
     for (uint v = 0; v < vertexCount; ++v) {
         uint globalVertexIndex = globalIndexBuffer.index[indexBufferOffset + v];
         PBRVertex vert = vertices.vertex[globalVertexIndex];
+        outVert[v].pad0 = 0.5;
+        if (vert.color0.x == 0.42) {
+            use = 1; // use this vertex for testing
+        }
+    }
+    if (use == 0 && false) {
+        return; // no vertices marked for use
+    }
+    for (uint v = 0; v < vertexCount; ++v) {
+        uint globalVertexIndex = globalIndexBuffer.index[indexBufferOffset + v];
+        PBRVertex vert = vertices.vertex[globalVertexIndex];
+        outVert[v].pad0 = 0.5;
+        if (vert.color0.x == 0.63) {
+            use = 1; // use this vertex for testing
+            outVert[v].pad0 = 1.0;
+            //vert.uv0.x = 0.0; // force uv0.x to 0.0 for testing
+            //vert.uv0.y = 1.0; // force uv0.y to 1.0 for testing
+            debugPrintfEXT("MESH SHADER marked vert: col %f pos %f %f %f UV %f %f\n", vert.color0.x, vert.position.x, vert.position.y, vert.position.z, vert.uv0.x, vert.uv0.y);
+        }
         //outVert[v].pos = vert.position;
         // Set more attributes as needed
         //if(v == 0) debugPrintfEXT("MESH SHADER globIndexBuffer %d pos %f %f %f\n", globalVertexIndex, vert.position.x, vert.position.y, vert.position.z);
@@ -87,6 +111,9 @@ void main()
         outVert[v].color0 = vert.color0;
         outVert[v].uv0 = vert.uv0;
         outVert[v].uv1 = vert.uv1;
+	    if (vert.uv0.y < 1.0) {
+		    debugPrintfEXT("PBR MESH in uv0 %f %f\n", vert.uv0.x, vert.uv0.y);
+	    }
 
         vec4 locPos;
 	    locPos = model_ubo.model * vec4(vert.position, 1.0);
@@ -101,7 +128,7 @@ void main()
             gl_MeshVerticesEXT[v].gl_Position =  ubo.proj * ubo.view * vec4(outVert[v].worldPos, 1.0);
         }
     }
-
+        
 //    gl_PrimitiveTriangleIndicesEXT[0] = uvec3(0, 1, 2);
 //    gl_PrimitiveTriangleIndicesEXT[1] = uvec3(0, 3, 1);
 //    gl_PrimitiveTriangleIndicesEXT[2] = uvec3(2, 1, 4);

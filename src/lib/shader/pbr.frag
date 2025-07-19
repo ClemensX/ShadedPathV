@@ -34,6 +34,7 @@ vec3 inWorldPos = inVert.worldPos;
 vec3 inNormal = inVert.normal;
 vec3 camPos = ubo.camPos;
 vec4 inColor0 = inVert.color0;
+float inpad0 = inVert.pad0;
 
 //struct PBRTextureIndexes {
 //    uint baseColor;
@@ -204,6 +205,15 @@ float microfacetDistribution(PBRInfo pbrInputs)
 
 void main() {
 	//debugPrintfEXT("pbr.frag main\n");
+	if (inpad0 != 0.5) {
+		debugPrintfEXT("PBR FRAG in pad0 %f uv0 %f %f\n", inpad0, inUV0.x, inUV0.y);
+	}
+	if (inColor0.x >= 0.40 && inColor0.x < 0.6) {
+		debugPrintfEXT("PBR FRAG in color %f %f %f %f inpad %f\n", inColor0.x, inColor0.y, inColor0.z, inColor0.w, inpad0);
+	}
+	if (inUV0.y < 1.0) {
+		debugPrintfEXT("PBR FRAG in uv0 %f %f\n", inUV0.x, inUV0.y);
+	}
 	//outColor = vec4(1.0,0.0,0.0,1.0);
 	//return;
 	ShaderMaterial material = model_ubo.material;
