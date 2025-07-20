@@ -9,6 +9,7 @@ enum class MeshFlags : int {
 	MESH_TYPE_SKINNED = 2,
 	MESH_TYPE_NO_TEXTURES = 4,
     MESH_TYPE_FLIP_WINDING_ORDER = 8, // flip clockwise <-> counter-clockwise winding order
+	MESHLET_DEBUG_COLORS = 16, // apply vertex color to all triangles of one meshlet
 	MESH_TYPE_COUNT = -1 // always last
 };
 
@@ -336,7 +337,7 @@ struct MeshInfo
 };
 typedef MeshInfo* ObjectID;
 
-// Mesh Store to organize objects loaded from gltf files.
+// Bitfield for controlling meshlet behaviour
 enum class MeshletFlags : uint32_t {
 	MESHLET_SORT = 1,
 	MESHLET_ALG_SIMPLE = 2,
@@ -344,6 +345,7 @@ enum class MeshletFlags : uint32_t {
     MESHLET_SIMPLIFY_MESH = 8, // remove duplicate vertices and triangles
 };
 
+// Mesh Store to organize objects loaded from gltf files.
 class MeshStore {
 public:
 	// init object store
@@ -383,6 +385,8 @@ public:
     void checkVertexNormalConsistency(std::string id);
 	// debug graphics, usually means bounding box and normals are added to line shader
 	void debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 color = Colors::Red, float normalLineLength = 0.001f);
+    // apply fixed colors to all vertices of one meshlet (useful for debugging)
+    // may not be totally correct if some vertices are shared between meshlets (color value will be overwritten)
 	void applyDebugMeshletColorsToVertices(MeshInfo* mesh);
     // draw object from lines using its meshlet information only
     // also servers as a debug function to visualize meshlets and to document meshlet structure

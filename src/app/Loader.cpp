@@ -48,7 +48,9 @@ void Loader::run(ContinuationInfo* cont)
 
 void Loader::debugColors(std::string meshName)
 {
-    uint32_t meshletFlags = (uint32_t) MeshletFlags::MESHLET_ALG_SIMPLE | (uint32_t) MeshletFlags::MESHLET_SORT;
+    uint32_t meshletFlags =
+        (uint32_t)MeshletFlags::MESHLET_ALG_SIMPLE
+        | (uint32_t)MeshletFlags::MESHLET_SORT;
     engine->meshStore.calculateMeshlets(meshName, meshletFlags);
     static auto col = engine->util.generateColorPalette256();
     assert(col.size() == 256); //  Color palette must have 256 colors!
@@ -81,6 +83,7 @@ void Loader::init() {
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
+    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = true;
     engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox"); alterObjectCoords = true;
     //engine->meshStore.loadMesh("WaterBottle_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("mirror_cmp.glb", "LogoBox"); alterObjectCoords = false;
@@ -110,8 +113,9 @@ void Loader::init() {
 
     // load skybox cube texture and generate cubemaps
     //engine->textureStore.loadTexture("nebula.ktx2", "skyboxTexture");
-    engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
+    //engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
     //engine->textureStore.loadTexture("papermill.ktx2", "skyboxTexture");
+    engine->textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
     engine->textureStore.generateBRDFLUT();
     // generating cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
     //engine->textureStore.generateCubemaps("skyboxTexture");

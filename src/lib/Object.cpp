@@ -62,7 +62,7 @@ MeshCollection* MeshStore::loadMeshFile(string filename, string id, vector<byte>
 		s << "WorldObjectStore: wrong id format " << id << endl;
 		Error(s.str());
 	}
-	// create MeshCollection and one MexhInfo: we have at least one mesh per gltf file
+	// create MeshCollection and one MeshInfo: we have at least one mesh per gltf file
 	MeshCollection initialCollection;  // only used to initialize struct in texture store - do not access this after assignment to store
 	initialCollection.id = id;
 	meshCollections.push_back(initialCollection);
@@ -504,6 +504,9 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32
 	if (meshlet_flags & static_cast<uint32_t>(MeshletFlags::MESHLET_ALG_SIMPLE)) {
         applyMeshletAlgorithmSimple(in, out);
     }
+	if (mesh->flags.hasFlag(MeshFlags::MESHLET_DEBUG_COLORS)) {
+        applyDebugMeshletColorsToVertices(mesh);
+	}
     int from = 0;
     int to = 9;
 	// only keep meshlets from .. to

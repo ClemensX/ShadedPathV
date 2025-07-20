@@ -365,7 +365,13 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	vkCmdBindIndexBuffer(commandBuffer, obj->mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 	auto buf = pbrShader->getAccessToModel(fr, obj->objectNum);
-	buf->mode = obj->mesh->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES) ? 1 : 0;
+	buf->mode = 0; // regular PBR rednering
+	if (obj->mesh->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
+		buf->mode = 1; // no textures, use vertex colors
+	}
+	if (obj->mesh->flags.hasFlag(MeshFlags::MESHLET_DEBUG_COLORS)) {
+		buf->mode = 1; // no textures, use vertex colors
+	}
 
 	// meshlet resources:
 	// set meshlet count, not the best code location here, but should do
