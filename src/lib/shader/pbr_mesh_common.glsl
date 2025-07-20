@@ -62,6 +62,7 @@ struct PBRVertex {
     vec4 color0;
 };
 
+// interpolated values (mesh -> frag shader)
 struct PBRVertexOut {
     vec3 worldPos;
     float pad0; // strange that we need padding for structure passed from mesh to frag shader...
@@ -69,9 +70,14 @@ struct PBRVertexOut {
     float pad1;
     vec2 uv0;
     vec2 uv1;
-    uvec4 joint0;
+    //uvec4 joint0;
     vec4 weight0;
     vec4 color0;
+};
+
+// non interpolated values (mesh -> frag shader)
+struct PBRVertexOutFlat {
+    uvec4 joint0;
 };
 
 struct UBOParams {

@@ -32,7 +32,8 @@ layout(local_size_x = 1) in;
 layout(max_vertices = NVMESHLET_VERTEX_COUNT, max_primitives = NVMESHLET_PRIMITIVE_COUNT) out;
 layout(triangles) out;
 
-layout(location = 0) out PBRVertexOut outVert[];
+layout(location = 0) out PBRVertexOutFlat outVertFlat[];
+layout(location = 1) out PBRVertexOut outVert[];
 
 void check_inputs() {
     uvec4 uv = meshletDescs.packedMeshlets[0];
@@ -73,11 +74,11 @@ void main()
         debugPrintfEXT("MESH SHADER ERROR: vertexCount %d or primCount %d exceeds limits\n", vertexCount, primCount);
         return;
     }
-    if (meshletIndex < 185 || meshletIndex > 185){
-        SetMeshOutputsEXT(0, 0);
-        return; // for testing, skip all but meshlet 1000
-    }
-
+//    if (meshletIndex < 185 || meshletIndex > 185){
+//        SetMeshOutputsEXT(0, 0);
+//        return; // for testing, skip all but meshlet 1000
+//    }
+//
     SetMeshOutputsEXT(vertexCount, primCount);
 
     // 1. Fetch meshlet-local to global vertex mapping
@@ -111,6 +112,9 @@ void main()
         outVert[v].color0 = vert.color0;
         outVert[v].uv0 = vert.uv0;
         outVert[v].uv1 = vert.uv1;
+        //outVert[v].normal = vert.normal;
+        outVert[v].weight0 = vert.weight0;
+        outVertFlat[v].joint0 = vert.joint0;
 	    if (vert.uv0.y < 1.0) {
 		    debugPrintfEXT("PBR MESH in uv0 %f %f\n", vert.uv0.x, vert.uv0.y);
 	    }

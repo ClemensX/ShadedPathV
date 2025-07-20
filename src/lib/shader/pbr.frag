@@ -17,7 +17,8 @@
 #include "shadermaterial.glsl"
 #include "pbr_mesh_common.glsl"
 
-layout(location = 0) flat in PBRVertexOut inVert; 
+layout(location = 0) flat in PBRVertexOutFlat inVertFlat;
+layout(location = 1) in PBRVertexOut inVert; // flat removed
 //layout (location = 0) in vec3 inWorldPos;
 //layout (location = 1) in vec3 inNormal;
 //layout (location = 2) in vec2 inUV0;
@@ -205,10 +206,15 @@ float microfacetDistribution(PBRInfo pbrInputs)
 
 void main() {
 	//debugPrintfEXT("pbr.frag main\n");
-	if (inpad0 != 0.5) {
+	//if (inUV0.x != 0.737041 || inpad0 != 0.5) {
+	if (inUV0.x != 0.737041
+	 && inUV0.x != 0.759412
+	 && inUV0.x != 0.774256
+	 && inUV0.x != 0.753219
+	) {
 		debugPrintfEXT("PBR FRAG in pad0 %f uv0 %f %f\n", inpad0, inUV0.x, inUV0.y);
 	}
-	if (inColor0.x >= 0.40 && inColor0.x < 0.6) {
+	if (false || (inColor0.x >= 0.40 && inColor0.x < 0.6)) {
 		debugPrintfEXT("PBR FRAG in color %f %f %f %f inpad %f\n", inColor0.x, inColor0.y, inColor0.z, inColor0.w, inpad0);
 	}
 	if (inUV0.y < 1.0) {
@@ -311,8 +317,8 @@ void main() {
 			baseColor = material.baseColorFactor;
 		}
 	}
-	outColor = baseColor;// test
-	return;
+//	outColor = baseColor;// test
+//	return;
 
 	baseColor *= inColor0;
 

@@ -269,4 +269,4 @@ uv0 _83.uv0.xy float2 0.73704, 1.13395
 bottom left:
 uv0 _83.uv0.xy float2 0.73704, 1.13395
 
---> UV values are not interpolated!!! remain fixed to vertex values for all frag shader runs!!!
+

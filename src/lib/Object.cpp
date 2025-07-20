@@ -517,7 +517,7 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32
 
 	int n = 14500;
 	n = 185 * 4;
-    markVertexOfTriangle(n, mesh);
+    //markVertexOfTriangle(n, mesh);
     logTriangleFromGlTF(n, mesh);
     logTriangleFromMeshlets(n, mesh);
     logTriangleFromMeshletBuffers(n, mesh);
