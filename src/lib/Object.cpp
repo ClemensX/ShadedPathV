@@ -391,7 +391,6 @@ void WorldObject::drawBoundingBox(std::vector<LineDef>& boxes, glm::mat4 modelTo
 
 void MeshStore::applyDebugMeshletColorsToVertices(MeshInfo* mesh)
 {
-
 	// color the meshlets:
 	int meshletCount = 0;
 	static auto col = engine->util.generateColorPalette256();
@@ -401,6 +400,13 @@ void MeshStore::applyDebugMeshletColorsToVertices(MeshInfo* mesh)
 		for (auto& v : m.verticesIndices) {
 			mesh->vertices[v].color = color; // assign color to vertices in meshlet
 		}
+	}
+}
+
+void MeshStore::applyDebugMeshletColorsToMeshlets(MeshInfo* mesh)
+{
+	for (auto& m : mesh->meshlets) {
+        m.debugColors = true; // mark meshlet as having debug colors
 	}
 }
 
@@ -505,7 +511,7 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32
         applyMeshletAlgorithmSimple(in, out);
     }
 	if (mesh->flags.hasFlag(MeshFlags::MESHLET_DEBUG_COLORS)) {
-        applyDebugMeshletColorsToVertices(mesh);
+        applyDebugMeshletColorsToMeshlets(mesh);
 	}
     int from = 0;
     int to = 9;
@@ -641,7 +647,11 @@ void MeshStore::fillMeshletOutputBuffers(MeshletIn& in, MeshletOut& out)
 		//PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x123456789ABC, 12, 34, 56, 101, 0xABCDEF);
 		//PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x00, 0, 0, 0, 0x00, 0x00);
 		//PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(-1, -1, -1, -1, -1, -1);
-		PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x123456789ABC, m.verticesIndices.size(), m.primitives.size(), 56, indexBufferOffset, 0xABCDEF);
+        uint8_t vp = 0; // default rendering mode
+        if (m.debugColors) {
+			vp = 0x01; // use debug colors
+        }
+		PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x123456789ABC, m.verticesIndices.size(), m.primitives.size(), vp, indexBufferOffset, 0xABCDEF);
 		out.outMeshletDesc[i] = packed;
 		// fill global index buffers:
 		for (size_t j = 0; j < m.verticesIndices.size(); ++j) {
@@ -1235,11 +1245,11 @@ void MeshStore::debugRenderMeshletFromBuffers(
 	int meshletCount = 0;
 	static auto col = engine->util.generateColorPalette256();
 
-	auto color = col[meshletCount % 256]; // assign color from palette
 	for (int meshletIndex = 0; meshletIndex < meshletDesc.size(); meshletIndex++) {
 		PBRShader::PackedMeshletDesc& packed = meshletDesc[meshletIndex];
 		auto meshletOffset = packed.getIndexBufferOffset();
 		auto color = col[meshletCount++ % 256]; // assign color from palette
+		color = vec4(0.0f, 0.0f, 0.0f, 1.0f); // use black color for meshlets
 		for (int i = 0; i < packed.getNumPrimitives(); ++i) {
 
 			// index into local index buffer:

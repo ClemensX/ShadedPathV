@@ -26,6 +26,7 @@ set(SHADER_DEPENDENCIES
   "${ShaderFolder}/pbr.vert|${ShaderFolder}/srgbtolinear.glsl"
   "${ShaderFolder}/pbr.vert|${ShaderFolder}/tonemapping.glsl"
   "${ShaderFolder}/pbr.task|${ShaderFolder}/pbr_mesh_common.glsl"
+  "${ShaderFolder}/pbr.mesh|${ShaderFolder}/debug_colors.glsl"
 )
 
 # Function to get dependencies for a shader file

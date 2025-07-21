@@ -812,6 +812,8 @@ std::vector<glm::vec4> Util::generateColorPalette256()
         float v = 0.95f;
         glm::vec3 rgb = hsv2rgb(h, s, v);
         palette.emplace_back(rgb, 1.0f);
+        //     vec3(0.5, 1.0, 0.5), // light green
+        //Log("  vec3(" << rgb.x << ", " << rgb.y << ", " << rgb.z << ")," << endl);
     }
     return palette;
 }

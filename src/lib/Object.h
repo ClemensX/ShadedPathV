@@ -60,6 +60,8 @@ public:
 	Meshlet& operator=(const Meshlet&) = default;
 	Meshlet& operator=(Meshlet&&) = default;
 
+	// debug info:
+    bool debugColors = false; // if true, color all triangles of this meshlet with the same color
 	// indices of the meshlet (index into global vertex buffer)
 	// actual vertex coord are globalVertexBuffer[verticesIndices[i]], if i is local 8 bit index
     std::vector<uint32_t> verticesIndices; // actual index buffer, map meshlet vert index 0..255 to global index
@@ -385,10 +387,13 @@ public:
     void checkVertexNormalConsistency(std::string id);
 	// debug graphics, usually means bounding box and normals are added to line shader
 	void debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 color = Colors::Red, float normalLineLength = 0.001f);
-    // apply fixed colors to all vertices of one meshlet (useful for debugging)
-    // may not be totally correct if some vertices are shared between meshlets (color value will be overwritten)
+	// apply fixed colors to all vertices of one meshlet (useful for debugging)
+	// may not be totally correct if some vertices are shared between meshlets (color value will be overwritten)
 	void applyDebugMeshletColorsToVertices(MeshInfo* mesh);
-    // draw object from lines using its meshlet information only
+	// apply same color to all trtiangles of the meshlets (useful for debugging)
+    // this simply markes the meshlet with a debug flag, the actual color is applied in the shader
+	void applyDebugMeshletColorsToMeshlets(MeshInfo* mesh);
+	// draw object from lines using its meshlet information only
     // also servers as a debug function to visualize meshlets and to document meshlet structure
 	void debugRenderMeshlet(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 color = Colors::Red);
 	void debugRenderMeshletFromBuffers(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 color = Colors::Red);

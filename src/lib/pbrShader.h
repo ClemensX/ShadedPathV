@@ -137,6 +137,7 @@ public:
 		uint8_t data[16];
 
 		// Packing function
+		// vertexPack == 0 means default rendering, 1 means use debug meshlet colors
 		static PackedMeshletDesc pack(
 			uint64_t boundingBox,      // 48 bits
 			uint8_t numVertices,       // 8 bits
@@ -181,6 +182,7 @@ public:
 			const uint64_t* u64 = reinterpret_cast<const uint64_t*>(data);
 			return (u64[0] >> 56) & 0xFF;
 		}
+        // 0 means default rendering, 1 means use debug meshlet colors
 		uint8_t getVertexPack() const {
 			const uint64_t* u64 = reinterpret_cast<const uint64_t*>(data);
 			return u64[1] & 0xFF;

@@ -4,6 +4,7 @@
 
 #include "shadermaterial.glsl"
 #include "pbr_mesh_common.glsl"
+#include "debug_colors.glsl"
 
 // Meshlet descriptor buffer (binding = 2)
 layout(std430, binding = 2) buffer MeshletBuffer {
@@ -110,6 +111,14 @@ void main()
         //if(v == 0) debugPrintfEXT("MESH SHADER globIndexBuffer %d pos %f %f %f\n", globalVertexIndex, vert.position.x, vert.position.y, vert.position.z);
         gl_MeshVerticesEXT[v].gl_Position = payload.mvp * vec4(vert.position, 1.0);
         outVert[v].color0 = vert.color0;
+
+        if ((meshlet.vertexPack & 0x01) != 0) {
+            // Bit 0 is set
+            // apply debug colors
+            vec3 debugColor = DEBUG_COLORS[meshletIndex % 256];
+            outVert[v].color0 = vec4(debugColor, 1.0); // apply debug color to vertex color
+        }
+
         outVert[v].uv0 = vert.uv0;
         outVert[v].uv1 = vert.uv1;
         //outVert[v].normal = vert.normal;
