@@ -184,6 +184,15 @@ struct MeshletIn {
 	const uint32_t vertexLimit; // usually 64
 };
 
+// intermediate structures used during meshlet calculations
+// can be cleared after meshlet calculations are done
+struct MeshletIntermediate {
+	std::vector<Meshlet::MeshletTriangle> trianglesVector; // base storage for triangles
+	std::unordered_map<uint32_t, Meshlet::MeshletVertInfo> indexVertexMap;
+	std::vector<Meshlet::MeshletTriangle*> triangles;
+	std::vector<Meshlet::MeshletVertInfo*> vertsVector; // meshlet vertex info, used to store vertex indices and neighbours
+};
+
 struct MeshletOut {
 	std::vector<Meshlet>& meshlets;
 	// output: needed on GPU side
@@ -221,7 +230,7 @@ void sortByPos(std::vector<T>& vertices) {
 
 // Sort vector<Meshlet::MeshletVertInfo*> by the position in the base vertex buffer, along the given axis.
 template<typename T>
-void sortByPosAxis(std::vector<Meshlet::MeshletVertInfo*>& verticesMeshletInfoVector, std::vector<T>& verticesBaseVector, Axis axis) {
+void sortByPosAxis(std::vector<Meshlet::MeshletVertInfo*>& verticesMeshletInfoVector, const std::vector<T>& verticesBaseVector, Axis axis) {
 	std::sort(verticesMeshletInfoVector.begin(), verticesMeshletInfoVector.end(),
 		[&verticesBaseVector, axis](const Meshlet::MeshletVertInfo* lhs, const Meshlet::MeshletVertInfo* rhs) {
 			const glm::vec3& posL = verticesBaseVector[lhs->index].pos;
@@ -238,7 +247,7 @@ void sortByPosAxis(std::vector<Meshlet::MeshletVertInfo*>& verticesMeshletInfoVe
 
 // Sort vector<Meshlet::MeshletVertInfo*> by the position in the base vertex buffer, along the given axis.
 template<typename T>
-void sortTrianglesByPosAxis(std::vector<Meshlet::MeshletTriangle*>& triangles, std::vector<T>& verticesBaseVector, Axis axis) {
+void sortTrianglesByPosAxis(std::vector<Meshlet::MeshletTriangle*>& triangles, const std::vector<T>& verticesBaseVector, Axis axis) {
 	std::sort(triangles.begin(), triangles.end(),
 		[&verticesBaseVector, axis](const Meshlet::MeshletTriangle* lhs, const Meshlet::MeshletTriangle* rhs) {
 			float l, r;
@@ -379,6 +388,8 @@ public:
 	void calculateMeshletsX(std::string id, uint32_t vertexLimit = 64, uint32_t primitiveLimit = 126);
 	void calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32_t vertexLimit = 64, uint32_t primitiveLimit = 126);
 	const float VERTEX_REUSE_THRESHOLD = 1.3f; // if vertex position duplication ratio is greater than this, log a warning
+	// IMPORTANT: this is no longer true! We need vertex normals for PBR and they should not be removed!
+    // comment is left here for reference
     // check if loaded mesh has many vertices that are identical in position, color and uv coords but differ in normal direction.
     // this is a common problem with glTF files that were exported from Blender, where the normals are not recomputed.
     // •	In edit mode, select all vertices of the mesh, then press "Alt+N" to display normal menu, then merge normals. 
@@ -413,15 +424,21 @@ private:
 	Util* util = nullptr;
 	std::vector<MeshInfo*> sortedList;
 	glTF gltf;
-    // iterate through index buffer and place a fixed number of triangles into meshlets
-    static void applyMeshletAlgorithmSimple(MeshletIn& in, MeshletOut& out);
-    // go through meshlets and create the buffers needed on GPU side
+	// iterate through index buffer and place a fixed number of triangles into meshlets
+	static void applyMeshletAlgorithmSimple(MeshletIn& in, MeshletOut& out);
+	// iterate through index buffer and place a fixed number of triangles into meshlets
+	static void applyMeshletAlgorithmSimpleOnSortedTriangles(MeshletIn& in, MeshletIntermediate& temp, MeshletOut& out);
+	// go through meshlets and create the buffers needed on GPU side
 	static void fillMeshletOutputBuffers(MeshletIn& in, MeshletOut& out);
-    static void logVertex(PBRShader::Vertex& v);
+	static void generateTrianglesAndNeighbours(MeshletIn& in, MeshletIntermediate& temp);
+	static void sort(MeshletIn& in, MeshletIntermediate& temp);
+	static void logVertex(PBRShader::Vertex& v);
+	static void logVertexIndex(PBRShader::Vertex& v, std::vector<PBRShader::Vertex>& vertices);
 	static void logTriangleFromGlTF(int num, MeshInfo* mesh);
 	static void logTriangleFromMeshlets(int num, MeshInfo* mesh);
 	static void logTriangleFromMeshletBuffers(int num, MeshInfo* mesh);
 	static void markVertexOfTriangle(int num, MeshInfo* mesh);
+	void checkVertexDuplication(std::string id);
 };
 
 // 

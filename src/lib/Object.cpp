@@ -486,10 +486,130 @@ bool compareVerts(const Meshlet::MeshletVertInfo* v1, const Meshlet::MeshletVert
 	return (vertexBuffer[v1->index].pos[idx] < vertexBuffer[v2->index].pos[idx]);
 }
 
+void MeshStore::generateTrianglesAndNeighbours(MeshletIn& in, MeshletIntermediate& temp)
+{
+	// Generate mesh structure
+	temp.triangles.resize(in.indices.size() / 3);
+	temp.trianglesVector.resize(temp.triangles.size());
+	int unique = 0;
+	int reused = 0;
+	for (uint32_t i = 0; i < in.indices.size() / 3; i++) {
+		Meshlet::MeshletTriangle* t = &temp.trianglesVector[i];
+		t->id = i;
+		temp.triangles[i] = t;
+		for (uint32_t j = 0; j < 3; j++) {
+			auto lookup = temp.indexVertexMap.find(in.indices[i * 3 + j]);
+			if (lookup != temp.indexVertexMap.end()) {
+				// vertex already exists, reuse it
+				lookup->second.neighbours.push_back(t);
+				lookup->second.degree++;
+				t->vertices.push_back(&lookup->second);
+				reused++;
+				//std::cout << "reused vertex " << lookup->second.index << std::endl;
+			}
+			else {
+				Meshlet::MeshletVertInfo v;
+				v.index = in.indices[i * 3 + j];
+				v.degree = 1;
+				v.neighbours.push_back(t);
+				temp.indexVertexMap[v.index] = v;
+				t->vertices.push_back(&temp.indexVertexMap[v.index]);
+				unique++;
+			}
+
+		}
+	}
+	Log("Mesh structure initialised" << std::endl);
+	Log(unique << " vertices added " << reused << " reused " << (unique + reused) << " total" << std::endl);
+
+	// Connect vertices
+	uint32_t found;
+	Meshlet::MeshletTriangle* t;
+	Meshlet::MeshletTriangle* c;
+	Meshlet::MeshletVertInfo* v;
+	Meshlet::MeshletVertInfo* p;
+	for (uint32_t i = 0; i < temp.triangles.size(); ++i) { // For each triangle
+		t = temp.triangles[i];
+		// Find adjacent triangles
+		found = 0;
+		for (uint32_t j = 0; j < 3; ++j) { // For each vertex of each triangle
+			v = t->vertices[j];
+			for (uint32_t k = 0; k < v->neighbours.size(); ++k) { // For each triangle containing each vertex of each triangle
+				c = v->neighbours[k];
+				if (c->id == t->id) continue; // You are yourself a neighbour of your neighbours
+				for (uint32_t l = 0; l < 3; ++l) { // For each vertex of each triangle containing ...
+					p = c->vertices[l];
+					if (p->index == t->vertices[(j + 1) % 3]->index) {
+						found++;
+						t->neighbours.push_back(c);
+						break;
+					}
+				}
+			}
+
+		}
+		//if (found != 3) {
+		//	std::cout << "Failed to find 3 adjacent triangles found " << found << " idx: " << t->id << std::endl;
+		//}
+	}
+}
+
+void MeshStore::sort(MeshletIn& in, MeshletIntermediate& temp)
+{
+	// calculate centroids and bounding boxes for triangles
+	auto& vertexBuffer = in.vertices; // use the original vertex buffer for sorting
+	glm::vec3 min{ FLT_MAX };
+	glm::vec3 max{ FLT_MIN };
+	for (Meshlet::MeshletTriangle& tri : temp.trianglesVector) {
+		min = glm::min(min, vertexBuffer[tri.vertices[0]->index].pos);
+		min = glm::min(min, vertexBuffer[tri.vertices[1]->index].pos);
+		min = glm::min(min, vertexBuffer[tri.vertices[2]->index].pos);
+		max = glm::max(max, vertexBuffer[tri.vertices[0]->index].pos);
+		max = glm::max(max, vertexBuffer[tri.vertices[1]->index].pos);
+		max = glm::max(max, vertexBuffer[tri.vertices[2]->index].pos);
+
+		glm::vec3 centroid = (vertexBuffer[tri.vertices[0]->index].pos + vertexBuffer[tri.vertices[1]->index].pos + vertexBuffer[tri.vertices[2]->index].pos) / 3.0f;
+		tri.centroid[0] = centroid.x;
+		tri.centroid[1] = centroid.y;
+		tri.centroid[2] = centroid.z;
+	}
+
+	// use the same axis info to sort vertices
+	glm::vec3 axis = glm::abs(max - min);
+
+
+	temp.vertsVector.reserve(temp.indexVertexMap.size());
+	for (int i = 0; i < temp.indexVertexMap.size(); ++i) {
+		temp.vertsVector.push_back(&temp.indexVertexMap[i]);
+	}
+
+	if (axis.x > axis.y && axis.x > axis.z) {
+		sortByPosAxis(temp.vertsVector, vertexBuffer, Axis::X);
+		sortTrianglesByPosAxis(temp.triangles, vertexBuffer, Axis::X);
+		//std::sort(vertsVector.begin(), vertsVector.end(), std::bind(compareVerts, std::placeholders::_1, std::placeholders::_2, vertexBuffer, 0));
+		//std::sort(triangles.begin(), triangles.end(), std::bind(CompareTriangles, std::placeholders::_1, std::placeholders::_2, 0));
+		std::cout << "x sorted" << std::endl;
+	}
+	else if (axis.y > axis.z && axis.y > axis.x) {
+		sortByPosAxis(temp.vertsVector, vertexBuffer, Axis::Y);
+		sortTrianglesByPosAxis(temp.triangles, vertexBuffer, Axis::Y);
+		//std::sort(vertsVector.begin(), vertsVector.end(), std::bind(compareVerts, std::placeholders::_1, std::placeholders::_2, vertexBuffer, 1));
+		//std::sort(triangles.begin(), triangles.end(), std::bind(CompareTriangles, std::placeholders::_1, std::placeholders::_2, 1));
+		std::cout << "y sorted" << std::endl;
+	}
+	else {
+		sortByPosAxis(temp.vertsVector, vertexBuffer, Axis::Z);
+		sortTrianglesByPosAxis(temp.triangles, vertexBuffer, Axis::Z);
+		//std::sort(vertsVector.begin(), vertsVector.end(), std::bind(compareVerts, std::placeholders::_1, std::placeholders::_2, vertexBuffer, 2));
+		//std::sort(triangles.begin(), triangles.end(), std::bind(CompareTriangles, std::placeholders::_1, std::placeholders::_2, 2));
+		std::cout << "z sorted" << std::endl;
+	}
+}
+
 void MeshStore::calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32_t vertexLimit, uint32_t primitiveLimit)
 {
 #   if defined(DEBUG)
-	checkVertexNormalConsistency(id);
+    checkVertexDuplication(id);
 #   endif
 	assert(primitiveLimit <= 255); // we need one more primitive for adding the 'rest'
 	assert(vertexLimit <= 256);
@@ -506,9 +626,17 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32
 
 	MeshletIn in { mesh->vertices, mesh->indices, 126, 64 };
 	MeshletOut out { mesh->meshlets , mesh->outMeshletDesc, mesh->outLocalIndexPrimitivesBuffer, mesh->outGlobalIndexBuffer};
+	std::unordered_map<uint32_t, Meshlet::MeshletVertInfo> indexVertexMap;
+	std::vector<Meshlet::MeshletTriangle*> triangles; // pointers to triangles, used in algorithms
+	std::vector<Meshlet::MeshletTriangle> trianglesVector; // base storage for triangles
+	std::vector<Meshlet::MeshletVertInfo*> vertsVector; // meshlet vertex info, used to store vertex indices and neighbours
+	MeshletIntermediate temp{ trianglesVector, indexVertexMap, triangles, vertsVector};
+    generateTrianglesAndNeighbours(in, temp);
+    sort(in, temp);
 
 	if (meshlet_flags & static_cast<uint32_t>(MeshletFlags::MESHLET_ALG_SIMPLE)) {
-        applyMeshletAlgorithmSimple(in, out);
+        //applyMeshletAlgorithmSimple(in, out);
+        applyMeshletAlgorithmSimpleOnSortedTriangles(in, temp, out);
     }
 	if (mesh->flags.hasFlag(MeshFlags::MESHLET_DEBUG_COLORS)) {
         applyDebugMeshletColorsToMeshlets(mesh);
@@ -539,6 +667,17 @@ void MeshStore::logVertex(PBRShader::Vertex& v)
 		<< ", color: " << v.color.x << " " << v.color.y << " " << v.color.z
 		<< ", uv: " << v.uv0.x << " " << v.uv0.y
         << endl);
+}
+
+void MeshStore::logVertexIndex(PBRShader::Vertex& v, vector<PBRShader::Vertex>& vertices)
+{
+	Log("Vertex occurs at index ");
+	for (size_t i = 0; i < vertices.size(); i++) {
+		if (vertices[i] == v) {
+			Log(" " << i);
+		}
+	}
+	Log("\n");
 }
 
 void MeshStore::markVertexOfTriangle(int num, MeshInfo* mesh)
@@ -685,6 +824,28 @@ void MeshStore::applyMeshletAlgorithmSimple(MeshletIn& in, MeshletOut& out)
 			if (indexBufferPos >= in.indices.size()) continue;
 			m.insert(&in.indices[indexBufferPos]);
 			indexBufferPos += 3;
+		}
+		out.meshlets.push_back(m);
+	}
+}
+
+void MeshStore::applyMeshletAlgorithmSimpleOnSortedTriangles(MeshletIn& in, MeshletIntermediate& temp, MeshletOut& out)
+{
+	Log("Meshlet algorithm simple started for " << temp.triangles.size() << " triangles" << std::endl);
+	// assert that we have an indices consistent with triangle layout (must be multiple of 3)
+	const int NUM_TRIANGLES_IN_MESHLET = 20;
+	uint32_t trianglePos = 0; // current position in triangle list
+	while (trianglePos < temp.triangles.size()) {
+		Meshlet m;
+		for (int i = 0; i < NUM_TRIANGLES_IN_MESHLET; i++) {
+			if (trianglePos >= temp.triangles.size()) continue;
+			auto& verts = temp.triangles[trianglePos]->vertices;
+			uint32_t idx[3];
+			idx[0] = verts[0]->index;
+			idx[1] = verts[1]->index;
+			idx[2] = verts[2]->index;
+			m.insert(idx);
+			trianglePos++;
 		}
 		out.meshlets.push_back(m);
 	}
@@ -1138,6 +1299,25 @@ void MeshStore::checkVertexNormalConsistency(std::string id)
 	else {
 		Log("MeshStore: Mesh " << id << " has a good ratio of total vertices to separate vertices: " << ratio << endl);
     }
+}
+
+void MeshStore::checkVertexDuplication(std::string id)
+{
+	MeshInfo* mesh = getMesh(id);
+
+	std::unordered_set<PBRShader::Vertex> uniqueVertices;
+	for (auto& v : mesh->vertices) {
+		if (!uniqueVertices.insert(v).second) {
+			// duplicate found, log v:
+			//Log("duplicate vertex: "); logVertex(v);
+			//logVertexIndex(v, mesh->vertices);
+		}
+	}
+    size_t numDuplicates = mesh->vertices.size() - uniqueVertices.size();
+	if (numDuplicates > 0) {
+        float percentage = (float)numDuplicates / (float)mesh->vertices.size() * 100.0f;
+		Log("WARNING: Mesh " << id << " has duplicated vertices: " << numDuplicates << " (" << std::round(percentage) << "%) - you should consider cleaning up the mesh before usage." << endl);
+	}
 }
 
 void MeshStore::debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, vec4 color, float normalLineLength)
