@@ -845,7 +845,7 @@ void MeshStore::calculateMeshletsX(std::string id, uint32_t vertexLimit, uint32_
 	}
 
 
-    // calculate cetroids and bounding boxes for triangles
+    // calculate centroids and bounding boxes for triangles
     auto& vertexBuffer = mesh->vertices; // use the original vertex buffer for sorting
 	glm::vec3 min{ FLT_MAX };
 	glm::vec3 max{ FLT_MIN };

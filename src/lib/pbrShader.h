@@ -3,8 +3,6 @@
 struct MeshInfo;
 class WorldObject;
 
-//#define GLTF_SUPPRESS_NORMALS_FOR_MESHLETS 1 // if set, normals are not used for meshlet generation
-
 // forward
 class PBRSubShader;
 
@@ -40,9 +38,7 @@ public:
 
 		bool operator==(const Vertex& other) const {
 			return pos == other.pos &&
-#if !defined(GLTF_SUPPRESS_NORMALS_FOR_MESHLETS)
 				normal == other.normal &&
-#endif
 				uv0 == other.uv0 &&
 				uv1 == other.uv1 &&
 				joint0 == other.joint0 &&
@@ -314,11 +310,9 @@ namespace std {
 			hash_combine(seed, std::hash<float>{}(v.pos.x));
 			hash_combine(seed, std::hash<float>{}(v.pos.y));
 			hash_combine(seed, std::hash<float>{}(v.pos.z));
-#if !defined(GLTF_SUPPRESS_NORMALS_FOR_MESHLETS)
 			hash_combine(seed, std::hash<float>{}(v.normal.x));
 			hash_combine(seed, std::hash<float>{}(v.normal.y));
 			hash_combine(seed, std::hash<float>{}(v.normal.z));
-#endif
 			hash_combine(seed, std::hash<float>{}(v.uv0.x));
 			hash_combine(seed, std::hash<float>{}(v.uv0.y));
 			hash_combine(seed, std::hash<float>{}(v.uv1.x));
