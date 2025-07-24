@@ -49,9 +49,9 @@ void Loader::run(ContinuationInfo* cont)
 void Loader::debugColors(std::string meshName)
 {
     uint32_t meshletFlags =
-        (uint32_t)MeshletFlags::MESHLET_ALG_SIMPLE
+        (uint32_t)MeshletFlags::MESHLET_ALG_GREEDY_VERT
         | (uint32_t)MeshletFlags::MESHLET_SORT;
-    engine->meshStore.calculateMeshlets(meshName, meshletFlags);
+    engine->meshStore.calculateMeshlets(meshName, meshletFlags, GLEXT_MESHLET_VERTEX_COUNT, GLEXT_MESHLET_PRIMITIVE_COUNT-1);
     static auto col = engine->util.generateColorPalette256();
     assert(col.size() == 256); //  Color palette must have 256 colors!
     MeshInfo* mesh = engine->meshStore.getMesh(meshName);
@@ -84,8 +84,8 @@ void Loader::init() {
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
 
-    engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = true;
-    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox"); alterObjectCoords = true;
+    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = true;
+    engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox"); alterObjectCoords = true;
 
     //engine->meshStore.loadMesh("WaterBottle_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("mirror_cmp.glb", "LogoBox"); alterObjectCoords = false;
@@ -261,7 +261,7 @@ void Loader::prepareFrame(FrameResources* fr)
         //buf->flags |= 0x1; // set flag for dicard rendering
 
         //engine->meshStore.debugRenderMeshlet(wo, tr, modeltransform);
-        engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
+        //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
 
         //engine->meshStore.debugGraphics(wo, tr, modeltransform);
         //wo->calculateBoundingBoxWorld(modeltransform);

@@ -187,10 +187,11 @@ struct MeshletIn {
 // intermediate structures used during meshlet calculations
 // can be cleared after meshlet calculations are done
 struct MeshletIntermediate {
-	std::vector<Meshlet::MeshletTriangle> trianglesVector; // base storage for triangles
-	std::unordered_map<uint32_t, Meshlet::MeshletVertInfo> indexVertexMap;
-	std::vector<Meshlet::MeshletTriangle*> triangles;
-	std::vector<Meshlet::MeshletVertInfo*> vertsVector; // meshlet vertex info, used to store vertex indices and neighbours
+	std::vector<Meshlet::MeshletTriangle>& trianglesVector; // base storage for triangles
+	std::unordered_map<uint32_t, Meshlet::MeshletVertInfo>& indexVertexMap;
+	std::vector<Meshlet::MeshletTriangle*>& triangles;
+	std::vector<Meshlet::MeshletVertInfo*>& vertsVector; // meshlet vertex info, used to store vertex indices and neighbours
+	std::vector<uint32_t>& meshletVertexIndices; // indices into vertices
 };
 
 struct MeshletOut {
@@ -386,7 +387,7 @@ public:
     // 2. global index buffer, which contains indices into the global vertex buffer
     // 3. local index buffer, byte buffer which maps local meshlet vertex index to global index buffer: byte val + global index start is the index where the actual vertex is found
 	void calculateMeshletsX(std::string id, uint32_t vertexLimit = 64, uint32_t primitiveLimit = 126);
-	void calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32_t vertexLimit = 64, uint32_t primitiveLimit = 126);
+	void calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32_t vertexLimit = GLEXT_MESHLET_VERTEX_COUNT, uint32_t primitiveLimit = GLEXT_MESHLET_PRIMITIVE_COUNT);
 	const float VERTEX_REUSE_THRESHOLD = 1.3f; // if vertex position duplication ratio is greater than this, log a warning
 	// IMPORTANT: this is no longer true! We need vertex normals for PBR and they should not be removed!
     // comment is left here for reference
@@ -428,6 +429,8 @@ private:
 	static void applyMeshletAlgorithmSimple(MeshletIn& in, MeshletOut& out);
 	// iterate through index buffer and place a fixed number of triangles into meshlets
 	static void applyMeshletAlgorithmSimpleOnSortedTriangles(MeshletIn& in, MeshletIntermediate& temp, MeshletOut& out);
+	// meshletmaker: https://github.com/Senbyo/meshletmaker
+	static void applyMeshletAlgorithmGreedyVerts(MeshletIn& in, MeshletIntermediate& temp, MeshletOut& out);
 	// go through meshlets and create the buffers needed on GPU side
 	static void fillMeshletOutputBuffers(MeshletIn& in, MeshletOut& out);
 	static void generateTrianglesAndNeighbours(MeshletIn& in, MeshletIntermediate& temp);
@@ -439,6 +442,7 @@ private:
 	static void logTriangleFromMeshletBuffers(int num, MeshInfo* mesh);
 	static void markVertexOfTriangle(int num, MeshInfo* mesh);
 	void checkVertexDuplication(std::string id);
+	static void prepareMeshletVertexIndices(MeshletIntermediate& temp);
 };
 
 // 

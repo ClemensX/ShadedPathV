@@ -308,6 +308,7 @@ double static const PI_quarter = PI / 4.0;
 
 // engine headers
 
+#include "shader/common_cpp_shader.h"
 #include "Threads_independent.h"
 #include "EngineParticipant.h"
 #include "GlobalDef.h"
