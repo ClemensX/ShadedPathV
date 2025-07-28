@@ -127,7 +127,7 @@ public:
 	// Array entries of DynamicModelUBO have to respect hardware alignment rules
 	uint64_t alignedDynamicUniformBufferSize = 0;
 
-	// Meshlet descriptor, from NVIDIA Descriptor B in https://jcgt.org/published/0012/02/01/
+	// MeshletOld descriptor, from NVIDIA Descriptor B in https://jcgt.org/published/0012/02/01/
 	// 128 bits = 16 bytes
 	struct alignas(16) PackedMeshletDesc {
 		uint8_t data[16];

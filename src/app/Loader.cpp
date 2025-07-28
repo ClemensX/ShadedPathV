@@ -14,9 +14,14 @@ void Loader::run(ContinuationInfo* cont)
         engine->appname = "Loader";
         // camera initialization
         //initCamera(glm::vec3([-0.0386716 0.57298 1.71695]), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        initCamera(glm::vec3(-0.0386716f, 0.5f, 1.71695f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        //initCamera(glm::vec3(-0.0386716f, 0.5f, 1.71695f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         //initCamera(glm::vec3(-0.0386716f, 0.2f, 0.51695f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         //initCamera(glm::vec3(-2.10783f, 0.56567f, -0.129275f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+        // dolphin debug:
+        // []
+        initCamera(glm::vec3(-0.204694f, 0.198027f, 0.220922f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
         getFirstPersonCameraPositioner()->setMaxSpeed(0.1f);
         //getFirstPersonCameraPositioner()->setMaxSpeed(10.1f);
         getHMDCameraPositioner()->setMaxSpeed(0.1f);
@@ -84,8 +89,8 @@ void Loader::init() {
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
 
-    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = true;
-    engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox"); alterObjectCoords = true;
+    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = true;  useDefaultNormalLineLength = false;
+    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox"); alterObjectCoords = true;  useDefaultNormalLineLength = false;
 
     //engine->meshStore.loadMesh("WaterBottle_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("mirror_cmp.glb", "LogoBox"); alterObjectCoords = false;
@@ -93,18 +98,23 @@ void Loader::init() {
     //engine->meshStore.loadMesh("desert3_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("output.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("cc_facial_exp_cmp.glb", "LogoBox"); alterObjectCoords = false;
-    //engine->meshStore.loadMesh("delphini6.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES)); alterObjectCoords = false;
-    //engine->meshStore.loadMesh("delphini7.glb", "LogoBox"); alterObjectCoords = false;
+    //engine->meshStore.loadMesh("delfini6.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES)); alterObjectCoords = false;
+    engine->meshStore.loadMesh("delfini6.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
+    //engine->meshStore.loadMesh("delfini6.glb", "LogoBox"); alterObjectCoords = false;
+    //engine->meshStore.loadMesh("delfini7.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
+    //engine->meshStore.loadMesh("delfini7.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
+    //engine->meshStore.loadMesh("delfini7.glb", "LogoBox"); alterObjectCoords = false;
     debugColors("LogoBox");
     engine->objectStore.createGroup("group");
     //object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.5f, -1.0f, -1.0f));
     object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.2f, 0.2f, 0.2f));
     //object = engine->objectStore.addObject("group", "LogoBox.2", vec3(-0.2f, 0.2f, 0.2f)); // cc_facial body legs
+
+    object->enableDebugGraphics = true;
     if (alterObjectCoords) {
         // turn upside down
         object->rot() = vec3(PI_half, 0.0, 0.0f);
     }
-    object->enableDebugGraphics = true;
     BoundingBox box;
     object->getBoundingBox(box);
     Log(" object max values: " << box.max.x << " " << box.max.y << " " << box.max.z << std::endl);
@@ -115,9 +125,9 @@ void Loader::init() {
 
     // load skybox cube texture and generate cubemaps
     //engine->textureStore.loadTexture("nebula.ktx2", "skyboxTexture");
-    //engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
+    engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
     //engine->textureStore.loadTexture("papermill.ktx2", "skyboxTexture");
-    engine->textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
+    //engine->textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
     engine->textureStore.generateBRDFLUT();
     // generating cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
     //engine->textureStore.generateCubemaps("skyboxTexture");
@@ -261,9 +271,13 @@ void Loader::prepareFrame(FrameResources* fr)
         //buf->flags |= 0x1; // set flag for dicard rendering
 
         //engine->meshStore.debugRenderMeshlet(wo, tr, modeltransform);
-        //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
+        engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform, 185);
 
-        //engine->meshStore.debugGraphics(wo, tr, modeltransform);
+        if (useDefaultNormalLineLength) {
+            //engine->meshStore.debugGraphics(wo, tr, modeltransform);
+        } else {
+            //engine->meshStore.debugGraphics(wo, tr, modeltransform, Colors::Red, 0.01f);
+        }
         //wo->calculateBoundingBoxWorld(modeltransform);
         //wo->drawBoundingBox(boundingBoxes, modeltransform, Colors::Red);
         //buf->params.gamma = 2.2f;
@@ -271,6 +285,7 @@ void Loader::prepareFrame(FrameResources* fr)
         //buf->material.alphaMask = 0.8f;
     }
     // lines
+    engine->shaders.lineShader.prepareAddLines(tr);
     LineShader::UniformBufferObject lubo{};
     LineShader::UniformBufferObject lubo2{};
     lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!

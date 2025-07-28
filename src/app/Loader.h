@@ -31,5 +31,5 @@ private:
     bool alterObjectCoords = false; // some gltf examples objects require different object rotation params
     bool firstPersonMode = true;
     bool doRotation = false;
+    bool useDefaultNormalLineLength = true; // to use different normal line length for some models
 };
-

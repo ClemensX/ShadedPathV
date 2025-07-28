@@ -49,16 +49,16 @@ struct MeshCollection {
 
 // meshlet class holds data for a single meshlet, contains collection of vertices and primitives (triangles).
 // vertex buffer is unchanged, all meshlet operations work on indices only
-class Meshlet {
+class MeshletOld {
 public:
-	Meshlet() {
+	MeshletOld() {
 		verticesIndices.reserve(256);
 		primitives.reserve(256);
 	}
-	Meshlet(const Meshlet&) = default;
-	Meshlet(Meshlet&&) = default;
-	Meshlet& operator=(const Meshlet&) = default;
-	Meshlet& operator=(Meshlet&&) = default;
+	MeshletOld(const MeshletOld&) = default;
+	MeshletOld(MeshletOld&&) = default;
+	MeshletOld& operator=(const MeshletOld&) = default;
+	MeshletOld& operator=(MeshletOld&&) = default;
 
 	// debug info:
     bool debugColors = false; // if true, color all triangles of this meshlet with the same color
@@ -86,10 +86,10 @@ public:
 
 	// meshletmaker: https://github.com/Senbyo/meshletmaker
 	static void applyMeshletAlgorithmGreedyVerts(
-		std::unordered_map<uint32_t, Meshlet::MeshletVertInfo>& indexVertexMap, // 117008
-		std::vector<Meshlet::MeshletVertInfo*>& vertsVector, // 117008
-		std::vector<Meshlet::MeshletTriangle*>& triangles, // 231256
-		std::vector<Meshlet>& meshlets, // 0
+		std::unordered_map<uint32_t, MeshletOld::MeshletVertInfo>& indexVertexMap, // 117008
+		std::vector<MeshletOld::MeshletVertInfo*>& vertsVector, // 117008
+		std::vector<MeshletOld::MeshletTriangle*>& triangles, // 231256
+		std::vector<MeshletOld>& meshlets, // 0
 		const std::vector<PBRShader::Vertex>& vertexBuffer, // 117008 vertices
 		uint32_t primitiveLimit, uint32_t vertexLimit // 125, 64
 	);
@@ -187,22 +187,22 @@ struct MeshletIn {
 // intermediate structures used during meshlet calculations
 // can be cleared after meshlet calculations are done
 struct MeshletIntermediate {
-	std::vector<Meshlet::MeshletTriangle>& trianglesVector; // base storage for triangles
-	std::unordered_map<uint32_t, Meshlet::MeshletVertInfo>& indexVertexMap;
-	std::vector<Meshlet::MeshletTriangle*>& triangles;
-	std::vector<Meshlet::MeshletVertInfo*>& vertsVector; // meshlet vertex info, used to store vertex indices and neighbours
+	std::vector<MeshletOld::MeshletTriangle>& trianglesVector; // base storage for triangles
+	std::unordered_map<uint32_t, MeshletOld::MeshletVertInfo>& indexVertexMap;
+	std::vector<MeshletOld::MeshletTriangle*>& triangles;
+	std::vector<MeshletOld::MeshletVertInfo*>& vertsVector; // meshlet vertex info, used to store vertex indices and neighbours
 	std::vector<uint32_t>& meshletVertexIndices; // indices into vertices
 };
 
 struct MeshletOut {
-	std::vector<Meshlet>& meshlets;
+	std::vector<MeshletOld>& meshlets;
 	// output: needed on GPU side
 	std::vector<PBRShader::PackedMeshletDesc>& outMeshletDesc;
 	std::vector<uint8_t>& outLocalIndexPrimitivesBuffer;   // local indices for primitives (3 indices per triangle)
 	std::vector<uint32_t>& outGlobalIndexBuffer; // vertex indices into vertex buffer
-	//std::vector<Meshlet::MeshletVertInfo> indexVertexMap; // 117008
-	//std::vector<Meshlet::MeshletVertInfo*> vertsVector; // 117008
-	//std::vector<Meshlet::MeshletTriangle*> triangles; // 231256
+	//std::vector<MeshletOld::MeshletVertInfo> indexVertexMap; // 117008
+	//std::vector<MeshletOld::MeshletVertInfo*> vertsVector; // 117008
+	//std::vector<MeshletOld::MeshletTriangle*> triangles; // 231256
 };
 
 struct BoundingBoxCorners {
@@ -229,11 +229,11 @@ void sortByPos(std::vector<T>& vertices) {
 	);
 }
 
-// Sort vector<Meshlet::MeshletVertInfo*> by the position in the base vertex buffer, along the given axis.
+// Sort vector<MeshletOld::MeshletVertInfo*> by the position in the base vertex buffer, along the given axis.
 template<typename T>
-void sortByPosAxis(std::vector<Meshlet::MeshletVertInfo*>& verticesMeshletInfoVector, const std::vector<T>& verticesBaseVector, Axis axis) {
+void sortByPosAxis(std::vector<MeshletOld::MeshletVertInfo*>& verticesMeshletInfoVector, const std::vector<T>& verticesBaseVector, Axis axis) {
 	std::sort(verticesMeshletInfoVector.begin(), verticesMeshletInfoVector.end(),
-		[&verticesBaseVector, axis](const Meshlet::MeshletVertInfo* lhs, const Meshlet::MeshletVertInfo* rhs) {
+		[&verticesBaseVector, axis](const MeshletOld::MeshletVertInfo* lhs, const MeshletOld::MeshletVertInfo* rhs) {
 			const glm::vec3& posL = verticesBaseVector[lhs->index].pos;
 			const glm::vec3& posR = verticesBaseVector[rhs->index].pos;
 			switch (axis) {
@@ -246,11 +246,11 @@ void sortByPosAxis(std::vector<Meshlet::MeshletVertInfo*>& verticesMeshletInfoVe
 	);
 }
 
-// Sort vector<Meshlet::MeshletVertInfo*> by the position in the base vertex buffer, along the given axis.
+// Sort vector<MeshletOld::MeshletVertInfo*> by the position in the base vertex buffer, along the given axis.
 template<typename T>
-void sortTrianglesByPosAxis(std::vector<Meshlet::MeshletTriangle*>& triangles, const std::vector<T>& verticesBaseVector, Axis axis) {
+void sortTrianglesByPosAxis(std::vector<MeshletOld::MeshletTriangle*>& triangles, const std::vector<T>& verticesBaseVector, Axis axis) {
 	std::sort(triangles.begin(), triangles.end(),
-		[&verticesBaseVector, axis](const Meshlet::MeshletTriangle* lhs, const Meshlet::MeshletTriangle* rhs) {
+		[&verticesBaseVector, axis](const MeshletOld::MeshletTriangle* lhs, const MeshletOld::MeshletTriangle* rhs) {
 			float l, r;
 			switch (axis) {
             case Axis::X: l = lhs->centroid[0]; r = rhs->centroid[0]; break;
@@ -275,8 +275,8 @@ struct MeshInfo
 	std::vector<PBRShader::Vertex> vertices;
 	std::vector<uint32_t> indices;
     std::vector<uint32_t> meshletVertexIndices; // indices into vertices, used for meshlets
-    std::vector<Meshlet> meshlets; // meshlets for this mesh, for use in MeshShader
-    std::vector<Meshlet::MeshletVertInfo*> vertsVector; // meshlet vertex info, used to store vertex indices and neighbours
+    std::vector<MeshletOld> meshlets; // meshlets for this mesh, for use in MeshShader
+    std::vector<MeshletOld::MeshletVertInfo*> vertsVector; // meshlet vertex info, used to store vertex indices and neighbours
 	// output: needed on GPU side
 	std::vector<PBRShader::PackedMeshletDesc> outMeshletDesc;
 	std::vector<uint8_t> outLocalIndexPrimitivesBuffer;   // local indices for primitives (3 indices per triangle)
@@ -408,12 +408,15 @@ public:
 	// draw object from lines using its meshlet information only
     // also servers as a debug function to visualize meshlets and to document meshlet structure
 	void debugRenderMeshlet(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 color = Colors::Red);
-	void debugRenderMeshletFromBuffers(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 color = Colors::Red);
+	// draw object from lines using its meshlet information only
+	// also servers as a debug function to visualize meshlets and to document meshlet structure
+    // if singleMeshletNum >= 0, only render this meshlet, otherwise render all meshlets
+	void debugRenderMeshletFromBuffers(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, int singleMeshletNum = -1);
 	void debugRenderMeshletFromBuffers(FrameResources& fr, glm::mat4 modelToWorld,
 		std::vector<PBRShader::PackedMeshletDesc>& meshletDesc,
 		std::vector<uint8_t>& localIndexPrimitivesBuffer,
 		std::vector<uint32_t>& globalIndexBuffer,
-		std::vector<PBRShader::Vertex>& vertices
+		std::vector<PBRShader::Vertex>& vertices, int singleMeshletNum
 	);
     void logMeshletStats(MeshInfo* mesh);
 
