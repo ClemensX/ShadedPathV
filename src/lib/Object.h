@@ -36,6 +36,105 @@ public:
 	}
 };
 
+// store vertex relashionships for the whole mesh
+struct GlobalMeshletVertex {
+    uint32_t globalIndex; // index into global vertex buffer
+	std::vector<uint32_t> neighbourVertices; // global indices of neighbouring vertices
+	std::vector<uint32_t> neighbourTriangles; // neighbour triangles, using indices of intermediate triangle vector
+	bool usedInTriangle = false; // true if this vertex is used in any triangle
+	bool hasNeighbourTriangle(uint32_t index) const {
+		return std::find(neighbourTriangles.begin(), neighbourTriangles.end(), index) != neighbourTriangles.end();
+	}
+};
+
+// store triangle relashionships for the whole mesh
+struct GlobalMeshletTriangle {
+	uint32_t indices[3]; // indices into global vertex buffer
+	std::vector<uint32_t> neighbours; // global indices of neighbouring triangles
+	bool usedInMeshlet = false; // true if this triangle is used in any meshlet
+	bool hasNeighbourTriangle(uint32_t index) const {
+		return std::find(neighbours.begin(), neighbours.end(), index) != neighbours.end();
+    }
+	bool hasVertex(uint32_t index) const {
+		return std::find(std::begin(indices), std::end(indices), index) != std::end(indices);
+    }
+};
+
+// forward declaration
+// MeshletsForMesh is a collection of meshlets for a single mesh
+class MeshletsForMesh;
+
+// single meshlet, contains vertices and triangles
+class Meshlet {
+public:
+	Meshlet(MeshletsForMesh* parentPtr, uint32_t maxVertexSize, uint32_t maxPrimitiveSize)
+        : parent(parentPtr), maxVertexSize(maxVertexSize), maxPrimitiveSize(maxPrimitiveSize) {
+    }
+
+    MeshletsForMesh* parent; // pointer to parent mesh, used to access global data
+    uint32_t maxVertexSize; // maximum number of vertices in this meshlet
+    uint32_t maxPrimitiveSize; // maximum number of primitives (triangles) in this meshlet
+
+	std::vector<GlobalMeshletTriangle*> triangles; // global triangles, used to store triangle indices and neighbours
+	std::vector<GlobalMeshletVertex*> vertices; // global vertices, used to store vertex indices and neighbours
+
+    // check if meshlet can hold one more triangle
+	bool canInsertTriangle(const GlobalMeshletTriangle& triangle, uint32_t maxVertexSize, uint32_t maxPrimitiveSize) const;
+
+	// insert triangle into meshlet, fitting checks must be done before calling this
+	void insertTriangle(GlobalMeshletTriangle& triangle);
+};
+	
+// input for meshlet calculations, basically the raw data from glTF:
+struct MeshletIn2 {
+	const std::vector<PBRShader::Vertex>& vertices;
+	const std::vector<uint32_t>& indices;
+	const uint32_t primitiveLimit; // usually 126
+	const uint32_t vertexLimit; // usually 64
+};
+
+// intermediate structures used during meshlet calculations
+// can be cleared after meshlet calculations are done
+struct MeshletIntermediate2 {
+	//std::vector<MeshletOld::MeshletTriangle>& trianglesVector; // base storage for triangles
+	//std::unordered_map<uint32_t, MeshletOld::MeshletVertInfo>& indexVertexMap;
+	//std::vector<MeshletOld::MeshletTriangle*>& triangles;
+	//std::vector<MeshletOld::MeshletVertInfo*>& vertsVector; // meshlet vertex info, used to store vertex indices and neighbours
+	//std::vector<uint32_t>& meshletVertexIndices; // indices into vertices
+};
+
+struct MeshletOut2 {
+	std::vector<Meshlet>& meshlets;
+	// output: needed on GPU side
+	std::vector<PBRShader::PackedMeshletDesc>& outMeshletDesc;
+	std::vector<uint8_t>& outLocalIndexPrimitivesBuffer;   // local indices for primitives (3 indices per triangle)
+	std::vector<uint32_t>& outGlobalIndexBuffer; // vertex indices into vertex buffer
+	//std::vector<MeshletOld::MeshletVertInfo> indexVertexMap; // 117008
+	//std::vector<MeshletOld::MeshletVertInfo*> vertsVector; // 117008
+	//std::vector<MeshletOld::MeshletTriangle*> triangles; // 231256
+};
+
+// store meshlets for a single mesh
+class MeshletsForMesh {
+public:
+	// intermediate data for meshlet calculations:
+    std::vector<GlobalMeshletTriangle> globalTriangles; // global triangles, used to store triangle indices and neighbours
+    std::vector<GlobalMeshletVertex> globalVertices; // global vertices, used to store vertex indices and neighbours
+    std::unordered_map<uint32_t, GlobalMeshletTriangle*> indexVertexMap; // map of global vertex indices to triangle  info
+
+	// output data:
+	std::vector<Meshlet> meshlets;
+	// output: needed on GPU side
+	std::vector<PBRShader::PackedMeshletDesc> outMeshletDesc;
+	std::vector<uint8_t> outLocalIndexPrimitivesBuffer;   // local indices for primitives (3 indices per triangle)
+	std::vector<uint32_t> outGlobalIndexBuffer; // vertex indices into vertex buffer
+
+	void calculateTrianglesAndNeighbours(MeshletIn2& in);
+    void verifyAdjacency(const MeshletIn2& in, bool runO2BigTest = false) const;
+	// iterate through index buffer and place a fixed number of triangles into meshlets
+	void applyMeshletAlgorithmSimple(MeshletIn2& in, MeshletOut2& out);
+};
+
 // all meshes loaded from one gltf file. Textures are maintained here, meshes are contained
 struct MeshCollection {
         std::string id;
@@ -274,6 +373,9 @@ struct MeshInfo
 	// gltf data: valid after object load, should be cleared after upload
 	std::vector<PBRShader::Vertex> vertices;
 	std::vector<uint32_t> indices;
+
+    MeshletsForMesh meshletsForMesh; // meshlets for this mesh, for use in MeshShader
+
     std::vector<uint32_t> meshletVertexIndices; // indices into vertices, used for meshlets
     std::vector<MeshletOld> meshlets; // meshlets for this mesh, for use in MeshShader
     std::vector<MeshletOld::MeshletVertInfo*> vertsVector; // meshlet vertex info, used to store vertex indices and neighbours
