@@ -39,7 +39,7 @@ public:
 // store vertex relashionships for the whole mesh
 struct GlobalMeshletVertex {
     uint32_t globalIndex; // index into global vertex buffer
-	std::vector<uint32_t> neighbourVertices; // global indices of neighbouring vertices
+	//std::vector<uint32_t> neighbourVertices; // global indices of neighbouring vertices
 	std::vector<uint32_t> neighbourTriangles; // neighbour triangles, using indices of intermediate triangle vector
 	bool usedInTriangle = false; // true if this vertex is used in any triangle
 	bool hasNeighbourTriangle(uint32_t index) const {
@@ -67,19 +67,19 @@ class MeshletsForMesh;
 // single meshlet, contains vertices and triangles
 class Meshlet {
 public:
-	Meshlet(MeshletsForMesh* parentPtr, uint32_t maxVertexSize, uint32_t maxPrimitiveSize)
-        : parent(parentPtr), maxVertexSize(maxVertexSize), maxPrimitiveSize(maxPrimitiveSize) {
+	Meshlet(MeshletsForMesh* parentPtr, uint32_t maxPrimitiveSize, uint32_t maxVertexSize)
+        : parent(parentPtr), maxPrimitiveSize(maxPrimitiveSize), maxVertexSize(maxVertexSize) {
     }
 
     MeshletsForMesh* parent; // pointer to parent mesh, used to access global data
-    uint32_t maxVertexSize; // maximum number of vertices in this meshlet
     uint32_t maxPrimitiveSize; // maximum number of primitives (triangles) in this meshlet
+	uint32_t maxVertexSize; // maximum number of vertices in this meshlet
 
 	std::vector<GlobalMeshletTriangle*> triangles; // global triangles, used to store triangle indices and neighbours
 	std::vector<GlobalMeshletVertex*> vertices; // global vertices, used to store vertex indices and neighbours
 
     // check if meshlet can hold one more triangle
-	bool canInsertTriangle(const GlobalMeshletTriangle& triangle, uint32_t maxVertexSize, uint32_t maxPrimitiveSize) const;
+	bool canInsertTriangle(const GlobalMeshletTriangle& triangle) const;
 
 	// insert triangle into meshlet, fitting checks must be done before calling this
 	void insertTriangle(GlobalMeshletTriangle& triangle);
@@ -133,6 +133,7 @@ public:
     void verifyAdjacency(const MeshletIn2& in, bool runO2BigTest = false) const;
 	// iterate through index buffer and place a fixed number of triangles into meshlets
 	void applyMeshletAlgorithmSimple(MeshletIn2& in, MeshletOut2& out);
+	void fillMeshletOutputBuffers(MeshletIn2& in, MeshletOut2& out);
 };
 
 // all meshes loaded from one gltf file. Textures are maintained here, meshes are contained

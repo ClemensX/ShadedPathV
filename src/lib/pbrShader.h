@@ -45,7 +45,25 @@ public:
 				weight0 == other.weight0 &&
 				color == other.color;
 		}
-    };
+		Vertex(
+			const glm::vec3& pos,
+			const glm::vec3& normal,
+			const glm::vec2& uv0,
+			const glm::vec2& uv1 = glm::vec2(0.0f),
+			const glm::uvec4& joint0 = glm::uvec4(0),
+			const glm::vec4& weight0 = glm::vec4(0.0f),
+			const glm::vec4& color = glm::vec4(1.0f)
+		)
+			: pos(pos), pad0(0.0f),
+			normal(normal), pad1(0.0f),
+			uv0(uv0), uv1(uv1),
+			joint0(joint0), weight0(weight0), color(color)
+		{
+		}
+		Vertex()
+		{
+		}
+	};
 
 	struct shaderValuesParams {
 		glm::vec4 lightDir;

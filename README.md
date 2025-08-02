@@ -360,14 +360,17 @@ Use Khronos OpenXR sdk directly for VS 2022:
 ## TODO Major Steps
 Current main topics we are working on:
 
-- [ ] Rework engine thread and app model
+- [x] Rework engine thread and app model
 - [ ] Finish Incoming Demo
-- [ ] PBR Shader
+- [x] PBR Shader
+- [ ] use Meshlets for PBR shader
 - [ ] Animation
 
 ## TODO List
 Things finished and things to do. Both very small and very large things, just as they come to my mind. 
 
+- [ ] rework singleThreadMode, numCores, numWorkerThreads
+- [ ] engine.setSingleThreadMode(true) stopped working since new thread model. Check FrameResources and framesInFlight
 - [x] Rework engine to allow multiple instances (remove static fields, apply manager pattern)
 - [x] rework FP object placement relative to cam (gun stuttering in *incoming* demo)
 - [x] Rest of PBR stages

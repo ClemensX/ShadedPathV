@@ -556,9 +556,6 @@ void MeshletsForMesh::verifyAdjacency(const MeshletIn2& in, bool runO2BigTest) c
     // check that all vertices are covered by neighbours:
 	for (int i = 0; i < globalVertices.size(); i++) {
 		const auto& v = globalVertices[i];
-		if (v.neighbourVertices.size() == 0) {
-			Log("ERROR: verifyAdjacency: Vertex " << i << " has no neighbour vertices." << std::endl);
-		}
 		if (v.neighbourTriangles.size() == 0) {
 			Log("ERROR: verifyAdjacency: Vertex " << i << " has no neighbour triangles." << std::endl);
 		}
@@ -567,10 +564,13 @@ void MeshletsForMesh::verifyAdjacency(const MeshletIn2& in, bool runO2BigTest) c
 
 void MeshletsForMesh::calculateTrianglesAndNeighbours(MeshletIn2& in)
 {
-	// create triangles,
-	// create vertices with their neighbours. Only vertices outside the triangle are considered neighbours
+	// Neighbour relation:
+    // vertices: all trianges that use this vertex are stored in neighbourTriangles
+    // triangles: all triangles that have at least one vertex in common with this triangle are stored in neighbourTriangles
 	globalTriangles.resize(in.indices.size() / 3);
 	globalVertices.resize(in.vertices.size());
+	// create triangle list and
+	// add all triangles a vertex belongs to to the vertex neighbours
 	for (uint32_t i = 0; i < globalTriangles.size(); i++) {
         GlobalMeshletTriangle* t = &globalTriangles[i];
 		for (uint32_t j = 0; j < 3; j++) {
@@ -591,17 +591,17 @@ void MeshletsForMesh::calculateTrianglesAndNeighbours(MeshletIn2& in)
         }
     }
 	Log("triangles created: " << globalTriangles.size() << endl);
-	// now for the vertices: all vertices of neighbour triangles are neighbour vertices! (except the vertex itself)
-	for (uint32_t i = 0; i < globalVertices.size(); i++) {
-		auto& v = globalVertices[i];
-		for (uint32_t j = 0; j < v.neighbourTriangles.size(); j++) {
-			// for each triangle that has this vertex, add the other two vertices to the neighbour list
-			uint32_t triangleIndex = v.neighbourTriangles[j];
-			const GlobalMeshletTriangle& t = globalTriangles[triangleIndex];
-			for (uint32_t k = 0; k < 3; k++) {
-				if (t.indices[k] != i) { // do not add the vertex itself
-					v.neighbourVertices.push_back(t.indices[k]);
-				}
+    // now for the triangles: go through all vertices of each triangle and add all their neighbours to triangle neighbour list
+	for (uint32_t tri_index = 0; tri_index < globalTriangles.size(); tri_index++) {
+		auto& tri = globalTriangles[tri_index];
+		for (uint32_t j = 0; j < 3; j++) {
+            auto& v = globalVertices[tri.indices[j]];
+			for (auto& neighbourTriangleIndex : v.neighbourTriangles) {
+                if (neighbourTriangleIndex == tri_index) continue; // do not add self as neighbour
+				if (!tri.hasNeighbourTriangle(neighbourTriangleIndex)) {
+					// add triangle to neighbourTriangles of this triangle
+					tri.neighbours.push_back(neighbourTriangleIndex);
+                }
 			}
         }
 	}
@@ -624,6 +624,60 @@ void MeshletsForMesh::applyMeshletAlgorithmSimple(MeshletIn2& in, MeshletOut2& o
 			triPos++;
 		}
 		out.meshlets.push_back(m);
+	}
+}
+
+void MeshletsForMesh::fillMeshletOutputBuffers(MeshletIn2& in, MeshletOut2& out)
+{
+	// first, we count how many indices we need for the meshlets:
+	uint32_t totalIndices = 0;
+	for (auto& m : out.meshlets) {
+		assert(m.vertices.size() <= in.vertexLimit); // we limit the number of vertices per meshlet to 256
+		//Log("MeshletOld " << " has " << m.verticesIndices.size() << " vertices and " << m.primitives.size() << " primitives." << endl);
+		// we need to align global and local index buffers, so we just use the bigger size of them.
+		// local index buffer size has to be multiplied by 3 to make room for 3 indices per triangle
+		uint32_t additionalIndices = m.vertices.size() < m.triangles.size() ? m.triangles.size() : m.vertices.size();
+		totalIndices += additionalIndices;
+	}
+	//Log("Total indices needed for meshlets: " << totalIndices << endl);
+	// create meshlet descriptor buffer and global index buffer and local index buffer
+
+	// DEBUG remove all but first element of mesh->meshlets
+	// Remove all but the n-th element of mesh->meshlets
+	//int n = 500;
+	//if (mesh->meshlets.size() > 1 && n < mesh->meshlets.size()) {
+	//	auto keep = mesh->meshlets[n];
+	//	mesh->meshlets.clear();
+	//	mesh->meshlets.push_back(keep);
+	//}
+	out.outMeshletDesc.resize(out.meshlets.size());
+	out.outGlobalIndexBuffer.resize(totalIndices);
+	out.outLocalIndexPrimitivesBuffer.resize(totalIndices * 3);
+	uint32_t indexBufferOffset = 0;
+	for (size_t i = 0; i < out.meshlets.size(); ++i) {
+		auto& m = out.meshlets[i];
+		uint8_t vp = 0; // default rendering mode
+		if (true/*m.debugColors*/) {
+			vp = 0x01; // use debug colors
+		}
+		PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x123456789ABC, m.vertices.size(), m.triangles.size(), vp, indexBufferOffset, 0xABCDEF);
+		out.outMeshletDesc[i] = packed;
+		// fill global index buffers:
+		for (size_t j = 0; j < m.vertices.size(); ++j) {
+			assert(j < 256);
+			out.outGlobalIndexBuffer[indexBufferOffset + j] = m.vertices[j]->globalIndex;
+			//mesh->outLocalIndexPrimitivesBuffer[indexBufferOffset + j] = j; // local index is just the index in the meshlet
+		}
+		// fill local primitives index buffers:
+		for (size_t j = 0; j < m.triangles.size(); ++j) {
+			assert(j < 256);
+			auto& triangle = m.triangles[j];
+			out.outLocalIndexPrimitivesBuffer[(indexBufferOffset + j) * 3] = triangle->indices[0];
+			out.outLocalIndexPrimitivesBuffer[(indexBufferOffset + j) * 3 + 1] = triangle->indices[1];
+			out.outLocalIndexPrimitivesBuffer[(indexBufferOffset + j) * 3 + 2] = triangle->indices[2];
+		}
+		uint32_t additionalIndices = m.vertices.size() < m.triangles.size() ? m.triangles.size() : m.vertices.size();
+		indexBufferOffset += additionalIndices;
 	}
 }
 
@@ -771,6 +825,8 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32
 	MeshletOut2 out2{ mesh->meshletsForMesh.meshlets, mesh->outMeshletDesc, mesh->outLocalIndexPrimitivesBuffer, mesh->outGlobalIndexBuffer };
 	mesh->meshletsForMesh.calculateTrianglesAndNeighbours(in2);
 	mesh->meshletsForMesh.applyMeshletAlgorithmSimple(in2, out2);
+	mesh->meshletsForMesh.fillMeshletOutputBuffers(in2, out2);
+	return;
 
 	// old impl
 	MeshletIn in { mesh->vertices, mesh->indices, primitiveLimit, vertexLimit };
@@ -1735,7 +1791,7 @@ void MeshStore::debugRenderMeshletFromBuffers(
 	lineShader.addOneTime(addLines, fr);
 }
 
-bool Meshlet::canInsertTriangle(const GlobalMeshletTriangle& triangle, uint32_t maxVertexSize, uint32_t maxPrimitiveSize) const {
+bool Meshlet::canInsertTriangle(const GlobalMeshletTriangle& triangle) const {
 
 	// check if any of the incoming three vertices are already in meshlet:
 	uint32_t found = 0;
@@ -1746,7 +1802,7 @@ bool Meshlet::canInsertTriangle(const GlobalMeshletTriangle& triangle, uint32_t 
 			}
 		}
 	}
-	bool ret = (vertices.size() + 3 - found) > maxVertexSize || (triangles.size() + 1) > maxPrimitiveSize;
+	bool ret = (vertices.size() + 3 - found) <= maxVertexSize && (triangles.size() + 1) <= maxPrimitiveSize;
 	if (ret) {
 		assert(vertices.size() <= maxVertexSize);
 		assert(triangles.size() <= maxPrimitiveSize);

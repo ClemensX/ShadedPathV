@@ -231,64 +231,97 @@ TEST_F(EngineTest, Headless) {
 
 TEST_F(EngineTest, DumpTexture) {
     {
-        //ShadedPathEngineManager man;
-        //static ShadedPathEngine* engine = man.createEngine();
-        //class TestApp : ShadedPathApplication
-        //{
-        //public:
-        //    void drawFrame(ThreadResources& tr) override {
-        //        engine->shaders.submitFrame(tr);
-        //    };
-        //    void handleInput(InputState& inputState) override {
-        //    };
-        //};
-        //TestApp testApp;
-        //ShaderState shaderState;
-        //engine->files.findAssetFolder("data");
-        //engine->setFrameCountLimit(10);
-        //engine->setBackBufferResolution(ShadedPathEngine::Resolution::Small);
-        //engine->setFramesInFlight(2);
-        //engine->setThreadModeSingle();
-        //engine->registerApp((ShadedPathApplication*)&testApp);
-        //engine->init("Test");
-        //engine->textureStore.generateBRDFLUT();
-        //engine->textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
-        //unsigned int texIndexHeightmap = engine->textureStore.getTexture("heightmap")->index;
-        //engine->shaders.addShader(engine->shaders.simpleShader);
-        //engine->shaders.initActiveShaders();
+        ShadedPathEngine my_engine;
+        static ShadedPathEngine* engine = &my_engine;
+        class TestApp : ShadedPathApplication
+        {
+        public:
+            void prepareFrame(FrameResources* fi) override {
+                Log("prepareFrame " << fi->frameNum << endl);
+                if (fi->frameNum >= 10) {
+                    shouldStopEngine = true;
+                }
+                lastFrameNum = fi->frameNum;
+            };
+            void drawFrame(FrameResources* fi, int topic, DrawResult* drawResult) override {
+                Log("drawFrame " << fi->frameNum << endl);
+                directImage.rendered = false;
+                engine->util.writeRawImageTestData(directImage, 0);
+                directImage.rendered = true;
+                fi->renderedImage = &directImage;
+            };
+            void run(ContinuationInfo* cont) override {
+                Log("TestApp started\n");
+                Log(" run thread: ");
+                engine->log_current_thread();
+                di.setEngine(engine);
+                gpui = engine->createImage("Test Image");
+                engine->globalRendering.createDumpImage(directImage);
+                di.openForCPUWriteAccess(gpui, &directImage);
 
-        //engine->prepareDrawing();
-        //engine->drawFrame();
+                // init app
+                engine->shaders.addShader(engine->shaders.simpleShader);
+                engine->shaders.initActiveShaders();
+                engine->textureStore.generateBRDFLUT();
+                engine->textureStore.loadTexture("height.ktx2", "heightmap", TextureType::TEXTURE_TYPE_HEIGHT, TextureFlags::KEEP_DATA_BUFFER);
+                unsigned int texIndexHeightmap = engine->textureStore.getTexture("heightmap")->index;
+
+                engine->eventLoop();
+
+                // cleanup
+                di.closeCPUWriteAccess(gpui, &directImage);
+                engine->globalRendering.destroyImage(&directImage);
+
+            };
+            void handleInput(InputState& inputState) override {
+            };
+            bool shouldClose() override {
+                return shouldStopEngine;
+            }
+            long lastFrameNum = 0;
+        private:
+            bool shouldStopEngine = false;
+            DirectImage di;
+            GPUImage* gpui = nullptr;
+            GPUImage directImage;
+        };
+        TestApp testApp;
+        ShaderState shaderState;
+        // engine initialization
+        engine->files.findAssetFolder("data");
+        //engine->setFrameCountLimit(10);
+        engine->overrideCPUCores(4);
+        //engine->setSingleThreadMode(true);
+        engine->registerApp((ShadedPathApplication*)&testApp);
+        engine->initGlobal();
+        engine->app->run();
     }
     Log("Test end. (Should appear after destructor log)\n");
 }
 
 TEST_F(EngineTest, Alignment) {
     {
-        //ShadedPathEngineManager man;
-        //ShadedPathEngine* engine = man.createEngine();
-        //engine->setFrameCountLimit(10);
-        //engine->setBackBufferResolution(ShadedPathEngine::Resolution::Small);
-        ////engine->enablePresentation(800, (int)(800 / 1.77f), "Vulkan Simple App");
-        //engine->setFramesInFlight(2);
-        //engine->setThreadModeSingle();
+        ShadedPathEngine my_engine;
+        static ShadedPathEngine* engine = &my_engine;
+        engine->setBackBufferResolution(ShadedPathEngine::Resolution::Small);
+        //engine->enablePresentation(800, (int)(800 / 1.77f), "Vulkan Simple App");
+        engine->setSingleThreadMode(true);
+        // engine initialization
+        engine->initGlobal();
 
-        //// engine initialization
-        //engine->init("Test");
-
-        //// test alignment method:
-        //EXPECT_EQ(64, engine->global.calcConstantBufferSize(1));
-        //EXPECT_EQ(64, engine->global.calcConstantBufferSize(2));
-        //EXPECT_EQ(256, engine->global.calcConstantBufferSize(255));
-        //EXPECT_EQ(256, engine->global.calcConstantBufferSize(256));
-        //EXPECT_EQ(320, engine->global.calcConstantBufferSize(257));
-        //// 120*64 == 7680
-        //EXPECT_EQ(7424, engine->global.calcConstantBufferSize(7423));
-        //EXPECT_EQ(7680, engine->global.calcConstantBufferSize(7679));
-        //EXPECT_EQ(7680, engine->global.calcConstantBufferSize(7680));
-        //EXPECT_EQ(7744, engine->global.calcConstantBufferSize(7681));
-        //EXPECT_EQ(7808, engine->global.calcConstantBufferSize(7781));
-        //EXPECT_EQ(7936, engine->global.calcConstantBufferSize(7881));
+        // test alignment method:
+        EXPECT_EQ(64, engine ->globalRendering.calcConstantBufferSize(1));
+        EXPECT_EQ(64, engine ->globalRendering.calcConstantBufferSize(2));
+        EXPECT_EQ(256, engine->globalRendering.calcConstantBufferSize(255));
+        EXPECT_EQ(256, engine->globalRendering.calcConstantBufferSize(256));
+        EXPECT_EQ(320, engine->globalRendering.calcConstantBufferSize(257));
+        // 120*64 == 7680
+        EXPECT_EQ(7424, engine->globalRendering.calcConstantBufferSize(7423));
+        EXPECT_EQ(7680, engine->globalRendering.calcConstantBufferSize(7679));
+        EXPECT_EQ(7680, engine->globalRendering.calcConstantBufferSize(7680));
+        EXPECT_EQ(7744, engine->globalRendering.calcConstantBufferSize(7681));
+        EXPECT_EQ(7808, engine->globalRendering.calcConstantBufferSize(7781));
+        EXPECT_EQ(7936, engine->globalRendering.calcConstantBufferSize(7881));
     }
     Log("Test end. (Should appear after destructor log)\n");
 }
@@ -511,6 +544,98 @@ TEST(CommandBufferIterator, Count) {
     fi.drawResults.pop_back(); // remove dr1
 
     // multiple draw results
+}
+
+TEST(Meshlets, BasicValidity) {
+    // define a cube with 8 vertices and 12 triangles
+    MeshletsForMesh meshlets;
+    // create 8 vertices
+    std::vector<PBRShader::Vertex> vertices = {
+        {glm::vec3(-1, -1, -1), glm::vec3(0, 0, -1), glm::vec2(0, 0)},
+        {glm::vec3(1, -1, -1),  glm::vec3(0, 0, -1), glm::vec2(1, 0)},
+        {glm::vec3(1, 1, -1),   glm::vec3(0, 0, -1), glm::vec2(1, 1)},
+        {glm::vec3(-1, 1, -1),  glm::vec3(0, 0, -1), glm::vec2(0, 1)},
+        {glm::vec3(-1, -1, 1),  glm::vec3(0, 0, 1),  glm::vec2(0, 0)},
+        {glm::vec3(1, -1, 1),   glm::vec3(0, 0, 1),  glm::vec2(1, 0)},
+        {glm::vec3(1, 1, 1),    glm::vec3(0, 0, 1),  glm::vec2(1, 1)},
+        {glm::vec3(-1, 1, 1),   glm::vec3(0, 0, 1),  glm::vec2(0, 1)}
+    };
+    // create 12 triangles from the vertices as a vector of indices, each triangle defined by 3 vertex indices
+    std::vector<uint32_t> indices = {
+        0, 1, 2, 0, 2, 3, // back face
+        4, 5, 6, 4, 6, 7, // front face
+        0, 1, 5, 0, 5, 4, // bottom face
+        1, 2, 6, 1, 6, 5, // right face
+        2, 3, 7, 2, 7, 6, // top face
+        3, 0, 4, 3, 4, 7 // left face
+    };
+    {
+        MeshletIn2 in{ vertices, indices, 126, 7 };
+        //MeshletOut2 out2{ mesh->meshletsForMesh.meshlets, mesh->outMeshletDesc, mesh->outLocalIndexPrimitivesBuffer, mesh->outGlobalIndexBuffer };
+        meshlets.calculateTrianglesAndNeighbours(in);
+        // test neighbour relations:
+        GlobalMeshletVertex v0 = meshlets.globalVertices[0];
+        GlobalMeshletTriangle t0 = meshlets.globalTriangles[0];
+        // v0 should have these neighbour triangles: 0, 1, 4, 5, 10
+        EXPECT_TRUE(v0.hasNeighbourTriangle(0));
+        EXPECT_TRUE(v0.hasNeighbourTriangle(1));
+        EXPECT_TRUE(v0.hasNeighbourTriangle(4));
+        EXPECT_TRUE(v0.hasNeighbourTriangle(5));
+        EXPECT_TRUE(v0.hasNeighbourTriangle(10));
+        EXPECT_FALSE(v0.hasNeighbourTriangle(2));
+        EXPECT_FALSE(v0.hasNeighbourTriangle(3));
+        EXPECT_FALSE(v0.hasNeighbourTriangle(11));
+
+        EXPECT_FALSE(t0.hasNeighbourTriangle(0)); // triangle does not have itself as neighbour
+        // t0 should have these neighbour triangles: 1, 4, 5, 6, 7, 8, 9, 10
+        EXPECT_TRUE(t0.hasNeighbourTriangle(1));
+        EXPECT_TRUE(t0.hasNeighbourTriangle(4));
+        EXPECT_TRUE(t0.hasNeighbourTriangle(5));
+        EXPECT_TRUE(t0.hasNeighbourTriangle(6));
+        EXPECT_TRUE(t0.hasNeighbourTriangle(7));
+        EXPECT_TRUE(t0.hasNeighbourTriangle(8));
+        EXPECT_TRUE(t0.hasNeighbourTriangle(9));
+        EXPECT_TRUE(t0.hasNeighbourTriangle(10));
+        EXPECT_FALSE(t0.hasNeighbourTriangle(2));
+        EXPECT_FALSE(t0.hasNeighbourTriangle(3));
+        EXPECT_FALSE(t0.hasNeighbourTriangle(11));
+
+        //mesh->meshletsForMesh.applyMeshletAlgorithmSimple(in2, out2);
+
+        // create 12 triangles for checking
+        std::vector<GlobalMeshletTriangle> chkTriangles = {
+            {0, 1, 2}, {0, 2, 3}, // back face
+            {4, 5, 6}, {4, 6, 7}, // front face
+            {0, 1, 5}, {0, 5, 4}, // bottom face
+            {1, 2, 6}, {1, 6, 5}, // right face
+            {2, 3, 7}, {2, 7, 6}, // top face
+            {3, 0, 4}, {3, 4, 7}  // left face
+        };
+        EXPECT_EQ(12, meshlets.globalTriangles.size());
+        for (size_t i = 0; i < chkTriangles.size(); ++i) {
+            const auto& triangle = meshlets.globalTriangles[i];
+            const auto& chkTriangle = chkTriangles[i];
+            EXPECT_EQ(chkTriangle.indices[0], triangle.indices[0]);
+            EXPECT_EQ(chkTriangle.indices[1], triangle.indices[1]);
+            EXPECT_EQ(chkTriangle.indices[2], triangle.indices[2]);
+            // check that all triangles are used in meshlet
+            //EXPECT_TRUE(triangle.usedInMeshlet);
+        }
+
+        // test a single meshlet:
+        Meshlet m(&meshlets, in.primitiveLimit, in.vertexLimit);
+        EXPECT_EQ(0, m.triangles.size());
+        // insert 3 triangles - should fit and fill vertex count
+        for (size_t i = 0; i < 3; ++i) {
+            EXPECT_TRUE(m.canInsertTriangle(meshlets.globalTriangles[i]));
+            m.insertTriangle(meshlets.globalTriangles[i]);
+            EXPECT_EQ(i + 1, m.triangles.size());
+        }
+        // the first 3 triangles should use 7 vertices:
+        EXPECT_EQ(7, m.vertices.size());
+        // another triangle should not fit, as it would exceed vertex limit
+        EXPECT_FALSE(m.canInsertTriangle(meshlets.globalTriangles[3]));
+    }
 }
 
 int main(int argc, char** argv) {
