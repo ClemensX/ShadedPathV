@@ -153,7 +153,7 @@ void main() {
 	outUV0 = inUV0;
 	outUV1 = inUV1;
     //debugPrintfEXT("loc.w %f\n", locPos.w);
-    if ((model_ubo.flags & 0x1) != 0) { // if model_ubo.flags & MODEL_FLAG_PRELIGHT_VERTICES
+    if ((model_ubo.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) { // if model_ubo.flags & MODEL_FLAG_PRELIGHT_VERTICES
     // bit 0 is set
         gl_Position = vec4(0.0, 0.0, 0.0, 0.0); // W=0, will be clipped
     } else {

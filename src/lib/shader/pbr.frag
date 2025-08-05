@@ -255,7 +255,7 @@ void main() {
     //if (occlusionIndex == -1) { // just a test :-)
     //    baseIndex = 0;
     //}
-    if (model_ubo.mode == 1) {
+	if ((model_ubo.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) {
 		outColor = inColor0;
         return;
 	} 

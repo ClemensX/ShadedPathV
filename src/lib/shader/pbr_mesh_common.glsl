@@ -87,6 +87,9 @@ struct BoundingBox {
 
 #define MAX_NUM_JOINTS 128
 
+const uint MODEL_RENDER_FLAG_NONE              = 0u;
+const uint MODEL_RENDER_FLAG_USE_VERTEX_COLORS = 1u << 0; // 0b0001
+const uint MODEL_RENDER_FLAG_DISABLE           = 1u << 1; // 0b0010
 // info for this model instance
 // see 	struct PBRTextureIndexes and struct DynamicModelUBO in pbrShader.h
 // one element of the large object material buffer (descriptor updated for each model group before rendering)
@@ -94,9 +97,9 @@ layout (binding = 1) uniform UboInstance {
     mat4 model; 
     mat4 jointMatrix[MAX_NUM_JOINTS];
     uint jointcount;
-    uint flags;
+    uint flags; // see flag definitions above
     uint meshletsCount;
-	uint mode; // object render mode: 1 == use vertex color only, 0 == regular BPR rendering
+	uint pad0; // object render mode: 1 == use vertex color only, 0 == regular BPR rendering
     PBRTextureIndexes indexes;
     UBOParams params;
     ShaderMaterial material;

@@ -589,7 +589,7 @@ public:
 	// no longer used - see Sound.h //int soundListIndex;  // index into audibleWorldObjects, used to get the 3d sound settings for this object, see Sound.h
 
 	bool enableDebugGraphics;
-    bool enabled = true;
+    bool enabled = true; // purely for application code, actual rendering is controlled by PBRShader::DynamicModelUBO.per_frame_flags
 	UINT objectNum; // must be unique for all objects
     void addVerticesToLineList(std::vector<LineDef>& lines, glm::vec3 offset, float sizeFactor = 1.0f);
     int userGroupId = 0; // user defined group id, used to group objects for specific purposes and easily differentiate them in user code

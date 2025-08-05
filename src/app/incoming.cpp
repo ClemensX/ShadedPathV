@@ -277,8 +277,7 @@ void Incoming::prepareFrame(FrameResources* fr)
 
         } else {
             if (!wo->enabled) {
-                // TODO OUCH! this is a hack to disable object rendering (means not seeing them)
-                wo->pos().y = -30000.0f;
+                buf->disableRendering();
             }
             // all other objects
             auto pos = wo->pos();

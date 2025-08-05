@@ -90,6 +90,10 @@ void check_inputs() {
 	//debugPrintfEXT("task coord sets base %d normal %d occlusion %d\n", u0, u1, u2);
     //debugPrintfEXT("task coord base %f %f %f %f spec %f %f %f %f\n", material.baseColorFactor.x, material.baseColorFactor.y, material.baseColorFactor.z, material.baseColorFactor.w, material.specularFactor.x, material.specularFactor.y, material.specularFactor.z, material.specularFactor.w);
     //debugPrintfEXT("task shader material workflow %f base set %d\n", material.workflow, material.baseColorTextureSet);
+
+    uint flags = model_ubo.flags;
+    bool isRenderingDisabled = (flags & MODEL_RENDER_FLAG_DISABLE) != 0;
+	debugPrintfEXT("TASH SHADER: rendering disabled %d\n", isRenderingDisabled);
 }
 
 /*
@@ -103,6 +107,11 @@ void check_inputs() {
 */
 void main() {
     check_inputs();
+    bool isRenderingDisabled = (model_ubo.flags & MODEL_RENDER_FLAG_DISABLE) != 0;
+    if (isRenderingDisabled) {
+        //debugPrintfEXT("WARNING: RENDERING DISABLED for this object\n");
+        return;
+    }
 
     mat4 model = model_ubo.model;
     mat4 view = ubo.view;

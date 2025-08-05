@@ -129,18 +129,26 @@ public:
 		uint32_t pad1;
 		TexCoordSets texCoordSets;
 	};
-    // the dynamic uniform buffer is peramnently mapped to CPU memory for fast updates
+    // define per frame flags - should be set by app code in prepareFrame()
+    static const unsigned int MODEL_RENDER_FLAG_NONE = 0; // default, does not really need to be set, means regular PBR rendering
+    static const unsigned int MODEL_RENDER_FLAG_USE_VERTEX_COLORS = 1; // use vertex colors only, no textures
+    static const unsigned int MODEL_RENDER_FLAG_DISABLE = 2; // disable rendering of this object for this frame
+	// the dynamic uniform buffer is peramnently mapped to CPU memory for fast updates
 	struct alignas(16) DynamicModelUBO {
 		glm::mat4 model; // 16-byte aligned
 		glm::mat4 jointMatrix[MAX_NUM_JOINTS]; // 16-byte aligned
 		uint32_t jointcount; // 4-byte aligned
-		uint32_t flags = 0; // 4-byte aligned
+        uint32_t flags = 0; // 4-byte aligned, see definitions above
 		uint32_t meshletsCount = 0; // 4-byte aligned
-		uint32_t mode; // 4 bytes mode: 1 == use vertex color only, 0 == regular BPR rendering
+		uint32_t pad0; // 4 bytes mode: 1 == use vertex color only, 0 == regular BPR rendering
 		PBRTextureIndexes indexes; // 4-byte aligned
         shaderValuesParams params; // 16-byte aligned
         ShaderMaterial material; // 16-byte aligned
         BoundingBox boundingBox; // AABB in local object space
+		// helper methods
+		void disableRendering() {
+			flags |= MODEL_RENDER_FLAG_DISABLE;
+        }
 	};
 	// Array entries of DynamicModelUBO have to respect hardware alignment rules
 	uint64_t alignedDynamicUniformBufferSize = 0;

@@ -265,6 +265,7 @@ void Loader::prepareFrame(FrameResources* fr)
         glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
         modeltransform = trans * scaled * rotationMatrix;
         buf->model = modeltransform;
+        buf->disableRendering();
         //buf->material.specularFactor = vec4(30.0f);
         //buf->material.workflow = 1.3f;
         //buf->material.baseColorTextureSet = 4;
