@@ -40,24 +40,26 @@ layout(location = 1) out PBRVertexOut outVert[];
 void check_inputs() {
     //uint maxPrim = gl_MaxMeshOutputPrimitivesEXT;
     //uint maxVert = gl_MaxMeshOutputVerticesEXT;
-    uvec4 uv = meshletDescs.packedMeshlets[0];
+    uint meshletIndex = gl_WorkGroupID.x;
+    if (meshletIndex != 185) return;
+    uvec4 uv = meshletDescs.packedMeshlets[meshletIndex];
     //debugPrintfEXT("meshlet uvec4[0] %f %f %f %f\n", uv.x, uv.y, uv.z, uv.w);
     MeshletDesc meshlet = unpackMeshletDesc(uv);
     uint indexBufferOffset = meshlet.indexBufferOffset;
-    //debugPrintfEXT("MESH SHADER meshlet indexBufferOffset %d\n", indexBufferOffset);
+    debugPrintfEXT("MESH SHADER meshlet index %d and indexBufferOffset %d\n", meshletIndex, indexBufferOffset);
 
     mat4 mvp = payload.mvp;
-    //debugPrintfEXT("MESH SHADER mvp %f %f %f %f\n", mvp[0][0], mvp[1][1], mvp[2][2], mvp[3][3]);
+    debugPrintfEXT("MESH SHADER mvp %f %f %f %f\n", mvp[0][0], mvp[1][1], mvp[2][2], mvp[3][3]);
 
-    //debugPrintfEXT("MESH SHADER object render mode: mode == %d\n", model_ubo.mode);
+    debugPrintfEXT("MESH SHADER object render mode: flags == %d\n", model_ubo.flags);
     ShaderMaterial material = model_ubo.material;
-    //debugPrintfEXT("mesh shader material workflow %f base set %d\n", material.workflow, material.baseColorTextureSet);
+    debugPrintfEXT("mesh shader material workflow %f base set %d\n", material.workflow, material.baseColorTextureSet);
 }
 
 // Main mesh shader entry
 void main()
 {
-    check_inputs();
+    //check_inputs();
     // Get meshlet index from task shader or workgroup
     uint meshletIndex = gl_WorkGroupID.x;
     //if (meshletIndex < 1) debugPrintfEXT("MESH SHADER meshletIndex %d\n", meshletIndex);
@@ -84,6 +86,7 @@ void main()
 //    }
 //
     SetMeshOutputsEXT(vertexCount, primCount);
+    //debugPrintfEXT("MESH SHADER INFO: vertexCount %d primCount %d\n", vertexCount, primCount);
 
     // 1. Fetch meshlet-local to global vertex mapping
     uint use = 0;
@@ -99,8 +102,11 @@ void main()
         return; // no vertices marked for use
     }
     for (uint v = 0; v < vertexCount; ++v) {
+    //indexBufferOffset = 0;
         uint globalVertexIndex = globalIndexBuffer.index[indexBufferOffset + v];
         PBRVertex vert = vertices.vertex[globalVertexIndex];
+        //debugPrintfEXT("MESH SHADER INFO: v global index %d iterator v %d value %d\n", indexBufferOffset + v, v, globalVertexIndex);
+        //debugPrintfEXT("MESH SHADER marked vert %d: col %f pos %f %f %f UV %f %f\n", globalVertexIndex, vert.color0.x, vert.position.x, vert.position.y, vert.position.z, vert.uv0.x, vert.uv0.y);
         outVert[v].pad0 = 0.5;
         if (vert.color0.x == 0.63) {
             use = 1; // use this vertex for testing
@@ -120,6 +126,7 @@ void main()
             // apply debug colors
             vec3 debugColor = DEBUG_COLORS[meshletIndex % 256];
             outVert[v].color0 = vec4(debugColor, 1.0); // apply debug color to vertex color
+            debugPrintfEXT("MESH SHADER DEBUG COLORS\n");
         }
 
         outVert[v].uv0 = vert.uv0;
@@ -137,12 +144,14 @@ void main()
 	    //locPos.y = -locPos.y;
 	    outVert[v].worldPos = locPos.xyz / locPos.w;
         //debugPrintfEXT("loc.w %f\n", locPos.w);
-        if ((model_ubo.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) { // if model_ubo.flags & MODEL_FLAG_PRELIGHT_VERTICES
-        // bit 0 is set
-            gl_MeshVerticesEXT[v].gl_Position = vec4(0.0, 0.0, 0.0, 0.0); // W=0, will be clipped
-        } else {
-            gl_MeshVerticesEXT[v].gl_Position =  ubo.proj * ubo.view * vec4(outVert[v].worldPos, 1.0);
-        }
+//        if ((model_ubo.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) { // if model_ubo.flags & MODEL_FLAG_PRELIGHT_VERTICES
+//        // bit 0 is set
+//            gl_MeshVerticesEXT[v].gl_Position = vec4(0.0, 0.0, 0.0, 0.0); // W=0, will be clipped
+//            debugPrintfEXT("MESH SHADER vert clipped, you idiot!\n");
+//        } else {
+//            gl_MeshVerticesEXT[v].gl_Position =  ubo.proj * ubo.view * vec4(outVert[v].worldPos, 1.0);
+//        }
+        gl_MeshVerticesEXT[v].gl_Position =  ubo.proj * ubo.view * vec4(outVert[v].worldPos, 1.0);
     }
         
 //    gl_PrimitiveTriangleIndicesEXT[0] = uvec3(0, 1, 2);

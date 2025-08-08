@@ -93,7 +93,7 @@ void check_inputs() {
 
     uint flags = model_ubo.flags;
     bool isRenderingDisabled = (flags & MODEL_RENDER_FLAG_DISABLE) != 0;
-	debugPrintfEXT("TASH SHADER: rendering disabled %d\n", isRenderingDisabled);
+	//debugPrintfEXT("TASK SHADER: rendering disabled %d\n", isRenderingDisabled);
 }
 
 /*

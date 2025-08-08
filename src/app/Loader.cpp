@@ -98,12 +98,15 @@ void Loader::init() {
     //engine->meshStore.loadMesh("desert3_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("output.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("cc_facial_exp_cmp.glb", "LogoBox"); alterObjectCoords = false;
+
     //engine->meshStore.loadMesh("delfini6.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES)); alterObjectCoords = false;
-    engine->meshStore.loadMesh("delfini6.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
+    //engine->meshStore.loadMesh("delfini6.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
+    //engine->meshStore.loadMesh("delfini6.glb", "LogoBox"); alterObjectCoords = false;
+
     //engine->meshStore.loadMesh("delfini6.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
-    //engine->meshStore.loadMesh("delfini7.glb", "LogoBox"); alterObjectCoords = false;
+    engine->meshStore.loadMesh("delfini7.glb", "LogoBox"); alterObjectCoords = false;
     debugColors("LogoBox");
     engine->objectStore.createGroup("group");
     //object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.5f, -1.0f, -1.0f));
@@ -265,14 +268,16 @@ void Loader::prepareFrame(FrameResources* fr)
         glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
         modeltransform = trans * scaled * rotationMatrix;
         buf->model = modeltransform;
-        buf->disableRendering();
+        //buf->disableRendering();
+
         //buf->material.specularFactor = vec4(30.0f);
         //buf->material.workflow = 1.3f;
         //buf->material.baseColorTextureSet = 4;
         //buf->flags |= 0x1; // set flag for dicard rendering
 
         //engine->meshStore.debugRenderMeshlet(wo, tr, modeltransform);
-        engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform, 185);
+        //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform, 185);
+        //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
 
         if (useDefaultNormalLineLength) {
             //engine->meshStore.debugGraphics(wo, tr, modeltransform);

@@ -54,10 +54,14 @@ struct GlobalMeshletTriangle {
 	bool usedInMeshlet = false; // true if this triangle is used in any meshlet
 	bool hasNeighbourTriangle(uint32_t index) const {
 		return std::find(neighbours.begin(), neighbours.end(), index) != neighbours.end();
-    }
+	}
 	bool hasVertex(uint32_t index) const {
 		return std::find(std::begin(indices), std::end(indices), index) != std::end(indices);
-    }
+	}
+};
+
+struct LocalMeshletTriangle {
+	uint32_t indices[3]; // indices into local vertex index buffer
 };
 
 // forward declaration
@@ -75,7 +79,9 @@ public:
     uint32_t maxPrimitiveSize; // maximum number of primitives (triangles) in this meshlet
 	uint32_t maxVertexSize; // maximum number of vertices in this meshlet
 
-	std::vector<GlobalMeshletTriangle*> triangles; // global triangles, used to store triangle indices and neighbours
+	//std::vector<GlobalMeshletTriangle*> triangles; // global triangles, used to store triangle indices and neighbours
+	std::vector<LocalMeshletTriangle> triangles; // local triangles, used to store triangle indices
+	std::vector<uint32_t> verticesIndices; // local vertex indices, indices into global vertex buffer
 	std::vector<GlobalMeshletVertex*> vertices; // global vertices, used to store vertex indices and neighbours
 
     // check if meshlet can hold one more triangle
@@ -83,6 +89,8 @@ public:
 
 	// insert triangle into meshlet, fitting checks must be done before calling this
 	void insertTriangle(GlobalMeshletTriangle& triangle);
+	// debug info:
+	bool debugColors = false; // if true, color all triangles of this meshlet with the same color
 };
 	
 // input for meshlet calculations, basically the raw data from glTF:
