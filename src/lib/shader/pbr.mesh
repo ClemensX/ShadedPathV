@@ -134,10 +134,10 @@ void main()
         //outVert[v].normal = vert.normal;
         outVert[v].weight0 = vert.weight0;
         outVertFlat[v].joint0 = vert.joint0;
-	    if (vert.uv0.y < 1.0) {
-		    debugPrintfEXT("PBR MESH in uv0 %f %f\n", vert.uv0.x, vert.uv0.y);
-	    }
-
+//	    if (vert.uv0.y < 1.0) {
+//		    debugPrintfEXT("PBR MESH in uv0 %f %f\n", vert.uv0.x, vert.uv0.y);
+//	    }
+//
         vec4 locPos;
 	    locPos = model_ubo.model * vec4(vert.position, 1.0);
 	    outVert[v].normal = normalize(transpose(inverse(mat3(model_ubo.model))) * vert.normal);

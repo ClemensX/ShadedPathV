@@ -207,19 +207,20 @@ float microfacetDistribution(PBRInfo pbrInputs)
 void main() {
 	//debugPrintfEXT("pbr.frag main\n");
 	//if (inUV0.x != 0.737041 || inpad0 != 0.5) {
-	if (inUV0.x != 0.737041
-	 && inUV0.x != 0.759412
-	 && inUV0.x != 0.774256
-	 && inUV0.x != 0.753219
-	) {
-		debugPrintfEXT("PBR FRAG in pad0 %f uv0 %f %f\n", inpad0, inUV0.x, inUV0.y);
-	}
+//	if (inUV0.x != 0.737041
+//	 && inUV0.x != 0.759412
+//	 && inUV0.x != 0.774256
+//	 && inUV0.x != 0.753219
+//	) {
+//		debugPrintfEXT("PBR FRAG in pad0 %f uv0 %f %f\n", inpad0, inUV0.x, inUV0.y);
+//	}
+
 	if (false || (inColor0.x >= 0.40 && inColor0.x < 0.6)) {
 		debugPrintfEXT("PBR FRAG in color %f %f %f %f inpad %f\n", inColor0.x, inColor0.y, inColor0.z, inColor0.w, inpad0);
 	}
-	if (inUV0.y < 1.0) {
-		debugPrintfEXT("PBR FRAG in uv0 %f %f\n", inUV0.x, inUV0.y);
-	}
+//	if (inUV0.y < 1.0) {
+//		debugPrintfEXT("PBR FRAG in uv0 %f %f\n", inUV0.x, inUV0.y);
+//	}
 	//outColor = vec4(1.0,0.0,0.0,1.0);
 	//return;
 	ShaderMaterial material = model_ubo.material;
@@ -251,12 +252,14 @@ void main() {
     //debugPrintfEXT("frag uboParams.gamma %f\n", f);
     //debugPrintfEXT("pbr frag render mode: %d\n", mode);
     uint baseIndex = material.baseColorTextureSet;//emissiveIndex;//baseColorIndex; // test indexes
+	//debugPrintfEXT("pbr frag base color index: %d\n", baseIndex);
     //uint baseIndex = baseColorIndex;
     //if (occlusionIndex == -1) { // just a test :-)
     //    baseIndex = 0;
     //}
 	if ((model_ubo.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) {
 		outColor = inColor0;
+		debugPrintfEXT("pbr frag MODEL_RENDER_FLAG_USE_VERTEX_COLORS\n");
         return;
 	} 
 
@@ -313,6 +316,8 @@ void main() {
 		// The albedo may be defined from a base texture or a flat color
 		if (material.baseColorTextureSet > -1) {
 			baseColor = SRGBtoLINEAR(textureBindless2D(material.baseColorTextureSet, material.texCoordSets.baseColor == 0 ? inUV0 : inUV1)) * material.baseColorFactor;
+			//debugPrintfEXT("pbr baseColor factor %f %f %f %f\n", material.baseColorFactor.r, material.baseColorFactor.g, material.baseColorFactor.b, material.baseColorFactor.a);
+			//debugPrintfEXT("pbr frag baseColor %f %f %f %f\n", baseColor.r, baseColor.g, baseColor.b, baseColor.a);
 		} else {
 			baseColor = material.baseColorFactor;
 		}

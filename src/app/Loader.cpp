@@ -85,6 +85,8 @@ void Loader::debugColors(std::string meshName)
 void Loader::init() {
     engine->sound.init(false);
 
+    engine->textureStore.generateBRDFLUT();
+
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
@@ -108,8 +110,8 @@ void Loader::init() {
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox"); alterObjectCoords = false;
 
-    engine->meshStore.loadMeshCylinder("LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER)); alterObjectCoords = false;
-    //engine->meshStore.loadMeshGrid("LogoBox"); alterObjectCoords = false;
+    //engine->meshStore.loadMeshCylinder("LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER), engine->textureStore.BRDFLUT_TEXTURE_ID); alterObjectCoords = false;
+    engine->meshStore.loadMeshGrid("LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER), engine->textureStore.BRDFLUT_TEXTURE_ID); alterObjectCoords = false;
 
     debugColors("LogoBox");
     engine->objectStore.createGroup("group");
@@ -135,7 +137,6 @@ void Loader::init() {
     engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
     //engine->textureStore.loadTexture("papermill.ktx2", "skyboxTexture");
     //engine->textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
-    engine->textureStore.generateBRDFLUT();
     // generating cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
     //engine->textureStore.generateCubemaps("skyboxTexture");
     engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);

@@ -1890,7 +1890,7 @@ void Meshlet::insertTriangle(GlobalMeshletTriangle& triangle) {
 	triangles.push_back(localTriangle); // store pointer to triangle meshlet triangle list
 }
 
-void MeshStore::loadMeshGrid(std::string id, int gridSize, float scale, MeshFlagsCollection flags)
+void MeshStore::loadMeshGrid(std::string id, MeshFlagsCollection flags, std::string baseColorTextureId, int gridSize, float scale)
 {
 	// Create mesh info and fill with generated data
 	MeshInfo meshInfo;
@@ -1899,11 +1899,29 @@ void MeshStore::loadMeshGrid(std::string id, int gridSize, float scale, MeshFlag
 
 	Util::GenerateGridMesh(gridSize, meshInfo.vertices, meshInfo.indices, scale);
 
+	if (flags.hasFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER)) {
+		// Flip winding order
+		for (size_t i = 0; i < meshInfo.indices.size(); i += 3) {
+			std::swap(meshInfo.indices[i], meshInfo.indices[i + 2]);
+		}
+	}
+
+	// Set all default material values
+	setDefaultMaterial(meshInfo.material);
+
+	// Assign base color texture if provided
+	if (!baseColorTextureId.empty()) {
+		meshInfo.baseColorTexture = engine->textureStore.getTexture(baseColorTextureId);
+		if (!meshInfo.baseColorTexture) {
+			Log("WARNING: Could not find base color texture with id: " << baseColorTextureId << endl);
+		}
+	}
+
 	meshInfo.available = true;
 	meshes[id] = std::move(meshInfo);
 }
 
-void MeshStore::loadMeshCylinder(std::string id, MeshFlagsCollection flags, int segments, int heightDivs, float radius, float height)
+void MeshStore::loadMeshCylinder(std::string id, MeshFlagsCollection flags, std::string baseColorTextureId, int segments, int heightDivs, float radius, float height)
 {
 	MeshInfo meshInfo;
 	meshInfo.id = id;
@@ -1918,6 +1936,29 @@ void MeshStore::loadMeshCylinder(std::string id, MeshFlagsCollection flags, int 
 		}
 	}
 
+	// Set all default material values
+	setDefaultMaterial(meshInfo.material);
+
+	// Assign base color texture if provided
+	if (!baseColorTextureId.empty()) {
+		meshInfo.baseColorTexture = engine->textureStore.getTexture(baseColorTextureId);
+		if (!meshInfo.baseColorTexture) {
+			Log("WARNING: Could not find base color texture with id: " << baseColorTextureId << endl);
+		}
+	}
+
 	meshInfo.available = true;
 	meshes[id] = std::move(meshInfo);
+}
+
+void MeshStore::setDefaultMaterial(PBRShader::ShaderMaterial& mat) {
+	mat.baseColorFactor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	mat.metallicFactor = 0.0f;
+	mat.roughnessFactor = 1.0f;
+	mat.emissiveFactor = glm::vec4(0.0f);
+	mat.metallicFactor = 0.0f;   // Default: non-metallic
+	mat.roughnessFactor = 1.0f;   // Default: fully rough (matte)
+	mat.alphaMask = 0.0f;   // Default: no alpha mask
+	mat.alphaMaskCutoff = 0.5f;   // Default: standard cutoff
+	mat.emissiveStrength = 1.0f;   // Default: no extra emission
 }

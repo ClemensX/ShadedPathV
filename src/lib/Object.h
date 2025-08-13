@@ -485,9 +485,9 @@ public:
 	void loadMesh(std::string filename, std::string id, MeshFlagsCollection flags = MeshFlagsCollection());
 
 	// Generate and register a grid mesh with the given id
-	void loadMeshGrid(std::string id, int gridSize = 9, float scale = 1.0f, MeshFlagsCollection flags = MeshFlagsCollection());
+	void loadMeshGrid(std::string id, MeshFlagsCollection flags = MeshFlagsCollection(), std::string baseColorTextureId = "", int gridSize = 9, float scale = 1.0f);
 	// Generate and register a cylinder mesh with the given id
-	void loadMeshCylinder(std::string id, MeshFlagsCollection flags = MeshFlagsCollection(), int segments = 16, int heightDivs = 8, float radius = 1.0f, float height = 2.0f);	// get sorted object list (sorted by type)
+	void loadMeshCylinder(std::string id, MeshFlagsCollection flags = MeshFlagsCollection(), std::string baseColorTextureId = "", int segments = 16, int heightDivs = 8, float radius = 1.0f, float height = 2.0f);	// get sorted object list (sorted by type)
 
 	// meshes are only resorted if one was added in the meantime
 	const std::vector<MeshInfo*> &getSortedList();
@@ -563,6 +563,8 @@ private:
 	static void markVertexOfTriangle(int num, MeshInfo* mesh);
 	void checkVertexDuplication(std::string id);
 	static void prepareMeshletVertexIndices(MeshletIntermediate& temp);
+	// Helper for default material setup
+	void setDefaultMaterial(PBRShader::ShaderMaterial& mat);
 };
 
 // 
