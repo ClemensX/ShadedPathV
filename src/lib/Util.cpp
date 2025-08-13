@@ -817,3 +817,114 @@ std::vector<glm::vec4> Util::generateColorPalette256()
     }
     return palette;
 }
+
+void Util::GenerateGridMesh(
+    int gridSize,
+    std::vector<PBRVertex>& vertices,
+    std::vector<uint32_t>& indices,
+    float scale)
+{
+    vertices.clear();
+    indices.clear();
+
+    for (int y = 0; y < gridSize; ++y) {
+        for (int x = 0; x < gridSize; ++x) {
+            glm::vec3 pos(scale * float(x), 0.0f, scale * float(y));
+            glm::vec3 normal(0.0f, 1.0f, 0.0f);
+            glm::vec2 uv(float(x) / (gridSize - 1), float(y) / (gridSize - 1));
+            vertices.emplace_back(pos, normal, uv);
+        }
+    }
+
+    for (int y = 0; y < gridSize - 1; ++y) {
+        for (int x = 0; x < gridSize - 1; ++x) {
+            uint32_t i0 = y * gridSize + x;
+            uint32_t i1 = y * gridSize + (x + 1);
+            uint32_t i2 = (y + 1) * gridSize + x;
+            uint32_t i3 = (y + 1) * gridSize + (x + 1);
+
+            // First triangle
+            indices.push_back(i0);
+            indices.push_back(i1);
+            indices.push_back(i2);
+
+            // Second triangle
+            indices.push_back(i1);
+            indices.push_back(i3);
+            indices.push_back(i2);
+        }
+    }
+}
+
+void Util::GenerateCylinderMesh(
+    int segments,
+    int heightDivs,
+    float radius,
+    float height,
+    std::vector<PBRVertex>& vertices,
+    std::vector<uint32_t>& indices)
+{
+    vertices.clear();
+    indices.clear();
+
+    // Side vertices
+    for (int y = 0; y <= heightDivs; ++y) {
+        float v = float(y) / heightDivs;
+        float py = -height / 2.0f + v * height;
+        for (int i = 0; i < segments; ++i) {
+            float u = float(i) / segments;
+            float theta = u * glm::two_pi<float>();
+            float px = radius * cos(theta);
+            float pz = radius * sin(theta);
+            glm::vec3 pos(px, py, pz);
+            glm::vec3 normal(cos(theta), 0.0f, sin(theta));
+            glm::vec2 uv(u, v);
+            vertices.emplace_back(pos, normal, uv);
+        }
+    }
+
+    // Side indices
+    for (int y = 0; y < heightDivs; ++y) {
+        for (int i = 0; i < segments; ++i) {
+            int next = (i + 1) % segments;
+            uint32_t i0 = y * segments + i;
+            uint32_t i1 = y * segments + next;
+            uint32_t i2 = (y + 1) * segments + i;
+            uint32_t i3 = (y + 1) * segments + next;
+
+            // First triangle
+            indices.push_back(i0);
+            indices.push_back(i1);
+            indices.push_back(i2);
+
+            // Second triangle
+            indices.push_back(i1);
+            indices.push_back(i3);
+            indices.push_back(i2);
+        }
+    }
+
+    // Top cap
+    uint32_t topCenterIndex = static_cast<uint32_t>(vertices.size());
+    vertices.emplace_back(glm::vec3(0, height / 2.0f, 0), glm::vec3(0, 1, 0), glm::vec2(0.5f, 0.5f));
+    for (int i = 0; i < segments; ++i) {
+        int next = (i + 1) % segments;
+        uint32_t i0 = heightDivs * segments + i;
+        uint32_t i1 = heightDivs * segments + next;
+        indices.push_back(topCenterIndex);
+        indices.push_back(i0);
+        indices.push_back(i1);
+    }
+
+    // Bottom cap
+    uint32_t bottomCenterIndex = static_cast<uint32_t>(vertices.size());
+    vertices.emplace_back(glm::vec3(0, -height / 2.0f, 0), glm::vec3(0, -1, 0), glm::vec2(0.5f, 0.5f));
+    for (int i = 0; i < segments; ++i) {
+        int next = (i + 1) % segments;
+        uint32_t i0 = i;
+        uint32_t i1 = next;
+        indices.push_back(bottomCenterIndex);
+        indices.push_back(i1);
+        indices.push_back(i0);
+    }
+}

@@ -106,7 +106,11 @@ void Loader::init() {
     //engine->meshStore.loadMesh("delfini6.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
-    engine->meshStore.loadMesh("delfini7.glb", "LogoBox"); alterObjectCoords = false;
+    //engine->meshStore.loadMesh("delfini7.glb", "LogoBox"); alterObjectCoords = false;
+
+    engine->meshStore.loadMeshCylinder("LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER)); alterObjectCoords = false;
+    //engine->meshStore.loadMeshGrid("LogoBox"); alterObjectCoords = false;
+
     debugColors("LogoBox");
     engine->objectStore.createGroup("group");
     //object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.5f, -1.0f, -1.0f));
@@ -277,7 +281,7 @@ void Loader::prepareFrame(FrameResources* fr)
 
         //engine->meshStore.debugRenderMeshlet(wo, tr, modeltransform);
         //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform, 185);
-        //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
+        engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
 
         if (useDefaultNormalLineLength) {
             //engine->meshStore.debugGraphics(wo, tr, modeltransform);

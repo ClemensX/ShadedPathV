@@ -2,6 +2,7 @@
 #extension GL_EXT_debug_printf : enable
 #extension GL_EXT_mesh_shader : enable
 
+#include "common_cpp_shader.h"
 #include "shadermaterial.glsl"
 #include "pbr_mesh_common.glsl"
 

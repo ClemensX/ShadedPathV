@@ -155,6 +155,22 @@ public:
     glm::vec3 hsv2rgb(float h, float s, float v);
     // Bit-reversal permutation for 8 bits
 
+    // Generates a regular grid mesh (plane) with the given size and divisions.
+    static void GenerateGridMesh(
+        int gridSize,
+        std::vector<PBRVertex>& vertices,
+        std::vector<uint32_t>& indices,
+        float scale = 1.0f);
+
+    // Generates a cylinder mesh with the given parameters.
+    static void GenerateCylinderMesh(
+        int segments,
+        int heightDivs,
+        float radius,
+        float height,
+        std::vector<PBRVertex>& vertices,
+        std::vector<uint32_t>& indices); 
+
 private:
     static uint8_t bit_reverse8(uint8_t n) {
         n = (n & 0xF0) >> 4 | (n & 0x0F) << 4;

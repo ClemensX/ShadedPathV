@@ -483,7 +483,12 @@ public:
 	// id.gltf_mesh_name == mesh with name == gltf_mesh_name
 	// id.2 == mesh[2]
 	void loadMesh(std::string filename, std::string id, MeshFlagsCollection flags = MeshFlagsCollection());
-	// get sorted object list (sorted by type)
+
+	// Generate and register a grid mesh with the given id
+	void loadMeshGrid(std::string id, int gridSize = 9, float scale = 1.0f, MeshFlagsCollection flags = MeshFlagsCollection());
+	// Generate and register a cylinder mesh with the given id
+	void loadMeshCylinder(std::string id, MeshFlagsCollection flags = MeshFlagsCollection(), int segments = 16, int heightDivs = 8, float radius = 1.0f, float height = 2.0f);	// get sorted object list (sorted by type)
+
 	// meshes are only resorted if one was added in the meantime
 	const std::vector<MeshInfo*> &getSortedList();
 	// upload single model to GPU
@@ -529,7 +534,8 @@ public:
 		std::vector<uint32_t>& globalIndexBuffer,
 		std::vector<PBRShader::Vertex>& vertices, int singleMeshletNum
 	);
-    void logMeshletStats(MeshInfo* mesh);
+	void logMeshletStatsOld(MeshInfo* mesh);
+	void logMeshletStats(MeshInfo* mesh);
 
 private:
 	MeshCollection* loadMeshFile(std::string filename, std::string id, std::vector<std::byte> &fileBuffer, MeshFlagsCollection flags);

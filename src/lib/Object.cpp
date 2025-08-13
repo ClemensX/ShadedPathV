@@ -826,7 +826,7 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32
 	mesh->meshletsForMesh.calculateTrianglesAndNeighbours(in2);
 	mesh->meshletsForMesh.applyMeshletAlgorithmSimple(in2, out2);
 	mesh->meshletsForMesh.fillMeshletOutputBuffers(in2, out2);
-    //logMeshletStats(mesh);
+    logMeshletStats(mesh);
 	return;
 
 	// old impl
@@ -863,7 +863,7 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32
 		out.meshlets.erase(out.meshlets.begin(), out.meshlets.begin() + from);
 		out.meshlets.erase(out.meshlets.begin() + to, out.meshlets.end());
 	}
-	logMeshletStats(mesh);
+	logMeshletStatsOld(mesh);
     fillMeshletOutputBuffers(in, out);
 
 	int n = 14500;
@@ -1406,7 +1406,7 @@ void MeshStore::calculateMeshletsX(std::string id, uint32_t vertexLimit, uint32_
 		indexVertexMap, mesh->vertsVector, triangles, mesh->meshlets, vertexBuffer, primitiveLimit, vertexLimit
     );
     //applyDebugMeshletColorsToVertices(mesh);
-	logMeshletStats(mesh);
+	logMeshletStatsOld(mesh);
     // create meshlet descriptors and buffers:
     // first, we count how many indices we need for the meshlets:
     uint32_t totalIndices = 0;
@@ -1459,22 +1459,22 @@ void MeshStore::calculateMeshletsX(std::string id, uint32_t vertexLimit, uint32_
 	}
 }
 
-void MeshStore::logMeshletStats(MeshInfo* mesh)
+void MeshStore::logMeshletStatsOld(MeshInfo* mesh)
 {
 	Log("MeshletOld stats for mesh " << mesh->id << endl);
 	Log("  Meshlets: " << mesh->meshlets.size() << endl);
 	//Log("  MeshletOld descriptors: " << mesh->outMeshletDesc.size() << endl);
-    //Log("  MeshletOld triangles: " << mesh->meshlets.size() * 12 << endl); // each meshlet has 12 triangles
-    int localIndexCount = 0; // count indices used for all meshlets
-    int avgVertsPerMeshlet = 0;
-    int avgPrimsPerMeshlet = 0;
+	//Log("  MeshletOld triangles: " << mesh->meshlets.size() * 12 << endl); // each meshlet has 12 triangles
+	int localIndexCount = 0; // count indices used for all meshlets
+	int avgVertsPerMeshlet = 0;
+	int avgPrimsPerMeshlet = 0;
 	static auto col = engine->util.generateColorPalette256();
 
 	for (auto& m : mesh->meshlets) {
 		localIndexCount += m.verticesIndices.size();
-        avgPrimsPerMeshlet += m.primitives.size();
-        avgVertsPerMeshlet += m.verticesIndices.size();
-        assert(m.verticesIndices.size() <= 256); // we limit the number of vertices per meshlet to 256
+		avgPrimsPerMeshlet += m.primitives.size();
+		avgVertsPerMeshlet += m.verticesIndices.size();
+		assert(m.verticesIndices.size() <= 256); // we limit the number of vertices per meshlet to 256
 		//for (auto& v : m.primitives) {
 		//	// v is a triangle
 		//	assert(v[0] < m.verticesIndices.size() && v[1] < m.verticesIndices.size() && v[2] < m.verticesIndices.size());
@@ -1491,12 +1491,53 @@ void MeshStore::logMeshletStats(MeshInfo* mesh)
 		//	//vec3 v2posWorld = vec3(modelToWorld * vec4(v2pos, 1.0f));
 		//}
 	}
-    avgPrimsPerMeshlet /= mesh->meshlets.size();
-    avgVertsPerMeshlet /= mesh->meshlets.size();
-    Log("  Average MeshletOld verts / triangles: " << avgVertsPerMeshlet << " / " << avgPrimsPerMeshlet << endl);
+	avgPrimsPerMeshlet /= mesh->meshlets.size();
+	avgVertsPerMeshlet /= mesh->meshlets.size();
+	Log("  Average MeshletOld verts / triangles: " << avgVertsPerMeshlet << " / " << avgPrimsPerMeshlet << endl);
 	Log("  local Vertex indices (b4 greedy alg): " << mesh->meshletVertexIndices.size() << endl);
 	Log("  local Vertex indices needed         : " << localIndexCount << endl);
 	Log("  vertices: " << mesh->vertices.size() << endl);
+}
+
+void MeshStore::logMeshletStats(MeshInfo* mesh)
+{
+    assert(mesh->meshletsForMesh.meshlets.size() > 0);
+	Log("MeshletOld stats for mesh " << mesh->id << endl);
+	Log("  Meshlets: " << mesh->meshletsForMesh.meshlets.size() << endl);
+	//Log("  MeshletOld descriptors: " << mesh->outMeshletDesc.size() << endl);
+	//Log("  MeshletOld triangles: " << mesh->meshlets.size() * 12 << endl); // each meshlet has 12 triangles
+	int localIndexCount = 0; // count indices used for all meshlets
+	int avgVertsPerMeshlet = 0;
+	int avgPrimsPerMeshlet = 0;
+	static auto col = engine->util.generateColorPalette256();
+
+	for (auto& m : mesh->meshletsForMesh.meshlets) {
+		localIndexCount += m.verticesIndices.size();
+		avgPrimsPerMeshlet += m.triangles.size();
+		avgVertsPerMeshlet += m.vertices.size();
+		assert(m.vertices.size() <= 256); // we limit the number of vertices per meshlet to 256
+		//for (auto& v : m.primitives) {
+		//	// v is a triangle
+		//	assert(v[0] < m.verticesIndices.size() && v[1] < m.verticesIndices.size() && v[2] < m.verticesIndices.size());
+  //          localIndexCount += m.verticesIndices.size();
+		//	auto& v0 = m.verticesIndices[v[0]];
+		//	auto& v1 = m.verticesIndices[v[1]];
+		//	auto& v2 = m.verticesIndices[v[2]];
+		//	assert(v0 < mesh->vertices.size() && v1 < mesh->vertices.size() && v2 < mesh->vertices.size());
+		//	auto& v0pos = mesh->vertices[v0].pos;
+		//	auto& v1pos = mesh->vertices[v1].pos;
+		//	auto& v2pos = mesh->vertices[v2].pos;
+		//	//vec3 v0posWorld = vec3(modelToWorld * vec4(v0pos, 1.0f));
+		//	//vec3 v1posWorld = vec3(modelToWorld * vec4(v1pos, 1.0f));
+		//	//vec3 v2posWorld = vec3(modelToWorld * vec4(v2pos, 1.0f));
+		//}
+	}
+	avgPrimsPerMeshlet /= mesh->meshletsForMesh.meshlets.size();
+	avgVertsPerMeshlet /= mesh->meshletsForMesh.meshlets.size();
+	Log("  Average Meshlet verts / triangles: " << avgVertsPerMeshlet << " / " << avgPrimsPerMeshlet << endl);
+	Log("  local Vertex indices (b4 greedy alg): " << mesh->meshletsForMesh.indexVertexMap.size() << endl);
+	Log("  local Vertex indices needed         : " << localIndexCount << endl);
+	Log("  vertices: " << mesh->meshletsForMesh.globalVertices.size() << endl);
 }
 
 void MeshletOld::applyMeshletAlgorithmGreedyVerts(
@@ -1847,4 +1888,36 @@ void Meshlet::insertTriangle(GlobalMeshletTriangle& triangle) {
 	}
 	// now all vertices are added to meshlet, add triangle
 	triangles.push_back(localTriangle); // store pointer to triangle meshlet triangle list
+}
+
+void MeshStore::loadMeshGrid(std::string id, int gridSize, float scale, MeshFlagsCollection flags)
+{
+	// Create mesh info and fill with generated data
+	MeshInfo meshInfo;
+	meshInfo.id = id;
+	meshInfo.flags = flags;
+
+	Util::GenerateGridMesh(gridSize, meshInfo.vertices, meshInfo.indices, scale);
+
+	meshInfo.available = true;
+	meshes[id] = std::move(meshInfo);
+}
+
+void MeshStore::loadMeshCylinder(std::string id, MeshFlagsCollection flags, int segments, int heightDivs, float radius, float height)
+{
+	MeshInfo meshInfo;
+	meshInfo.id = id;
+	meshInfo.flags = flags;
+
+	Util::GenerateCylinderMesh(segments, heightDivs, radius, height, meshInfo.vertices, meshInfo.indices);
+
+	if (flags.hasFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER)) {
+		// Flip winding order
+		for (size_t i = 0; i < meshInfo.indices.size(); i += 3) {
+			std::swap(meshInfo.indices[i], meshInfo.indices[i + 2]);
+		}
+	}
+
+	meshInfo.available = true;
+	meshes[id] = std::move(meshInfo);
 }

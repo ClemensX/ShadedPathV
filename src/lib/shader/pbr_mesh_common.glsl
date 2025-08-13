@@ -25,18 +25,6 @@ MeshletDesc unpackMeshletDesc(uvec4 packed) {
     return desc;
 }
 
-struct PBRVertex {
-    vec3 position;
-    float pad0;
-    vec3 normal;
-    float pad1;
-    vec2 uv0;
-    vec2 uv1;
-    uvec4 joint0;
-    vec4 weight0;
-    vec4 color0;
-};
-
 // interpolated values (mesh -> frag shader)
 struct PBRVertexOut {
     vec3 worldPos;
