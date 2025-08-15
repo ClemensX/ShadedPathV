@@ -110,7 +110,9 @@ void Loader::init() {
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox"); alterObjectCoords = false;
 
-    engine->meshStore.loadMeshCylinder("LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER), engine->textureStore.BRDFLUT_TEXTURE_ID); alterObjectCoords = false;
+    MeshFlagsCollection meshFlags = MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
+    meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
+    engine->meshStore.loadMeshCylinder("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID); alterObjectCoords = false;
     //engine->meshStore.loadMeshGrid("LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER), engine->textureStore.BRDFLUT_TEXTURE_ID); alterObjectCoords = false;
 
     debugColors("LogoBox");

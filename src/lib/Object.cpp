@@ -401,12 +401,22 @@ void MeshStore::applyDebugMeshletColorsToVertices(MeshInfo* mesh)
 			mesh->vertices[v].color = color; // assign color to vertices in meshlet
 		}
 	}
+	for (auto& m : mesh->meshletsForMesh.meshlets) {
+		auto color = col[meshletCount % 256]; // assign color from palette
+		meshletCount++;
+		for (auto& v : m.vertices) {
+			mesh->vertices[v->globalIndex].color = color; // assign color to vertices in meshlet
+		}
+	}
 }
 
 void MeshStore::applyDebugMeshletColorsToMeshlets(MeshInfo* mesh)
 {
 	for (auto& m : mesh->meshlets) {
-        m.debugColors = true; // mark meshlet as having debug colors
+		m.debugColors = true; // mark meshlet as having debug colors
+	}
+	for (auto& m : mesh->meshletsForMesh.meshlets) {
+		m.debugColors = true; // mark meshlet as having debug colors
 	}
 }
 
@@ -836,6 +846,10 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32
 	mesh->meshletsForMesh.applyMeshletAlgorithmSimple(in2, out2);
 	mesh->meshletsForMesh.fillMeshletOutputBuffers(in2, out2);
     logMeshletStats(mesh);
+	if (mesh->flags.hasFlag(MeshFlags::MESHLET_DEBUG_COLORS)) {
+		applyDebugMeshletColorsToVertices(mesh);
+		applyDebugMeshletColorsToMeshlets(mesh);
+	}
 	return;
 
 	// old impl
