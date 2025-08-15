@@ -35,6 +35,16 @@ private:
 class UtilTest : public WorkingDirectoryTest {};
 class EngineTest : public WorkingDirectoryTest {};
 class EngineImageConsumer : public WorkingDirectoryTest {};
+class MeshletTest : public WorkingDirectoryTest {};
+
+static void minimalEngineInitialization(ShadedPathEngine* engine) {
+    engine->files.findAssetFolder("data");
+    engine->overrideCPUCores(4);
+    engine->initGlobal();
+    engine->shaders.addShader(engine->shaders.simpleShader);
+    engine->shaders.initActiveShaders();
+    engine->textureStore.generateBRDFLUT();
+}
 
 TEST(Environment, GLM) {
     glm::mat4 m1;
@@ -546,7 +556,7 @@ TEST(CommandBufferIterator, Count) {
     // multiple draw results
 }
 
-TEST(Meshlets, BasicValidity) {
+TEST_F(MeshletTest, BasicValidity) {
     // define a cube with 8 vertices and 12 triangles
     MeshletsForMesh meshlets;
     // create 8 vertices
@@ -635,6 +645,60 @@ TEST(Meshlets, BasicValidity) {
         EXPECT_EQ(7, m.vertices.size());
         // another triangle should not fit, as it would exceed vertex limit
         EXPECT_FALSE(m.canInsertTriangle(meshlets.globalTriangles[3]));
+    }
+}
+
+TEST_F(MeshletTest, ManualCreation) {
+    {
+        ShadedPathEngine my_engine;
+        static ShadedPathEngine* engine = &my_engine;
+        minimalEngineInitialization(engine);
+        engine->meshStore.loadMeshCylinder("TestObject", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
+        MeshInfo* meshInfo = engine->meshStore.getMesh("TestObject");
+        EXPECT_TRUE(meshInfo != nullptr);
+        // check that we have more triangles and vertices than fit into one single meshlet:
+        EXPECT_TRUE(meshInfo->vertices.size() > GLEXT_MESHLET_VERTEX_COUNT);
+        EXPECT_TRUE(meshInfo->indices.size() / 3 > GLEXT_MESHLET_PRIMITIVE_COUNT);
+        MeshletIn2 in2{ meshInfo->vertices, meshInfo->indices, GLEXT_MESHLET_PRIMITIVE_COUNT-1, GLEXT_MESHLET_VERTEX_COUNT };
+        MeshletOut2 out2{ meshInfo->meshletsForMesh.meshlets, meshInfo->outMeshletDesc, meshInfo->outLocalIndexPrimitivesBuffer, meshInfo->outGlobalIndexBuffer };
+        meshInfo->meshletsForMesh.calculateTrianglesAndNeighbours(in2);
+        EXPECT_TRUE(meshInfo->meshletsForMesh.verifyAdjacency(in2, true));
+        auto& m4m = meshInfo->meshletsForMesh;
+        // check meshlet insterion limits:
+        Meshlet m(&m4m, in2.primitiveLimit, in2.vertexLimit);
+        for (int i = 0; i < m4m.globalTriangles.size(); ++i) {
+            bool canInsert = m.canInsertTriangle(m4m.globalTriangles[i]);
+            if (canInsert) {
+                m.insertTriangle(m4m.globalTriangles[i]);
+            }
+        }
+        // we should now have reached either vertex or triangle limit:
+        EXPECT_TRUE(m.triangles.size() == in2.primitiveLimit || m.vertices.size() + 3 > in2.vertexLimit);
+        // ... but still be below meshlet limits:
+        EXPECT_TRUE(m.triangles.size() <= in2.primitiveLimit);
+        EXPECT_TRUE(m.vertices.size() <= in2.vertexLimit);
+        //meshInfo->meshletsForMesh.applyMeshletAlgorithmSimple(in2, out2);
+        //meshInfo->meshletsForMesh.fillMeshletOutputBuffers(in2, out2);
+
+    }
+}
+
+TEST_F(MeshletTest, StoreCreation) {
+    {
+        ShadedPathEngine my_engine;
+        static ShadedPathEngine* engine = &my_engine;
+        minimalEngineInitialization(engine);
+        engine->meshStore.loadMeshCylinder("TestObject", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
+        MeshInfo* meshInfo = engine->meshStore.getMesh("TestObject");
+        EXPECT_TRUE(meshInfo != nullptr);
+        // check that we have more triangles and vertices than fit into one single meshlet:
+        EXPECT_TRUE(meshInfo->vertices.size() > GLEXT_MESHLET_VERTEX_COUNT);
+        EXPECT_TRUE(meshInfo->indices.size() / 3 > GLEXT_MESHLET_PRIMITIVE_COUNT);
+        uint32_t meshletFlags =
+            (uint32_t)MeshletFlags::MESHLET_ALG_GREEDY_VERT
+            | (uint32_t)MeshletFlags::MESHLET_SORT;
+        engine->meshStore.calculateMeshlets("TestObject", meshletFlags, GLEXT_MESHLET_VERTEX_COUNT, GLEXT_MESHLET_PRIMITIVE_COUNT - 1);
+        EXPECT_TRUE(meshInfo->meshletsForMesh.meshlets.size() > 0);
     }
 }
 

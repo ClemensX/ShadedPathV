@@ -138,7 +138,10 @@ public:
 	std::vector<uint32_t> outGlobalIndexBuffer; // vertex indices into vertex buffer
 
 	void calculateTrianglesAndNeighbours(MeshletIn2& in);
-    void verifyAdjacency(const MeshletIn2& in, bool runO2BigTest = false) const;
+	// log errors in adjacency relations
+	void verifyAdjacencyLog(const MeshletIn2& in, bool runO2BigTest = false) const;
+	// check that all triangles have neighbours and vertices have neighbours
+	bool verifyAdjacency(const MeshletIn2& in, bool runO2BigTest = false, bool doLog = false) const;
 	// iterate through index buffer and place a fixed number of triangles into meshlets
 	void applyMeshletAlgorithmSimple(MeshletIn2& in, MeshletOut2& out);
 	void fillMeshletOutputBuffers(MeshletIn2& in, MeshletOut2& out);
@@ -377,7 +380,6 @@ struct MeshInfo
 	std::string id;
 	bool available = false; // true if this object is ready for use in shader code
 	MeshFlagsCollection flags;
-    uint32_t meshletVerticesLimit = 0; // limit for meshlet vertices, we need to a fixed value for index buffer alignment
 
 	// gltf data: valid after object load, should be cleared after upload
 	std::vector<PBRShader::Vertex> vertices;

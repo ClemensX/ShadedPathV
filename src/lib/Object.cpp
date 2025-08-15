@@ -523,8 +523,14 @@ static void verifyAdjacency(const MeshletIn& in, MeshletIntermediate& temp)
 	}
 }
 
-void MeshletsForMesh::verifyAdjacency(const MeshletIn2& in, bool runO2BigTest) const
+void MeshletsForMesh::verifyAdjacencyLog(const MeshletIn2& in, bool runO2BigTest) const
 {
+    verifyAdjacency(in, runO2BigTest, true);
+}
+
+bool MeshletsForMesh::verifyAdjacency(const MeshletIn2& in, bool runO2BigTest, bool doLog) const
+{
+    bool ret = true;
 	for (int i = 0; i < globalVertices.size(); i++) {
 		auto& v = globalVertices[i];
 		if (v.usedInTriangle) {
@@ -533,7 +539,8 @@ void MeshletsForMesh::verifyAdjacency(const MeshletIn2& in, bool runO2BigTest) c
                 // check symmetry: each neighbour triangle should have this vertex in its vertex list
                 const GlobalMeshletTriangle& neighbourTriangle = globalTriangles[neighbourTriangleIndex];
                 if (!neighbourTriangle.hasVertex(i)) {
-                    Log("ERROR: verifyAdjacency: Vertex " << i << " is not reciprocated by neighbour triangle " << neighbourTriangleIndex << std::endl);
+                    if (doLog) Log("ERROR: verifyAdjacency: Vertex " << i << " is not reciprocated by neighbour triangle " << neighbourTriangleIndex << std::endl);
+                    ret = false;
                 }
             }
 		}
@@ -547,7 +554,8 @@ void MeshletsForMesh::verifyAdjacency(const MeshletIn2& in, bool runO2BigTest) c
 				if (t.hasVertex(i)) { // v is part of the triangle
 					// check if the found triangle is in v's neighbourTriangles
 					if (!v.hasNeighbourTriangle(j)) {
-						Log("ERROR: verifyAdjacency: Vertex " << i << " is in triangle " << j << " but that triangle is not in its neighbourTriangles." << std::endl);
+						if (doLog) Log("ERROR: verifyAdjacency: Vertex " << i << " is in triangle " << j << " but that triangle is not in its neighbourTriangles." << std::endl);
+                        ret = false;
 					}
 				}
 			}
@@ -557,9 +565,11 @@ void MeshletsForMesh::verifyAdjacency(const MeshletIn2& in, bool runO2BigTest) c
 	for (int i = 0; i < globalVertices.size(); i++) {
 		const auto& v = globalVertices[i];
 		if (v.neighbourTriangles.size() == 0) {
-			Log("ERROR: verifyAdjacency: Vertex " << i << " has no neighbour triangles." << std::endl);
+			if (doLog) Log("ERROR: verifyAdjacency: Vertex " << i << " has no neighbour triangles." << std::endl);
+            ret = false;
 		}
 	}
+	return ret;
 }
 
 void MeshletsForMesh::calculateTrianglesAndNeighbours(MeshletIn2& in)
@@ -811,7 +821,6 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32
 	assert(vertexLimit <= GLEXT_MESHLET_VERTEX_COUNT);
 
 	MeshInfo* mesh = getMesh(id);
-	mesh->meshletVerticesLimit = vertexLimit;
 	//mesh->
 	// min	[-0.040992 -0.046309 -0.053326]	glm::vec<3,float,0>
 	// max	[0.040992 0.067943 0.132763]	glm::vec<3,float,0>
@@ -1176,7 +1185,6 @@ void MeshStore::calculateMeshletsX(std::string id, uint32_t vertexLimit, uint32_
 	assert(vertexLimit <= 256);
 
 	MeshInfo* mesh = getMesh(id);
-    mesh->meshletVerticesLimit = vertexLimit;
 	//mesh->
 	// min	[-0.040992 -0.046309 -0.053326]	glm::vec<3,float,0>
 	// max	[0.040992 0.067943 0.132763]	glm::vec<3,float,0>
