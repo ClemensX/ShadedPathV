@@ -91,6 +91,9 @@ public:
 	void insertTriangle(GlobalMeshletTriangle& triangle);
 	// debug info:
 	bool debugColors = false; // if true, color all triangles of this meshlet with the same color
+
+	bool isTrianglesConnected() const;
+	bool isVerticesConnected() const;
 };
 	
 // input for meshlet calculations, basically the raw data from glTF:
@@ -138,10 +141,12 @@ public:
 	std::vector<uint32_t> outGlobalIndexBuffer; // vertex indices into vertex buffer
 
 	void calculateTrianglesAndNeighbours(MeshletIn2& in);
-	// log errors in adjacency relations
-	void verifyAdjacencyLog(const MeshletIn2& in, bool runO2BigTest = false) const;
-	// check that all triangles have neighbours and vertices have neighbours
-	bool verifyAdjacency(const MeshletIn2& in, bool runO2BigTest = false, bool doLog = false) const;
+    // log errors in adjacency relations (for whole mesh)
+	void verifyGlobalAdjacencyLog(bool runO2BigTest = false) const;
+    // check that all triangles have neighbours and vertices have neighbours (for whole mesh)
+	bool verifyGlobalAdjacency(bool runO2BigTest = false, bool doLog = false) const;
+    // for each meshlet, check that all triangles and vertices are connected
+    bool verifyMeshletAdjacency(bool doLog = false) const;
 	// iterate through index buffer and place numTrianglesPerMeshlet triangles into meshlets
     // if numTrianglesPerMeshlet is 0, fill meshlet with all triangles until it is full
 	void applyMeshletAlgorithmSimple(MeshletIn2& in, MeshletOut2& out, int numTrianglesPerMeshlet = 0);

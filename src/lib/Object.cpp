@@ -533,12 +533,12 @@ static void verifyAdjacency(const MeshletIn& in, MeshletIntermediate& temp)
 	}
 }
 
-void MeshletsForMesh::verifyAdjacencyLog(const MeshletIn2& in, bool runO2BigTest) const
+void MeshletsForMesh::verifyGlobalAdjacencyLog(bool runO2BigTest) const
 {
-    verifyAdjacency(in, runO2BigTest, true);
+    verifyGlobalAdjacency(runO2BigTest, true);
 }
 
-bool MeshletsForMesh::verifyAdjacency(const MeshletIn2& in, bool runO2BigTest, bool doLog) const
+bool MeshletsForMesh::verifyGlobalAdjacency(bool runO2BigTest, bool doLog) const
 {
     bool ret = true;
 	for (int i = 0; i < globalVertices.size(); i++) {
@@ -626,7 +626,7 @@ void MeshletsForMesh::calculateTrianglesAndNeighbours(MeshletIn2& in)
         }
 	}
 
-    verifyAdjacency(in);
+    verifyGlobalAdjacency();
 }
 
 void MeshletsForMesh::applyMeshletAlgorithmSimple(MeshletIn2& in, MeshletOut2& out, int numTrianglesPerMeshlet)
@@ -646,19 +646,19 @@ void MeshletsForMesh::applyMeshletAlgorithmSimple(MeshletIn2& in, MeshletOut2& o
 			}
 			out.meshlets.push_back(m);
 		}
-		return;
-	}
-
-	uint32_t triPos = 0; // current position in global triangle vector
-	while (triPos < globalTriangles.size()) {
-		Meshlet m(this, in.primitiveLimit, in.vertexLimit);
-		for (int i = 0; i < numTrianglesPerMeshlet; i++) {
-			if (triPos >= globalTriangles.size()) continue;
-			m.insertTriangle(globalTriangles[triPos]);
-			triPos++;
+	} else {
+		uint32_t triPos = 0; // current position in global triangle vector
+		while (triPos < globalTriangles.size()) {
+			Meshlet m(this, in.primitiveLimit, in.vertexLimit);
+			for (int i = 0; i < numTrianglesPerMeshlet; i++) {
+				if (triPos >= globalTriangles.size()) continue;
+				m.insertTriangle(globalTriangles[triPos]);
+				triPos++;
+			}
+			out.meshlets.push_back(m);
 		}
-		out.meshlets.push_back(m);
 	}
+	verifyMeshletAdjacency(true);
 }
 
 void MeshletsForMesh::fillMeshletOutputBuffers(MeshletIn2& in, MeshletOut2& out)
@@ -1997,4 +1997,117 @@ void MeshStore::setDefaultMaterial(PBRShader::ShaderMaterial& mat) {
 	mat.alphaMask = 0.0f;   // Default: no alpha mask
 	mat.alphaMaskCutoff = 0.5f;   // Default: standard cutoff
 	mat.emissiveStrength = 1.0f;   // Default: no extra emission
+}
+
+// Add this method inside the Meshlet class
+bool Meshlet::isTrianglesConnected() const {
+	size_t triCount = triangles.size();
+	if (triCount <= 1) return true;
+
+	// Build adjacency list: for each triangle, store indices of adjacent triangles
+	std::vector<std::vector<size_t>> adjacency(triCount);
+
+	for (size_t i = 0; i < triCount; ++i) {
+		const auto& triA = triangles[i];
+		for (size_t j = i + 1; j < triCount; ++j) {
+			const auto& triB = triangles[j];
+			// Count shared local vertex indices
+			int shared = 0;
+			for (int ai = 0; ai < 3; ++ai) {
+				for (int bi = 0; bi < 3; ++bi) {
+					if (triA.indices[ai] == triB.indices[bi]) {
+						++shared;
+					}
+				}
+			}
+			if (shared >= 2) {
+				adjacency[i].push_back(j);
+				adjacency[j].push_back(i);
+			}
+		}
+	}
+
+	// BFS to check connectivity
+	std::vector<bool> visited(triCount, false);
+	std::queue<size_t> q;
+	q.push(0);
+	visited[0] = true;
+	size_t visitedCount = 1;
+
+	while (!q.empty()) {
+		size_t curr = q.front();
+		q.pop();
+		for (size_t neighbor : adjacency[curr]) {
+			if (!visited[neighbor]) {
+				visited[neighbor] = true;
+				q.push(neighbor);
+				++visitedCount;
+			}
+		}
+	}
+
+	return visitedCount == triCount;
+}
+
+bool Meshlet::isVerticesConnected() const {
+	size_t vertCount = vertices.size();
+	if (vertCount <= 1) return true;
+
+	// Build adjacency list for local vertices
+	std::vector<std::vector<size_t>> adjacency(vertCount);
+
+	// For each triangle, connect its three vertices
+	for (const auto& tri : triangles) {
+		for (int i = 0; i < 3; ++i) {
+			size_t a = tri.indices[i];
+			size_t b = tri.indices[(i + 1) % 3];
+			size_t c = tri.indices[(i + 2) % 3];
+			// Add undirected edges
+			if (a != b) adjacency[a].push_back(b);
+			if (b != a) adjacency[b].push_back(a);
+			if (a != c) adjacency[a].push_back(c);
+			if (c != a) adjacency[c].push_back(a);
+			if (b != c) adjacency[b].push_back(c);
+			if (c != b) adjacency[c].push_back(b);
+		}
+	}
+
+	// BFS to check connectivity
+	std::vector<bool> visited(vertCount, false);
+	std::queue<size_t> q;
+	q.push(0);
+	visited[0] = true;
+	size_t visitedCount = 1;
+
+	while (!q.empty()) {
+		size_t curr = q.front();
+		q.pop();
+		for (size_t neighbor : adjacency[curr]) {
+			if (!visited[neighbor]) {
+				visited[neighbor] = true;
+				q.push(neighbor);
+				++visitedCount;
+			}
+		}
+	}
+
+	return visitedCount == vertCount;
+}
+
+bool MeshletsForMesh::verifyMeshletAdjacency(bool doLog) const {
+	if (doLog) Log("MeshletsForMesh::verifyMeshletAdjacency() called, meshlets count: " << meshlets.size() << endl);
+	if (meshlets.empty()) return true; // no meshlets to verify
+	// Check if all meshlets are connected
+	for (const auto& meshlet : meshlets) {
+		if (!meshlet.isTrianglesConnected()) {
+			if (doLog) Log("ERROR: Meshlet triangles are not connected!" << endl);
+			return false;
+		}
+		if (!meshlet.isVerticesConnected()) {
+			if (doLog) Log("ERROR: Meshlet vertices are not connected!" << endl);
+			return false;
+		}
+	}
+	if (doLog) Log("All meshlets verified successfully." << endl);
+    return true;
 }

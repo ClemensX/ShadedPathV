@@ -665,7 +665,7 @@ TEST_F(MeshletTest, ManualCreation) {
         MeshletIn2 in2{ meshInfo->vertices, meshInfo->indices, GLEXT_MESHLET_PRIMITIVE_COUNT-1, GLEXT_MESHLET_VERTEX_COUNT };
         MeshletOut2 out2{ m4m.meshlets, meshInfo->outMeshletDesc, meshInfo->outLocalIndexPrimitivesBuffer, meshInfo->outGlobalIndexBuffer };
         m4m.calculateTrianglesAndNeighbours(in2);
-        EXPECT_TRUE(m4m.verifyAdjacency(in2, true));
+        EXPECT_TRUE(m4m.verifyGlobalAdjacency(true));
         // check meshlet insertion limits:
         Meshlet m(&m4m, in2.primitiveLimit, in2.vertexLimit);
         for (int i = 0; i < m4m.globalTriangles.size(); ++i) {
@@ -680,12 +680,24 @@ TEST_F(MeshletTest, ManualCreation) {
         EXPECT_TRUE(m.triangles.size() <= in2.primitiveLimit);
         EXPECT_TRUE(m.vertices.size() <= in2.vertexLimit);
 
-        // now test greedy algorithm:
+        // now test simple algorithm:
         m4m.reset();
         m4m.calculateTrianglesAndNeighbours(in2);
-        EXPECT_TRUE(m4m.verifyAdjacency(in2, true));
+        EXPECT_TRUE(m4m.verifyGlobalAdjacency(true));
         m4m.applyMeshletAlgorithmSimple(in2, out2);
         EXPECT_TRUE(m4m.meshlets.size() == 4);
+        EXPECT_TRUE(m4m.meshlets[0].isTrianglesConnected());
+        EXPECT_TRUE(m4m.meshlets[1].isTrianglesConnected());
+        EXPECT_FALSE(m4m.meshlets[2].isTrianglesConnected()); // known disconnection in cylinder meshlets through simple algorithm
+        EXPECT_TRUE(m4m.meshlets[3].isTrianglesConnected());
+
+        EXPECT_TRUE(m4m.meshlets[0].isVerticesConnected());
+        EXPECT_TRUE(m4m.meshlets[1].isVerticesConnected());
+        EXPECT_FALSE(m4m.meshlets[2].isVerticesConnected()); // known disconnection in cylinder meshlets through simple algorithm
+        EXPECT_TRUE(m4m.meshlets[3].isVerticesConnected());
+
+        // we already know of the disconnection, so the whole adjacency test should be false, too:
+        EXPECT_FALSE(m4m.verifyMeshletAdjacency());
     }
 }
 
