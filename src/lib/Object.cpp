@@ -629,16 +629,30 @@ void MeshletsForMesh::calculateTrianglesAndNeighbours(MeshletIn2& in)
     verifyAdjacency(in);
 }
 
-void MeshletsForMesh::applyMeshletAlgorithmSimple(MeshletIn2& in, MeshletOut2& out)
+void MeshletsForMesh::applyMeshletAlgorithmSimple(MeshletIn2& in, MeshletOut2& out, int numTrianglesPerMeshlet)
 {
 	Log("Meshlet algorithm simple started for " << in.vertices.size() << " vertices and " << in.indices.size() << " indices" << std::endl);
 	// assert that we have an indices consistent with triangle layout (must be multiple of 3)
 	assert(in.indices.size() % 3 == 0);
-	const int NUM_TRIANGLES_IN_MESHLET = 14;
+
+	if (numTrianglesPerMeshlet == 0) {
+        // fill as many triangles as possible into each meshlet
+		uint32_t triPos = 0; // current position in global triangle vector
+		while (triPos < globalTriangles.size()) {
+			Meshlet m(this, in.primitiveLimit, in.vertexLimit);
+			while (triPos < globalTriangles.size() && m.canInsertTriangle(globalTriangles[triPos])) {
+				m.insertTriangle(globalTriangles[triPos]);
+				triPos++;
+			}
+			out.meshlets.push_back(m);
+		}
+		return;
+	}
+
 	uint32_t triPos = 0; // current position in global triangle vector
 	while (triPos < globalTriangles.size()) {
 		Meshlet m(this, in.primitiveLimit, in.vertexLimit);
-		for (int i = 0; i < NUM_TRIANGLES_IN_MESHLET; i++) {
+		for (int i = 0; i < numTrianglesPerMeshlet; i++) {
 			if (triPos >= globalTriangles.size()) continue;
 			m.insertTriangle(globalTriangles[triPos]);
 			triPos++;

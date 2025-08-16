@@ -142,9 +142,19 @@ public:
 	void verifyAdjacencyLog(const MeshletIn2& in, bool runO2BigTest = false) const;
 	// check that all triangles have neighbours and vertices have neighbours
 	bool verifyAdjacency(const MeshletIn2& in, bool runO2BigTest = false, bool doLog = false) const;
-	// iterate through index buffer and place a fixed number of triangles into meshlets
-	void applyMeshletAlgorithmSimple(MeshletIn2& in, MeshletOut2& out);
+	// iterate through index buffer and place numTrianglesPerMeshlet triangles into meshlets
+    // if numTrianglesPerMeshlet is 0, fill meshlet with all triangles until it is full
+	void applyMeshletAlgorithmSimple(MeshletIn2& in, MeshletOut2& out, int numTrianglesPerMeshlet = 0);
 	void fillMeshletOutputBuffers(MeshletIn2& in, MeshletOut2& out);
+	void reset() {
+		globalTriangles.clear();
+		globalVertices.clear();
+		indexVertexMap.clear();
+		meshlets.clear();
+		outMeshletDesc.clear();
+		outLocalIndexPrimitivesBuffer.clear();
+		outGlobalIndexBuffer.clear();
+    }
 };
 
 // all meshes loaded from one gltf file. Textures are maintained here, meshes are contained

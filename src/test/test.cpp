@@ -650,21 +650,23 @@ TEST_F(MeshletTest, BasicValidity) {
 
 TEST_F(MeshletTest, ManualCreation) {
     {
+        // init engine and mesh
         ShadedPathEngine my_engine;
         static ShadedPathEngine* engine = &my_engine;
         minimalEngineInitialization(engine);
         engine->meshStore.loadMeshCylinder("TestObject", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
         MeshInfo* meshInfo = engine->meshStore.getMesh("TestObject");
         EXPECT_TRUE(meshInfo != nullptr);
+        auto& m4m = meshInfo->meshletsForMesh;
+
         // check that we have more triangles and vertices than fit into one single meshlet:
         EXPECT_TRUE(meshInfo->vertices.size() > GLEXT_MESHLET_VERTEX_COUNT);
         EXPECT_TRUE(meshInfo->indices.size() / 3 > GLEXT_MESHLET_PRIMITIVE_COUNT);
         MeshletIn2 in2{ meshInfo->vertices, meshInfo->indices, GLEXT_MESHLET_PRIMITIVE_COUNT-1, GLEXT_MESHLET_VERTEX_COUNT };
-        MeshletOut2 out2{ meshInfo->meshletsForMesh.meshlets, meshInfo->outMeshletDesc, meshInfo->outLocalIndexPrimitivesBuffer, meshInfo->outGlobalIndexBuffer };
-        meshInfo->meshletsForMesh.calculateTrianglesAndNeighbours(in2);
-        EXPECT_TRUE(meshInfo->meshletsForMesh.verifyAdjacency(in2, true));
-        auto& m4m = meshInfo->meshletsForMesh;
-        // check meshlet insterion limits:
+        MeshletOut2 out2{ m4m.meshlets, meshInfo->outMeshletDesc, meshInfo->outLocalIndexPrimitivesBuffer, meshInfo->outGlobalIndexBuffer };
+        m4m.calculateTrianglesAndNeighbours(in2);
+        EXPECT_TRUE(m4m.verifyAdjacency(in2, true));
+        // check meshlet insertion limits:
         Meshlet m(&m4m, in2.primitiveLimit, in2.vertexLimit);
         for (int i = 0; i < m4m.globalTriangles.size(); ++i) {
             bool canInsert = m.canInsertTriangle(m4m.globalTriangles[i]);
@@ -677,9 +679,13 @@ TEST_F(MeshletTest, ManualCreation) {
         // ... but still be below meshlet limits:
         EXPECT_TRUE(m.triangles.size() <= in2.primitiveLimit);
         EXPECT_TRUE(m.vertices.size() <= in2.vertexLimit);
-        //meshInfo->meshletsForMesh.applyMeshletAlgorithmSimple(in2, out2);
-        //meshInfo->meshletsForMesh.fillMeshletOutputBuffers(in2, out2);
 
+        // now test greedy algorithm:
+        m4m.reset();
+        m4m.calculateTrianglesAndNeighbours(in2);
+        EXPECT_TRUE(m4m.verifyAdjacency(in2, true));
+        m4m.applyMeshletAlgorithmSimple(in2, out2);
+        EXPECT_TRUE(m4m.meshlets.size() == 4);
     }
 }
 
