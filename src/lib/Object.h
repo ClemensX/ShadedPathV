@@ -42,6 +42,7 @@ struct GlobalMeshletVertex {
 	//std::vector<uint32_t> neighbourVertices; // global indices of neighbouring vertices
 	std::vector<uint32_t> neighbourTriangles; // neighbour triangles, using indices of intermediate triangle vector
 	bool usedInTriangle = false; // true if this vertex is used in any triangle
+    bool usedInMeshlet = false; // true if this vertex is used in any meshlet
 	bool hasNeighbourTriangle(uint32_t index) const {
 		return std::find(neighbourTriangles.begin(), neighbourTriangles.end(), index) != neighbourTriangles.end();
 	}
@@ -94,6 +95,12 @@ public:
 
 	bool isTrianglesConnected() const;
 	bool isVerticesConnected() const;
+	void reset() {
+		triangles.clear();
+		verticesIndices.clear();
+		vertices.clear();
+		debugColors = false;
+	}
 };
 	
 // input for meshlet calculations, basically the raw data from glTF:
@@ -150,6 +157,7 @@ public:
 	// iterate through index buffer and place numTrianglesPerMeshlet triangles into meshlets
     // if numTrianglesPerMeshlet is 0, fill meshlet with all triangles until it is full
 	void applyMeshletAlgorithmSimple(MeshletIn2& in, MeshletOut2& out, int numTrianglesPerMeshlet = 0);
+	void applyMeshletAlgorithmGreedy(MeshletIn2& in, MeshletOut2& out);
 	void fillMeshletOutputBuffers(MeshletIn2& in, MeshletOut2& out);
 	void reset() {
 		globalTriangles.clear();

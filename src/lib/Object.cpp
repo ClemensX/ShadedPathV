@@ -661,6 +661,50 @@ void MeshletsForMesh::applyMeshletAlgorithmSimple(MeshletIn2& in, MeshletOut2& o
 	verifyMeshletAdjacency(true);
 }
 
+void MeshletsForMesh::applyMeshletAlgorithmGreedy(MeshletIn2& in, MeshletOut2& out)
+{
+	Log("Meshlet algorithm greedy started for " << in.vertices.size() << " vertices and " << in.indices.size() << " indices" << std::endl);
+	std::queue<GlobalMeshletVertex*> queue;
+	std::unordered_map<uint32_t, unsigned char> used;
+	Meshlet m(this, in.primitiveLimit, in.vertexLimit);
+	for (auto& vertex : this->globalVertices) {
+		if (vertex.usedInMeshlet) continue;
+		queue.push(&vertex);
+		while (!queue.empty()) {
+			auto* curVertex = queue.front();
+            queue.pop();
+			for (auto triangleIndex : curVertex->neighbourTriangles) {
+				//Log("Processing triangle " << triangleIndex << " for vertex " << curVertex->globalIndex << std::endl);
+				auto& triangle = this->globalTriangles[triangleIndex];
+				if (triangle.usedInMeshlet) continue;
+				for (auto idx : triangle.indices) {
+                    //Log("  process vertex " << idx << " of triangle index " << triangleIndex << std::endl);
+                    auto& vert = this->globalVertices[idx];
+					if (!vert.usedInMeshlet) {
+                        queue.push(&vert);
+					}
+				}
+				if (!m.canInsertTriangle(triangle)) {
+					// meshlet full
+                    queue.push(curVertex); // reinsert current vertex to continue with it in the next meshlet
+					out.meshlets.push_back(m);
+					m.reset();
+				}
+                // before inserting, mark the triangles and its vertices as being used in a meshlet
+                triangle.usedInMeshlet = true;
+                m.insertTriangle(triangle);
+				Log("Insert triangle " << triangleIndex << endl);
+			}
+            // after processing all triangles for this vertex, mark it as used in a meshlet
+            curVertex->usedInMeshlet = true;
+		}
+	}
+    // we have to push the (non full) last meshlet if it has triangles in it
+	if (m.triangles.size() > 0) {
+		out.meshlets.push_back(m);
+	}
+}
+
 void MeshletsForMesh::fillMeshletOutputBuffers(MeshletIn2& in, MeshletOut2& out)
 {
 	// first, we count how many indices we need for the meshlets:
@@ -857,7 +901,8 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32
     MeshletIn2 in2{ mesh->vertices, mesh->indices, primitiveLimit, vertexLimit };
 	MeshletOut2 out2{ mesh->meshletsForMesh.meshlets, mesh->outMeshletDesc, mesh->outLocalIndexPrimitivesBuffer, mesh->outGlobalIndexBuffer };
 	mesh->meshletsForMesh.calculateTrianglesAndNeighbours(in2);
-	mesh->meshletsForMesh.applyMeshletAlgorithmSimple(in2, out2);
+	//mesh->meshletsForMesh.applyMeshletAlgorithmSimple(in2, out2);
+	mesh->meshletsForMesh.applyMeshletAlgorithmGreedy(in2, out2);
 	mesh->meshletsForMesh.fillMeshletOutputBuffers(in2, out2);
     logMeshletStats(mesh);
 	if (mesh->flags.hasFlag(MeshFlags::MESHLET_DEBUG_COLORS)) {

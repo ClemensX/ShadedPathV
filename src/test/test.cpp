@@ -662,7 +662,7 @@ TEST_F(MeshletTest, ManualCreation) {
         // check that we have more triangles and vertices than fit into one single meshlet:
         EXPECT_TRUE(meshInfo->vertices.size() > GLEXT_MESHLET_VERTEX_COUNT);
         EXPECT_TRUE(meshInfo->indices.size() / 3 > GLEXT_MESHLET_PRIMITIVE_COUNT);
-        MeshletIn2 in2{ meshInfo->vertices, meshInfo->indices, GLEXT_MESHLET_PRIMITIVE_COUNT-1, GLEXT_MESHLET_VERTEX_COUNT };
+        MeshletIn2 in2{ meshInfo->vertices, meshInfo->indices, GLEXT_MESHLET_PRIMITIVE_COUNT - 1, GLEXT_MESHLET_VERTEX_COUNT };
         MeshletOut2 out2{ m4m.meshlets, meshInfo->outMeshletDesc, meshInfo->outLocalIndexPrimitivesBuffer, meshInfo->outGlobalIndexBuffer };
         m4m.calculateTrianglesAndNeighbours(in2);
         EXPECT_TRUE(m4m.verifyGlobalAdjacency(true));
@@ -698,6 +698,39 @@ TEST_F(MeshletTest, ManualCreation) {
 
         // we already know of the disconnection, so the whole adjacency test should be false, too:
         EXPECT_FALSE(m4m.verifyMeshletAdjacency());
+    }
+}
+
+TEST_F(MeshletTest, GreedyAlgorithm) {
+    {
+        // init engine and mesh
+        ShadedPathEngine my_engine;
+        static ShadedPathEngine* engine = &my_engine;
+        minimalEngineInitialization(engine);
+        engine->meshStore.loadMeshCylinder("TestObject", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
+        MeshInfo* meshInfo = engine->meshStore.getMesh("TestObject");
+        EXPECT_TRUE(meshInfo != nullptr);
+        auto& m4m = meshInfo->meshletsForMesh;
+
+        MeshletIn2 in2{ meshInfo->vertices, meshInfo->indices, GLEXT_MESHLET_PRIMITIVE_COUNT - 1, GLEXT_MESHLET_VERTEX_COUNT };
+        MeshletOut2 out2{ m4m.meshlets, meshInfo->outMeshletDesc, meshInfo->outLocalIndexPrimitivesBuffer, meshInfo->outGlobalIndexBuffer };
+        m4m.calculateTrianglesAndNeighbours(in2);
+        EXPECT_TRUE(m4m.verifyGlobalAdjacency(true));
+        for (auto& v : m4m.globalVertices) {
+            EXPECT_FALSE(v.usedInMeshlet); // all vertices should be unused at the start
+        }
+        for (auto& t : m4m.globalTriangles) {
+            EXPECT_FALSE(t.usedInMeshlet); // all triangles should be unused at the start
+        }
+        m4m.applyMeshletAlgorithmGreedy(in2, out2);
+        auto totalTriInMesh = meshInfo->indices.size() / 3;
+        auto totalTriInMeshlets = 0;
+        for (auto& m : m4m.meshlets) {
+            totalTriInMeshlets += m.triangles.size();
+        }
+        EXPECT_EQ(totalTriInMesh, m4m.globalTriangles.size());
+        EXPECT_EQ(totalTriInMesh, totalTriInMeshlets);
+        EXPECT_TRUE(m4m.verifyMeshletAdjacency());
     }
 }
 
