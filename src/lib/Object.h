@@ -157,8 +157,13 @@ public:
 	// iterate through index buffer and place numTrianglesPerMeshlet triangles into meshlets
     // if numTrianglesPerMeshlet is 0, fill meshlet with all triangles until it is full
 	void applyMeshletAlgorithmSimple(MeshletIn2& in, MeshletOut2& out, int numTrianglesPerMeshlet = 0);
-	void applyMeshletAlgorithmGreedy(MeshletIn2& in, MeshletOut2& out);
+    // start with a triangle and add neighbours until meshlet is full
+	// if squeeze is set, we try to find triangles that only use vertices already in the meshlet and add them also
+	// https://jcgt.org/published/0012/02/01/
+	void applyMeshletAlgorithmGreedy(MeshletIn2& in, MeshletOut2& out, bool squeeze = false);
 	void fillMeshletOutputBuffers(MeshletIn2& in, MeshletOut2& out);
+	// calculate the meshlet border: trinagles connected (sharing vertices), but not yet included with meshlet
+	void calcMeshletBorder(std::vector<uint32_t>& borderTriangleIndices, Meshlet& m);
 	void reset() {
 		globalTriangles.clear();
 		globalVertices.clear();

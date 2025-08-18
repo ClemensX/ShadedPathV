@@ -661,7 +661,7 @@ void MeshletsForMesh::applyMeshletAlgorithmSimple(MeshletIn2& in, MeshletOut2& o
 	verifyMeshletAdjacency(true);
 }
 
-void MeshletsForMesh::applyMeshletAlgorithmGreedy(MeshletIn2& in, MeshletOut2& out)
+void MeshletsForMesh::applyMeshletAlgorithmGreedy(MeshletIn2& in, MeshletOut2& out, bool squeeze)
 {
 	Log("Meshlet algorithm greedy started for " << in.vertices.size() << " vertices and " << in.indices.size() << " indices" << std::endl);
 	std::queue<GlobalMeshletVertex*> queue;
@@ -685,6 +685,20 @@ void MeshletsForMesh::applyMeshletAlgorithmGreedy(MeshletIn2& in, MeshletOut2& o
 					}
 				}
 				if (!m.canInsertTriangle(triangle)) {
+					if (squeeze && m.triangles.size() < in.primitiveLimit) {
+                        // try to find triangles that only use already included vertices
+                        vector<uint32_t> borderTriangleIndices; // indices into this->globalTriangles
+						calcMeshletBorder(borderTriangleIndices, m);
+						for (auto borderTriangleIndex : borderTriangleIndices) {
+							auto& borderTriangle = this->globalTriangles[borderTriangleIndex];
+							if (m.canInsertTriangle(borderTriangle)) {
+								//Log("Squeeze triangle " << borderTriangleIndex << " into meshlet." << endl);
+								borderTriangle.usedInMeshlet = true;
+								m.insertTriangle(borderTriangle);
+								// mark triangle as used in meshlet
+							}
+                        }
+					}
 					// meshlet full
                     queue.push(curVertex); // reinsert current vertex to continue with it in the next meshlet
 					out.meshlets.push_back(m);
@@ -693,7 +707,7 @@ void MeshletsForMesh::applyMeshletAlgorithmGreedy(MeshletIn2& in, MeshletOut2& o
                 // before inserting, mark the triangles and its vertices as being used in a meshlet
                 triangle.usedInMeshlet = true;
                 m.insertTriangle(triangle);
-				Log("Insert triangle " << triangleIndex << endl);
+				//Log("Insert triangle " << triangleIndex << endl);
 			}
             // after processing all triangles for this vertex, mark it as used in a meshlet
             curVertex->usedInMeshlet = true;
@@ -703,6 +717,23 @@ void MeshletsForMesh::applyMeshletAlgorithmGreedy(MeshletIn2& in, MeshletOut2& o
 	if (m.triangles.size() > 0) {
 		out.meshlets.push_back(m);
 	}
+}
+
+void MeshletsForMesh::calcMeshletBorder(vector<uint32_t>& borderTriangleIndices, Meshlet& m)
+{
+    borderTriangleIndices.clear();
+	// iterate through all vertices inside the meshlet and add neighbour triangles not already in
+	for (auto& v : m.vertices) {
+		//Log("Vertex " << v->globalIndex << " has " << v->neighbourTriangles.size() << " neighbour triangles." << endl);
+		for (auto triangleIndex : v->neighbourTriangles) {
+			auto& triangle = globalTriangles[triangleIndex];
+			if (triangle.usedInMeshlet) continue; // already in meshlet
+			// check if triangle is already in borderTriangleIndices
+			if (std::find(borderTriangleIndices.begin(), borderTriangleIndices.end(), triangleIndex) == borderTriangleIndices.end()) {
+				borderTriangleIndices.push_back(triangleIndex);
+			}
+		}
+    }
 }
 
 void MeshletsForMesh::fillMeshletOutputBuffers(MeshletIn2& in, MeshletOut2& out)
@@ -902,13 +933,13 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32
 	MeshletOut2 out2{ mesh->meshletsForMesh.meshlets, mesh->outMeshletDesc, mesh->outLocalIndexPrimitivesBuffer, mesh->outGlobalIndexBuffer };
 	mesh->meshletsForMesh.calculateTrianglesAndNeighbours(in2);
 	//mesh->meshletsForMesh.applyMeshletAlgorithmSimple(in2, out2);
-	mesh->meshletsForMesh.applyMeshletAlgorithmGreedy(in2, out2);
-	mesh->meshletsForMesh.fillMeshletOutputBuffers(in2, out2);
-    logMeshletStats(mesh);
+	mesh->meshletsForMesh.applyMeshletAlgorithmGreedy(in2, out2, true);
 	if (mesh->flags.hasFlag(MeshFlags::MESHLET_DEBUG_COLORS)) {
 		applyDebugMeshletColorsToVertices(mesh);
 		applyDebugMeshletColorsToMeshlets(mesh);
 	}
+	mesh->meshletsForMesh.fillMeshletOutputBuffers(in2, out2);
+    logMeshletStats(mesh);
 	return;
 
 	// old impl
