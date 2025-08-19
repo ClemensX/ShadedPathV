@@ -46,14 +46,14 @@ void check_inputs() {
     //debugPrintfEXT("meshlet uvec4[0] %f %f %f %f\n", uv.x, uv.y, uv.z, uv.w);
     MeshletDesc meshlet = unpackMeshletDesc(uv);
     uint indexBufferOffset = meshlet.indexBufferOffset;
-    debugPrintfEXT("MESH SHADER meshlet index %d and indexBufferOffset %d\n", meshletIndex, indexBufferOffset);
+    //debugPrintfEXT("MESH SHADER meshlet index %d and indexBufferOffset %d\n", meshletIndex, indexBufferOffset);
 
     mat4 mvp = payload.mvp;
-    debugPrintfEXT("MESH SHADER mvp %f %f %f %f\n", mvp[0][0], mvp[1][1], mvp[2][2], mvp[3][3]);
+    //debugPrintfEXT("MESH SHADER mvp %f %f %f %f\n", mvp[0][0], mvp[1][1], mvp[2][2], mvp[3][3]);
 
-    debugPrintfEXT("MESH SHADER object render mode: flags == %d\n", model_ubo.flags);
+    //debugPrintfEXT("MESH SHADER object render mode: flags == %d\n", model_ubo.flags);
     ShaderMaterial material = model_ubo.material;
-    debugPrintfEXT("mesh shader material workflow %f base set %d\n", material.workflow, material.baseColorTextureSet);
+    //debugPrintfEXT("mesh shader material workflow %f base set %d\n", material.workflow, material.baseColorTextureSet);
 }
 
 // Main mesh shader entry
@@ -72,12 +72,14 @@ void main()
     uint vertexCount = meshlet.numVertices;
     uint primCount = meshlet.numPrimitives;
     uint indexBufferOffset = meshlet.indexBufferOffset;
+    // define subset of triangles to draw by setting primStart and primCount
     //primCount = 10;
     uint primStart = 0;
+    primCount = primCount - primStart; // skip first 20 primitives for testing
 
     // sanity check
     if (vertexCount > GLEXT_MESHLET_VERTEX_COUNT || primCount > GLEXT_MESHLET_PRIMITIVE_COUNT) {
-        debugPrintfEXT("MESH SHADER ERROR: vertexCount %d or primCount %d exceeds limits\n", vertexCount, primCount);
+        //debugPrintfEXT("MESH SHADER ERROR: vertexCount %d or primCount %d exceeds limits\n", vertexCount, primCount);
         return;
     }
 //    if (meshletIndex < 185 || meshletIndex > 185){
@@ -113,7 +115,7 @@ void main()
             outVert[v].pad0 = 1.0;
             //vert.uv0.x = 0.0; // force uv0.x to 0.0 for testing
             //vert.uv0.y = 1.0; // force uv0.y to 1.0 for testing
-            debugPrintfEXT("MESH SHADER marked vert: col %f pos %f %f %f UV %f %f\n", vert.color0.x, vert.position.x, vert.position.y, vert.position.z, vert.uv0.x, vert.uv0.y);
+            //debugPrintfEXT("MESH SHADER marked vert: col %f pos %f %f %f UV %f %f\n", vert.color0.x, vert.position.x, vert.position.y, vert.position.z, vert.uv0.x, vert.uv0.y);
         }
         //outVert[v].pos = vert.position;
         // Set more attributes as needed
@@ -126,7 +128,7 @@ void main()
             // apply debug colors
             vec3 debugColor = DEBUG_COLORS[meshletIndex % 256];
             outVert[v].color0 = vec4(debugColor, 1.0); // apply debug color to vertex color
-            debugPrintfEXT("MESH SHADER DEBUG COLORS\n");
+            //debugPrintfEXT("MESH SHADER DEBUG COLORS\n");
         }
 
         outVert[v].uv0 = vert.uv0;
@@ -160,6 +162,7 @@ void main()
 
     // 2. Emit triangles using local indices from primitiveIndexBuffer
     // Each triangle is 3 bytes (local indices into meshlet vertex array)
+    //debugPrintfEXT("MESH SHADER INFO: vertexCount %d  primCount %d \n", vertexCount, primCount);
     for (uint p = primStart; p < primStart + primCount; ++p) {
         uint localPrimBufferIndex = indexBufferOffset * 3 + p * 3;
         //if (meshletIndex < 1 && p == 0) debugPrintfEXT("MESH SHADER localPrimBufferIndex %d\n", localPrimBufferIndex);
@@ -175,6 +178,9 @@ void main()
         //uint i1 = primitiveIndexBuffer.primitiveIndices[p + 1] & 0xFFu;
         //uint i2 = primitiveIndexBuffer.primitiveIndices[p + 2] & 0xFFu;
         //if (meshletIndex < 1 && p < primCount)
+        uint primIndex = localPrimBufferIndex / 4;
+        debugPrintfEXT("MESH SHADER uint index %d value %u\n", primIndex, primitiveIndexBuffer.primitiveIndices[primIndex]);
+        //debugPrintfEXT("MESH SHADER uint index %d tri %d prim %d %d %d\n", primIndex, p, byteValue0, byteValue1, byteValue2);
         gl_PrimitiveTriangleIndicesEXT[p-primStart] = uvec3(byteValue0, byteValue1, byteValue2);
         //if (meshletIndex < 1 && p == 90) debugPrintfEXT("MESH SHADER X count %d prim %d %d %d\n", primCount, byteValue0, byteValue1, byteValue2);
     }

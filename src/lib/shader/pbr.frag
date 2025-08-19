@@ -259,7 +259,7 @@ void main() {
     //}
 	if ((model_ubo.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) {
 		outColor = inColor0;
-		debugPrintfEXT("pbr frag MODEL_RENDER_FLAG_USE_VERTEX_COLORS\n");
+		//debugPrintfEXT("pbr frag MODEL_RENDER_FLAG_USE_VERTEX_COLORS\n");
         return;
 	} 
 

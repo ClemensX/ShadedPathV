@@ -158,29 +158,9 @@ void Loader::init() {
     engine->sound.openSoundFile("loading_music.ogg", "BACKGROUND_MUSIC", true);
     engine->sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 0.2f, 5000);
 
-    // 0.054417 17.445881 12.587227
-    float aspectRatio = 10.0f; // engine->getAspect();
-    LineDef myLines[] = {
-        // start, end, color
-        //{ glm::vec3(0.0f, 0.25f * aspectRatio, 0.0f), glm::vec3(0.25f, -0.25f * aspectRatio, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) },
-        { glm::vec3(0.026825, -0.900974, 0.545404), glm::vec3(0.054417f, 17.445881f, 12.587227f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) },
-        { glm::vec3(0.026825, 0.900974, 0.545404), glm::vec3(0.054417f, 17.445881f, 12.587227f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f) },
-        { glm::vec3(-0.017894, 0.900974, 0.545404), glm::vec3(0.943287, 0.097692, -0.317280), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) },
-        { glm::vec3(0.026474, 0.900974, 0.545403), glm::vec3(-0.190582, -0.924082, -0.331288), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) },
-        { glm::vec3(0.025699, 0.900974, 0.545403), glm::vec3(-0.190814, -0.926022, -0.325689), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) },
-        { glm::vec3(0.017435, 0.900974, 0.545404), glm::vec3(0.950813, 0.133715, -0.279420), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) },
-        { glm::vec3(-0.020320, 0.900974, 0.545404), glm::vec3(0.961352, 0.093620, -0.258915), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) },
-        { glm::vec3(-0.020326, 0.900974, 0.545402), glm::vec3(-0.184916, -0.938009, -0.293163), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) },
-        { glm::vec3(-0.017938, 0.900974, 0.545404), glm::vec3(0.964335, 0.055209, -0.258863), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) },
-        { glm::vec3(-0.021625, 0.900974, 0.545403), glm::vec3(-0.185608, -0.962647, -0.197130), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) },
-        { glm::vec3(-0.021622, 0.900974, 0.545404), glm::vec3(0.965867, 0.061166, -0.251712), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) },
-        { glm::vec3(-0.017982, 0.900974, 0.545404), glm::vec3(0.966822, 0.019318, -0.254719), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f) }
-    };
-    for (int i = 2; i < 12; i++) {
-        myLines[i].end = myLines[i].start + myLines[i].end;
-    }
-    vector<LineDef> lines;
-    for_each(begin(myLines), end(myLines), [&lines](LineDef l) {lines.push_back(l); });
+    // uncomment next block to enable zero cross display
+    //vector<LineDef> lines;
+    //LineShader::addZeroCross(lines);
     //engine->shaders.lineShader.addFixedGlobalLines(lines);
     //engine->shaders.lineShader.uploadFixedGlobalLines();
 }

@@ -697,9 +697,23 @@ void GlobalRendering::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDevic
     endSingleTimeCommands(commandBuffer, false, queue);
 }
 
+VkDeviceSize GlobalRendering::minAlign(VkDeviceSize size, VkDeviceSize alignment)
+{
+    if (alignment == 0) {
+        return size; // no alignment needed
+    }
+    if (size % alignment == 0) {
+        return size; // already aligned
+    }
+    return ((size + alignment - 1) / alignment) * alignment; // round up to next multiple of alignment
+}
+
 void GlobalRendering::uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory,
     string bufferDebugName, QueueSelector queue, uint64_t flags)
 {
+    if (bufferSize % 4 != 0) {
+        Error("Buffer size must be a multiple of 4 bytes. You may want to use GlobalRendering::minAlign() to get corrected size.");
+    }
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
     createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,

@@ -685,6 +685,7 @@ TEST_F(MeshletTest, ManualCreation) {
         m4m.calculateTrianglesAndNeighbours(in2);
         EXPECT_TRUE(m4m.verifyGlobalAdjacency(true));
         m4m.applyMeshletAlgorithmSimple(in2, out2);
+        //EXPECT_TRUE(m4m.verifyMeshletAdjacency());
         EXPECT_TRUE(m4m.meshlets.size() == 4);
         EXPECT_TRUE(m4m.meshlets[0].isTrianglesConnected());
         EXPECT_TRUE(m4m.meshlets[1].isTrianglesConnected());
@@ -710,6 +711,7 @@ TEST_F(MeshletTest, GreedyAlgorithm) {
         engine->meshStore.loadMeshCylinder("TestObject", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
         MeshInfo* meshInfo = engine->meshStore.getMesh("TestObject");
         EXPECT_TRUE(meshInfo != nullptr);
+        EXPECT_TRUE(Util::verifyMesh(meshInfo->vertices, meshInfo->indices));
         auto& m4m = meshInfo->meshletsForMesh;
 
         MeshletIn2 in2{ meshInfo->vertices, meshInfo->indices, GLEXT_MESHLET_PRIMITIVE_COUNT - 1, GLEXT_MESHLET_VERTEX_COUNT };
@@ -722,11 +724,52 @@ TEST_F(MeshletTest, GreedyAlgorithm) {
         for (auto& t : m4m.globalTriangles) {
             EXPECT_FALSE(t.usedInMeshlet); // all triangles should be unused at the start
         }
-        m4m.applyMeshletAlgorithmGreedy(in2, out2);
+        m4m.applyMeshletAlgorithmGreedy(in2, out2, true);
         auto totalTriInMesh = meshInfo->indices.size() / 3;
         auto totalTriInMeshlets = 0;
+        float maxY = -std::numeric_limits<float>::max();
         for (auto& m : m4m.meshlets) {
             totalTriInMeshlets += m.triangles.size();
+            // create vector of SimpleVertex for testing:
+            std::vector<Util::SimpleVertex> simpleVertices;
+            std::vector<uint32_t> indices;
+            for (auto& v : m.vertices) {
+                Util::SimpleVertex sv;
+                sv.pos = meshInfo->vertices[v->globalIndex].pos;
+                if (sv.pos.y > maxY) {
+                    maxY = sv.pos.y; // remember maximum Y value
+                }
+                simpleVertices.push_back(Util::SimpleVertex(sv));
+            }
+            for (auto& t : m.triangles) {
+                indices.push_back(t.indices[0]);
+                indices.push_back(t.indices[1]);
+                indices.push_back(t.indices[2]);
+            }
+            Util::verifyMesh(simpleVertices, indices);
+        }
+        Log("MeshletTest: max Y value in meshlets: " << maxY << endl);
+        {
+            // list all tri with maxY
+            for (auto& m : m4m.meshlets) {
+                for (auto& t : m.triangles) {
+                    auto& v = m.vertices[t.indices[0]];
+                    vec3 p0 = meshInfo->vertices[v->globalIndex].pos;
+                    v = m.vertices[t.indices[1]];
+                    vec3 p1 = meshInfo->vertices[v->globalIndex].pos;
+                    v = m.vertices[t.indices[2]];
+                    vec3 p2 = meshInfo->vertices[v->globalIndex].pos;
+                    if (p0.y == maxY || p1.y == maxY || p2.y == maxY) {
+                        // log triangle with max Y value
+                        float triHeight = fabs(p0.y - p1.y);
+                        float h2 = fabs(p0.y - p2.y);
+                        triHeight = h2 > triHeight ? h2 : triHeight;
+
+                        Log("MeshletTest: triangle with max Y value: " << p0.y << ", " << p1.y << ", " << p2.y << " height " << triHeight << endl);
+                    }
+                    //Log("MeshletTest: triangle with max Y value: " << t.indices[0] << ", " << t.indices[1] << ", " << t.indices[2] << endl);
+                }
+            }
         }
         EXPECT_EQ(totalTriInMesh, m4m.globalTriangles.size());
         EXPECT_EQ(totalTriInMesh, totalTriInMeshlets);

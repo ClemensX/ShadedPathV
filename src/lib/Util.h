@@ -162,6 +162,10 @@ public:
         std::vector<uint32_t>& indices,
         float scale = 1.0f);
 
+    struct SimpleVertex {
+        glm::vec3 pos;
+    };
+
     // Generates a cylinder mesh with the given parameters.
     static void GenerateCylinderMesh(
         int segments,
@@ -170,6 +174,13 @@ public:
         float height,
         std::vector<PBRVertex>& vertices,
         std::vector<uint32_t>& indices); 
+    // basic checks for vertices and indices
+    // - vertices should not be empty
+    // - indices should not be empty
+    // - indices should not contain duplicates
+    // - indices should not reference out of bounds vertices
+    static bool verifyMesh(std::vector<PBRVertex>& vertices, std::vector<uint32_t>& indices);
+    static bool verifyMesh(std::vector<SimpleVertex>& vertices, std::vector<uint32_t>& indices);
 
 private:
     static uint8_t bit_reverse8(uint8_t n) {

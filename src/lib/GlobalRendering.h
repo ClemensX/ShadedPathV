@@ -197,6 +197,7 @@ public:
 
 	enum class QueueSelector { GRAPHICS, TRANSFER };
 	static const uint64_t QUEUE_FLAG_PERMANENT_UPDATE = 0x01L;
+	static VkDeviceSize minAlign(VkDeviceSize size, VkDeviceSize alignment = 4);
 	// Upload index or vertex buffer
 	void uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory,
 		std::string bufferDebugName, QueueSelector queue = QueueSelector::GRAPHICS, uint64_t flags = 0L );

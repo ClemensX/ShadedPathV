@@ -141,6 +141,7 @@ void MeshStore::uploadObject(MeshInfo* obj)
 	size_t meshletDescBufferSize = obj->outMeshletDesc.size() * sizeof(PBRShader::PackedMeshletDesc);
 	if (meshletDescBufferSize > 0) {
 		size_t localIndexBufferSize = obj->outLocalIndexPrimitivesBuffer.size() * sizeof(obj->outLocalIndexPrimitivesBuffer[0]);
+        localIndexBufferSize = GlobalRendering::minAlign(localIndexBufferSize);
 		size_t globalIndexBufferSize = obj->outGlobalIndexBuffer.size()         * sizeof(obj->outGlobalIndexBuffer[0]);
 		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, meshletDescBufferSize, obj->outMeshletDesc.data(), obj->meshletDescBuffer, obj->meshletDescBufferMemory, "meshlet desc array buffer");
 		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, localIndexBufferSize, obj->outLocalIndexPrimitivesBuffer.data(), obj->localIndexBuffer, obj->localIndexBufferMemory, "meshlet local index buffer");
@@ -761,7 +762,7 @@ void MeshletsForMesh::fillMeshletOutputBuffers(MeshletIn2& in, MeshletOut2& out)
 	//}
 	out.outMeshletDesc.resize(out.meshlets.size());
 	out.outGlobalIndexBuffer.resize(totalIndices);
-	out.outLocalIndexPrimitivesBuffer.resize(totalIndices * 3);
+	out.outLocalIndexPrimitivesBuffer.resize(GlobalRendering::minAlign(totalIndices * 3));
 	uint32_t indexBufferOffset = 0;
 	for (size_t i = 0; i < out.meshlets.size(); ++i) {
 		auto& m = out.meshlets[i];
@@ -1543,7 +1544,7 @@ void MeshStore::calculateMeshletsX(std::string id, uint32_t vertexLimit, uint32_
 	//}
 	mesh->outMeshletDesc.resize(mesh->meshlets.size());
 	mesh->outGlobalIndexBuffer.resize(totalIndices);
-    mesh->outLocalIndexPrimitivesBuffer.resize(totalIndices * 3);
+    mesh->outLocalIndexPrimitivesBuffer.resize(GlobalRendering::minAlign(totalIndices * 3));
 	uint32_t indexBufferOffset = 0;
 	for (size_t i = 0; i < mesh->meshlets.size(); ++i) {
 		auto& m = mesh->meshlets[i];
@@ -2096,7 +2097,10 @@ bool Meshlet::isTrianglesConnected() const {
 					}
 				}
 			}
-			if (shared >= 2) {
+			if (shared == 1) {
+				//Log("shared 1\n");
+			}
+			if (shared >= 1) {
 				adjacency[i].push_back(j);
 				adjacency[j].push_back(i);
 			}

@@ -856,6 +856,104 @@ void Util::GenerateGridMesh(
     }
 }
 
+struct Triangle {
+    uint32_t i0, i1, i2;
+    // Equality operator
+    bool operator==(const Triangle& other) const {
+        return i0 == other.i0 && i1 == other.i1 && i2 == other.i2;
+    }
+};
+
+// Hash function for Triangle
+namespace std {
+    template <>
+    struct hash<Triangle> {
+        std::size_t operator()(const Triangle& t) const noexcept {
+            // Combine the hashes of the three indices
+            std::size_t h1 = std::hash<uint32_t>{}(t.i0);
+            std::size_t h2 = std::hash<uint32_t>{}(t.i1);
+            std::size_t h3 = std::hash<uint32_t>{}(t.i2);
+            return h1 ^ (h2 << 1) ^ (h3 << 2);
+        }
+    };
+}
+bool Util::verifyMesh(
+    std::vector<Util::SimpleVertex>& vertices,
+    std::vector<uint32_t>& indices)
+{
+    if (vertices.empty()) {
+        Log("ERROR: Mesh has no vertices!" << endl);
+        return false;
+    }
+    if (indices.empty()) {
+        Log("ERROR: Mesh has no indices!" << endl);
+        return false;
+    }
+    if (indices.size() % 3 != 0) {
+        Log("ERROR: Mesh indices are not a multiple of 3!" << endl);
+        return false;
+    }
+    for (auto& index : indices) {
+        if (index >= vertices.size()) {
+            Log("ERROR: Mesh index out of bounds: " << index << " >= " << vertices.size() << endl);
+            return false;
+        }
+    }
+    for (auto& vertex : vertices) {
+        if (std::isnan(vertex.pos.x) || std::isnan(vertex.pos.y) || std::isnan(vertex.pos.z)) {
+            Log("ERROR: Mesh vertex position contains NaN: " << vertex.pos.x << ", " << vertex.pos.y << ", " << vertex.pos.z << endl);
+            return false;
+        }
+        //if (std::isnan(vertex.normal.x) || std::isnan(vertex.normal.y) || std::isnan(vertex.normal.z)) {
+        //    Log("ERROR: Mesh vertex normal contains NaN: " << vertex.normal.x << ", " << vertex.normal.y << ", " << vertex.normal.z << endl);
+        //    return;
+        //}
+        //if (std::isnan(vertex.uv.x) || std::isnan(vertex.uv.y)) {
+        //    Log("ERROR: Mesh vertex UV contains NaN: " << vertex.uv.x << ", " << vertex.uv.y << endl);
+        //    return;
+        //}
+    }
+    // check triangles:
+
+    unordered_set<Triangle> triangles;
+    for (size_t i = 0; i < indices.size(); i += 3) {
+        uint32_t i0 = indices[i];
+        uint32_t i1 = indices[i + 1];
+        uint32_t i2 = indices[i + 2];
+        if (i0 == i1 || i1 == i2 || i0 == i2) {
+            Log("ERROR: Mesh has degenerate triangle with indices: " << i0 << ", " << i1 << ", " << i2 << endl);
+            return false;
+        }
+        // sort indices to make them comparable (will fail for double sided meshes!!!!)
+        if (i0 > i1) std::swap(i0, i1);
+        if (i1 > i2) std::swap(i1, i2);
+        if (i0 > i2) std::swap(i0, i2);
+        // check for duplicate triangles
+        Triangle tri = { i0, i1, i2 };
+        if (triangles.find(tri) != triangles.end()) {
+            Log("ERROR: Mesh has duplicate triangle with indices: " << i0 << ", " << i1 << ", " << i2 << endl);
+            return false;
+        }
+        else {
+            triangles.insert(tri);
+        }
+    }
+    Log("Mesh verification passed: " << vertices.size() << " vertices, " << indices.size() / 3 << " triangles." << endl);
+    return true;
+}
+
+bool Util::verifyMesh(
+    std::vector<PBRVertex>& vertices,
+    std::vector<uint32_t>& indices)
+{
+    vector<SimpleVertex> simpleVertices;
+    simpleVertices.reserve(vertices.size());
+    for (const auto& v : vertices) {
+        simpleVertices.push_back({ v.pos});
+    }
+    return verifyMesh(simpleVertices, indices);
+}
+
 void Util::GenerateCylinderMesh(
     int segments,
     int heightDivs,
@@ -903,11 +1001,10 @@ void Util::GenerateCylinderMesh(
             indices.push_back(i2);
         }
     }
-
     // Top cap
     uint32_t topCenterIndex = static_cast<uint32_t>(vertices.size());
     vertices.emplace_back(glm::vec3(0, height / 2.0f, 0), glm::vec3(0, 1, 0), glm::vec2(0.5f, 0.5f));
-    for (int i = 0; i < segments; ++i) {
+    for (int i = 1; i < segments; ++i) {
         int next = (i + 1) % segments;
         uint32_t i0 = heightDivs * segments + i;
         uint32_t i1 = heightDivs * segments + next;
