@@ -960,7 +960,8 @@ void Util::GenerateCylinderMesh(
     float radius,
     float height,
     std::vector<PBRVertex>& vertices,
-    std::vector<uint32_t>& indices)
+    std::vector<uint32_t>& indices,
+    bool produceCrack)
 {
     vertices.clear();
     indices.clear();
@@ -990,6 +991,10 @@ void Util::GenerateCylinderMesh(
             uint32_t i2 = (y + 1) * segments + i;
             uint32_t i3 = (y + 1) * segments + next;
 
+            if (produceCrack && y == heightDivs - 1 && i == 0) {
+                // Skip the first segment if we produce a crack
+                continue;
+            }
             // First triangle
             indices.push_back(i0);
             indices.push_back(i1);
@@ -1004,7 +1009,8 @@ void Util::GenerateCylinderMesh(
     // Top cap
     uint32_t topCenterIndex = static_cast<uint32_t>(vertices.size());
     vertices.emplace_back(glm::vec3(0, height / 2.0f, 0), glm::vec3(0, 1, 0), glm::vec2(0.5f, 0.5f));
-    for (int i = 1; i < segments; ++i) {
+    int startIndexTop = produceCrack ? 1 : 0; // if we produce a crack, we leave out the first segment
+    for (int i = startIndexTop; i < segments; ++i) {
         int next = (i + 1) % segments;
         uint32_t i0 = heightDivs * segments + i;
         uint32_t i1 = heightDivs * segments + next;
@@ -1024,4 +1030,30 @@ void Util::GenerateCylinderMesh(
         indices.push_back(i1);
         indices.push_back(i0);
     }
+
+    if (produceCrack) {
+        // if we produce a crack, we add more triangles at the top
+        // it0 and it1 are the indices at the top where we left out the first segment
+        uint32_t it0 = heightDivs * segments;
+        uint32_t it1 = heightDivs * segments + 1;
+        // il0 and il1 are one triangle lower than it0 and it1
+        uint32_t il0 = (heightDivs - 1) * segments;
+        uint32_t il1 = (heightDivs - 1) * segments + 1;
+
+        // add triangles to close the gap
+        indices.push_back(topCenterIndex);
+        indices.push_back(it0);
+        indices.push_back(il0);
+
+        indices.push_back(topCenterIndex);
+        indices.push_back(il1);
+        indices.push_back(it1);
+
+        indices.push_back(topCenterIndex);
+        indices.push_back(il0);
+        indices.push_back(il1);
+    }
+
+
+
 }

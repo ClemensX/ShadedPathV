@@ -173,7 +173,8 @@ public:
         float radius,
         float height,
         std::vector<PBRVertex>& vertices,
-        std::vector<uint32_t>& indices); 
+        std::vector<uint32_t>& indices,
+        bool produceCrack = false);
     // basic checks for vertices and indices
     // - vertices should not be empty
     // - indices should not be empty

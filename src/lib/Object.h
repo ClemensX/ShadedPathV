@@ -517,7 +517,7 @@ public:
 	// Generate and register a grid mesh with the given id
 	void loadMeshGrid(std::string id, MeshFlagsCollection flags = MeshFlagsCollection(), std::string baseColorTextureId = "", int gridSize = 9, float scale = 1.0f);
 	// Generate and register a cylinder mesh with the given id
-	void loadMeshCylinder(std::string id, MeshFlagsCollection flags = MeshFlagsCollection(), std::string baseColorTextureId = "", int segments = 16, int heightDivs = 8, float radius = 1.0f, float height = 2.0f);	// get sorted object list (sorted by type)
+	void loadMeshCylinder(std::string id, MeshFlagsCollection flags = MeshFlagsCollection(), std::string baseColorTextureId = "", bool produceCrack = false, int segments = 16, int heightDivs = 8, float radius = 1.0f, float height = 2.0f);	// get sorted object list (sorted by type)
 
 	// meshes are only resorted if one was added in the meantime
 	const std::vector<MeshInfo*> &getSortedList();

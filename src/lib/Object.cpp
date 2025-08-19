@@ -693,7 +693,7 @@ void MeshletsForMesh::applyMeshletAlgorithmGreedy(MeshletIn2& in, MeshletOut2& o
 						for (auto borderTriangleIndex : borderTriangleIndices) {
 							auto& borderTriangle = this->globalTriangles[borderTriangleIndex];
 							if (m.canInsertTriangle(borderTriangle)) {
-								//Log("Squeeze triangle " << borderTriangleIndex << " into meshlet." << endl);
+								Log("Squeeze triangle " << borderTriangleIndex << " into meshlet." << endl);
 								borderTriangle.usedInMeshlet = true;
 								m.insertTriangle(borderTriangle);
 								// mark triangle as used in meshlet
@@ -2034,13 +2034,13 @@ void MeshStore::loadMeshGrid(std::string id, MeshFlagsCollection flags, std::str
 	meshes[id] = std::move(meshInfo);
 }
 
-void MeshStore::loadMeshCylinder(std::string id, MeshFlagsCollection flags, std::string baseColorTextureId, int segments, int heightDivs, float radius, float height)
+void MeshStore::loadMeshCylinder(std::string id, MeshFlagsCollection flags, std::string baseColorTextureId, bool produceCrack, int segments, int heightDivs, float radius, float height)
 {
 	MeshInfo meshInfo;
 	meshInfo.id = id;
 	meshInfo.flags = flags;
 
-	Util::GenerateCylinderMesh(segments, heightDivs, radius, height, meshInfo.vertices, meshInfo.indices);
+	Util::GenerateCylinderMesh(segments, heightDivs, radius, height, meshInfo.vertices, meshInfo.indices, produceCrack);
 
 	if (flags.hasFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER)) {
 		// Flip winding order

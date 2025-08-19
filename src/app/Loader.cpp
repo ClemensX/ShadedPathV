@@ -112,7 +112,7 @@ void Loader::init() {
 
     MeshFlagsCollection meshFlags = MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
-    engine->meshStore.loadMeshCylinder("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID); alterObjectCoords = false;
+    engine->meshStore.loadMeshCylinder("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID, true); alterObjectCoords = false;
     //engine->meshStore.loadMeshGrid("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID); alterObjectCoords = false;
 
     debugColors("LogoBox");
