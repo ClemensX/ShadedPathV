@@ -104,24 +104,14 @@ public:
 };
 	
 // input for meshlet calculations, basically the raw data from glTF:
-struct MeshletIn2 {
+struct MeshletIn {
 	const std::vector<PBRShader::Vertex>& vertices;
 	const std::vector<uint32_t>& indices;
 	const uint32_t primitiveLimit; // usually 126
 	const uint32_t vertexLimit; // usually 64
 };
 
-// intermediate structures used during meshlet calculations
-// can be cleared after meshlet calculations are done
-struct MeshletIntermediate2 {
-	//std::vector<MeshletOld::MeshletTriangle>& trianglesVector; // base storage for triangles
-	//std::unordered_map<uint32_t, MeshletOld::MeshletVertInfo>& indexVertexMap;
-	//std::vector<MeshletOld::MeshletTriangle*>& triangles;
-	//std::vector<MeshletOld::MeshletVertInfo*>& vertsVector; // meshlet vertex info, used to store vertex indices and neighbours
-	//std::vector<uint32_t>& meshletVertexIndices; // indices into vertices
-};
-
-struct MeshletOut2 {
+struct MeshletOut {
 	std::vector<Meshlet>& meshlets;
 	// output: needed on GPU side
 	std::vector<PBRShader::PackedMeshletDesc>& outMeshletDesc;
@@ -147,7 +137,7 @@ public:
 	std::vector<uint8_t> outLocalIndexPrimitivesBuffer;   // local indices for primitives (3 indices per triangle)
 	std::vector<uint32_t> outGlobalIndexBuffer; // vertex indices into vertex buffer
 
-	void calculateTrianglesAndNeighbours(MeshletIn2& in);
+	void calculateTrianglesAndNeighbours(MeshletIn& in);
     // log errors in adjacency relations (for whole mesh)
 	void verifyGlobalAdjacencyLog(bool runO2BigTest = false) const;
     // check that all triangles have neighbours and vertices have neighbours (for whole mesh)
@@ -156,12 +146,12 @@ public:
     bool verifyMeshletAdjacency(bool doLog = false) const;
 	// iterate through index buffer and place numTrianglesPerMeshlet triangles into meshlets
     // if numTrianglesPerMeshlet is 0, fill meshlet with all triangles until it is full
-	void applyMeshletAlgorithmSimple(MeshletIn2& in, MeshletOut2& out, int numTrianglesPerMeshlet = 0);
+	void applyMeshletAlgorithmSimple(MeshletIn& in, MeshletOut& out, int numTrianglesPerMeshlet = 0);
     // start with a triangle and add neighbours until meshlet is full
 	// if squeeze is set, we try to find triangles that only use vertices already in the meshlet and add them also
 	// https://jcgt.org/published/0012/02/01/
-	void applyMeshletAlgorithmGreedy(MeshletIn2& in, MeshletOut2& out, bool squeeze = false);
-	void fillMeshletOutputBuffers(MeshletIn2& in, MeshletOut2& out);
+	void applyMeshletAlgorithmGreedy(MeshletIn& in, MeshletOut& out, bool squeeze = false);
+	void fillMeshletOutputBuffers(MeshletIn& in, MeshletOut& out);
 	// calculate the meshlet border: trinagles connected (sharing vertices), but not yet included with meshlet
 	void calcMeshletBorder(std::vector<uint32_t>& borderTriangleIndices, Meshlet& m);
 	void reset() {
@@ -184,164 +174,6 @@ struct MeshCollection {
         std::vector<::TextureInfo*> textureInfos;
         std::vector<MeshInfo*> meshInfos;
 		MeshFlagsCollection flags;
-};
-
-// meshlet class holds data for a single meshlet, contains collection of vertices and primitives (triangles).
-// vertex buffer is unchanged, all meshlet operations work on indices only
-class MeshletOld {
-public:
-	MeshletOld() {
-		verticesIndices.reserve(256);
-		primitives.reserve(256);
-	}
-	MeshletOld(const MeshletOld&) = default;
-	MeshletOld(MeshletOld&&) = default;
-	MeshletOld& operator=(const MeshletOld&) = default;
-	MeshletOld& operator=(MeshletOld&&) = default;
-
-	// debug info:
-    bool debugColors = false; // if true, color all triangles of this meshlet with the same color
-	// indices of the meshlet (index into global vertex buffer)
-	// actual vertex coord are globalVertexBuffer[verticesIndices[i]], if i is local 8 bit index
-    std::vector<uint32_t> verticesIndices; // actual index buffer, map meshlet vert index 0..255 to global index
-	using uvec3 = std::array<uint32_t, 3>;
-	std::vector<uvec3> primitives;
-	struct MeshletVertInfo;
-	struct MeshletTriangle {
-		// local indices of the meshlet, fit into one byte
-		//uint8_t a, b, c; // vertices, defined by local index into verticesIndices
-		std::vector<MeshletVertInfo*> vertices;
-		std::vector<MeshletTriangle*> neighbours;
-		float centroid[3]{};
-		uint32_t id;
-		uint32_t flag = -1;
-		uint32_t dist;
-	};
-	struct MeshletVertInfo {
-		std::vector<MeshletTriangle*> neighbours; // vertex index
-		unsigned int index;
-		unsigned int degree;
-	};
-
-	// meshletmaker: https://github.com/Senbyo/meshletmaker
-	static void applyMeshletAlgorithmGreedyVerts(
-		std::unordered_map<uint32_t, MeshletOld::MeshletVertInfo>& indexVertexMap, // 117008
-		std::vector<MeshletOld::MeshletVertInfo*>& vertsVector, // 117008
-		std::vector<MeshletOld::MeshletTriangle*>& triangles, // 231256
-		std::vector<MeshletOld>& meshlets, // 0
-		const std::vector<PBRShader::Vertex>& vertexBuffer, // 117008 vertices
-		uint32_t primitiveLimit, uint32_t vertexLimit // 125, 64
-	);
-
-	bool empty() const { return verticesIndices.empty(); }
-
-	void reset() {
-		verticesIndices.clear(); // clear but retain allocated memory
-		primitives.clear();
-	}
-
-	// check if cache can hold one more triangle
-	bool cannotInsert(const uint32_t* indices, uint32_t maxVertexSize, uint32_t maxPrimitiveSize) const
-	{
-		// skip degenerate
-		if (indices[0] == indices[1] || indices[0] == indices[2] || indices[1] == indices[2])
-		{
-			return false;
-		}
-
-		uint32_t found = 0;
-
-		// check if any of the incoming three indices are already in meshlet
-		for (auto vert_idx : verticesIndices) {
-			for (int i = 0; i < 3; ++i) {
-				uint32_t idx = indices[i];
-				if (vert_idx == idx) {
-					found++;
-				}
-			}
-		}
-		// out of bounds
-		bool ret = (verticesIndices.size() + 3 - found) > maxVertexSize || (primitives.size() + 1) > maxPrimitiveSize;
-		if (ret) {
-			assert(verticesIndices.size() <= maxVertexSize);
-			assert(primitives.size() <= maxPrimitiveSize);
-		}
-		return ret;
-	}
-
-	// insert new triangle
-	void insert(const uint32_t* indices) {
-		uint32_t triangle[3];
-
-		// skip degenerate
-		if (indices[0] == indices[1] || indices[0] == indices[2] || indices[1] == indices[2])
-		{
-			return;
-		}
-
-		for (int i = 0; i < 3; ++i) {
-			// take out an index
-			uint32_t idx = indices[i];
-			bool found = false;
-
-			// check if idx is already in cache
-			for (uint32_t v = 0; v < verticesIndices.size(); ++v) {
-				if (idx == verticesIndices[v])
-				{
-					triangle[i] = v;
-					found = true;
-					break;
-				}
-			}
-			// if idx is not in cache add it
-			if (!found)
-			{
-				verticesIndices.push_back(idx);
-				//actualVertices[numVertices] = verts[idx]; we do not have actual vertices here, only indices
-				triangle[i] = verticesIndices.size() - 1;
-
-				//if (numVertices)
-				//{
-				//	numVertexDeltaBits = std::max(findMSB((idx ^ vertices[0]) | 1) + 1, numVertexDeltaBits);
-				//}
-				//numVertexAllBits = std::max(numVertexAllBits, findMSB(idx) + 1);
-
-				//numVertices++;
-			}
-		}
-
-        uvec3 tri = { triangle[0], triangle[1], triangle[2] };
-        primitives.push_back(tri);
-	}
-};
-
-// input for meshlet calculations, basically the raw data from glTF:
-struct MeshletIn {
-	const std::vector<PBRShader::Vertex>& vertices;
-	const std::vector<uint32_t>& indices;
-	const uint32_t primitiveLimit; // usually 126
-	const uint32_t vertexLimit; // usually 64
-};
-
-// intermediate structures used during meshlet calculations
-// can be cleared after meshlet calculations are done
-struct MeshletIntermediate {
-	std::vector<MeshletOld::MeshletTriangle>& trianglesVector; // base storage for triangles
-	std::unordered_map<uint32_t, MeshletOld::MeshletVertInfo>& indexVertexMap;
-	std::vector<MeshletOld::MeshletTriangle*>& triangles;
-	std::vector<MeshletOld::MeshletVertInfo*>& vertsVector; // meshlet vertex info, used to store vertex indices and neighbours
-	std::vector<uint32_t>& meshletVertexIndices; // indices into vertices
-};
-
-struct MeshletOut {
-	std::vector<MeshletOld>& meshlets;
-	// output: needed on GPU side
-	std::vector<PBRShader::PackedMeshletDesc>& outMeshletDesc;
-	std::vector<uint8_t>& outLocalIndexPrimitivesBuffer;   // local indices for primitives (3 indices per triangle)
-	std::vector<uint32_t>& outGlobalIndexBuffer; // vertex indices into vertex buffer
-	//std::vector<MeshletOld::MeshletVertInfo> indexVertexMap; // 117008
-	//std::vector<MeshletOld::MeshletVertInfo*> vertsVector; // 117008
-	//std::vector<MeshletOld::MeshletTriangle*> triangles; // 231256
 };
 
 struct BoundingBoxCorners {
@@ -368,39 +200,6 @@ void sortByPos(std::vector<T>& vertices) {
 	);
 }
 
-// Sort vector<MeshletOld::MeshletVertInfo*> by the position in the base vertex buffer, along the given axis.
-template<typename T>
-void sortByPosAxis(std::vector<MeshletOld::MeshletVertInfo*>& verticesMeshletInfoVector, const std::vector<T>& verticesBaseVector, Axis axis) {
-	std::sort(verticesMeshletInfoVector.begin(), verticesMeshletInfoVector.end(),
-		[&verticesBaseVector, axis](const MeshletOld::MeshletVertInfo* lhs, const MeshletOld::MeshletVertInfo* rhs) {
-			const glm::vec3& posL = verticesBaseVector[lhs->index].pos;
-			const glm::vec3& posR = verticesBaseVector[rhs->index].pos;
-			switch (axis) {
-			case Axis::X: return posL.x < posR.x;
-			case Axis::Y: return posL.y < posR.y;
-			case Axis::Z: return posL.z < posR.z;
-			default:      return false;
-			}
-		}
-	);
-}
-
-// Sort vector<MeshletOld::MeshletVertInfo*> by the position in the base vertex buffer, along the given axis.
-template<typename T>
-void sortTrianglesByPosAxis(std::vector<MeshletOld::MeshletTriangle*>& triangles, const std::vector<T>& verticesBaseVector, Axis axis) {
-	std::sort(triangles.begin(), triangles.end(),
-		[&verticesBaseVector, axis](const MeshletOld::MeshletTriangle* lhs, const MeshletOld::MeshletTriangle* rhs) {
-			float l, r;
-			switch (axis) {
-            case Axis::X: l = lhs->centroid[0]; r = rhs->centroid[0]; break;
-            case Axis::Y: l = lhs->centroid[1]; r = rhs->centroid[1]; break;
-            case Axis::Z: l = lhs->centroid[2]; r = rhs->centroid[2]; break;
-			default:      return false;
-			}
-            return l < r;
-		}
-	);
-}
 
 // Describe a single loaded mesh. mesh IDs are unique, several Objects may be instantiated backed by the same mesh
 struct MeshInfo
@@ -416,8 +215,6 @@ struct MeshInfo
     MeshletsForMesh meshletsForMesh; // meshlets for this mesh, for use in MeshShader
 
     std::vector<uint32_t> meshletVertexIndices; // indices into vertices, used for meshlets
-    std::vector<MeshletOld> meshlets; // meshlets for this mesh, for use in MeshShader
-    std::vector<MeshletOld::MeshletVertInfo*> vertsVector; // meshlet vertex info, used to store vertex indices and neighbours
 	// output: needed on GPU side
 	std::vector<PBRShader::PackedMeshletDesc> outMeshletDesc;
 	std::vector<uint8_t> outLocalIndexPrimitivesBuffer;   // local indices for primitives (3 indices per triangle)
@@ -532,7 +329,6 @@ public:
     // 1. meshlet desc buffer, most important: get global index start for each meshlet
     // 2. global index buffer, which contains indices into the global vertex buffer
     // 3. local index buffer, byte buffer which maps local meshlet vertex index to global index buffer: byte val + global index start is the index where the actual vertex is found
-	void calculateMeshletsX(std::string id, uint32_t vertexLimit = 64, uint32_t primitiveLimit = 126);
 	void calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32_t vertexLimit = GLEXT_MESHLET_VERTEX_COUNT, uint32_t primitiveLimit = GLEXT_MESHLET_PRIMITIVE_COUNT);
 	const float VERTEX_REUSE_THRESHOLD = 1.3f; // if vertex position duplication ratio is greater than this, log a warning
 	// IMPORTANT: this is no longer true! We need vertex normals for PBR and they should not be removed!
@@ -575,16 +371,6 @@ private:
 	Util* util = nullptr;
 	std::vector<MeshInfo*> sortedList;
 	glTF gltf;
-	// iterate through index buffer and place a fixed number of triangles into meshlets
-	static void applyMeshletAlgorithmSimple(MeshletIn& in, MeshletOut& out);
-	// iterate through index buffer and place a fixed number of triangles into meshlets
-	static void applyMeshletAlgorithmSimpleOnSortedTriangles(MeshletIn& in, MeshletIntermediate& temp, MeshletOut& out);
-	// meshletmaker: https://github.com/Senbyo/meshletmaker
-	static void applyMeshletAlgorithmGreedyVerts(MeshletIn& in, MeshletIntermediate& temp, MeshletOut& out);
-	// go through meshlets and create the buffers needed on GPU side
-	static void fillMeshletOutputBuffers(MeshletIn& in, MeshletOut& out);
-	static void generateTrianglesAndNeighbours(MeshletIn& in, MeshletIntermediate& temp);
-	static void sort(MeshletIn& in, MeshletIntermediate& temp);
 	static void logVertex(PBRShader::Vertex& v);
 	static void logVertexIndex(PBRShader::Vertex& v, std::vector<PBRShader::Vertex>& vertices);
 	static void logTriangleFromGlTF(int num, MeshInfo* mesh);
@@ -592,7 +378,6 @@ private:
 	static void logTriangleFromMeshletBuffers(int num, MeshInfo* mesh);
 	static void markVertexOfTriangle(int num, MeshInfo* mesh);
 	void checkVertexDuplication(std::string id);
-	static void prepareMeshletVertexIndices(MeshletIntermediate& temp);
 	// Helper for default material setup
 	void setDefaultMaterial(PBRShader::ShaderMaterial& mat);
 };

@@ -580,8 +580,8 @@ TEST_F(MeshletTest, BasicValidity) {
         3, 0, 4, 3, 4, 7 // left face
     };
     {
-        MeshletIn2 in{ vertices, indices, 126, 7 };
-        //MeshletOut2 out2{ mesh->meshletsForMesh.meshlets, mesh->outMeshletDesc, mesh->outLocalIndexPrimitivesBuffer, mesh->outGlobalIndexBuffer };
+        MeshletIn in{ vertices, indices, 126, 7 };
+        //MeshletOut out2{ mesh->meshletsForMesh.meshlets, mesh->outMeshletDesc, mesh->outLocalIndexPrimitivesBuffer, mesh->outGlobalIndexBuffer };
         meshlets.calculateTrianglesAndNeighbours(in);
         // test neighbour relations:
         GlobalMeshletVertex v0 = meshlets.globalVertices[0];
@@ -662,8 +662,8 @@ TEST_F(MeshletTest, ManualCreation) {
         // check that we have more triangles and vertices than fit into one single meshlet:
         EXPECT_TRUE(meshInfo->vertices.size() > GLEXT_MESHLET_VERTEX_COUNT);
         EXPECT_TRUE(meshInfo->indices.size() / 3 > GLEXT_MESHLET_PRIMITIVE_COUNT);
-        MeshletIn2 in2{ meshInfo->vertices, meshInfo->indices, GLEXT_MESHLET_PRIMITIVE_COUNT - 1, GLEXT_MESHLET_VERTEX_COUNT };
-        MeshletOut2 out2{ m4m.meshlets, meshInfo->outMeshletDesc, meshInfo->outLocalIndexPrimitivesBuffer, meshInfo->outGlobalIndexBuffer };
+        MeshletIn in2{ meshInfo->vertices, meshInfo->indices, GLEXT_MESHLET_PRIMITIVE_COUNT - 1, GLEXT_MESHLET_VERTEX_COUNT };
+        MeshletOut out2{ m4m.meshlets, meshInfo->outMeshletDesc, meshInfo->outLocalIndexPrimitivesBuffer, meshInfo->outGlobalIndexBuffer };
         m4m.calculateTrianglesAndNeighbours(in2);
         EXPECT_TRUE(m4m.verifyGlobalAdjacency(true));
         // check meshlet insertion limits:
@@ -714,8 +714,8 @@ TEST_F(MeshletTest, GreedyAlgorithm) {
         EXPECT_TRUE(Util::verifyMesh(meshInfo->vertices, meshInfo->indices));
         auto& m4m = meshInfo->meshletsForMesh;
 
-        MeshletIn2 in2{ meshInfo->vertices, meshInfo->indices, GLEXT_MESHLET_PRIMITIVE_COUNT - 1, GLEXT_MESHLET_VERTEX_COUNT };
-        MeshletOut2 out2{ m4m.meshlets, meshInfo->outMeshletDesc, meshInfo->outLocalIndexPrimitivesBuffer, meshInfo->outGlobalIndexBuffer };
+        MeshletIn in2{ meshInfo->vertices, meshInfo->indices, GLEXT_MESHLET_PRIMITIVE_COUNT - 1, GLEXT_MESHLET_VERTEX_COUNT };
+        MeshletOut out2{ m4m.meshlets, meshInfo->outMeshletDesc, meshInfo->outLocalIndexPrimitivesBuffer, meshInfo->outGlobalIndexBuffer };
         m4m.calculateTrianglesAndNeighbours(in2);
         EXPECT_TRUE(m4m.verifyGlobalAdjacency(true));
         for (auto& v : m4m.globalVertices) {

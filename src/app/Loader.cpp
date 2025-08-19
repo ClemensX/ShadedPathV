@@ -54,8 +54,7 @@ void Loader::run(ContinuationInfo* cont)
 void Loader::debugColors(std::string meshName)
 {
     uint32_t meshletFlags =
-        (uint32_t)MeshletFlags::MESHLET_ALG_GREEDY_VERT
-        | (uint32_t)MeshletFlags::MESHLET_SORT;
+        (uint32_t)MeshletFlags::MESHLET_ALG_GREEDY_VERT; // | (uint32_t)MeshletFlags::MESHLET_SORT;
     engine->meshStore.calculateMeshlets(meshName, meshletFlags, GLEXT_MESHLET_VERTEX_COUNT, GLEXT_MESHLET_PRIMITIVE_COUNT-1);
     static auto col = engine->util.generateColorPalette256();
     assert(col.size() == 256); //  Color palette must have 256 colors!
@@ -106,13 +105,12 @@ void Loader::init() {
     //engine->meshStore.loadMesh("delfini6.glb", "LogoBox"); alterObjectCoords = false;
 
     //engine->meshStore.loadMesh("delfini6.glb", "LogoBox"); alterObjectCoords = false;
-    //engine->meshStore.loadMesh("delfini7.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
-    //engine->meshStore.loadMesh("delfini7.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
+    engine->meshStore.loadMesh("delfini7.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox"); alterObjectCoords = false;
 
     MeshFlagsCollection meshFlags = MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
-    engine->meshStore.loadMeshCylinder("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID, true); alterObjectCoords = false;
+    //engine->meshStore.loadMeshCylinder("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID, true); alterObjectCoords = false;
     //engine->meshStore.loadMeshGrid("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID); alterObjectCoords = false;
 
     debugColors("LogoBox");
@@ -264,7 +262,7 @@ void Loader::prepareFrame(FrameResources* fr)
 
         //engine->meshStore.debugRenderMeshlet(wo, tr, modeltransform);
         //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform, 185);
-        engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
+        //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
 
         if (useDefaultNormalLineLength) {
             //engine->meshStore.debugGraphics(wo, tr, modeltransform);
