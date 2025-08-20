@@ -150,10 +150,12 @@ public:
     // start with a triangle and add neighbours until meshlet is full
 	// if squeeze is set, we try to find triangles that only use vertices already in the meshlet and add them also
 	// https://jcgt.org/published/0012/02/01/
-	void applyMeshletAlgorithmGreedy(MeshletIn& in, MeshletOut& out, bool squeeze = false);
+	void applyMeshletAlgorithmGreedy(MeshletIn& in, MeshletOut& out, bool squeeze = false, bool useNearestNeighbour = false);
 	void fillMeshletOutputBuffers(MeshletIn& in, MeshletOut& out);
 	// calculate the meshlet border: trinagles connected (sharing vertices), but not yet included with meshlet
 	void calcMeshletBorder(std::vector<uint32_t>& borderTriangleIndices, Meshlet& m);
+    // sort neighbours by distance to current vertex
+	void sortNeighboursByDistance(MeshletIn& in, GlobalMeshletVertex* vertex, std::vector<uint32_t>& neighbours);
 	void reset() {
 		globalTriangles.clear();
 		globalVertices.clear();
@@ -292,7 +294,8 @@ enum class MeshletFlags : uint32_t {
 	MESHLET_SORT = 1,
 	MESHLET_ALG_SIMPLE = 2,
 	MESHLET_ALG_GREEDY_VERT = 4,
-    MESHLET_SIMPLIFY_MESH = 8, // remove duplicate vertices and triangles
+	MESHLET_ALG_GREEDY_DISTANCE = 8,
+	MESHLET_SIMPLIFY_MESH = 16, // remove duplicate vertices and triangles
 };
 
 // Mesh Store to organize objects loaded from gltf files.
@@ -360,9 +363,9 @@ public:
 		std::vector<uint32_t>& globalIndexBuffer,
 		std::vector<PBRShader::Vertex>& vertices, int singleMeshletNum
 	);
-	void logMeshletStatsOld(MeshInfo* mesh);
 	void logMeshletStats(MeshInfo* mesh);
 
+	static void logVertex(const PBRShader::Vertex& v);
 private:
 	MeshCollection* loadMeshFile(std::string filename, std::string id, std::vector<std::byte> &fileBuffer, MeshFlagsCollection flags);
 	std::unordered_map<std::string, MeshInfo> meshes;
@@ -371,7 +374,6 @@ private:
 	Util* util = nullptr;
 	std::vector<MeshInfo*> sortedList;
 	glTF gltf;
-	static void logVertex(PBRShader::Vertex& v);
 	static void logVertexIndex(PBRShader::Vertex& v, std::vector<PBRShader::Vertex>& vertices);
 	static void logTriangleFromGlTF(int num, MeshInfo* mesh);
 	static void logTriangleFromMeshlets(int num, MeshInfo* mesh);

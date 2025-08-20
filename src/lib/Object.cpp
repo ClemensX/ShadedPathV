@@ -539,7 +539,7 @@ bool MeshletsForMesh::verifyGlobalAdjacency(bool runO2BigTest, bool doLog) const
 void MeshletsForMesh::calculateTrianglesAndNeighbours(MeshletIn& in)
 {
 	// Neighbour relation:
-    // vertices: all trianges that use this vertex are stored in neighbourTriangles
+    // vertices: all triangles that use this vertex are stored in neighbourTriangles
     // triangles: all triangles that have at least one vertex in common with this triangle are stored in neighbourTriangles
 	globalTriangles.resize(in.indices.size() / 3);
 	globalVertices.resize(in.vertices.size());
@@ -615,7 +615,7 @@ void MeshletsForMesh::applyMeshletAlgorithmSimple(MeshletIn& in, MeshletOut& out
 	verifyMeshletAdjacency(true);
 }
 
-void MeshletsForMesh::applyMeshletAlgorithmGreedy(MeshletIn& in, MeshletOut& out, bool squeeze)
+void MeshletsForMesh::applyMeshletAlgorithmGreedy(MeshletIn& in, MeshletOut& out, bool squeeze, bool useNearestNeighbour)
 {
 	Log("Meshlet algorithm greedy started for " << in.vertices.size() << " vertices and " << in.indices.size() << " indices" << std::endl);
 	std::queue<GlobalMeshletVertex*> queue;
@@ -627,8 +627,13 @@ void MeshletsForMesh::applyMeshletAlgorithmGreedy(MeshletIn& in, MeshletOut& out
 		while (!queue.empty()) {
 			auto* curVertex = queue.front();
             queue.pop();
-			for (auto triangleIndex : curVertex->neighbourTriangles) {
-				//Log("Processing triangle " << triangleIndex << " for vertex " << curVertex->globalIndex << std::endl);
+			auto& neighbours = curVertex->neighbourTriangles;
+			if (useNearestNeighbour) {
+				// sort neighbours by distance to current vertex
+				sortNeighboursByDistance(in, curVertex, neighbours);
+            }
+			for (auto triangleIndex : neighbours) {
+				Log("Processing triangle " << triangleIndex << " for vertex " << curVertex->globalIndex << std::endl);
 				auto& triangle = this->globalTriangles[triangleIndex];
 				if (triangle.usedInMeshlet) continue;
 				for (auto idx : triangle.indices) {
@@ -670,6 +675,42 @@ void MeshletsForMesh::applyMeshletAlgorithmGreedy(MeshletIn& in, MeshletOut& out
     // we have to push the (non full) last meshlet if it has triangles in it
 	if (m.triangles.size() > 0) {
 		out.meshlets.push_back(m);
+	}
+}
+
+void MeshletsForMesh::sortNeighboursByDistance(MeshletIn& in, GlobalMeshletVertex* vertex, std::vector<uint32_t>& neighbours)
+{
+	std::sort(neighbours.begin(), neighbours.end(),
+		[in,vertex,this](uint32_t a, uint32_t b) {
+            //Log("Sorting neighbours by distance from vertex: " << vertex->globalIndex << a << " vs " << b << std::endl);
+            auto vIndex = vertex->globalIndex;
+            auto& v = in.vertices[vIndex];
+			//MeshStore::logVertex(v);
+            auto& a0pos = in.vertices[this->globalTriangles[a].indices[0]].pos;
+            auto& a1pos = in.vertices[this->globalTriangles[a].indices[1]].pos;
+            auto& a2pos = in.vertices[this->globalTriangles[a].indices[2]].pos;
+			glm::vec3 centroidA = (a0pos + a1pos + a2pos) / 3.0f;
+			auto& b0pos = in.vertices[this->globalTriangles[b].indices[0]].pos;
+			auto& b1pos = in.vertices[this->globalTriangles[b].indices[1]].pos;
+            auto& b2pos = in.vertices[this->globalTriangles[b].indices[2]].pos;
+            glm::vec3 centroidB = (b0pos + b1pos + b2pos) / 3.0f;
+            // calculate distance from vertex to triangle centroids
+			float distanceA = glm::length(v.pos - centroidA);
+            float distanceB = glm::length(v.pos - centroidB);
+
+			return distanceA < distanceB;
+		});
+	Log("Sorted neighbours for vertex " << vertex->globalIndex << ": " << endl);
+	for (auto n : neighbours) {
+		uint32_t i0 = this->globalTriangles[n].indices[0];
+		uint32_t i1 = this->globalTriangles[n].indices[1];
+		uint32_t i2 = this->globalTriangles[n].indices[2];
+		auto& a0pos = in.vertices[i0].pos;
+		auto& a1pos = in.vertices[i1].pos;
+		auto& a2pos = in.vertices[i2].pos;
+		glm::vec3 centroidA = (a0pos + a1pos + a2pos) / 3.0f;
+		float distanceA = glm::length(in.vertices[vertex->globalIndex].pos - centroidA);
+		Log("tri " << i0 << " " << i1 << " " << i2 << " distance: " << distanceA << endl);
 	}
 }
 
@@ -774,6 +815,8 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32
 		mesh->meshletsForMesh.applyMeshletAlgorithmSimple(in, out);
 	} else if (meshlet_flags & static_cast<uint32_t>(MeshletFlags::MESHLET_ALG_GREEDY_VERT)) {
 		mesh->meshletsForMesh.applyMeshletAlgorithmGreedy(in, out, true);
+	} else if (meshlet_flags & static_cast<uint32_t>(MeshletFlags::MESHLET_ALG_GREEDY_DISTANCE)) {
+		mesh->meshletsForMesh.applyMeshletAlgorithmGreedy(in, out, true, true);
 	} else {
 		Log("WARNING: No meshlet algorithm specified, using greedy algorithm by default." << endl);
 		mesh->meshletsForMesh.applyMeshletAlgorithmGreedy(in, out, true);
@@ -787,7 +830,7 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32
     logMeshletStats(mesh);
 }
 
-void MeshStore::logVertex(PBRShader::Vertex& v)
+void MeshStore::logVertex(const PBRShader::Vertex& v)
 {
 	Log("Vertex: pos: " << v.pos.x << " " << v.pos.y << " " << v.pos.z
 		<< ", normal: " << v.normal.x << " " << v.normal.y << " " << v.normal.z
