@@ -612,7 +612,6 @@ void MeshletsForMesh::applyMeshletAlgorithmSimple(MeshletIn& in, MeshletOut& out
 			out.meshlets.push_back(m);
 		}
 	}
-	verifyMeshletAdjacency(true);
 }
 
 void MeshletsForMesh::applyMeshletAlgorithmGreedy(MeshletIn& in, MeshletOut& out, bool squeeze, bool useNearestNeighbour)
@@ -676,6 +675,79 @@ void MeshletsForMesh::applyMeshletAlgorithmGreedy(MeshletIn& in, MeshletOut& out
 	if (m.triangles.size() > 0) {
 		out.meshlets.push_back(m);
 	}
+}
+
+void insertTriangle(MeshletsForMesh& m4m, Meshlet& m, uint32_t triIndex) {
+    GlobalMeshletTriangle& tri = m4m.globalTriangles[triIndex];
+    tri.usedInMeshlet = true;
+    m.insertTriangle(tri);
+	// recalc center
+	m.center = vec3(0.0f);
+	for (auto& t : m.triangles) {
+		m.center += t.globalTriangle->centroid;
+	}
+    m.center /= static_cast<float>(m.triangles.size());
+}
+
+uint32_t findNextTriangle(MeshletsForMesh& m4m, Meshlet& m, bool& finished) {
+	vector<uint32_t> borderTriangleIndices; // indices into this->globalTriangles
+	m4m.calcMeshletBorder(borderTriangleIndices, m);
+    float bestDistance = std::numeric_limits<float>::max();
+    finished = true; // assume we are done
+	uint32_t nextTriangleIndex = 0;
+	for (auto borderTriangleIndex : borderTriangleIndices) {
+		auto& borderTriangle = m4m.globalTriangles[borderTriangleIndex];
+		if (borderTriangle.usedInMeshlet) continue; // already in meshlet
+		// calculate distance from current meshlet center to triangle centroid
+		float distance = glm::length(m.center - borderTriangle.centroid);
+		if (distance < bestDistance) {
+			bestDistance = distance;
+			nextTriangleIndex = borderTriangleIndex; // found a better triangle
+            finished = false; // we found a triangle to insert
+		}
+    }
+    return nextTriangleIndex;
+}
+
+void MeshletsForMesh::applyMeshletAlgorithmGreedyDistance(MeshletIn& in, MeshletOut& out)
+{
+	Log("Meshlet algorithm GREEDY DISTANCE started for " << in.vertices.size() << " vertices and " << in.indices.size() << " indices" << std::endl);
+    std::queue<GlobalMeshletVertex*> queue; // queue of vertices to process, in nearest neighbour order
+	std::unordered_map<uint32_t, unsigned char> used;
+	Meshlet m(this, in.primitiveLimit, in.vertexLimit);
+    // calculate centroids for all triangles
+    for (auto& triangle : globalTriangles) {
+        auto& i0 = in.vertices[triangle.indices[0]].pos;
+        auto& i1 = in.vertices[triangle.indices[1]].pos;
+        auto& i2 = in.vertices[triangle.indices[2]].pos;
+        vec3 centroid = (i0 + i1 + i2) / 3.0f;
+        triangle.centroid = centroid;
+    }
+	//auto& curVertex = this->globalVertices[0]; // start with first vertex
+	//auto& curTriangle = this->globalTriangles[0]; // start with first triangle
+    auto curTriangleIndex = 0; // start with first triangle (from global list)
+	insertTriangle(*this, m, curTriangleIndex);
+	bool finished = false;
+	while (!finished) {
+		curTriangleIndex = findNextTriangle(*this, m, finished);
+		if (!finished) {
+			auto& curTriangle = this->globalTriangles[curTriangleIndex];
+			if (m.canInsertTriangle(curTriangle)) {
+				insertTriangle(*this, m, curTriangleIndex);
+			} else {
+				//finished = true; // no more triangles to insert
+				out.meshlets.push_back(m);
+				m.reset();
+				insertTriangle(*this, m, curTriangleIndex);
+			}
+		}
+	}
+
+
+	if (m.triangles.size() > 0) {
+		out.meshlets.push_back(m);
+	}
+	return;
 }
 
 void MeshletsForMesh::sortNeighboursByDistance(MeshletIn& in, GlobalMeshletVertex* vertex, std::vector<uint32_t>& neighbours)
@@ -816,11 +888,15 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32
 	} else if (meshlet_flags & static_cast<uint32_t>(MeshletFlags::MESHLET_ALG_GREEDY_VERT)) {
 		mesh->meshletsForMesh.applyMeshletAlgorithmGreedy(in, out, true);
 	} else if (meshlet_flags & static_cast<uint32_t>(MeshletFlags::MESHLET_ALG_GREEDY_DISTANCE)) {
-		mesh->meshletsForMesh.applyMeshletAlgorithmGreedy(in, out, true, true);
+		mesh->meshletsForMesh.applyMeshletAlgorithmGreedyDistance(in, out);
 	} else {
 		Log("WARNING: No meshlet algorithm specified, using greedy algorithm by default." << endl);
 		mesh->meshletsForMesh.applyMeshletAlgorithmGreedy(in, out, true);
     }
+	// testing generated meshlets:
+	mesh->meshletsForMesh.verifyMeshletCoverage(true);
+	mesh->meshletsForMesh.verifyMeshletAdjacency(true);
+
 
 	if (mesh->flags.hasFlag(MeshFlags::MESHLET_DEBUG_COLORS)) {
 		applyDebugMeshletColorsToVertices(mesh);
@@ -1183,6 +1259,7 @@ void Meshlet::insertTriangle(GlobalMeshletTriangle& triangle) {
 	}
 
     LocalMeshletTriangle localTriangle; // holds indices < 256 into local vertex list
+    localTriangle.globalTriangle = &triangle; // store pointer to global triangle for later reference
 	uint32_t vertOfTriangle = 0;
 	for (auto vert_index_incoming : triangle.indices) {
 		// check if vertex is already in meshlet:
@@ -1396,4 +1473,63 @@ bool MeshletsForMesh::verifyMeshletAdjacency(bool doLog) const {
 	}
 	if (doLog) Log("All meshlets verified successfully." << endl);
     return true;
+}
+
+struct IndicesHash {
+	size_t operator()(const std::array<uint32_t, 3>& arr) const noexcept {
+		size_t h1 = std::hash<uint32_t>{}(arr[0]);
+		size_t h2 = std::hash<uint32_t>{}(arr[1]);
+		size_t h3 = std::hash<uint32_t>{}(arr[2]);
+		size_t seed = h1;
+		seed ^= h2 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		seed ^= h3 + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+		return seed;
+	}
+};
+
+using IndicesKey = std::array<uint32_t, 3>;
+
+bool MeshletsForMesh::verifyMeshletCoverage(bool doLog) const
+{
+	std::unordered_map<IndicesKey, GlobalMeshletTriangle, IndicesHash> triangleMap;
+	// Check if all triangles are used in meshlets
+
+    vector<bool> verticesUsed(globalVertices.size(), false);
+	bool allVerticesUsed = true;
+	bool allTrianglesUsed = true;
+	for (const auto& meshlet : meshlets) {
+		for (const auto& tri : meshlet.triangles) {
+            // get global indices of triangle:
+			auto& v0 = meshlet.vertices[tri.indices[0]]->globalIndex;
+			auto& v1 = meshlet.vertices[tri.indices[1]]->globalIndex;
+			auto& v2 = meshlet.vertices[tri.indices[2]]->globalIndex;
+            IndicesKey key = { v0, v1, v2 };
+            for (auto vi : key) {
+				verticesUsed[vi] = true; // mark vertex as used
+            }
+            auto it = triangleMap.find(key);
+			if (it == triangleMap.end()) {
+				triangleMap[key] = *tri.globalTriangle; // store triangle in map
+			} else {
+                // duplicate triangle found (may be problem of original mesh, so only a warning)
+				if (doLog) Log("WARNING: Duplicate triangle found in meshlets: " << v0 << " " << v1 << " " << v2 << endl);
+            }
+		}
+    }
+    // Now check if all global triangles are in the map
+	for (size_t i = 0; i < globalTriangles.size(); i++) {
+		auto& tri = globalTriangles[i];
+		IndicesKey key = { tri.indices[0], tri.indices[1], tri.indices[2] };
+		if (triangleMap.find(key) == triangleMap.end()) {
+			if (doLog) Log("ERROR: Triangle not covered by any meshlet: globalTriangles[" << i << "] " << tri.indices[0] << " " << tri.indices[1] << " " << tri.indices[2] << endl);
+			allTrianglesUsed = false;
+		}
+    }
+	for (size_t i = 0; i < verticesUsed.size(); i++) {
+		if (!verticesUsed[i]) {
+			if (doLog) Log("ERROR: Vertex not used in any meshlet: vertex index " << i << endl);
+			allVerticesUsed = false;
+		}
+    }
+	return false;
 }

@@ -59,10 +59,12 @@ struct GlobalMeshletTriangle {
 	bool hasVertex(uint32_t index) const {
 		return std::find(std::begin(indices), std::end(indices), index) != std::end(indices);
 	}
+    glm::vec3 centroid; // centroid of the triangle, calculated from vertex positions, only used by some algorithms
 };
 
 struct LocalMeshletTriangle {
 	uint32_t indices[3]; // indices into local vertex index buffer
+    GlobalMeshletTriangle* globalTriangle = nullptr; // pointer to the global triangle, used only by some algorithms
 };
 
 // forward declaration
@@ -101,6 +103,7 @@ public:
 		vertices.clear();
 		debugColors = false;
 	}
+    glm::vec3 center; // used by some algorithms to calculate the center of the meshlet
 };
 	
 // input for meshlet calculations, basically the raw data from glTF:
@@ -142,8 +145,10 @@ public:
 	void verifyGlobalAdjacencyLog(bool runO2BigTest = false) const;
     // check that all triangles have neighbours and vertices have neighbours (for whole mesh)
 	bool verifyGlobalAdjacency(bool runO2BigTest = false, bool doLog = false) const;
-    // for each meshlet, check that all triangles and vertices are connected
-    bool verifyMeshletAdjacency(bool doLog = false) const;
+	// for each meshlet, check that all triangles and vertices were added to meshlets
+	bool verifyMeshletCoverage(bool doLog = false) const;
+	// for each meshlet, check that all triangles and vertices are connected
+	bool verifyMeshletAdjacency(bool doLog = false) const;
 	// iterate through index buffer and place numTrianglesPerMeshlet triangles into meshlets
     // if numTrianglesPerMeshlet is 0, fill meshlet with all triangles until it is full
 	void applyMeshletAlgorithmSimple(MeshletIn& in, MeshletOut& out, int numTrianglesPerMeshlet = 0);
@@ -151,6 +156,9 @@ public:
 	// if squeeze is set, we try to find triangles that only use vertices already in the meshlet and add them also
 	// https://jcgt.org/published/0012/02/01/
 	void applyMeshletAlgorithmGreedy(MeshletIn& in, MeshletOut& out, bool squeeze = false, bool useNearestNeighbour = false);
+    // nearest Triangles are added until meshlet is full. Nearest is defined as distance to the current meshlet center.
+	// if meshlet is full choose any neighbour vertex to start next meshlet.
+	void applyMeshletAlgorithmGreedyDistance(MeshletIn& in, MeshletOut& out);
 	void fillMeshletOutputBuffers(MeshletIn& in, MeshletOut& out);
 	// calculate the meshlet border: trinagles connected (sharing vertices), but not yet included with meshlet
 	void calcMeshletBorder(std::vector<uint32_t>& borderTriangleIndices, Meshlet& m);
