@@ -101,7 +101,7 @@ void Loader::init() {
     //engine->meshStore.loadMesh("cc_facial_exp_cmp.glb", "LogoBox"); alterObjectCoords = false;
 
     //engine->meshStore.loadMesh("delfini6.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES)); alterObjectCoords = false;
-    //engine->meshStore.loadMesh("delfini6.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
+    engine->meshStore.loadMesh("delfini6.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
     //engine->meshStore.loadMesh("delfini6.glb", "LogoBox"); alterObjectCoords = false;
 
     //engine->meshStore.loadMesh("delfini6.glb", "LogoBox"); alterObjectCoords = false;
@@ -110,7 +110,7 @@ void Loader::init() {
 
     MeshFlagsCollection meshFlags = MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
-    engine->meshStore.loadMeshCylinder("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID, true); alterObjectCoords = false;
+    //engine->meshStore.loadMeshCylinder("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID, true); alterObjectCoords = false;
     //engine->meshStore.loadMeshGrid("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID); alterObjectCoords = false;
 
     debugColors("LogoBox");

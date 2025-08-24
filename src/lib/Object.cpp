@@ -678,15 +678,27 @@ void MeshletsForMesh::applyMeshletAlgorithmGreedy(MeshletIn& in, MeshletOut& out
 }
 
 void insertTriangle(MeshletsForMesh& m4m, Meshlet& m, uint32_t triIndex) {
-    GlobalMeshletTriangle& tri = m4m.globalTriangles[triIndex];
-    tri.usedInMeshlet = true;
-    m.insertTriangle(tri);
+	GlobalMeshletTriangle& tri = m4m.globalTriangles[triIndex];
+	tri.usedInMeshlet = true;
+	m.insertTriangle(tri);
 	// recalc center
 	m.center = vec3(0.0f);
 	for (auto& t : m.triangles) {
 		m.center += t.globalTriangle->centroid;
 	}
-    m.center /= static_cast<float>(m.triangles.size());
+	m.center /= static_cast<float>(m.triangles.size());
+}
+
+void addTriangle(MeshletsForMesh& m4m, MeshletOut& out, Meshlet& m, uint32_t triIndex) {
+	GlobalMeshletTriangle& tri = m4m.globalTriangles[triIndex];
+	if (m.canInsertTriangle(tri)) {
+		insertTriangle(m4m, m, triIndex);
+	} else {
+		//finished = true; // no more triangles to insert
+		out.meshlets.push_back(m);
+		m.reset();
+		insertTriangle(m4m, m, triIndex);
+	}
 }
 
 uint32_t findNextTriangle(MeshletsForMesh& m4m, Meshlet& m, bool& finished) {
@@ -709,45 +721,145 @@ uint32_t findNextTriangle(MeshletsForMesh& m4m, Meshlet& m, bool& finished) {
     return nextTriangleIndex;
 }
 
+// find nearest unfinished vertex to meshlet center
+GlobalMeshletVertex* findNextVertexNearestToMeshletCenter(std::unordered_map<uint32_t, GlobalMeshletVertex*>& verticesMap, MeshletsForMesh& m4m, Meshlet& m, const MeshletIn& in) {
+	// return first vertex on first call:
+	if (verticesMap.size() == m4m.globalVertices.size()) {
+		return &m4m.globalVertices[0];
+	}
+	std::vector<uint32_t> borderVerticesIndices; // indices into this->globalVertices
+	m4m.calcMeshletBorder(verticesMap, borderVerticesIndices, m);
+	// find nearest vertex to current meshlet center:
+	float bestDistance = std::numeric_limits<float>::max();
+	GlobalMeshletVertex* nextVertex = nullptr;
+	for (auto borderVertexIndex : borderVerticesIndices) {
+		GlobalMeshletVertex* borderVertex = &m4m.globalVertices[borderVertexIndex];
+		// calculate distance from current meshlet center to vertex position
+		float distance = glm::length(m.center - in.vertices[borderVertexIndex].pos);
+		if (distance < bestDistance) {
+			bestDistance = distance;
+			nextVertex = borderVertex; // found a better vertex
+		}
+	}
+	return nextVertex;
+}
+
+// find nearest unfinished vertex relative to first meshlet vertex
+GlobalMeshletVertex* findNextVertexNearestToMeshletStart(std::unordered_map<uint32_t, GlobalMeshletVertex*>& verticesMap, MeshletsForMesh& m4m, Meshlet& m, const MeshletIn& in) {
+	// return first vertex on first call:
+	if (verticesMap.size() == m4m.globalVertices.size()) {
+		return &m4m.globalVertices[0];
+	}
+	if (m.vertices.size() == 0) {
+        Log("ERROR: findNextVertexNearestToMeshletStart called with empty meshlet!" << std::endl);
+    }
+    vec3 startPos = in.vertices[m.vertices[0]->globalIndex].pos;
+	std::vector<uint32_t> borderVerticesIndices; // indices into this->globalVertices
+	m4m.calcMeshletBorder(verticesMap, borderVerticesIndices, m);
+	// find nearest vertex to current meshlet center:
+	float bestDistance = std::numeric_limits<float>::max();
+	GlobalMeshletVertex* nextVertex = nullptr;
+	for (auto borderVertexIndex : borderVerticesIndices) {
+		GlobalMeshletVertex* borderVertex = &m4m.globalVertices[borderVertexIndex];
+		// calculate distance from current meshlet center to vertex position
+		float distance = glm::length(startPos - in.vertices[borderVertexIndex].pos);
+		if (distance < bestDistance) {
+			bestDistance = distance;
+			nextVertex = borderVertex; // found a better vertex
+		}
+	}
+	return nextVertex;
+}
+
 void MeshletsForMesh::applyMeshletAlgorithmGreedyDistance(MeshletIn& in, MeshletOut& out)
 {
 	Log("Meshlet algorithm GREEDY DISTANCE started for " << in.vertices.size() << " vertices and " << in.indices.size() << " indices" << std::endl);
-    std::queue<GlobalMeshletVertex*> queue; // queue of vertices to process, in nearest neighbour order
-	std::unordered_map<uint32_t, unsigned char> used;
-	Meshlet m(this, in.primitiveLimit, in.vertexLimit);
-    // calculate centroids for all triangles
-    for (auto& triangle : globalTriangles) {
-        auto& i0 = in.vertices[triangle.indices[0]].pos;
-        auto& i1 = in.vertices[triangle.indices[1]].pos;
-        auto& i2 = in.vertices[triangle.indices[2]].pos;
-        vec3 centroid = (i0 + i1 + i2) / 3.0f;
-        triangle.centroid = centroid;
+	/*
+    * sketch of algorithm:
+	* 
+    * if not all vertices used: choose nearest unused vertex v
+    *     put v to queue
+    *     while queue not empty
+    *         if v finished: continue
+	*             trilist = sorted nearest triangles using v
+    *         while trilist not empty
+    *             choose nearest unfinished triangle t of v and add to meshlet
+	*             add unfishied vertices of t to queue
+    *             mark finished vertices
+    *         
+	*/
+
+	std::unordered_map<uint32_t, GlobalMeshletVertex*> verticesMap;
+    // fill vertices map with pointers to all vertices
+	for (auto& v : globalVertices) {
+		verticesMap[v.globalIndex] = &v;
     }
-	//auto& curVertex = this->globalVertices[0]; // start with first vertex
-	//auto& curTriangle = this->globalTriangles[0]; // start with first triangle
-    auto curTriangleIndex = 0; // start with first triangle (from global list)
-	insertTriangle(*this, m, curTriangleIndex);
-	bool finished = false;
-	while (!finished) {
-		curTriangleIndex = findNextTriangle(*this, m, finished);
-		if (!finished) {
-			auto& curTriangle = this->globalTriangles[curTriangleIndex];
-			if (m.canInsertTriangle(curTriangle)) {
-				insertTriangle(*this, m, curTriangleIndex);
-			} else {
-				//finished = true; // no more triangles to insert
-				out.meshlets.push_back(m);
-				m.reset();
-				insertTriangle(*this, m, curTriangleIndex);
+
+	Meshlet m(this, in.primitiveLimit, in.vertexLimit);
+	GlobalMeshletVertex* curVertex = nullptr;
+	while (!verticesMap.empty()) {
+		curVertex = findNextVertexNearestToMeshletStart(verticesMap, *this, m, in);
+		if (curVertex == nullptr) {
+			if (!verticesMap.empty()) {
+                // we still have unfinished vertices, just get the next one
+                curVertex = verticesMap.begin()->second;
+                Log("WARNING: applyMeshletAlgorithmGreedyDistance: findNextVertexNearestToMeshletStart returned nullptr, but we still have unfinished vertices, picking first unfinished vertex " << curVertex->globalIndex << std::endl);
 			}
 		}
+        if (curVertex == nullptr) break; // we are done
+        //Log("Processing vertex " << curVertex->globalIndex << " for new meshlet." << std::endl);
+		// add neighbour triangles
+		for (auto triIndex : curVertex->neighbourTriangles) {
+            if (globalTriangles[triIndex].usedInMeshlet) continue; // already in meshlet
+			addTriangle(*this, out, m, triIndex);
+		}
+        // mark vertex as finished
+        curVertex->usedInMeshlet = true;
+        verticesMap.erase(curVertex->globalIndex);
 	}
-
-
 	if (m.triangles.size() > 0) {
 		out.meshlets.push_back(m);
 	}
-	return;
+
+    // keep for reference
+	if (false) {
+		std::queue<GlobalMeshletVertex*> queue; // queue of vertices to process, in nearest neighbour order
+		std::unordered_map<uint32_t, unsigned char> used;
+		Meshlet m(this, in.primitiveLimit, in.vertexLimit);
+		// calculate centroids for all triangles
+		for (auto& triangle : globalTriangles) {
+			auto& i0 = in.vertices[triangle.indices[0]].pos;
+			auto& i1 = in.vertices[triangle.indices[1]].pos;
+			auto& i2 = in.vertices[triangle.indices[2]].pos;
+			vec3 centroid = (i0 + i1 + i2) / 3.0f;
+			triangle.centroid = centroid;
+		}
+		//auto& curVertex = this->globalVertices[0]; // start with first vertex
+		//auto& curTriangle = this->globalTriangles[0]; // start with first triangle
+		auto curTriangleIndex = 0; // start with first triangle (from global list)
+		insertTriangle(*this, m, curTriangleIndex);
+		bool finished = false;
+		while (!finished) {
+			curTriangleIndex = findNextTriangle(*this, m, finished);
+			if (!finished) {
+				auto& curTriangle = this->globalTriangles[curTriangleIndex];
+				if (m.canInsertTriangle(curTriangle)) {
+					insertTriangle(*this, m, curTriangleIndex);
+				}
+				else {
+					//finished = true; // no more triangles to insert
+					out.meshlets.push_back(m);
+					m.reset();
+					insertTriangle(*this, m, curTriangleIndex);
+				}
+			}
+		}
+
+
+		if (m.triangles.size() > 0) {
+			out.meshlets.push_back(m);
+		}
+	}
 }
 
 void MeshletsForMesh::sortNeighboursByDistance(MeshletIn& in, GlobalMeshletVertex* vertex, std::vector<uint32_t>& neighbours)
@@ -801,6 +913,19 @@ void MeshletsForMesh::calcMeshletBorder(vector<uint32_t>& borderTriangleIndices,
 			}
 		}
     }
+}
+
+void MeshletsForMesh::calcMeshletBorder(std::unordered_map<uint32_t, GlobalMeshletVertex*>& verticesMap, std::vector<uint32_t>& borderVerticesIndices, Meshlet& m)
+{
+	borderVerticesIndices.clear();
+	// iterate through all vertices inside the meshlet and add all unfinished vertices
+	for (auto& v : m.vertices) {
+		//Log("Vertex " << v->globalIndex << " has " << v->neighbourTriangles.size() << " neighbour triangles." << endl);
+        if (verticesMap.find(v->globalIndex) != verticesMap.end()) { // TODO maybe using flag 'used_in_meshlet' is enough?
+			// vertex is not yet finished
+            borderVerticesIndices.push_back(v->globalIndex);
+        }
+	}
 }
 
 void MeshletsForMesh::fillMeshletOutputBuffers(MeshletIn& in, MeshletOut& out)

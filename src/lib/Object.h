@@ -160,9 +160,11 @@ public:
 	// if meshlet is full choose any neighbour vertex to start next meshlet.
 	void applyMeshletAlgorithmGreedyDistance(MeshletIn& in, MeshletOut& out);
 	void fillMeshletOutputBuffers(MeshletIn& in, MeshletOut& out);
-	// calculate the meshlet border: trinagles connected (sharing vertices), but not yet included with meshlet
+	// calculate the meshlet border: triangles connected (sharing vertices), but not yet included with meshlet
 	void calcMeshletBorder(std::vector<uint32_t>& borderTriangleIndices, Meshlet& m);
-    // sort neighbours by distance to current vertex
+	// calculate the meshlet border: vertices included, but not finished
+	void calcMeshletBorder(std::unordered_map<uint32_t, GlobalMeshletVertex*>& verticesMap, std::vector<uint32_t>& borderVerticesIndices, Meshlet& m);
+	// sort neighbours by distance to current vertex
 	void sortNeighboursByDistance(MeshletIn& in, GlobalMeshletVertex* vertex, std::vector<uint32_t>& neighbours);
 	void reset() {
 		globalTriangles.clear();
