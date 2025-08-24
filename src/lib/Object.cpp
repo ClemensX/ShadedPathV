@@ -751,9 +751,9 @@ GlobalMeshletVertex* findNextVertexNearestToMeshletStart(std::unordered_map<uint
 		return &m4m.globalVertices[0];
 	}
 	if (m.vertices.size() == 0) {
-        Log("ERROR: findNextVertexNearestToMeshletStart called with empty meshlet!" << std::endl);
-    }
-    vec3 startPos = in.vertices[m.vertices[0]->globalIndex].pos;
+		Log("ERROR: findNextVertexNearestToMeshletStart called with empty meshlet!" << std::endl);
+	}
+	vec3 startPos = in.vertices[m.vertices[0]->globalIndex].pos;
 	std::vector<uint32_t> borderVerticesIndices; // indices into this->globalVertices
 	m4m.calcMeshletBorder(verticesMap, borderVerticesIndices, m);
 	// find nearest vertex to current meshlet center:
@@ -763,6 +763,32 @@ GlobalMeshletVertex* findNextVertexNearestToMeshletStart(std::unordered_map<uint
 		GlobalMeshletVertex* borderVertex = &m4m.globalVertices[borderVertexIndex];
 		// calculate distance from current meshlet center to vertex position
 		float distance = glm::length(startPos - in.vertices[borderVertexIndex].pos);
+		if (distance < bestDistance) {
+			bestDistance = distance;
+			nextVertex = borderVertex; // found a better vertex
+		}
+	}
+	return nextVertex;
+}
+
+// find nearest unfinished vertex relative to first meshlet vertex, not using border
+GlobalMeshletVertex* findNextVertexNearestToMeshletStartNoBorder(std::unordered_map<uint32_t, GlobalMeshletVertex*>& verticesMap, MeshletsForMesh& m4m, Meshlet& m, const MeshletIn& in) {
+	// return first vertex on first call:
+	if (verticesMap.size() == m4m.globalVertices.size()) {
+		return &m4m.globalVertices[0];
+	}
+	if (m.vertices.size() == 0) {
+		Log("ERROR: findNextVertexNearestToMeshletStart called with empty meshlet!" << std::endl);
+	}
+	vec3 startPos = in.vertices[m.vertices[0]->globalIndex].pos;
+	// find nearest vertex to current meshlet center:
+	float bestDistance = std::numeric_limits<float>::max();
+	GlobalMeshletVertex* nextVertex = nullptr;
+	for (auto vertexMapEntry: verticesMap) {
+        uint32_t unfinishedVertexIndex = vertexMapEntry.first;
+		GlobalMeshletVertex* borderVertex = &m4m.globalVertices[unfinishedVertexIndex];
+		// calculate distance from current meshlet center to vertex position
+		float distance = glm::length(startPos - in.vertices[unfinishedVertexIndex].pos);
 		if (distance < bestDistance) {
 			bestDistance = distance;
 			nextVertex = borderVertex; // found a better vertex
@@ -798,12 +824,18 @@ void MeshletsForMesh::applyMeshletAlgorithmGreedyDistance(MeshletIn& in, Meshlet
 	Meshlet m(this, in.primitiveLimit, in.vertexLimit);
 	GlobalMeshletVertex* curVertex = nullptr;
 	while (!verticesMap.empty()) {
+		if (verticesMap.size() % 10000 == 0) {
+			Log("  applyMeshletAlgorithmGreedyDistance: still " << verticesMap.size() << " unfinished vertices." << std::endl);
+		}
+		// find next vertex to process
+        //curVertex = findNextVertexNearestToMeshletCenter(verticesMap, *this, m, in);
 		curVertex = findNextVertexNearestToMeshletStart(verticesMap, *this, m, in);
 		if (curVertex == nullptr) {
 			if (!verticesMap.empty()) {
                 // we still have unfinished vertices, just get the next one
-                curVertex = verticesMap.begin()->second;
-                Log("WARNING: applyMeshletAlgorithmGreedyDistance: findNextVertexNearestToMeshletStart returned nullptr, but we still have unfinished vertices, picking first unfinished vertex " << curVertex->globalIndex << std::endl);
+                //curVertex = verticesMap.begin()->second;
+                //Log("WARNING: applyMeshletAlgorithmGreedyDistance: findNextVertexNearestToMeshletStart returned nullptr, but we still have unfinished vertices, picking first unfinished vertex " << curVertex->globalIndex << std::endl);
+                curVertex = findNextVertexNearestToMeshletStartNoBorder(verticesMap, *this, m, in);
 			}
 		}
         if (curVertex == nullptr) break; // we are done
