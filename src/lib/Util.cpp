@@ -1053,7 +1053,81 @@ void Util::GenerateCylinderMesh(
         indices.push_back(il0);
         indices.push_back(il1);
     }
+}
 
+KDTree3D::KDTree3D(const std::vector<glm::vec3>& points) {
+    std::vector<KDTreeNode*> nodes;
+    nodes.reserve(points.size());
+    nodePtrs.reserve(points.size());
+    for (uint32_t i = 0; i < points.size(); ++i) {
+        auto* n = new KDTreeNode{ points[i], i, false, nullptr, nullptr };
+        nodes.push_back(n);
+        nodePtrs.push_back(n);
+    }
+    root = build(nodes, 0, 0, static_cast<int>(nodes.size()));
+}
 
+KDTree3D::~KDTree3D() {
+    free(root);
+}
 
+void KDTree3D::free(KDTreeNode* node) {
+    if (!node) return;
+    free(node->left);
+    free(node->right);
+    delete node;
+}
+
+KDTreeNode* KDTree3D::build(std::vector<KDTreeNode*>& nodes, int depth, int start, int end) {
+    if (start >= end) return nullptr;
+    int axis = depth % 3;
+    int mid = (start + end) / 2;
+    std::nth_element(nodes.begin() + start, nodes.begin() + mid, nodes.begin() + end,
+        [axis](KDTreeNode* a, KDTreeNode* b) {
+            return a->pos[axis] < b->pos[axis];
+        });
+    KDTreeNode* node = nodes[mid];
+    node->left = build(nodes, depth + 1, start, mid);
+    node->right = build(nodes, depth + 1, mid + 1, end);
+    return node;
+}
+
+void KDTree3D::markUsed(uint32_t idx) {
+    //markUsed(root, idx);
+    nodePtrs[idx]->used = true;
+}
+
+void KDTree3D::markUsed(KDTreeNode* node, uint32_t idx) {
+    if (!node) return;
+    if (node->index == idx) {
+        node->used = true;
+        return;
+    }
+    if (node->left) markUsed(node->left, idx);
+    if (node->right) markUsed(node->right, idx);
+}
+
+uint32_t KDTree3D::nearestUnused(const glm::vec3& query, float* outDist) const {
+    float bestDist = std::numeric_limits<float>::max();
+    uint32_t bestIdx = std::numeric_limits<uint32_t>::max();
+    nearestUnused(root, query, 0, bestDist, bestIdx);
+    if (outDist) *outDist = bestDist;
+    return bestIdx;
+}
+
+void KDTree3D::nearestUnused(KDTreeNode* node, const glm::vec3& query, int depth, float& bestDist, uint32_t& bestIdx) const {
+    if (!node) return;
+    if (!node->used) {
+        float dist = glm::distance(query, node->pos);
+        if (dist < bestDist) {
+            bestDist = dist;
+            bestIdx = node->index;
+        }
+    }
+    int axis = depth % 3;
+    float diff = query[axis] - node->pos[axis];
+    KDTreeNode* first = diff < 0 ? node->left : node->right;
+    KDTreeNode* second = diff < 0 ? node->right : node->left;
+    if (first) nearestUnused(first, query, depth + 1, bestDist, bestIdx);
+    if (second && std::abs(diff) < bestDist) nearestUnused(second, query, depth + 1, bestDist, bestIdx);
 }

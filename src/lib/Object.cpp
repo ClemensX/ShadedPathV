@@ -814,43 +814,91 @@ void MeshletsForMesh::applyMeshletAlgorithmGreedyDistance(MeshletIn& in, Meshlet
     *             mark finished vertices
     *         
 	*/
-
-	std::unordered_map<uint32_t, GlobalMeshletVertex*> verticesMap;
-    // fill vertices map with pointers to all vertices
-	for (auto& v : globalVertices) {
-		verticesMap[v.globalIndex] = &v;
-    }
-
-	Meshlet m(this, in.primitiveLimit, in.vertexLimit);
-	GlobalMeshletVertex* curVertex = nullptr;
-	while (!verticesMap.empty()) {
-		if (verticesMap.size() % 10000 == 0) {
-			Log("  applyMeshletAlgorithmGreedyDistance: still " << verticesMap.size() << " unfinished vertices." << std::endl);
+	if (true) {
+		std::unordered_map<uint32_t, GlobalMeshletVertex*> verticesMap;
+		// fill vertices map with pointers to all vertices
+		for (auto& v : globalVertices) {
+			verticesMap[v.globalIndex] = &v;
 		}
-		// find next vertex to process
-        //curVertex = findNextVertexNearestToMeshletCenter(verticesMap, *this, m, in);
-		curVertex = findNextVertexNearestToMeshletStart(verticesMap, *this, m, in);
-		if (curVertex == nullptr) {
-			if (!verticesMap.empty()) {
-                // we still have unfinished vertices, just get the next one
-                //curVertex = verticesMap.begin()->second;
-                //Log("WARNING: applyMeshletAlgorithmGreedyDistance: findNextVertexNearestToMeshletStart returned nullptr, but we still have unfinished vertices, picking first unfinished vertex " << curVertex->globalIndex << std::endl);
-                curVertex = findNextVertexNearestToMeshletStartNoBorder(verticesMap, *this, m, in);
+		std::vector<glm::vec3> positions;
+		for (const auto& v : in.vertices) positions.push_back(v.pos);
+		KDTree3D tree(positions);
+		Meshlet m(this, in.primitiveLimit, in.vertexLimit);
+		GlobalMeshletVertex* curVertex = nullptr;
+		// start with first vertex:
+		curVertex = &this->globalVertices[0];
+		while (curVertex != nullptr) {
+			if (verticesMap.size() % 10000 == 0) {
+				Log("  applyMeshletAlgorithmGreedyDistance: still " << verticesMap.size() << " unfinished vertices." << std::endl);
+			}
+			//vec3 queryPos = in.vertices[curVertex->globalIndex].pos;
+			for (auto triIndex : curVertex->neighbourTriangles) {
+				if (globalTriangles[triIndex].usedInMeshlet) continue; // already in meshlet
+				addTriangle(*this, out, m, triIndex);
+			}
+			// mark vertex as finished
+			curVertex->usedInMeshlet = true;
+			verticesMap.erase(curVertex->globalIndex);
+			tree.markUsed(curVertex->globalIndex);
+
+			// find next vertex at borders
+			curVertex = findNextVertexNearestToMeshletStart(verticesMap, *this, m, in);
+			if (curVertex != nullptr) continue; // found a border vertex
+
+			// find next nearest unused vertex
+			vec3 startPos = in.vertices[m.vertices[0]->globalIndex].pos;
+			uint32_t idx = tree.nearestUnused(startPos);
+			if (idx != std::numeric_limits<uint32_t>::max()) {
+				// Use idx as the next vertex
+				curVertex = &this->globalVertices[idx];
+			}
+			else {
+				curVertex = nullptr; // we are done
 			}
 		}
-        if (curVertex == nullptr) break; // we are done
-        //Log("Processing vertex " << curVertex->globalIndex << " for new meshlet." << std::endl);
-		// add neighbour triangles
-		for (auto triIndex : curVertex->neighbourTriangles) {
-            if (globalTriangles[triIndex].usedInMeshlet) continue; // already in meshlet
-			addTriangle(*this, out, m, triIndex);
+		if (m.triangles.size() > 0) {
+			out.meshlets.push_back(m);
 		}
-        // mark vertex as finished
-        curVertex->usedInMeshlet = true;
-        verticesMap.erase(curVertex->globalIndex);
 	}
-	if (m.triangles.size() > 0) {
-		out.meshlets.push_back(m);
+
+	if (false) {
+		std::unordered_map<uint32_t, GlobalMeshletVertex*> verticesMap;
+		// fill vertices map with pointers to all vertices
+		for (auto& v : globalVertices) {
+			verticesMap[v.globalIndex] = &v;
+		}
+
+		Meshlet m(this, in.primitiveLimit, in.vertexLimit);
+		GlobalMeshletVertex* curVertex = nullptr;
+		while (!verticesMap.empty()) {
+			if (verticesMap.size() % 10000 == 0) {
+				Log("  applyMeshletAlgorithmGreedyDistance: still " << verticesMap.size() << " unfinished vertices." << std::endl);
+			}
+			// find next vertex to process
+			//curVertex = findNextVertexNearestToMeshletCenter(verticesMap, *this, m, in);
+			curVertex = findNextVertexNearestToMeshletStart(verticesMap, *this, m, in);
+			if (curVertex == nullptr) {
+				if (!verticesMap.empty()) {
+					// we still have unfinished vertices, just get the next one
+					//curVertex = verticesMap.begin()->second;
+					//Log("WARNING: applyMeshletAlgorithmGreedyDistance: findNextVertexNearestToMeshletStart returned nullptr, but we still have unfinished vertices, picking first unfinished vertex " << curVertex->globalIndex << std::endl);
+					curVertex = findNextVertexNearestToMeshletStartNoBorder(verticesMap, *this, m, in);
+				}
+			}
+			if (curVertex == nullptr) break; // we are done
+			//Log("Processing vertex " << curVertex->globalIndex << " for new meshlet." << std::endl);
+			// add neighbour triangles
+			for (auto triIndex : curVertex->neighbourTriangles) {
+				if (globalTriangles[triIndex].usedInMeshlet) continue; // already in meshlet
+				addTriangle(*this, out, m, triIndex);
+			}
+			// mark vertex as finished
+			curVertex->usedInMeshlet = true;
+			verticesMap.erase(curVertex->globalIndex);
+		}
+		if (m.triangles.size() > 0) {
+			out.meshlets.push_back(m);
+		}
 	}
 
     // keep for reference

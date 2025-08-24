@@ -331,3 +331,33 @@ public:
 private:
     std::unordered_map<std::string, int> map;
 };
+
+// Simple k-d tree node for 3D points
+struct KDTreeNode {
+    glm::vec3 pos;
+    uint32_t index; // index into your vertex array
+    bool used = false;
+    KDTreeNode* left = nullptr;
+    KDTreeNode* right = nullptr;
+};
+
+class KDTree3D {
+public:
+    KDTree3D(const std::vector<glm::vec3>& points);
+    ~KDTree3D();
+
+    // Mark a vertex as used by its index
+    void markUsed(uint32_t idx);
+
+    // Find nearest unused vertex to 'query'
+    uint32_t nearestUnused(const glm::vec3& query, float* outDist = nullptr) const;
+
+private:
+    std::vector<KDTreeNode*> nodePtrs;
+    KDTreeNode* root = nullptr;
+    void free(KDTreeNode* node);
+
+    KDTreeNode* build(std::vector<KDTreeNode*>& nodes, int depth, int start, int end);
+    void markUsed(KDTreeNode* node, uint32_t idx);
+    void nearestUnused(KDTreeNode* node, const glm::vec3& query, int depth, float& bestDist, uint32_t& bestIdx) const;
+};
