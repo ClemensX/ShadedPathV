@@ -127,6 +127,15 @@ void MeshStore::loadMesh(string filename, string id, MeshFlagsCollection flags)
 	string fileAndPath = coll->filename;
 	gltf.load((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), coll, fileAndPath);
 	coll->available = true;
+	aquireMeshletData(id);
+}
+
+void MeshStore::aquireMeshletData(std::string id)
+{
+    // TODO: implement a loading mechanism for precomputed meshlet data
+	uint32_t meshletFlags =
+		(uint32_t)MeshletFlags::MESHLET_ALG_GREEDY_DISTANCE; // | (uint32_t)MeshletFlags::MESHLET_SORT;
+	calculateMeshlets(id, meshletFlags, GLEXT_MESHLET_VERTEX_COUNT, GLEXT_MESHLET_PRIMITIVE_COUNT - 1);
 }
 
 void MeshStore::uploadObject(MeshInfo* obj)
@@ -1521,6 +1530,7 @@ void MeshStore::loadMeshGrid(std::string id, MeshFlagsCollection flags, std::str
 
 	meshInfo.available = true;
 	meshes[id] = std::move(meshInfo);
+	aquireMeshletData(id);
 }
 
 void MeshStore::loadMeshCylinder(std::string id, MeshFlagsCollection flags, std::string baseColorTextureId, bool produceCrack, int segments, int heightDivs, float radius, float height)
@@ -1551,6 +1561,7 @@ void MeshStore::loadMeshCylinder(std::string id, MeshFlagsCollection flags, std:
 
 	meshInfo.available = true;
 	meshes[id] = std::move(meshInfo);
+    aquireMeshletData(id);
 }
 
 void MeshStore::setDefaultMaterial(PBRShader::ShaderMaterial& mat) {

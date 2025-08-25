@@ -18,8 +18,6 @@ public:
     void processImage(FrameResources* fi) override;
     bool shouldClose() override;
     void handleInput(InputState& inputState) override;
-    // test meshlet by coloring base mesh:
-    void debugColors(std::string meshName);
 private:
     World world;
     WorldObject *object = nullptr;

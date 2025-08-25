@@ -98,9 +98,9 @@ void Incoming::init() {
 
     MeshFlagsCollection meshFlags = MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES);
     //meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
-    //engine->meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", meshFlags);
+    engine->meshStore.loadMesh("incoming/valley_Mesh_0.5.glb", "WorldBaseTerrain", meshFlags);
     //engine->meshStore.loadMesh("desert_cmp.glb", "WorldBaseTerrain", meshFlags);
-    engine->meshStore.loadMesh("desert3_cmp.glb", "WorldBaseTerrain");
+    //engine->meshStore.loadMesh("desert3_cmp.glb", "WorldBaseTerrain");
     engine->objectStore.createGroup(GroupTerrainName, GroupTerrain);
     if (debugObjects) {
         engine->objectStore.createGroup(GroupDebugName, GroupDebug);

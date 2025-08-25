@@ -392,6 +392,9 @@ private:
 	void checkVertexDuplication(std::string id);
 	// Helper for default material setup
 	void setDefaultMaterial(PBRShader::ShaderMaterial& mat);
+	// generate or load meshlet data
+	void aquireMeshletData(std::string id);
+
 };
 
 // 

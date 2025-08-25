@@ -51,36 +51,6 @@ void Loader::run(ContinuationInfo* cont)
     Log("Loader ended" << endl);
 }
 
-void Loader::debugColors(std::string meshName)
-{
-    uint32_t meshletFlags =
-        (uint32_t)MeshletFlags::MESHLET_ALG_GREEDY_DISTANCE; // | (uint32_t)MeshletFlags::MESHLET_SORT;
-    engine->meshStore.calculateMeshlets(meshName, meshletFlags, GLEXT_MESHLET_VERTEX_COUNT, GLEXT_MESHLET_PRIMITIVE_COUNT-1);
-    static auto col = engine->util.generateColorPalette256();
-    assert(col.size() == 256); //  Color palette must have 256 colors!
-    MeshInfo* mesh = engine->meshStore.getMesh(meshName);
-    //Log("Debug colors for mesh " << meshName << " with " << mesh->vertices.size() << " vertices" << std::endl);
-    // vert based coloring
-    //for (long i = 0; i < mesh->vertices.size(); i++) {
-    //    auto& v = mesh->vertices[i];
-    //    v.color = vec4(1.0f, 1.0f, 0.0f, 1.0f);
-    //    v.color = col[i%25];
-    //    //Log("Vertex " << i << ": " << v.pos.x << " " << v.pos.y << " " << v.pos.z << " color: " << v.color.x << " " << v.color.y << " " << v.color.z << std::endl);
-    //}
-
-    // index based coloring
-    //for (long i = 0; i < mesh->indices.size(); i += 3) {
-    //    // triangle is v[0], v[1], v[2]
-    //    auto& v0 = mesh->vertices[mesh->indices[i + 0]];
-    //    auto& v1 = mesh->vertices[mesh->indices[i + 1]];
-    //    auto& v2 = mesh->vertices[mesh->indices[i + 2]];
-    //    //v0.color = col[i % 25]; // use modulo to cycle through colors
-    //    //v1.color = col[i % 25]; // use modulo to cycle through colors
-    //    //v2.color = col[i % 25]; // use modulo to cycle through colors
-    //}
-
-}
-
 void Loader::init() {
     engine->sound.init(false);
 
@@ -97,6 +67,7 @@ void Loader::init() {
     //engine->meshStore.loadMesh("mirror_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("SimpleMaterial.gltf", "LogoBox");
     //engine->meshStore.loadMesh("desert3_cmp.glb", "LogoBox"); alterObjectCoords = false;
+    //engine->meshStore.loadMesh("desert_cmp.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("output.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("cc_facial_exp_cmp.glb", "LogoBox"); alterObjectCoords = false;
 
@@ -109,11 +80,10 @@ void Loader::init() {
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox"); alterObjectCoords = false;
 
     MeshFlagsCollection meshFlags = MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
-    meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
+    //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
     engine->meshStore.loadMeshCylinder("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID, true); alterObjectCoords = false;
     //engine->meshStore.loadMeshGrid("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID); alterObjectCoords = false;
 
-    debugColors("LogoBox");
     engine->objectStore.createGroup("group");
     //object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.5f, -1.0f, -1.0f));
     object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.2f, 0.2f, 0.2f));
@@ -262,7 +232,7 @@ void Loader::prepareFrame(FrameResources* fr)
 
         //engine->meshStore.debugRenderMeshlet(wo, tr, modeltransform);
         //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform, 185);
-        //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
+        engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
 
         if (useDefaultNormalLineLength) {
             //engine->meshStore.debugGraphics(wo, tr, modeltransform);
