@@ -16,6 +16,7 @@
 #include "incoming.h"
 #include "LandscapeGenerator.h"
 #include "Loader.h"
+#include "MeshManager.h"
 
 int mainOne();
 int mainTwo();
@@ -42,7 +43,8 @@ int mainOne()
     //LandscapeDemo app; // vr ok
     //Incoming app;
     //LandscapeGenerator app; // vr ok with limited support
-    Loader app;
+    //Loader app;
+    MeshManager app;
 
     Log("main() start!\n");
     ShadedPathEngine engine;

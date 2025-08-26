@@ -70,6 +70,7 @@ add_executable(app
   Loader.cpp
   SimpleMultiApp.cpp
   SimpleMultiWin.cpp
+  MeshManager.cpp
   ShadedPathV.cpp
   ${VULKAN_SHADERS}
   ${SHADERINCLUDE_FILES}  # Add include files to the target

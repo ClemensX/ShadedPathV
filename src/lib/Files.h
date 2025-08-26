@@ -35,6 +35,11 @@ public:
 	std::string absoluteFilePath(std::string filename);
 	void readFile(PakEntry* pakEntry, std::vector<std::byte>& buffer, FileCategory cat);
 	PakEntry* findFileInPak(std::string filename);
+    std::filesystem::path getAssetFolderPath() { return assetFolder; };
+	//define sub folder names, all directly below asset folder
+	const std::string TEXTURE_PATH = "texture";
+	const std::string MESH_PATH = "mesh";
+	const std::string SOUND_PATH = "sound";
 private:
 	// initiate pak files before any other file operation. Called from findAssetFolder()
 	void initPakFiles();
@@ -43,9 +48,4 @@ private:
 
 	std::filesystem::path assetFolder;
 	std::filesystem::path fxFolder;
-
-	//define sub folder names, all directly below asset folder
-	const std::string TEXTURE_PATH = "texture";
-	const std::string MESH_PATH = "mesh";
-	const std::string SOUND_PATH = "sound";
 };

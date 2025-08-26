@@ -160,7 +160,7 @@ void UI::buildUI()
     if (!enabled)
         return;
     // switch between imgui demo window and our own
-    bool showImguiDemo = false;
+    bool showImguiDemo = true;
     if (!showImguiDemo) {
         bool open = false;
         bool* p_open = NULL;//&open; // no close button
