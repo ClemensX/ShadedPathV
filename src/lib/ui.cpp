@@ -109,7 +109,7 @@ void UI::init(ShadedPathEngine* engine)
 
     // upload fonts to GPU
     //VkCommandBuffer command_buffer = engine->globalRendering.beginSingleTimeCommands();
-    ImGui_ImplVulkan_CreateFontsTexture();
+    //ImGui_ImplVulkan_CreateFontsTexture();
     //engine->globalRendering.endSingleTimeCommands(command_buffer);
 }
 
@@ -160,7 +160,7 @@ void UI::buildUI()
     if (!enabled)
         return;
     // switch between imgui demo window and our own
-    bool showImguiDemo = true;
+    bool showImguiDemo = false;
     if (!showImguiDemo) {
         bool open = false;
         bool* p_open = NULL;//&open; // no close button

@@ -266,12 +266,12 @@ void MeshManager::buildCustomUI() {
     static int selectedLine = -1;
     static vector<string> files;
     static string currentFilePattern = "_cmp.glb";
-    static char patternBuffer[640] = "_cmp.glb";
+    static char patternBuffer[64] = "_cmp.glb";
 
     ImGui::Separator();
     // Input field for file pattern
-    ImGui::InputText("File Pattern", &patternBuffer[0], 60);
-    //currentFilePattern = patternBuffer;
+    ImGui::InputText("File Pattern", patternBuffer, sizeof(patternBuffer));
+    currentFilePattern = patternBuffer;
     if (ImGui::Button("Select GLB file from data folder")) {
         showLineSelector = true;
         ImGui::OpenPopup("Line Selector");
@@ -280,8 +280,7 @@ void MeshManager::buildCustomUI() {
         // load file list from data folder
         engine->files.findAssetFolder("data"); // maybe let the user change asset folder name?
         filesystem::path meshFolder = engine->files.getAssetFolderPath() / engine->files.MESH_PATH;
-        string pat = patternBuffer;
-        files = getFilesMatchingPattern(meshFolder, ".glb");
+        files = getFilesMatchingPattern(meshFolder, currentFilePattern);
         ImGui::Text("Data folder: %s", meshFolder.string().c_str());
         ImGui::Text("Choose a file:");
         ImGui::Separator();

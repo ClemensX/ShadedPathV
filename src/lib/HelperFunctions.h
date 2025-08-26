@@ -115,7 +115,7 @@ inline std::vector<char> ReadBinaryFile(const std::string &filepath, AAssetManag
 #endif
 
 #ifdef _MSC_VER
-#define strncpy(dst, src, count) strcpy_s(dst, count, src);
+//#define strncpy(dst, src, count) strcpy_s(dst, count, src); // ERROR: caused DearImGui InputText() to throw exceptions
 #endif
 
 // XR_DOCS_TAG_END_Helper_Functions1
