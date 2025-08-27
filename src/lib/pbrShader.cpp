@@ -72,6 +72,14 @@ void PBRShader::prefillModelParameters(FrameResources& fr)
 		PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(fr, obj->objectNum);
         PBRTextureIndexes ind;
         fillTextureIndexesFromMesh(ind, obj->mesh);
+		if (ind.baseColor == 9) {
+            // 9 10 13 12 11 --> 1 2 5 4 3
+            //ind.baseColor = 1; // override for testing
+			//ind.metallicRoughness = 2;
+			//ind.normal = 5;
+			//ind.occlusion = 4;
+			//ind.emissive = 3;
+		}
         buf->indexes = ind;
 		buf->jointcount = 0;
 		shaderValuesParams params;
@@ -475,5 +483,14 @@ void PBRSubShader::destroy()
 		vkDestroyFramebuffer(device, framebuffer2, nullptr);
 		vkDestroyBuffer(device, uniformBuffer2, nullptr);
 		vkFreeMemory(device, uniformBufferMemory2, nullptr);
+	}
+}
+
+void PBRShader::recreateGlobalCommandBuffers()
+{
+	for (auto& fi : engine->frameInfos) {
+		//globalSubShaders[fi.frameIndex].destroy();
+        globalSubShaders[fi.frameIndex].createGlobalCommandBufferAndRenderPass(fi);
+		//shaders.createCommandBuffers(fi);
 	}
 }

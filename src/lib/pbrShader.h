@@ -244,6 +244,8 @@ public:
 	// create command buffers. One time auto called before rendering starts
 	// we create one command buffer for every mesh loaded
 	virtual void createCommandBuffer(FrameResources& tr) override;
+    // recreate global command buffers, e.g. after adding objects, not to be used for real time updates as this will pause engine...
+    void recreateGlobalCommandBuffers();
 	// add the pre-computed command buffer for the current object
 	virtual void addCommandBuffers(FrameResources* fr, DrawResult* drawResult) override;
 

@@ -55,7 +55,9 @@ void MeshManager::init() {
 
     MeshFlagsCollection meshFlags = MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
-    engine->meshStore.loadMeshCylinder("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID, true); alterObjectCoords = false;
+    //engine->meshStore.loadMesh("box10_cmp.glb", "LogoBox");
+    engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox");
+    //engine->meshStore.loadMeshCylinder("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID, true); alterObjectCoords = false;
 
     engine->objectStore.createGroup("group");
     object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.2f, 0.2f, 0.2f));
@@ -109,6 +111,25 @@ void MeshManager::prepareFrame(FrameResources* fr)
     updateCameraPositioners(deltaSeconds);
     old_seconds = seconds;
 
+    // file handling:
+    if (loadNewFile) {
+        // load new file
+        loadNewFile = false;
+        // convert filename to path and check if file exists
+        std::filesystem::path filepath = engine->files.findFile(newFileName, FileCategory::MESH, false);
+        if (filepath.empty() || !std::filesystem::exists(filepath)) {
+            Log("File does not exist: " << newFileName << endl);
+            return;
+        }
+        Log("Loading new file: " << filepath.filename() << endl);
+        //engine->meshStore.loadMesh(filepath.filename().string(), "newid", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
+        engine->meshStore.loadMesh(filepath.filename().string(), "newid");
+        object = engine->objectStore.addObject("group", "newid", vec3(+1.8f, 0.2f, 0.2f));
+        //object->enableDebugGraphics = true;
+        engine->shaders.pbrShader.initialUpload();
+        engine->shaders.pbrShader.recreateGlobalCommandBuffers();
+    }
+
     if (spinningBox == false && seconds > 4.0f) {
         spinningBox = true; // start spinning the logo after 4s
         spinTimeSeconds = seconds;
@@ -142,6 +163,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
     //auto grp = engine->objectStore.getGroup("knife_group");
     vector<LineDef> boundingBoxes;
     for (auto& wo : engine->objectStore.getSortedList()) {
+        //if (wo.)
         //Log(" adapt object " << obj.get()->objectNum << endl);
         //WorldObject *wo = obj.get();
         PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
@@ -274,9 +296,9 @@ void MeshManager::buildCustomUI() {
     currentFilePattern = patternBuffer;
     if (ImGui::Button("Select GLB file from data folder")) {
         showLineSelector = true;
-        ImGui::OpenPopup("Line Selector");
+        ImGui::OpenPopup("File Selection");
     }
-    if (ImGui::BeginPopupModal("Line Selector", &showLineSelector)) {
+    if (ImGui::BeginPopupModal("File Selection", &showLineSelector)) {
         // load file list from data folder
         engine->files.findAssetFolder("data"); // maybe let the user change asset folder name?
         filesystem::path meshFolder = engine->files.getAssetFolderPath() / engine->files.MESH_PATH;
@@ -289,6 +311,8 @@ void MeshManager::buildCustomUI() {
             if (ImGui::Selectable(files[i].c_str(), selectedLine == i)) {
                 selectedLine = i;
                 showLineSelector = false; // Close after selection
+                loadNewFile = true;
+                newFileName = (meshFolder / files[i]).string();
                 ImGui::CloseCurrentPopup();
             }
         }

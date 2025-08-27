@@ -280,3 +280,12 @@ MESH SHADER INFO: v global index 5 value 55313
 MESH SHADER INFO: v global index 6 value 5164
 MESH SHADER INFO: v global index 7 value 5161
 
+
+ERROR: Meshlet triangles are not connected!
+MeshletOld stats for mesh id2
+  Meshlets: 251
+  Average Meshlet verts / triangles: 63 / 61
+  local Vertex indices (b4 greedy alg): 0
+  local Vertex indices needed         : 0
+  vertices: 14556
+

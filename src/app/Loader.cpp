@@ -89,6 +89,9 @@ void Loader::init() {
     object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.2f, 0.2f, 0.2f));
     //object = engine->objectStore.addObject("group", "LogoBox.2", vec3(-0.2f, 0.2f, 0.2f)); // cc_facial body legs
 
+    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "newid");
+    //engine->objectStore.addObject("group", "newid", vec3(+0.5f, 0.2f, 0.2f));
+
     object->enableDebugGraphics = true;
     if (alterObjectCoords) {
         // turn upside down

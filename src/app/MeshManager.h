@@ -31,4 +31,6 @@ private:
     bool firstPersonMode = true;
     bool doRotation = false;
     bool useDefaultNormalLineLength = true; // to use different normal line length for some models
+    bool loadNewFile = false; // signal to load new file, activated by ImGui
+    std::string newFileName; // name of new file to load
 };

@@ -229,7 +229,7 @@ public:
     Shaders shaders;
     Util util;
     VR vr;
-private:
+//private:
     // need to insert here for proper destruction order
     std::array<FrameResources, 2> frameInfos; // only 2 frame infos needed for alternating during draw calls, initialized in initGlobal()
 public:

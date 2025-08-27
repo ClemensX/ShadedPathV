@@ -82,7 +82,13 @@ vec4 textureBindless3D(uint textureid, vec3 uv) {
 }
 
 vec4 textureBindless2D(uint textureid, vec2 uv) {
-	return texture(global_textures2d[nonuniformEXT(textureid)], uv);
+	vec2 wrappedUV = uv;
+	//vec2 wrappedUV = fract(uv);
+    if (textureid != 2 && textureid != 10)
+	if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
+	    debugPrintfEXT("textureBindless2D bad uv %f %f for texid %d\n", uv.x, uv.y, textureid);
+	}
+	return texture(global_textures2d[nonuniformEXT(textureid)], wrappedUV);
 }
 
 UBOParams uboParams = model_ubo.params;

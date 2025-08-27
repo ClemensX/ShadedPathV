@@ -269,4 +269,14 @@ uv0 _83.uv0.xy float2 0.73704, 1.13395
 bottom left:
 uv0 _83.uv0.xy float2 0.73704, 1.13395
 
+--> UV values are not interpolated!!! remain fixed to vertex values for all frag shader runs!!!
+
+MESH SHADER INFO: v global index 0 value 55314
+MESH SHADER INFO: v global index 1 value 6562
+MESH SHADER INFO: v global index 2 value 258
+MESH SHADER INFO: v global index 3 value 5165
+MESH SHADER INFO: v global index 4 value 55310
+MESH SHADER INFO: v global index 5 value 55313
+MESH SHADER INFO: v global index 6 value 5164
+MESH SHADER INFO: v global index 7 value 5161
 
