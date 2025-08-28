@@ -198,13 +198,15 @@ public:
 	enum class QueueSelector { GRAPHICS, TRANSFER };
 	static const uint64_t QUEUE_FLAG_PERMANENT_UPDATE = 0x01L;
 	static VkDeviceSize minAlign(VkDeviceSize size, VkDeviceSize alignment = 4);
+	// Upload into pre-existing large buffer, return offset to buffer start
+	uint64_t uploadToGlobalBuffer(VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, QueueSelector queue = QueueSelector::GRAPHICS);
 	// Upload index or vertex buffer
 	void uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory,
 		std::string bufferDebugName, QueueSelector queue = QueueSelector::GRAPHICS, uint64_t flags = 0L );
 	// Buffer Creation
 	void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory, std::string bufferDebugName);
 	// copy buffer
-	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, QueueSelector queue = QueueSelector::GRAPHICS, uint64_t flags = 0L);
+	void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, uint64_t targetPos = 0, QueueSelector queue = QueueSelector::GRAPHICS, uint64_t flags = 0L);
 	// images
 	VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);
 	VkImageView createImageViewCube(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags, uint32_t mipLevels);

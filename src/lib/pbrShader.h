@@ -265,6 +265,7 @@ public:
         lightSource.rotation = rotation;
     }
 	uint64_t allocateMeshStorage(uint64_t size);
+	VkBuffer meshStorageBuffer = nullptr;
 
 private:
 	UniformBufferObject ubo = {};
@@ -280,7 +281,6 @@ private:
 		glm::vec3 rotation = glm::vec3(75.0f, 40.0f, 0.0f);
 	} lightSource;
     bool commandBuffersCreated = false;
-	VkBuffer meshStorageBuffer = nullptr;
 	VkDeviceMemory meshStorageBufferMemory = nullptr;
 	void* meshStorageBufferCPUMemory = nullptr;
     uint64_t meshStorageNextFreePos = 0;

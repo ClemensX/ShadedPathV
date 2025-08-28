@@ -161,7 +161,8 @@ void MeshStore::uploadObject(MeshInfo* obj)
 		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vertexBufferSize, obj->vertices.data(), obj->vertexStorageBuffer, obj->vertexStorageBufferMemory, "meshlet vertex buffer");
 
         // global storage buffer:
-		engine->shaders.pbrShader.allocateMeshStorage(vertexBufferSize); // testing buffer handling
+		//engine->shaders.pbrShader.allocateMeshStorage(vertexBufferSize); // testing buffer handling
+        uint64_t pos = engine->globalRendering.uploadToGlobalBuffer(vertexBufferSize, obj->vertices.data(), engine->shaders.pbrShader.meshStorageBuffer);
 	}
 	engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBufferSize, obj->vertices.data(), obj->vertexBuffer, obj->vertexBufferMemory, "GLTF object vertex buffer");
 	if (obj->meshletVertexIndices.size() > 0)

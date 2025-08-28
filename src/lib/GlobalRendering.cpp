@@ -687,11 +687,11 @@ void GlobalRendering::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
     engine->util.debugNameObjectDeviceMemory(bufferMemory, memName.c_str());
 }
 
-void GlobalRendering::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, QueueSelector queue, uint64_t flags) {
+void GlobalRendering::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, uint64_t pos, QueueSelector queue, uint64_t flags) {
     auto commandBuffer = beginSingleTimeCommands(false, queue);
     VkBufferCopy copyRegion{};
     copyRegion.srcOffset = 0; // Optional
-    copyRegion.dstOffset = 0; // Optional
+    copyRegion.dstOffset = pos; // Optional
     copyRegion.size = size;
     vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
     endSingleTimeCommands(commandBuffer, false, queue);
@@ -728,12 +728,36 @@ void GlobalRendering::uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize buf
         buffer, bufferMemory, bufferDebugName);
 
     //for (int i = 0; i < 10000; i++)
-    engine->globalRendering.copyBuffer(stagingBuffer, buffer, bufferSize, queue);
+    engine->globalRendering.copyBuffer(stagingBuffer, buffer, bufferSize, 0, queue);
 
     vkDestroyBuffer(engine->globalRendering.device, stagingBuffer, nullptr);
     vkFreeMemory(engine->globalRendering.device, stagingBufferMemory, nullptr);
     //vkDestroyBuffer(engine->global.device, buffer, nullptr);
     //vkFreeMemory(engine->global.device, bufferMemory, nullptr);
+}
+
+uint64_t GlobalRendering::uploadToGlobalBuffer(VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, QueueSelector queue)
+{
+    if (bufferSize % 4 != 0) {
+        Error("Buffer size must be a multiple of 4 bytes. You may want to use GlobalRendering::minAlign() to get corrected size.");
+    }
+    auto pos = engine->shaders.pbrShader.allocateMeshStorage(bufferSize);
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        stagingBuffer, stagingBufferMemory, "Staging");
+
+    void* data;
+    vkMapMemory(engine->globalRendering.device, stagingBufferMemory, 0, bufferSize, 0, &data);
+    memcpy(data, src, (size_t)bufferSize);
+    vkUnmapMemory(engine->globalRendering.device, stagingBufferMemory);
+
+    engine->globalRendering.copyBuffer(stagingBuffer, buffer, bufferSize, pos, queue);
+
+    vkDestroyBuffer(engine->globalRendering.device, stagingBuffer, nullptr);
+    vkFreeMemory(engine->globalRendering.device, stagingBufferMemory, nullptr);
+    return pos;
 }
 
 void GlobalRendering::createTextureSampler()
