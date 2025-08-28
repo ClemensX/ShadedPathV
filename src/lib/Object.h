@@ -376,11 +376,11 @@ public:
 	void logMeshletStats(MeshInfo* mesh);
 
 	static void logVertex(const PBRShader::Vertex& v);
+	ShadedPathEngine* engine = nullptr;
 private:
 	MeshCollection* loadMeshFile(std::string filename, std::string id, std::vector<std::byte> &fileBuffer, MeshFlagsCollection flags);
 	std::unordered_map<std::string, MeshInfo> meshes;
 	std::vector<MeshCollection> meshCollections;
-	ShadedPathEngine* engine = nullptr;
 	Util* util = nullptr;
 	std::vector<MeshInfo*> sortedList;
 	glTF gltf;
@@ -470,6 +470,7 @@ public:
 	// get sorted object list (sorted by type)
 	// meshes are only resorted if one was added in the meantime
 	const std::vector<WorldObject*>& getSortedList();
+
 private:
 	std::unordered_map<std::string, std::vector<std::unique_ptr<WorldObject>>> groups;
 	StringIntMap groupNames;

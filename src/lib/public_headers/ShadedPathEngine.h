@@ -87,8 +87,12 @@ public:
     ShadedPathEngine& enableGlobalWireframe() { fii(); globalWireframe = true; return *this; }
     // enable mesh shaders. Will fail to create vulkan device if no suitable GPU is found
     ShadedPathEngine& enableMeshShader() { fii(); meshShaderEnabled = true; return *this; }
-
-
+    // set max number of objects allowed
+    ShadedPathEngine& setMaxObjects(uint64_t mo) { fii(); MaxObjects = mo; return *this; }
+    // set max number of meshes allowed
+    ShadedPathEngine& setMaxMeshes(uint64_t mm) { fii(); MaxMeshes = mm; return *this; }
+    // set mesh storage size in GB
+    ShadedPathEngine& setMeshStorageSizeGB(float sizeGB) { fii(); meshStorageSize = 1024*1024*1024 * sizeGB; return *this; }
 
     // getters
     bool isDebugWindowPosition() { return debugWindowPosition; }
@@ -164,6 +168,13 @@ public:
     void enableMousButtonEvents() {
         enabledMousButtonEvents = true;
     }
+
+    // get max number of objects
+    uint64_t getMaxObjects() const { return MaxObjects; }
+    // get max number of meshes
+    uint64_t getMaxMeshes() const { return MaxMeshes; }
+    // get mesh storage size in bytes
+    uint64_t getMeshStorageSize() const { return meshStorageSize; }
 
     // application should set this in init() for any shader that needs world info
     void setWorld(World* world) {
@@ -289,6 +300,12 @@ private:
     bool meshShaderEnabled = false; // enable mesh shaders, if supported by GPU
     ImageConsumer* imageConsumer = nullptr;
     ImageConsumerNullify imageConsumerNullify;
+    // We have to set max number of objects, as dynamic uniform buffers have to be allocated (one entry for each object in a large buffer)
+    uint64_t MaxObjects = 10;
+    // We have to set max number of meshes, as mesh data will be stored in one large storage buffer (meshlets, vertex, index data)
+    uint64_t MaxMeshes = 5;
+    // byte size of mesh storage buffer
+    uint64_t meshStorageSize = 100; // 1024 * 1024 * 1024; // default 1 GB
 
     // backbuffer size:
     VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);

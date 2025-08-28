@@ -257,11 +257,11 @@ void LineSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	lineShader->createUniformBuffer(uniformBuffer, sizeof(LineShader::UniformBufferObject),
 		uniformBufferMemory);
 	engine->util.debugNameObjectBuffer(uniformBuffer, "Line UBO 1");
-	engine->util.debugNameObjectDeviceMmeory(uniformBufferMemory, "Line Memory 1");
+	engine->util.debugNameObjectDeviceMemory(uniformBufferMemory, "Line Memory 1");
 	if (engine->isStereo()) {
 		lineShader->createUniformBuffer(uniformBuffer2, sizeof(LineShader::UniformBufferObject), uniformBufferMemory2);
 		engine->util.debugNameObjectBuffer(uniformBuffer2, "Line UBO 2");
-		engine->util.debugNameObjectDeviceMmeory(uniformBufferMemory2, "Line Memory 2");
+		engine->util.debugNameObjectDeviceMemory(uniformBufferMemory2, "Line Memory 2");
 	}
 	VulkanHandoverResources handover;
 	handover.mvpBuffer = uniformBuffer;

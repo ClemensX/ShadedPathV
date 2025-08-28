@@ -9,9 +9,6 @@ class PBRSubShader;
 // pbr shader draws objects read from glTF files with PBR lighing
 class PBRShader : public ShaderBase {
 public:
-	// We have to set max number of objects, as dynamic uniform buffers have to be allocated (one entry for each object in a large buffer)
-	uint64_t MaxObjects = 1000;
-
 	std::vector<PBRSubShader> globalSubShaders;
 
 	std::vector<VulkanResourceElement> vulkanResourceDefinition = {
@@ -249,7 +246,7 @@ public:
 	// add the pre-computed command buffer for the current object
 	virtual void addCommandBuffers(FrameResources* fr, DrawResult* drawResult) override;
 
-	// get access to dynamic uniform buffer for an object
+	// get access to dynamic uniform buffer for an object (individual ovjects, not a common mesh)
 	DynamicModelUBO* getAccessToModel(FrameResources& tr, UINT num);
 	
 	// upload of all objects to GPU - only valid before first render
@@ -267,6 +264,7 @@ public:
         lightSource.color = color;
         lightSource.rotation = rotation;
     }
+	uint64_t allocateMeshStorage(uint64_t size);
 
 private:
 	UniformBufferObject ubo = {};
@@ -282,6 +280,10 @@ private:
 		glm::vec3 rotation = glm::vec3(75.0f, 40.0f, 0.0f);
 	} lightSource;
     bool commandBuffersCreated = false;
+	VkBuffer meshStorageBuffer = nullptr;
+	VkDeviceMemory meshStorageBufferMemory = nullptr;
+	void* meshStorageBufferCPUMemory = nullptr;
+    uint64_t meshStorageNextFreePos = 0;
 };
 
 // Hash combine utility
@@ -352,8 +354,8 @@ public:
 	void allocateCommandBuffer(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, const char* debugName);
 	void addRenderPassAndDrawCommands(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, VkBuffer vertexBuffer);
 
-	void createGlobalCommandBufferAndRenderPass(FrameResources& tr);
-	void recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, WorldObject* obj, bool isRightEye = false);
+	void createGlobalCommandBufferAndRenderPass(FrameResources& tr, bool update = false);
+	void recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, WorldObject* obj, bool isRightEye = false, bool update = false);
 	// per frame update of UBO / MVP
 	void uploadToGPU(FrameResources& tr, PBRShader::UniformBufferObject& ubo, PBRShader::UniformBufferObject& ubo2);
 

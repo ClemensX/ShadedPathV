@@ -101,7 +101,7 @@ public:
         debugNameObject((uint64_t)buf, VK_OBJECT_TYPE_BUFFER, name);
     }
     // debug name command buffers
-    void debugNameObjectDeviceMmeory(VkDeviceMemory m, const char* name) {
+    void debugNameObjectDeviceMemory(VkDeviceMemory m, const char* name) {
         debugNameObject((uint64_t)m, VK_OBJECT_TYPE_DEVICE_MEMORY, name);
     }
     // debug name descriptor set layout

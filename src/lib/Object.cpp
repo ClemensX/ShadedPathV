@@ -40,6 +40,9 @@ MeshInfo* MeshStore::getMesh(string id)
 
 MeshInfo* MeshStore::initMeshInfo(MeshCollection* coll, std::string id)
 {
+	if (!(meshes.size() < engine->getMaxMeshes())) {
+        Error("MeshStore: too many meshes, increase max meshes in engine settings.");
+	}
 	MeshInfo initialObject;  // only used to initialize struct in texture store - do not access this after assignment to store
 
 	// add MeshInfo to global and collecion mesh lists
@@ -156,6 +159,9 @@ void MeshStore::uploadObject(MeshInfo* obj)
 		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, localIndexBufferSize, obj->outLocalIndexPrimitivesBuffer.data(), obj->localIndexBuffer, obj->localIndexBufferMemory, "meshlet local index buffer");
 		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, globalIndexBufferSize, obj->outGlobalIndexBuffer.data(), obj->globalIndexBuffer, obj->globalIndexBufferMemory, "meshlet global index buffer");
 		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vertexBufferSize, obj->vertices.data(), obj->vertexStorageBuffer, obj->vertexStorageBufferMemory, "meshlet vertex buffer");
+
+        // global storage buffer:
+		engine->shaders.pbrShader.allocateMeshStorage(vertexBufferSize); // testing buffer handling
 	}
 	engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBufferSize, obj->vertices.data(), obj->vertexBuffer, obj->vertexBufferMemory, "GLTF object vertex buffer");
 	if (obj->meshletVertexIndices.size() > 0)
@@ -313,6 +319,9 @@ void WorldObjectStore::addObjectPrivate(WorldObject* w, string id, vec3 pos, int
 	w->alpha = 1.0f;
     w->userGroupId = userGroupId;
 	w->objectNum = numObjects++;
+	if (!(w->objectNum < meshStore->engine->getMaxObjects())) {
+		Error("WorldObjectStore: too many objects, increase max objects in engine settings.");
+    }
 }
 
 const vector<WorldObject*>& WorldObjectStore::getSortedList()

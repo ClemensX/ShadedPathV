@@ -40,11 +40,11 @@ void CubeSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	// uniform buffer
 	cubeShader->createUniformBuffer(uniformBuffer, sizeof(CubeShader::UniformBufferObject), uniformBufferMemory);
 	engine->util.debugNameObjectBuffer(uniformBuffer, "Cube UBO 1");
-	engine->util.debugNameObjectDeviceMmeory(uniformBufferMemory, "Cube Memory 1");
+	engine->util.debugNameObjectDeviceMemory(uniformBufferMemory, "Cube Memory 1");
 	if (engine->isStereo()) {
 		cubeShader->createUniformBuffer(uniformBuffer2, sizeof(CubeShader::UniformBufferObject), uniformBufferMemory2);
 		engine->util.debugNameObjectBuffer(uniformBuffer2, "Cube UBO 2");
-		engine->util.debugNameObjectDeviceMmeory(uniformBufferMemory2, "Cube Memory 2");
+		engine->util.debugNameObjectDeviceMemory(uniformBufferMemory2, "Cube Memory 2");
 	}
 	cubeShader->createRenderPassAndFramebuffer(tr, shaderState, renderPass, framebuffer, framebuffer2);
 

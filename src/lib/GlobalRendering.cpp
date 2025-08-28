@@ -684,7 +684,7 @@ void GlobalRendering::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
     vkBindBufferMemory(device, buffer, bufferMemory, 0);
     engine->util.debugNameObjectBuffer(buffer, bufferDebugName.c_str());
     string memName = bufferDebugName + " memory";
-    engine->util.debugNameObjectDeviceMmeory(bufferMemory, memName.c_str());
+    engine->util.debugNameObjectDeviceMemory(bufferMemory, memName.c_str());
 }
 
 void GlobalRendering::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, QueueSelector queue, uint64_t flags) {
@@ -882,7 +882,7 @@ void GlobalRendering::createImage(uint32_t width, uint32_t height, uint32_t mipL
     vkBindImageMemory(device, image, imageMemory, 0);
     string memName = debugName;
     memName += "_dev_mem";
-    engine->util.debugNameObjectDeviceMmeory(imageMemory, memName.c_str());
+    engine->util.debugNameObjectDeviceMemory(imageMemory, memName.c_str());
 }
 
 void GlobalRendering::createCubeMapFrom2dTexture(string textureName2d, string textureNameCube)

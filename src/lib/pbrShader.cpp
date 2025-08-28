@@ -30,6 +30,24 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 		sub.setVulkanResources(&resources);
 		globalSubShaders.push_back(sub);
 	}
+
+	// global mesh storage:
+	VkDeviceSize bufferSize = engine.getMeshStorageSize();
+    bufferSize = GlobalRendering::minAlign(bufferSize, 16);
+	global->createBuffer(bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		meshStorageBuffer, meshStorageBufferMemory, "global mesh storage buffer");
+	meshStorageNextFreePos = 0;
+}
+
+uint64_t PBRShader::allocateMeshStorage(uint64_t size)
+{
+    size = GlobalRendering::minAlign(size, 16);
+	if (meshStorageNextFreePos + size > engine->getMeshStorageSize()) {
+		Error("PBRShader: out of global mesh storage memory. Increase in engine settings.");
+	}
+    uint64_t ret = meshStorageNextFreePos;
+    meshStorageNextFreePos += size;
+	return ret;
 }
 
 void PBRShader::initSingle(FrameResources& tr, ShaderState& shaderState)
@@ -170,17 +188,17 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
     // MVP uniform buffer
     pbrShader->createUniformBuffer(uniformBuffer, sizeof(PBRShader::UniformBufferObject), uniformBufferMemory);
     engine->util.debugNameObjectBuffer(uniformBuffer, "PBR UBO 1");
-    engine->util.debugNameObjectDeviceMmeory(uniformBufferMemory, "PBR Memory 1");
+    engine->util.debugNameObjectDeviceMemory(uniformBufferMemory, "PBR Memory 1");
     if (engine->isStereo()) {
         pbrShader->createUniformBuffer(uniformBuffer2, sizeof(PBRShader::UniformBufferObject), uniformBufferMemory2);
         engine->util.debugNameObjectBuffer(uniformBuffer2, "PBR UBO 2");
-        engine->util.debugNameObjectDeviceMmeory(uniformBufferMemory2, "PBR Memory 2");
+        engine->util.debugNameObjectDeviceMemory(uniformBufferMemory2, "PBR Memory 2");
     }
 	// dynamic uniform buffer
-	auto bufSize = pbrShader->alignedDynamicUniformBufferSize * pbrShader->MaxObjects;
+	auto bufSize = pbrShader->alignedDynamicUniformBufferSize * engine->getMaxObjects();//pbrShader->MaxObjects;
 	pbrShader->createUniformBuffer(dynamicUniformBuffer, bufSize, dynamicUniformBufferMemory);
 	engine->util.debugNameObjectBuffer(dynamicUniformBuffer, "PBR dynamic UBO");
-	engine->util.debugNameObjectDeviceMmeory(dynamicUniformBufferMemory, "PBR dynamic UBO Memory");
+	engine->util.debugNameObjectDeviceMemory(dynamicUniformBufferMemory, "PBR dynamic UBO Memory");
 	// permanently map the dynamic buffer to CPU memory:
 	vkMapMemory(device, dynamicUniformBufferMemory, 0, bufSize, 0, &dynamicUniformBufferCPUMemory);
 	void* data = dynamicUniformBufferCPUMemory;
@@ -301,8 +319,15 @@ void PBRSubShader::addRenderPassAndDrawCommands(FrameResources& tr, VkCommandBuf
 {
 }
 
-void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr)
+void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bool update)
 {
+	if (update) {
+		// if update is true, we destroy the old one
+		if (commandBuffer != nullptr) {
+			vkFreeCommandBuffers(device, tr.commandPool, 1, &commandBuffer);
+			commandBuffer = nullptr;
+        }
+	}
 	allocateCommandBuffer(tr, &commandBuffer, "PBR COMMAND BUFFER");
 
 	VkCommandBufferBeginInfo beginInfo{};
@@ -327,14 +352,14 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr)
 	//auto &objs = engine->meshStore.getSortedList();
 	auto& objs = engine->objectStore.getSortedList();
 	for (auto obj : objs) {
-		recordDrawCommand(commandBuffer, tr, obj);
+		recordDrawCommand(commandBuffer, tr, obj, false, update);
 	}
 	vkCmdEndRenderPass(commandBuffer);
 	if (engine->isStereo()) {
 		renderPassInfo.framebuffer = framebuffer2;
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 		for (auto obj : objs) {
-			recordDrawCommand(commandBuffer, tr, obj, true);
+			recordDrawCommand(commandBuffer, tr, obj, true, update);
 		}
 		vkCmdEndRenderPass(commandBuffer);
 	}
@@ -361,7 +386,7 @@ void PBRSubShader::uploadToGPU(FrameResources& tr, PBRShader::UniformBufferObjec
 	}
 }
 
-void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& fr, WorldObject* obj, bool isRightEye)
+void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& fr, WorldObject* obj, bool isRightEye, bool update)
 {
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 	// Set the cull mode dynamically
@@ -490,7 +515,8 @@ void PBRShader::recreateGlobalCommandBuffers()
 {
 	for (auto& fi : engine->frameInfos) {
 		//globalSubShaders[fi.frameIndex].destroy();
-        globalSubShaders[fi.frameIndex].createGlobalCommandBufferAndRenderPass(fi);
+		globalSubShaders[fi.frameIndex].createGlobalCommandBufferAndRenderPass(fi, true);
+		globalSubShaders[fi.frameIndex].createGlobalCommandBufferAndRenderPass(fi, true);
 		//shaders.createCommandBuffers(fi);
 	}
 }
