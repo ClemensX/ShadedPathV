@@ -123,6 +123,9 @@ void PBRShader::prefillModelParameters(FrameResources& fr)
         buf->boundingBox = box;
         buf->GPUMeshStorageBaseAddress = obj->mesh->GPUMeshStorageBaseAddress;
         buf->vertexOffset = obj->mesh->vertexOffset;
+        buf->meshletOffset = obj->mesh->meshletOffset;
+        buf->globalIndexOffset = obj->mesh->globalIndexOffset;
+        buf->localIndexOffset = obj->mesh->localIndexOffset;
 	}
 
 }

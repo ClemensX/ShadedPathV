@@ -147,30 +147,26 @@ void MeshStore::uploadObject(MeshInfo* obj)
 	assert(obj->indices.size() > 0);
 
 	// upload vec3 vertex buffer:
-	size_t vertexBufferSize = obj->vertices.size() * sizeof(PBRShader::Vertex);
-	size_t indexBufferSize = obj->indices.size() * sizeof(obj->indices[0]);
-	size_t meshletIndexBufferSize = obj->meshletVertexIndices.size() * sizeof(obj->meshletVertexIndices[0]);
-	size_t meshletDescBufferSize = obj->outMeshletDesc.size() * sizeof(PBRShader::PackedMeshletDesc);
-	if (meshletDescBufferSize > 0) {
-		size_t localIndexBufferSize = obj->outLocalIndexPrimitivesBuffer.size() * sizeof(obj->outLocalIndexPrimitivesBuffer[0]);
-        localIndexBufferSize = GlobalRendering::minAlign(localIndexBufferSize);
-		size_t globalIndexBufferSize = obj->outGlobalIndexBuffer.size()         * sizeof(obj->outGlobalIndexBuffer[0]);
-		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, meshletDescBufferSize, obj->outMeshletDesc.data(), obj->meshletDescBuffer, obj->meshletDescBufferMemory, "meshlet desc array buffer");
-		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, localIndexBufferSize, obj->outLocalIndexPrimitivesBuffer.data(), obj->localIndexBuffer, obj->localIndexBufferMemory, "meshlet local index buffer");
-		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, globalIndexBufferSize, obj->outGlobalIndexBuffer.data(), obj->globalIndexBuffer, obj->globalIndexBufferMemory, "meshlet global index buffer");
-		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vertexBufferSize, obj->vertices.data(), obj->vertexStorageBuffer, obj->vertexStorageBufferMemory, "meshlet vertex buffer");
+	size_t vertexBufferSize = GlobalRendering::minAlign(obj->vertices.size() * sizeof(PBRShader::Vertex));
+	size_t globalIndexBufferSize = GlobalRendering::minAlign(obj->outGlobalIndexBuffer.size() * sizeof(obj->outGlobalIndexBuffer[0]));
+	size_t localIndexBufferSize = GlobalRendering::minAlign(obj->outLocalIndexPrimitivesBuffer.size() * sizeof(obj->outLocalIndexPrimitivesBuffer[0]));
+	size_t meshletDescBufferSize = GlobalRendering::minAlign(obj->outMeshletDesc.size() * sizeof(PBRShader::PackedMeshletDesc));
 
+	if (meshletDescBufferSize > 0) {
         // global storage buffer:
-		//engine->shaders.pbrShader.allocateMeshStorage(vertexBufferSize); // testing buffer handling
 		obj->GPUMeshStorageBaseAddress = engine->shaders.pbrShader.meshStorageBufferDeviceAddress;
-        uint64_t pos = engine->globalRendering.uploadToGlobalBuffer(vertexBufferSize, obj->vertices.data(), engine->shaders.pbrShader.meshStorageBuffer);
+		uint64_t pos = engine->globalRendering.uploadToGlobalBuffer(vertexBufferSize, obj->vertices.data(), engine->shaders.pbrShader.meshStorageBuffer);
 		obj->vertexOffset = pos;
+
+		pos = engine->globalRendering.uploadToGlobalBuffer(globalIndexBufferSize, obj->outGlobalIndexBuffer.data(), engine->shaders.pbrShader.meshStorageBuffer);
+		obj->globalIndexOffset = pos;
+
+		pos = engine->globalRendering.uploadToGlobalBuffer(localIndexBufferSize, obj->outLocalIndexPrimitivesBuffer.data(), engine->shaders.pbrShader.meshStorageBuffer);
+		obj->localIndexOffset = pos;
+
+		pos = engine->globalRendering.uploadToGlobalBuffer(meshletDescBufferSize, obj->outMeshletDesc.data(), engine->shaders.pbrShader.meshStorageBuffer);
+		obj->meshletOffset = pos;
 	}
-	engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertexBufferSize, obj->vertices.data(), obj->vertexBuffer, obj->vertexBufferMemory, "GLTF object vertex buffer");
-	if (obj->meshletVertexIndices.size() > 0)
-		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, meshletIndexBufferSize, obj->meshletVertexIndices.data(), obj->indexBuffer, obj->indexBufferMemory, "GLTF object index buffer");
-	else 
-		engine->globalRendering.uploadBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indexBufferSize, obj->indices.data(), obj->indexBuffer, obj->indexBufferMemory, "GLTF object index buffer");
 }
 
 const vector<MeshInfo*> &MeshStore::getSortedList()
