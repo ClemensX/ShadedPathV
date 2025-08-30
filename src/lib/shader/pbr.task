@@ -35,6 +35,8 @@ layout(buffer_reference, std430) buffer GlobalIndexBuffer {
     uint index[];
 };
 
+layout(local_size_x = 1) in; // not using the usual 32 threads per workgroup, but only 1 as we implement object culling and LOD object selection here
+
 taskPayloadSharedEXT TaskPayload payload;
 
 void check_inputs() {
@@ -114,7 +116,7 @@ void check_inputs() {
 }
 
 void main() {
-    check_inputs();
+    //check_inputs();
 
     bool isRenderingDisabled = (model_ubo.flags & MODEL_RENDER_FLAG_DISABLE) != 0;
     if (isRenderingDisabled) {
@@ -139,163 +141,3 @@ void main() {
     EmitMeshTasksEXT(model_ubo.meshletsCount, 1, 1);
 }
 
-#ifdef NIXOS
-
-layout(binding = 2) buffer MeshStorageBuffer {
-    uint64_t baseOffset;
-} ubo;
-
-// Meshlet descriptor buffer (binding = 2)
-layout(std430, binding = 2) buffer MeshStorageBuffer {
-    uvec4 packedMeshlets[];
-} meshStorage;
-
-// local primitive index buffer:
-layout(std430, binding = 3) buffer PrimitiveIndexBuffer {
-    uint primitiveIndices[];
-} primitiveIndexBuffer;
-
-// global index buffer:
-layout(std430, binding = 4) buffer GlobalIndexBuffer {
-    uint index[];
-} globalIndexBuffer;
-
-// vertex storage buffer (NOT vertex buffer)
-layout(std430, binding = 5) buffer VertexStorageBuffer {
-    PBRVertex vertex[];
-} vertices;
-
-// Define the maximum number of meshlets to dispatch
-// (You may want to pass this as a push constant or specialization constant)
-//#define NUM_MESHLETS 128
-
-layout(local_size_x = 1) in; // not using the usual 32 threads per workgroup, but only 1 as we implement object culling and LOD object selection here
-
-taskPayloadSharedEXT TaskPayload payload;
-
-void check_inputs() {
-//    vec4 v = ubo.model[0];
-//    //debugPrintfEXT("model %f %f %f %f\n", v.x, v.y, v.z, v.w);
-//    v = ubo.view[0];
-//    //debugPrintfEXT("view %f %f %f %f\n", v.x, v.y, v.z, v.w);
-//    v = ubo.proj[0];
-//    //debugPrintfEXT("proj %f %f %f %f\n", v.x, v.y, v.z, v.w);
-//    v = ubo.baseColor;
-//    //debugPrintfEXT("col %f %f %f %f\n", v.x, v.y, v.z, v.w);
-//    //vec3 cp = ubo.camPos;
-//    //debugPrintfEXT("cam %f %f %f\n", ubo.camPos.x, ubo.camPos.y, ubo.camPos.z);
-//
-    uint index = 3;
-    uint byteValue0 = (primitiveIndexBuffer.primitiveIndices[index / 4] >> ((index % 4) * 8)) & 0xFFu;
-    index = 4;
-    uint byteValue1 = (primitiveIndexBuffer.primitiveIndices[index / 4] >> ((index % 4) * 8)) & 0xFFu;
-    index = 5;
-    uint byteValue2 = (primitiveIndexBuffer.primitiveIndices[index / 4] >> ((index % 4) * 8)) & 0xFFu;
-    //debugPrintfEXT("TASK SHADER byte values: %d %d %d\n", byteValue0, byteValue1, byteValue2);
-
-    uint globalIndex = globalIndexBuffer.index[4];
-    //debugPrintfEXT("TASK SHADER global index[4] %d\n", globalIndex);
-
-    uvec4 uv = meshletDescs.packedMeshlets[0];
-    //debugPrintfEXT("meshlet uvec4[0] %f %f %f %f\n", uv.x, uv.y, uv.z, uv.w);
-    MeshletDesc meshlet = unpackMeshletDesc(uv);
-    uint indexBufferOffset = meshlet.indexBufferOffset;
-    //debugPrintfEXT("TASK SHADER meshlet indexBufferOffset %d\n", indexBufferOffset);
-
-    PBRVertex vert = vertices.vertex[1];
-    //debugPrintfEXT("TASK SHADER vertex[1] position %f %f %f\n", vert.position.x, vert.position.y, vert.position.z);
-
-	vec3 w = ubo.camPos;
-	//debugPrintfEXT("cam pos %f %f %f\n", w.x, w.y, w.z);
-
-    vec4 v = model_ubo.model[0];
-    //debugPrintfEXT("model_ubo %f %f %f %f\n", v.x, v.y, v.z, v.w);
-
-    BoundingBox bb = model_ubo.boundingBox;
-    //debugPrintfEXT("bb min %f %f %f\n", bb.min.x, bb.min.y, bb.min.z);
-    //debugPrintfEXT("bb max %f %f %f\n", bb.max.x, bb.max.y, bb.max.z);
-
-
-    uint meshletsCount = model_ubo.meshletsCount;
-    //uint meshletIndex = gl_GlobalInvocationID.x;
-    uint meshletIndex = gl_WorkGroupID.x;
-    uint localIndex = gl_LocalInvocationID.x;
-    //if (meshletIndex > 2506)
-    //debugPrintfEXT("TASK SHADER WrkGrop.x %d localIndex %d meshletsCount %d\n", meshletIndex, localIndex, meshletsCount);
-
-	ShaderMaterial material = model_ubo.material;
-	uint u0 = material.texCoordSets.baseColor;
-	uint u1 = material.texCoordSets.normal;
-	uint u2 = material.texCoordSets.occlusion;
-	//debugPrintfEXT("task coord sets base %d normal %d occlusion %d\n", u0, u1, u2);
-    //debugPrintfEXT("task coord base %f %f %f %f spec %f %f %f %f\n", material.baseColorFactor.x, material.baseColorFactor.y, material.baseColorFactor.z, material.baseColorFactor.w, material.specularFactor.x, material.specularFactor.y, material.specularFactor.z, material.specularFactor.w);
-    //debugPrintfEXT("task shader material workflow %f base set %d\n", material.workflow, material.baseColorTextureSet);
-
-    uint flags = model_ubo.flags;
-    bool isRenderingDisabled = (flags & MODEL_RENDER_FLAG_DISABLE) != 0;
-	//debugPrintfEXT("TASK SHADER: rendering disabled %d\n", isRenderingDisabled);
-    debugPrintfEXT("TASK SHADER: vertex offset %d\n", model_ubo.vertexOffset);
-}
-
-/*
-
-| Shader Variable          | Meaning                                 | 
-|--------------------------|-----------------------------------------| 
-| gl_GlobalInvocationID.x  | Global thread index (across all groups) | 
-| gl_WorkGroupID.x         | Workgroup index (your meshlet index)    | 
-| gl_LocalInvocationID.x   | Thread index within the workgroup       |
-
-*/
-void main() {
-    check_inputs();
-    bool isRenderingDisabled = (model_ubo.flags & MODEL_RENDER_FLAG_DISABLE) != 0;
-    if (isRenderingDisabled) {
-        //debugPrintfEXT("WARNING: RENDERING DISABLED for this object\n");
-        return;
-    }
-
-    mat4 model = model_ubo.model;
-    mat4 view = ubo.view;
-    mat4 proj = ubo.proj;
-    mat4 mvp = proj * view * model;
-    bool isOutside = isOutsideView(model_ubo.boundingBox, mvp);
-    if (isOutside) {
-        // Don't emit mesh tasks for this object
-        BoundingBox bb = model_ubo.boundingBox;
-        //debugPrintfEXT("WARNING: OUTSIDE bb min %f %f %f\n", bb.min.x, bb.min.y, bb.min.z);
-        return;
-    }
-/*
-| Mechanism                | Use for passing...        | Notes                                 | 
-|--------------------------|---------------------------|---------------------------------------| 
-| taskPayloadSharedEXT     | Custom per-dispatch data  | Most efficient, direct, and standard  | 
-| SSBO/UBO                 | Large, static data        | Use for mesh/vertex/index buffers     | 
-| Built-in variables       | System info (IDs, etc.)   | Provided by Vulkan/GLSL               |
-*/
-    uint meshletIndex = gl_GlobalInvocationID.x;
-    payload.meshletIndex = meshletIndex;
-    payload.mvp = mvp;
-    //EmitMeshTasksEXT(1, 1, 1);
-    EmitMeshTasksEXT(model_ubo.meshletsCount, 1, 1);
-    //debugPrintfEXT("TASK SHADER mvp %f %f %f %f\n", mvp[0][0], mvp[1][1], mvp[2][2], mvp[3][3]);
-
-//    if (meshletIndex >= NUM_MESHLETS) {
-//        debugPrintfEXT("task shader meshlet index out-of-range: %d\n", meshletIndex);
-//        return;
-//    }
-//
-    //debugPrintfEXT("task shader still thereX\n");
-    // Read and unpack meshlet
-    //uvec4 packed = meshletDescs.packedMeshlets[meshletIndex];
-    //MeshletDesc meshlet = unpackMeshletDesc(packed);
-
-    // Example: Dispatch a mesh shader workgroup for this meshlet
-    // (You would typically call EmitMeshTasksEXT here)
-    // For demonstration, emit one mesh task per meshlet
-    //EmitMeshTasksEXT(meshletIndex, 1, 1); // (groupX, groupY, groupZ)
-    //debugPrintfEXT("task shader b4 emit\n");
-    //EmitMeshTasksEXT(1, 1, 1); // (groupX, groupY, groupZ)
-    //debugPrintfEXT("task shader emitted\n");
-}
-
-#endif

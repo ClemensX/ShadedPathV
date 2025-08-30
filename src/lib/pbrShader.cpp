@@ -10,7 +10,7 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	// create shader modules
 	taskShaderModule = resources.createShaderModule("pbr.task.spv");
 	meshShaderModule = resources.createShaderModule("pbr.mesh.spv");
-	//fragShaderModule = resources.createShaderModule("pbr.frag.spv");
+	fragShaderModule = resources.createShaderModule("pbr.frag.spv");
 
 	// descriptor set (dynamic UBO - one large set, bind one for each object during command creation)
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, this, 1);
@@ -22,7 +22,7 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 		PBRSubShader sub;
 		sub.init(this, "PBRLineSubshader");
 		//sub.setVertShaderModule(vertShaderModule);
-		//sub.setFragShaderModule(fragShaderModule);
+		sub.setFragShaderModule(fragShaderModule);
         sub.setTaskShaderModule(taskShaderModule);
         sub.setMeshShaderModule(meshShaderModule);
 		sub.setVulkanResources(&resources);
@@ -32,7 +32,7 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	// global mesh storage:
 	VkDeviceSize bufferSize = engine.getMeshStorageSize();
     bufferSize = GlobalRendering::minAlign(bufferSize, 16);
-	global->createBuffer(bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+	global->createBuffer(bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT,
 		meshStorageBuffer, meshStorageBufferMemory, "global mesh storage buffer");
     meshStorageBufferDeviceAddress = global->getBufferDeviceAddress(meshStorageBuffer);
 	meshStorageNextFreePos = 0;
@@ -167,9 +167,11 @@ PBRShader::~PBRShader()
     for (PBRSubShader& sub : globalSubShaders) {
         sub.destroy();
     }
+	vkDestroyBuffer(device, meshStorageBuffer, nullptr);
+	vkFreeMemory(device, meshStorageBufferMemory, nullptr);
 	//vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);
-	vkDestroyShaderModule(device, vertShaderModule, nullptr);
+	//vkDestroyShaderModule(device, vertShaderModule, nullptr);
     vkDestroyShaderModule(device, taskShaderModule, nullptr);
     vkDestroyShaderModule(device, meshShaderModule, nullptr);
 	vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
@@ -228,9 +230,9 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	//auto vertShaderStageInfo = engine->shaders.createVertexShaderCreateInfo(vertShaderModule);
     auto taskShaderStageInfo = engine->shaders.createTaskShaderCreateInfo(taskShaderModule);
     auto meshShaderStageInfo = engine->shaders.createMeshShaderCreateInfo(meshShaderModule);
-	//auto fragShaderStageInfo = engine->shaders.createFragmentShaderCreateInfo(fragShaderModule);
-	VkPipelineShaderStageCreateInfo shaderStages[] = { taskShaderStageInfo, meshShaderStageInfo };
-	//VkPipelineShaderStageCreateInfo shaderStages[] = { taskShaderStageInfo, meshShaderStageInfo, fragShaderStageInfo };
+	auto fragShaderStageInfo = engine->shaders.createFragmentShaderCreateInfo(fragShaderModule);
+	//VkPipelineShaderStageCreateInfo shaderStages[] = { taskShaderStageInfo, meshShaderStageInfo };
+	VkPipelineShaderStageCreateInfo shaderStages[] = { taskShaderStageInfo, meshShaderStageInfo, fragShaderStageInfo };
 
 	// input assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};

@@ -2,31 +2,33 @@
 #extension GL_EXT_debug_printf : enable
 #extension GL_EXT_mesh_shader : enable
 #extension GL_ARB_gpu_shader_int64 : enable
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_buffer_reference_uvec2 : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 
 #include "common_cpp_shader.h"
 #include "shadermaterial.glsl"
 #include "pbr_mesh_common.glsl"
 #include "debug_colors.glsl"
 
-// Meshlet descriptor buffer (binding = 2)
-layout(std430, binding = 2) buffer MeshletBuffer {
+layout(buffer_reference, std430) buffer VertexBuffer {
+    PBRVertex vertex[];
+};
+
+layout(buffer_reference, std430) buffer MeshletDescs {
     uvec4 packedMeshlets[];
-} meshletDescs;
+};
 
 // local primitive index buffer:
-layout(std430, binding = 3) buffer PrimitiveIndexBuffer {
+layout(buffer_reference, std430) buffer PrimitiveIndexBuffer {
     uint primitiveIndices[];
-} primitiveIndexBuffer;
+};
 
 // global index buffer:
-layout(std430, binding = 4) buffer GlobalIndexBuffer {
+layout(buffer_reference, std430) buffer GlobalIndexBuffer {
     uint index[];
-} globalIndexBuffer;
+};
 
-// vertex storage buffer (NOT vertex buffer)
-layout(std430, binding = 5) buffer VertexStorageBuffer {
-    PBRVertex vertex[];
-} vertices;
 
 taskPayloadSharedEXT TaskPayload payload;
 
@@ -37,6 +39,11 @@ layout(triangles) out;
 
 layout(location = 0) out PBRVertexOutFlat outVertFlat[];
 layout(location = 1) out PBRVertexOut outVert[];
+
+MeshletDescs meshletDescs = MeshletDescs(model_ubo.GPUMeshStorageBaseAddress + model_ubo.meshletOffset);
+GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(model_ubo.GPUMeshStorageBaseAddress + model_ubo.globalIndexOffset);
+PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(model_ubo.GPUMeshStorageBaseAddress + model_ubo.localIndexOffset);
+VertexBuffer vertices = VertexBuffer(model_ubo.GPUMeshStorageBaseAddress + model_ubo.vertexOffset);
 
 void check_inputs() {
     //uint maxPrim = gl_MaxMeshOutputPrimitivesEXT;
