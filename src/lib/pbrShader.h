@@ -102,6 +102,10 @@ public:
         shaderValuesParams params; // 16-byte aligned
         ShaderMaterial material; // 16-byte aligned
         BoundingBox boundingBox; // AABB in local object space
+		uint64_t meshletOffset = 0; // offset into global mesh storage buffer
+		uint64_t localIndexOffset = 0; // offset into global mesh storage buffer
+		uint64_t globalIndexOffset = 0; // offset into global mesh storage buffer
+		uint64_t vertexOffset = 0; // offset into global mesh storage buffer
 		// helper methods
 		void disableRendering() {
 			flags |= MODEL_RENDER_FLAG_DISABLE;

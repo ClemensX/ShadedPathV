@@ -1,5 +1,6 @@
 #version 460
 #extension GL_EXT_debug_printf : enable
+#extension GL_ARB_gpu_shader_int64 : enable
 
 layout (location = 0) in vec3 inPos;
 layout (location = 1) in vec3 inNormal;

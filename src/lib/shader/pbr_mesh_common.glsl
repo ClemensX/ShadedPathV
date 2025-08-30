@@ -92,6 +92,10 @@ layout (binding = 1) uniform UboInstance {
     UBOParams params;
     ShaderMaterial material;
     BoundingBox boundingBox; // AABB axis aligned bounding box
+	uint64_t meshletOffset; // offset into global mesh storage buffer
+	uint64_t localIndexOffset; // offset into global mesh storage buffer
+	uint64_t globalIndexOffset; // offset into global mesh storage buffer
+	uint64_t vertexOffset; // offset into global mesh storage buffer
 } model_ubo;
 
 layout(binding = 0) uniform UniformBufferObject {

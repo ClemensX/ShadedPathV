@@ -1,6 +1,7 @@
 #version 460
 #extension GL_EXT_debug_printf : enable
 #extension GL_EXT_mesh_shader : enable
+#extension GL_ARB_gpu_shader_int64 : enable
 
 #include "common_cpp_shader.h"
 #include "shadermaterial.glsl"

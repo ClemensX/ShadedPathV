@@ -13,7 +13,7 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	taskShaderModule = resources.createShaderModule("pbr.task.spv");
 	meshShaderModule = resources.createShaderModule("pbr.mesh.spv");
 
-	// descriptor
+	// descriptor 8544 -> 8676
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, this, 1);
 	alignedDynamicUniformBufferSize = global->calcConstantBufferSize(sizeof(DynamicModelUBO));
 	//resources.createPipelineLayout(&pipelineLayout, this);
@@ -122,6 +122,7 @@ void PBRShader::prefillModelParameters(FrameResources& fr)
         BoundingBox box;
 		obj->getBoundingBox(box);
         buf->boundingBox = box;
+        buf->vertexOffset = obj->mesh->vertexOffset;
 	}
 
 }
@@ -444,6 +445,11 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	bufferInfo5.offset = 0;
 	bufferInfo5.range = VK_WHOLE_SIZE;
 
+	VkDescriptorBufferInfo bufferInfoMeshStorage{};
+	bufferInfoMeshStorage.buffer = pbrShader->meshStorageBuffer;
+	bufferInfoMeshStorage.offset = 0;
+	bufferInfoMeshStorage.range = VK_WHOLE_SIZE;
+
 	// 2. Prepare VkWriteDescriptorSet for each new buffer
 	VkWriteDescriptorSet write3{};
 	write3.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -462,8 +468,13 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	write5.dstBinding = 5;
 	write5.pBufferInfo = &bufferInfo5;
 
+	VkWriteDescriptorSet writeMeshStorage = write3;
+	writeMeshStorage.dstBinding = 5;
+	writeMeshStorage.pBufferInfo = &bufferInfoMeshStorage;
+
 	// 3. Update the descriptor set
-	std::array<VkWriteDescriptorSet, 4> writes = { write, write3, write4, write5 };
+	//std::array<VkWriteDescriptorSet, 5> writes = { write, write3, write4, write5, writeMeshStorage };
+	std::array<VkWriteDescriptorSet, 4> writes = { write, write3, write4, writeMeshStorage };
 	// bind global texture array:
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
 

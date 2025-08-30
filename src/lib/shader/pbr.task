@@ -1,6 +1,7 @@
 #version 460
 #extension GL_EXT_debug_printf : enable
 #extension GL_EXT_mesh_shader : enable
+#extension GL_ARB_gpu_shader_int64 : enable
 
 #include "common_cpp_shader.h"
 #include "shadermaterial.glsl"
@@ -95,6 +96,7 @@ void check_inputs() {
     uint flags = model_ubo.flags;
     bool isRenderingDisabled = (flags & MODEL_RENDER_FLAG_DISABLE) != 0;
 	//debugPrintfEXT("TASK SHADER: rendering disabled %d\n", isRenderingDisabled);
+    debugPrintfEXT("TASK SHADER: vertex offset %d\n", model_ubo.vertexOffset);
 }
 
 /*

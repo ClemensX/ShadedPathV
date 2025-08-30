@@ -340,8 +340,9 @@ private:
 
 	bool checkFeatureMeshShader(DeviceInfo& info);
     bool checkFeatureCompressedTextures(DeviceInfo& info);
-    bool checkFeatureDescriptorIndexSize(DeviceInfo& info);
-    // swap chain support check, only available after real device creation, not during device selection
+	bool checkFeatureDescriptorIndexSize(DeviceInfo& info);
+	bool checkFeatureShaderInt64(DeviceInfo& info);
+	// swap chain support check, only available after real device creation, not during device selection
     bool checkFeatureSwapChain(VkPhysicalDevice physDevice);
 	// check extension support and optionally return list of supported extensions
 	void getDeviceExtensionSupport(VkPhysicalDevice device, std::vector<std::string>* list) {

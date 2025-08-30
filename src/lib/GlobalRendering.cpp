@@ -120,6 +120,16 @@ bool GlobalRendering::checkFeatureDescriptorIndexSize(DeviceInfo& info)
 }
 
 
+bool GlobalRendering::checkFeatureShaderInt64(DeviceInfo& info)
+{
+    // check in64 feature to be able to address inside large mesh storage buffer
+    if (!info.features.shaderInt64) {
+        Log("Device does not support indexing with 64 bit (shaderInt64)" << endl);
+        return false;
+    }
+    return true;
+}
+
 bool GlobalRendering::checkFeatureSwapChain(VkPhysicalDevice physDevice)
 {
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physDevice);
@@ -142,6 +152,7 @@ bool GlobalRendering::isDeviceSuitable(DeviceInfo& info)
     }
     if (!checkFeatureCompressedTextures(info)) return false;
     if (!checkFeatureDescriptorIndexSize(info)) return false;
+    if (!checkFeatureShaderInt64(info)) return false;
     //if (!checkFeatureSwapChain(info)) return false;
     familyIndices = findQueueFamilies(info.device);
     if (!familyIndices.isComplete(true)) return false;

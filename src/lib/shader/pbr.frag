@@ -1,6 +1,7 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier : require
 #extension GL_EXT_debug_printf : enable
+#extension GL_ARB_gpu_shader_int64 : enable
 
 //struct UBOParams {
 //	vec4 lightDir;
@@ -86,7 +87,7 @@ vec4 textureBindless2D(uint textureid, vec2 uv) {
 	//vec2 wrappedUV = fract(uv);
     if (textureid != 2 && textureid != 10)
 	if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
-	    debugPrintfEXT("textureBindless2D bad uv %f %f for texid %d\n", uv.x, uv.y, textureid);
+	    //debugPrintfEXT("textureBindless2D bad uv %f %f for texid %d\n", uv.x, uv.y, textureid);
 	}
 	return texture(global_textures2d[nonuniformEXT(textureid)], wrappedUV);
 }
