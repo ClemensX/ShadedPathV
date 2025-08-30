@@ -2,15 +2,67 @@
 #extension GL_EXT_debug_printf : enable
 #extension GL_EXT_mesh_shader : enable
 #extension GL_ARB_gpu_shader_int64 : enable
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_buffer_reference_uvec2 : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 
 #include "common_cpp_shader.h"
 #include "shadermaterial.glsl"
 #include "pbr_mesh_common.glsl"
 
+// default set (0) bindings:
+// binding 0: global UBO (MVP)
+// binding 1: per-model UBO (PBR, model matrix, bounding box, meshlet count, material, flags)
+// mesh storage buffer (for all meshes) is bindless!!
+// set 1 bindings:
+// binding 0: global textures
+
+layout(buffer_reference, std430) buffer VertexBuffer {
+    PBRVertex vertex[];
+};
+
+taskPayloadSharedEXT TaskPayload payload;
+
+void main() {
+    VertexBuffer vb = VertexBuffer(model_ubo.GPUMeshStorageBaseAddress + model_ubo.vertexOffset);
+    PBRVertex v = vb.vertex[0];
+    debugPrintfEXT("TASK SHADER: your very first vertex from 64 bit addressed bindless mesh storage buffer is: %f %f %f\n", v.position.x, v.position.y, v.position.z);
+    //debugPrintfEXT("TASK SHADER: mesh buffer base address %d\n", model_ubo.GPUMeshStorageBaseAddress);
+    //debugPrintfEXT("TASK SHADER: vertex offset %d\n", model_ubo.vertexOffset);
+
+    bool isRenderingDisabled = (model_ubo.flags & MODEL_RENDER_FLAG_DISABLE) != 0;
+    if (isRenderingDisabled) {
+        //debugPrintfEXT("WARNING: RENDERING DISABLED for this object\n");
+        return;
+    }
+
+    mat4 model = model_ubo.model;
+    mat4 view = ubo.view;
+    mat4 proj = ubo.proj;
+    mat4 mvp = proj * view * model;
+    bool isOutside = isOutsideView(model_ubo.boundingBox, mvp);
+    if (isOutside) {
+        // Don't emit mesh tasks for this object
+        BoundingBox bb = model_ubo.boundingBox;
+        debugPrintfEXT("WARNING: OUTSIDE bb min %f %f %f\n", bb.min.x, bb.min.y, bb.min.z);
+        return;
+    }
+    uint meshletIndex = gl_GlobalInvocationID.x;
+    payload.meshletIndex = meshletIndex;
+    payload.mvp = mvp;
+    EmitMeshTasksEXT(model_ubo.meshletsCount, 1, 1);
+}
+
+#ifdef NIXOS
+
+layout(binding = 2) buffer MeshStorageBuffer {
+    uint64_t baseOffset;
+} ubo;
+
 // Meshlet descriptor buffer (binding = 2)
-layout(std430, binding = 2) buffer MeshletBuffer {
+layout(std430, binding = 2) buffer MeshStorageBuffer {
     uvec4 packedMeshlets[];
-} meshletDescs;
+} meshStorage;
 
 // local primitive index buffer:
 layout(std430, binding = 3) buffer PrimitiveIndexBuffer {
@@ -159,3 +211,5 @@ void main() {
     //EmitMeshTasksEXT(1, 1, 1); // (groupX, groupY, groupZ)
     //debugPrintfEXT("task shader emitted\n");
 }
+
+#endif

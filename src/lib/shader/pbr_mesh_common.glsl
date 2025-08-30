@@ -92,6 +92,7 @@ layout (binding = 1) uniform UboInstance {
     UBOParams params;
     ShaderMaterial material;
     BoundingBox boundingBox; // AABB axis aligned bounding box
+    uint64_t GPUMeshStorageBaseAddress; // base address of global mesh storage buffer on GPU
 	uint64_t meshletOffset; // offset into global mesh storage buffer
 	uint64_t localIndexOffset; // offset into global mesh storage buffer
 	uint64_t globalIndexOffset; // offset into global mesh storage buffer

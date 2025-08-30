@@ -102,6 +102,7 @@ public:
         shaderValuesParams params; // 16-byte aligned
         ShaderMaterial material; // 16-byte aligned
         BoundingBox boundingBox; // AABB in local object space
+		uint64_t GPUMeshStorageBaseAddress; // base address of global mesh storage buffer on GPU
 		uint64_t meshletOffset = 0; // offset into global mesh storage buffer
 		uint64_t localIndexOffset = 0; // offset into global mesh storage buffer
 		uint64_t globalIndexOffset = 0; // offset into global mesh storage buffer
@@ -180,62 +181,6 @@ public:
 		}
 	};
 
-	static VkVertexInputBindingDescription getBindingDescription() {
-		VkVertexInputBindingDescription bindingDescription{};
-		bindingDescription.binding = 0;
-		bindingDescription.stride = sizeof(Vertex);
-		bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-		return bindingDescription;
-	}
-	// get static std::array of attribute desciptions, make sure to copy to local array, otherwise you get dangling pointers!
-	static std::array<VkVertexInputAttributeDescription, 7> getAttributeDescriptions() {
-		std::array<VkVertexInputAttributeDescription, 7> attributeDescriptions{};
-
-		// layout(location = 0) in vec3 inPos;
-		attributeDescriptions[0].binding = 0;
-		attributeDescriptions[0].location = 0;
-		attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptions[0].offset = offsetof(Vertex, pos);
-
-		// layout(location = 1) in vec3 inNormal;
-		attributeDescriptions[1].binding = 0;
-		attributeDescriptions[1].location = 1;
-		attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		attributeDescriptions[1].offset = offsetof(Vertex, normal);
-
-		// layout(location = 2) in vec2 inUV0;
-		attributeDescriptions[2].binding = 0;
-		attributeDescriptions[2].location = 2;
-		attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-		attributeDescriptions[2].offset = offsetof(Vertex, uv0);
-
-		// layout(location = 3) in vec2 inUV1;
-		attributeDescriptions[3].binding = 0;
-		attributeDescriptions[3].location = 3;
-		attributeDescriptions[3].format = VK_FORMAT_R32G32_SFLOAT;
-		attributeDescriptions[3].offset = offsetof(Vertex, uv1);
-
-		// layout(location = 4) in uvec4 inJoint0;
-		attributeDescriptions[4].binding = 0;
-		attributeDescriptions[4].location = 4;
-		attributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_UINT;
-		attributeDescriptions[4].offset = offsetof(Vertex, joint0);
-
-		// layout(location = 5) in vec4 inWeight0;
-		attributeDescriptions[5].binding = 0;
-		attributeDescriptions[5].location = 5;
-		attributeDescriptions[5].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-		attributeDescriptions[5].offset = offsetof(Vertex, weight0);
-
-		// layout(location = 6) in vec4 inColor0;
-		attributeDescriptions[6].binding = 0;
-		attributeDescriptions[6].location = 6;
-		attributeDescriptions[6].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-		attributeDescriptions[6].offset = offsetof(Vertex, color);
-
-		return attributeDescriptions;
-	}
-
 	virtual ~PBRShader() override;
 
 	// shader initialization, end result is a shader sub resource for each worker thread
@@ -270,6 +215,7 @@ public:
     }
 	uint64_t allocateMeshStorage(uint64_t size);
 	VkBuffer meshStorageBuffer = nullptr;
+    VkDeviceAddress meshStorageBufferDeviceAddress = 0;
 
 private:
 	UniformBufferObject ubo = {};
@@ -359,6 +305,7 @@ public:
 	void addRenderPassAndDrawCommands(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, VkBuffer vertexBuffer);
 
 	void createGlobalCommandBufferAndRenderPass(FrameResources& tr, bool update = false);
+	void updateDescriptors(FrameResources& tr, WorldObject* obj, bool isRightEye = false, bool update = false);
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, WorldObject* obj, bool isRightEye = false, bool update = false);
 	// per frame update of UBO / MVP
 	void uploadToGPU(FrameResources& tr, PBRShader::UniformBufferObject& ubo, PBRShader::UniformBufferObject& ubo2);

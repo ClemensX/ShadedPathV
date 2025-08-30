@@ -8,23 +8,21 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	resources.setResourceDefinition(&vulkanResourceDefinition);
 
 	// create shader modules
-	vertShaderModule = resources.createShaderModule("pbr.vert.spv");
-	fragShaderModule = resources.createShaderModule("pbr.frag.spv");
 	taskShaderModule = resources.createShaderModule("pbr.task.spv");
 	meshShaderModule = resources.createShaderModule("pbr.mesh.spv");
+	//fragShaderModule = resources.createShaderModule("pbr.frag.spv");
 
-	// descriptor 8544 -> 8676
+	// descriptor set (dynamic UBO - one large set, bind one for each object during command creation)
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, this, 1);
 	alignedDynamicUniformBufferSize = global->calcConstantBufferSize(sizeof(DynamicModelUBO));
-	//resources.createPipelineLayout(&pipelineLayout, this);
 
 	int fl = engine.getFramesInFlight();
 	for (int i = 0; i < fl; i++) {
 		// global fixed lines (one common vertex buffer)
 		PBRSubShader sub;
 		sub.init(this, "PBRLineSubshader");
-		sub.setVertShaderModule(vertShaderModule);
-		sub.setFragShaderModule(fragShaderModule);
+		//sub.setVertShaderModule(vertShaderModule);
+		//sub.setFragShaderModule(fragShaderModule);
         sub.setTaskShaderModule(taskShaderModule);
         sub.setMeshShaderModule(meshShaderModule);
 		sub.setVulkanResources(&resources);
@@ -36,6 +34,7 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
     bufferSize = GlobalRendering::minAlign(bufferSize, 16);
 	global->createBuffer(bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 		meshStorageBuffer, meshStorageBufferMemory, "global mesh storage buffer");
+    meshStorageBufferDeviceAddress = global->getBufferDeviceAddress(meshStorageBuffer);
 	meshStorageNextFreePos = 0;
 }
 
@@ -122,6 +121,7 @@ void PBRShader::prefillModelParameters(FrameResources& fr)
         BoundingBox box;
 		obj->getBoundingBox(box);
         buf->boundingBox = box;
+        buf->GPUMeshStorageBaseAddress = obj->mesh->GPUMeshStorageBaseAddress;
         buf->vertexOffset = obj->mesh->vertexOffset;
 	}
 
@@ -222,17 +222,12 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
     pbrShader->createRenderPassAndFramebuffer(tr, shaderState, renderPass, framebuffer, framebuffer2);
 
 	// create shader stage
-	auto vertShaderStageInfo = engine->shaders.createVertexShaderCreateInfo(vertShaderModule);
+	//auto vertShaderStageInfo = engine->shaders.createVertexShaderCreateInfo(vertShaderModule);
     auto taskShaderStageInfo = engine->shaders.createTaskShaderCreateInfo(taskShaderModule);
     auto meshShaderStageInfo = engine->shaders.createMeshShaderCreateInfo(meshShaderModule);
-	auto fragShaderStageInfo = engine->shaders.createFragmentShaderCreateInfo(fragShaderModule);
-	//VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
-	VkPipelineShaderStageCreateInfo shaderStages[] = { taskShaderStageInfo, meshShaderStageInfo, fragShaderStageInfo };
-
-	// vertex input
-	auto binding_desc = pbrShader->getBindingDescription();
-	auto attribute_desc = pbrShader->getAttributeDescriptions();
-	auto vertexInputInfo = pbrShader->createVertexInputCreateInfo(&binding_desc, attribute_desc.data(), attribute_desc.size());
+	//auto fragShaderStageInfo = engine->shaders.createFragmentShaderCreateInfo(fragShaderModule);
+	VkPipelineShaderStageCreateInfo shaderStages[] = { taskShaderStageInfo, meshShaderStageInfo };
+	//VkPipelineShaderStageCreateInfo shaderStages[] = { taskShaderStageInfo, meshShaderStageInfo, fragShaderStageInfo };
 
 	// input assembly
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
@@ -279,7 +274,7 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipelineInfo.stageCount = stageCount;
 	pipelineInfo.pStages = shaderStages;
-	pipelineInfo.pVertexInputState = &vertexInputInfo;
+	//pipelineInfo.pVertexInputState = &vertexInputInfo;
 	pipelineInfo.pInputAssemblyState = &inputAssembly;
 	pipelineInfo.pViewportState = &viewportState;
 	pipelineInfo.pRasterizationState = &rasterizer;
@@ -331,6 +326,18 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 	}
 	allocateCommandBuffer(tr, &commandBuffer, "PBR COMMAND BUFFER");
 
+    // always handle descriptors before recording commands:
+	auto& objs = engine->objectStore.getSortedList();
+	for (auto obj : objs) {
+		updateDescriptors(tr, obj, false, update);
+	}
+	if (engine->isStereo()) {
+		for (auto obj : objs) {
+			updateDescriptors(tr, obj, true, update);
+		}
+	}
+
+
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0; // Optional
@@ -350,8 +357,6 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 	// add draw commands for all valid objects:
-	//auto &objs = engine->meshStore.getSortedList();
-	auto& objs = engine->objectStore.getSortedList();
 	for (auto obj : objs) {
 		recordDrawCommand(commandBuffer, tr, obj, false, update);
 	}
@@ -387,6 +392,40 @@ void PBRSubShader::uploadToGPU(FrameResources& tr, PBRShader::UniformBufferObjec
 	}
 }
 
+void PBRSubShader::updateDescriptors(FrameResources& tr, WorldObject* obj, bool isRightEye, bool update)
+{
+	// update descriptor set for mesh storage buffer:
+
+	VkDescriptorBufferInfo bufferInfoMeshStorage{};
+	bufferInfoMeshStorage.buffer = pbrShader->meshStorageBuffer;
+	bufferInfoMeshStorage.offset = 0;
+	bufferInfoMeshStorage.range = VK_WHOLE_SIZE;
+
+	VkWriteDescriptorSet write{};
+	write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	write.dstSet = descriptorSet;
+	write.dstBinding = 0;
+	write.dstArrayElement = 0;
+	write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	write.descriptorCount = 1;
+	write.pBufferInfo = &bufferInfoMeshStorage;
+
+	// update descriptor sets:
+	// One dynamic offset per dynamic descriptor to offset into the ubo containing all model matrices
+	uint32_t objId = obj->objectNum;
+	uint32_t dynamicOffset = static_cast<uint32_t>(objId * pbrShader->alignedDynamicUniformBufferSize);
+	if (!isRightEye) {
+		// left eye
+		write.dstSet = descriptorSet;
+		//vkUpdateDescriptorSets(device, static_cast<uint32_t>(1), &write, 0, nullptr);
+	}
+	else {
+		// right eye
+		write.dstSet = descriptorSet2;
+		//vkUpdateDescriptorSets(device, static_cast<uint32_t>(1), &write, 0, nullptr);
+	}
+}
+
 void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& fr, WorldObject* obj, bool isRightEye, bool update)
 {
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
@@ -395,8 +434,6 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	vkCmdSetCullMode(commandBuffer, cullMode);
 	VkBuffer vertexBuffers[] = { obj->mesh->vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
-	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-	vkCmdBindIndexBuffer(commandBuffer, obj->mesh->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 	auto buf = pbrShader->getAccessToModel(fr, obj->objectNum);
 	buf->flags = 0; // regular PBR rednering
@@ -414,67 +451,6 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
         // assert that the meshlet count is less than the max task work group count
         assert(buf->meshletsCount < engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxTaskWorkGroupCount[0]);
 	}
-    // update descriptor set for mesh shader:
-	VkDescriptorBufferInfo bufferInfo{};
-	bufferInfo.buffer = obj->mesh->meshletDescBuffer; // Your VkBuffer handle
-	bufferInfo.offset = 0;
-	bufferInfo.range = VK_WHOLE_SIZE;
-
-	VkWriteDescriptorSet write{};
-	write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	//write.dstSet = descriptorSet;
-	write.dstBinding = 2;
-	write.dstArrayElement = 0;
-	write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	write.descriptorCount = 1;
-	write.pBufferInfo = &bufferInfo;
-
-	// more storage buffers:
-	VkDescriptorBufferInfo bufferInfo3{};
-	bufferInfo3.buffer = obj->mesh->localIndexBuffer;
-	bufferInfo3.offset = 0;
-	bufferInfo3.range = VK_WHOLE_SIZE;
-
-	VkDescriptorBufferInfo bufferInfo4{};
-	bufferInfo4.buffer = obj->mesh->globalIndexBuffer;
-	bufferInfo4.offset = 0;
-	bufferInfo4.range = VK_WHOLE_SIZE;
-
-	VkDescriptorBufferInfo bufferInfo5{};
-	bufferInfo5.buffer = obj->mesh->vertexStorageBuffer;
-	bufferInfo5.offset = 0;
-	bufferInfo5.range = VK_WHOLE_SIZE;
-
-	VkDescriptorBufferInfo bufferInfoMeshStorage{};
-	bufferInfoMeshStorage.buffer = pbrShader->meshStorageBuffer;
-	bufferInfoMeshStorage.offset = 0;
-	bufferInfoMeshStorage.range = VK_WHOLE_SIZE;
-
-	// 2. Prepare VkWriteDescriptorSet for each new buffer
-	VkWriteDescriptorSet write3{};
-	write3.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	write3.dstSet = descriptorSet;
-	write3.dstBinding = 3; // Binding index in the shader
-	write3.dstArrayElement = 0;
-	write3.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	write3.descriptorCount = 1;
-	write3.pBufferInfo = &bufferInfo3;
-
-	VkWriteDescriptorSet write4 = write3;
-	write4.dstBinding = 4;
-	write4.pBufferInfo = &bufferInfo4;
-
-	VkWriteDescriptorSet write5 = write3;
-	write5.dstBinding = 5;
-	write5.pBufferInfo = &bufferInfo5;
-
-	VkWriteDescriptorSet writeMeshStorage = write3;
-	writeMeshStorage.dstBinding = 5;
-	writeMeshStorage.pBufferInfo = &bufferInfoMeshStorage;
-
-	// 3. Update the descriptor set
-	//std::array<VkWriteDescriptorSet, 5> writes = { write, write3, write4, write5, writeMeshStorage };
-	std::array<VkWriteDescriptorSet, 4> writes = { write, write3, write4, writeMeshStorage };
 	// bind global texture array:
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
 
@@ -484,25 +460,17 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	uint32_t dynamicOffset = static_cast<uint32_t>(objId * pbrShader->alignedDynamicUniformBufferSize);
 	if (!isRightEye) {
 		// left eye
-		writes[0].dstSet = writes[1].dstSet = writes[2].dstSet = writes[3].dstSet = descriptorSet;
-		vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 1, &dynamicOffset);
 	}
 	else {
 		// right eye
-		writes[0].dstSet = writes[1].dstSet = writes[2].dstSet = writes[3].dstSet = descriptorSet2;
-		vkUpdateDescriptorSets(device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet2, 1, &dynamicOffset);
 	}
-	//if (isRightEye) vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);
 	if (obj->mesh->outMeshletDesc.size() > 0) {
 		// groupCountX, groupCountY, groupCountZ: number of workgroups to dispatch
-		//vkCmdDrawMeshTasksEXT(commandBuffer, obj->mesh->outMeshletDesc.size(), 1, 1);
 		// only 1 workgroup: we implement object culling and LOD object selection in task shader
 		vkCmdDrawMeshTasksEXT(commandBuffer, 1, 1, 1);
 	}
-	else
-		vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(obj->mesh->indices.size()), 1, 0, 0, 0);
 }
 
 void PBRSubShader::destroy()

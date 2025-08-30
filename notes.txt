@@ -289,3 +289,5 @@ MeshletOld stats for mesh id2
   local Vertex indices needed         : 0
   vertices: 14556
 
+
+[-0.611995 -0.0309409 0.48309]

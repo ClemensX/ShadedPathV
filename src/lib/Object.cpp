@@ -162,6 +162,7 @@ void MeshStore::uploadObject(MeshInfo* obj)
 
         // global storage buffer:
 		//engine->shaders.pbrShader.allocateMeshStorage(vertexBufferSize); // testing buffer handling
+		obj->GPUMeshStorageBaseAddress = engine->shaders.pbrShader.meshStorageBufferDeviceAddress;
         uint64_t pos = engine->globalRendering.uploadToGlobalBuffer(vertexBufferSize, obj->vertices.data(), engine->shaders.pbrShader.meshStorageBuffer);
 		obj->vertexOffset = pos;
 	}

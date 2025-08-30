@@ -130,6 +130,26 @@ bool GlobalRendering::checkFeatureShaderInt64(DeviceInfo& info)
     return true;
 }
 
+bool GlobalRendering::checkFeatureBindless64Buffer(DeviceInfo& info)
+{
+    // check mesh support:
+    // set extension details for device addressing
+    VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
+    bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+    VkPhysicalDeviceFeatures2 features2{};
+    features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+    features2.pNext = &bufferDeviceAddressFeatures;
+    vkGetPhysicalDeviceFeatures2(info.device, &features2);
+    if (bufferDeviceAddressFeatures.bufferDeviceAddress) {
+        // Device supports buffer device address (bindless, 64-bit buffer access)
+        return true;
+    }
+    else {
+        // Not supported
+        return false;
+    }
+}
+
 bool GlobalRendering::checkFeatureSwapChain(VkPhysicalDevice physDevice)
 {
     SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physDevice);
@@ -153,6 +173,7 @@ bool GlobalRendering::isDeviceSuitable(DeviceInfo& info)
     if (!checkFeatureCompressedTextures(info)) return false;
     if (!checkFeatureDescriptorIndexSize(info)) return false;
     if (!checkFeatureShaderInt64(info)) return false;
+    if (!checkFeatureBindless64Buffer(info)) return false;
     //if (!checkFeatureSwapChain(info)) return false;
     familyIndices = findQueueFamilies(info.device);
     if (!familyIndices.isComplete(true)) return false;
@@ -511,6 +532,7 @@ void GlobalRendering::createLogicalDevice()
     chainNextDeviceFeature(&createInfo, &deviceFeatures13);
     if (isMeshShading()) {
         chainNextDeviceFeature(&createInfo, &meshFeatures);
+        //chainNextDeviceFeature(&createInfo, &deviceAddressFeatures); already done in deviceFeatures12
     }
     if (isSynchronization2()) {
         chainNextDeviceFeature(&createInfo, &synchronization2Features);
@@ -528,15 +550,6 @@ void GlobalRendering::createLogicalDevice()
         createInfo.ppEnabledExtensionNames = deviceExtensions.data();
     }
     createInfo.enabledLayerCount = 0; // no longer used - validation layers handled in kvInstance
-    if (false) {
-        VkPhysicalDeviceBufferDeviceAddressFeatures bufferDeviceAddressFeatures{};
-        bufferDeviceAddressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
-        bufferDeviceAddressFeatures.pNext = (void*)createInfo.pNext;
-        createInfo.pNext = &bufferDeviceAddressFeatures;
-        bufferDeviceAddressFeatures.bufferDeviceAddress = VK_TRUE;
-        bufferDeviceAddressFeatures.bufferDeviceAddressCaptureReplay = VK_TRUE;
-        bufferDeviceAddressFeatures.bufferDeviceAddressMultiDevice = VK_TRUE;
-    }
     if (engine->isVR()) {
         engine->vr.initVulkanCreateDevice(createInfo);
     }

@@ -265,6 +265,12 @@ public:
 
         return std::string(buffer);
     }
+	VkDeviceAddress getBufferDeviceAddress(VkBuffer buffer) {
+		VkBufferDeviceAddressInfo bufferDeviceAI{};
+		bufferDeviceAI.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+		bufferDeviceAI.buffer = buffer;
+		return vkGetBufferDeviceAddress(device, &bufferDeviceAI);
+    }
 
 	// low level graphics
 
@@ -342,6 +348,7 @@ private:
     bool checkFeatureCompressedTextures(DeviceInfo& info);
 	bool checkFeatureDescriptorIndexSize(DeviceInfo& info);
 	bool checkFeatureShaderInt64(DeviceInfo& info);
+	bool checkFeatureBindless64Buffer(DeviceInfo& info);
 	// swap chain support check, only available after real device creation, not during device selection
     bool checkFeatureSwapChain(VkPhysicalDevice physDevice);
 	// check extension support and optionally return list of supported extensions

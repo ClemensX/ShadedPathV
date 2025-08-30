@@ -296,6 +296,7 @@ struct MeshInfo
     }
 	bool boundingBoxAlreadySet = false;
 	BoundingBox boundingBox;
+    uint64_t GPUMeshStorageBaseAddress = 0; // base address of global mesh storage buffer on GPU
 	uint64_t meshletOffset = 0; // offset into global mesh storage buffer
 	uint64_t localIndexOffset = 0; // offset into global mesh storage buffer
 	uint64_t globalIndexOffset = 0; // offset into global mesh storage buffer
