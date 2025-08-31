@@ -414,15 +414,17 @@ void VulkanResources::updateDescriptorSetForTextures(ShadedPathEngine* engine) {
     TextureInfo* lastTexture = nullptr;
     for (auto& texMapEntry : engine->textureStore.getTexturesMap()) {
         auto& tex = texMapEntry.second;
-        //Log("tex: " << tex.id.c_str() << " index: " << tex.index << endl);
+        //Log("tex: " << tex.id.c_str() << " index: " << tex.index << " ");
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         imageInfo.imageView = tex.imageView;
         //imageInfo.sampler = engine->globalRendering.textureSampler[(int)tex.type];
         if (tex.type == TextureType::TEXTURE_TYPE_GLTF) {
             imageInfo.sampler = tex.sampler;
+            Log("using glTF sampler\n");
         } else {
             imageInfo.sampler = engine->globalRendering.textureSampler_TEXTURE_TYPE_MIPMAP_IMAGE;
+            Log("using default sampler\n");
         }
         imageInfos[tex.index] = imageInfo;
         lastTexture = (TextureInfo*) &tex;

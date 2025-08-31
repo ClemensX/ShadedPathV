@@ -55,6 +55,7 @@ bool LoadImageDataKTX(Image* image, const int image_idx, std::string* err,
 	}
 	tvec[image_idx] = kTexture;
 	auto* texture = userData->engine->textureStore.createTextureSlotForMesh(userData->collection->meshInfos[0], image_idx);
+    //texture->type = TextureType::TEXTURE_TYPE_GLTF;
 	userData->engine->textureStore.createVulkanTextureFromKTKTexture(kTexture, texture);
 	userData->collection->textureInfos[image_idx] = texture;
 	//userData->engine->textureStore.destroyKTXIntermediate(kTexture);
@@ -339,6 +340,9 @@ void glTF::prepareTexturesAndMaterials(tinygltf::Model& model, MeshCollection* c
 	if (mesh->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
 		return;
 	}
+	for (auto* tp : coll->textureInfos) {
+		engine->textureStore.setTextureActive(tp->id, true);
+    }
 	// now set the shaderMaterial fields from gltf material:
 	PBRShader::ShaderMaterial m{};
 	m.texCoordSets.baseColor = mat.pbrMetallicRoughness.baseColorTexture.texCoord;

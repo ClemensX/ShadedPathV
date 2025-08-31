@@ -72,6 +72,7 @@ void TextureStore::loadTexture(string filename, string id, TextureType type, Tex
 	ktxTexture* kTexture;
 	createKTXFromMemory((const ktx_uint8_t*)file_buffer.data(), static_cast<int>(file_buffer.size()), &kTexture);
 	createVulkanTextureFromKTKTexture(kTexture, texture);
+	setTextureActive(texture->id, true);
 	if (hasFlag(flags, TextureFlags::KEEP_DATA_BUFFER)) {
 		assert(kTexture->numLevels == 1);
 		assert(texture->vulkanTexture.imageFormat == VK_FORMAT_R32_SFLOAT);
@@ -142,7 +143,7 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 		} else {
 			texture->imageView = engine->globalRendering.createImageView(texture->vulkanTexture.image, format, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
 		}
-        setTextureActive(texture->id, true);
+        //setTextureActive(texture->id, true);
 		return;
 	} else {
 		// KTX 1 handling
@@ -160,7 +161,7 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 			//texture->imageView = engine->globalRendering.createImageView(texture->vulkanTexture.image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
 			texture->imageView = engine->globalRendering.createImageView(texture->vulkanTexture.image, format, VK_IMAGE_ASPECT_COLOR_BIT, texture->vulkanTexture.levelCount);
 		}
-		setTextureActive(texture->id, true);
+		//setTextureActive(texture->id, true);
 	}
 }
 
@@ -1092,7 +1093,7 @@ void TextureStore::setTextureActive(std::string id, bool active)
         ti->second.available = active;
 		// recreate texture pool descriptor set
 		VulkanResources::updateDescriptorSetForTextures(engine);
-		Log("tex added and descriptor set updated: " << ti->second.id.c_str() << " index: " << ti->second.index << endl);
+		//Log("tex added and descriptor set updated: " << ti->second.id.c_str() << " index: " << ti->second.index << endl);
 		return;
 	}
     Error("Texture not found");

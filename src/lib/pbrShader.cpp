@@ -502,5 +502,6 @@ void PBRShader::recreateGlobalCommandBuffers()
 		globalSubShaders[fi.frameIndex].createGlobalCommandBufferAndRenderPass(fi, true);
 		globalSubShaders[fi.frameIndex].createGlobalCommandBufferAndRenderPass(fi, true);
 		//shaders.createCommandBuffers(fi);
+		//engine->textureStore.updateDescriptorSetForTextures(engine);
 	}
 }
