@@ -33,4 +33,5 @@ private:
     bool useDefaultNormalLineLength = true; // to use different normal line length for some models
     bool loadNewFile = false; // signal to load new file, activated by ImGui
     std::string newFileName; // name of new file to load
+    int loadObjectNum = 0; // used to generate new object IDs when loading new objects
 };

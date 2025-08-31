@@ -239,21 +239,6 @@ struct MeshInfo
 	::TextureInfo* occlusionTexture = nullptr;
 	::TextureInfo* emissiveTexture = nullptr;
 
-	// GPU data:
-	VkBuffer vertexBuffer = nullptr;
-	VkDeviceMemory vertexBufferMemory = nullptr;
-	VkBuffer indexBuffer = nullptr;
-	VkDeviceMemory indexBufferMemory = nullptr;
-	VkBuffer meshletDescBuffer = nullptr;
-	VkDeviceMemory meshletDescBufferMemory = nullptr;
-	VkBuffer globalIndexBuffer = nullptr;
-	VkDeviceMemory globalIndexBufferMemory = nullptr;
-	VkBuffer localIndexBuffer = nullptr;
-	VkDeviceMemory localIndexBufferMemory = nullptr;
-	VkBuffer vertexStorageBuffer = nullptr;
-	VkDeviceMemory vertexStorageBufferMemory = nullptr;
-	//VkDescriptorSet descriptorSet = nullptr;
-
 	// gltf mesh index, only valid during gltf parsing. -1 if not yet set
 	int gltfMeshIndex = -1;
 	// base transform from gltf file (default to identity)

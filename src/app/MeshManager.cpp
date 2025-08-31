@@ -53,23 +53,14 @@ void MeshManager::init() {
 
     engine->textureStore.generateBRDFLUT();
 
-    MeshFlagsCollection meshFlags = MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
-    //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
-    //engine->meshStore.loadMesh("box10_cmp.glb", "LogoBox");
-    engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox");
-    //engine->meshStore.loadMeshCylinder("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID, true); alterObjectCoords = false;
 
     engine->objectStore.createGroup("group");
-    object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.2f, 0.2f, 0.2f));
 
     //object->enableDebugGraphics = true;
     if (alterObjectCoords) {
         // turn upside down
         object->rot() = vec3(PI_half, 0.0, 0.0f);
     }
-    BoundingBox box;
-    object->getBoundingBox(box);
-    Log(" object max values: " << box.max.x << " " << box.max.y << " " << box.max.z << std::endl);
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
@@ -123,8 +114,13 @@ void MeshManager::prepareFrame(FrameResources* fr)
         }
         Log("Loading new file: " << filepath.filename() << endl);
         //engine->meshStore.loadMesh(filepath.filename().string(), "newid", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
-        engine->meshStore.loadMesh(filepath.filename().string(), "newid");
-        object = engine->objectStore.addObject("group", "newid", vec3(+1.8f, 0.2f, 0.2f));
+        // generate new id for each loaded object:
+        string newid = "newid" + to_string(loadObjectNum++);
+        engine->meshStore.loadMesh(filepath.filename().string(), newid);
+        if (object != nullptr) {
+            object->enabled = false;
+        }
+        object = engine->objectStore.addObject("group", newid, vec3(+1.8f, 0.2f, 0.2f));
         //object->enableDebugGraphics = true;
         engine->shaders.pbrShader.initialUpload();
         engine->shaders.pbrShader.recreateGlobalCommandBuffers();
@@ -163,10 +159,11 @@ void MeshManager::prepareFrame(FrameResources* fr)
     //auto grp = engine->objectStore.getGroup("knife_group");
     vector<LineDef> boundingBoxes;
     for (auto& wo : engine->objectStore.getSortedList()) {
-        //if (wo.)
-        //Log(" adapt object " << obj.get()->objectNum << endl);
-        //WorldObject *wo = obj.get();
         PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
+        if (!wo->enabled) {
+            buf->disableRendering();
+            continue;
+        }
         mat4 modeltransform;
         if (spinningBox) {
             // Define a constant rotation speed (radians per second)

@@ -437,8 +437,6 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	// Set the cull mode dynamically
 	VkCullModeFlags cullMode = obj->mesh->isDoubleSided ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT;
 	vkCmdSetCullMode(commandBuffer, cullMode);
-	VkBuffer vertexBuffers[] = { obj->mesh->vertexBuffer };
-	VkDeviceSize offsets[] = { 0 };
 
 	auto buf = pbrShader->getAccessToModel(fr, obj->objectNum);
 	buf->flags = 0; // regular PBR rednering
@@ -498,10 +496,6 @@ void PBRSubShader::destroy()
 void PBRShader::recreateGlobalCommandBuffers()
 {
 	for (auto& fi : engine->frameInfos) {
-		//globalSubShaders[fi.frameIndex].destroy();
 		globalSubShaders[fi.frameIndex].createGlobalCommandBufferAndRenderPass(fi, true);
-		globalSubShaders[fi.frameIndex].createGlobalCommandBufferAndRenderPass(fi, true);
-		//shaders.createCommandBuffers(fi);
-		//engine->textureStore.updateDescriptorSetForTextures(engine);
 	}
 }

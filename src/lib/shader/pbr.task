@@ -19,7 +19,7 @@
 
 layout(buffer_reference, std430) buffer VertexBuffer {
     PBRVertex vertex[];
-} vertices;
+};
 
 layout(buffer_reference, std430) buffer MeshletDescs {
     uvec4 packedMeshlets[];
@@ -39,11 +39,15 @@ layout(local_size_x = 1) in; // not using the usual 32 threads per workgroup, bu
 
 taskPayloadSharedEXT TaskPayload payload;
 
+MeshletDescs meshletDescs = MeshletDescs(model_ubo.GPUMeshStorageBaseAddress + model_ubo.meshletOffset);
+GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(model_ubo.GPUMeshStorageBaseAddress + model_ubo.globalIndexOffset);
+PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(model_ubo.GPUMeshStorageBaseAddress + model_ubo.localIndexOffset);
+VertexBuffer vertices = VertexBuffer(model_ubo.GPUMeshStorageBaseAddress + model_ubo.vertexOffset);
+
 void check_inputs() {
-    VertexBuffer vb = VertexBuffer(model_ubo.GPUMeshStorageBaseAddress + model_ubo.vertexOffset);
-    PBRVertex v = vb.vertex[0];
+    PBRVertex v = vertices.vertex[0];
     debugPrintfEXT("TASK SHADER: vertex[0]: %f %f %f\n", v.position.x, v.position.y, v.position.z);
-    v = vb.vertex[1];
+    v = vertices.vertex[1];
     debugPrintfEXT("TASK SHADER: vertex[1]: %f %f %f\n", v.position.x, v.position.y, v.position.z);
     debugPrintfEXT("TASK SHADER: you have %d meshlets in this mesh!\n", model_ubo.meshletsCount);
     //debugPrintfEXT("TASK SHADER: mesh buffer base address %d\n", model_ubo.GPUMeshStorageBaseAddress);
@@ -60,7 +64,6 @@ void check_inputs() {
 //    //vec3 cp = ubo.camPos;
 //    //debugPrintfEXT("cam %f %f %f\n", ubo.camPos.x, ubo.camPos.y, ubo.camPos.z);
 //
-    PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(model_ubo.GPUMeshStorageBaseAddress + model_ubo.localIndexOffset);
     uint index = 3;
     uint byteValue0 = (primitiveIndexBuffer.primitiveIndices[index / 4] >> ((index % 4) * 8)) & 0xFFu;
     index = 4;
@@ -69,11 +72,9 @@ void check_inputs() {
     uint byteValue2 = (primitiveIndexBuffer.primitiveIndices[index / 4] >> ((index % 4) * 8)) & 0xFFu;
     debugPrintfEXT("TASK SHADER byte values: %d %d %d\n", byteValue0, byteValue1, byteValue2);
 
-    GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(model_ubo.GPUMeshStorageBaseAddress + model_ubo.globalIndexOffset);
     //uint globalIndex0 = globalIndexBuffer.index[4];
     debugPrintfEXT("TASK SHADER global index[0..4] %d %d %d %d %d\n", globalIndexBuffer.index[0],globalIndexBuffer.index[1],globalIndexBuffer.index[2],globalIndexBuffer.index[3],globalIndexBuffer.index[4]);
 
-    MeshletDescs meshletDescs = MeshletDescs(model_ubo.GPUMeshStorageBaseAddress + model_ubo.meshletOffset);
     uvec4 uv = meshletDescs.packedMeshlets[1];
     //debugPrintfEXT("meshlet uvec4[0] %f %f %f %f\n", uv.x, uv.y, uv.z, uv.w);
     MeshletDesc meshlet = unpackMeshletDesc(uv);
@@ -118,6 +119,7 @@ void check_inputs() {
 void main() {
     //check_inputs();
 
+    //debugPrintfEXT("TASK SHADER: model flags: %d\n", model_ubo.flags);
     bool isRenderingDisabled = (model_ubo.flags & MODEL_RENDER_FLAG_DISABLE) != 0;
     if (isRenderingDisabled) {
         //debugPrintfEXT("WARNING: RENDERING DISABLED for this object\n");

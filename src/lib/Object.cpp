@@ -189,18 +189,6 @@ MeshStore::~MeshStore()
 	for (auto& coll : meshCollections) {
 		if (coll.available) {
             for (auto& obj : coll.meshInfos) {
-				vkDestroyBuffer(engine->globalRendering.device, obj->vertexBuffer, nullptr);
-				vkFreeMemory(engine->globalRendering.device, obj->vertexBufferMemory, nullptr);
-				vkDestroyBuffer(engine->globalRendering.device, obj->indexBuffer, nullptr);
-				vkFreeMemory(engine->globalRendering.device, obj->indexBufferMemory, nullptr);
-                vkDestroyBuffer(engine->globalRendering.device, obj->meshletDescBuffer, nullptr);
-                vkFreeMemory(engine->globalRendering.device, obj->meshletDescBufferMemory, nullptr);
-                vkDestroyBuffer(engine->globalRendering.device, obj->globalIndexBuffer, nullptr);
-                vkFreeMemory(engine->globalRendering.device, obj->globalIndexBufferMemory, nullptr);
-                vkDestroyBuffer(engine->globalRendering.device, obj->localIndexBuffer, nullptr);
-                vkFreeMemory(engine->globalRendering.device, obj->localIndexBufferMemory, nullptr);
-                vkDestroyBuffer(engine->globalRendering.device, obj->vertexStorageBuffer, nullptr);
-                vkFreeMemory(engine->globalRendering.device, obj->vertexStorageBufferMemory, nullptr);
                 obj->available = false;
             }
 		}
@@ -208,18 +196,6 @@ MeshStore::~MeshStore()
 	for (auto& mapobj : meshes) {
 		if (mapobj.second.available) {
 			auto& obj = mapobj.second;
-			vkDestroyBuffer(engine->globalRendering.device, obj.vertexBuffer, nullptr);
-			vkFreeMemory(engine->globalRendering.device, obj.vertexBufferMemory, nullptr);
-			vkDestroyBuffer(engine->globalRendering.device, obj.indexBuffer, nullptr);
-			vkFreeMemory(engine->globalRendering.device, obj.indexBufferMemory, nullptr);
-			vkDestroyBuffer(engine->globalRendering.device, obj.meshletDescBuffer, nullptr);
-			vkFreeMemory(engine->globalRendering.device, obj.meshletDescBufferMemory, nullptr);
-			vkDestroyBuffer(engine->globalRendering.device, obj.globalIndexBuffer, nullptr);
-			vkFreeMemory(engine->globalRendering.device, obj.globalIndexBufferMemory, nullptr);
-			vkDestroyBuffer(engine->globalRendering.device, obj.localIndexBuffer, nullptr);
-			vkFreeMemory(engine->globalRendering.device, obj.localIndexBufferMemory, nullptr);
-			vkDestroyBuffer(engine->globalRendering.device, obj.vertexStorageBuffer, nullptr);
-			vkFreeMemory(engine->globalRendering.device, obj.vertexStorageBufferMemory, nullptr);
 		}
 	}
 }
@@ -831,131 +807,49 @@ void MeshletsForMesh::applyMeshletAlgorithmGreedyDistance(MeshletIn& in, Meshlet
     *             mark finished vertices
     *         
 	*/
-	if (true) {
-		std::unordered_map<uint32_t, GlobalMeshletVertex*> verticesMap;
-		// fill vertices map with pointers to all vertices
-		for (auto& v : globalVertices) {
-			verticesMap[v.globalIndex] = &v;
+	std::unordered_map<uint32_t, GlobalMeshletVertex*> verticesMap;
+	// fill vertices map with pointers to all vertices
+	for (auto& v : globalVertices) {
+		verticesMap[v.globalIndex] = &v;
+	}
+	std::vector<glm::vec3> positions;
+	for (const auto& v : in.vertices) positions.push_back(v.pos);
+	KDTree3D tree(positions);
+	Meshlet m(this, in.primitiveLimit, in.vertexLimit);
+	GlobalMeshletVertex* curVertex = nullptr;
+	// start with first vertex:
+	curVertex = &this->globalVertices[0];
+	while (curVertex != nullptr) {
+		if (verticesMap.size() % 10000 == 0) {
+			Log("  applyMeshletAlgorithmGreedyDistance: still " << verticesMap.size() << " unfinished vertices." << std::endl);
 		}
-		std::vector<glm::vec3> positions;
-		for (const auto& v : in.vertices) positions.push_back(v.pos);
-		KDTree3D tree(positions);
-		Meshlet m(this, in.primitiveLimit, in.vertexLimit);
-		GlobalMeshletVertex* curVertex = nullptr;
-		// start with first vertex:
-		curVertex = &this->globalVertices[0];
-		while (curVertex != nullptr) {
-			if (verticesMap.size() % 10000 == 0) {
-				Log("  applyMeshletAlgorithmGreedyDistance: still " << verticesMap.size() << " unfinished vertices." << std::endl);
-			}
-			//vec3 queryPos = in.vertices[curVertex->globalIndex].pos;
-			for (auto triIndex : curVertex->neighbourTriangles) {
-				if (globalTriangles[triIndex].usedInMeshlet) continue; // already in meshlet
-				addTriangle(*this, out, m, triIndex);
-			}
-			// mark vertex as finished
-			curVertex->usedInMeshlet = true;
-			verticesMap.erase(curVertex->globalIndex);
-			tree.markUsed(curVertex->globalIndex);
-
-			// find next vertex at borders
-			curVertex = findNextVertexNearestToMeshletStart(verticesMap, *this, m, in);
-			if (curVertex != nullptr) continue; // found a border vertex
-
-			// find next nearest unused vertex
-			vec3 startPos = in.vertices[m.vertices[0]->globalIndex].pos;
-			uint32_t idx = tree.nearestUnused(startPos);
-			if (idx != std::numeric_limits<uint32_t>::max()) {
-				// Use idx as the next vertex
-				curVertex = &this->globalVertices[idx];
-			}
-			else {
-				curVertex = nullptr; // we are done
-			}
+		//vec3 queryPos = in.vertices[curVertex->globalIndex].pos;
+		for (auto triIndex : curVertex->neighbourTriangles) {
+			if (globalTriangles[triIndex].usedInMeshlet) continue; // already in meshlet
+			addTriangle(*this, out, m, triIndex);
 		}
-		if (m.triangles.size() > 0) {
-			out.meshlets.push_back(m);
+		// mark vertex as finished
+		curVertex->usedInMeshlet = true;
+		verticesMap.erase(curVertex->globalIndex);
+		tree.markUsed(curVertex->globalIndex);
+
+		// find next vertex at borders
+		curVertex = findNextVertexNearestToMeshletStart(verticesMap, *this, m, in);
+		if (curVertex != nullptr) continue; // found a border vertex
+
+		// find next nearest unused vertex
+		vec3 startPos = in.vertices[m.vertices[0]->globalIndex].pos;
+		uint32_t idx = tree.nearestUnused(startPos);
+		if (idx != std::numeric_limits<uint32_t>::max()) {
+			// Use idx as the next vertex
+			curVertex = &this->globalVertices[idx];
+		}
+		else {
+			curVertex = nullptr; // we are done
 		}
 	}
-
-	if (false) {
-		std::unordered_map<uint32_t, GlobalMeshletVertex*> verticesMap;
-		// fill vertices map with pointers to all vertices
-		for (auto& v : globalVertices) {
-			verticesMap[v.globalIndex] = &v;
-		}
-
-		Meshlet m(this, in.primitiveLimit, in.vertexLimit);
-		GlobalMeshletVertex* curVertex = nullptr;
-		while (!verticesMap.empty()) {
-			if (verticesMap.size() % 10000 == 0) {
-				Log("  applyMeshletAlgorithmGreedyDistance: still " << verticesMap.size() << " unfinished vertices." << std::endl);
-			}
-			// find next vertex to process
-			//curVertex = findNextVertexNearestToMeshletCenter(verticesMap, *this, m, in);
-			curVertex = findNextVertexNearestToMeshletStart(verticesMap, *this, m, in);
-			if (curVertex == nullptr) {
-				if (!verticesMap.empty()) {
-					// we still have unfinished vertices, just get the next one
-					//curVertex = verticesMap.begin()->second;
-					//Log("WARNING: applyMeshletAlgorithmGreedyDistance: findNextVertexNearestToMeshletStart returned nullptr, but we still have unfinished vertices, picking first unfinished vertex " << curVertex->globalIndex << std::endl);
-					curVertex = findNextVertexNearestToMeshletStartNoBorder(verticesMap, *this, m, in);
-				}
-			}
-			if (curVertex == nullptr) break; // we are done
-			//Log("Processing vertex " << curVertex->globalIndex << " for new meshlet." << std::endl);
-			// add neighbour triangles
-			for (auto triIndex : curVertex->neighbourTriangles) {
-				if (globalTriangles[triIndex].usedInMeshlet) continue; // already in meshlet
-				addTriangle(*this, out, m, triIndex);
-			}
-			// mark vertex as finished
-			curVertex->usedInMeshlet = true;
-			verticesMap.erase(curVertex->globalIndex);
-		}
-		if (m.triangles.size() > 0) {
-			out.meshlets.push_back(m);
-		}
-	}
-
-    // keep for reference
-	if (false) {
-		std::queue<GlobalMeshletVertex*> queue; // queue of vertices to process, in nearest neighbour order
-		std::unordered_map<uint32_t, unsigned char> used;
-		Meshlet m(this, in.primitiveLimit, in.vertexLimit);
-		// calculate centroids for all triangles
-		for (auto& triangle : globalTriangles) {
-			auto& i0 = in.vertices[triangle.indices[0]].pos;
-			auto& i1 = in.vertices[triangle.indices[1]].pos;
-			auto& i2 = in.vertices[triangle.indices[2]].pos;
-			vec3 centroid = (i0 + i1 + i2) / 3.0f;
-			triangle.centroid = centroid;
-		}
-		//auto& curVertex = this->globalVertices[0]; // start with first vertex
-		//auto& curTriangle = this->globalTriangles[0]; // start with first triangle
-		auto curTriangleIndex = 0; // start with first triangle (from global list)
-		insertTriangle(*this, m, curTriangleIndex);
-		bool finished = false;
-		while (!finished) {
-			curTriangleIndex = findNextTriangle(*this, m, finished);
-			if (!finished) {
-				auto& curTriangle = this->globalTriangles[curTriangleIndex];
-				if (m.canInsertTriangle(curTriangle)) {
-					insertTriangle(*this, m, curTriangleIndex);
-				}
-				else {
-					//finished = true; // no more triangles to insert
-					out.meshlets.push_back(m);
-					m.reset();
-					insertTriangle(*this, m, curTriangleIndex);
-				}
-			}
-		}
-
-
-		if (m.triangles.size() > 0) {
-			out.meshlets.push_back(m);
-		}
+	if (m.triangles.size() > 0) {
+		out.meshlets.push_back(m);
 	}
 }
 
