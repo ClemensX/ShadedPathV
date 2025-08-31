@@ -216,6 +216,7 @@ public:
 	uint64_t allocateMeshStorage(uint64_t size);
 	VkBuffer meshStorageBuffer = nullptr;
     VkDeviceAddress meshStorageBufferDeviceAddress = 0;
+    uint64_t getMeshStorageBufferUsage() const { return meshStorageNextFreePos; }
 
 private:
 	UniformBufferObject ubo = {};

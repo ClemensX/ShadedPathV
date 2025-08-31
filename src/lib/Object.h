@@ -367,6 +367,9 @@ public:
 
 	static void logVertex(const PBRShader::Vertex& v);
 	ShadedPathEngine* engine = nullptr;
+    // get used storage size in bytes
+	uint64_t getUsedStorageSize();
+    size_t getUsedMeshesCount() { return meshes.size(); }
 private:
 	MeshCollection* loadMeshFile(std::string filename, std::string id, std::vector<std::byte> &fileBuffer, MeshFlagsCollection flags);
 	std::unordered_map<std::string, MeshInfo> meshes;

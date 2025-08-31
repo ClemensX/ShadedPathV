@@ -287,6 +287,20 @@ void MeshManager::buildCustomUI() {
     static string currentFilePattern = "_cmp.glb";
     static char patternBuffer[64] = "_cmp.glb";
 
+    // --- Display max mesh count and max storage size in GB ---
+    if (engine) {
+        double maxStorageGB = static_cast<double>(engine->getMeshStorageSize()) / (1024.0 * 1024.0 * 1024.0);
+        double usedStorageGB = static_cast<double>(engine->meshStore.getUsedStorageSize()) / (1024.0 * 1024.0 * 1024.0);
+        uint64_t maxMeshes = engine->getMaxMeshes();
+        size_t usedMeshes = engine->meshStore.getUsedMeshesCount();
+
+        ImGui::SeparatorText("Storage");
+        ImGui::Text("Max: %.2f GB", maxStorageGB); ImGui::SameLine();
+        ImGui::Text("Used: %.2f GB", usedStorageGB);
+        ImGui::SeparatorText("Meshes");
+        ImGui::Text("Max: %llu", maxMeshes);  ImGui::SameLine();
+        ImGui::Text("Used: %u", usedMeshes);
+    }
     ImGui::Separator();
     // Input field for file pattern
     ImGui::InputText("File Pattern", patternBuffer, sizeof(patternBuffer));

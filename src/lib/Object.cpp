@@ -1651,3 +1651,9 @@ bool MeshletsForMesh::verifyMeshletCoverage(bool doLog) const
     }
 	return false;
 }
+
+uint64_t MeshStore::getUsedStorageSize() {
+	auto max = engine->getMeshStorageSize();
+	auto used = engine->shaders.pbrShader.getMeshStorageBufferUsage();
+	return used;
+}

@@ -61,6 +61,7 @@ int mainOne()
         .overrideCPUCores(4)
         .configureParallelAppDrawCalls(2)
         .setMaxTextures(50)
+        .setMaxMeshes(100)
         .setMeshStorageSizeGB(0.6f)
         //.setFixedPhysicalDeviceIndex(1) // if GPU card is available it should be device 0. device 1 is usually the integrated Intel/AMD GPU
         //.enableGlobalWireframe()
