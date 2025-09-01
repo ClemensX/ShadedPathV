@@ -39,4 +39,6 @@ private:
     std::vector<LineDef> grid1;
     std::vector<LineDef>  grid10;
     std::vector<LineDef>  grid100;
+    int uiCameraSpeed = 0; // set by UI
+    int oldUiCameraSpeed = 0; // to detect changes
 };

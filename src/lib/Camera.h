@@ -37,6 +37,7 @@ struct Movement {
 	glm::vec3 lastFinalPositionLeft = glm::vec3(); // last final position left eye
 	glm::vec3 lastFinalPositionRight = glm::vec3(); // last final position right eye
 	MovementWalkingSubtype walkingSubtype = MovementWalkingSubtype::NoGradient;
+    float constantSpeed = -1.0f; // if >= 0, override all speed settings and move with this speed in m/s
 };
 
 class CameraPositionerInterface : public EngineParticipant {
@@ -87,6 +88,7 @@ public:
 	}
 
 	Camera() {
+        //Log("Camera c'tor without engine!" << std::endl);
 	}
 
 	void changePositioner(CameraPositionerInterface* positioner_) {
@@ -142,6 +144,11 @@ public:
 		auto l = getLookAt();
 		Log(" camera pos (" << p.x << "," << p.y << "," << p.z << ") look at (" << l.x << "," << l.y << "," << l.z << ")" << std::endl);
 	}
+	void setConstantSpeed(float speed) {
+		if (positioner) {
+			positioner->movement.constantSpeed = speed;
+		}
+    }
 private:
 	//// save projection matrix in normal screen space (y up)
 	//void saveProjection(glm::mat4 p) {

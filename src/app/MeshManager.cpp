@@ -29,6 +29,9 @@ void MeshManager::run(ContinuationInfo* cont)
         engine->files.findAssetFolder("data");
         setHighBackbufferResolution();
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 5000.0f);
+        Movement mv;
+        camera->setConstantSpeed(mv.walkSpeedMS);
+
 
         // add shaders used in this app
         shaders
@@ -103,6 +106,17 @@ void MeshManager::prepareFrame(FrameResources* fr)
     }
     double deltaSeconds = seconds - old_seconds;
 
+    if (uiCameraSpeed != oldUiCameraSpeed) {
+        Movement mv;
+        oldUiCameraSpeed = uiCameraSpeed;
+        if (uiCameraSpeed == 1) {
+            camera->setConstantSpeed(mv.runSpeedMS);
+        } else if (uiCameraSpeed == 2) {
+            camera->setConstantSpeed(mv.fallSpeedMS);
+        } else {
+            camera->setConstantSpeed(mv.walkSpeedMS);
+        }
+    }
     updateCameraPositioners(deltaSeconds);
     old_seconds = seconds;
 
@@ -361,7 +375,9 @@ void MeshManager::buildCustomUI() {
     ImGui::RadioButton("1 m", &gridSpacing, 1); ImGui::SameLine();
     ImGui::RadioButton("10 m", &gridSpacing, 10); ImGui::SameLine();
     ImGui::RadioButton("100 m", &gridSpacing, 100);
-    //Log("Grid " << planeGrid << "spacing: " << gridSpacing << endl);
-    //bool useAutoCameraCheckbox;
-    //ImGui::Checkbox("Auto Moving Camera", &useAutoCameraCheckbox);
+
+    ImGui::SeparatorText("Camera Speed");
+    ImGui::RadioButton("walk (3.5 km/h)", &uiCameraSpeed, 0); ImGui::SameLine();
+    ImGui::RadioButton("run (10 km/h)", &uiCameraSpeed, 1); ImGui::SameLine();
+    ImGui::RadioButton("fall (200 km/h)", &uiCameraSpeed, 2);
 }

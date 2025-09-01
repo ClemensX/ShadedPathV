@@ -60,7 +60,7 @@ void Files::findAssetFolder(string folderName)
 		//Log("Looking for asset folder: " << to_check << endl);
 		if (filesystem::exists(to_check)) {
 			assetFolder = to_check;
-			Log("Found asset folder: " << assetFolder << endl);
+			//Log("Found asset folder: " << assetFolder << endl);
 			initPakFiles();
 			return;
 		}
@@ -217,7 +217,7 @@ void Files::initPakFiles()
 {
 	string binFile = findFile("data.pak", FileCategory::TEXTUREPAK, false);
 	if (binFile.size() == 0) {
-		Log("pak file texture01.pak not found!" << endl);
+		//Log("pak file texture01.pak not found!" << endl);
 		return;
 	}
 	ifstream bfile(binFile, ios::in | ios::binary);

@@ -19,11 +19,20 @@ void CameraPositionerInterface::calcMovement(Movement& mv, glm::quat orientation
 
 		if (accel == glm::vec3(0)) {
 			moveSpeed -= moveSpeed * std::min((1.0f / damping_) * static_cast<float>(deltaSeconds), 1.0f);
+            // TODO override dampening for now - look into this later
+			moveSpeed = vec3(0);
+			//Log("Move speed (length): " << glm::length(moveSpeed) << std::endl);
 		} else {
 			moveSpeed += accel * acceleration_ * static_cast<float>(deltaSeconds);
 			const float maxSpeed = mv.fastSpeed_ ? maxSpeed_ * fastCoef_ : maxSpeed_;
+			//Log("Move speed length x y z: " << glm::length(moveSpeed) << " " << moveSpeed.x << " " << moveSpeed.y << " " << moveSpeed.z << std::endl);
 			if (glm::length(moveSpeed) > maxSpeed)
 				moveSpeed = glm::normalize(moveSpeed) * maxSpeed;
+			moveSpeed = glm::normalize(moveSpeed) * mv.walkSpeedMS;
+			if (mv.constantSpeed >= 0.0f) {
+				moveSpeed = glm::normalize(moveSpeed) * mv.constantSpeed;
+            }
+			//Log("Move speed (length): " << glm::length(moveSpeed) << std::endl);
 		}
 	} else {
 		engine->getWorld()->paths.updateCameraPosition(this, movement, deltaSeconds);
