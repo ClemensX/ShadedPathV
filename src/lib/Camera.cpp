@@ -74,7 +74,7 @@ void CameraPositioner_HMD::update(int viewNum, glm::vec3 pos, glm::quat ori, glm
 		movement.forward = (moveLength / glm::length(movement.forward)) * movement.forward;
 		movement.right = (moveLength / glm::length(movement.right)) * movement.right;
 		calcMovement(movement, normori, moveSpeed, acceleration_, damping_, maxSpeed_, fastCoef_, deltaSeconds/2.0f, true);
-		cameraPosition += moveSpeed;// *static_cast<float>(deltaSeconds);
+		cameraPosition += moveSpeed * static_cast<float>(deltaSeconds);
 	}
 	else {
 		//Log("deltaSeconds: " << deltaSeconds << endl);
