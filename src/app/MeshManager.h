@@ -34,4 +34,9 @@ private:
     bool loadNewFile = false; // signal to load new file, activated by ImGui
     std::string newFileName; // name of new file to load
     int loadObjectNum = 0; // used to generate new object IDs when loading new objects
+    bool planeGrid = false;
+    int gridSpacing = 1; // m between grid lines
+    std::vector<LineDef> grid1;
+    std::vector<LineDef>  grid10;
+    std::vector<LineDef>  grid100;
 };

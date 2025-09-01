@@ -8,7 +8,11 @@ public:
 	void createGridXZ(Grid& grid);
     // create horizontal grid with lines. lineGap is the distance between lines, verticalAdjust is the height of the grid.
     // the outermost lines are always at the world border, while inner ones are placed at lineGap distance beginning at world center (0x 0z).
-	Grid* createWorldGrid(float lineGap, float verticalAdjust = 0.0f);
+    // if disableTopPlane is true, the top plane (the one with biggest y value) is not drawn
+    // BEWARE: the returned pointer is global to the world, so you only can have one grid at the same time
+	Grid* createWorldGrid(float lineGap, float verticalAdjust = 0.0f, bool disableTopPlane = true);
+    // like above, but grid lines are copied to given vector for later use
+	void createWorldGridAndCopyToLineVector(std::vector<LineDef>& lines, float lineGap, float verticalAdjust = 0.0f, bool disableTopPlane = true);
 	void setWorldSize(float x, float y, float z) {
 		sizex = x; sizey = y; sizez = z;
 		if (x != z) Error("World size needs to be square in x and z");

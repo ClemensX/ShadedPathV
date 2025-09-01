@@ -64,6 +64,10 @@ void MeshManager::init() {
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
+    world.createWorldGridAndCopyToLineVector(grid1, 1.0f);
+    world.createWorldGridAndCopyToLineVector(grid10, 10.0f);
+    world.createWorldGridAndCopyToLineVector(grid100, 100.0f);
+
     engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
     // generating cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
     //engine->textureStore.generateCubemaps("skyboxTexture");
@@ -130,7 +134,6 @@ void MeshManager::prepareFrame(FrameResources* fr)
         spinningBox = true; // start spinning the logo after 4s
         spinTimeSeconds = seconds;
     }
-    engine->shaders.lineShader.clearLocalLines(tr);
     // cube
     CubeShader::UniformBufferObject cubo{};
     CubeShader::UniformBufferObject cubo2{};
@@ -203,12 +206,25 @@ void MeshManager::prepareFrame(FrameResources* fr)
         engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
     }
     // lines
-    engine->shaders.lineShader.prepareAddLines(tr);
     LineShader::UniformBufferObject lubo{};
     LineShader::UniformBufferObject lubo2{};
     lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
+    // dynamic lines:
+    engine->shaders.lineShader.clearLocalLines(tr);
+    if (planeGrid) {
+        if (gridSpacing == 1) {
+            engine->shaders.lineShader.addOneTime(grid1, tr);
+        }
+        else if (gridSpacing == 10) {
+            engine->shaders.lineShader.addOneTime(grid10, tr);
+        }
+        else if (gridSpacing == 100) {
+            engine->shaders.lineShader.addOneTime(grid100, tr);
+        }
+    }
+    engine->shaders.lineShader.prepareAddLines(tr);
     engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
 
     postUpdatePerFrame(tr);
@@ -339,6 +355,13 @@ void MeshManager::buildCustomUI() {
     if (selectedLine >= 0) {
         ImGui::Text("Selected: %s", files[selectedLine].c_str());
     }
-    bool useAutoCameraCheckbox;
+    ImGui::SeparatorText("Zero-Plane Grid");
+    ImGui::Checkbox("enable 2 km square grid", &planeGrid);
+
+    ImGui::RadioButton("1 m", &gridSpacing, 1); ImGui::SameLine();
+    ImGui::RadioButton("10 m", &gridSpacing, 10); ImGui::SameLine();
+    ImGui::RadioButton("100 m", &gridSpacing, 100);
+    //Log("Grid " << planeGrid << "spacing: " << gridSpacing << endl);
+    //bool useAutoCameraCheckbox;
     //ImGui::Checkbox("Auto Moving Camera", &useAutoCameraCheckbox);
 }

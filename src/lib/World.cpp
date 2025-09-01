@@ -77,7 +77,14 @@ void World::createGridXZ(Grid& grid) {
 	}
 }
 
-Grid* World::createWorldGrid(float lineGap, float verticalAdjust) {
+void World::createWorldGridAndCopyToLineVector(std::vector<LineDef>& lines, float lineGap, float verticalAdjust, bool disableTopPlane)
+{
+	createWorldGrid(lineGap, verticalAdjust, disableTopPlane);
+    lines = grid.lines;
+}
+
+Grid* World::createWorldGrid(float lineGap, float verticalAdjust, bool disableTopPlane) {
+    grid.lines.clear();
 	grid.center = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	grid.depth = sizez;
 	grid.width = sizex;
@@ -96,35 +103,37 @@ Grid* World::createWorldGrid(float lineGap, float verticalAdjust) {
 	//createGridXZ(grid);
 	grid.center.y = low;
 	createGridXZ(grid);
-	grid.center.y = high;
-	createGridXZ(grid);
-    // connect corners:
-	LineDef line;
-	line.color = Colors::Silver;
-	float xstart = grid.center.x - grid.width / 2;
-	float xend = grid.center.x + grid.width / 2;
-	float zstart = grid.center.z - grid.depth / 2;
-	float zend = grid.center.z + grid.depth / 2;
-	vec3 p1(xstart, low, zstart);
-	vec3 p2(xstart, high, zstart);
-	line.start = p1;
-	line.end = p2;
-	grid.lines.push_back(line);
-	p1 = vec3(xend, low, zstart);
-	p2 = vec3(xend, high, zstart);
-	line.start = p1;
-	line.end = p2;
-	grid.lines.push_back(line);
-	p1 = vec3(xend, low, zend);
-	p2 = vec3(xend, high, zend);
-	line.start = p1;
-	line.end = p2;
-	grid.lines.push_back(line);
-	p1 = vec3(xstart, low, zend);
-	p2 = vec3(xstart, high, zend);
-	line.start = p1;
-	line.end = p2;
-	grid.lines.push_back(line);
+	if (!disableTopPlane) {
+		grid.center.y = high;
+		createGridXZ(grid);
+		// connect corners:
+		LineDef line;
+		line.color = Colors::Silver;
+		float xstart = grid.center.x - grid.width / 2;
+		float xend = grid.center.x + grid.width / 2;
+		float zstart = grid.center.z - grid.depth / 2;
+		float zend = grid.center.z + grid.depth / 2;
+		vec3 p1(xstart, low, zstart);
+		vec3 p2(xstart, high, zstart);
+		line.start = p1;
+		line.end = p2;
+		grid.lines.push_back(line);
+		p1 = vec3(xend, low, zstart);
+		p2 = vec3(xend, high, zstart);
+		line.start = p1;
+		line.end = p2;
+		grid.lines.push_back(line);
+		p1 = vec3(xend, low, zend);
+		p2 = vec3(xend, high, zend);
+		line.start = p1;
+		line.end = p2;
+		grid.lines.push_back(line);
+		p1 = vec3(xstart, low, zend);
+		p2 = vec3(xstart, high, zend);
+		line.start = p1;
+		line.end = p2;
+		grid.lines.push_back(line);
+	}
 
 	return &grid;
 }

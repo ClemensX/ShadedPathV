@@ -120,6 +120,7 @@ void LineShader::clearLocalLines(FrameResources& tr)
 	if (!enabled) return;
 	LineSubShader& pf = perFrameLineSubShaders[tr.frameIndex];
 	pf.vertices.clear();
+	pf.drawCount = 0;
 }
 
 void LineShader::addFixedGlobalLines(vector<LineDef>& linesToAdd)
