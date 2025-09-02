@@ -130,7 +130,14 @@ void MeshStore::loadMesh(string filename, string id, MeshFlagsCollection flags)
 	string fileAndPath = coll->filename;
 	gltf.load((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), coll, fileAndPath);
 	coll->available = true;
-	aquireMeshletData(id);
+	if (coll->meshInfos.size() == 0) {
+		Error("No meshes found in glTF file " + filename);
+    }
+	if (flags.hasFlag(MeshFlags::MESHLET_GENERATE)) {
+		for (auto mi : coll->meshInfos) {
+			aquireMeshletData(mi->id);
+		}
+	}
 }
 
 void MeshStore::aquireMeshletData(std::string id)
@@ -1196,25 +1203,49 @@ void MeshStore::checkVertexDuplication(std::string id)
 	}
 }
 
-void MeshStore::debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, vec4 color, float normalLineLength)
+void MeshStore::debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, bool drawBoundingBox, bool drawVertices, bool drawNormals, glm::vec4 colorVertices, glm::vec4 colorNormal, float normalLineLength)
 {
 	// get access to line shader
 	auto& lineShader = engine->shaders.lineShader;
 	if (!lineShader.enabled) return;
 	if (!obj->enableDebugGraphics) return;
 
+	LineDef l;
 	vector<LineDef> addLines;
-	obj->drawBoundingBox(addLines, modelToWorld, color);
+	if (drawBoundingBox) {
+		obj->drawBoundingBox(addLines, modelToWorld, colorNormal);
+	}
+    // add vertices:
+	if (drawVertices) {
+		for (long i = 0; i < obj->mesh->indices.size(); i += 3) {
+			l.color = colorVertices;
+			auto& v0 = obj->mesh->vertices[obj->mesh->indices[i + 0]];
+			auto& v1 = obj->mesh->vertices[obj->mesh->indices[i + 1]];
+			auto& v2 = obj->mesh->vertices[obj->mesh->indices[i + 2]];
+			vec3 p0 = vec3(modelToWorld * vec4(v0.pos, 1.0f));
+			vec3 p1 = vec3(modelToWorld * vec4(v1.pos, 1.0f));
+			vec3 p2 = vec3(modelToWorld * vec4(v2.pos, 1.0f));
+			l.start = p0;
+			l.end = p1;
+			addLines.push_back(l);
+			l.start = p1;
+			l.end = p2;
+			addLines.push_back(l);
+			l.start = p2;
+			l.end = p0;
+			addLines.push_back(l);
+		}
+	}
 
 	// add normals:
-	for (auto& v : obj->mesh->vertices) {
-		LineDef l;
-		l.color = color;
-		l.start = vec3(modelToWorld * vec4(v.pos, 1.0f));
-		l.end = l.start + v.normal * normalLineLength;
-		addLines.push_back(l);
+	if (drawNormals) {
+		for (auto& v : obj->mesh->vertices) {
+			l.color = colorNormal;
+			l.start = vec3(modelToWorld * vec4(v.pos, 1.0f));
+			l.end = l.start + v.normal * normalLineLength;
+			addLines.push_back(l);
+		}
 	}
-	//lineShader.prepareAddLines(fr);
 	lineShader.addOneTime(addLines, fr);
 }
 

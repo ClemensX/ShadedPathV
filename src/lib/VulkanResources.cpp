@@ -421,10 +421,10 @@ void VulkanResources::updateDescriptorSetForTextures(ShadedPathEngine* engine) {
         //imageInfo.sampler = engine->globalRendering.textureSampler[(int)tex.type];
         if (tex.type == TextureType::TEXTURE_TYPE_GLTF) {
             imageInfo.sampler = tex.sampler;
-            Log("using glTF sampler\n");
+            //Log("using glTF sampler\n");
         } else {
             imageInfo.sampler = engine->globalRendering.textureSampler_TEXTURE_TYPE_MIPMAP_IMAGE;
-            Log("using default sampler\n");
+            //Log("using default sampler\n");
         }
         imageInfos[tex.index] = imageInfo;
         lastTexture = (TextureInfo*) &tex;

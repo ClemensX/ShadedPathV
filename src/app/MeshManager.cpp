@@ -131,14 +131,20 @@ void MeshManager::prepareFrame(FrameResources* fr)
             return;
         }
         Log("Loading new file: " << filepath.filename() << endl);
+        displayNoMeshletDataWarning = false;
         //engine->meshStore.loadMesh(filepath.filename().string(), "newid", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
         // generate new id for each loaded object:
         string newid = "newid" + to_string(loadObjectNum++);
+        MeshFlagsCollection meshFlags = MeshFlagsCollection(MeshFlags::MESHLET_GENERATE);
         engine->meshStore.loadMesh(filepath.filename().string(), newid);
         if (object != nullptr) {
             object->enabled = false;
         }
         object = engine->objectStore.addObject("group", newid, vec3(+1.8f, 0.2f, 0.2f));
+        if (!object->mesh->meshletStorageFileFound) {
+            Log("ERROR: Meshlet storage file not found for this object, meshlets will not be used for rendering" << endl);
+            displayNoMeshletDataWarning = true;
+        }
         //object->enableDebugGraphics = true;
         engine->shaders.pbrShader.initialUpload();
         engine->shaders.pbrShader.recreateGlobalCommandBuffers();
@@ -174,6 +180,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
     engine->shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
     // change individual objects position:
     //auto grp = engine->objectStore.getGroup("knife_group");
+    engine->shaders.lineShader.clearLocalLines(tr);
     vector<LineDef> boundingBoxes;
     for (auto& wo : engine->objectStore.getSortedList()) {
         PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
@@ -218,6 +225,12 @@ void MeshManager::prepareFrame(FrameResources* fr)
         modeltransform = trans * scaled * rotationMatrix;
         buf->model = modeltransform;
         engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
+        // vertices display for meshes with no meshlet data available:
+        if (!wo->mesh->meshletStorageFileFound) {
+            wo->enableDebugGraphics = true;
+            //engine->meshStore.debugGraphics(wo, tr, modeltransform, true, true, true); // with normals
+            engine->meshStore.debugGraphics(wo, tr, modeltransform); // bb and wireframe
+        }
     }
     // lines
     LineShader::UniformBufferObject lubo{};
@@ -226,7 +239,6 @@ void MeshManager::prepareFrame(FrameResources* fr)
     lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
     applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
     // dynamic lines:
-    engine->shaders.lineShader.clearLocalLines(tr);
     if (planeGrid) {
         if (gridSpacing == 1) {
             engine->shaders.lineShader.addOneTime(grid1, tr);
@@ -368,6 +380,9 @@ void MeshManager::buildCustomUI() {
     // Optionally, display the selected line
     if (selectedLine >= 0) {
         ImGui::Text("Selected: %s", files[selectedLine].c_str());
+        if (displayNoMeshletDataWarning) {
+            ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.3f, 1.0f), "No meshlet data found. \nReverting to vertices display");
+        }
     }
     ImGui::SeparatorText("Zero-Plane Grid");
     ImGui::Checkbox("enable 2 km square grid", &planeGrid);

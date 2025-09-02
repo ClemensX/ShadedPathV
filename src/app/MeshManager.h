@@ -41,4 +41,5 @@ private:
     std::vector<LineDef>  grid100;
     int uiCameraSpeed = 0; // set by UI
     int oldUiCameraSpeed = 0; // to detect changes
+    bool displayNoMeshletDataWarning = false;
 };

@@ -7,9 +7,10 @@ enum class MeshFlags : int {
 	MESH_TYPE_INVALID = 0,
 	MESH_TYPE_PBR = 1,
 	MESH_TYPE_SKINNED = 2,
-	MESH_TYPE_NO_TEXTURES = 4,
-    MESH_TYPE_FLIP_WINDING_ORDER = 8, // flip clockwise <-> counter-clockwise winding order
-	MESHLET_DEBUG_COLORS = 16, // apply vertex color to all triangles of one meshlet
+	MESH_TYPE_NO_TEXTURES = 3,
+    MESH_TYPE_FLIP_WINDING_ORDER = 4, // flip clockwise <-> counter-clockwise winding order
+	MESHLET_DEBUG_COLORS = 5, // apply vertex color to all triangles of one meshlet
+    MESHLET_GENERATE = 6, // re-generate meshlet data if meshlet data file not found
 	MESH_TYPE_COUNT = -1 // always last
 };
 
@@ -212,6 +213,15 @@ void sortByPos(std::vector<T>& vertices) {
 	);
 }
 
+// all the data we need to save/load meshlet info
+struct MeshletStorageData {
+	uint32_t numMeshlets = 0;
+	uint32_t numLocalIndices = 0;
+	uint32_t numGlobalIndices = 0;
+	std::vector<PBRShader::PackedMeshletDesc> meshletDescs;
+	std::vector<uint8_t> localIndexBuffer; // local indices for primitives (3 indices per triangle)
+	std::vector<uint32_t> globalIndexBuffer; // vertex indices into vertex buffer
+};
 
 // Describe a single loaded mesh. mesh IDs are unique, several Objects may be instantiated backed by the same mesh
 struct MeshInfo
@@ -286,6 +296,7 @@ struct MeshInfo
 	uint64_t localIndexOffset = 0; // offset into global mesh storage buffer
 	uint64_t globalIndexOffset = 0; // offset into global mesh storage buffer
 	uint64_t vertexOffset = 0; // offset into global mesh storage buffer
+    bool meshletStorageFileFound = false; // true if meshlet storage file was found and loaded
 };
 typedef MeshInfo* ObjectID;
 
@@ -342,8 +353,8 @@ public:
 	//      you might want to add normals view in mesh edit mode overlay (use "Display Split Normals")
 	// •	Export Settings : When exporting(e.g., to glTF), ensure normals are exported and modifiers are applied
     void checkVertexNormalConsistency(std::string id);
-	// debug graphics, usually means bounding box and normals are added to line shader
-	void debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, glm::vec4 color = Colors::Red, float normalLineLength = 0.001f);
+	// debug graphics, bounding box, vertices and normals are added to line shader
+	void debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, bool drawBoundingBox = true, bool drawVertices = true, bool drawNormals = false, glm::vec4 colorVertices = Colors::Black, glm::vec4 colorNormal = Colors::Red, float normalLineLength = 0.01f);
 	// apply fixed colors to all vertices of one meshlet (useful for debugging)
 	// may not be totally correct if some vertices are shared between meshlets (color value will be overwritten)
 	void applyDebugMeshletColorsToVertices(MeshInfo* mesh);
