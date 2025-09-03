@@ -1494,7 +1494,9 @@ void MeshStore::loadMeshCylinder(std::string id, MeshFlagsCollection flags, std:
 
 	meshInfo.available = true;
 	meshes[id] = std::move(meshInfo);
-    aquireMeshletData(id);
+	if (flags.hasFlag(MeshFlags::MESHLET_GENERATE)) {
+		aquireMeshletData(id);
+	}
 }
 
 void MeshStore::setDefaultMaterial(PBRShader::ShaderMaterial& mat) {

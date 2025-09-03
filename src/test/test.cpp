@@ -718,6 +718,7 @@ TEST_F(MeshletTest, GreedyAlgorithm) {
         MeshletOut out2{ m4m.meshlets, meshInfo->outMeshletDesc, meshInfo->outLocalIndexPrimitivesBuffer, meshInfo->outGlobalIndexBuffer };
         m4m.calculateTrianglesAndNeighbours(in2);
         EXPECT_TRUE(m4m.verifyGlobalAdjacency(true));
+        //m4m.reset(); // reset usedInMeshlet flags
         for (auto& v : m4m.globalVertices) {
             EXPECT_FALSE(v.usedInMeshlet); // all vertices should be unused at the start
         }

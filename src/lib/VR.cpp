@@ -60,7 +60,6 @@ void VR::initVulkanEnable2(VkInstanceCreateInfo &instInfo)
     if (err != VK_SUCCESS) {
         Error("Could not initialize vulkan instance via OpenXR");
     }
-    //volkLoadInstance(engine->globalRendering.vkInstance);
 
     // pick physical device
     XrVulkanGraphicsDeviceGetInfoKHR deviceInfo{ XR_TYPE_VULKAN_GRAPHICS_DEVICE_GET_INFO_KHR };

@@ -117,10 +117,6 @@ class GlobalRendering : public EngineParticipant
 public:
 	GlobalRendering(ShadedPathEngine* s) {
 		Log("GlobalRendering c'tor\n");
-		//VkResult res = volkInitialize();
-        //if (res != VK_SUCCESS) {
-		//	Error("Failed to initialize volk for Vulkan");
-        //}
         setEngine(s);
 		// log vulkan version as string
 		Log("Vulkan API Version: " << getVulkanAPIString().c_str() << std::endl);
