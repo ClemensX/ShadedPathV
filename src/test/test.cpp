@@ -797,6 +797,47 @@ TEST_F(MeshletTest, StoreCreation) {
     }
 }
 
+TEST_F(MeshletTest, MeshletStorageFile) {
+    {
+        // init engine and mesh
+        ShadedPathEngine my_engine;
+        static ShadedPathEngine* engine = &my_engine;
+        minimalEngineInitialization(engine);
+
+        // look for meshlet file and delete if found:
+        // we should be in test name subfolder: MeshletStorageFile
+        auto cur_path = std::filesystem::current_path();
+        // test if cur_path ends with folder name 'MeshletStorageFile'
+        EXPECT_TRUE(cur_path.filename() == "MeshletStorageFile");
+        // if there is no data_test folder below "MeshletStorageFile", we need to create it:
+        auto data_test_path = cur_path / "data_test";
+        if (!std::filesystem::exists(data_test_path)) {
+            std::filesystem::create_directory(data_test_path);
+        }
+        // if there is no "mesh" folder below data_test_path, we need to create it:
+        auto mesh_path = data_test_path / "mesh";
+        if (!std::filesystem::exists(mesh_path)) {
+            std::filesystem::create_directory(mesh_path);
+        }
+        // if there is "TestObject.meshlet" file in mesh folder, we need to delete it:
+        auto meshlet_path = mesh_path / "TestObject.meshlet";
+        if (std::filesystem::exists(meshlet_path)) {
+            std::filesystem::remove(meshlet_path);
+        }
+
+        engine->files.findAssetFolder("data_test");
+        string meshFile = engine->files.findFile("TestObject.meshlet", FileCategory::MESH, false);
+        EXPECT_EQ(0, meshFile.size());
+
+        // load mesh with meshlet creation
+        MeshFlagsCollection meshFlags = MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER;
+        meshFlags.setFlag(MeshFlags::MESHLET_GENERATE);
+        engine->meshStore.loadMeshCylinder("TestObject", meshFlags);
+        MeshInfo* meshInfo = engine->meshStore.getMesh("TestObject");
+        EXPECT_FALSE(meshInfo->meshletStorageFileFound);
+    }
+}
+
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     // enable single tests
