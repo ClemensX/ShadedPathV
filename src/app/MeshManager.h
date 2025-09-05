@@ -42,4 +42,7 @@ private:
     int uiCameraSpeed = 0; // set by UI
     int oldUiCameraSpeed = 0; // to detect changes
     bool displayNoMeshletDataWarning = false;
+    bool regenerateMeshletData = false;
+    bool regenerationFinished = false;
+    bool showMeshWireframe = false;
 };

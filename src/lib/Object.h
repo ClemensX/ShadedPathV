@@ -218,9 +218,6 @@ struct MeshletStorageData {
 	uint32_t numMeshlets = 0;
 	uint32_t numLocalIndices = 0;
 	uint32_t numGlobalIndices = 0;
-	std::vector<PBRShader::PackedMeshletDesc> meshletDescs;
-	std::vector<uint8_t> localIndexBuffer; // local indices for primitives (3 indices per triangle)
-	std::vector<uint32_t> globalIndexBuffer; // vertex indices into vertex buffer
 };
 
 // Describe a single loaded mesh. mesh IDs are unique, several Objects may be instantiated backed by the same mesh
@@ -381,6 +378,8 @@ public:
     // get used storage size in bytes
 	uint64_t getUsedStorageSize();
     size_t getUsedMeshesCount() { return meshes.size(); }
+	bool writeMeshletStorageFile(std::string id, std::string fileBaseName);
+	bool loadMeshletStorageFile(std::string id, std::string fileBaseName);
 private:
 	MeshCollection* loadMeshFile(std::string filename, std::string id, std::vector<std::byte> &fileBuffer, MeshFlagsCollection flags);
 	std::unordered_map<std::string, MeshInfo> meshes;
@@ -396,9 +395,8 @@ private:
 	void checkVertexDuplication(std::string id);
 	// Helper for default material setup
 	void setDefaultMaterial(PBRShader::ShaderMaterial& mat);
-	// generate or load meshlet data
-	void aquireMeshletData(std::string id);
-
+	// generate or load meshlet data. will show error log message if meshlet file not found and regenerate == false
+	void aquireMeshletData(std::string filename, std::string id, bool regenerateMeshletData = false);
 };
 
 // 

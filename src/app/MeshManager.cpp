@@ -135,7 +135,6 @@ void MeshManager::prepareFrame(FrameResources* fr)
         //engine->meshStore.loadMesh(filepath.filename().string(), "newid", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
         // generate new id for each loaded object:
         string newid = "newid" + to_string(loadObjectNum++);
-        MeshFlagsCollection meshFlags = MeshFlagsCollection(MeshFlags::MESHLET_GENERATE);
         engine->meshStore.loadMesh(filepath.filename().string(), newid);
         if (object != nullptr) {
             object->enabled = false;
@@ -148,6 +147,16 @@ void MeshManager::prepareFrame(FrameResources* fr)
         //object->enableDebugGraphics = true;
         engine->shaders.pbrShader.initialUpload();
         engine->shaders.pbrShader.recreateGlobalCommandBuffers();
+    }
+    if (regenerateMeshletData) {
+        regenerateMeshletData = false;
+        Log("Regenerating meshlet data for file: " << newFileName << endl);
+        string newid = "newid" + to_string(loadObjectNum++);
+        std::filesystem::path filepath = newFileName;
+        MeshFlagsCollection meshFlags = MeshFlagsCollection(MeshFlags::MESHLET_GENERATE);
+        engine->meshStore.loadMesh(filepath.filename().string(), newid, meshFlags);
+        bool ok = engine->meshStore.writeMeshletStorageFile(newid, filepath.filename().string());
+        regenerationFinished = true;
     }
 
     if (spinningBox == false && seconds > 4.0f) {
@@ -229,7 +238,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
         if (!wo->mesh->meshletStorageFileFound) {
             wo->enableDebugGraphics = true;
             //engine->meshStore.debugGraphics(wo, tr, modeltransform, true, true, true); // with normals
-            engine->meshStore.debugGraphics(wo, tr, modeltransform); // bb and wireframe
+            engine->meshStore.debugGraphics(wo, tr, modeltransform, true, showMeshWireframe); // bb and wireframe
         }
     }
     // lines
@@ -344,6 +353,7 @@ void MeshManager::buildCustomUI() {
         ImGui::Text("Used: %u", usedMeshes);
     }
     ImGui::Separator();
+    ImGui::Checkbox("Show Wireframe if meshlet file missing", &showMeshWireframe);
     // Input field for file pattern
     ImGui::InputText("File Pattern", patternBuffer, sizeof(patternBuffer));
     currentFilePattern = patternBuffer;
@@ -382,6 +392,23 @@ void MeshManager::buildCustomUI() {
         ImGui::Text("Selected: %s", files[selectedLine].c_str());
         if (displayNoMeshletDataWarning) {
             ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.3f, 1.0f), "No meshlet data found. \nReverting to vertices display");
+        }
+    }
+    static int clicked = 0;
+    if (regenerationFinished) {
+        regenerationFinished = false;
+        clicked = 0;
+    }
+    if (!newFileName.empty()) {
+        if (ImGui::Button("Generate Meshlet Data"))
+            clicked++;
+        ImGui::SetItemTooltip(newFileName.c_str());
+        if (clicked == 1)
+        {
+            ImGui::SameLine();
+            ImGui::Text("Generating... (see log for progress)");
+            regenerateMeshletData = true;
+            clicked = 2; // prevent multiple clicks
         }
     }
     ImGui::SeparatorText("Zero-Plane Grid");

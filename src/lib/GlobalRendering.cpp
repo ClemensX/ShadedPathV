@@ -705,7 +705,8 @@ void GlobalRendering::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
         allocInfo.pNext = &allocFlagsInfo;
     }
 
-    if (vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory) != VK_SUCCESS) {
+    auto ret = vkAllocateMemory(device, &allocInfo, nullptr, &bufferMemory);
+    if ( ret != VK_SUCCESS) {
         Error("failed to allocate buffer memory!");
     }
 
@@ -1080,6 +1081,8 @@ void GlobalRendering::logDeviceLimits()
     Log("minUniformBufferOffsetAlignment " << globalDeviceInfo.properties.limits.minUniformBufferOffsetAlignment << endl);
     Log("maxDescriptorSetSampledImages " << globalDeviceInfo.properties.limits.maxDescriptorSetSampledImages << endl);
     Log("maxPushConstantsSize " << globalDeviceInfo.properties.limits.maxPushConstantsSize << endl);
+    Log("maxMemoryAllocationCount: " << globalDeviceInfo.properties.limits.maxMemoryAllocationCount << endl);
+    Log("maxStorageBufferRange: " << globalDeviceInfo.properties.limits.maxStorageBufferRange << endl);
     // maxDescriptorSetSampledImages
 }
 

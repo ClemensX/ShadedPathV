@@ -835,6 +835,27 @@ TEST_F(MeshletTest, MeshletStorageFile) {
         engine->meshStore.loadMeshCylinder("TestObject", meshFlags);
         MeshInfo* meshInfo = engine->meshStore.getMesh("TestObject");
         EXPECT_FALSE(meshInfo->meshletStorageFileFound);
+        
+        EXPECT_TRUE(meshInfo->meshletsForMesh.meshlets.size() > 0);
+
+        // call the write method:
+        EXPECT_TRUE(engine->meshStore.writeMeshletStorageFile("TestObject", "TestObject"));
+        // assert that file now exists:
+        EXPECT_TRUE(std::filesystem::exists(meshlet_path));
+        // assert that file has size >= 16 bytes (file type identifier)
+        auto fsize = std::filesystem::file_size(meshlet_path);
+        EXPECT_TRUE(fsize >= 16);
+
+        // load save file again:
+        EXPECT_TRUE(engine->meshStore.loadMeshletStorageFile("TestObject", "TestObject"));
+        meshInfo = engine->meshStore.getMesh("TestObject");
+
+        // generate 2nd mesh and compare:
+        engine->meshStore.loadMeshCylinder("TestObject2", meshFlags);
+        MeshInfo* meshInfo2 = engine->meshStore.getMesh("TestObject2");
+        EXPECT_EQ(meshInfo2->outMeshletDesc.size(), meshInfo->outMeshletDesc.size());
+        EXPECT_EQ(meshInfo2->outLocalIndexPrimitivesBuffer.size(), meshInfo->outLocalIndexPrimitivesBuffer.size());
+        EXPECT_EQ(meshInfo2->outGlobalIndexBuffer.size(), meshInfo->outGlobalIndexBuffer.size());
     }
 }
 
