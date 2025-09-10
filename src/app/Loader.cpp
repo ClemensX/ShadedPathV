@@ -56,10 +56,13 @@ void Loader::init() {
 
     engine->textureStore.generateBRDFLUT();
 
+    MeshFlagsCollection meshFlags;
+    //meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
+    meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
+    meshFlags.setFlag(MeshFlags::MESHLET_GENERATE);
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
-    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
-
+    engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = true;  useDefaultNormalLineLength = false;
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox"); alterObjectCoords = true;  useDefaultNormalLineLength = false;
 
@@ -79,11 +82,11 @@ void Loader::init() {
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox"); alterObjectCoords = false;
 
-    MeshFlagsCollection meshFlags = MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
+    meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
     // we don't have meshlet file for test meshes - regenrate the meshlet data:
     meshFlags.setFlag(MeshFlags::MESHLET_GENERATE);
-    engine->meshStore.loadMeshCylinder("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID, true); alterObjectCoords = false;
+    //engine->meshStore.loadMeshCylinder("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID, true); alterObjectCoords = false;
     //engine->meshStore.loadMeshGrid("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID); alterObjectCoords = false;
 
     engine->objectStore.createGroup("group");
@@ -237,14 +240,14 @@ void Loader::prepareFrame(FrameResources* fr)
 
         //engine->meshStore.debugRenderMeshlet(wo, tr, modeltransform);
         //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform, 185);
-        engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
+        //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
 
         if (useDefaultNormalLineLength) {
             //engine->meshStore.debugGraphics(wo, tr, modeltransform);
         } else {
             //engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false);
         }
-        engine->meshStore.debugGraphics(wo, tr, modeltransform, false, false, false, true);
+        engine->meshStore.debugGraphics(wo, tr, modeltransform, true, true, false, true);
         //wo->calculateBoundingBoxWorld(modeltransform);
         //wo->drawBoundingBox(boundingBoxes, modeltransform, Colors::Red);
         //buf->params.gamma = 2.2f;

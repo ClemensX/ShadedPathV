@@ -106,6 +106,7 @@ public:
 	}
     glm::vec3 center; // used by some algorithms to calculate the center of the meshlet
     BoundingBox boundingBox; // AABB in local meshlet space
+    uint64_t packedBoundingBox = 0; // packed AABB, 16 bits per axis, calculated from boundingBox
 };
 	
 // input for meshlet calculations, basically the raw data from glTF:
@@ -114,6 +115,7 @@ struct MeshletIn {
 	const std::vector<uint32_t>& indices;
 	const uint32_t primitiveLimit; // usually 126
 	const uint32_t vertexLimit; // usually 64
+    BoundingBox boundingBox; // AABB of whole object in local object space
 };
 
 struct MeshletOut {

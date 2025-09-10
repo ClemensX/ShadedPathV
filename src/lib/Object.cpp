@@ -884,6 +884,8 @@ void MeshletsForMesh::calcMeshletBorder(std::unordered_map<uint32_t, GlobalMeshl
 
 void MeshletsForMesh::generatePackedBoundingBoxData(MeshletIn& in, MeshletOut& out)
 {
+	// make sure we have calculated the objects AABB
+    assert(in.boundingBox.min.x < std::numeric_limits<float>::max());
     if (out.meshlets.size() == 0) return;
     // simple test to find out if we need to calculate bounding boxes:
 	if (out.meshlets[0].boundingBox.min.x == std::numeric_limits<float>::max()) {
@@ -900,12 +902,9 @@ void MeshletsForMesh::generatePackedBoundingBoxData(MeshletIn& in, MeshletOut& o
 				if (v.pos.y > m.boundingBox.max.y) m.boundingBox.max.y = v.pos.y;
                 if (v.pos.z > m.boundingBox.max.z) m.boundingBox.max.z = v.pos.z;
 			}
-
+            m.packedBoundingBox = Util::packBoundingBox48(m.boundingBox, in.boundingBox);
 		}
     }
-	for (auto& m : out.meshlets) {
-
-	}
 }
 
 void MeshletsForMesh::fillMeshletOutputBuffers(MeshletIn& in, MeshletOut& out)
@@ -942,7 +941,7 @@ void MeshletsForMesh::fillMeshletOutputBuffers(MeshletIn& in, MeshletOut& out)
 		if (m.debugColors) {
 			vp = 0x01; // use debug colors
 		}
-		PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(0x123456789ABC, m.vertices.size(), m.triangles.size(), vp, indexBufferOffset, 0xABCDEF);
+		PBRShader::PackedMeshletDesc packed = PBRShader::PackedMeshletDesc::pack(m.packedBoundingBox, m.vertices.size(), m.triangles.size(), vp, indexBufferOffset, 0xABCDEF);
 		out.outMeshletDesc[i] = packed;
 		// fill global index buffers:
 		for (size_t j = 0; j < m.vertices.size(); ++j) {
@@ -984,7 +983,7 @@ void MeshStore::calculateMeshlets(std::string id, uint32_t meshlet_flags, uint32
 		Log("WARNING: MESHLET_SORT was specified, but pre-sorting vertices is no longer available" << endl);
 	}
 
-	MeshletIn in{ mesh->vertices, mesh->indices, primitiveLimit, vertexLimit };
+	MeshletIn in{ mesh->vertices, mesh->indices, primitiveLimit, vertexLimit, box };
 	MeshletOut out{ mesh->meshletsForMesh.meshlets, mesh->outMeshletDesc, mesh->outLocalIndexPrimitivesBuffer, mesh->outGlobalIndexBuffer };
 	mesh->meshletsForMesh.calculateTrianglesAndNeighbours(in);
 
@@ -1201,7 +1200,16 @@ void MeshStore::debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 mo
     if (drawMeshletBoundingBoxes) {
 		for (auto& m : obj->mesh->meshletsForMesh.meshlets) {
 			BoundingBoxCorners bbcorners;
-			Util::drawBoundingBox(addLines, m.boundingBox, bbcorners, modelToWorld, colorBoxes);
+			//Util::drawBoundingBox(addLines, m.boundingBox, bbcorners, modelToWorld, colorBoxes);
+		}
+		for (auto& packed : obj->mesh->outMeshletDesc) {
+			BoundingBoxCorners bbcorners;
+			uint64_t bb = packed.getBoundingBox();
+			BoundingBox meshletBB;
+			BoundingBox objectBB;
+			obj->mesh->getBoundingBox(objectBB);
+			Util::unpackBoundingBox48(bb, meshletBB, objectBB);
+			Util::drawBoundingBox(addLines, meshletBB, bbcorners, modelToWorld, colorBoxes);
 		}
     }
     // add vertices:

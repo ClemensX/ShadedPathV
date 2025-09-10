@@ -173,6 +173,62 @@ public:
         glm::vec3 pos;
     };
 
+    // Quantize a float in [sceneMin, sceneMax] to 8 bits
+    static inline uint8_t quantize(float value, float sceneMin, float sceneMax) {
+        float normalized = (value - sceneMin) / (sceneMax - sceneMin);
+        normalized = std::clamp(normalized, 0.0f, 1.0f);
+        return static_cast<uint8_t>(normalized * 255.0f + 0.5f);
+    }
+
+    // Pack bounding box into 48 bits
+    static uint64_t packBoundingBox48(BoundingBox& boxMeshlet, BoundingBox boxObject) {
+        return packBoundingBox48(boxMeshlet.min, boxMeshlet.max, boxObject.min, boxObject.max);
+    };
+
+    static uint64_t packBoundingBox48(const glm::vec3& min, const glm::vec3& max,
+        const glm::vec3& sceneMin, const glm::vec3& sceneMax) {
+        uint64_t packed = 0;
+        packed |= uint64_t(quantize(min.x, sceneMin.x, sceneMax.x)) << 0;
+        packed |= uint64_t(quantize(min.y, sceneMin.y, sceneMax.y)) << 8;
+        packed |= uint64_t(quantize(min.z, sceneMin.z, sceneMax.z)) << 16;
+        packed |= uint64_t(quantize(max.x, sceneMin.x, sceneMax.x)) << 24;
+        packed |= uint64_t(quantize(max.y, sceneMin.y, sceneMax.y)) << 32;
+        packed |= uint64_t(quantize(max.z, sceneMin.z, sceneMax.z)) << 40;
+        return packed;
+    }
+
+    static void unpackBoundingBox48(uint64_t packed, BoundingBox& boxMeshlet, BoundingBox& boxObject)
+    {
+        return unpackBoundingBox48(packed, boxObject.min, boxObject.max, boxMeshlet.min, boxMeshlet.max);
+    }
+
+    static void unpackBoundingBox48(
+        uint64_t packed,
+        const glm::vec3& sceneMin,
+        const glm::vec3& sceneMax,
+        glm::vec3& outMin,
+        glm::vec3& outMax)
+    {
+        auto dequantize = [](uint8_t q, float sceneMin, float sceneMax) -> float {
+            float normalized = q / 255.0f;
+            return sceneMin + normalized * (sceneMax - sceneMin);
+            };
+
+        uint8_t minX = (packed >> 0) & 0xFF;
+        uint8_t minY = (packed >> 8) & 0xFF;
+        uint8_t minZ = (packed >> 16) & 0xFF;
+        uint8_t maxX = (packed >> 24) & 0xFF;
+        uint8_t maxY = (packed >> 32) & 0xFF;
+        uint8_t maxZ = (packed >> 40) & 0xFF;
+
+        outMin.x = dequantize(minX, sceneMin.x, sceneMax.x);
+        outMin.y = dequantize(minY, sceneMin.y, sceneMax.y);
+        outMin.z = dequantize(minZ, sceneMin.z, sceneMax.z);
+        outMax.x = dequantize(maxX, sceneMin.x, sceneMax.x);
+        outMax.y = dequantize(maxY, sceneMin.y, sceneMax.y);
+        outMax.z = dequantize(maxZ, sceneMin.z, sceneMax.z);
+    }
+
     // Generates a cylinder mesh with the given parameters.
     static void GenerateCylinderMesh(
         int segments,
