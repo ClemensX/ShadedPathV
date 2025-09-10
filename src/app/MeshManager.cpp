@@ -239,9 +239,9 @@ void MeshManager::prepareFrame(FrameResources* fr)
             wo->enableDebugGraphics = true;
             //engine->meshStore.debugGraphics(wo, tr, modeltransform, true, true, true); // with normals
             engine->meshStore.debugGraphics(wo, tr, modeltransform, true, showMeshWireframe); // bb and wireframe
-        } else if (showBoundingBox) {
+        } else if (showBoundingBox || showMeshletBoundingBoxes) {
             wo->enableDebugGraphics = true;
-            engine->meshStore.debugGraphics(wo, tr, modeltransform, true, showMeshWireframe); // bb and wireframe
+            engine->meshStore.debugGraphics(wo, tr, modeltransform, showBoundingBox, showMeshWireframe, false, showMeshletBoundingBoxes); // bb and wireframe
         }
     }
     // lines
