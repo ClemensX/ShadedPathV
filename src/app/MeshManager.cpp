@@ -239,6 +239,9 @@ void MeshManager::prepareFrame(FrameResources* fr)
             wo->enableDebugGraphics = true;
             //engine->meshStore.debugGraphics(wo, tr, modeltransform, true, true, true); // with normals
             engine->meshStore.debugGraphics(wo, tr, modeltransform, true, showMeshWireframe); // bb and wireframe
+        } else if (showBoundingBox) {
+            wo->enableDebugGraphics = true;
+            engine->meshStore.debugGraphics(wo, tr, modeltransform, true, showMeshWireframe); // bb and wireframe
         }
     }
     // lines
@@ -422,4 +425,10 @@ void MeshManager::buildCustomUI() {
     ImGui::RadioButton("walk (3.5 km/h)", &uiCameraSpeed, 0); ImGui::SameLine();
     ImGui::RadioButton("run (10 km/h)", &uiCameraSpeed, 1); ImGui::SameLine();
     ImGui::RadioButton("fall (200 km/h)", &uiCameraSpeed, 2);
+    if (ImGui::CollapsingHeader("More Options", ImGuiTreeNodeFlags_None))
+    {
+        ImGui::Checkbox("Bounding Box", &showBoundingBox);
+        ImGui::SameLine();
+        ImGui::Checkbox("Meshlet Bounding Boxes", &showMeshletBoundingBoxes);
+    }
 }

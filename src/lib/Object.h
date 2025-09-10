@@ -105,6 +105,7 @@ public:
 		debugColors = false;
 	}
     glm::vec3 center; // used by some algorithms to calculate the center of the meshlet
+    BoundingBox boundingBox; // AABB in local meshlet space
 };
 	
 // input for meshlet calculations, basically the raw data from glTF:
@@ -167,6 +168,7 @@ public:
 	void calcMeshletBorder(std::unordered_map<uint32_t, GlobalMeshletVertex*>& verticesMap, std::vector<uint32_t>& borderVerticesIndices, Meshlet& m);
 	// sort neighbours by distance to current vertex
 	void sortNeighboursByDistance(MeshletIn& in, GlobalMeshletVertex* vertex, std::vector<uint32_t>& neighbours);
+	void generatePackedBoundingBoxData(MeshletIn& in, MeshletOut& out);
 	void reset() {
 		globalTriangles.clear();
 		globalVertices.clear();
@@ -188,11 +190,6 @@ struct MeshCollection {
         std::vector<MeshInfo*> meshInfos;
 		MeshFlagsCollection flags;
 };
-
-struct BoundingBoxCorners {
-	glm::vec3 corners[8];
-};
-
 
 enum class Axis { X, Y, Z };
 
@@ -351,7 +348,7 @@ public:
 	// •	Export Settings : When exporting(e.g., to glTF), ensure normals are exported and modifiers are applied
     void checkVertexNormalConsistency(std::string id);
 	// debug graphics, bounding box, vertices and normals are added to line shader
-	void debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, bool drawBoundingBox = true, bool drawVertices = true, bool drawNormals = false, glm::vec4 colorVertices = Colors::Black, glm::vec4 colorNormal = Colors::Red, float normalLineLength = 0.01f);
+	void debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, bool drawBoundingBox = true, bool drawVertices = true, bool drawNormals = false, bool drawMeshletBoundingBoxes = false, glm::vec4 colorVertices = Colors::Black, glm::vec4 colorNormal = Colors::Red, glm::vec4 colorBoxes = Colors::Yellow, float normalLineLength = 0.01f);
 	// apply fixed colors to all vertices of one meshlet (useful for debugging)
 	// may not be totally correct if some vertices are shared between meshlets (color value will be overwritten)
 	void applyDebugMeshletColorsToVertices(MeshInfo* mesh);

@@ -595,6 +595,71 @@ void Util::writeHeightmapRaw(std::vector<glm::vec3>& points)
     Log("written 32-bit float RAW heightmap file with ( " << roundedSquareRoot << " x " << roundedSquareRoot << " ) points: " << engine->files.absoluteFilePath(filename).c_str() << endl);
 }
 
+void Util::calculateBoundingBox(glm::mat4 modelToWorld, BoundingBox& box, BoundingBoxCorners& bbcorners)
+{
+    auto& corners = bbcorners.corners;
+    corners[0] = vec3(box.min.x, box.min.y, box.min.z);
+    corners[1] = vec3(box.min.x, box.min.y, box.max.z);
+    corners[2] = vec3(box.max.x, box.min.y, box.max.z);
+    corners[3] = vec3(box.max.x, box.min.y, box.min.z);
+    corners[4] = vec3(box.min.x, box.max.y, box.min.z);
+    corners[5] = vec3(box.min.x, box.max.y, box.max.z);
+    corners[6] = vec3(box.max.x, box.max.y, box.max.z);
+    corners[7] = vec3(box.max.x, box.max.y, box.min.z);
+    // transform corners to world coords:
+    for (vec3& corner : corners) {
+        corner = vec3(modelToWorld * vec4(corner, 1.0f));
+    }
+}
+
+void Util::drawBoundingBox(std::vector<LineDef>& boxes, BoundingBox& box, BoundingBoxCorners& boundingBoxCorners, glm::mat4 modelToWorld, vec4 color)
+{
+    calculateBoundingBox(modelToWorld, box, boundingBoxCorners);
+    LineDef l;
+    l.color = color;
+    // draw cube from the eight corners:
+    auto& corners = boundingBoxCorners.corners;
+    // lower rect:
+    l.start = corners[0];
+    l.end = corners[1];
+    boxes.push_back(l);
+    l.start = corners[1];
+    l.end = corners[2];
+    boxes.push_back(l);
+    l.start = corners[2];
+    l.end = corners[3];
+    boxes.push_back(l);
+    l.start = corners[3];
+    l.end = corners[0];
+    boxes.push_back(l);
+    // upper rect:
+    l.start = corners[4];
+    l.end = corners[5];
+    boxes.push_back(l);
+    l.start = corners[5];
+    l.end = corners[6];
+    boxes.push_back(l);
+    l.start = corners[6];
+    l.end = corners[7];
+    boxes.push_back(l);
+    l.start = corners[7];
+    l.end = corners[4];
+    boxes.push_back(l);
+    // vertical lines:
+    l.start = corners[0];
+    l.end = corners[4];
+    boxes.push_back(l);
+    l.start = corners[1];
+    l.end = corners[5];
+    boxes.push_back(l);
+    l.start = corners[2];
+    l.end = corners[6];
+    boxes.push_back(l);
+    l.start = corners[3];
+    l.end = corners[7];
+    boxes.push_back(l);
+}
+
 void Util::drawBoxFromAxes(std::vector<LineDef>& boxes, vec3* axes)
 {
     LineDef l;

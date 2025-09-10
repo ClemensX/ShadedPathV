@@ -80,7 +80,9 @@ void Loader::init() {
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox"); alterObjectCoords = false;
 
     MeshFlagsCollection meshFlags = MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
-    //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
+    meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
+    // we don't have meshlet file for test meshes - regenrate the meshlet data:
+    meshFlags.setFlag(MeshFlags::MESHLET_GENERATE);
     engine->meshStore.loadMeshCylinder("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID, true); alterObjectCoords = false;
     //engine->meshStore.loadMeshGrid("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID); alterObjectCoords = false;
 
@@ -240,8 +242,9 @@ void Loader::prepareFrame(FrameResources* fr)
         if (useDefaultNormalLineLength) {
             //engine->meshStore.debugGraphics(wo, tr, modeltransform);
         } else {
-            //engine->meshStore.debugGraphics(wo, tr, modeltransform, Colors::Red, 0.01f);
+            //engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false);
         }
+        engine->meshStore.debugGraphics(wo, tr, modeltransform, false, false, false, true);
         //wo->calculateBoundingBoxWorld(modeltransform);
         //wo->drawBoundingBox(boundingBoxes, modeltransform, Colors::Red);
         //buf->params.gamma = 2.2f;

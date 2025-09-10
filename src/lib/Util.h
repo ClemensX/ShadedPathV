@@ -24,6 +24,10 @@ namespace Colors {
     const glm::vec4 LightSteelBlue = { 0.69f, 0.77f, 0.87f, 1.0f };
 };
 
+struct BoundingBoxCorners {
+    glm::vec3 corners[8];
+};
+
 class Util : public EngineParticipant
 {
 public:
@@ -50,6 +54,9 @@ public:
     static float getMaxCubeViewDistanceFromFarPlane(float f) {
         return sqrt((f * f) / 3.0f);
     }
+    // calculate bounding box to world coords into corners
+    static void calculateBoundingBox(glm::mat4 toWorld, BoundingBox& box, BoundingBoxCorners& corners);
+    static void drawBoundingBox(std::vector<LineDef>& boxes, BoundingBox& box, BoundingBoxCorners& boundingBoxCorners, glm::mat4 modelToWorld, glm::vec4 color);
     static void drawBoxFromAxes(std::vector<LineDef>& boxes, glm::vec3* axes);
     static void printCStringList(std::vector<const char*>& exts) {
         for (uint32_t i = 0; i < exts.size(); i++) {

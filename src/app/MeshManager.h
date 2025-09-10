@@ -45,4 +45,6 @@ private:
     bool regenerateMeshletData = false;
     bool regenerationFinished = false;
     bool showMeshWireframe = false;
+    bool showBoundingBox = false;
+    bool showMeshletBoundingBoxes = false;
 };

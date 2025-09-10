@@ -335,66 +335,15 @@ void WorldObject::calculateBoundingBoxWorld(glm::mat4 modelToWorld)
 	BoundingBox box;
 	getBoundingBox(box);
     auto& corners = boundingBoxCorners.corners;
-	corners[0] = vec3(box.min.x, box.min.y, box.min.z);
-	corners[1] = vec3(box.min.x, box.min.y, box.max.z);
-	corners[2] = vec3(box.max.x, box.min.y, box.max.z);
-	corners[3] = vec3(box.max.x, box.min.y, box.min.z);
-	corners[4] = vec3(box.min.x, box.max.y, box.min.z);
-	corners[5] = vec3(box.min.x, box.max.y, box.max.z);
-	corners[6] = vec3(box.max.x, box.max.y, box.max.z);
-	corners[7] = vec3(box.max.x, box.max.y, box.min.z);
-	// transform corners to world coords:
-	for (vec3& corner : corners) {
-		corner = vec3(modelToWorld * vec4(corner, 1.0f));
-	}
+    Util::calculateBoundingBox(modelToWorld, box, boundingBoxCorners);
+	return;
 }
 
 void WorldObject::drawBoundingBox(std::vector<LineDef>& boxes, glm::mat4 modelToWorld, vec4 color)
 {
-    LineDef l;
-    l.color = color;
-    calculateBoundingBoxWorld(modelToWorld);
-    // draw cube from the eight corners:
-	auto& corners = boundingBoxCorners.corners;
-	// lower rect:
-	l.start = corners[0];
-	l.end = corners[1];
-	boxes.push_back(l);
-	l.start = corners[1];
-	l.end = corners[2];
-	boxes.push_back(l);
-	l.start = corners[2];
-	l.end = corners[3];
-	boxes.push_back(l);
-	l.start = corners[3];
-	l.end = corners[0];
-	boxes.push_back(l);
-    // upper rect:
-    l.start = corners[4];
-    l.end = corners[5];
-    boxes.push_back(l);
-    l.start = corners[5];
-    l.end = corners[6];
-    boxes.push_back(l);
-    l.start = corners[6];
-    l.end = corners[7];
-    boxes.push_back(l);
-    l.start = corners[7];
-    l.end = corners[4];
-    boxes.push_back(l);
-    // vertical lines:
-    l.start = corners[0];
-    l.end = corners[4];
-    boxes.push_back(l);
-    l.start = corners[1];
-    l.end = corners[5];
-    boxes.push_back(l);
-    l.start = corners[2];
-    l.end = corners[6];
-    boxes.push_back(l);
-    l.start = corners[3];
-    l.end = corners[7];
-    boxes.push_back(l);
+	BoundingBox box;
+	getBoundingBox(box);
+	Util::drawBoundingBox(boxes, box, boundingBoxCorners, modelToWorld, color);
 }
 
 void MeshStore::applyDebugMeshletColorsToVertices(MeshInfo* mesh)
@@ -933,8 +882,35 @@ void MeshletsForMesh::calcMeshletBorder(std::unordered_map<uint32_t, GlobalMeshl
 	}
 }
 
+void MeshletsForMesh::generatePackedBoundingBoxData(MeshletIn& in, MeshletOut& out)
+{
+    if (out.meshlets.size() == 0) return;
+    // simple test to find out if we need to calculate bounding boxes:
+	if (out.meshlets[0].boundingBox.min.x == std::numeric_limits<float>::max()) {
+		// bounding boxes already calculated
+		Log("regenerating bounding box info for meshlet");
+		for (size_t i = 0; i < out.meshlets.size(); ++i) {
+			auto& m = out.meshlets[i];
+			for (size_t j = 0; j < m.vertices.size(); ++j) {
+				auto& v = in.vertices[m.vertices[j]->globalIndex];
+				if (v.pos.x < m.boundingBox.min.x) m.boundingBox.min.x = v.pos.x;
+				if (v.pos.y < m.boundingBox.min.y) m.boundingBox.min.y = v.pos.y;
+				if (v.pos.z < m.boundingBox.min.z) m.boundingBox.min.z = v.pos.z;
+				if (v.pos.x > m.boundingBox.max.x) m.boundingBox.max.x = v.pos.x;
+				if (v.pos.y > m.boundingBox.max.y) m.boundingBox.max.y = v.pos.y;
+                if (v.pos.z > m.boundingBox.max.z) m.boundingBox.max.z = v.pos.z;
+			}
+
+		}
+    }
+	for (auto& m : out.meshlets) {
+
+	}
+}
+
 void MeshletsForMesh::fillMeshletOutputBuffers(MeshletIn& in, MeshletOut& out)
 {
+    generatePackedBoundingBoxData(in, out);
 	// first, we count how many indices we need for the meshlets:
 	uint32_t totalIndices = 0;
 	for (auto& m : out.meshlets) {
@@ -1210,7 +1186,7 @@ void MeshStore::checkVertexDuplication(std::string id)
 	}
 }
 
-void MeshStore::debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, bool drawBoundingBox, bool drawVertices, bool drawNormals, glm::vec4 colorVertices, glm::vec4 colorNormal, float normalLineLength)
+void MeshStore::debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, bool drawBoundingBox, bool drawVertices, bool drawNormals, bool drawMeshletBoundingBoxes, glm::vec4 colorVertices, glm::vec4 colorNormal, glm::vec4 colorBoxes, float normalLineLength)
 {
 	// get access to line shader
 	auto& lineShader = engine->shaders.lineShader;
@@ -1222,6 +1198,12 @@ void MeshStore::debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 mo
 	if (drawBoundingBox) {
 		obj->drawBoundingBox(addLines, modelToWorld, colorNormal);
 	}
+    if (drawMeshletBoundingBoxes) {
+		for (auto& m : obj->mesh->meshletsForMesh.meshlets) {
+			BoundingBoxCorners bbcorners;
+			Util::drawBoundingBox(addLines, m.boundingBox, bbcorners, modelToWorld, colorBoxes);
+		}
+    }
     // add vertices:
 	if (drawVertices) {
 		for (long i = 0; i < obj->mesh->indices.size(); i += 3) {
