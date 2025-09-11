@@ -99,8 +99,8 @@ bool GlobalRendering::checkFeatureCompressedTextures(DeviceInfo& info)
     // 0x01d401
     VkFormatFeatureFlags flagsToCheck = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT | VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
     if ((fp.linearTilingFeatures & flagsToCheck) == 0) {
-        Log("device does not support needed linearTilingFeatures" << endl);
-        return false;
+        Log("WARNING: device does not support linearTilingFeatures. Some features using direct CPU image access might not work!" << endl);
+        //return false;
     }
     if ((fp.optimalTilingFeatures & flagsToCheck) == 0) {
         Log("device does not support needed optimalTilingFeatures" << endl);
