@@ -233,13 +233,14 @@ void MeshManager::prepareFrame(FrameResources* fr)
         glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
         modeltransform = trans * scaled * rotationMatrix;
         buf->model = modeltransform;
-        engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
+        // uncomment to enable more debug meshlet displays:
+        //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
         // vertices display for meshes with no meshlet data available:
         if (!wo->mesh->meshletStorageFileFound) {
             wo->enableDebugGraphics = true;
-            //engine->meshStore.debugGraphics(wo, tr, modeltransform, true, true, true); // with normals
-            engine->meshStore.debugGraphics(wo, tr, modeltransform, true, showMeshWireframe); // bb and wireframe
-        } else if (showBoundingBox || showMeshletBoundingBoxes) {
+            showMeshWireframe = true;
+        }
+        if (showBoundingBox || showMeshletBoundingBoxes || showMeshWireframe) {
             wo->enableDebugGraphics = true;
             engine->meshStore.debugGraphics(wo, tr, modeltransform, showBoundingBox, showMeshWireframe, false, showMeshletBoundingBoxes); // bb and wireframe
         }
@@ -356,7 +357,7 @@ void MeshManager::buildCustomUI() {
         ImGui::Text("Used: %u", usedMeshes);
     }
     ImGui::Separator();
-    ImGui::Checkbox("Show Wireframe if meshlet file missing", &showMeshWireframe);
+    //ImGui::Checkbox("Show Wireframe if meshlet file missing", &showMeshWireframe);
     // Input field for file pattern
     ImGui::InputText("File Pattern", patternBuffer, sizeof(patternBuffer));
     currentFilePattern = patternBuffer;
@@ -427,6 +428,8 @@ void MeshManager::buildCustomUI() {
     ImGui::RadioButton("fall (200 km/h)", &uiCameraSpeed, 2);
     if (ImGui::CollapsingHeader("More Options", ImGuiTreeNodeFlags_None))
     {
+        ImGui::Checkbox("Mesh Wireframe", &showMeshWireframe);
+        ImGui::SameLine();
         ImGui::Checkbox("Bounding Box", &showBoundingBox);
         ImGui::SameLine();
         ImGui::Checkbox("Meshlet Bounding Boxes", &showMeshletBoundingBoxes);
