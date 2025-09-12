@@ -27,7 +27,6 @@ private:
     bool enableUI = true;
     bool spinningBox = false; // do not change - time dependent value
     double spinTimeSeconds = 0.0;
-    bool alterObjectCoords = false; // some gltf examples objects require different object rotation params
     bool firstPersonMode = true;
     bool doRotation = false;
     bool useDefaultNormalLineLength = true; // to use different normal line length for some models
@@ -47,4 +46,6 @@ private:
     bool showMeshWireframe = false;
     bool showBoundingBox = false;
     bool showMeshletBoundingBoxes = false;
+    glm::vec3 modelRotation = glm::vec3(0.0f, 0.0f, 0.0f); // used as increments to pi/2
+    glm::vec3 modelTranslation = glm::vec3(0.0f, 0.0f, 0.0f);
 };

@@ -68,6 +68,13 @@ void check_inputs() {
 void main()
 {
     //check_inputs();
+
+    // check for culled objects:
+    if (payload.meshletIndex == 0xFFFFFFFFu) {
+        //debugPrintfEXT("MESH SHADER: object culled\n");
+        return;
+    }
+
     // Get meshlet index from task shader or workgroup
     uint meshletIndex = gl_WorkGroupID.x;
     //if (meshletIndex < 1) debugPrintfEXT("MESH SHADER meshletIndex %d\n", meshletIndex);

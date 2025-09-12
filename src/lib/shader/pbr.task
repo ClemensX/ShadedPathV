@@ -121,22 +121,37 @@ void main() {
 
     //debugPrintfEXT("TASK SHADER: model flags: %d\n", model_ubo.flags);
     bool isRenderingDisabled = (model_ubo.flags & MODEL_RENDER_FLAG_DISABLE) != 0;
-    if (isRenderingDisabled) {
-        //debugPrintfEXT("WARNING: RENDERING DISABLED for this object\n");
-        return;
-    }
 
     mat4 model = model_ubo.model;
     mat4 view = ubo.view;
     mat4 proj = ubo.proj;
     mat4 mvp = proj * view * model;
-    bool isOutside = isOutsideView(model_ubo.boundingBox, mvp);
-    if (isOutside) {
-        // Don't emit mesh tasks for this object
-        BoundingBox bb = model_ubo.boundingBox;
-        debugPrintfEXT("WARNING: OUTSIDE bb min %f %f %f\n", bb.min.x, bb.min.y, bb.min.z);
+
+    // sentinel value used to signal culled/disabled from task -> mesh shader
+    const uint PAYLOAD_CULLED = 0xFFFFFFFFu;
+
+    if (isRenderingDisabled) {
+        //debugPrintfEXT("WARNING: RENDERING DISABLED for this object\n");
+        // signal to mesh shader that this object is culled/disabled.
+        payload.meshletIndex = PAYLOAD_CULLED;
+        payload.mvp = mvp;
+        // Emit a single dummy mesh task so the pipeline/driver receives a mesh task invocation.
+        // The mesh shader must test for payload.meshletIndex == PAYLOAD_CULLED and return immediately.
+        EmitMeshTasksEXT(1, 1, 1);
         return;
     }
+
+    bool isOutside = isOutsideView(model_ubo.boundingBox, mvp);
+    if (isOutside) {
+        // Don't emit mesh tasks for this object — but emit one dummy so drivers stay happy.
+        BoundingBox bb = model_ubo.boundingBox;
+        //debugPrintfEXT("WARNING: OUTSIDE bb min %f %f %f\n", bb.min.x, bb.min.y, bb.min.z);
+        payload.meshletIndex = PAYLOAD_CULLED;
+        payload.mvp = mvp;
+        EmitMeshTasksEXT(1, 1, 1);
+        return;
+    }
+    // Visible: emit actual mesh tasks for meshlets
     uint meshletIndex = gl_GlobalInvocationID.x;
     payload.meshletIndex = meshletIndex;
     payload.mvp = mvp;

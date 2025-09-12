@@ -60,10 +60,10 @@ void MeshManager::init() {
     engine->objectStore.createGroup("group");
 
     //object->enableDebugGraphics = true;
-    if (alterObjectCoords) {
-        // turn upside down
-        object->rot() = vec3(PI_half, 0.0, 0.0f);
-    }
+    //if (alterObjectCoords) {
+    //    // turn upside down
+    //    object->rot() = vec3(PI_half, 0.0, 0.0f);
+    //}
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
@@ -139,7 +139,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
         if (object != nullptr) {
             object->enabled = false;
         }
-        object = engine->objectStore.addObject("group", newid, vec3(+1.8f, 0.2f, 0.2f));
+        object = engine->objectStore.addObject("group", newid, vec3(0.0f));
         if (!object->mesh->meshletStorageFileFound) {
             Log("ERROR: Meshlet storage file not found for this object, meshlets will not be used for rendering" << endl);
             displayNoMeshletDataWarning = true;
@@ -198,12 +198,12 @@ void MeshManager::prepareFrame(FrameResources* fr)
             continue;
         }
         mat4 modeltransform;
+        wo->pos() = modelTranslation;
+        // adapt with UI rotation input:
+        wo->rot() = modelRotation * vec3(PI_half);
         if (spinningBox) {
             // Define a constant rotation speed (radians per second)
-            double rotationSpeed = glm::radians(5.0f);
-            if (!alterObjectCoords) {
-                rotationSpeed = glm::radians(15.0f);
-            }
+            double rotationSpeed = glm::radians(15.0f);
 
             // Calculate the rotation angle based on the elapsed time
             //float rotationAngle = rotationSpeed * (seconds - spinTimeSeconds);
@@ -211,18 +211,15 @@ void MeshManager::prepareFrame(FrameResources* fr)
 
             // Apply the rotation to the modeltransform matrix
             if (doRotation) {
-                //modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
-                //if (alterObjectCoords) {
-                //    modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
-                //}
                 object->rot().y += rotationAngle;
             }
         } else {
             modeltransform = wo->mesh->baseTransform;
         }
-        // standard model matrix
+
         auto pos = wo->pos();
         auto rot = wo->rot();
+
         auto scale = wo->scale();
         glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), rot.x, glm::vec3(1.0f, 0.0f, 0.0f));
         glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), rot.y, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -433,5 +430,14 @@ void MeshManager::buildCustomUI() {
         ImGui::Checkbox("Bounding Box", &showBoundingBox);
         ImGui::SameLine();
         ImGui::Checkbox("Meshlet Bounding Boxes", &showMeshletBoundingBoxes);
+        ImGui::SeparatorText("Object Rotation (as increments to PI/2)");
+        ImGui::InputFloat("X Axis", &modelRotation.x, 0.5f, 1.0f, "%.3f");
+        ImGui::InputFloat("Y Axis", &modelRotation.y, 0.5f, 1.0f, "%.3f");
+        ImGui::InputFloat("Z Axis", &modelRotation.z, 0.5f, 1.0f, "%.3f");
+        ImGui::SeparatorText("Object Position");
+        ImGui::InputFloat("X", &modelTranslation.x, 0.5f, 10.0f, "%.3f");
+        ImGui::InputFloat("Y", &modelTranslation.y, 0.5f, 10.0f, "%.3f");
+        ImGui::InputFloat("Z", &modelTranslation.z, 0.5f, 10.0f, "%.3f");
+
     }
 }
