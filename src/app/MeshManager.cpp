@@ -211,7 +211,9 @@ void MeshManager::prepareFrame(FrameResources* fr)
 
             // Apply the rotation to the modeltransform matrix
             if (doRotation) {
-                object->rot().y += rotationAngle;
+                wo->rot().y += rotationAngle;
+                // push actual rotation back to UI:
+                modelRotation = wo->rot() / vec3(PI_half);
             }
         } else {
             modeltransform = wo->mesh->baseTransform;
