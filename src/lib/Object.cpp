@@ -1202,6 +1202,12 @@ void MeshStore::debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 mo
 			BoundingBoxCorners bbcorners;
 			//Util::drawBoundingBox(addLines, m.boundingBox, bbcorners, modelToWorld, colorBoxes);
 		}
+		if (obj->mesh->outMeshletDesc.size() > 0) {
+			auto& packed = obj->mesh->outMeshletDesc[0];
+			uint64_t bb = packed.getBoundingBox();
+			Log("Meshlet 0 aabb: " << std::hex << bb << std::dec << endl);
+
+		}
 		for (auto& packed : obj->mesh->outMeshletDesc) {
 			BoundingBoxCorners bbcorners;
 			uint64_t bb = packed.getBoundingBox();
