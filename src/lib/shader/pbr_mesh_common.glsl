@@ -237,3 +237,42 @@ int isOutsideViewOrTooSmall(BoundingBox bb, mat4 mvp) {
 //        return;
 //    }
 //
+
+// Unpack a 48-bit packed bounding box (6 x 8-bit quantized components).
+// Layout (bits): [min.x(0..7), min.y(8..15), min.z(16..23), max.x(24..31), max.y(32..39), max.z(40..47)]
+// Call with the two 32-bit words that contain the 48-bit value (low, high).
+// sceneMin/sceneMax must be the same values used when packing on the CPU.
+vec3 dequantizeByte(uint q, vec3 sceneMin, vec3 sceneMax) {
+    float normalized = float(q) / 255.0;
+    return sceneMin + normalized * (sceneMax - sceneMin);
+}
+
+void unpackBoundingBox48_from_uvec2(uvec2 packedLowHigh, vec3 sceneMin, vec3 sceneMax, out vec3 outMin, out vec3 outMax) {
+    uint low = packedLowHigh.x;
+    uint high = packedLowHigh.y;
+
+    uint b0 = low & 0xFFu;            // min.x
+    uint b1 = (low >> 8) & 0xFFu;     // min.y
+    uint b2 = (low >> 16) & 0xFFu;    // min.z
+    uint b3 = (low >> 24) & 0xFFu;    // max.x
+    uint b4 = high & 0xFFu;           // max.y (bits 32..39)
+    uint b5 = (high >> 8) & 0xFFu;    // max.z (bits 40..47)
+
+    outMin = vec3(
+        dequantizeByte(b0, sceneMin, sceneMax).x,
+        dequantizeByte(b1, sceneMin, sceneMax).y,
+        dequantizeByte(b2, sceneMin, sceneMax).z
+    );
+
+    outMax = vec3(
+        dequantizeByte(b3, sceneMin, sceneMax).x,
+        dequantizeByte(b4, sceneMin, sceneMax).y,
+        dequantizeByte(b5, sceneMin, sceneMax).z
+    );
+}
+
+// Convenience overload for a uvec4 where first two components hold the packed bounding box:
+// e.g. if your meshlet descriptor is stored in a uvec4, pass that uvec4 directly.
+void unpackBoundingBox48_from_uvec4(uvec4 packed4, vec3 sceneMin, vec3 sceneMax, out vec3 outMin, out vec3 outMax) {
+    unpackBoundingBox48_from_uvec2(uvec2(packed4.x, packed4.y), sceneMin, sceneMax, outMin, outMax);
+}
