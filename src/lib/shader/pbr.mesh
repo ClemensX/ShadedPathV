@@ -101,7 +101,29 @@ void main()
         vec3 outMin;
         vec3 outMax;
         unpackBoundingBox48_from_uvec2(packedLowHigh, sceneMin, sceneMax, outMin, outMax);
-        debugPrintfEXT("MESH SHADER unpacked aabb min %f %f %f max %f %f %f\n", outMin.x, outMin.y, outMin.z, outMax.x, outMax.y, outMax.z);
+        //debugPrintfEXT("MESH SHADER unpacked aabb min %f %f %f max %f %f %f\n", outMin.x, outMin.y, outMin.z, outMax.x, outMax.y, outMax.z);
+    }
+
+    // reconstruct meshlet AABB:
+    vec3 sceneMin = model_ubo.boundingBox.min;
+    vec3 sceneMax = model_ubo.boundingBox.max;
+    uvec2 packedLowHigh;
+    packedLowHigh.x = meshlet.boundingBoxLow;
+    packedLowHigh.y = meshlet.boundingBoxHigh;
+    vec3 outMin;
+    vec3 outMax;
+    unpackBoundingBox48_from_uvec2(packedLowHigh, sceneMin, sceneMax, outMin, outMax);
+
+    // cull meshlet if outside view frustum:
+    {
+        BoundingBox mbb;
+        mbb.min = outMin;
+        mbb.max = outMax;
+        bool isOutside = isOutsideView(mbb, payload.mvp);
+        if (isOutside) {
+            debugPrintfEXT("MESH SHADER meshlet %d culled\n", meshletIndex);
+            return;
+        }
     }
 
     // Set meshlet output counts
