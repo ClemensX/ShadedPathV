@@ -12,7 +12,7 @@ set (SOURCES
   BillboardShader.cpp
   #TerrainShader.cpp
   UIShader.cpp
-  UI.cpp
+  ui.cpp
   ShaderBase.cpp
   ClearShader.cpp
   LineShader.cpp

@@ -60,7 +60,7 @@ public:
 
 	// Other methods remain unchanged
 	template <class Fn, class... Args>
-	void* addThread(ThreadCategory category, const std::string& name, Fn&& F, Args&&... A) {
+	std::thread::native_handle_type addThread(ThreadCategory category, const std::string& name, Fn&& F, Args&&... A) {
 		ThreadInfo info;
 		info.name = name;
 		info.category = category;

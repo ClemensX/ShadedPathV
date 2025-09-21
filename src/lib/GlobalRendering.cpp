@@ -572,7 +572,7 @@ void GlobalRendering::createLogicalDevice()
         engine->setSingleQueueMode();
         Log("WARNING: Your device does only offer a single queue. Expect severe performance penalties\n");
     }
-    if (TRUE) {
+    if (true) {
         engine->presentation.createPresentQueue(familyIndices.presentFamily.value());
     }
     if (engine->isVR()) {

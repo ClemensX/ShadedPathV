@@ -139,7 +139,7 @@ Changed build from manual VS2022 project to cmake.
 Currently this is Windows only. We also tried 
 Mac build, but realized that their Vulkan support is lacking too much. Maybe we will pick up later if the situation changes. 
 
-Linux build is tempting, but we haven't tried it yet.
+### Windows 
 
 We use **vcpkg** for dependency management. If some of the required libraries are missing the build will fail. If all dependencies are setup correctly on your local machine the build is initiated like this. Please adapt the toolchain file path to yours!
 
@@ -157,10 +157,24 @@ cmake --build ./build
 
 If all goes well you will find the built app here: ``.build/src/app/Debug``
 
-### Debugging
+#### Debugging
 
 Make sure to copy https://github.com/icaven/glm/blob/master/util/glm.natvis to your local machine. This will enable you to see glm vectors in the debugger properly.
 You can use this folder ``C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\Common7\Packages\Debugger\Visualizers``. Adapt the path to your VS2022 installation.
+
+### Linux
+install MS Code, Vulkan, cmake, vcpkg, gcc, ninja-build
+
+you might get an error like this: ``These can be installed on Ubuntu systems via sudo apt install libxinerama-dev libxcursor-dev xorg-dev libglu1-mesa-dev pkg-config ninja-build``
+
+then just install, clean build folder and try again
+e.g.:
+
+```
+sudo apt-get update
+sudo apt-get install -y build-essential
+```
+
 
 <a id="toc-blog"></a>
 

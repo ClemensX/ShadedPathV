@@ -81,7 +81,7 @@ public:
 private:
 	long long limitMicro;
 	float limit;
-	std::chrono::time_point<std::chrono::steady_clock> lastCallTime;
+	std::chrono::high_resolution_clock::time_point lastCallTime;
 };
 
 template<typename T>

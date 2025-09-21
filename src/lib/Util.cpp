@@ -49,6 +49,7 @@ void Util::initializeDebugFunctionPointers() {
         pfnDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(engine->globalRendering.vkInstance, "vkSetDebugUtilsObjectNameEXT");
         /* Put this in your code that initializes Vulkan (after you create your VkInstance and VkDevice): */
         vkCmdDrawMeshTasksEXT_ = (PFN_vkCmdDrawMeshTasksEXT)vkGetInstanceProcAddr(engine->globalRendering.vkInstance, "vkCmdDrawMeshTasksEXT");
+        Log("vkCmdDrawMeshTasksEXT function pointer: " << (void*)vkCmdDrawMeshTasksEXT_ << endl);
 }
 
 std::string Util::createDebugName(const char* name, int number) {

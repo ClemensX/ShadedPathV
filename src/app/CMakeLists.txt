@@ -65,7 +65,7 @@ add_executable(app
   LandscapeGenerator.cpp
   LineApp.cpp
   SimpleApp.cpp
-  Incoming.cpp
+  incoming.cpp
   TextureViewer.cpp
   Loader.cpp
   SimpleMultiApp.cpp

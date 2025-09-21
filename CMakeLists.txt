@@ -33,6 +33,11 @@ set(BUILD_SHARED_LIBS NO)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_CXX_EXTENSIONS NO)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_compile_definitions(_DEBUG)
+endif()
+
 # Externally provided content
 include(cmake/dependencies.cmake)
 # Main targets built by this project
@@ -54,5 +59,13 @@ endif()
 
 # call chain:
 # cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=~/dev/cpp/vcpkg/scripts/buildsystems/vcpkg.cmake
+# cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=~/cpp/vcpkg/scripts/buildsystems/vcpkg.cmake
 # cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=C:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake
 # cmake --build ./build
+
+# if you get errors about missing libraries, re-run after cleaning build folder
+# rm -r ./build
+#cmake -S . -B ./build -DCMAKE_C_COMPILER=/usr/bin/gcc \
+#-DCMAKE_CXX_COMPILER=/usr/bin/g++ \
+#-DCMAKE_MAKE_PROGRAM=/usr/bin/make \
+#-DCMAKE_TOOLCHAIN_FILE=~/cpp/vcpkg/scripts/buildsystems/vcpkg.cmake

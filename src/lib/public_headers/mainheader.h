@@ -118,6 +118,10 @@ typedef unsigned int UINT;
 #endif
 
 
+#if defined(__linux__)
+#define _byteswap_uint64(x) __builtin_bswap64(x)
+#endif
+
 //{
 //std::byte b;
 //}
@@ -150,7 +154,7 @@ inline void LogFile(const char* s) {
     OutputDebugString(wss.str().c_str()); \
     LogFile(str.c_str()); \
 }
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) || defined(__linux__)
 #define Log(x)\
 {\
     std::stringstream s1765; s1765 << x; \

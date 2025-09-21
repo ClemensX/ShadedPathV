@@ -58,7 +58,7 @@ void Loader::init() {
 
     MeshFlagsCollection meshFlags;
     //meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
-    meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
+    //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
     meshFlags.setFlag(MeshFlags::MESHLET_GENERATE);
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
