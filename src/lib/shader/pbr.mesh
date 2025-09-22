@@ -82,6 +82,7 @@ void main()
 
     // Get meshlet index from task shader or workgroup
     uint meshletIndex = gl_WorkGroupID.x;
+    meshletIndex = payload.meshletIndex;
     //if (meshletIndex < 1) debugPrintfEXT("MESH SHADER meshletIndex %d\n", meshletIndex);
 //    if (meshletIndex > 40) {
 //        // for testing, only process first 40 meshlets
@@ -97,7 +98,7 @@ void main()
     if (meshletIndex == 0) {
     vec3 min;
     vec3 max;
-        unpackAABB(meshlet.boundingBoxHigh, meshlet.boundingBoxLow, min, max);
+        //unpackAABB(meshlet.boundingBoxHigh, meshlet.boundingBoxLow, min, max);
         //debugPrintfEXT("MESH SHADER meshlet 0 aabb min %f %f %f max %f %f %f\n", meshlet.objectMin.x, meshlet.objectMin.y, meshlet.objectMin.z, meshlet.objectMax.x, meshlet.objectMax.y, meshlet.objectMax.z);
         vec3 sceneMin = model_ubo.boundingBox.min;
         vec3 sceneMax = model_ubo.boundingBox.max;
@@ -126,8 +127,9 @@ void main()
         mbb.min = outMin;
         mbb.max = outMax;
         bool isOutside = isOutsideView(mbb, payload.mvp);
+        if (meshletIndex > 0)debugPrintfEXT("MESH SHADER meshlet %d\n", meshletIndex);
         if (isOutside) {
-            debugPrintfEXT("MESH SHADER meshlet %d culled\n", meshletIndex);
+            //debugPrintfEXT("MESH SHADER meshlet %d culled\n", meshletIndex);
             SetMeshOutputsEXT(0, 0);
             return;
         }

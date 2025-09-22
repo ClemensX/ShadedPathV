@@ -471,12 +471,13 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	}
 	if (obj->mesh->outMeshletDesc.size() > 0) {
 		// groupCountX, groupCountY, groupCountZ: number of workgroups to dispatch
-		// only 1 workgroup: we implement object culling and LOD object selection in task shader
+		// Dispatch one workgroup per meshlet for better driver compatibility
 		Log("About to call vkCmdDrawMeshTasksEXT with " << obj->mesh->outMeshletDesc.size() << " meshlets" << endl);
 		if (vkCmdDrawMeshTasksEXT_ == nullptr) {
 			Log("ERROR: vkCmdDrawMeshTasksEXT function pointer is null!" << endl);
 		} else {
-			vkCmdDrawMeshTasksEXT(commandBuffer, 1, 1, 1);
+			// Dispatch one workgroup per meshlet instead of one workgroup for all meshlets
+			vkCmdDrawMeshTasksEXT(commandBuffer, static_cast<uint32_t>(obj->mesh->outMeshletDesc.size()), 1, 1);
 			Log("Called vkCmdDrawMeshTasksEXT successfully" << endl);
 		}
 	} else {

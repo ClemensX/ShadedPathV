@@ -119,7 +119,7 @@ void check_inputs() {
 void main() {
     //check_inputs();
 
-    debugPrintfEXT("TASK SHADER: model flags: %d\n", model_ubo.flags);
+    //debugPrintfEXT("TASK SHADER: model flags: %d\n", model_ubo.flags);
     bool isRenderingDisabled = (model_ubo.flags & MODEL_RENDER_FLAG_DISABLE) != 0;
 
     mat4 model = model_ubo.model;
@@ -152,9 +152,18 @@ void main() {
         return;
     }
     // Visible: emit actual mesh tasks for meshlets
-    uint meshletIndex = gl_GlobalInvocationID.x;
+    // Now each workgroup handles exactly one meshlet
+    uint meshletIndex = gl_WorkGroupID.x;  // Use workgroup ID instead of global invocation ID
+    
+    // Check if this workgroup's meshlet index is valid
+    if (meshletIndex >= model_ubo.meshletsCount) {
+        return; // Skip invalid meshlet indices
+    }
+    
     payload.meshletIndex = meshletIndex;
     payload.mvp = mvp;
-    EmitMeshTasksEXT(model_ubo.meshletsCount, 1, 1);
+    debugPrintfEXT("TASK SHADER: processing meshlet %d of %d\n", meshletIndex, model_ubo.meshletsCount);
+    // Each task shader workgroup emits exactly one mesh shader workgroup
+    EmitMeshTasksEXT(1, 1, 1);
 }
 

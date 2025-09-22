@@ -1205,13 +1205,13 @@ void MeshStore::debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 mo
 		if (obj->mesh->outMeshletDesc.size() > 0) {
 			auto& packed = obj->mesh->outMeshletDesc[0];
 			uint64_t bb = packed.getBoundingBox();
-			Log("Meshlet 0 aabb: " << std::hex << bb << std::dec << endl);
+			//Log("Meshlet 0 aabb: " << std::hex << bb << std::dec << endl);
 			BoundingBox meshletBB;
 			BoundingBox objectBB;
 			obj->mesh->getBoundingBox(objectBB);
 			Util::unpackBoundingBox48(bb, meshletBB, objectBB);
-            Log("  min: " << meshletBB.min.x << " " << meshletBB.min.y << " " << meshletBB.min.z);
-            Log("  max: " << meshletBB.max.x << " " << meshletBB.max.y << " " << meshletBB.max.z << endl);
+            //Log("  min: " << meshletBB.min.x << " " << meshletBB.min.y << " " << meshletBB.min.z);
+            //Log("  max: " << meshletBB.max.x << " " << meshletBB.max.y << " " << meshletBB.max.z << endl);
 		}
 		for (auto& packed : obj->mesh->outMeshletDesc) {
 			BoundingBoxCorners bbcorners;

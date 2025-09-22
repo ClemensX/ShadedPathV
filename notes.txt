@@ -296,3 +296,7 @@ MeshletOld stats for mesh id2
  global:  0 1 2 3 12
  
  local: 0 1 2 2 3 0
+
+
+ Meshlet 0 aabb: cca93e767620
+  min: -0.710288 -0.261665 -0.0671427  max: -0.48794 0.138335 0.54058
