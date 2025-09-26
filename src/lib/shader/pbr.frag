@@ -3,31 +3,12 @@
 #extension GL_EXT_debug_printf : enable
 #extension GL_ARB_gpu_shader_int64 : enable
 
-//struct UBOParams {
-//	vec4 lightDir;
-//	float exposure;
-//	float gamma;
-//	float prefilteredCubeMipLevels;
-//	float scaleIBLAmbient;
-//	float debugViewInputs;
-//	float debugViewEquation;
-//	float pad0;
-//	float pad1;
-//};
-
 #include "shadermaterial.glsl"
 #include "pbr_mesh_common.glsl"
 
 layout(location = 0) flat in PBRVertexOutFlat inVertFlat;
 layout(location = 1) in PBRVertexOut inVert; // flat removed
-//layout (location = 0) in vec3 inWorldPos;
-//layout (location = 1) in vec3 inNormal;
-//layout (location = 2) in vec2 inUV0;
-//layout (location = 3) in vec2 inUV1;
-//layout (location = 4) in vec4 inColor0;
-//layout (location = 5) flat in uint mode;
-//layout (location = 6) in vec3 camPos;
-//// mode 0: pbr metallic roughness
+// mode 0: pbr metallic roughness
 // mode 1: only use vertex color
 
 vec2 inUV0 = inVert.uv0;
@@ -37,35 +18,6 @@ vec3 inNormal = inVert.normal;
 vec3 camPos = ubo.camPos;
 vec4 inColor0 = inVert.color0;
 float inpad0 = inVert.pad0;
-
-//struct PBRTextureIndexes {
-//    uint baseColor;
-//    uint metallicRoughness;
-//    uint normal;
-//    uint occlusion;
-//    uint emissive;
-//    uint pad0;
-//    uint pad1;
-//    uint pad2;
-//};
-//
-//#define MAX_NUM_JOINTS 128
-//
-//// info for this model instance
-//// see 	struct PBRTextureIndexes and struct DynamicModelUBO in pbrShader.h
-//// one element of the large object material buffer (descriptor updated for each model group before rednering)
-//layout (binding = 1) uniform UboInstance {
-//    mat4 model; 
-//    mat4 jointMatrix[MAX_NUM_JOINTS];
-//    uint jointcount;
-//    uint pad0;
-//    uint pad1;
-//    uint pad2;
-//    //uint padding[2]; // 8 bytes of padding to align the next member to 16 bytes
-//    PBRTextureIndexes indexes;
-//    UBOParams params;
-//    ShaderMaterial material;
-//} model_ubo;
 
 layout(location = 0) out vec4 outColor;
 
@@ -84,11 +36,6 @@ vec4 textureBindless3D(uint textureid, vec3 uv) {
 
 vec4 textureBindless2D(uint textureid, vec2 uv) {
 	vec2 wrappedUV = uv;
-	//vec2 wrappedUV = fract(uv);
-    if (textureid != 2 && textureid != 10)
-	if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
-	    //debugPrintfEXT("textureBindless2D bad uv %f %f for texid %d\n", uv.x, uv.y, textureid);
-	}
 	return texture(global_textures2d[nonuniformEXT(textureid)], wrappedUV);
 }
 
@@ -213,23 +160,7 @@ float microfacetDistribution(PBRInfo pbrInputs)
 
 void main() {
 	//debugPrintfEXT("pbr.frag main\n");
-	//if (inUV0.x != 0.737041 || inpad0 != 0.5) {
-//	if (inUV0.x != 0.737041
-//	 && inUV0.x != 0.759412
-//	 && inUV0.x != 0.774256
-//	 && inUV0.x != 0.753219
-//	) {
-//		debugPrintfEXT("PBR FRAG in pad0 %f uv0 %f %f\n", inpad0, inUV0.x, inUV0.y);
-//	}
 
-	if (false || (inColor0.x >= 0.40 && inColor0.x < 0.6)) {
-		debugPrintfEXT("PBR FRAG in color %f %f %f %f inpad %f\n", inColor0.x, inColor0.y, inColor0.z, inColor0.w, inpad0);
-	}
-//	if (inUV0.y < 1.0) {
-//		debugPrintfEXT("PBR FRAG in uv0 %f %f\n", inUV0.x, inUV0.y);
-//	}
-	//outColor = vec4(1.0,0.0,0.0,1.0);
-	//return;
 	ShaderMaterial material = model_ubo.material;
     //debugPrintfEXT("frag shader material workflow %f base set %d\n", material.workflow, material.baseColorTextureSet);
     //debugPrintfEXT("frag shader material workflow %f normal set %d\n", material.workflow, material.normalTextureSet);
@@ -411,11 +342,3 @@ void main() {
 	
 	outColor = vec4(color, baseColor.a);
 }
-
-//layout (location = 0) out vec4 color;
-//
-//void main()
-//{
-//  debugPrintfEXT("pbr.frag main\n");
-//  color = vec4(1.0,0.0,0.0,1.0);
-//}

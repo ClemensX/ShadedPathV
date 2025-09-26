@@ -162,7 +162,7 @@ void main() {
     
     payload.meshletIndex = meshletIndex;
     payload.mvp = mvp;
-    debugPrintfEXT("TASK SHADER: processing meshlet %d of %d\n", meshletIndex, model_ubo.meshletsCount);
+    //debugPrintfEXT("TASK SHADER: processing meshlet %d of %d\n", meshletIndex, model_ubo.meshletsCount);
     // Each task shader workgroup emits exactly one mesh shader workgroup
     EmitMeshTasksEXT(1, 1, 1);
 }

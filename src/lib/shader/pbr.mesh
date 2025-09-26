@@ -94,23 +94,6 @@ void main()
     uvec4 packed = meshletDescs.packedMeshlets[meshletIndex];
     MeshletDesc meshlet = unpackMeshletDesc(packed);
 
-    // test AABB:
-    if (meshletIndex == 0) {
-    vec3 min;
-    vec3 max;
-        //unpackAABB(meshlet.boundingBoxHigh, meshlet.boundingBoxLow, min, max);
-        //debugPrintfEXT("MESH SHADER meshlet 0 aabb min %f %f %f max %f %f %f\n", meshlet.objectMin.x, meshlet.objectMin.y, meshlet.objectMin.z, meshlet.objectMax.x, meshlet.objectMax.y, meshlet.objectMax.z);
-        vec3 sceneMin = model_ubo.boundingBox.min;
-        vec3 sceneMax = model_ubo.boundingBox.max;
-        uvec2 packedLowHigh;
-        packedLowHigh.x = meshlet.boundingBoxLow;
-        packedLowHigh.y = meshlet.boundingBoxHigh;
-        vec3 outMin;
-        vec3 outMax;
-        unpackBoundingBox48_from_uvec2(packedLowHigh, sceneMin, sceneMax, outMin, outMax);
-        //debugPrintfEXT("MESH SHADER unpacked aabb min %f %f %f max %f %f %f\n", outMin.x, outMin.y, outMin.z, outMax.x, outMax.y, outMax.z);
-    }
-
     {
         // reconstruct meshlet AABB:
         vec3 sceneMin = model_ubo.boundingBox.min;
@@ -127,7 +110,7 @@ void main()
         mbb.min = outMin;
         mbb.max = outMax;
         bool isOutside = isOutsideView(mbb, payload.mvp);
-        if (meshletIndex > 0)debugPrintfEXT("MESH SHADER meshlet %d\n", meshletIndex);
+        //if (meshletIndex > 0)debugPrintfEXT("MESH SHADER meshlet %d\n", meshletIndex);
         if (isOutside) {
             //debugPrintfEXT("MESH SHADER meshlet %d culled\n", meshletIndex);
             SetMeshOutputsEXT(0, 0);
@@ -149,11 +132,6 @@ void main()
         //debugPrintfEXT("MESH SHADER ERROR: vertexCount %d or primCount %d exceeds limits\n", vertexCount, primCount);
         return;
     }
-//    if (meshletIndex < 185 || meshletIndex > 185){
-//        SetMeshOutputsEXT(0, 0);
-//        return; // for testing, skip all but meshlet 1000
-//    }
-//
     SetMeshOutputsEXT(vertexCount, primCount);
     //debugPrintfEXT("MESH SHADER INFO: vertexCount %d primCount %d\n", vertexCount, primCount);
 
@@ -174,29 +152,8 @@ void main()
     //indexBufferOffset = 0;
         uint globalVertexIndex = globalIndexBuffer.index[indexBufferOffset + v];
         PBRVertex vert = vertices.vertex[globalVertexIndex];
-        //debugPrintfEXT("MESH SHADER INFO: v global index %d iterator v %d value %d\n", indexBufferOffset + v, v, globalVertexIndex);
-        //debugPrintfEXT("MESH SHADER marked vert %d: col %f pos %f %f %f UV %f %f\n", globalVertexIndex, vert.color0.x, vert.position.x, vert.position.y, vert.position.z, vert.uv0.x, vert.uv0.y);
-        outVert[v].pad0 = 0.5;
-        if (vert.color0.x == 0.63) {
-            use = 1; // use this vertex for testing
-            outVert[v].pad0 = 1.0;
-            //vert.uv0.x = 0.0; // force uv0.x to 0.0 for testing
-            //vert.uv0.y = 1.0; // force uv0.y to 1.0 for testing
-            //debugPrintfEXT("MESH SHADER marked vert: col %f pos %f %f %f UV %f %f\n", vert.color0.x, vert.position.x, vert.position.y, vert.position.z, vert.uv0.x, vert.uv0.y);
-        }
-        //outVert[v].pos = vert.position;
-        // Set more attributes as needed
-        //if(v == 0) debugPrintfEXT("MESH SHADER globIndexBuffer %d pos %f %f %f\n", globalVertexIndex, vert.position.x, vert.position.y, vert.position.z);
         gl_MeshVerticesEXT[v].gl_Position = payload.mvp * vec4(vert.position, 1.0);
         outVert[v].color0 = vert.color0;
-
-        if ((meshlet.vertexPack & 0x01) != 0) {
-            // Bit 0 is set
-            // apply debug colors
-            vec3 debugColor = DEBUG_COLORS[meshletIndex % 256];
-            outVert[v].color0 = vec4(debugColor, 1.0); // apply debug color to vertex color
-            //debugPrintfEXT("MESH SHADER DEBUG COLORS\n");
-        }
 
         outVert[v].uv0 = vert.uv0;
         outVert[v].uv1 = vert.uv1;
@@ -213,19 +170,14 @@ void main()
 	    //locPos.y = -locPos.y;
 	    outVert[v].worldPos = locPos.xyz / locPos.w;
         //debugPrintfEXT("loc.w %f\n", locPos.w);
-//        if ((model_ubo.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) { // if model_ubo.flags & MODEL_FLAG_PRELIGHT_VERTICES
-//        // bit 0 is set
-//            gl_MeshVerticesEXT[v].gl_Position = vec4(0.0, 0.0, 0.0, 0.0); // W=0, will be clipped
-//            debugPrintfEXT("MESH SHADER vert clipped, you idiot!\n");
-//        } else {
-//            gl_MeshVerticesEXT[v].gl_Position =  ubo.proj * ubo.view * vec4(outVert[v].worldPos, 1.0);
-//        }
+        if ((model_ubo.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) { // if model_ubo.flags & MODEL_FLAG_PRELIGHT_VERTICES
+            // apply debug colors
+            vec3 debugColor = DEBUG_COLORS[meshletIndex % 256];
+            outVert[v].color0 = vec4(debugColor, 1.0); // apply debug color to vertex color
+        }
         gl_MeshVerticesEXT[v].gl_Position =  ubo.proj * ubo.view * vec4(outVert[v].worldPos, 1.0);
     }
         
-//    gl_PrimitiveTriangleIndicesEXT[0] = uvec3(0, 1, 2);
-//    gl_PrimitiveTriangleIndicesEXT[1] = uvec3(0, 3, 1);
-//    gl_PrimitiveTriangleIndicesEXT[2] = uvec3(2, 1, 4);
 
     // 2. Emit triangles using local indices from primitiveIndexBuffer
     // Each triangle is 3 bytes (local indices into meshlet vertex array)
@@ -252,25 +204,4 @@ void main()
         //if (meshletIndex < 1 && p == 90) debugPrintfEXT("MESH SHADER X count %d prim %d %d %d\n", primCount, byteValue0, byteValue1, byteValue2);
     }
 
-//    gl_MeshVerticesEXT[0].gl_Position = vec4(0.5,-0.5, 0, 1);
-//    gl_MeshVerticesEXT[1].gl_Position = vec4(0.5, 0.5, 0, 1);
-//    gl_MeshVerticesEXT[2].gl_Position = vec4(-0.5, 0.5, 0, 1);
-//    gl_PrimitiveTriangleIndicesEXT[0] =  uvec3(0, 1, 2);
 }
-
-//layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
-//layout(triangles, max_vertices = 3, max_primitives = 1) out;
-//
-//void main()
-//{
-//  //debugPrintfEXT("mesh shader main start\n");
-//  uint vertexCount = 3;
-//  uint triangleCount = 1;
-//  SetMeshOutputsEXT(vertexCount, triangleCount);
-//  gl_MeshVerticesEXT[0].gl_Position = vec4(0.5,-0.5, 0, 1);
-//  gl_MeshVerticesEXT[1].gl_Position = vec4(0.5, 0.5, 0, 1);
-//  gl_MeshVerticesEXT[2].gl_Position = vec4(-0.5, 0.5, 0, 1);
-//  gl_PrimitiveTriangleIndicesEXT[0] =  uvec3(0, 1, 2);
-//  //debugPrintfEXT("mesh shader main end\n");
-//}
-//

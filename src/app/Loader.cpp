@@ -19,8 +19,10 @@ void Loader::run(ContinuationInfo* cont)
         //initCamera(glm::vec3(-2.10783f, 0.56567f, -0.129275f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         // dolphin debug:
-        // []
-        initCamera(glm::vec3(-0.204694f, 0.198027f, 0.220922f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        //initCamera(glm::vec3(-0.204694f, 0.198027f, 0.220922f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        // camery for damaged helmet video recording:
+        //cameraPosition = [-0.640809 - 0.445347 2.82217]
+        initCamera(glm::vec3(-0.640809f, -0.445347f, 2.82217f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         getFirstPersonCameraPositioner()->setMaxSpeed(0.1f);
         //getFirstPersonCameraPositioner()->setMaxSpeed(10.1f);
@@ -59,7 +61,7 @@ void Loader::init() {
     MeshFlagsCollection meshFlags;
     //meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
-    meshFlags.setFlag(MeshFlags::MESHLET_GENERATE);
+    //meshFlags.setFlag(MeshFlags::MESHLET_GENERATE);
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
     engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
@@ -247,7 +249,7 @@ void Loader::prepareFrame(FrameResources* fr)
         } else {
             //engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false);
         }
-        engine->meshStore.debugGraphics(wo, tr, modeltransform, true, true, false, true);
+        //engine->meshStore.debugGraphics(wo, tr, modeltransform, true, true, false, true);
         //wo->calculateBoundingBoxWorld(modeltransform);
         //wo->drawBoundingBox(boundingBoxes, modeltransform, Colors::Red);
         //buf->params.gamma = 2.2f;
