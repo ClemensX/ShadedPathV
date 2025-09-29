@@ -4,15 +4,39 @@ Game Engine in Development!
 
 ShadedPathV is a completely free C++ game engine built mainly on [Khronos standards](https://www.khronos.org/)
 
+**Please note:** ShadedPathV is in high development phase. We change something almost every day. At this time it is not recommended to use ShadedPath for anything else than tests. The interface from application to engine may change very much until release.
+
+However, if you find something useful here, please just use it in your own projects. The very liberal license allows almost any kind of usage of ShadedPath!
+
 Some features:
 
 - Multi-Thread Rendering
+- Modern Meshlet-based rendering engine built on top of Vulkan
+  - true 64 bit adressing on GPU
+  - Physically Based Rendering (PBR) model
 - Support VR games via OpenXR
 - Sound support for ogg vorbis: Both background music and spatial sound attached to objects
-- Upload of GPU resources in a background thread for stutter free rendering
+- Built on open standards we currently support these environments:
+  - *Windows* - this is where our focus lies and almost all our development is done
+  - *Linux* - we also support Linux builds. Beware that graphics drivers on Linux can be a nightmare. As we do use very modern techniques that currently not many engines utilize, you may find that Linux drivers that work for something else might not do so for ShadedPath
+  - **NOT supported** *MacOS* - We had tested builds for MacOS, but the current level of Vulkan support just isn't enough for ShadedPath. We hope to come back to MacOS if the compatibility increases in the future
+
+**Release Plan**
+
+Sorry, we announce no dates :-)
+
+We plan to implement features according to this list:
+
+- V 0.1 (**done**): General Setup, Shaders, Audio, OpenXR
+- V 0.2 (**done**): PBR Rendering
+- V 0.3 (**done**): Meshlet Rendering
+- V 0.3.5: LOD System
+- V 0.4: Animation
 
 **Table of content:**
 - [Current State](#toc-state)
+- [Meshlet Rendering](#toc-meshlets)
+- [Linux Build](#toc-linux)
 - [Blog](#toc-blog)
 - [Setup](#toc-setup)
 - [ToDo](#toc-todo)
@@ -24,26 +48,46 @@ Some features:
 
 <a id="toc-state"></a>
 
+## Current State (Q3 / 2025)
+
+<a id="toc-meshlets"></a>
 ## Meshlets
 
 Before going deeper into animation we decided to come back to meshlet rendering. This topic has matured a lot since last we tested some years ago. Meaning that meshlet rendering is now supported by many NVIDIA and AMD GPUs and even mid-price laptops, e.g. on Intel Arc offer it.
 
 See details about meshlet rendering in this NVIDIA article: https://developer.nvidia.com/blog/introduction-turing-mesh-shaders/
 
-We implemented the meshlet generation algorithm **Greedy (vertex based)** from here: https://github.com/Senbyo/meshletmaker
+The glTF file format does not support meshlet data. Because of that we needed to provide additional storage for meshlet data in supplementory files. Each glTF mesh loaded into ShadedPath that is intended to be rendered as a PBR asset needs to have its meshlet data in a file with extension *.meshlet* next to the glTF file. We implemented a variation of the meshlet generation algorithm **Greedy (vertex based)** from here: https://github.com/Senbyo/meshletmaker
 
-![meshlet 1](images/dolphin_meshlet_1.png)
+Look here for some additional details about proper use of meshlets. [meshlets.md](./meshlets.md)
 
-It is important to use a properly defined base mesh for use with meshlets. Often, vertices are duplicated and differ only in normal values. To help seeing that problem you can enable debug graphics on any object. Here is an example of a bad base mesh, with many vertices duplicated:
+Use the *MeshManager* tool to create and test your meshlet data:
+| Mesh with no meshlet data | Meshlet data generated |
+|-------------------------------|-------------------------------|
+| ![Mesh Manager, no meshlet data](images/mesh_manager1.png) | ![Mesh Manager, meshlets data generated](images/mesh_manager2.png) |
 
-![meshlet 2](images/dolphin_meshlet_2.png) 
+Mesh Manager is also presented with more depth in a video on our YouTube channel. There are a number of debug options to help with checking meshlet rendering:
 
-Detail view: ![meshlet 3](images/dolphin_meshlet_3.png)
+| Regular Object Render | Meshlet display enabled |
+|-------------------------------|-------------------------------|
+| ![meshlets full](images/mesh_helmet_reg.png) | ![meshlets colored](images/mesh_helmet_meshlets.png) |
 
-The same model, but all vertices at the same position merged into one:
-![meshlet 4](images/dolphin_meshlet_4.png) 
+| Vertices overlayed | Meshlet Bounding Boxes enabled |
+|-------------------------------|-------------------------------|
+| ![meshlets with vertices](images/mesh_helmet_mesh_meshlets.png) | ![meshlets bounding boxes](images/mesh_helmet_meshlets_bb.png) |
 
-In Blender, this can be achieved by going into edit mode, selecting all vertices, then open the *Normal Menu* (Alt-N) and select **Merge**.
+<a id="toc-linux"></a>
+## Linux Build
+
+We finally adapted our cmake build scripts for linux. (All test with Ubuntu 24)
+
+| Linux Build | Linux Run |
+|-------------------------------|-------------------------------|
+| ![linux build](images/linux_build.png) | ![linux run](images/linux_run.png) |
+
+We were very satisfied to see that only minor changes were necessary to build and run on Linux. However, graphics drivers for Linux are a nightmare. We tried a number of combinations and all had their own problems. As we only tested on an Intel Arc Laptop, we can't really say if the situation is better with NVIDIA or AMD graphics cards.
+
+We could run most features with the exception of meshlet rendering. As the same code runs in Windows on the same machine, and we do not get any errors or warnings from Vulkan validation layer, we guess the problem is with the driver. Obviously, we cannot rule out the possibility that we made an error somewhere, that only manifests under Linux. We will continue testing Linux on other machines later...
 
 ## Animation (to be picked up later)
 

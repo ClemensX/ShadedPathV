@@ -30,10 +30,16 @@ protected:
     double old_seconds = 0.0f;
 };
 
+class PreStart { // simple class for early initializations
+    public:
+        PreStart();
+};
+
 class ShadedPathEngine
 {
 public:
     ShadedPathEngine() :
+        preStart(),
         globalRendering(this),
         presentation(this),
         threadsMain(0),
@@ -108,9 +114,9 @@ public:
     void log_current_thread();
     ThreadInfo mainThreadInfo;
 
-    const std::string engineName = "ShadedPathV";
-    const std::string engineVersion = "0.1";
-    const uint32_t engineVersionInt = 1;
+    const static std::string engineName;
+    const static std::string engineVersion;
+    const static uint32_t engineVersionInt;
     std::string vulkanAPIVersion; // = global.getVulkanAPIString();
 
     enum class Resolution { FourK, TwoK, OneK, DeviceDefault, Small, Invalid, HMD_Native };
@@ -236,6 +242,7 @@ public:
     // are not allowed to change after this call
     void initGlobal(std::string appname = "");
 
+    PreStart preStart; // early initialization
     GlobalRendering globalRendering;
     Shaders shaders;
     Util util;

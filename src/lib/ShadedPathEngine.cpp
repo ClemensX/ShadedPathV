@@ -2,6 +2,15 @@
 
 using namespace std;
 
+const std::string ShadedPathEngine::engineName = "ShadedPathV";
+const std::string ShadedPathEngine::engineVersion = "0.3";
+const uint32_t ShadedPathEngine::engineVersionInt = 1;
+
+PreStart::PreStart() {
+    Log("This is " << ShadedPathEngine::engineName << " version " << ShadedPathEngine::engineVersion << endl);
+}
+
+
 void ShadedPathEngine::initGlobal(string appname) {
     if (!appname.empty()) {
         this->appname = appname;
