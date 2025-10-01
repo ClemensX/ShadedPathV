@@ -66,7 +66,7 @@ Use the *MeshManager* tool to create and test your meshlet data:
 |-------------------------------|-------------------------------|
 | ![Mesh Manager, no meshlet data](images/mesh_manager1.png) | ![Mesh Manager, meshlets data generated](images/mesh_manager2.png) |
 
-Mesh Manager is also presented with more depth in a video on our YouTube channel. There are a number of debug options to help with checking meshlet rendering:
+Mesh Manager is also presented with more depth in a video on our [YouTube channel](https://youtu.be/Dlnng9bn-oY). There are a number of debug options to help with checking meshlet rendering:
 
 | Regular Object Render | Meshlet display enabled |
 |-------------------------------|-------------------------------|

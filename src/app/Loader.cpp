@@ -249,12 +249,7 @@ void Loader::prepareFrame(FrameResources* fr)
         } else {
             //engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false);
         }
-        //engine->meshStore.debugGraphics(wo, tr, modeltransform, true, true, false, true);
-        //wo->calculateBoundingBoxWorld(modeltransform);
-        //wo->drawBoundingBox(boundingBoxes, modeltransform, Colors::Red);
-        //buf->params.gamma = 2.2f;
-        //buf->params.debugViewEquation = 0.5f;
-        //buf->material.alphaMask = 0.8f;
+        engine->meshStore.debugGraphics(wo, tr, modeltransform, false, true, false, false);
     }
     // lines
     engine->shaders.lineShader.prepareAddLines(tr);
