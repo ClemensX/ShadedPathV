@@ -56,4 +56,9 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #gltf-transform uastc ../data/raw/desert.glb ../data/mesh/desert_cmp.glb --level 1 --zstd 10 --verbose
 #gltf-transform uastc ../data/raw/desert3.glb ../data/mesh/desert3_cmp.glb --level 4 --zstd 18 --verbose
 #gltf-transform uastc ../data/raw/Terrain.glb ../data/mesh/Terrain_cmp.glb --level 4 --zstd 18 --verbose
-gltf-transform uastc ../data/mesh/cc_facial_exp.glb ../data/mesh/cc_facial_exp_cmp.glb --level 4 --zstd 18 --verbose
+#gltf-transform uastc ../data/mesh/cc_facial_exp.glb ../data/mesh/cc_facial_exp_cmp.glb --level 4 --zstd 18 --verbose
+
+# run gltf-tranform scripts:
+# npm install @gltf-transform/core
+#node set-single-sided.mjs ../data/granite_rock_double_sided.glb ../data/granite_rock.glb
+gltf-transform uastc ../data/granite_rock.glb ../data/mesh/granite_rock_cmp.glb --level 4 --zstd 18 --verbose

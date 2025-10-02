@@ -78,7 +78,7 @@ public:
 	// max # lines for dynamic adding for single frame
 	// we limit this to allow for pre-allocated vertex buffer in thread resources
 	//static const size_t MAX_DYNAMIC_LINES = 100000;
-	static const size_t MAX_DYNAMIC_LINES = 5000000;
+	static const size_t MAX_DYNAMIC_LINES = 6000000;
 
 	virtual void init(ShadedPathEngine& engine, ShaderState &shaderState) override;
 	// thread resources initialization
