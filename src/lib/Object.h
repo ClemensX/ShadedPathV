@@ -379,6 +379,7 @@ public:
     size_t getUsedMeshesCount() { return meshes.size(); }
 	bool writeMeshletStorageFile(std::string id, std::string fileBaseName);
 	bool loadMeshletStorageFile(std::string id, std::string fileBaseName);
+    MeshCollection* getMeshCollection(std::string id);
 private:
 	MeshCollection* loadMeshFile(std::string filename, std::string id, std::vector<std::byte> &fileBuffer, MeshFlagsCollection flags);
 	std::unordered_map<std::string, MeshInfo> meshes;

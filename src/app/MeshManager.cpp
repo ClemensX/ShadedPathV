@@ -134,11 +134,20 @@ void MeshManager::prepareFrame(FrameResources* fr)
         displayNoMeshletDataWarning = false;
         //engine->meshStore.loadMesh(filepath.filename().string(), "newid", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
         // generate new id for each loaded object:
-        string newid = "newid" + to_string(loadObjectNum++);
+        string newid = "newid";// +to_string(loadObjectNum++);
+        for (int i = 0; i < loadObjectNum; i++) {
+            newid += "X";
+        }
         engine->meshStore.loadMesh(filepath.filename().string(), newid);
         if (object != nullptr) {
             object->enabled = false;
         }
+        auto* coll = engine->meshStore.getMeshCollection(newid);
+        Log("Loaded " << coll->meshInfos.size() << " meshes from file" << endl);
+        for (auto* mi : coll->meshInfos) {
+            Log("Mesh: " << mi->id << " triangles: " << mi->indices.size()/3 << " vertices: " << mi->vertices.size() << endl);
+        }
+        newid += ".9";
         object = engine->objectStore.addObject("group", newid, vec3(0.0f));
         if (!object->mesh->meshletStorageFileFound) {
             Log("ERROR: Meshlet storage file not found for this object, meshlets will not be used for rendering" << endl);

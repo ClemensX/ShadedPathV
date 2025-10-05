@@ -300,3 +300,15 @@ MeshletOld stats for mesh id2
 
  Meshlet 0 aabb: cca93e767620
   min: -0.710288 -0.261665 -0.0671427  max: -0.48794 0.138335 0.54058
+
+lod: orig: LOD0
+Sh D duplicate, rename LOD1,
+select, add modifier: decimate, 0.25, apply with right arrow
+--> optionally edit mode: fill holes: Mesh -> Clean Up -> Fill Holes
+                          Sh N to recalc Normals
+
+if there are visible holes:
+object mode, modifier remesh, Sharp: octree adjust to get # tris we want, apply
+re-apply textures: Data Transfer Modifier, select face corener data and UV tab
+
+same for LOD2-9           

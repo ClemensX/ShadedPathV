@@ -8,6 +8,8 @@ ShadedPathV is a completely free C++ game engine built mainly on [Khronos standa
 
 However, if you find something useful here, please just use it in your own projects. The very liberal license allows almost any kind of usage of ShadedPath!
 
+**Contact:** At this point we do not accept pull requests, but we are happy to answer any questions or comments via email: shadedpath.org@gmail.com
+
 Some features:
 
 - Multi-Thread Rendering
@@ -30,10 +32,12 @@ We plan to implement features according to this list:
 - V 0.1 (**done**): General Setup, Shaders, Audio, OpenXR
 - V 0.2 (**done**): PBR Rendering
 - V 0.3 (**done**): Meshlet Rendering
-- V 0.3.5: LOD System
+- V 0.3.1: LOD System
 - V 0.4: Animation
+- V 0.5: Shadows
 
 **Table of content:**
+- [LOD System](#toc-lod)
 - [Current State](#toc-state)
 - [Meshlet Rendering](#toc-meshlets)
 - [Linux Build](#toc-linux)
@@ -45,6 +49,29 @@ We plan to implement features according to this list:
 - [Thread Model](#toc-threads)
 - [Coordinate System](#toc-coords)
 - [Misc](#toc-misc)
+
+<a id="toc-lod"></a>
+
+## LOD System
+
+Every mesh intended to be rendered with the PBR shader should contain LOD (level of detail) information. You will get a warning if this is missing from your asset files.
+
+ShadedPath mandates a fixed set of 10 levels - LOD 0 to LOD 9. Higher numbers mean less detail. Currently, we recommend reducing the triangle count by a factor of 0.25 with each level. But this is not a strict requirement and will not be checked at runtime. Use your artistic judgement: e.g. for the lower levels it may be much better to keep some more vertices to roughly match the original shape than to be fixed on reducing vertex count. 10 levels with 0.25 reduction factor means if you start with 6 million triangles on LOD 0 you will end with just around 20 triangles on LOD 9.
+
+Usually, LOD info ist not contained in assets you aquired, so you must prepare them yourself. We did not find a good way to automate LOD generation. Trying to automate this in Blender also was underwhelming. So, here is our suggested manual Blender workflow for creating LOD info:
+
+- select LOD 0 in object mode and duplicate (Shift-D), right click to paste at the same location.
+- Rename the new mesh to something like **name_LOD_1**.
+- You might want to disable rendering of the older level in the *Outliner* to just see what you are currently working on.
+- Make sure you have LOD_1 selected, then add the *Decimate* modifier: Enable the *Triangulate* flag and set a *Ratio* of 0.25. You should see the changed mesh now. (Allow some time for Blender to work for very high triangle counts.)
+- Bake the modifier to the mesh by using *Apply* in the menu right of the mesh name.
+- Examine the mesh from all sides
+- If there are visible holes (these usually start to appear after you have applied some iterations): 
+  - Use another modifier: *Remesh*: use *Sharp* mode and adjust *Octree Depth* to roughly get the triangle count you want. Also bake this modifier.
+  - As you now have lost all UV mapping use *Data Transfer Modifier* to correct that: Select one of your older meshes as Source, then enable *Face Corner Data*, open it and choose *UVs* tab. Generate data by using the *Generate Data Layers* button. Also bake the result, once you are satisfied.
+- Now apply the same steps for LOD 2 to LOD 9
+
+Obviously, this is just a suggestion. If you are an experienced artist or Blender user you might know better ways to create LOD levels. We just wanted to give a simple workflow example.
 
 <a id="toc-state"></a>
 

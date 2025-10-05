@@ -139,6 +139,16 @@ void MeshStore::loadMesh(string filename, string id, MeshFlagsCollection flags)
 	}
 }
 
+MeshCollection* MeshStore::getMeshCollection(std::string id)
+{
+	for (auto& coll : meshCollections) {
+		if (coll.id == id) {
+			return &coll;
+		}
+    }
+	return nullptr;
+}
+
 void MeshStore::aquireMeshletData(std::string filename, std::string id, bool regenerateMeshletData)
 {
 	bool loadedFromFile = engine->meshStore.loadMeshletStorageFile(id, filename);

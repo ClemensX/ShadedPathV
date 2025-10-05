@@ -61,4 +61,5 @@ export PATH="/c/tools/ktx/bin:$PATH"
 # run gltf-tranform scripts:
 # npm install @gltf-transform/core
 #node set-single-sided.mjs ../data/granite_rock_double_sided.glb ../data/granite_rock.glb
-gltf-transform uastc ../data/granite_rock.glb ../data/mesh/granite_rock_cmp.glb --level 4 --zstd 18 --verbose
+#gltf-transform uastc ../data/granite_rock_lod.glb ../data/mesh/granite_rock_lod_cmp.glb --level 4 --zstd 18 --verbose
+gltf-transform uastc ../data/granite_rock_lod.glb ../data/mesh/granite_rock_lod_cmp.glb --verbose
