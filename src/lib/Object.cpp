@@ -318,6 +318,7 @@ void WorldObjectStore::addObjectPrivate(WorldObject* w, string id, vec3 pos, int
 	w->alpha = 1.0f;
     w->userGroupId = userGroupId;
 	w->objectNum = numObjects++;
+    Log("Added object " << id.c_str() << " at " << pos.x << " " << pos.y << " " << pos.z << " to group " << userGroupId << " with objectNum " << w->objectNum << endl);
 	if (!(w->objectNum < meshStore->engine->getMaxObjects())) {
 		Error("WorldObjectStore: too many objects, increase max objects in engine settings.");
     }

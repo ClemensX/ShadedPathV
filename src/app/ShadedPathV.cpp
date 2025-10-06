@@ -67,6 +67,7 @@ int mainOne()
         //.setFixedPhysicalDeviceIndex(1) // if GPU card is available it should be device 0. device 1 is usually the integrated Intel/AMD GPU
         //.enableGlobalWireframe()
         .enableMeshShader()
+        .setMaxObjects(1000)
         ;
 
     engine.initGlobal();

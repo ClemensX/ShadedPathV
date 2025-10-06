@@ -147,15 +147,27 @@ void MeshManager::prepareFrame(FrameResources* fr)
         for (auto* mi : coll->meshInfos) {
             Log("Mesh: " << mi->id << " triangles: " << mi->indices.size()/3 << " vertices: " << mi->vertices.size() << endl);
         }
-        newid += ".9";
+        // TODO: add all objects of collection
         object = engine->objectStore.addObject("group", newid, vec3(0.0f));
         if (!object->mesh->meshletStorageFileFound) {
             Log("ERROR: Meshlet storage file not found for this object, meshlets will not be used for rendering" << endl);
             displayNoMeshletDataWarning = true;
         }
+        meshCollection = coll;
         //object->enableDebugGraphics = true;
         engine->shaders.pbrShader.initialUpload();
         engine->shaders.pbrShader.recreateGlobalCommandBuffers();
+    }
+    // new mesh seleceted from collection:
+    if (meshSelectedFromCollection != nullptr) {
+        // diable old object
+        if (object != nullptr) {
+            object->enabled = false;
+            object = nullptr;
+        }
+        object = engine->objectStore.addObject("group", meshSelectedFromCollection->id, vec3(0.0f));
+        object->enabled = true;
+        meshSelectedFromCollection = nullptr;
     }
     if (regenerateMeshletData) {
         regenerateMeshletData = false;
@@ -399,9 +411,11 @@ void MeshManager::buildCustomUI() {
         ImGui::EndPopup();
     }
 
+    string filename;
     // Optionally, display the selected line
     if (selectedLine >= 0) {
-        ImGui::Text("Selected: %s", files[selectedLine].c_str());
+        filename = files[selectedLine];
+        ImGui::Text("Selected: %s", filename.c_str());
         if (displayNoMeshletDataWarning) {
             ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.3f, 1.0f), "No meshlet data found. \nReverting to vertices display");
         }
@@ -423,6 +437,32 @@ void MeshManager::buildCustomUI() {
             clicked = 2; // prevent multiple clicks
         }
     }
+    bool selectEnabled = (meshCollection != nullptr && meshCollection->meshInfos.size() > 1);
+    ImGui::BeginDisabled(!selectEnabled);
+    if (ImGui::TreeNode("Select Mesh"))
+    {
+        static int selected = -1;
+        static int prevSelected = -1;
+        for (int n = 0; n < meshCollection->meshInfos.size(); n++)
+        {
+            char buf[128];
+            string s = meshCollection->meshInfos[n]->name;
+            sprintf(buf, "%s %d", s.c_str(), n);
+            if (ImGui::Selectable(buf, selected == n))
+                selected = n;
+        }
+        if (selected != prevSelected && selected >= 0) {
+            meshSelectedFromCollection = meshCollection->meshInfos[selected];
+            prevSelected = selected;
+        }
+        ImGui::TreePop();
+    }
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("Select a mesh from the collection contained in %s", filename.c_str());
+    }
+    ImGui::EndDisabled();
+
     ImGui::SeparatorText("Zero-Plane Grid");
     ImGui::Checkbox("enable 2 km square grid", &planeGrid);
 

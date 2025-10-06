@@ -48,4 +48,6 @@ private:
     bool showMeshletBoundingBoxes = false;
     glm::vec3 modelRotation = glm::vec3(0.0f, 0.0f, 0.0f); // used as increments to pi/2
     glm::vec3 modelTranslation = glm::vec3(0.0f, 0.0f, 0.0f);
+    MeshCollection* meshCollection = nullptr;
+    MeshInfo* meshSelectedFromCollection = nullptr;
 };

@@ -222,7 +222,8 @@ struct MeshletStorageData {
 // Describe a single loaded mesh. mesh IDs are unique, several Objects may be instantiated backed by the same mesh
 struct MeshInfo
 {
-	std::string id;
+    std::string id; // id in ShadedPath mesh store
+    std::string name; // gltf mesh name
 	bool available = false; // true if this object is ready for use in shader code
 	MeshFlagsCollection flags;
 
@@ -313,7 +314,7 @@ public:
 	~MeshStore();
 	// load mesh wireframe and add to Line vector (only for first mesh in gltf file)
 	void loadMeshWireframe(std::string filename, std::string id, std::vector<LineDef>& lines);
-	// load meshes from glTF file, objects are referenced via id string according to this schema:
+	// load all meshes from glTF file, objects are referenced via id string according to this schema:
 	// ref string == gltf mesh
 	// =======================
 	// id == mesh[0]

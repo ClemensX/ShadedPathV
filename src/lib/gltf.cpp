@@ -443,7 +443,7 @@ void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
 			}
 		}
 		if (mat.doubleSided == true) {
-			Log("INFO: double sided gltf material used " << mat.name.c_str())
+			Log("INFO: double sided gltf material used " << mat.name.c_str() << endl)
 		}
 	}
 	for (auto& m : model.meshes) {
@@ -544,6 +544,7 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
 			mesh = coll->meshInfos[0];
 		}
 		mesh->gltfMeshIndex = modelindex;
+        mesh->name = m.name;
 		prepareTexturesAndMaterials(model, coll, modelindex);
 		loadVertices(model, mesh, mesh->vertices, mesh->indices, modelindex);
 		collectBaseTransform(model, mesh);
