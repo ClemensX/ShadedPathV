@@ -134,9 +134,7 @@ void MeshStore::loadMesh(string filename, string id, MeshFlagsCollection flags)
 		Error("No meshes found in glTF file " + filename);
     }
 	bool regenerate = flags.hasFlag(MeshFlags::MESHLET_GENERATE);
-	for (auto mi : coll->meshInfos) {
-		aquireMeshletData(filename, mi->id, regenerate);
-	}
+	aquireMeshletData(filename, id, regenerate);
 }
 
 MeshCollection* MeshStore::getMeshCollection(std::string id)
@@ -1714,7 +1712,8 @@ uint64_t MeshStore::getUsedStorageSize() {
 
 bool MeshStore::writeMeshletStorageFile(std::string id, string fileBaseName)
 {
-    MeshInfo* meshInfo = getMesh(id);
+	auto* coll = engine->meshStore.getMeshCollection(id);
+
 	// open meshlet file for write:
     // concatenate mesh name with .meshlet extension
     string fileName = fileBaseName + ".meshlet";
@@ -1724,23 +1723,28 @@ bool MeshStore::writeMeshletStorageFile(std::string id, string fileBaseName)
 	// write file type identifier:
 	const char fileType[16] = "SPMESHLETFILEv1";
 	mf.write(fileType, 16); // write file type string and trailing zero
+	// write number of meshes (NOT meshlets):
+    uint32_t numMeshes = coll->meshInfos.size();
+    mf.write((char*)&numMeshes, sizeof(uint32_t));
 	// write meshlet data:
-    MeshletStorageData meshletData;
-    meshletData.numMeshlets = meshInfo->outMeshletDesc.size();
-    meshletData.numLocalIndices = meshInfo->outLocalIndexPrimitivesBuffer.size();
-    meshletData.numGlobalIndices = meshInfo->outGlobalIndexBuffer.size();
-	if (meshletData.numMeshlets == 0 || meshletData.numGlobalIndices == 0 || meshletData.numLocalIndices == 0) {
-		Log("ERROR: Trying to write meshlet file for empty mesh " << id << endl);
-		return false;
-    }
-    // write buffer lengths:
-	mf.write((char*)&meshletData, sizeof(MeshletStorageData));
-	// write meshlet descriptors:
-    mf.write((char*)meshInfo->outMeshletDesc.data(), sizeof(PBRShader::PackedMeshletDesc) * meshletData.numMeshlets);
-    // write local index buffer:
-    mf.write((char*)meshInfo->outLocalIndexPrimitivesBuffer.data(), sizeof(uint8_t) * meshletData.numLocalIndices);
-    // write global index buffer:
-    mf.write((char*)meshInfo->outGlobalIndexBuffer.data(), sizeof(uint32_t) * meshletData.numGlobalIndices);
+	for (auto& meshInfo : coll->meshInfos) {
+		MeshletStorageData meshletData;
+		meshletData.numMeshlets = meshInfo->outMeshletDesc.size();
+		meshletData.numLocalIndices = meshInfo->outLocalIndexPrimitivesBuffer.size();
+		meshletData.numGlobalIndices = meshInfo->outGlobalIndexBuffer.size();
+		if (meshletData.numMeshlets == 0 || meshletData.numGlobalIndices == 0 || meshletData.numLocalIndices == 0) {
+			Log("ERROR: Trying to write meshlet file for empty mesh " << id << endl);
+			return false;
+		}
+		// write buffer lengths:
+		mf.write((char*)&meshletData, sizeof(MeshletStorageData));
+		// write meshlet descriptors:
+		mf.write((char*)meshInfo->outMeshletDesc.data(), sizeof(PBRShader::PackedMeshletDesc) * meshletData.numMeshlets);
+		// write local index buffer:
+		mf.write((char*)meshInfo->outLocalIndexPrimitivesBuffer.data(), sizeof(uint8_t) * meshletData.numLocalIndices);
+		// write global index buffer:
+		mf.write((char*)meshInfo->outGlobalIndexBuffer.data(), sizeof(uint32_t) * meshletData.numGlobalIndices);
+	}
 	// close file:
 	mf.close();
 	return true;
@@ -1748,7 +1752,7 @@ bool MeshStore::writeMeshletStorageFile(std::string id, string fileBaseName)
 
 bool MeshStore::loadMeshletStorageFile(std::string id, string fileBaseName)
 {
-	MeshInfo* meshInfo = getMesh(id);
+	auto* coll = engine->meshStore.getMeshCollection(id);
 	// open meshlet file for read:
 	// concatenate mesh name with .meshlet extension
 	string fileName = fileBaseName + ".meshlet";
@@ -1769,38 +1773,49 @@ bool MeshStore::loadMeshletStorageFile(std::string id, string fileBaseName)
         Log("ERROR: Meshlet file has incorrect header for mesh " << id << endl);
         return false;
     }
-	// read meshlet buffer sizes:
-	MeshletStorageData meshletData;
-    size_t offset = 16;
-    if (file_buffer.size() < offset + sizeof(MeshletStorageData)) {
-        Log("ERROR: Meshlet file too small for mesh " << id << endl);
-        return false;
-    }
-    memcpy(&meshletData, file_buffer.data() + offset, sizeof(MeshletStorageData));
-    offset += sizeof(MeshletStorageData);
-	if (meshletData.numMeshlets == 0 || meshletData.numGlobalIndices == 0 || meshletData.numLocalIndices == 0) {
-		Log("ERROR: Meshlet file has zero sizes for mesh " << id << endl);
-		return false;
-    }
-	// resize mesh buffers:
-	meshInfo->outMeshletDesc.resize(meshletData.numMeshlets);
-	meshInfo->outLocalIndexPrimitivesBuffer.resize(meshletData.numLocalIndices);
-	meshInfo->outGlobalIndexBuffer.resize(meshletData.numGlobalIndices);
-	size_t expectedSize = offset + sizeof(PBRShader::PackedMeshletDesc) * meshletData.numMeshlets
-		+ sizeof(uint8_t) * meshletData.numLocalIndices
-		+ sizeof(uint32_t) * meshletData.numGlobalIndices;
-	if (file_buffer.size() < expectedSize) {
-		Log("ERROR: Meshlet file too small for mesh " << id << endl);
-		return false;
-    }
-    // read meshlet descriptors:
-    memcpy(meshInfo->outMeshletDesc.data(), file_buffer.data() + offset, sizeof(PBRShader::PackedMeshletDesc) * meshletData.numMeshlets);
-    offset += sizeof(PBRShader::PackedMeshletDesc) * meshletData.numMeshlets;
-    // read local index buffer:
-    memcpy(meshInfo->outLocalIndexPrimitivesBuffer.data(), file_buffer.data() + offset, sizeof(uint8_t) * meshletData.numLocalIndices);
-    offset += sizeof(uint8_t) * meshletData.numLocalIndices;
-    // read global index buffer:
-    memcpy(meshInfo->outGlobalIndexBuffer.data(), file_buffer.data() + offset, sizeof(uint32_t) * meshletData.numGlobalIndices);
-    meshInfo->meshletStorageFileFound = true;
+	size_t offset = 16;
+	// check number of meshlet data sets
+	uint32_t numMeshesInCollection = coll->meshInfos.size();
+	uint32_t numMeshesFromeFile;
+	memcpy(&numMeshesFromeFile, file_buffer.data() + offset, sizeof(numMeshesFromeFile));
+	offset += sizeof(numMeshesFromeFile);
+    assert(numMeshesInCollection == numMeshesFromeFile);
+
+	for (auto& meshInfo : coll->meshInfos) {
+		// read meshlet buffer sizes:
+		MeshletStorageData meshletData;
+		if (file_buffer.size() < offset + sizeof(MeshletStorageData)) {
+			Log("ERROR: Meshlet file too small for mesh " << id << endl);
+			return false;
+		}
+		memcpy(&meshletData, file_buffer.data() + offset, sizeof(MeshletStorageData));
+		offset += sizeof(MeshletStorageData);
+		if (meshletData.numMeshlets == 0 || meshletData.numGlobalIndices == 0 || meshletData.numLocalIndices == 0) {
+			Log("ERROR: Meshlet file has zero sizes for mesh " << id << endl);
+			return false;
+		}
+		// resize mesh buffers:
+		meshInfo->outMeshletDesc.resize(meshletData.numMeshlets);
+		meshInfo->outLocalIndexPrimitivesBuffer.resize(meshletData.numLocalIndices);
+		meshInfo->outGlobalIndexBuffer.resize(meshletData.numGlobalIndices);
+		size_t expectedSize = offset + sizeof(PBRShader::PackedMeshletDesc) * meshletData.numMeshlets
+			+ sizeof(uint8_t) * meshletData.numLocalIndices
+			+ sizeof(uint32_t) * meshletData.numGlobalIndices;
+		if (file_buffer.size() < expectedSize) {
+			Log("ERROR: Meshlet file too small for mesh " << id << endl);
+			return false;
+		}
+		// read meshlet descriptors:
+		memcpy(meshInfo->outMeshletDesc.data(), file_buffer.data() + offset, sizeof(PBRShader::PackedMeshletDesc) * meshletData.numMeshlets);
+		offset += sizeof(PBRShader::PackedMeshletDesc) * meshletData.numMeshlets;
+		// read local index buffer:
+		memcpy(meshInfo->outLocalIndexPrimitivesBuffer.data(), file_buffer.data() + offset, sizeof(uint8_t) * meshletData.numLocalIndices);
+		offset += sizeof(uint8_t) * meshletData.numLocalIndices;
+		// read global index buffer:
+		memcpy(meshInfo->outGlobalIndexBuffer.data(), file_buffer.data() + offset, sizeof(uint32_t) * meshletData.numGlobalIndices);
+		offset += sizeof(uint32_t) * meshletData.numGlobalIndices;
+		meshInfo->meshletStorageFileFound = true;
+	}
+
 	return true;
 }

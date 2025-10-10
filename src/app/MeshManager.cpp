@@ -148,6 +148,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
             Log("Mesh: " << mi->id << " triangles: " << mi->indices.size()/3 << " vertices: " << mi->vertices.size() << endl);
         }
         // TODO: add all objects of collection
+        newid = newid + ".8"; // first object
         object = engine->objectStore.addObject("group", newid, vec3(0.0f));
         if (!object->mesh->meshletStorageFileFound) {
             Log("ERROR: Meshlet storage file not found for this object, meshlets will not be used for rendering" << endl);
@@ -160,7 +161,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
     }
     // new mesh seleceted from collection:
     if (meshSelectedFromCollection != nullptr) {
-        // diable old object
+        // disable old object
         if (object != nullptr) {
             object->enabled = false;
             object = nullptr;
@@ -168,6 +169,8 @@ void MeshManager::prepareFrame(FrameResources* fr)
         object = engine->objectStore.addObject("group", meshSelectedFromCollection->id, vec3(0.0f));
         object->enabled = true;
         meshSelectedFromCollection = nullptr;
+        engine->shaders.pbrShader.initialUpload();
+        engine->shaders.pbrShader.recreateGlobalCommandBuffers();
     }
     if (regenerateMeshletData) {
         regenerateMeshletData = false;

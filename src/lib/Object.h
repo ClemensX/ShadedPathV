@@ -378,7 +378,9 @@ public:
     // get used storage size in bytes
 	uint64_t getUsedStorageSize();
     size_t getUsedMeshesCount() { return meshes.size(); }
+    //write meshlet data for all meshes in the collection to file, return true if successful
 	bool writeMeshletStorageFile(std::string id, std::string fileBaseName);
+    // load meshlet data for all meshes of a collection from file, return true if successful, error if #items and #meshlet data sets do not match
 	bool loadMeshletStorageFile(std::string id, std::string fileBaseName);
     MeshCollection* getMeshCollection(std::string id);
 private:
