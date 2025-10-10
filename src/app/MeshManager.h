@@ -21,7 +21,8 @@ public:
     void buildCustomUI() override;
 private:
     World world;
-    WorldObject *object = nullptr;
+    WorldObject* object = nullptr; // current object which can be manipulated bu UI
+    std::vector<WorldObject*> objects; // all loaded objects
     float plus = 0.0f;
     bool shouldStopEngine = false;
     bool enableUI = true;

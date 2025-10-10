@@ -143,13 +143,19 @@ void MeshManager::prepareFrame(FrameResources* fr)
             object->enabled = false;
         }
         auto* coll = engine->meshStore.getMeshCollection(newid);
+        objects.clear();
         Log("Loaded " << coll->meshInfos.size() << " meshes from file" << endl);
+        float xpos = 0.0f;
         for (auto* mi : coll->meshInfos) {
             Log("Mesh: " << mi->id << " triangles: " << mi->indices.size()/3 << " vertices: " << mi->vertices.size() << endl);
+            vec3 pos = vec3(xpos, 0.0f, 0.0f);
+            BoundingBox box;
+            mi->getBoundingBox(box);
+            float width = box.max.x - box.min.x;
+            //xpos += width;
+            auto* wo = object = engine->objectStore.addObject("group", mi->id, pos);
+            objects.push_back(wo);
         }
-        // TODO: add all objects of collection
-        newid = newid + ".8"; // first object
-        object = engine->objectStore.addObject("group", newid, vec3(0.0f));
         if (!object->mesh->meshletStorageFileFound) {
             Log("ERROR: Meshlet storage file not found for this object, meshlets will not be used for rendering" << endl);
             displayNoMeshletDataWarning = true;
@@ -159,18 +165,26 @@ void MeshManager::prepareFrame(FrameResources* fr)
         engine->shaders.pbrShader.initialUpload();
         engine->shaders.pbrShader.recreateGlobalCommandBuffers();
     }
-    // new mesh seleceted from collection:
+    // new mesh selected from collection:
     if (meshSelectedFromCollection != nullptr) {
         // disable old object
         if (object != nullptr) {
-            object->enabled = false;
+            //object->enabled = false;
             object = nullptr;
         }
-        object = engine->objectStore.addObject("group", meshSelectedFromCollection->id, vec3(0.0f));
+        // find position for new object in objects vector:
+        for (size_t i = 0; i < objects.size(); i++) {
+            if (objects[i]->mesh == meshSelectedFromCollection) {
+                object = objects[i];
+                break;
+            }
+        }
+        assert(object != nullptr);
+        //object = engine->objectStore.addObject("group", meshSelectedFromCollection->id, vec3(0.0f));
         object->enabled = true;
         meshSelectedFromCollection = nullptr;
-        engine->shaders.pbrShader.initialUpload();
-        engine->shaders.pbrShader.recreateGlobalCommandBuffers();
+        modelRotation = object->rot() / vec3(PI_half);
+        modelTranslation = object->pos();
     }
     if (regenerateMeshletData) {
         regenerateMeshletData = false;
@@ -221,10 +235,13 @@ void MeshManager::prepareFrame(FrameResources* fr)
             buf->disableRendering();
             continue;
         }
+        if (wo == object && object != nullptr) {
+            // do only manipulations for selected object
+            wo->pos() = modelTranslation;
+            // adapt with UI rotation input:
+            wo->rot() = modelRotation * vec3(PI_half);
+        }
         mat4 modeltransform;
-        wo->pos() = modelTranslation;
-        // adapt with UI rotation input:
-        wo->rot() = modelRotation * vec3(PI_half);
         if (spinningBox) {
             // Define a constant rotation speed (radians per second)
             double rotationSpeed = glm::radians(15.0f);
