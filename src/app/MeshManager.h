@@ -47,6 +47,9 @@ private:
     bool showMeshWireframe = false;
     bool showBoundingBox = false;
     bool showMeshletBoundingBoxes = false;
+    bool changeAllObjects = true;
+    bool applySetupObjects = false; // signal to apply default object setup for LOD checking
+    float modelScale = 1.0f;
     glm::vec3 modelRotation = glm::vec3(0.0f, 0.0f, 0.0f); // used as increments to pi/2
     glm::vec3 modelTranslation = glm::vec3(0.0f, 0.0f, 0.0f);
     MeshCollection* meshCollection = nullptr;

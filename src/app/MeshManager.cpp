@@ -201,6 +201,25 @@ void MeshManager::prepareFrame(FrameResources* fr)
         spinningBox = true; // start spinning the logo after 4s
         spinTimeSeconds = seconds;
     }
+    if (applySetupObjects) {
+        applySetupObjects = false;
+        if (objects.size() != 10) {
+            Error("Loaded objects not suitable for LOD claculations");
+        }
+        // scale to have 1m width for LOD 0 object:
+        BoundingBox box;
+        objects[0]->getBoundingBox(box);
+        float width = box.max.x - box.min.x;
+        float scale = 1.0f / width;
+        modelScale = scale;
+        // we base all calculations on LOD 0:
+        for (int i = 0; i < 10; i++) {
+            objects[i]->scale() = vec3(scale);
+            //objects[i]->rot() = vec3(0.0f, PI_half, 0.0f);
+            objects[i]->pos() = vec3(i * 1.0f, 0.0f, 0.0f);
+        }
+        object = nullptr;
+    }
     // cube
     CubeShader::UniformBufferObject cubo{};
     CubeShader::UniformBufferObject cubo2{};
@@ -240,11 +259,16 @@ void MeshManager::prepareFrame(FrameResources* fr)
             wo->pos() = modelTranslation;
             // adapt with UI rotation input:
             wo->rot() = modelRotation * vec3(PI_half);
+            wo->scale() = vec3(modelScale);
+        }
+        if (changeAllObjects) {
+            wo->rot() = modelRotation * vec3(PI_half);
+            wo->scale() = vec3(modelScale);
         }
         mat4 modeltransform;
         if (spinningBox) {
             // Define a constant rotation speed (radians per second)
-            double rotationSpeed = glm::radians(15.0f);
+            double rotationSpeed = glm::radians(4.0f);
 
             // Calculate the rotation angle based on the elapsed time
             //float rotationAngle = rotationSpeed * (seconds - spinTimeSeconds);
@@ -494,8 +518,16 @@ void MeshManager::buildCustomUI() {
     ImGui::RadioButton("walk (3.5 km/h)", &uiCameraSpeed, 0); ImGui::SameLine();
     ImGui::RadioButton("run (10 km/h)", &uiCameraSpeed, 1); ImGui::SameLine();
     ImGui::RadioButton("fall (200 km/h)", &uiCameraSpeed, 2);
+    if (ImGui::CollapsingHeader("LOD", ImGuiTreeNodeFlags_None))
+    {
+        if (ImGui::Button("Setup Objects")) {
+            applySetupObjects = true;
+        }
+        ImGui::SetItemTooltip("Rescale to 1m width and place all objects on Zero point and to the right");
+    }
     if (ImGui::CollapsingHeader("More Options", ImGuiTreeNodeFlags_None))
     {
+        ImGui::Checkbox("Change All Objects", &changeAllObjects);
         ImGui::Checkbox("Mesh Wireframe", &showMeshWireframe);
         ImGui::SameLine();
         ImGui::Checkbox("Bounding Box", &showBoundingBox);
@@ -509,6 +541,7 @@ void MeshManager::buildCustomUI() {
         ImGui::InputFloat("X", &modelTranslation.x, 0.5f, 10.0f, "%.3f");
         ImGui::InputFloat("Y", &modelTranslation.y, 0.5f, 10.0f, "%.3f");
         ImGui::InputFloat("Z", &modelTranslation.z, 0.5f, 10.0f, "%.3f");
-
+        ImGui::SeparatorText("Object Scale");
+        ImGui::InputFloat("Uniform Scale", &modelScale, 0.1f, 1.0f, "%.3f");
     }
 }
