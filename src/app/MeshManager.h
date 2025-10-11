@@ -54,4 +54,6 @@ private:
     glm::vec3 modelTranslation = glm::vec3(0.0f, 0.0f, 0.0f);
     MeshCollection* meshCollection = nullptr;
     MeshInfo* meshSelectedFromCollection = nullptr;
+    bool applyLOD = false; // set objects position according to LOD distances
+    float lod[10] = { 0.0f }; // LOD distances, 0 is never used
 };

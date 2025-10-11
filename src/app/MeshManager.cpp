@@ -220,6 +220,17 @@ void MeshManager::prepareFrame(FrameResources* fr)
         }
         object = nullptr;
     }
+    if (applyLOD) {
+        applyLOD = false;
+        if (objects.size() != 10) {
+            Error("Loaded objects not suitable for LOD claculations");
+        }
+        // position the objects according to LOD distances, starting from z = 0 line:
+        for (int i = 0; i < 10; i++) {
+            objects[i]->pos().z = -lod[i];
+        }
+        // 1 5 10 15 25 30 50 70 150
+    }
     // cube
     CubeShader::UniformBufferObject cubo{};
     CubeShader::UniformBufferObject cubo2{};
@@ -524,6 +535,19 @@ void MeshManager::buildCustomUI() {
             applySetupObjects = true;
         }
         ImGui::SetItemTooltip("Rescale to 1m width and place all objects on Zero point and to the right");
+        ImGui::SeparatorText("LOD Definition");
+        ImGui::InputFloat("LOD 1", &lod[1], 0.1f, 1.0f, "%.3f");
+        ImGui::InputFloat("LOD 2", &lod[2], 0.1f, 1.0f, "%.3f");
+        ImGui::InputFloat("LOD 3", &lod[3], 0.1f, 1.0f, "%.3f");
+        ImGui::InputFloat("LOD 4", &lod[4], 0.1f, 1.0f, "%.3f");
+        ImGui::InputFloat("LOD 5", &lod[5], 0.1f, 1.0f, "%.3f");
+        ImGui::InputFloat("LOD 6", &lod[6], 0.1f, 1.0f, "%.3f");
+        ImGui::InputFloat("LOD 7", &lod[7], 0.1f, 1.0f, "%.3f");
+        ImGui::InputFloat("LOD 8", &lod[8], 0.1f, 1.0f, "%.3f");
+        ImGui::InputFloat("LOD 9", &lod[9], 0.1f, 1.0f, "%.3f");
+        if (ImGui::Button("Apply LOD")) {
+            applyLOD = true;
+        }
     }
     if (ImGui::CollapsingHeader("More Options", ImGuiTreeNodeFlags_None))
     {
