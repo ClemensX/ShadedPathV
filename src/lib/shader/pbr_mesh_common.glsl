@@ -43,16 +43,18 @@ struct PBRVertexOutFlat {
     uvec4 joint0;
 };
 
+// make sure structure matches shaderValuesParams in pbrShader.h
 struct UBOParams {
 	vec4 lightDir;
+    vec4 lightColor;
 	float exposure;
 	float gamma;
 	float prefilteredCubeMipLevels;
 	float scaleIBLAmbient;
 	float debugViewInputs;
 	float debugViewEquation;
-	float pad0;
-	float pad1;
+	float intensity;
+	int type; // 0=directional, 1=point, 2=spot
 };
 
 struct PBRTextureIndexes {
@@ -73,8 +75,6 @@ struct BoundingBox {
     float pad1; // padding to align to vec4
 };
 
-#define MAX_NUM_JOINTS 128
-
 const uint MODEL_RENDER_FLAG_NONE              = 0u;
 const uint MODEL_RENDER_FLAG_USE_VERTEX_COLORS = 1u << 0; // 0b0001
 const uint MODEL_RENDER_FLAG_DISABLE           = 1u << 1; // 0b0010
@@ -89,7 +89,7 @@ layout (binding = 1) uniform UboInstance {
     uint meshletsCount;
 	uint pad0; // object render mode: 1 == use vertex color only, 0 == regular BPR rendering
     PBRTextureIndexes indexes;
-    UBOParams params;
+    UBOParams params[MAX_DYNAMIC_LIGHTS];
     ShaderMaterial material;
     BoundingBox boundingBox; // AABB axis aligned bounding box
     uint64_t GPUMeshStorageBaseAddress; // base address of global mesh storage buffer on GPU

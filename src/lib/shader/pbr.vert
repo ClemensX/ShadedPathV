@@ -22,6 +22,7 @@ layout (location = 6) in vec4 inColor0;
 //	float pad1;
 //};
 //
+#include "common_cpp_shader.h"
 #include "shadermaterial.glsl"
 #include "pbr_mesh_common.glsl"
 
@@ -109,7 +110,7 @@ void check_inputs() {
     //debugPrintfEXT("inUV0 %f %f\n", c.x, c.y);
     c = inUV1;
     //debugPrintfEXT("inUV1 %f %f\n", c.x, c.y);
-    float f = model_ubo.params.gamma;
+    float f = model_ubo.params[0].gamma;
     //debugPrintfEXT("uboParams.gamma %f\n", f);
     f = model_ubo.material.alphaMask;
     //debugPrintfEXT("material alphaMask %f\n", f);

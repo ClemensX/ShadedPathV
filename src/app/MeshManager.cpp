@@ -80,6 +80,11 @@ void MeshManager::init() {
     engine->shaders.cubeShader.setSkybox("skyboxTexture");
     engine->shaders.cubeShader.setFarPlane(2000.0f);
 
+    PBRShader::LightSource ls;
+    ls.color = vec3(1.0f);
+    ls.position = vec3(75.0f, 0.5f, -20.0f);
+    engine->shaders.pbrShader.changeLightSource(ls.color, ls.position);
+
     engine->shaders.pbrShader.initialUpload();
     // window creation
     prepareWindowOutput("Mesh Manager");
@@ -264,6 +269,22 @@ void MeshManager::prepareFrame(FrameResources* fr)
         if (!wo->enabled) {
             buf->disableRendering();
             continue;
+        }
+        buf->params[0].intensity = sunIntensity; // adjust sun light intensity
+        if (addSunDirBeam) {
+            // add a line to indicate sun direction:
+            vec3 sunDir = normalize(buf->params[0].lightDir);
+            vec3 start = wo->pos();
+            vec3 end = start + sunDir * 500.0f;
+            LineDef beam(start, end, Colors::Red);
+            vector<LineDef> beams;
+            beams.push_back(beam);
+            PBRShader::LightSource* ls = engine->shaders.pbrShader.getLightSource();
+            beam.start = vec3(0.0f);
+            beam.end = ls->position * 100.0f;
+            beam.color = Colors::Green;
+            beams.push_back(beam);
+            engine->shaders.lineShader.addOneTime(beams, tr);
         }
         if (wo == object && object != nullptr) {
             // do only manipulations for selected object
@@ -552,6 +573,8 @@ void MeshManager::buildCustomUI() {
     if (ImGui::CollapsingHeader("More Options", ImGuiTreeNodeFlags_None))
     {
         ImGui::Checkbox("Change All Objects", &changeAllObjects);
+        ImGui::InputFloat("Sun Intensity", &sunIntensity, 1.0f, 5.0f, "%.3f");
+        ImGui::Checkbox("Debug Sun Position", &addSunDirBeam);
         ImGui::Checkbox("Mesh Wireframe", &showMeshWireframe);
         ImGui::SameLine();
         ImGui::Checkbox("Bounding Box", &showBoundingBox);

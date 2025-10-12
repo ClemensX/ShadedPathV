@@ -56,4 +56,6 @@ private:
     MeshInfo* meshSelectedFromCollection = nullptr;
     bool applyLOD = false; // set objects position according to LOD distances
     float lod[10] = { 0.0f }; // LOD distances, 0 is never used
+    float sunIntensity = 1.0f;
+    bool addSunDirBeam = false; // add line to point to sun direction, for checking corect sun position
 };

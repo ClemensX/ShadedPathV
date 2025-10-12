@@ -3,6 +3,7 @@
 #extension GL_EXT_debug_printf : enable
 #extension GL_ARB_gpu_shader_int64 : enable
 
+#include "common_cpp_shader.h"
 #include "shadermaterial.glsl"
 #include "pbr_mesh_common.glsl"
 
@@ -39,7 +40,7 @@ vec4 textureBindless2D(uint textureid, vec2 uv) {
 	return texture(global_textures2d[nonuniformEXT(textureid)], wrappedUV);
 }
 
-UBOParams uboParams = model_ubo.params;
+UBOParams uboParams = model_ubo.params[0];
 
 // Encapsulate the various inputs used by the various functions in the shading equation
 // We store values in this struct to simplify the integration of alternative implementations
@@ -316,7 +317,7 @@ void main() {
 	float G = geometricOcclusion(pbrInputs);
 	float D = microfacetDistribution(pbrInputs);
 
-	const vec3 u_LightColor = vec3(1.0);
+	vec3 u_LightColor = vec3(1.0) * uboParams.intensity;
 
 	// Calculation of analytical lighting contribution
 	vec3 diffuseContrib = (1.0 - F) * diffuse(pbrInputs);

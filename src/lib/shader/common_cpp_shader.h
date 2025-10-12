@@ -1,5 +1,9 @@
 // common definitions shared by C++ and shaders
 
+// Lights and joints max values
+#define MAX_NUM_JOINTS 128
+#define MAX_DYNAMIC_LIGHTS 4
+
 // see https://github.com/nvpro-samples/gl_vk_meshlet_cadscene/blob/master/common.h
 #ifndef GLEXT_MESHLET_VERTEX_COUNT
 // primitive count should be 40, 84 or 126

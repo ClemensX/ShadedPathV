@@ -22,16 +22,18 @@ public:
 	//struct Vertex : public ::PBRVertex {};
     using Vertex = ::PBRVertex;
 
+    // make sure structure matches UBOParams in pbr_mesh_common.glsl
 	struct shaderValuesParams {
 		glm::vec4 lightDir;
+		glm::vec4 lightColor;
 		float exposure = 4.5f;
 		float gamma = 2.2f;
 		float prefilteredCubeMipLevels;
 		float scaleIBLAmbient = 1.0f;
 		float debugViewInputs = 0;
 		float debugViewEquation = 0;
-		float pad0;
-		float pad1;
+		float intensity;
+		int type; // 0=directional, 1=point, 2=spot
 	};
 
 	struct UniformBufferObject {
@@ -44,7 +46,7 @@ public:
 
 	// MUST match shader definition: pbr.vert, pbr.frag
     // DO NOT USE arrays for padding on glsl side! only single variables like uint pad0, uint pad1, ...
-#define MAX_NUM_JOINTS 128
+
 	struct PBRTextureIndexes {
 		uint32_t baseColor; // uint in shader
 		uint32_t metallicRoughness; // uint in shader
@@ -99,7 +101,7 @@ public:
 		uint32_t meshletsCount = 0; // 4-byte aligned
 		uint32_t pad0; // 4 bytes mode: 1 == use vertex color only, 0 == regular BPR rendering
 		PBRTextureIndexes indexes; // 4-byte aligned
-        shaderValuesParams params; // 16-byte aligned
+        shaderValuesParams params[MAX_DYNAMIC_LIGHTS]; // 16-byte aligned
         ShaderMaterial material; // 16-byte aligned
         BoundingBox boundingBox; // AABB in local object space
 		uint64_t GPUMeshStorageBaseAddress; // base address of global mesh storage buffer on GPU
@@ -208,10 +210,15 @@ public:
 	void prefillModelParameters(FrameResources& tr);
 
 	void fillTextureIndexesFromMesh(PBRTextureIndexes& ind, MeshInfo* mesh);
-    void changeLightSource(glm::vec3 color, glm::vec3 rotation) {
+	struct LightSource {
+		glm::vec3 color = glm::vec3(1.0f);
+		glm::vec3 position = glm::vec3(75.0f, 40.0f, 0.0f);
+	};
+	LightSource* getLightSource() { return &lightSource; }
+    void changeLightSource(glm::vec3 color, glm::vec3 position) {
 		if (commandBuffersCreated) Error("cannot change light source after command buffers have been created. Change for each model in app code!");
         lightSource.color = color;
-        lightSource.rotation = rotation;
+        lightSource.position = position;
     }
 	uint64_t allocateMeshStorage(uint64_t size);
 	VkBuffer meshStorageBuffer = nullptr;
@@ -227,10 +234,7 @@ private:
 	VkShaderModule fragShaderModule = nullptr;
 	VkShaderModule taskShaderModule = nullptr;
 	VkShaderModule meshShaderModule = nullptr;
-	struct LightSource {
-		glm::vec3 color = glm::vec3(1.0f);
-		glm::vec3 rotation = glm::vec3(75.0f, 40.0f, 0.0f);
-	} lightSource;
+	LightSource lightSource;
     bool commandBuffersCreated = false;
 	VkDeviceMemory meshStorageBufferMemory = nullptr;
 	void* meshStorageBufferCPUMemory = nullptr;

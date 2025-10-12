@@ -101,12 +101,13 @@ void PBRShader::prefillModelParameters(FrameResources& fr)
 		buf->jointcount = 0;
 		shaderValuesParams params;
 		params.prefilteredCubeMipLevels = tiPrefileterdEnv->vulkanTexture.levelCount;
-		params.lightDir = glm::vec4(
-			sin(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
-			sin(glm::radians(lightSource.rotation.y)),
-			cos(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
-			0.0f);
-		buf->params = params;
+		//params.lightDir = glm::vec4(
+		//	sin(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
+		//	sin(glm::radians(lightSource.rotation.y)),
+		//	cos(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
+		//	0.0f);
+		params.lightDir = glm::vec4(glm::normalize(lightSource.position), 0.0f);
+		buf->params[0] = params;
         buf->material = obj->mesh->material;
         buf->material.baseColorTextureSet = ind.baseColor;
         buf->material.physicalDescriptorTextureSet = ind.metallicRoughness;
