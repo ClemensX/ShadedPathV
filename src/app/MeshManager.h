@@ -22,7 +22,7 @@ public:
 private:
     World world;
     WorldObject* object = nullptr; // current object which can be manipulated bu UI
-    std::vector<WorldObject*> objects; // all loaded objects
+    std::vector<WorldObject*> objects; // all loaded objects (of a collection)
     float plus = 0.0f;
     bool shouldStopEngine = false;
     bool enableUI = true;
@@ -55,7 +55,11 @@ private:
     MeshCollection* meshCollection = nullptr;
     MeshInfo* meshSelectedFromCollection = nullptr;
     bool applyLOD = false; // set objects position according to LOD distances
-    float lod[10] = { 0.0f }; // LOD distances, 0 is never used
+    float lod[10] = { 0.0f }; // LOD distances, [0] is never used
     float sunIntensity = 1.0f;
     bool addSunDirBeam = false; // add line to point to sun direction, for checking corect sun position
+    bool simluateLOD = false;
+    float lodDistance = 0.0f; // distance for LOD simulation
+    int simLODLevel = 0; // LOD level for simulation
+    std::vector<WorldObject*> simObjects; // for simulating LOD
 };

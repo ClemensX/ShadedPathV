@@ -84,6 +84,8 @@ void MeshManager::init() {
     ls.color = vec3(1.0f);
     ls.position = vec3(75.0f, 0.5f, -20.0f);
     engine->shaders.pbrShader.changeLightSource(ls.color, ls.position);
+    float curLod[10] = { 0, 1, 5, 10, 15, 25, 30, 50, 70, 150 };
+    memcpy(lod, curLod, sizeof(float) * 10);
 
     engine->shaders.pbrShader.initialUpload();
     // window creation
@@ -149,6 +151,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
         }
         auto* coll = engine->meshStore.getMeshCollection(newid);
         objects.clear();
+        simObjects.clear();
         Log("Loaded " << coll->meshInfos.size() << " meshes from file" << endl);
         float xpos = 0.0f;
         for (auto* mi : coll->meshInfos) {
@@ -160,6 +163,10 @@ void MeshManager::prepareFrame(FrameResources* fr)
             //xpos += width;
             auto* wo = object = engine->objectStore.addObject("group", mi->id, pos);
             objects.push_back(wo);
+            pos.x = -2.0f;
+            pos.y = -10000.0f; // TODO hack
+            wo = engine->objectStore.addObject("group", mi->id, pos);
+            simObjects.push_back(wo);
         }
         if (!object->mesh->meshletStorageFileFound) {
             Log("ERROR: Meshlet storage file not found for this object, meshlets will not be used for rendering" << endl);
@@ -235,6 +242,21 @@ void MeshManager::prepareFrame(FrameResources* fr)
             objects[i]->pos().z = -lod[i];
         }
         // 1 5 10 15 25 30 50 70 150
+    }
+    if (simluateLOD) {
+        vec3 camPos = camera->getPosition();
+        vec3 objPos = simObjects[0]->pos();
+        objPos.y = 0.0f;
+        float dist = length(camPos - objPos);
+        int lodLevel = Util::calculateLODIndex(lod, dist);
+        //make object visible:
+        for (int i = 0; i < 10; i++) {
+            simObjects[i]->pos().y = -10000;
+        }
+        simObjects[lodLevel]->pos().y = 0.0f;
+        // update UI:
+        simLODLevel = lodLevel;
+        lodDistance = dist;
     }
     // cube
     CubeShader::UniformBufferObject cubo{};
@@ -569,10 +591,16 @@ void MeshManager::buildCustomUI() {
         if (ImGui::Button("Apply LOD")) {
             applyLOD = true;
         }
+        ImGui::Checkbox("Simulate LOD", &simluateLOD);
+        ImGui::BeginDisabled(!simluateLOD);
+        ImGui::Text("Camera Distance: %.3f", lodDistance); ImGui::SameLine();
+        ImGui::Text("LOD Level: %d", simLODLevel);
+        ImGui::EndDisabled();
     }
     if (ImGui::CollapsingHeader("More Options", ImGuiTreeNodeFlags_None))
     {
         ImGui::Checkbox("Change All Objects", &changeAllObjects);
+        ImGui::SetItemTooltip("Apply LOD switching to object left of Zero point. Camera distance and LOD level are displayed.");
         ImGui::InputFloat("Sun Intensity", &sunIntensity, 1.0f, 5.0f, "%.3f");
         ImGui::Checkbox("Debug Sun Position", &addSunDirBeam);
         ImGui::Checkbox("Mesh Wireframe", &showMeshWireframe);

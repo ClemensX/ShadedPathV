@@ -246,6 +246,20 @@ public:
     static bool verifyMesh(std::vector<PBRVertex>& vertices, std::vector<uint32_t>& indices);
     static bool verifyMesh(std::vector<SimpleVertex>& vertices, std::vector<uint32_t>& indices);
 
+    // Calculates the LOD index based on the given lod distances and current distance.
+    // lod: array of LOD distances (lod[1]..lod[9]), lod[0] is unused.
+    // distance: current camera-to-object distance.
+    // Returns: LOD index in range 0..9 (0 = closest, 9 = farthest).
+    static int calculateLODIndex(const float lod[10], float distance) {
+        // LOD 0 is always used for distance < lod[1]
+        for (int i = 9; i >= 1; --i) {
+            if (distance >= lod[i]) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
 private:
     static uint8_t bit_reverse8(uint8_t n) {
         n = (n & 0xF0) >> 4 | (n & 0x0F) << 4;
