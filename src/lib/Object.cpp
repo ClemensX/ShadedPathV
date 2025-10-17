@@ -7,6 +7,15 @@ using namespace glm;
 void MeshStore::init(ShadedPathEngine* engine) {
 	this->engine = engine;
 	gltf.init(engine);
+
+	// initialize structures on GPU global mesh storage:
+	auto* mem = engine->globalRendering.getCurrentGPUMemoryChunk();
+    gpuMeshIndices.resize(engine->getMaxMeshes());
+    gpuMeshInfos.resize(engine->getMaxMeshes() * 10);
+	VkDeviceSize size = gpuMeshIndices.size() * sizeof(GPUMeshIndex)
+        + gpuMeshInfos.size() * sizeof(GPUMeshInfo);
+	uint64_t pos = engine->globalRendering.reserveInGlobalBuffer(size, mem);
+
 }
 
 // simple id, only letters, numbers and underscore
@@ -49,6 +58,7 @@ MeshInfo* MeshStore::initMeshInfo(MeshCollection* coll, std::string id)
 	initialObject.id = id;
 	initialObject.collection = coll;
 	initialObject.flags = coll->flags;
+    initialObject.meshNum = meshNumber++;
 	meshes[id] = initialObject;
 	MeshInfo* mi = &meshes[id];
 	coll->meshInfos.push_back(mi);
@@ -150,7 +160,9 @@ MeshCollection* MeshStore::getMeshCollection(std::string id)
 void MeshStore::aquireMeshletData(std::string filename, std::string id, bool regenerateMeshletData)
 {
 	bool loadedFromFile = engine->meshStore.loadMeshletStorageFile(id, filename);
-	if (loadedFromFile) return;
+	if (loadedFromFile) {
+		return;
+	}
 
 	// not loaded - we have to regenerate meshlet data
 	if (!regenerateMeshletData) {
@@ -163,31 +175,58 @@ void MeshStore::aquireMeshletData(std::string filename, std::string id, bool reg
 	calculateMeshlets(id, meshletFlags, GLEXT_MESHLET_VERTEX_COUNT, GLEXT_MESHLET_PRIMITIVE_COUNT - 1);
 }
 
-void MeshStore::uploadObject(MeshInfo* obj)
+void MeshStore::fillPushConstants(PBRPushConstants* pushConstants)
 {
-	assert(obj->vertices.size() > 0);
-	assert(obj->indices.size() > 0);
+	auto* mem = engine->globalRendering.getCurrentGPUMemoryChunk();
+    pushConstants->baseAddressIndices = mem->address;
+    pushConstants->baseAddressInfos = mem->address + gpuMeshIndices.size() * sizeof(GPUMeshIndex);
+}
+
+void MeshStore::uploadMesh(MeshInfo* mesh_ptr)
+{
+	assert(mesh_ptr->vertices.size() > 0);
+	assert(mesh_ptr->indices.size() > 0);
 
 	// upload vec3 vertex buffer:
-	size_t vertexBufferSize = GlobalRendering::minAlign(obj->vertices.size() * sizeof(PBRShader::Vertex));
-	size_t globalIndexBufferSize = GlobalRendering::minAlign(obj->outGlobalIndexBuffer.size() * sizeof(obj->outGlobalIndexBuffer[0]));
-	size_t localIndexBufferSize = GlobalRendering::minAlign(obj->outLocalIndexPrimitivesBuffer.size() * sizeof(obj->outLocalIndexPrimitivesBuffer[0]));
-	size_t meshletDescBufferSize = GlobalRendering::minAlign(obj->outMeshletDesc.size() * sizeof(PBRShader::PackedMeshletDesc));
+	size_t vertexBufferSize = GlobalRendering::minAlign(mesh_ptr->vertices.size() * sizeof(PBRShader::Vertex));
+	size_t globalIndexBufferSize = GlobalRendering::minAlign(mesh_ptr->outGlobalIndexBuffer.size() * sizeof(mesh_ptr->outGlobalIndexBuffer[0]));
+	size_t localIndexBufferSize = GlobalRendering::minAlign(mesh_ptr->outLocalIndexPrimitivesBuffer.size() * sizeof(mesh_ptr->outLocalIndexPrimitivesBuffer[0]));
+	size_t meshletDescBufferSize = GlobalRendering::minAlign(mesh_ptr->outMeshletDesc.size() * sizeof(PBRShader::PackedMeshletDesc));
 
 	if (meshletDescBufferSize > 0) {
+        auto* mem = engine->globalRendering.getCurrentGPUMemoryChunk();
         // global storage buffer:
-		obj->GPUMeshStorageBaseAddress = engine->shaders.pbrShader.meshStorageBufferDeviceAddress;
-		uint64_t pos = engine->globalRendering.uploadToGlobalBuffer(vertexBufferSize, obj->vertices.data(), engine->shaders.pbrShader.meshStorageBuffer);
-		obj->vertexOffset = pos;
+		mesh_ptr->GPUMeshStorageBaseAddress = mem->address;
+		uint64_t pos = engine->globalRendering.uploadToGlobalBuffer(vertexBufferSize, mesh_ptr->vertices.data(), mem);
+		mesh_ptr->vertexOffset = pos;
 
-		pos = engine->globalRendering.uploadToGlobalBuffer(globalIndexBufferSize, obj->outGlobalIndexBuffer.data(), engine->shaders.pbrShader.meshStorageBuffer);
-		obj->globalIndexOffset = pos;
+		pos = engine->globalRendering.uploadToGlobalBuffer(globalIndexBufferSize, mesh_ptr->outGlobalIndexBuffer.data(), mem);
+		mesh_ptr->globalIndexOffset = pos;
 
-		pos = engine->globalRendering.uploadToGlobalBuffer(localIndexBufferSize, obj->outLocalIndexPrimitivesBuffer.data(), engine->shaders.pbrShader.meshStorageBuffer);
-		obj->localIndexOffset = pos;
+		pos = engine->globalRendering.uploadToGlobalBuffer(localIndexBufferSize, mesh_ptr->outLocalIndexPrimitivesBuffer.data(), mem);
+		mesh_ptr->localIndexOffset = pos;
 
-		pos = engine->globalRendering.uploadToGlobalBuffer(meshletDescBufferSize, obj->outMeshletDesc.data(), engine->shaders.pbrShader.meshStorageBuffer);
-		obj->meshletOffset = pos;
+		pos = engine->globalRendering.uploadToGlobalBuffer(meshletDescBufferSize, mesh_ptr->outMeshletDesc.data(), mem);
+		mesh_ptr->meshletOffset = pos;
+        // update GPU mesh info structures:
+		int index = mesh_ptr->meshNum; // mesh index in global mesh store, increased with each new mesh, each LOD counts as one mesh
+        int lodIndex = index / 10; // each 10 meshes are one LOD group
+		int lodLevel = index % 10; // lod level inside group
+		Log("Upload mesh info" << index << " to GPU\n");
+        uint64_t sizeIndices = gpuMeshIndices.size() * sizeof(GPUMeshIndex);
+        uint64_t sizeInfos = index * sizeof(GPUMeshInfo);
+		gpuMeshIndices[lodIndex].gpuMeshInfoIndex[lodLevel] = index;
+        gpuMeshInfos[index].vertexOffset = mesh_ptr->vertexOffset;
+        gpuMeshInfos[index].globalIndexOffset = mesh_ptr->globalIndexOffset;
+        gpuMeshInfos[index].localIndexOffset = mesh_ptr->localIndexOffset;
+        gpuMeshInfos[index].meshletOffset = mesh_ptr->meshletOffset;
+        int indicesOffset = lodIndex * sizeof(GPUMeshIndex);
+		engine->globalRendering.copyToGlobalBuffer(sizeof(GPUMeshIndex), &gpuMeshIndices[lodIndex], mem, indicesOffset);
+		engine->globalRendering.copyToGlobalBuffer(sizeof(GPUMeshInfo), &gpuMeshInfos[index], mem, sizeIndices + sizeInfos);
+		if (index == 0) {
+			Log(" First mesh GPUMeshIndex index: " << std::hex << gpuMeshIndices[0].gpuMeshInfoIndex[0] << std::dec << endl);
+			Log(" First mesh GPUMeshInfo meshlet offset: " << std::hex << gpuMeshInfos[0].meshletOffset << std::dec << endl);
+		}
 	}
 }
 
@@ -1705,8 +1744,7 @@ bool MeshletsForMesh::verifyMeshletCoverage(bool doLog) const
 }
 
 uint64_t MeshStore::getUsedStorageSize() {
-	auto max = engine->getMeshStorageSize();
-	auto used = engine->shaders.pbrShader.getMeshStorageBufferUsage();
+	auto used = engine->globalRendering.getCurrentGPUMemoryChunk()->nextFreePos;
 	return used;
 }
 

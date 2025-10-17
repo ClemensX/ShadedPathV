@@ -1,6 +1,10 @@
 #version 460
 #extension GL_EXT_debug_printf : enable
-#extension GL_ARB_gpu_shader_int64 : enable
+//#extension GL_EXT_mesh_shader : enable
+#extension GL_ARB_gpu_shader_int64 : require
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_buffer_reference_uvec2 : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 
 layout (location = 0) in vec3 inPos;
 layout (location = 1) in vec3 inNormal;
@@ -73,10 +77,10 @@ layout (location = 5) out uint mode_out;
 layout (location = 6) out vec3 outCamPos;
 
 // sync with pbrPushConstants in pbrShader.h
-layout(push_constant) uniform pbrPushConstants {
-    uint mode; // 0: standard pbr metallicRoughness, 1: pre-light vertices with color in vertex structure
-} push;
-
+//layout(push_constant) uniform pbrPushConstants {
+//    uint mode; // 0: standard pbr metallicRoughness, 1: pre-light vertices with color in vertex structure
+//} push;
+//
 
 layout(std430, binding = 2) buffer MeshletBuffer {
     uvec4 packedMeshlets[];
@@ -144,7 +148,7 @@ void main() {
 //    metallicRoughnessIndex = model_ubo.indexes.baseColor;
 
 	outColor0 = inColor0;
-    mode_out = push.mode;
+    mode_out = 0;//push.mode;
     outCamPos = ubo.camPos;
 
     vec4 locPos;

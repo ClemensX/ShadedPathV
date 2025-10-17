@@ -1,7 +1,11 @@
 #version 450
-#extension GL_EXT_nonuniform_qualifier : require
 #extension GL_EXT_debug_printf : enable
-#extension GL_ARB_gpu_shader_int64 : enable
+#extension GL_EXT_mesh_shader : enable
+#extension GL_ARB_gpu_shader_int64 : require
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_buffer_reference_uvec2 : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+#extension GL_EXT_nonuniform_qualifier : require
 
 #include "common_cpp_shader.h"
 #include "shadermaterial.glsl"

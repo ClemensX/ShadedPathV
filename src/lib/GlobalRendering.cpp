@@ -250,6 +250,7 @@ void GlobalRendering::init()
         Error("failed to create inFlightFence for a frame");
     }
     engine->util.debugNameObjectFence(queueSubmitFence, "GlobalRendering.queueSubmitFence");
+    createGPUMemoryChunk(engine->getMeshStorageSize());
 }
 
 void GlobalRendering::shutdown()
@@ -766,13 +767,14 @@ void GlobalRendering::uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize buf
     //vkFreeMemory(engine->global.device, bufferMemory, nullptr);
 }
 
-uint64_t GlobalRendering::uploadToGlobalBuffer(VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, QueueSelector queue)
+uint64_t GlobalRendering::reserveInGlobalBuffer(VkDeviceSize bufferSize, GPUMemoryChunk* chunk)
 {
-    if (bufferSize % 4 != 0) {
-        Error("Buffer size must be a multiple of 4 bytes. You may want to use GlobalRendering::minAlign() to get corrected size.");
-    }
-    auto pos = engine->shaders.pbrShader.allocateMeshStorage(bufferSize);
+    auto pos = allocateMeshStorage(bufferSize, chunk);
+    return pos;
+}
 
+uint64_t GlobalRendering::copyToGlobalBuffer(VkDeviceSize bufferSize, const void* src, GPUMemoryChunk* chunk, uint64_t offset, QueueSelector queue)
+{
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
     createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -783,10 +785,20 @@ uint64_t GlobalRendering::uploadToGlobalBuffer(VkDeviceSize bufferSize, const vo
     memcpy(data, src, (size_t)bufferSize);
     vkUnmapMemory(engine->globalRendering.device, stagingBufferMemory);
 
-    engine->globalRendering.copyBuffer(stagingBuffer, buffer, bufferSize, pos, queue);
+    engine->globalRendering.copyBuffer(stagingBuffer, chunk->buffer, bufferSize, offset, queue);
 
     vkDestroyBuffer(engine->globalRendering.device, stagingBuffer, nullptr);
     vkFreeMemory(engine->globalRendering.device, stagingBufferMemory, nullptr);
+    return offset;
+}
+
+uint64_t GlobalRendering::uploadToGlobalBuffer(VkDeviceSize bufferSize, const void* src, GPUMemoryChunk* chunk, QueueSelector queue)
+{
+    if (bufferSize % 4 != 0) {
+        Error("Buffer size must be a multiple of 4 bytes. You may want to use GlobalRendering::minAlign() to get corrected size.");
+    }
+    auto pos = allocateMeshStorage(bufferSize, chunk);
+    copyToGlobalBuffer(bufferSize, src, chunk, pos, queue);
     return pos;
 }
 

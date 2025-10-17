@@ -6,6 +6,18 @@ class WorldObject;
 // forward
 class PBRSubShader;
 
+// make sure to match the push_constant layout in the shader
+struct PBRPushConstants {
+	uint64_t baseAddressIndices;
+	uint64_t baseAddressInfos;
+};
+
+const VkPushConstantRange pbrPushConstantRange = {
+	VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT, // stageFlags
+	0, // offset
+	sizeof(PBRPushConstants) // size
+};
+
 // pbr shader draws objects read from glTF files with PBR lighing
 class PBRShader : public ShaderBase {
 public:
@@ -99,11 +111,12 @@ public:
 		uint32_t jointcount; // 4-byte aligned
         uint32_t flags = 0; // 4-byte aligned, see definitions above
 		uint32_t meshletsCount = 0; // 4-byte aligned
-		uint32_t pad0; // 4 bytes mode: 1 == use vertex color only, 0 == regular BPR rendering
+		uint32_t objectNum; // 4 bytes mode: 1 == use vertex color only, 0 == regular BPR rendering
 		PBRTextureIndexes indexes; // 4-byte aligned
         shaderValuesParams params[MAX_DYNAMIC_LIGHTS]; // 16-byte aligned
         ShaderMaterial material; // 16-byte aligned
         BoundingBox boundingBox; // AABB in local object space
+		uint32_t meshNumber; // LOD 0 number
 		uint64_t GPUMeshStorageBaseAddress; // base address of global mesh storage buffer on GPU
 		uint64_t meshletOffset = 0; // offset into global mesh storage buffer
 		uint64_t localIndexOffset = 0; // offset into global mesh storage buffer
@@ -220,10 +233,7 @@ public:
         lightSource.color = color;
         lightSource.position = position;
     }
-	uint64_t allocateMeshStorage(uint64_t size);
-	VkBuffer meshStorageBuffer = nullptr;
-    VkDeviceAddress meshStorageBufferDeviceAddress = 0;
-    uint64_t getMeshStorageBufferUsage() const { return meshStorageNextFreePos; }
+	PBRPushConstants pushConstants = {};
 
 private:
 	UniformBufferObject ubo = {};
@@ -310,7 +320,6 @@ public:
 	void addRenderPassAndDrawCommands(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, VkBuffer vertexBuffer);
 
 	void createGlobalCommandBufferAndRenderPass(FrameResources& tr, bool update = false);
-	void updateDescriptors(FrameResources& tr, WorldObject* obj, bool isRightEye = false, bool update = false);
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, WorldObject* obj, bool isRightEye = false, bool update = false);
 	// per frame update of UBO / MVP
 	void uploadToGPU(FrameResources& tr, PBRShader::UniformBufferObject& ubo, PBRShader::UniformBufferObject& ubo2);

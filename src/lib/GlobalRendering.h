@@ -111,6 +111,16 @@ private:
 	std::unordered_map<VkSamplerCreateInfo, VkSampler, SamplerCreateInfoHash, SamplerCreateInfoEqual> cache;
 };
 
+// hold info for GPU memory chunks allocated (only one atm...)
+struct GPUMemoryChunk {
+    int chunkNumber = -1;
+	VkBuffer buffer = nullptr;
+	VkDeviceMemory memory = nullptr;
+    VkDeviceAddress address = 0;
+	uint64_t size = 0;
+	uint64_t nextFreePos = 0;
+	void reset() { nextFreePos = 0; }
+};
 // global resources that are not changed in rendering threads.
 class GlobalRendering : public EngineParticipant
 {
@@ -125,6 +135,14 @@ public:
 	~GlobalRendering() {
 		Log("GlobalRendering destructor\n");
 		//samplerCache.~SamplerCache();
+		for (auto& chunk : gpuMemoryChunks) {
+			if (chunk.buffer != nullptr) {
+				vkDestroyBuffer(device, chunk.buffer, nullptr);
+			}
+			if (chunk.memory != nullptr) {
+				vkFreeMemory(device, chunk.memory, nullptr);
+			}
+        }
 		shutdown();
 	};
 
@@ -197,8 +215,12 @@ public:
 	enum class QueueSelector { GRAPHICS, TRANSFER };
 	static const uint64_t QUEUE_FLAG_PERMANENT_UPDATE = 0x01L;
 	static VkDeviceSize minAlign(VkDeviceSize size, VkDeviceSize alignment = 4);
+	// Reserve space in GPU buffer, return offset to buffer start
+	uint64_t reserveInGlobalBuffer(VkDeviceSize bufferSize, GPUMemoryChunk* chunk);
 	// Upload into pre-existing large buffer, return offset to buffer start
-	uint64_t uploadToGlobalBuffer(VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, QueueSelector queue = QueueSelector::GRAPHICS);
+	uint64_t uploadToGlobalBuffer(VkDeviceSize bufferSize, const void* src, GPUMemoryChunk* chunk, QueueSelector queue = QueueSelector::GRAPHICS);
+	// Upload into pre-existing large buffer, return offset to buffer start
+	uint64_t copyToGlobalBuffer(VkDeviceSize bufferSize, const void* src, GPUMemoryChunk* chunk, uint64_t offset, QueueSelector queue = QueueSelector::GRAPHICS);
 	// Upload index or vertex buffer
 	void uploadBuffer(VkBufferUsageFlagBits usage, VkDeviceSize bufferSize, const void* src, VkBuffer& buffer, VkDeviceMemory& bufferMemory,
 		std::string bufferDebugName, QueueSelector queue = QueueSelector::GRAPHICS, uint64_t flags = 0L );
@@ -306,7 +328,40 @@ public:
 	// submit command buffers, can only be called from queue submit thread
 	void submit(FrameResources* fr);
 	void writeCubemapToFile(TextureInfo* cubemap, const std::string& filename);
+	// get current GPU memory chunk, currently we do not allocate another one if the first is full...
+    GPUMemoryChunk* getCurrentGPUMemoryChunk() {
+		if (gpuMemoryChunks.size() == 0) {
+			Error("No GPU memory chunk allocated");
+			return nullptr;
+		}
+		return &gpuMemoryChunks[0];
+    }
+	uint64_t allocateMeshStorage(uint64_t size, GPUMemoryChunk* chunk)
+	{
+		size = minAlign(size, 16);
+		if (chunk->nextFreePos + size > chunk->size) {
+			Error("Global Rendering: out of global mesh storage memory. Increase in engine settings or allocate new chunk.");
+		}
+		uint64_t ret = chunk->nextFreePos;
+		chunk->nextFreePos += size;
+		return ret;
+	}
+
 private:
+    std::vector<GPUMemoryChunk> gpuMemoryChunks;
+	void createGPUMemoryChunk(VkDeviceSize bufferSize) {
+		//VkDeviceSize bufferSize = engine.getMeshStorageSize();
+		bufferSize = minAlign(bufferSize, 16);
+		GPUMemoryChunk chunk;
+        chunk.chunkNumber = (int)gpuMemoryChunks.size();
+        std::string dbgName = "global GPU memory chunk " + chunk.chunkNumber;
+		createBuffer(bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT,
+			chunk.buffer, chunk.memory, dbgName);
+		chunk.address = getBufferDeviceAddress(chunk.buffer);
+		chunk.nextFreePos = 0;
+        chunk.size = bufferSize;
+        gpuMemoryChunks.push_back(chunk);
+	}
     // gather all cmd buffers from the DrawResults of the current frame and copy into single list cmdBufs
 	void consolidateCommandBuffers(CommandBufferArray& cmdBufs, FrameResources* fr);
 	// copy all cmd buffers here before calling vkQueueSubmit

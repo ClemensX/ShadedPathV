@@ -224,6 +224,7 @@ struct MeshInfo
 {
     std::string id; // id in ShadedPath mesh store
     std::string name; // gltf mesh name
+	int meshNum; // count all meshes 0..n
 	bool available = false; // true if this object is ready for use in shader code
 	MeshFlagsCollection flags;
 
@@ -306,6 +307,17 @@ enum class MeshletFlags : uint32_t {
 	MESHLET_SIMPLIFY_MESH = 16, // remove duplicate vertices and triangles
 };
 
+struct GPUMeshIndex {
+    uint32_t gpuMeshInfoIndex[10]; // base address of mesh storage buffer on GPU for LOD 0..9
+};
+
+struct GPUMeshInfo {
+	uint64_t meshletOffset = 0; // offset into global mesh storage buffer
+	uint64_t localIndexOffset = 0; // offset into global mesh storage buffer
+	uint64_t globalIndexOffset = 0; // offset into global mesh storage buffer
+	uint64_t vertexOffset = 0; // offset into global mesh storage buffer
+};
+
 // Mesh Store to organize objects loaded from gltf files.
 class MeshStore {
 public:
@@ -330,7 +342,7 @@ public:
 	// meshes are only resorted if one was added in the meantime
 	const std::vector<MeshInfo*> &getSortedList();
 	// upload single model to GPU
-	void uploadObject(MeshInfo* obj);
+	void uploadMesh(MeshInfo* mesh);
 	// initialize MeshInfo, also add to collection. id is expected to be in collection format like myid.2
 	// myid.0 is a synonym for myid
 	MeshInfo* initMeshInfo(MeshCollection* coll, std::string id);
@@ -383,6 +395,7 @@ public:
     // load meshlet data for all meshes of a collection from file, return true if successful, error if #items and #meshlet data sets do not match
 	bool loadMeshletStorageFile(std::string id, std::string fileBaseName);
     MeshCollection* getMeshCollection(std::string id);
+	void fillPushConstants(PBRPushConstants *pushConstants);
 private:
 	MeshCollection* loadMeshFile(std::string filename, std::string id, std::vector<std::byte> &fileBuffer, MeshFlagsCollection flags);
 	std::unordered_map<std::string, MeshInfo> meshes;
@@ -400,6 +413,9 @@ private:
 	void setDefaultMaterial(PBRShader::ShaderMaterial& mat);
 	// generate or load meshlet data. will show error log message if meshlet file not found and regenerate == false
 	void aquireMeshletData(std::string filename, std::string id, bool regenerateMeshletData = false);
+    int meshNumber = 0; // count all meshes
+    std::vector<GPUMeshIndex> gpuMeshIndices; // one per mesh
+    std::vector<GPUMeshInfo> gpuMeshInfos; // one per LOD level of each mesh
 };
 
 // 

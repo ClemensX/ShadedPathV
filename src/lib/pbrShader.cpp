@@ -16,6 +16,10 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, this, 1);
 	alignedDynamicUniformBufferSize = global->calcConstantBufferSize(sizeof(DynamicModelUBO));
 
+	// push constants
+	pushConstantRanges.push_back(pbrPushConstantRange);
+
+
 	int fl = engine.getFramesInFlight();
 	for (int i = 0; i < fl; i++) {
 		// global fixed lines (one common vertex buffer)
@@ -28,25 +32,6 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 		sub.setVulkanResources(&resources);
 		globalSubShaders.push_back(sub);
 	}
-
-	// global mesh storage:
-	VkDeviceSize bufferSize = engine.getMeshStorageSize();
-    bufferSize = GlobalRendering::minAlign(bufferSize, 16);
-	global->createBuffer(bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT,
-		meshStorageBuffer, meshStorageBufferMemory, "global mesh storage buffer");
-    meshStorageBufferDeviceAddress = global->getBufferDeviceAddress(meshStorageBuffer);
-	meshStorageNextFreePos = 0;
-}
-
-uint64_t PBRShader::allocateMeshStorage(uint64_t size)
-{
-    size = GlobalRendering::minAlign(size, 16);
-	if (meshStorageNextFreePos + size > engine->getMeshStorageSize()) {
-		Error("PBRShader: out of global mesh storage memory. Increase in engine settings.");
-	}
-    uint64_t ret = meshStorageNextFreePos;
-    meshStorageNextFreePos += size;
-	return ret;
 }
 
 void PBRShader::initSingle(FrameResources& tr, ShaderState& shaderState)
@@ -60,9 +45,10 @@ void PBRShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 void PBRShader::initialUpload()
 {
 	// upload all meshes from store:
+    engine->meshStore.fillPushConstants(&pushConstants);
 	auto& list = engine->meshStore.getSortedList();
-	for (auto objptr : list) {
-		engine->meshStore.uploadObject(objptr);
+	for (auto meshptr : list) {
+		engine->meshStore.uploadMesh(meshptr);
 	}
 }
 
@@ -87,6 +73,7 @@ void PBRShader::prefillModelParameters(FrameResources& fr)
             continue;
         }
 		PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(fr, obj->objectNum);
+        buf->objectNum = obj->objectNum;
         PBRTextureIndexes ind;
         fillTextureIndexesFromMesh(ind, obj->mesh);
 		if (ind.baseColor == 9) {
@@ -122,7 +109,7 @@ void PBRShader::prefillModelParameters(FrameResources& fr)
         BoundingBox box;
 		obj->getBoundingBox(box);
         buf->boundingBox = box;
-        buf->GPUMeshStorageBaseAddress = obj->mesh->GPUMeshStorageBaseAddress;
+		buf->GPUMeshStorageBaseAddress = 0;// obj->mesh->GPUMeshStorageBaseAddress;
         buf->vertexOffset = obj->mesh->vertexOffset;
         buf->meshletOffset = obj->mesh->meshletOffset;
         buf->globalIndexOffset = obj->mesh->globalIndexOffset;
@@ -168,8 +155,6 @@ PBRShader::~PBRShader()
     for (PBRSubShader& sub : globalSubShaders) {
         sub.destroy();
     }
-	vkDestroyBuffer(device, meshStorageBuffer, nullptr);
-	vkFreeMemory(device, meshStorageBufferMemory, nullptr);
 	//vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);
 	//vkDestroyShaderModule(device, vertShaderModule, nullptr);
@@ -334,15 +319,6 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 
     // always handle descriptors before recording commands:
 	auto& objs = engine->objectStore.getSortedList();
-	for (auto obj : objs) {
-		updateDescriptors(tr, obj, false, update);
-	}
-	if (engine->isStereo()) {
-		for (auto obj : objs) {
-			updateDescriptors(tr, obj, true, update);
-		}
-	}
-
 
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -361,7 +337,19 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 
 	renderPassInfo.clearValueCount = 0;
 
+	assert(pbrShader->pushConstants.baseAddressIndices != 0);
+	assert(pbrShader->pushConstants.baseAddressInfos != 0);
+	PBRPushConstants* push = &pbrShader->pushConstants;
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    uint64_t meshStorageBufferDeviceAddress = engine->globalRendering.getCurrentGPUMemoryChunk()->address;
+	vkCmdPushConstants(
+		commandBuffer,
+		pipelineLayout,
+		VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
+		0,
+		sizeof(PBRPushConstants),
+		push // your buffer address
+	);
 	// add draw commands for all valid objects:
 	for (auto obj : objs) {
 		recordDrawCommand(commandBuffer, tr, obj, false, update);
@@ -395,40 +383,6 @@ void PBRSubShader::uploadToGPU(FrameResources& tr, PBRShader::UniformBufferObjec
 		vkMapMemory(device, uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
 		memcpy(data, &ubo2, sizeof(ubo2));
 		vkUnmapMemory(device, uniformBufferMemory2);
-	}
-}
-
-void PBRSubShader::updateDescriptors(FrameResources& tr, WorldObject* obj, bool isRightEye, bool update)
-{
-	// update descriptor set for mesh storage buffer:
-
-	VkDescriptorBufferInfo bufferInfoMeshStorage{};
-	bufferInfoMeshStorage.buffer = pbrShader->meshStorageBuffer;
-	bufferInfoMeshStorage.offset = 0;
-	bufferInfoMeshStorage.range = VK_WHOLE_SIZE;
-
-	VkWriteDescriptorSet write{};
-	write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	write.dstSet = descriptorSet;
-	write.dstBinding = 0;
-	write.dstArrayElement = 0;
-	write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	write.descriptorCount = 1;
-	write.pBufferInfo = &bufferInfoMeshStorage;
-
-	// update descriptor sets:
-	// One dynamic offset per dynamic descriptor to offset into the ubo containing all model matrices
-	uint32_t objId = obj->objectNum;
-	uint32_t dynamicOffset = static_cast<uint32_t>(objId * pbrShader->alignedDynamicUniformBufferSize);
-	if (!isRightEye) {
-		// left eye
-		write.dstSet = descriptorSet;
-		//vkUpdateDescriptorSets(device, static_cast<uint32_t>(1), &write, 0, nullptr);
-	}
-	else {
-		// right eye
-		write.dstSet = descriptorSet2;
-		//vkUpdateDescriptorSets(device, static_cast<uint32_t>(1), &write, 0, nullptr);
 	}
 }
 

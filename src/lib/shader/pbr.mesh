@@ -1,7 +1,7 @@
 #version 460
 #extension GL_EXT_debug_printf : enable
 #extension GL_EXT_mesh_shader : enable
-#extension GL_ARB_gpu_shader_int64 : enable
+#extension GL_ARB_gpu_shader_int64 : require
 #extension GL_EXT_buffer_reference : require
 #extension GL_EXT_buffer_reference_uvec2 : require
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
@@ -10,25 +10,6 @@
 #include "shadermaterial.glsl"
 #include "pbr_mesh_common.glsl"
 #include "debug_colors.glsl"
-
-layout(buffer_reference, std430) buffer VertexBuffer {
-    PBRVertex vertex[];
-};
-
-layout(buffer_reference, std430) buffer MeshletDescs {
-    uvec4 packedMeshlets[];
-};
-
-// local primitive index buffer:
-layout(buffer_reference, std430) buffer PrimitiveIndexBuffer {
-    uint primitiveIndices[];
-};
-
-// global index buffer:
-layout(buffer_reference, std430) buffer GlobalIndexBuffer {
-    uint index[];
-};
-
 
 taskPayloadSharedEXT TaskPayload payload;
 
@@ -40,10 +21,10 @@ layout(triangles) out;
 layout(location = 0) out PBRVertexOutFlat outVertFlat[];
 layout(location = 1) out PBRVertexOut outVert[];
 
-MeshletDescs meshletDescs = MeshletDescs(model_ubo.GPUMeshStorageBaseAddress + model_ubo.meshletOffset);
-GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(model_ubo.GPUMeshStorageBaseAddress + model_ubo.globalIndexOffset);
-PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(model_ubo.GPUMeshStorageBaseAddress + model_ubo.localIndexOffset);
-VertexBuffer vertices = VertexBuffer(model_ubo.GPUMeshStorageBaseAddress + model_ubo.vertexOffset);
+MeshletDescs meshletDescs = MeshletDescs(pushConstants.meshStorageBufferAddress + model_ubo.meshletOffset);
+GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(pushConstants.meshStorageBufferAddress + model_ubo.globalIndexOffset);
+PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(pushConstants.meshStorageBufferAddress + model_ubo.localIndexOffset);
+VertexBuffer vertices = VertexBuffer(pushConstants.meshStorageBufferAddress + model_ubo.vertexOffset);
 
 void unpackAABB(uint pHigh, uint pLow, vec3 objectMin, vec3 objectMax) {
     debugPrintfEXT("uint64 aabb value: 0x %08x %08x\n", pHigh, pLow);

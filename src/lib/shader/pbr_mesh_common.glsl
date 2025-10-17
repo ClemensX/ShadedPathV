@@ -1,3 +1,19 @@
+
+// mesh info structures in large GPU mesh data block:
+// we first have an index structure, where for every LOD level we index into the mesh info data array
+// usually, LOD levels are just in increasing indices, but with using an index for each level we may change that any time
+struct GPUMeshIndex {
+    uint gpuMeshInfoIndex[10]; // index into mesh info array for LOD 0..9
+};
+
+struct GPUMeshInfo {
+	uint64_t meshletOffset; // offset into global mesh storage buffer
+	uint64_t localIndexOffset; // offset into global mesh storage buffer
+	uint64_t globalIndexOffset; // offset into global mesh storage buffer
+	uint64_t vertexOffset; // offset into global mesh storage buffer
+};
+
+
 // Meshlet descriptor struct and unpack function (as in your vertex shader)
 struct MeshletDesc {
     uint boundingBoxLow;
@@ -87,11 +103,12 @@ layout (binding = 1) uniform UboInstance {
     uint jointcount;
     uint flags; // see flag definitions above
     uint meshletsCount;
-	uint pad0; // object render mode: 1 == use vertex color only, 0 == regular BPR rendering
+	uint objectNum; // object render mode: 1 == use vertex color only, 0 == regular BPR rendering
     PBRTextureIndexes indexes;
     UBOParams params[MAX_DYNAMIC_LIGHTS];
     ShaderMaterial material;
     BoundingBox boundingBox; // AABB axis aligned bounding box
+    uint meshNumber;
     uint64_t GPUMeshStorageBaseAddress; // base address of global mesh storage buffer on GPU
 	uint64_t meshletOffset; // offset into global mesh storage buffer
 	uint64_t localIndexOffset; // offset into global mesh storage buffer
@@ -107,6 +124,39 @@ layout(binding = 0) uniform UniformBufferObject {
     vec3 camPos;
 } ubo;
 
+
+layout(buffer_reference, std430) buffer VertexBuffer {
+    PBRVertex vertex[];
+};
+
+layout(buffer_reference, std430) buffer MeshletDescs {
+    uvec4 packedMeshlets[];
+};
+
+// local primitive index buffer:
+layout(buffer_reference, std430) buffer PrimitiveIndexBuffer {
+    uint primitiveIndices[];
+};
+
+// global index buffer:
+layout(buffer_reference, std430) buffer GlobalIndexBuffer {
+    uint index[];
+};
+
+// mesh infos on GPU global buffer:
+layout(buffer_reference, std430) buffer GPUMeshIndexBuffer {
+    GPUMeshIndex index[];
+};
+
+layout(buffer_reference, std430) buffer GPUMeshInfoBuffer {
+    GPUMeshInfo info[];
+};
+
+// see pbrShader.h
+layout(push_constant) uniform PushConstants {
+	uint64_t meshStorageBufferAddress; // we name it differently here to make clear that this is (also) start address of memory chunk
+	uint64_t baseAddressInfos;
+} pushConstants;
 
 struct TaskPayload {
     mat4 mvp;

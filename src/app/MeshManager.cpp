@@ -164,8 +164,8 @@ void MeshManager::prepareFrame(FrameResources* fr)
             auto* wo = object = engine->objectStore.addObject("group", mi->id, pos);
             objects.push_back(wo);
             pos.x = -2.0f;
-            pos.y = -10000.0f; // TODO hack
             wo = engine->objectStore.addObject("group", mi->id, pos);
+            wo->enabled = false;
             simObjects.push_back(wo);
         }
         if (!object->mesh->meshletStorageFileFound) {
@@ -243,20 +243,27 @@ void MeshManager::prepareFrame(FrameResources* fr)
         }
         // 1 5 10 15 25 30 50 70 150
     }
-    if (simluateLOD) {
-        vec3 camPos = camera->getPosition();
-        vec3 objPos = simObjects[0]->pos();
-        objPos.y = 0.0f;
-        float dist = length(camPos - objPos);
-        int lodLevel = Util::calculateLODIndex(lod, dist);
-        //make object visible:
-        for (int i = 0; i < 10; i++) {
-            simObjects[i]->pos().y = -10000;
+    if (simObjects.size() == 10) {
+        if (simluateLOD) {
+            vec3 camPos = camera->getPosition();
+            vec3 objPos = simObjects[0]->pos();
+            objPos.y = 0.0f;
+            float dist = length(camPos - objPos);
+            int lodLevel = Util::calculateLODIndex(lod, dist);
+            //make object visible:
+            for (int i = 0; i < 10; i++) {
+                simObjects[i]->enabled = false;
+            }
+            simObjects[lodLevel]->enabled = true;
+            // update UI:
+            simLODLevel = lodLevel;
+            lodDistance = dist;
         }
-        simObjects[lodLevel]->pos().y = 0.0f;
-        // update UI:
-        simLODLevel = lodLevel;
-        lodDistance = dist;
+        else {
+            for (int i = 0; i < 10; i++) {
+                simObjects[i]->enabled = false;
+            }
+        }
     }
     // cube
     CubeShader::UniformBufferObject cubo{};

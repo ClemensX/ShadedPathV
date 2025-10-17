@@ -1,7 +1,7 @@
 #version 460
 #extension GL_EXT_debug_printf : enable
 #extension GL_EXT_mesh_shader : enable
-#extension GL_ARB_gpu_shader_int64 : enable
+#extension GL_ARB_gpu_shader_int64 : require
 #extension GL_EXT_buffer_reference : require
 #extension GL_EXT_buffer_reference_uvec2 : require
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
@@ -17,40 +17,30 @@
 // set 1 bindings:
 // binding 0: global textures
 
-layout(buffer_reference, std430) buffer VertexBuffer {
-    PBRVertex vertex[];
-};
-
-layout(buffer_reference, std430) buffer MeshletDescs {
-    uvec4 packedMeshlets[];
-};
-
-// local primitive index buffer:
-layout(buffer_reference, std430) buffer PrimitiveIndexBuffer {
-    uint primitiveIndices[];
-};
-
-// global index buffer:
-layout(buffer_reference, std430) buffer GlobalIndexBuffer {
-    uint index[];
-};
-
 layout(local_size_x = 1) in; // not using the usual 32 threads per workgroup, but only 1 as we implement object culling and LOD object selection here
 
 taskPayloadSharedEXT TaskPayload payload;
 
-MeshletDescs meshletDescs = MeshletDescs(model_ubo.GPUMeshStorageBaseAddress + model_ubo.meshletOffset);
-GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(model_ubo.GPUMeshStorageBaseAddress + model_ubo.globalIndexOffset);
-PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(model_ubo.GPUMeshStorageBaseAddress + model_ubo.localIndexOffset);
-VertexBuffer vertices = VertexBuffer(model_ubo.GPUMeshStorageBaseAddress + model_ubo.vertexOffset);
+MeshletDescs meshletDescs = MeshletDescs(pushConstants.meshStorageBufferAddress + model_ubo.meshletOffset);
+GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(pushConstants.meshStorageBufferAddress + model_ubo.globalIndexOffset);
+PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(pushConstants.meshStorageBufferAddress + model_ubo.localIndexOffset);
+VertexBuffer vertices = VertexBuffer(pushConstants.meshStorageBufferAddress + model_ubo.vertexOffset);
+GPUMeshIndexBuffer gpuIndices = GPUMeshIndexBuffer(pushConstants.meshStorageBufferAddress + 0);
+GPUMeshInfoBuffer gpuInfos = GPUMeshInfoBuffer(pushConstants.baseAddressInfos);
 
 void check_inputs() {
+    GPUMeshIndex gi = gpuIndices.index[0];
+    //debugPrintfEXT("TASK SHADER GPUIndex 0 0: %llx\n", test.gpuMeshInfoBaseAddress[0]);//gi.gpuMeshInfoBaseAddress[0]);
+    debugPrintfEXT("TASK SHADER GPUIndex 0 0: %x\n", gi.gpuMeshInfoIndex[0]);
+    //GPUMeshInfoBuffer gpuInfos = GPUMeshInfoBuffer(pushConstants.meshStorageBufferAddress + gi.gpuMeshInfoBaseAddress[0]);
+    debugPrintfEXT("TASK SHADER GPUInfo 0: meshlet offset: %llx\n", gpuInfos.info[0].meshletOffset);
+
     PBRVertex v = vertices.vertex[0];
-    debugPrintfEXT("TASK SHADER: vertex[0]: %f %f %f\n", v.position.x, v.position.y, v.position.z);
+    //debugPrintfEXT("TASK SHADER: vertex[0]: %f %f %f\n", v.position.x, v.position.y, v.position.z);
     v = vertices.vertex[1];
-    debugPrintfEXT("TASK SHADER: vertex[1]: %f %f %f\n", v.position.x, v.position.y, v.position.z);
-    debugPrintfEXT("TASK SHADER: you have %d meshlets in this mesh!\n", model_ubo.meshletsCount);
-    //debugPrintfEXT("TASK SHADER: mesh buffer base address %d\n", model_ubo.GPUMeshStorageBaseAddress);
+    //debugPrintfEXT("TASK SHADER: vertex[1]: %f %f %f\n", v.position.x, v.position.y, v.position.z);
+    //debugPrintfEXT("TASK SHADER: you have %d meshlets in this mesh!\n", model_ubo.meshletsCount);
+    //debugPrintfEXT("TASK SHADER: mesh buffer base address %llx\n", model_ubo.GPUMeshStorageBaseAddress);
     //debugPrintfEXT("TASK SHADER: vertex offset %d\n", model_ubo.vertexOffset);
 
 //    vec4 v = ubo.model[0];
@@ -70,16 +60,16 @@ void check_inputs() {
     uint byteValue1 = (primitiveIndexBuffer.primitiveIndices[index / 4] >> ((index % 4) * 8)) & 0xFFu;
     index = 5;
     uint byteValue2 = (primitiveIndexBuffer.primitiveIndices[index / 4] >> ((index % 4) * 8)) & 0xFFu;
-    debugPrintfEXT("TASK SHADER byte values: %d %d %d\n", byteValue0, byteValue1, byteValue2);
+    //debugPrintfEXT("TASK SHADER byte values: %d %d %d\n", byteValue0, byteValue1, byteValue2);
 
     //uint globalIndex0 = globalIndexBuffer.index[4];
-    debugPrintfEXT("TASK SHADER global index[0..4] %d %d %d %d %d\n", globalIndexBuffer.index[0],globalIndexBuffer.index[1],globalIndexBuffer.index[2],globalIndexBuffer.index[3],globalIndexBuffer.index[4]);
+    //debugPrintfEXT("TASK SHADER global index[0..4] %d %d %d %d %d\n", globalIndexBuffer.index[0],globalIndexBuffer.index[1],globalIndexBuffer.index[2],globalIndexBuffer.index[3],globalIndexBuffer.index[4]);
 
     uvec4 uv = meshletDescs.packedMeshlets[1];
     //debugPrintfEXT("meshlet uvec4[0] %f %f %f %f\n", uv.x, uv.y, uv.z, uv.w);
     MeshletDesc meshlet = unpackMeshletDesc(uv);
     uint indexBufferOffset = meshlet.indexBufferOffset;
-    debugPrintfEXT("TASK SHADER meshlet indexBufferOffset %d\n", indexBufferOffset);
+    //debugPrintfEXT("TASK SHADER meshlet indexBufferOffset %d\n", indexBufferOffset);
 
     PBRVertex vert = vertices.vertex[1];
     //debugPrintfEXT("TASK SHADER vertex[1] position %f %f %f\n", vert.position.x, vert.position.y, vert.position.z);
@@ -114,12 +104,19 @@ void check_inputs() {
     bool isRenderingDisabled = (flags & MODEL_RENDER_FLAG_DISABLE) != 0;
 	//debugPrintfEXT("TASK SHADER: rendering disabled %d\n", isRenderingDisabled);
    // debugPrintfEXT("TASK SHADER: vertex offset %d\n", model_ubo.vertexOffset);
+
+
 }
 
 void main() {
-    //check_inputs();
+    check_inputs();
 
     //debugPrintfEXT("TASK SHADER: model flags: %d\n", model_ubo.flags);
+    //debugPrintfEXT("TASK SHADER PUUUUSH: : %llx\n", pushConstants.meshStorageBufferAddress);
+    //debugPrintfEXT("TASK SHADER: model_ubo.GPUMeshStorageBaseAddress %llx\n", model_ubo.GPUMeshStorageBaseAddress);
+    if (model_ubo.meshNumber == 0) {
+        //debugPrintfEXT("TASK SHADER: model_ubo.meshNumber is ZERO! This is invalid!\n");
+    }
     bool isRenderingDisabled = (model_ubo.flags & MODEL_RENDER_FLAG_DISABLE) != 0;
 
     mat4 model = model_ubo.model;
@@ -131,7 +128,9 @@ void main() {
     const uint PAYLOAD_CULLED = 0xFFFFFFFFu;
 
     if (isRenderingDisabled) {
-        //debugPrintfEXT("WARNING: RENDERING DISABLED for this object\n");
+        if (model_ubo.objectNum == 9) {
+            //debugPrintfEXT("INFO: RENDERING DISABLED for object %d\n", model_ubo.objectNum);
+        }
         // signal to mesh shader that this object is culled/disabled.
         payload.meshletIndex = PAYLOAD_CULLED;
         payload.mvp = mvp;
@@ -139,6 +138,10 @@ void main() {
         // The mesh shader must test for payload.meshletIndex == PAYLOAD_CULLED and return immediately.
         EmitMeshTasksEXT(1, 1, 1);
         return;
+    } else {
+        if (model_ubo.objectNum == 9) {
+            debugPrintfEXT("RENDERING ENABLED for object %d\n", model_ubo.objectNum);
+        }
     }
 
     bool isOutside = isOutsideView(model_ubo.boundingBox, mvp);
