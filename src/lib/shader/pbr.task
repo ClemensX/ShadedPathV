@@ -21,12 +21,14 @@ layout(local_size_x = 1) in; // not using the usual 32 threads per workgroup, bu
 
 taskPayloadSharedEXT TaskPayload payload;
 
-MeshletDescs meshletDescs = MeshletDescs(pushConstants.meshStorageBufferAddress + model_ubo.meshletOffset);
-GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(pushConstants.meshStorageBufferAddress + model_ubo.globalIndexOffset);
-PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(pushConstants.meshStorageBufferAddress + model_ubo.localIndexOffset);
-VertexBuffer vertices = VertexBuffer(pushConstants.meshStorageBufferAddress + model_ubo.vertexOffset);
 GPUMeshIndexBuffer gpuIndices = GPUMeshIndexBuffer(pushConstants.meshStorageBufferAddress + 0);
 GPUMeshInfoBuffer gpuInfos = GPUMeshInfoBuffer(pushConstants.baseAddressInfos);
+
+uint meshIndex = 5;
+MeshletDescs meshletDescs = MeshletDescs(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].meshletOffset);
+GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].globalIndexOffset);
+PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].localIndexOffset);
+VertexBuffer vertices = VertexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].vertexOffset);
 
 void check_inputs() {
     GPUMeshIndex gi = gpuIndices.index[0];
@@ -109,7 +111,7 @@ void check_inputs() {
 }
 
 void main() {
-    check_inputs();
+    //check_inputs();
 
     //debugPrintfEXT("TASK SHADER: model flags: %d\n", model_ubo.flags);
     //debugPrintfEXT("TASK SHADER PUUUUSH: : %llx\n", pushConstants.meshStorageBufferAddress);
@@ -140,7 +142,7 @@ void main() {
         return;
     } else {
         if (model_ubo.objectNum == 9) {
-            debugPrintfEXT("RENDERING ENABLED for object %d\n", model_ubo.objectNum);
+            //debugPrintfEXT("RENDERING ENABLED for object %d\n", model_ubo.objectNum);
         }
     }
 

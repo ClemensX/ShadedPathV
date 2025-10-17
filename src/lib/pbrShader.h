@@ -116,7 +116,7 @@ public:
         shaderValuesParams params[MAX_DYNAMIC_LIGHTS]; // 16-byte aligned
         ShaderMaterial material; // 16-byte aligned
         BoundingBox boundingBox; // AABB in local object space
-		uint32_t meshNumber; // LOD 0 number
+        uint32_t meshNumber; // link to MeshInfo
 		uint64_t GPUMeshStorageBaseAddress; // base address of global mesh storage buffer on GPU
 		uint64_t meshletOffset = 0; // offset into global mesh storage buffer
 		uint64_t localIndexOffset = 0; // offset into global mesh storage buffer

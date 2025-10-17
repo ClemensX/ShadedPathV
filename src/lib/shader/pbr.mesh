@@ -21,11 +21,22 @@ layout(triangles) out;
 layout(location = 0) out PBRVertexOutFlat outVertFlat[];
 layout(location = 1) out PBRVertexOut outVert[];
 
-MeshletDescs meshletDescs = MeshletDescs(pushConstants.meshStorageBufferAddress + model_ubo.meshletOffset);
-GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(pushConstants.meshStorageBufferAddress + model_ubo.globalIndexOffset);
-PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(pushConstants.meshStorageBufferAddress + model_ubo.localIndexOffset);
-VertexBuffer vertices = VertexBuffer(pushConstants.meshStorageBufferAddress + model_ubo.vertexOffset);
+GPUMeshIndexBuffer gpuIndices = GPUMeshIndexBuffer(pushConstants.meshStorageBufferAddress + 0);
+GPUMeshInfoBuffer gpuInfos = GPUMeshInfoBuffer(pushConstants.baseAddressInfos);
 
+uint meshIndex = model_ubo.meshNumber;
+//uint meshIndex = 5;
+MeshletDescs meshletDescs = MeshletDescs(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].meshletOffset);
+GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].globalIndexOffset);
+PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].localIndexOffset);
+VertexBuffer vertices = VertexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].vertexOffset);
+/*
+*/
+/**///MeshletDescs meshletDescs = MeshletDescs(pushConstants.meshStorageBufferAddress + model_ubo.meshletOffset);
+//GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(pushConstants.meshStorageBufferAddress + model_ubo.globalIndexOffset);
+//PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(pushConstants.meshStorageBufferAddress + model_ubo.localIndexOffset);
+//VertexBuffer vertices = VertexBuffer(pushConstants.meshStorageBufferAddress + model_ubo.vertexOffset);
+/**/
 void unpackAABB(uint pHigh, uint pLow, vec3 objectMin, vec3 objectMax) {
     debugPrintfEXT("uint64 aabb value: 0x %08x %08x\n", pHigh, pLow);
 }

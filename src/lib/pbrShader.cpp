@@ -95,6 +95,7 @@ void PBRShader::prefillModelParameters(FrameResources& fr)
 		//	0.0f);
 		params.lightDir = glm::vec4(glm::normalize(lightSource.position), 0.0f);
 		buf->params[0] = params;
+		buf->meshNumber = obj->mesh->meshNum;
         buf->material = obj->mesh->material;
         buf->material.baseColorTextureSet = ind.baseColor;
         buf->material.physicalDescriptorTextureSet = ind.metallicRoughness;
