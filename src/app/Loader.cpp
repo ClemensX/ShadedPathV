@@ -64,7 +64,9 @@ void Loader::init() {
     //meshFlags.setFlag(MeshFlags::MESHLET_GENERATE);
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
-    engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
+    
+    engine->meshStore.loadMesh("granite_rock_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
+    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = true;  useDefaultNormalLineLength = false;
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox"); alterObjectCoords = true;  useDefaultNormalLineLength = false;
 
@@ -99,7 +101,7 @@ void Loader::init() {
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "newid");
     //engine->objectStore.addObject("group", "newid", vec3(+0.5f, 0.2f, 0.2f));
 
-    object->enableDebugGraphics = true;
+    object->enableDebugGraphics = false;
     if (alterObjectCoords) {
         // turn upside down
         object->rot() = vec3(PI_half, 0.0, 0.0f);
@@ -107,6 +109,13 @@ void Loader::init() {
     BoundingBox box;
     object->getBoundingBox(box);
     Log(" object max values: " << box.max.x << " " << box.max.y << " " << box.max.z << std::endl);
+    if (true) {
+        // scale to have 1m width for LOD 0 object:
+        float width = box.max.x - box.min.x;
+        float scale = 1.0f / width;
+        object->scale() = vec3(scale);
+        object->enabled = true;
+    }
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
@@ -125,6 +134,10 @@ void Loader::init() {
     engine->shaders.cubeShader.setSkybox("skyboxTexture");
     engine->shaders.cubeShader.setFarPlane(2000.0f);
 
+    PBRShader::LightSource ls;
+    ls.color = vec3(1.0f);
+    ls.position = vec3(75.0f, 0.5f, -20.0f);
+    engine->shaders.pbrShader.changeLightSource(ls.color, ls.position);
     engine->shaders.pbrShader.initialUpload();
     // window creation
     prepareWindowOutput("Loader");
@@ -164,6 +177,9 @@ void Loader::prepareFrame(FrameResources* fr)
     if (spinningBox == false && seconds > 4.0f) {
         spinningBox = true; // start spinning the logo after 4s
         spinTimeSeconds = seconds;
+    }
+    if (seconds > 20.0f) {
+        object->enabled = false;
     }
     engine->shaders.lineShader.clearLocalLines(tr);
     // cube
@@ -233,7 +249,8 @@ void Loader::prepareFrame(FrameResources* fr)
         glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
         modeltransform = trans * scaled * rotationMatrix;
         buf->model = modeltransform;
-        //buf->disableRendering();
+        buf->params[0].intensity = 10.0f; // adjust sun light intensity
+        if (!object->enabled)   buf->disableRendering();
 
         //buf->material.specularFactor = vec4(30.0f);
         //buf->material.workflow = 1.3f;
@@ -249,7 +266,7 @@ void Loader::prepareFrame(FrameResources* fr)
         } else {
             //engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false);
         }
-        engine->meshStore.debugGraphics(wo, tr, modeltransform, false, true, false, false);
+        if (wo->enableDebugGraphics) engine->meshStore.debugGraphics(wo, tr, modeltransform, false, true, false, false);
     }
     // lines
     engine->shaders.lineShader.prepareAddLines(tr);

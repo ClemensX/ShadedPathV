@@ -159,8 +159,11 @@ layout(push_constant) uniform PushConstants {
 } pushConstants;
 
 struct TaskPayload {
+    uint flags;
     mat4 mvp;
-    uint meshletIndex;
+    uint pad0;
+    uint meshletIndex2;
+    uint meshletIndexX;
     // Add more fields as needed (e.g., LOD, culling flags, etc.)
 };
 
