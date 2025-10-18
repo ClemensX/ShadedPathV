@@ -45,7 +45,6 @@ void check_inputs() {
     //uint maxPrim = gl_MaxMeshOutputPrimitivesEXT;
     //uint maxVert = gl_MaxMeshOutputVerticesEXT;
     uint meshletIndex = gl_WorkGroupID.x;
-    if (meshletIndex != 185) return;
     uvec4 uv = meshletDescs.packedMeshlets[meshletIndex];
     //debugPrintfEXT("meshlet uvec4[0] %f %f %f %f\n", uv.x, uv.y, uv.z, uv.w);
     MeshletDesc meshlet = unpackMeshletDesc(uv);
@@ -65,27 +64,17 @@ void main()
 {
     //check_inputs();
 
-    //if (payload.meshletIndexX >= 100000)
-    debugPrintfEXT("MESH SHADER: payload.meshletINdex: %u\n", payload.meshletIndexX);
     // check for culled objects:
-    if (payload.meshletIndexX >= 100000 || payload.meshletIndexX == 0xFFFFFFFFu) {
-        debugPrintfEXT("MESH SHADER: payload.meshletINdex: %u flags: %d ind2 %d \n", payload.meshletIndexX, payload.flags, payload.meshletIndex2);
-        //debugPrintfEXT("MESH SHADER: object culled\n");
+    if (payload.meshletIndex == PAYLOAD_CULLED) {
+        //debugPrintfEXT("MESH SHADER: payload.meshletIndex: %u\n", payload.meshletIndex);
         SetMeshOutputsEXT(0, 0);
         return;
     }
 
-    //debugPrintfEXT("MESH SHADER: object NOT culled\n");
     // Get meshlet index from task shader or workgroup
     uint meshletIndex = gl_WorkGroupID.x;
-    meshletIndex = payload.meshletIndexX;
-    //if (meshletIndex < 1) debugPrintfEXT("MESH SHADER meshletIndex %d\n", meshletIndex);
-//    if (meshletIndex > 40) {
-//        // for testing, only process first 40 meshlets
-//        SetMeshOutputsEXT(0, 0);
-//        return;
-//    }
-//
+    meshletIndex = payload.meshletIndex;
+
     // Read and unpack meshlet
     uvec4 packed = meshletDescs.packedMeshlets[meshletIndex];
     MeshletDesc meshlet = unpackMeshletDesc(packed);

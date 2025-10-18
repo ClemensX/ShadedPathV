@@ -126,38 +126,24 @@ void main() {
     mat4 proj = ubo.proj;
     mat4 mvp = proj * view * model;
 
-    // sentinel value used to signal culled/disabled from task -> mesh shader
-    const uint PAYLOAD_CULLED = 0xFFFFFFFFu;
-    uint runthroughDsabled = 0;
     if (isRenderingDisabled) {
-        if (model_ubo.objectNum == 9) {
-            //debugPrintfEXT("INFO: RENDERING DISABLED for object %d\n", model_ubo.objectNum);
-        }
         // signal to mesh shader that this object is culled/disabled.
-        payload.meshletIndexX = 100000;//PAYLOAD_CULLED;
-        payload.meshletIndex2 = 100000;//PAYLOAD_CULLED;
+        payload.meshletIndex = PAYLOAD_CULLED;
         payload.mvp = mvp;
-        payload.flags = 42;
         //debugPrintfEXT("TASK SHADER: RENDERING DISABLED for object %d, payload %u\n", model_ubo.objectNum, payload.meshletIndexX);
-        runthroughDsabled = 1;
         // Emit a single dummy mesh task so the pipeline/driver receives a mesh task invocation.
         // The mesh shader must test for payload.meshletIndex == PAYLOAD_CULLED and return immediately.
-//    debugPrintfEXT("TASK[%u:%u] object %u DISABLED -> payload.meshletIndex=%u (returning)\n",
-//                   gl_WorkGroupID.x, gl_LocalInvocationID.x, model_ubo.objectNum, payload.meshletIndexX);
+        // debugPrintfEXT("TASK[%u:%u] object %u DISABLED -> payload.meshletIndex=%u (returning)\n", gl_WorkGroupID.x, gl_LocalInvocationID.x, model_ubo.objectNum, payload.meshletIndexX);
         EmitMeshTasksEXT(1, 1, 1);
         return;
-    } else {
-        if (model_ubo.objectNum == 9) {
-            //debugPrintfEXT("RENDERING ENABLED for object %d\n", model_ubo.objectNum);
-        }
     }
 
     bool isOutside = isOutsideView(model_ubo.boundingBox, mvp);
     if (isOutside) {
         // Don't emit mesh tasks for this object � but emit one dummy so drivers stay happy.
         BoundingBox bb = model_ubo.boundingBox;
-        debugPrintfEXT("TASK SHADER: OUTSIDE bb min %f %f %f\n", bb.min.x, bb.min.y, bb.min.z);
-        payload.meshletIndexX = PAYLOAD_CULLED;
+        //debugPrintfEXT("TASK SHADER: OUTSIDE bb min %f %f %f\n", bb.min.x, bb.min.y, bb.min.z);
+        payload.meshletIndex = PAYLOAD_CULLED;
         payload.mvp = mvp;
         EmitMeshTasksEXT(1, 1, 1);
         return;
@@ -167,14 +153,13 @@ void main() {
     uint meshletIndex = gl_WorkGroupID.x;  // Use workgroup ID instead of global invocation ID
     
     // Check if this workgroup's meshlet index is valid
-    if (meshletIndex >= model_ubo.meshletsCount) {
-        return; // Skip invalid meshlet indices
-    }
-    
+    //    if (meshletIndex >= model_ubo.meshletsCount) {
+    //        return; // Skip invalid meshlet indices
+    //    }
+  
     if (!isRenderingDisabled && !isOutside) {
-        debugPrintfEXT("TASK[%u:%u] object %u emitting meshlet %u, is disabled == %u\n",
-                   gl_WorkGroupID.x, gl_LocalInvocationID.x, model_ubo.objectNum, meshletIndex, isRenderingDisabled ? 1 : 0);
-        payload.meshletIndexX = meshletIndex;
+        //debugPrintfEXT("TASK[%u:%u] object %u emitting meshlet %u, is disabled == %u\n", gl_WorkGroupID.x, gl_LocalInvocationID.x, model_ubo.objectNum, meshletIndex, isRenderingDisabled ? 1 : 0);
+        payload.meshletIndex = meshletIndex;
         payload.mvp = mvp;
         //debugPrintfEXT("TASK SHADER: processing meshlet %d of %d\n", meshletIndex, model_ubo.meshletsCount);
         // Each task shader workgroup emits exactly one mesh shader workgroup

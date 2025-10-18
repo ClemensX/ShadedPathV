@@ -125,7 +125,10 @@ public:
 		// helper methods
 		void disableRendering() {
 			flags |= MODEL_RENDER_FLAG_DISABLE;
-        }
+		}
+		void enableRendering() {
+			flags &= ~MODEL_RENDER_FLAG_DISABLE;
+		}
 	};
 	// Array entries of DynamicModelUBO have to respect hardware alignment rules
 	uint64_t alignedDynamicUniformBufferSize = 0;

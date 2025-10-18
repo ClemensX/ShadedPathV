@@ -158,12 +158,12 @@ layout(push_constant) uniform PushConstants {
 	uint64_t baseAddressInfos;
 } pushConstants;
 
+// sentinel value used to signal culled/disabled from task -> mesh shader
+const uint PAYLOAD_CULLED = 0xFFFFFFFFu;
+
 struct TaskPayload {
-    uint flags;
     mat4 mvp;
-    uint pad0;
-    uint meshletIndex2;
-    uint meshletIndexX;
+    uint meshletIndex;
     // Add more fields as needed (e.g., LOD, culling flags, etc.)
 };
 
