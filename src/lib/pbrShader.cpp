@@ -120,9 +120,15 @@ void PBRShader::prefillModelParameters(FrameResources& fr)
         buf->boundingBox = box;
 		if (obj->useGpuLod) {
             buf->enableGpuLodRendering();
+            buf->objPos = obj->pos();
             checkForGpuLodCompatibility(obj);
+            // this check is probably obsolete, as we set objPos here
 			if (std::isnan(buf->objPos.x) || std::isnan(buf->objPos.y) || std::isnan(buf->objPos.z)) {
-				Error("PBRShader: object position not set in UBO");
+				if (obj->enabled) {
+					Error("PBRShader: object position not set in UBO");
+				} else {
+					Log("WARNING: PBRShader: object position not set in UBO. Be sure to set objPos before enabling this object\n");
+				}
 			}
 		}
 	}
@@ -204,7 +210,15 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	engine->util.debugNameObjectDeviceMemory(dynamicUniformBufferMemory, "PBR dynamic UBO Memory");
 	// permanently map the dynamic buffer to CPU memory:
 	vkMapMemory(device, dynamicUniformBufferMemory, 0, bufSize, 0, &dynamicUniformBufferCPUMemory);
-	void* data = dynamicUniformBufferCPUMemory;
+	// initialize the array of model_ubo's:
+	for (size_t i = 0; i < engine->getMaxObjects(); i++) {
+		char* c_ptr = static_cast<char*>(dynamicUniformBufferCPUMemory);
+		c_ptr += i * pbrShader->alignedDynamicUniformBufferSize;
+		PBRShader::DynamicModelUBO* model_ubo = (PBRShader::DynamicModelUBO*)c_ptr;
+		memset(model_ubo, 0, sizeof(PBRShader::DynamicModelUBO));
+		model_ubo->init();
+    }
+
 	
 	VulkanHandoverResources handover{};
     handover.mvpBuffer = uniformBuffer;

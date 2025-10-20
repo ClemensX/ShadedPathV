@@ -43,8 +43,8 @@ int mainOne()
     //LandscapeDemo app; // vr ok
     //Incoming app;
     //LandscapeGenerator app; // vr ok with limited support
-    Loader app;
-    //MeshManager app;
+    //Loader app;
+    MeshManager app;
 
     Log("main() start!\n");
     ShadedPathEngine engine;

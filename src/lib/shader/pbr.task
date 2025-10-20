@@ -187,7 +187,7 @@ void main() {
   
     if (!isRenderingDisabled && !isOutside) {
         // LOD selection:
-        uint meshIndex = 0; // default to LOD0
+        uint meshIndex = model_ubo.meshNumber; // default to exact mesh specified in model_ubo (for non-LOD rendering)
         //debugPrintfEXT("TASK SHADER: model_ubo flags: %u\n", model_ubo.flags);
         //debugPrintfEXT("TASK SHADER: isGpuLodEnabled: %d\n", isGpuLodEnabled ? 1 : 0);
         if (isGpuLodEnabled) {
@@ -204,7 +204,7 @@ void main() {
 
             uint lodLevel = calculateLODIndex(dist);
             //debugPrintfEXT("TASK SHADER: object %u dist %f scaled %f ==> level: %u\n", model_ubo.objectNum, dist, distScaled, lodLevel);
-            meshIndex = lodLevel;
+            meshIndex = model_ubo.meshNumber + lodLevel; // we rely on proper selection of LOD 0 mesh number in app code!!
         }
         // meshIndex is the LOD mesh we want to render, determine its meshlet count:
         uint meshletsCount = gpuInfos.info[meshIndex].meshletCount;

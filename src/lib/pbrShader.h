@@ -133,6 +133,10 @@ public:
 		void disableGpuLodRendering() {
 			flags &= ~MODEL_RENDER_FLAG_GPU_LOD;
 		}
+        // since we allocate arrays of DynamicModelUBO we need an init function to set default values
+		void init() {
+			objPos = glm::vec3(std::numeric_limits<double>::quiet_NaN()); // signal that this is not set
+		}
 	};
 	// Array entries of DynamicModelUBO have to respect hardware alignment rules
 	uint64_t alignedDynamicUniformBufferSize = 0;

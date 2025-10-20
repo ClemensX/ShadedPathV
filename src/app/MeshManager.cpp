@@ -311,6 +311,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
         PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
         if (!wo->enabled) {
             buf->disableRendering();
+            buf->objPos = wo->pos(); // get rid of uninitialized object position warning
             continue;
         } else {
             buf->enableRendering();
