@@ -402,7 +402,7 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	vkCmdSetCullMode(commandBuffer, cullMode);
 
 	auto buf = pbrShader->getAccessToModel(fr, obj->objectNum);
-	buf->flags = 0; // regular PBR rednering
+	//buf->flags = 0; // regular PBR rendering, do not overwrite pre-set flags
 	if (obj->mesh->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
 		buf->flags |= PBRShader::MODEL_RENDER_FLAG_USE_VERTEX_COLORS; // no textures, use vertex colors
 	}
@@ -415,7 +415,13 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	if (obj->mesh->outMeshletDesc.size() > 0) {
         buf->meshletsCount = static_cast<uint32_t>(obj->mesh->outMeshletDesc.size());
         // assert that the meshlet count is less than the max task work group count
-        assert(buf->meshletsCount < engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxTaskWorkGroupCount[0]);
+        bool okTasks = buf->meshletsCount < engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxTaskWorkGroupCount[0];
+        bool okMeshlets = buf->meshletsCount < engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxMeshWorkGroupCount[0];
+		if (!okTasks || !okMeshlets) {
+			Error("Meshlet count " + to_string(buf->meshletsCount) + " exceeds device limits: max task work groups " + to_string(engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxTaskWorkGroupCount[0]) +
+				", max mesh work groups " + to_string(engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxMeshWorkGroupCount[0]) +
+				" for object " + to_string(obj->objectNum));
+        }
 	}
 	// bind global texture array:
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
@@ -440,7 +446,9 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 			Log("ERROR: vkCmdDrawMeshTasksEXT function pointer is null!" << endl);
 		} else {
 			// Dispatch one workgroup per meshlet instead of one workgroup for all meshlets
-			vkCmdDrawMeshTasksEXT(commandBuffer, static_cast<uint32_t>(obj->mesh->outMeshletDesc.size()), 1, 1);
+			//vkCmdDrawMeshTasksEXT(commandBuffer, static_cast<uint32_t>(obj->mesh->outMeshletDesc.size()), 1, 1);
+            // only one workgroup, task shader will handle LOD selection and emit all draw calls for all meshlets
+			vkCmdDrawMeshTasksEXT(commandBuffer, 1, 1, 1);
 			Log("Called vkCmdDrawMeshTasksEXT successfully" << endl);
 		}
 	} else {

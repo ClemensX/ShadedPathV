@@ -24,11 +24,15 @@ taskPayloadSharedEXT TaskPayload payload;
 GPUMeshIndexBuffer gpuIndices = GPUMeshIndexBuffer(pushConstants.meshStorageBufferAddress + 0);
 GPUMeshInfoBuffer gpuInfos = GPUMeshInfoBuffer(pushConstants.baseAddressInfos);
 
-uint meshIndex = 5;
-MeshletDescs meshletDescs = MeshletDescs(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].meshletOffset);
-GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].globalIndexOffset);
-PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].localIndexOffset);
-VertexBuffer vertices = VertexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].vertexOffset);
+//uint meshIndex = 9;
+//MeshletDescs meshletDescs = MeshletDescs(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].meshletOffset);
+//GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].globalIndexOffset);
+//PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].localIndexOffset);
+//VertexBuffer vertices = VertexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].vertexOffset);
+
+void logPayload() {
+    debugPrintfEXT("TaskPayload: meshletIndex %u, meshIndex %u\n", payload.meshletIndex, payload.meshIndex);
+}
 
 void check_inputs() {
     GPUMeshIndex gi = gpuIndices.index[0];
@@ -37,6 +41,8 @@ void check_inputs() {
     //GPUMeshInfoBuffer gpuInfos = GPUMeshInfoBuffer(pushConstants.meshStorageBufferAddress + gi.gpuMeshInfoBaseAddress[0]);
     debugPrintfEXT("TASK SHADER GPUInfo 0: meshlet offset: %llx\n", gpuInfos.info[0].meshletOffset);
 
+    uint meshIndex = 0;
+    VertexBuffer vertices = VertexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].vertexOffset);
     PBRVertex v = vertices.vertex[0];
     //debugPrintfEXT("TASK SHADER: vertex[0]: %f %f %f\n", v.position.x, v.position.y, v.position.z);
     v = vertices.vertex[1];
@@ -56,6 +62,7 @@ void check_inputs() {
 //    //vec3 cp = ubo.camPos;
 //    //debugPrintfEXT("cam %f %f %f\n", ubo.camPos.x, ubo.camPos.y, ubo.camPos.z);
 //
+    PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].localIndexOffset);
     uint index = 3;
     uint byteValue0 = (primitiveIndexBuffer.primitiveIndices[index / 4] >> ((index % 4) * 8)) & 0xFFu;
     index = 4;
@@ -67,6 +74,7 @@ void check_inputs() {
     //uint globalIndex0 = globalIndexBuffer.index[4];
     //debugPrintfEXT("TASK SHADER global index[0..4] %d %d %d %d %d\n", globalIndexBuffer.index[0],globalIndexBuffer.index[1],globalIndexBuffer.index[2],globalIndexBuffer.index[3],globalIndexBuffer.index[4]);
 
+    MeshletDescs meshletDescs = MeshletDescs(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].meshletOffset);
     uvec4 uv = meshletDescs.packedMeshlets[1];
     //debugPrintfEXT("meshlet uvec4[0] %f %f %f %f\n", uv.x, uv.y, uv.z, uv.w);
     MeshletDesc meshlet = unpackMeshletDesc(uv);
@@ -120,6 +128,7 @@ void main() {
         //debugPrintfEXT("TASK SHADER: model_ubo.meshNumber is ZERO! This is invalid!\n");
     }
     bool isRenderingDisabled = (model_ubo.flags & MODEL_RENDER_FLAG_DISABLE) != 0;
+    bool isGpuLodEnabled = (model_ubo.flags & MODEL_RENDER_FLAG_GPU_LOD) != 0;
 
     mat4 model = model_ubo.model;
     mat4 view = ubo.view;
@@ -160,12 +169,27 @@ void main() {
     //    }
   
     if (!isRenderingDisabled && !isOutside) {
-        //debugPrintfEXT("TASK[%u:%u] object %u emitting meshlet %u, is disabled == %u\n", gl_WorkGroupID.x, gl_LocalInvocationID.x, model_ubo.objectNum, meshletIndex, isRenderingDisabled ? 1 : 0);
-        payload.meshletIndex = meshletIndex;
+        // LOD selection:
+        uint meshIndex = 0; // default to LOD0
+        //debugPrintfEXT("TASK SHADER: model_ubo flags: %u\n", model_ubo.flags);
+        //debugPrintfEXT("TASK SHADER: isGpuLodEnabled: %d\n", isGpuLodEnabled ? 1 : 0);
+        if (isGpuLodEnabled) {
+            meshIndex = 8;
+        }
+        // meshIndex is the LOD mesh we want to render, determine its meshlet count:
+        uint meshletsCount = gpuInfos.info[meshIndex].meshletCount;
+        //debugPrintfEXT("TASK SHADER: render mesh index %u with meshletsCount %u\n", meshIndex, meshletsCount);
+        // Emit selectedCount mesh shader workgroups.
+        // We emit one mesh workgroup at a time so each gets a distinct payload.meshletIndex.
         payload.mvp = mvp;
-        //debugPrintfEXT("TASK SHADER: processing meshlet %d of %d\n", meshletIndex, model_ubo.meshletsCount);
-        // Each task shader workgroup emits exactly one mesh shader workgroup
-        EmitMeshTasksEXT(1, 1, 1);
+        payload.meshIndex = meshIndex;
+        payload.meshletIndex = 0; // never used
+        //debugPrintfEXT("TASK SHADER: mesh loop mi %u meshletIndex %u\n", mi, payload.meshletIndex);
+        //logPayload();
+        // Optionally print once for debugging:
+        // if (mi == 0u) debugPrintfEXT("TASK: object %u LOD %u selectedCount %u dist %f\n", model_ubo.objectNum, lod, selectedCount, dist);
+        EmitMeshTasksEXT(meshletsCount, 1, 1);
+        //debugPrintfEXT("TASK[%u:%u] object %u emitting meshlet %u, is disabled == %u\n", gl_WorkGroupID.x, gl_LocalInvocationID.x, model_ubo.objectNum, meshletIndex, isRenderingDisabled ? 1 : 0);
     }
 }
 

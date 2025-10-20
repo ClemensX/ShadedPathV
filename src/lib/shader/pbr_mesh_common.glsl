@@ -94,8 +94,9 @@ struct BoundingBox {
 };
 
 const uint MODEL_RENDER_FLAG_NONE              = 0u;
-const uint MODEL_RENDER_FLAG_USE_VERTEX_COLORS = 1u << 0; // 0b0001
-const uint MODEL_RENDER_FLAG_DISABLE           = 1u << 1; // 0b0010
+const uint MODEL_RENDER_FLAG_USE_VERTEX_COLORS = 1u << 0; // 1
+const uint MODEL_RENDER_FLAG_DISABLE           = 1u << 1; // 2
+const uint MODEL_RENDER_FLAG_GPU_LOD           = 1u << 2; // 4, enable GPU LOD object manipulation
 // info for this model instance
 // see 	struct PBRTextureIndexes and struct DynamicModelUBO in pbrShader.h
 // one element of the large object material buffer (descriptor updated for each model group before rendering)
@@ -160,8 +161,9 @@ const uint PAYLOAD_CULLED = 0xFFFFFFFFu;
 
 struct TaskPayload {
     mat4 mvp;
-    uint meshletIndex;
-    // Add more fields as needed (e.g., LOD, culling flags, etc.)
+    uint meshIndex; // LOD selection
+    uint meshletIndex; // only used for discarding
+    // single meshlet to draw DO NOT iterate meshletIndex, emit multiple mesh shader calls at once with EmitMeshTasksEXT(meshletsCount, 1, 1);
 };
 
 // utility functions

@@ -25,7 +25,7 @@ GPUMeshIndexBuffer gpuIndices = GPUMeshIndexBuffer(pushConstants.meshStorageBuff
 GPUMeshInfoBuffer gpuInfos = GPUMeshInfoBuffer(pushConstants.baseAddressInfos);
 
 //uint meshIndex = model_ubo.meshNumber;
-uint meshIndex = 8;
+uint meshIndex = payload.meshIndex;
 MeshletDescs meshletDescs = MeshletDescs(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].meshletOffset);
 GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].globalIndexOffset);
 PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].localIndexOffset);
@@ -37,6 +37,11 @@ VertexBuffer vertices = VertexBuffer(pushConstants.meshStorageBufferAddress + gp
 //PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(pushConstants.meshStorageBufferAddress + model_ubo.localIndexOffset);
 //VertexBuffer vertices = VertexBuffer(pushConstants.meshStorageBufferAddress + model_ubo.vertexOffset);
 /**/
+
+void logPayload() {
+    debugPrintfEXT("TaskPayload: meshletIndex %u, meshIndex %u\n", payload.meshletIndex, payload.meshIndex);
+}
+
 void unpackAABB(uint pHigh, uint pLow, vec3 objectMin, vec3 objectMax) {
     debugPrintfEXT("uint64 aabb value: 0x %08x %08x\n", pHigh, pLow);
 }
@@ -63,7 +68,7 @@ void check_inputs() {
 void main()
 {
     //check_inputs();
-
+    //logPayload();
     // check for culled objects:
     if (payload.meshletIndex == PAYLOAD_CULLED || payload.meshletIndex > gpuInfos.info[meshIndex].meshletCount) {
         //debugPrintfEXT("MESH SHADER: payload.meshletIndex: %u\n", payload.meshletIndex);
@@ -73,7 +78,8 @@ void main()
 
     // Get meshlet index from task shader or workgroup
     uint meshletIndex = gl_WorkGroupID.x;
-    meshletIndex = payload.meshletIndex;
+    //uint meshletIndex = payload.meshletIndex;
+    //debugPrintfEXT("MESH SHADER: meshletIndex: %u\n", meshletIndex);
 
     // Read and unpack meshlet
     uvec4 packed = meshletDescs.packedMeshlets[meshletIndex];
