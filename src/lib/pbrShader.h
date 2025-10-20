@@ -103,7 +103,8 @@ public:
     // define per frame flags - should be set by app code in prepareFrame()
     static const unsigned int MODEL_RENDER_FLAG_NONE = 0; // default, does not really need to be set, means regular PBR rendering
     static const unsigned int MODEL_RENDER_FLAG_USE_VERTEX_COLORS = 1; // use vertex colors only, no textures
-    static const unsigned int MODEL_RENDER_FLAG_DISABLE = 2; // disable rendering of this object for this frame
+	static const unsigned int MODEL_RENDER_FLAG_DISABLE = 2; // disable rendering of this object for this frame
+	static const unsigned int MODEL_RENDER_FLAG_GPU_LOD = 4; // enable GPU LOD object manipulation
 	// the dynamic uniform buffer is peramnently mapped to CPU memory for fast updates
 	struct alignas(16) DynamicModelUBO {
 		glm::mat4 model; // 16-byte aligned
@@ -117,17 +118,18 @@ public:
         ShaderMaterial material; // 16-byte aligned
         BoundingBox boundingBox; // AABB in local object space
         uint32_t meshNumber; // link to MeshInfo
-		uint64_t GPUMeshStorageBaseAddress; // base address of global mesh storage buffer on GPU
-		uint64_t meshletOffset = 0; // offset into global mesh storage buffer
-		uint64_t localIndexOffset = 0; // offset into global mesh storage buffer
-		uint64_t globalIndexOffset = 0; // offset into global mesh storage buffer
-		uint64_t vertexOffset = 0; // offset into global mesh storage buffer
 		// helper methods
 		void disableRendering() {
 			flags |= MODEL_RENDER_FLAG_DISABLE;
 		}
 		void enableRendering() {
 			flags &= ~MODEL_RENDER_FLAG_DISABLE;
+		}
+		void enableGpuLodRendering() {
+			flags |= MODEL_RENDER_FLAG_GPU_LOD;
+		}
+		void disableGpuLodRendering() {
+			flags &= ~MODEL_RENDER_FLAG_GPU_LOD;
 		}
 	};
 	// Array entries of DynamicModelUBO have to respect hardware alignment rules
@@ -252,6 +254,8 @@ private:
 	VkDeviceMemory meshStorageBufferMemory = nullptr;
 	void* meshStorageBufferCPUMemory = nullptr;
     uint64_t meshStorageNextFreePos = 0;
+    // check that the object and its meshes are compatible with GPU LOD rendering
+    void checkForGpuLodCompatibility(WorldObject *wo);
 };
 
 // Hash combine utility

@@ -58,8 +58,10 @@ private:
     float lod[10] = { 0.0f }; // LOD distances, [0] is never used
     float sunIntensity = 1.0f;
     bool addSunDirBeam = false; // add line to point to sun direction, for checking corect sun position
-    bool simluateLOD = false;
+    bool simulateLOD = false;
     float lodDistance = 0.0f; // distance for LOD simulation
     int simLODLevel = 0; // LOD level for simulation
     std::vector<WorldObject*> simObjects; // for simulating LOD
+    bool enableGpuLodObject = false;
+    WorldObject* gpuLodObject = nullptr; // object used to test GPU LOD
 };

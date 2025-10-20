@@ -24,8 +24,8 @@ layout(location = 1) out PBRVertexOut outVert[];
 GPUMeshIndexBuffer gpuIndices = GPUMeshIndexBuffer(pushConstants.meshStorageBufferAddress + 0);
 GPUMeshInfoBuffer gpuInfos = GPUMeshInfoBuffer(pushConstants.baseAddressInfos);
 
-uint meshIndex = model_ubo.meshNumber;
-//uint meshIndex = 5;
+//uint meshIndex = model_ubo.meshNumber;
+uint meshIndex = 8;
 MeshletDescs meshletDescs = MeshletDescs(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].meshletOffset);
 GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].globalIndexOffset);
 PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].localIndexOffset);
@@ -65,7 +65,7 @@ void main()
     //check_inputs();
 
     // check for culled objects:
-    if (payload.meshletIndex == PAYLOAD_CULLED) {
+    if (payload.meshletIndex == PAYLOAD_CULLED || payload.meshletIndex > gpuInfos.info[meshIndex].meshletCount) {
         //debugPrintfEXT("MESH SHADER: payload.meshletIndex: %u\n", payload.meshletIndex);
         SetMeshOutputsEXT(0, 0);
         return;

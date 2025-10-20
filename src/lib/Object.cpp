@@ -220,6 +220,7 @@ void MeshStore::uploadMesh(MeshInfo* mesh_ptr)
         gpuMeshInfos[index].globalIndexOffset = mesh_ptr->globalIndexOffset;
         gpuMeshInfos[index].localIndexOffset = mesh_ptr->localIndexOffset;
         gpuMeshInfos[index].meshletOffset = mesh_ptr->meshletOffset;
+        gpuMeshInfos[index].meshletCount = (uint32_t)mesh_ptr->outMeshletDesc.size();
         int indicesOffset = lodIndex * sizeof(GPUMeshIndex);
 		engine->globalRendering.copyToGlobalBuffer(sizeof(GPUMeshIndex), &gpuMeshIndices[lodIndex], mem, indicesOffset);
 		engine->globalRendering.copyToGlobalBuffer(sizeof(GPUMeshInfo), &gpuMeshInfos[index], mem, sizeIndices + sizeInfos);

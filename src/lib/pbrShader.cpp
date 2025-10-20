@@ -61,6 +61,14 @@ void PBRShader::fillTextureIndexesFromMesh(PBRTextureIndexes& ind, MeshInfo* mes
 	ind.emissive = mesh->emissiveTexture ? mesh->emissiveTexture->index : -1;
 }
 
+void PBRShader::checkForGpuLodCompatibility(WorldObject* wo)
+{
+	// get mesh collection for this object:
+    MeshCollection* coll = engine->meshStore.getMeshCollection(wo->mesh->id);
+	assert(coll != nullptr);
+	assert(coll->meshInfos.size() == 10);
+}
+
 void PBRShader::prefillModelParameters(FrameResources& fr)
 {
 	TextureInfo* tiBrdflut = engine->textureStore.getTexture(engine->textureStore.BRDFLUT_TEXTURE_ID);
@@ -110,11 +118,10 @@ void PBRShader::prefillModelParameters(FrameResources& fr)
         BoundingBox box;
 		obj->getBoundingBox(box);
         buf->boundingBox = box;
-		buf->GPUMeshStorageBaseAddress = 0;// obj->mesh->GPUMeshStorageBaseAddress;
-        buf->vertexOffset = obj->mesh->vertexOffset;
-        buf->meshletOffset = obj->mesh->meshletOffset;
-        buf->globalIndexOffset = obj->mesh->globalIndexOffset;
-        buf->localIndexOffset = obj->mesh->localIndexOffset;
+		if (obj->useGpuLod) {
+            buf->enableGpuLodRendering();
+            checkForGpuLodCompatibility(obj);
+		}
 	}
 
 }

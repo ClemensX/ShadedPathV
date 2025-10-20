@@ -11,6 +11,8 @@ struct GPUMeshInfo {
 	uint64_t localIndexOffset; // offset into global mesh storage buffer
 	uint64_t globalIndexOffset; // offset into global mesh storage buffer
 	uint64_t vertexOffset; // offset into global mesh storage buffer
+    uint meshletCount; // number of meshlets for this LOD
+    uint pad0;
 };
 
 
@@ -109,11 +111,6 @@ layout (binding = 1) uniform UboInstance {
     ShaderMaterial material;
     BoundingBox boundingBox; // AABB axis aligned bounding box
     uint meshNumber;
-    uint64_t GPUMeshStorageBaseAddress; // base address of global mesh storage buffer on GPU
-	uint64_t meshletOffset; // offset into global mesh storage buffer
-	uint64_t localIndexOffset; // offset into global mesh storage buffer
-	uint64_t globalIndexOffset; // offset into global mesh storage buffer
-	uint64_t vertexOffset; // offset into global mesh storage buffer
 } model_ubo;
 
 layout(binding = 0) uniform UniformBufferObject {

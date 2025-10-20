@@ -316,6 +316,8 @@ struct GPUMeshInfo {
 	uint64_t localIndexOffset = 0; // offset into global mesh storage buffer
 	uint64_t globalIndexOffset = 0; // offset into global mesh storage buffer
 	uint64_t vertexOffset = 0; // offset into global mesh storage buffer
+	uint32_t meshletCount; // number of meshlets for this LOD
+	uint32_t pad0;
 };
 
 // Mesh Store to organize objects loaded from gltf files.
@@ -460,6 +462,7 @@ public:
 	UINT objectNum; // must be unique for all objects
     void addVerticesToLineList(std::vector<LineDef>& lines, glm::vec3 offset, float sizeFactor = 1.0f);
     int userGroupId = 0; // user defined group id, used to group objects for specific purposes and easily differentiate them in user code
+    bool useGpuLod = false; // if true, GPU LOD selection is used for this object
 private:
 	glm::vec3 _pos;
 	glm::vec3 _rot;

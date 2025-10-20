@@ -115,6 +115,7 @@ void Loader::init() {
         float scale = 1.0f / width;
         object->scale() = vec3(scale);
         object->enabled = true;
+        object->useGpuLod = true;
     }
 
     // 2 square km world size
@@ -179,7 +180,7 @@ void Loader::prepareFrame(FrameResources* fr)
         spinTimeSeconds = seconds;
     }
     if (seconds > 20.0f) {
-        object->enabled = false;
+        //object->enabled = false;
     }
     engine->shaders.lineShader.clearLocalLines(tr);
     // cube

@@ -149,6 +149,8 @@ void main() {
         return;
     }
     // Visible: emit actual mesh tasks for meshlets
+    if (gl_WorkGroupID.x > 10962)
+    debugPrintfEXT("TASK SHADER: gl_WorkGroupID. x %d y %d z %d\n", gl_WorkGroupID.x, gl_WorkGroupID.y, gl_WorkGroupID.z);
     // Now each workgroup handles exactly one meshlet
     uint meshletIndex = gl_WorkGroupID.x;  // Use workgroup ID instead of global invocation ID
     

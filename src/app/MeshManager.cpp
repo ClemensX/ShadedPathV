@@ -168,6 +168,12 @@ void MeshManager::prepareFrame(FrameResources* fr)
             wo->enabled = false;
             simObjects.push_back(wo);
         }
+        // add test object for GPU LOD:
+        enableGpuLodObject = false;
+        gpuLodObject = engine->objectStore.addObject("group", coll->meshInfos[0]->id, vec3(-2.0f, 2.0f, 0.0f));
+        gpuLodObject->enabled = false;
+        gpuLodObject->useGpuLod = true;
+
         if (!object->mesh->meshletStorageFileFound) {
             Log("ERROR: Meshlet storage file not found for this object, meshlets will not be used for rendering" << endl);
             displayNoMeshletDataWarning = true;
@@ -244,7 +250,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
         // 1 5 10 15 25 30 50 70 150
     }
     if (simObjects.size() == 10) {
-        if (simluateLOD) {
+        if (simulateLOD) {
             vec3 camPos = camera->getPosition();
             vec3 objPos = simObjects[0]->pos();
             objPos.y = 0.0f;
@@ -263,6 +269,14 @@ void MeshManager::prepareFrame(FrameResources* fr)
             for (int i = 0; i < 10; i++) {
                 simObjects[i]->enabled = false;
             }
+        }
+    }
+    if (gpuLodObject != nullptr) {
+        if (enableGpuLodObject) {
+            gpuLodObject->enabled = true;
+        }
+        else {
+            gpuLodObject->enabled = false;
         }
     }
     // cube
@@ -600,8 +614,9 @@ void MeshManager::buildCustomUI() {
         if (ImGui::Button("Apply LOD")) {
             applyLOD = true;
         }
-        ImGui::Checkbox("Simulate LOD", &simluateLOD);
-        ImGui::BeginDisabled(!simluateLOD);
+        ImGui::Checkbox("Simulate LOD", &simulateLOD); ImGui::SameLine();
+        ImGui::Checkbox("Enable GPU LOD Object", &enableGpuLodObject);
+        ImGui::BeginDisabled(!simulateLOD);
         ImGui::Text("Camera Distance: %.3f", lodDistance); ImGui::SameLine();
         ImGui::Text("LOD Level: %d", simLODLevel);
         ImGui::EndDisabled();
