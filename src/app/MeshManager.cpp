@@ -253,7 +253,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
         if (simulateLOD) {
             vec3 camPos = camera->getPosition();
             vec3 objPos = simObjects[0]->pos();
-            objPos.y = 0.0f;
+            //objPos.y = 0.0f; ???
             float dist = length(camPos - objPos);
             int lodLevel = Util::calculateLODIndex(lod, dist);
             //make object visible:

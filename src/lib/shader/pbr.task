@@ -118,6 +118,23 @@ void check_inputs() {
 
 }
 
+float fixed_lod[10] = { 0, 1, 5, 10, 15, 25, 30, 50, 70, 150 };
+
+
+// Calculates the LOD index based on the given lod distances and current distance.
+// lod: array of LOD distances (lod[1]..lod[9]), lod[0] is unused.
+// distance: current camera-to-object distance, scaled to 1m width!!
+// Returns: LOD index in range 0..9 (0 = closest, 9 = farthest).
+uint calculateLODIndex(float distance) {
+    // LOD 0 is always used for distance < lod[1]
+    for (int i = 9; i >= 1; --i) {
+        if (distance >= fixed_lod[i]) {
+            return i;
+        }
+    }
+    return 0;
+}
+
 void main() {
     //check_inputs();
 
@@ -174,7 +191,20 @@ void main() {
         //debugPrintfEXT("TASK SHADER: model_ubo flags: %u\n", model_ubo.flags);
         //debugPrintfEXT("TASK SHADER: isGpuLodEnabled: %d\n", isGpuLodEnabled ? 1 : 0);
         if (isGpuLodEnabled) {
-            meshIndex = 8;
+            // scale to have 1m width for LOD 0 object:
+            BoundingBox box = model_ubo.boundingBox;
+            float width = box.max.x - box.min.x;
+            float scale = 1.0f / width;
+            vec3 camPos = ubo.camPos;
+            vec3 objPos = ubo.objPos;
+            objPos.y = 0.0f;
+            float dist = length(camPos - objPos);
+            float distScaled = dist * scale;
+            //debugPrintfEXT("TASK SHADER: object %u dist %f scaled %f\n", model_ubo.objectNum, dist, distScaled);
+
+            uint lodLevel = calculateLODIndex(dist);
+            //debugPrintfEXT("TASK SHADER: object %u dist %f scaled %f ==> level: %u\n", model_ubo.objectNum, dist, distScaled, lodLevel);
+            meshIndex = lodLevel;
         }
         // meshIndex is the LOD mesh we want to render, determine its meshlet count:
         uint meshletsCount = gpuInfos.info[meshIndex].meshletCount;

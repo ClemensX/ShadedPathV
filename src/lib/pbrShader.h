@@ -53,7 +53,9 @@ public:
 		glm::mat4 view;
 		glm::mat4 proj;
 		glm::vec4 baseColor = glm::vec4(1.0f);
-        glm::vec3 camPos = glm::vec3(-42.0f); // signal that this is not set
+        glm::vec3 camPos = glm::vec3(std::numeric_limits<double>::quiet_NaN()); // signal that this is not set
+        float pad0;
+		glm::vec3 objPos = glm::vec3(std::numeric_limits<double>::quiet_NaN()); // signal that this is not set
 	};
 
 	// MUST match shader definition: pbr.vert, pbr.frag

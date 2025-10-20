@@ -120,6 +120,8 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 proj;
     vec4 baseColor;
     vec3 camPos;
+    float pad0;
+    vec3 objPos;
 } ubo;
 
 
