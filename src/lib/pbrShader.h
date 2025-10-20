@@ -54,8 +54,6 @@ public:
 		glm::mat4 proj;
 		glm::vec4 baseColor = glm::vec4(1.0f);
         glm::vec3 camPos = glm::vec3(std::numeric_limits<double>::quiet_NaN()); // signal that this is not set
-        float pad0;
-		glm::vec3 objPos = glm::vec3(std::numeric_limits<double>::quiet_NaN()); // signal that this is not set
 	};
 
 	// MUST match shader definition: pbr.vert, pbr.frag
@@ -119,7 +117,9 @@ public:
         shaderValuesParams params[MAX_DYNAMIC_LIGHTS]; // 16-byte aligned
         ShaderMaterial material; // 16-byte aligned
         BoundingBox boundingBox; // AABB in local object space
-        uint32_t meshNumber; // link to MeshInfo
+		glm::vec3 objPos = glm::vec3(std::numeric_limits<double>::quiet_NaN()); // signal that this is not set
+		float pad0;
+		uint32_t meshNumber; // link to MeshInfo
 		// helper methods
 		void disableRendering() {
 			flags |= MODEL_RENDER_FLAG_DISABLE;

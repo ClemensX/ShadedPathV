@@ -196,7 +196,7 @@ void main() {
             float width = box.max.x - box.min.x;
             float scale = 1.0f / width;
             vec3 camPos = ubo.camPos;
-            vec3 objPos = ubo.objPos;
+            vec3 objPos = model_ubo.objPos;
             objPos.y = 0.0f;
             float dist = length(camPos - objPos);
             float distScaled = dist * scale;

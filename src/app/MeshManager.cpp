@@ -314,6 +314,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
             continue;
         } else {
             buf->enableRendering();
+            buf->objPos = wo->pos();
         }
         buf->params[0].intensity = sunIntensity; // adjust sun light intensity
         if (addSunDirBeam) {

@@ -121,6 +121,9 @@ void PBRShader::prefillModelParameters(FrameResources& fr)
 		if (obj->useGpuLod) {
             buf->enableGpuLodRendering();
             checkForGpuLodCompatibility(obj);
+			if (std::isnan(buf->objPos.x) || std::isnan(buf->objPos.y) || std::isnan(buf->objPos.z)) {
+				Error("PBRShader: object position not set in UBO");
+			}
 		}
 	}
 
@@ -141,9 +144,6 @@ void PBRShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
 void PBRShader::uploadToGPU(FrameResources& fr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
     if (std::isnan(ubo.camPos.x) || std::isnan(ubo.camPos.y) || std::isnan(ubo.camPos.z)) {
         Error("PBRShader: camera position not set in UBO");
-    }
-	if (std::isnan(ubo.objPos.x) || std::isnan(ubo.objPos.y) || std::isnan(ubo.objPos.z)) {
-		Error("PBRShader: object position not set in UBO");
     }
 	auto& sub = globalSubShaders[fr.frameIndex];
     sub.uploadToGPU(fr, ubo, ubo2);

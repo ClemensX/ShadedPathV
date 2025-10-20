@@ -204,7 +204,6 @@ void Loader::prepareFrame(FrameResources* fr)
 
     // be sure to add cam pos to UBO for PBR shader!!!
     applyViewProjection(pubo.view, pubo.proj, pubo2.view, pubo2.proj, &pubo.camPos, &pubo2.camPos);
-    pubo.objPos = pubo2.objPos = object->pos();
     //Log("Camera position: " << pubo.camPos.x << " " << pubo.camPos.y << " " << pubo.camPos.z << endl); // Camera position: -0.0386716 0.2 0.51695
 
     engine->shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);

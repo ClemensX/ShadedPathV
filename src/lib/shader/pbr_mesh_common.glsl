@@ -111,6 +111,8 @@ layout (binding = 1) uniform UboInstance {
     UBOParams params[MAX_DYNAMIC_LIGHTS];
     ShaderMaterial material;
     BoundingBox boundingBox; // AABB axis aligned bounding box
+    vec3 objPos;
+    float pad0;
     uint meshNumber;
 } model_ubo;
 
@@ -120,8 +122,6 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 proj;
     vec4 baseColor;
     vec3 camPos;
-    float pad0;
-    vec3 objPos;
 } ubo;
 
 
