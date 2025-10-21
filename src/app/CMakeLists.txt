@@ -88,6 +88,12 @@ source_group("ShaderIncludes" FILES ${SHADERINCLUDE_FILES})
 
 function(compile_glsl run_target_name)
     set(glsl_output_files "")
+    # Choose flags based on build type
+    if(CMAKE_BUILD_TYPE STREQUAL "Release")
+        set(GLSLC_FLAGS --target-env=vulkan1.4 -O)
+    else()
+        set(GLSLC_FLAGS --target-env=vulkan1.4 -g)
+    endif()
     foreach(in_file IN LISTS ARGN)
         #get_filename_component(glsl_stage ${in_file} NAME_WE)
         get_filename_component(glsl_stage ${in_file} NAME)
@@ -97,12 +103,14 @@ function(compile_glsl run_target_name)
         get_shader_dependencies(${in_file} dependencies)
 
         # Run glslc if we can find it
-        message(STATUS "command: Vulkan::glslc --target-env=vulkan1.4 -g ${in_file} -o out: ${out_file}")
+        string(JOIN " " GLSLC_FLAGS_STR ${GLSLC_FLAGS})
+        message(STATUS "command: Vulkan::glslc ${GLSLC_FLAGS_STR} ${in_file} -o out: ${out_file}")
         # -g option is debug info
         # -O option is optimization
         add_custom_command(
             OUTPUT ${out_file}
-            COMMAND Vulkan::glslc --target-env=vulkan1.4 -g ${in_file} -o ${out_file}
+            COMMAND ${CMAKE_COMMAND} -E echo "Vulkan::glslc ${GLSLC_FLAGS_STR} ${in_file} -o ${out_file}"
+            COMMAND Vulkan::glslc ${GLSLC_FLAGS} ${in_file} -o ${out_file}
             DEPENDS ${dependencies}
         )
         list(APPEND glsl_output_files ${out_file})
