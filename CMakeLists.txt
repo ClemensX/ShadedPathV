@@ -18,6 +18,9 @@ if(MSVC)
   # comment next line to get deprecation errors:
   add_compile_options(/wd4996)
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=deprecated")
+  # For MSVC (Visual Studio)
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi")
+  set(CMAKE_EXE_LINKER_FLAGS_RELEASE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /DEBUG")
 elseif(APPLE)
   add_definitions(-DALLOW_USING_NON_TRANSFER_ONLY_QUEUE)
   add_compile_options(-Wall -Wextra -Werror -Wno-error=unused-variable -Wno-error=unused-function
