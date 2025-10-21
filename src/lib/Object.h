@@ -463,6 +463,7 @@ public:
     void addVerticesToLineList(std::vector<LineDef>& lines, glm::vec3 offset, float sizeFactor = 1.0f);
     int userGroupId = 0; // user defined group id, used to group objects for specific purposes and easily differentiate them in user code
     bool useGpuLod = false; // if true, GPU LOD selection is used for this object
+    BoundingBox perFrameBB; // bounding box updated per frame, e.g. for animated objects
 private:
 	glm::vec3 _pos;
 	glm::vec3 _rot;

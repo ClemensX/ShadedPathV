@@ -54,6 +54,9 @@ public:
     static float getMaxCubeViewDistanceFromFarPlane(float f) {
         return sqrt((f * f) / 3.0f);
     }
+    static void calculateStandardModelTransform(glm::mat4& modelToWorld, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation);
+    // recalculate bounding box, call this after resizing an object, make sure to pass object BB, not from the mesh!
+    static void recalculateBoundingBox(glm::mat4 toWorld, BoundingBox& box);
     // calculate bounding box to world coords into corners
     static void calculateBoundingBox(glm::mat4 toWorld, BoundingBox& box, BoundingBoxCorners& corners);
     static void drawBoundingBox(std::vector<LineDef>& boxes, BoundingBox& box, BoundingBoxCorners& boundingBoxCorners, glm::mat4 modelToWorld, glm::vec4 color);

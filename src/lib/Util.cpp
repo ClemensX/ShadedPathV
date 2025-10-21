@@ -49,7 +49,7 @@ void Util::initializeDebugFunctionPointers() {
         pfnDebugUtilsObjectNameEXT = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(engine->globalRendering.vkInstance, "vkSetDebugUtilsObjectNameEXT");
         /* Put this in your code that initializes Vulkan (after you create your VkInstance and VkDevice): */
         vkCmdDrawMeshTasksEXT_ = (PFN_vkCmdDrawMeshTasksEXT)vkGetInstanceProcAddr(engine->globalRendering.vkInstance, "vkCmdDrawMeshTasksEXT");
-        Log("vkCmdDrawMeshTasksEXT function pointer: " << (void*)vkCmdDrawMeshTasksEXT_ << endl);
+        //Log("vkCmdDrawMeshTasksEXT function pointer: " << (void*)vkCmdDrawMeshTasksEXT_ << endl);
 }
 
 std::string Util::createDebugName(const char* name, int number) {
@@ -594,6 +594,36 @@ void Util::writeHeightmapRaw(std::vector<glm::vec3>& points)
     file.close();
 
     Log("written 32-bit float RAW heightmap file with ( " << roundedSquareRoot << " x " << roundedSquareRoot << " ) points: " << engine->files.absoluteFilePath(filename).c_str() << endl);
+}
+
+void Util::calculateStandardModelTransform(glm::mat4& modelToWorld, glm::vec3 pos, glm::vec3 scale, glm::vec3 rot)
+{
+    glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), rot.x, glm::vec3(1.0f, 0.0f, 0.0f));
+    glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), rot.y, glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), rot.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+    glm::mat4 rotationMatrix = rotationZ * rotationY * rotationX;
+    glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
+    glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
+    modelToWorld = trans * scaled * rotationMatrix;
+}
+
+void Util::recalculateBoundingBox(glm::mat4 toWorld, BoundingBox& box)
+{
+    //vec3 corners[8];
+    BoundingBoxCorners corners;
+    calculateBoundingBox(toWorld, box, corners);
+    // recalculate bounding box from transformed corners:
+    box.min = vec3(FLT_MAX, FLT_MAX, FLT_MAX);
+    box.max = vec3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+    for (const vec3& corner : corners.corners) {
+        box.min.x = std::min(box.min.x, corner.x);
+        box.min.y = std::min(box.min.y, corner.y);
+        box.min.z = std::min(box.min.z, corner.z);
+        box.max.x = std::max(box.max.x, corner.x);
+        box.max.y = std::max(box.max.y, corner.y);
+        box.max.z = std::max(box.max.z, corner.z);
+    }
 }
 
 void Util::calculateBoundingBox(glm::mat4 modelToWorld, BoundingBox& box, BoundingBoxCorners& bbcorners)

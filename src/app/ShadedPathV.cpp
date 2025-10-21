@@ -17,6 +17,7 @@
 #include "LandscapeGenerator.h"
 #include "Loader.h"
 #include "MeshManager.h"
+#include "Rocks.h"
 
 int mainOne();
 int mainTwo();
@@ -44,7 +45,8 @@ int mainOne()
     //Incoming app;
     //LandscapeGenerator app; // vr ok with limited support
     //Loader app;
-    MeshManager app;
+    //MeshManager app;
+    Rocks app;
 
     Log("main() start!\n");
     ShadedPathEngine engine;
@@ -67,7 +69,7 @@ int mainOne()
         //.setFixedPhysicalDeviceIndex(1) // if GPU card is available it should be device 0. device 1 is usually the integrated Intel/AMD GPU
         //.enableGlobalWireframe()
         .enableMeshShader()
-        .setMaxObjects(1000)
+        .setMaxObjects(10010)
         ;
 
     engine.initGlobal();

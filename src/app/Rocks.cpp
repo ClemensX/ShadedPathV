@@ -1,33 +1,27 @@
 #include "mainheader.h"
 #include "AppSupport.h"
-#include "Loader.h"
+#include "Rocks.h"
 
 using namespace std;
 using namespace glm;
 
-void Loader::run(ContinuationInfo* cont)
+void Rocks::run(ContinuationInfo* cont)
 {
-    Log("Loader started" << endl);
+    Log("Rocks started" << endl);
     {
         AppSupport::setEngine(engine);
         auto& shaders = engine->shaders;
-        engine->appname = "Loader";
+        engine->appname = "Tech Demo 1";
         // camera initialization
-        //initCamera(glm::vec3([-0.0386716 0.57298 1.71695]), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        //initCamera(glm::vec3(-0.0386716f, 0.5f, 1.71695f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        //initCamera(glm::vec3(-0.0386716f, 0.2f, 0.51695f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        //initCamera(glm::vec3(-2.10783f, 0.56567f, -0.129275f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-
-        // dolphin debug:
-        //initCamera(glm::vec3(-0.204694f, 0.198027f, 0.220922f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        // camery for damaged helmet video recording:
-        //cameraPosition = [-0.640809 - 0.445347 2.82217]
         initCamera(glm::vec3(-0.640809f, -0.445347f, 2.82217f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         getFirstPersonCameraPositioner()->setMaxSpeed(0.1f);
-        //getFirstPersonCameraPositioner()->setMaxSpeed(10.1f);
+        //getFirstPersonCameraPositioner()->setMaxSpeed(200.0f);
         getHMDCameraPositioner()->setMaxSpeed(0.1f);
-
+        Movement mv;
+        //camera->setConstantSpeed(mv.fallSpeedMS);
+        //camera->setConstantSpeed(mv.runSpeedMS);
+        camera->setConstantSpeed(mv.walkSpeedMS);
         // engine configuration
         enableEventsAndModes();
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
@@ -50,10 +44,67 @@ void Loader::run(ContinuationInfo* cont)
         init();
         engine->eventLoop();
     }
-    Log("Loader ended" << endl);
+    Log("Rocks ended" << endl);
 }
 
-void Loader::init() {
+void redoBB(WorldObject* obj) {
+    mat4 modeltransform = mat4(0.0f);
+    BoundingBox box;
+    obj->getBoundingBox(box); // get the unscaled mesh BB
+    Util::calculateStandardModelTransform(modeltransform, obj->pos(), obj->scale(), obj->rot());
+    Util::recalculateBoundingBox(modeltransform, box);
+    obj->perFrameBB = box;
+}
+void Rocks::addRandomRocks(std::vector<WorldObject*>& rocks, World& world, MeshInfo* meshInfo, float scale1m) {
+
+    unsigned long total_rocks = 10000;
+    if (engine->isVR()) total_rocks /= 4; // reduce number of rocks for VR mode for performance reasons
+
+    // create randomly positioned billboards for each vacXX texture we have:
+    for (unsigned long num = 0; num < total_rocks; num++) {
+        vec3 rnd = world.getRandomPos();
+        vec3 pos;
+        float denseFactor = 8.0f;
+        if (engine->isVR()) denseFactor *= 2.0f; // reduce density for VR mode for performance reasons
+        pos.x = rnd.x/denseFactor;
+        pos.y = rnd.y/denseFactor;
+        pos.z = rnd.z/denseFactor;
+        //pos.x = num * 1.0f;
+        //pos.y = 0.0f;
+        //pos.z = -300.0f;
+
+        WorldObject* rock = engine->objectStore.addObject("group", "LogoBox", pos);
+
+        // scale between 1 and 10 meters:
+        //float scale = MathHelper::RandF(scale1m, 10.0f * scale1m);
+        float scale = MathHelper::RandF(1.0f, 3.0f);
+        scale = 1.0f;// scale1m;
+        scale = scale1m;
+        rock->scale() = vec3(scale);
+        rock->enabled = true;
+        rock->useGpuLod = true;
+        vec3 rotation;
+        rotation.x = MathHelper::RandF(0.0f, PI);
+        rotation.y = MathHelper::RandF(0.0f, PI);
+        rotation.z = MathHelper::RandF(0.0f, PI);
+        //rock->rot() = vec3(PI_half, 0.0, 0.0f);
+        rock->rot() = rotation;
+        //mat4 modeltransform = mat4(0.0f);
+        //BoundingBox box;
+        //rock->getBoundingBox(box); // get the unscaled mesh BB
+        //Util::calculateStandardModelTransform(modeltransform, rock->pos(), rock->scale(), rock->rot());
+        //Util::recalculateBoundingBox(modeltransform, box);
+        //rock->perFrameBB = box;
+        auto box = rock->perFrameBB;
+        redoBB(rock);
+        float width = box.max.x - box.min.x;
+        scale = 1.0f / width;
+        //Log("add rocks: width " << width << " scale " << scale << endl);
+        rocks.push_back(rock);
+    }
+}
+
+void Rocks::init() {
     engine->sound.init(false);
 
     engine->textureStore.generateBRDFLUT();
@@ -61,45 +112,10 @@ void Loader::init() {
     MeshFlagsCollection meshFlags;
     //meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
-    //meshFlags.setFlag(MeshFlags::MESHLET_GENERATE);
-    //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
-    //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
-    
     engine->meshStore.loadMesh("granite_rock_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
-    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
-    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = true;  useDefaultNormalLineLength = false;
-    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox"); alterObjectCoords = true;  useDefaultNormalLineLength = false;
-
-    //engine->meshStore.loadMesh("WaterBottle_cmp.glb", "LogoBox"); alterObjectCoords = false;
-    //engine->meshStore.loadMesh("mirror_cmp.glb", "LogoBox"); alterObjectCoords = false;
-    //engine->meshStore.loadMesh("SimpleMaterial.gltf", "LogoBox");
-    //engine->meshStore.loadMesh("desert3_cmp.glb", "LogoBox"); alterObjectCoords = false;
-    //engine->meshStore.loadMesh("desert_cmp.glb", "LogoBox"); alterObjectCoords = false;
-    //engine->meshStore.loadMesh("output.glb", "LogoBox"); alterObjectCoords = false;
-    //engine->meshStore.loadMesh("cc_facial_exp_cmp.glb", "LogoBox"); alterObjectCoords = false;
-
-    //engine->meshStore.loadMesh("delfini6.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES)); alterObjectCoords = false;
-    //engine->meshStore.loadMesh("delfini6.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
-    //engine->meshStore.loadMesh("delfini6.glb", "LogoBox"); alterObjectCoords = false;
-
-    //engine->meshStore.loadMesh("delfini6.glb", "LogoBox"); alterObjectCoords = false;
-    //engine->meshStore.loadMesh("delfini7.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
-    //engine->meshStore.loadMesh("delfini7.glb", "LogoBox"); alterObjectCoords = false;
-
-    meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
-    meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
-    // we don't have meshlet file for test meshes - regenrate the meshlet data:
-    meshFlags.setFlag(MeshFlags::MESHLET_GENERATE);
-    //engine->meshStore.loadMeshCylinder("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID, true); alterObjectCoords = false;
-    //engine->meshStore.loadMeshGrid("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID); alterObjectCoords = false;
 
     engine->objectStore.createGroup("group");
-    //object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.5f, -1.0f, -1.0f));
     object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.2f, 0.2f, 0.2f));
-    //object = engine->objectStore.addObject("group", "LogoBox.2", vec3(-0.2f, 0.2f, 0.2f)); // cc_facial body legs
-
-    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "newid");
-    //engine->objectStore.addObject("group", "newid", vec3(+0.5f, 0.2f, 0.2f));
 
     object->enableDebugGraphics = false;
     if (alterObjectCoords) {
@@ -109,39 +125,43 @@ void Loader::init() {
     BoundingBox box;
     object->getBoundingBox(box);
     Log(" object max values: " << box.max.x << " " << box.max.y << " " << box.max.z << std::endl);
+    // scale to have 1m width for LOD 0 object:
+    float width = box.max.x - box.min.x;
+    float scale = 1.0f / width;
     if (true) {
-        // scale to have 1m width for LOD 0 object:
-        float width = box.max.x - box.min.x;
-        float scale = 1.0f / width;
         object->scale() = vec3(scale);
         object->enabled = true;
         object->useGpuLod = true;
+        redoBB(object);
     }
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
-    // Grid with 1m squares, floor on -10m, ceiling on 372m
-
-    // load skybox cube texture and generate cubemaps
-    //engine->textureStore.loadTexture("nebula.ktx2", "skyboxTexture");
-    engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
-    //engine->textureStore.loadTexture("papermill.ktx2", "skyboxTexture");
-    //engine->textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
-    // generating cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
-    //engine->textureStore.generateCubemaps("skyboxTexture");
-    engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);
-    engine->textureStore.loadTexture("prefilter.ktx2", engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
+    bool generateCubemaps = false;
+    // transform terrain to world size
+    engine->textureStore.loadTexture("nebula.ktx2", "skyboxTexture");
+    //engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
+    if (generateCubemaps) {
+        // generating cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
+        engine->textureStore.generateCubemaps("skyboxTexture");
+    } else {
+        engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);
+        engine->textureStore.loadTexture("prefilter.ktx2", engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
+    }
 
     engine->shaders.cubeShader.setSkybox("skyboxTexture");
     engine->shaders.cubeShader.setFarPlane(2000.0f);
 
+    vector<WorldObject*> rocks;
+    addRandomRocks(rocks, world, object->mesh, scale);
+
     PBRShader::LightSource ls;
     ls.color = vec3(1.0f);
-    ls.position = vec3(75.0f, 0.5f, -20.0f);
+    ls.position = vec3(75.0f, -10.5f, -40.0f);
     engine->shaders.pbrShader.changeLightSource(ls.color, ls.position);
     engine->shaders.pbrShader.initialUpload();
     // window creation
-    prepareWindowOutput("Loader");
+    prepareWindowOutput("Rocks");
     engine->presentation.startUI();
 
     // load and play music
@@ -150,19 +170,14 @@ void Loader::init() {
     engine->sound.openSoundFile("loading_music.ogg", "BACKGROUND_MUSIC", true);
     engine->sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 0.2f, 5000);
 
-    // uncomment next block to enable zero cross display
-    //vector<LineDef> lines;
-    //LineShader::addZeroCross(lines);
-    //engine->shaders.lineShader.addFixedGlobalLines(lines);
-    //engine->shaders.lineShader.uploadFixedGlobalLines();
 }
 
-void Loader::mainThreadHook()
+void Rocks::mainThreadHook()
 {
 }
 
 // prepare drawing, guaranteed single thread
-void Loader::prepareFrame(FrameResources* fr)
+void Rocks::prepareFrame(FrameResources* fr)
 {
     FrameResources& tr = *fr;
     double seconds = engine->gameTime.getTimeSeconds();
@@ -207,9 +222,7 @@ void Loader::prepareFrame(FrameResources* fr)
     //Log("Camera position: " << pubo.camPos.x << " " << pubo.camPos.y << " " << pubo.camPos.z << endl); // Camera position: -0.0386716 0.2 0.51695
 
     engine->shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
-    // change individual objects position:
-    //auto grp = engine->objectStore.getGroup("knife_group");
-    vector<LineDef> boundingBoxes;
+
     for (auto& wo : engine->objectStore.getSortedList()) {
         //Log(" adapt object " << obj.get()->objectNum << endl);
         //WorldObject *wo = obj.get();
@@ -238,39 +251,11 @@ void Loader::prepareFrame(FrameResources* fr)
             modeltransform = wo->mesh->baseTransform;
         }
         // standard model matrix
-        auto pos = wo->pos();
-        auto rot = wo->rot();
-        auto scale = wo->scale();
-        glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), rot.x, glm::vec3(1.0f, 0.0f, 0.0f));
-        glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), rot.y, glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), rot.z, glm::vec3(0.0f, 0.0f, 1.0f));
-
-        glm::mat4 rotationMatrix = rotationZ * rotationY * rotationX;
-        glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
-        glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
-        modeltransform = trans * scaled * rotationMatrix;
+        Util::calculateStandardModelTransform(modeltransform, wo->pos(), wo->scale(), wo->rot());
         buf->model = modeltransform;
         buf->params[0].intensity = 10.0f; // adjust sun light intensity
+        //buf->boundingBox = wo->perFrameBB;
         if (!object->enabled)   buf->disableRendering();
-
-        // log object distance to camera
-        //float distanceToCamera = glm::length(pos - pubo.camPos);
-        //Log(" Object " << wo->objectNum << " distance to camera: " << distanceToCamera << endl);
-
-        //buf->material.specularFactor = vec4(30.0f);
-        //buf->material.workflow = 1.3f;
-        //buf->material.baseColorTextureSet = 4;
-        //buf->flags |= 0x1; // set flag for dicard rendering
-
-        //engine->meshStore.debugRenderMeshlet(wo, tr, modeltransform);
-        //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform, 185);
-        //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
-
-        if (useDefaultNormalLineLength) {
-            //engine->meshStore.debugGraphics(wo, tr, modeltransform);
-        } else {
-            //engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false);
-        }
         if (wo->enableDebugGraphics) engine->meshStore.debugGraphics(wo, tr, modeltransform, false, true, false, false);
     }
     // lines
@@ -283,12 +268,11 @@ void Loader::prepareFrame(FrameResources* fr)
     engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
 
     postUpdatePerFrame(tr);
-    //camera->log();
     engine->shaders.clearShader.addCommandBuffers(fr, &fr->drawResults[0]); // put clear shader first
 }
 
 // draw from multiple threads
-void Loader::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
+void Rocks::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
 {
     if (topic == 0) {
         //engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
@@ -301,26 +285,26 @@ void Loader::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
     }
     else if (topic == 1) {
         engine->shaders.pbrShader.addCommandBuffers(fr, drawResult);
-        //Log("Loader::drawFrame: PBR shader command buffers added" << endl);
+        //Log("Rocks::drawFrame: PBR shader command buffers added" << endl);
     }
 }
 
-void Loader::postFrame(FrameResources* fr)
+void Rocks::postFrame(FrameResources* fr)
 {
     engine->shaders.endShader.addCommandBuffers(fr, fr->getLatestCommandBufferArray());
 }
 
-void Loader::processImage(FrameResources* fr)
+void Rocks::processImage(FrameResources* fr)
 {
     present(fr);
 }
 
-bool Loader::shouldClose()
+bool Rocks::shouldClose()
 {
     return shouldStopEngine;
 }
 
-void Loader::handleInput(InputState& inputState)
+void Rocks::handleInput(InputState& inputState)
 {
     if (inputState.windowClosed != nullptr) {
         inputState.windowClosed = nullptr;

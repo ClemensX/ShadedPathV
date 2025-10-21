@@ -195,9 +195,11 @@ void main() {
             BoundingBox box = model_ubo.boundingBox;
             float width = box.max.x - box.min.x;
             float scale = 1.0f / width;
+            //debugPrintfEXT("TASK SHADER: width %f scale %f\n", width, scale);
             vec3 camPos = ubo.camPos;
+            //debugPrintfEXT("TASK SHADER: camPos %f %f %f\n", camPos.x, camPos.y, camPos.z);
             vec3 objPos = model_ubo.objPos;
-            objPos.y = 0.0f;
+            //debugPrintfEXT("TASK SHADER: object %u objPos %f %f %f\n", model_ubo.objectNum, objPos.x, objPos.y, objPos.z);
             float dist = length(camPos - objPos);
             float distScaled = dist * scale;
             //debugPrintfEXT("TASK SHADER: object %u dist %f scaled %f\n", model_ubo.objectNum, dist, distScaled);

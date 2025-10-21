@@ -71,7 +71,8 @@ void MeshManager::init() {
     world.createWorldGridAndCopyToLineVector(grid10, 10.0f);
     world.createWorldGridAndCopyToLineVector(grid100, 100.0f);
 
-    engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
+    engine->textureStore.loadTexture("nebula.ktx2", "skyboxTexture");
+    //engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
     // generating cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
     //engine->textureStore.generateCubemaps("skyboxTexture");
     engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);
@@ -82,7 +83,8 @@ void MeshManager::init() {
 
     PBRShader::LightSource ls;
     ls.color = vec3(1.0f);
-    ls.position = vec3(75.0f, 0.5f, -20.0f);
+    //ls.position = vec3(75.0f, 0.5f, -20.0f);
+    ls.position = vec3(75.0f, -10.5f, -40.0f);
     engine->shaders.pbrShader.changeLightSource(ls.color, ls.position);
     float curLod[10] = { 0, 1, 5, 10, 15, 25, 30, 50, 70, 150 };
     memcpy(lod, curLod, sizeof(float) * 10);
