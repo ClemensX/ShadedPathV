@@ -41,6 +41,7 @@ if (OPENXR_INC)
   list(APPEND SOURCES VR.cpp)
 endif()
 add_library(shadedpath ${SOURCES})
+set_target_properties(shadedpath PROPERTIES LINK_FLAGS "/PROFILE")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 
 #message(STATUS "current includes")
