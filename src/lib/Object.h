@@ -348,6 +348,7 @@ public:
 	// initialize MeshInfo, also add to collection. id is expected to be in collection format like myid.2
 	// myid.0 is a synonym for myid
 	MeshInfo* initMeshInfo(MeshCollection* coll, std::string id);
+    MeshCollection* initMeshCollection(std::string id, MeshFlagsCollection flags = MeshFlagsCollection());
 
 	MeshInfo* getMesh(std::string id);
 	// to render an object using meshlets we need:

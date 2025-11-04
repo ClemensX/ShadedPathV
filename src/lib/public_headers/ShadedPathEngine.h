@@ -16,6 +16,8 @@ public:
     virtual void run(ContinuationInfo* cont = nullptr) {};
     virtual void handleInput(InputState& inputState) {};
     virtual void backgroundWork() {};
+    // allow the app to prepafe frame data in thread safe manner
+    // called before rendering each frame, from main render thread
     virtual void prepareFrame(FrameResources* fi) {};
     // draw Frame depending on topic. is in range 0..appDrawCalls-1
     // each topic will be called in parallel threads
@@ -26,6 +28,7 @@ public:
     virtual void processImage(FrameResources* fi) {};
     virtual void buildCustomUI() {};
     virtual bool shouldClose() { return true; };
+    bool isCLITool = false;
 protected:
     double old_seconds = 0.0f;
 };
@@ -312,7 +315,8 @@ private:
     // We have to set max number of meshes, as mesh data will be stored in one large storage buffer (meshlets, vertex, index data)
     uint64_t MaxMeshes = 5;
     // byte size of mesh storage buffer
-    uint64_t meshStorageSize = 100; // 1024 * 1024 * 1024; // default 1 GB
+    //uint64_t meshStorageSize = 100; // 1024 * 1024 * 1024; // default 1 GB
+    uint64_t meshStorageSize = 1024 * 1024 * 300; // default 300 MB
 
     // backbuffer size:
     VkExtent2D backBufferExtent = getExtentForResolution(Resolution::Small);

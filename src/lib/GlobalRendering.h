@@ -347,7 +347,7 @@ public:
 		return ret;
 	}
 
-private:
+//private:
     std::vector<GPUMemoryChunk> gpuMemoryChunks;
 	void createGPUMemoryChunk(VkDeviceSize bufferSize) {
 		//VkDeviceSize bufferSize = engine.getMeshStorageSize();
@@ -362,7 +362,8 @@ private:
         chunk.size = bufferSize;
         gpuMemoryChunks.push_back(chunk);
 	}
-    // gather all cmd buffers from the DrawResults of the current frame and copy into single list cmdBufs
+private:
+	// gather all cmd buffers from the DrawResults of the current frame and copy into single list cmdBufs
 	void consolidateCommandBuffers(CommandBufferArray& cmdBufs, FrameResources* fr);
 	// copy all cmd buffers here before calling vkQueueSubmit
 	CommandBufferArray submitCommandBuffers;

@@ -33,6 +33,8 @@ struct ContinuationInfo
 {
 	bool cont = false;
 	WindowInfo windowInfo;
+	int argc;
+	char** argv;
 };
 
 class Presentation : public EngineParticipant

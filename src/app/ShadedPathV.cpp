@@ -10,6 +10,7 @@
 #include "GeneratedTexturesApp.h"
 #include "gltfTerrainApp.h"
 #include "gltfObjectsApp.h"
+#include "glbLodMerger.h"
 #include "BillboardDemo.h"
 #include "TextureViewer.h"
 #include "LandscapeDemo1.h"
@@ -19,16 +20,16 @@
 #include "MeshManager.h"
 #include "Rocks.h"
 
-int mainOne();
-int mainTwo();
+int mainOne(int argc, char* argv[]);
+int mainTwo(int argc, char* argv[]);
 
-int main()
+int main(int argc, char* argv[])
 {
-    mainOne();
-    //mainTwo();
+    mainOne(argc, argv);
+    //mainTwo(argc, argv);
 }
 
-int mainOne()
+int mainOne(int argc, char* argv[])
 {
     //mainSimpleMultiWin(); return 0; // use with care, see notes in SimpleMultiWin.h
     //mainSimpleMultiApp(); return 0;
@@ -46,9 +47,17 @@ int mainOne()
     //LandscapeGenerator app; // vr ok with limited support
     //Loader app;
     //MeshManager app;
-    Rocks app;
+    //Rocks app;
+    glbLodMerger app; // vr not supported
 
     Log("main() start!\n");
+    if (app.isCLITool) {
+        ContinuationInfo cont;
+        cont.argc = argc;
+        cont.argv = argv;
+        app.run(&cont);
+        return 1;
+    }
     ShadedPathEngine engine;
     engine
         .setEnableLines(true)
@@ -64,7 +73,7 @@ int mainOne()
         .configureParallelAppDrawCalls(2)
         .setMaxTextures(50)
         .setMaxMeshes(100)
-        .setMeshStorageSizeGB(3.9999f)
+        .setMeshStorageSizeGB(2.9999f) //        .setMeshStorageSizeGB(3.9999f)
         //.setMeshStorageSizeGB(4.0f)
         //.setFixedPhysicalDeviceIndex(1) // if GPU card is available it should be device 0. device 1 is usually the integrated Intel/AMD GPU
         //.enableGlobalWireframe()
@@ -103,7 +112,7 @@ void runLoader(Loader * ptr) {
     runEngine((ShadedPathApplication*)ptr);
 }
 
-int mainTwo()
+int mainTwo(int argc, char* argv[])
 {
     Loader app1;
     Loader app2;

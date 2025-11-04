@@ -312,3 +312,26 @@ object mode, modifier remesh, Sharp: octree adjust to get # tris we want, apply
 re-apply textures: Data Transfer Modifier, select face corener data and UV tab
 
 same for LOD2-9           
+
+Rocks 10000:
+debug run:
+
+ThemedTimer: DrawFrame
+  #calls: 613 average time: 32420 [microseconds] / 32 [ms]
+ThemedTimer: PartPrepareFrame
+  #calls: 613 average time: 32388 [microseconds] / 32 [ms]
+ThemedTimer: PresentFrame
+  #calls: 612 average time: 41294 [microseconds] / 41 [ms]
+   FPS: 24.2166 over 25.3185 [s]
+
+release run:
+ThemedTimer: DrawFrame
+  #calls: 2013 average time: 1267 [microseconds] / 1 [ms]
+ThemedTimer: PartPrepareFrame
+  #calls: 2013 average time: 1254 [microseconds] / 1 [ms]
+ThemedTimer: PresentFrame
+  #calls: 2011 average time: 9083 [microseconds] / 9 [ms]
+   FPS: 110.096 over 18.9813 [s]
+
+   GPU: volor pass #2 ~7000 microseconds
+

@@ -24,6 +24,7 @@ void ShadedPathEngine::initGlobal(string appname) {
     ThemedTimer::getInstance()->create(TIMER_PART_GLOBAL_UPDATE, 1000);
     ThemedTimer::getInstance()->create(TIMER_PART_OPENXR, 1000);
     ThemedTimer::getInstance()->create(TIMER_PART_BUFFER_COPY, 10);
+    ThemedTimer::getInstance()->create(TIMER_PART_PREPARE_FRAME, 1000);
     mainThreadInfo.name = "Main Thread";
     mainThreadInfo.category = ThreadCategory::MainThread;
     mainThreadInfo.id = this_thread::get_id();
@@ -77,6 +78,7 @@ ShadedPathEngine::~ShadedPathEngine()
     if (threadsWorker) delete threadsWorker;
     //if (workerFutures) delete workerFutures;
     ThemedTimer::getInstance()->logInfo(TIMER_DRAW_FRAME);
+    ThemedTimer::getInstance()->logInfo(TIMER_PART_PREPARE_FRAME);
     //ThemedTimer::getInstance()->logFPS(TIMER_DRAW_FRAME);
     ThemedTimer::getInstance()->logInfo(TIMER_PRESENT_FRAME);
     ThemedTimer::getInstance()->logFPS(TIMER_PRESENT_FRAME);
@@ -285,8 +287,9 @@ void ShadedPathEngine::preFrame()
     globalRendering.preFrame(currentFrameInfo);
 
     // call app
+    ThemedTimer::getInstance()->start(TIMER_PART_PREPARE_FRAME);
     app->prepareFrame(currentFrameInfo);
-
+    ThemedTimer::getInstance()->stop(TIMER_PART_PREPARE_FRAME);
 }
 
 void ShadedPathEngine::drawFrame()

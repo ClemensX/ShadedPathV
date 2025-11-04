@@ -47,6 +47,16 @@ MeshInfo* MeshStore::getMesh(string id)
 	return ret;
 }
 
+MeshCollection* MeshStore::initMeshCollection(std::string id, MeshFlagsCollection flags)
+{
+	MeshCollection initialCollection;  // only used to initialize struct in texture store - do not access this after assignment to store
+	initialCollection.id = id;
+	initialCollection.flags = flags;
+	meshCollections.push_back(initialCollection);
+	MeshCollection* collection = &meshCollections.back();
+	return collection;
+}
+
 MeshInfo* MeshStore::initMeshInfo(MeshCollection* coll, std::string id)
 {
 	if (!(meshes.size() < engine->getMaxMeshes())) {
@@ -76,11 +86,7 @@ MeshCollection* MeshStore::loadMeshFile(string filename, string id, vector<byte>
 		Error(s.str());
 	}
 	// create MeshCollection and one MeshInfo: we have at least one mesh per gltf file
-	MeshCollection initialCollection;  // only used to initialize struct in texture store - do not access this after assignment to store
-	initialCollection.id = id;
-	meshCollections.push_back(initialCollection);
-	MeshCollection* collection = &meshCollections.back();
-	collection->flags = flags;
+    MeshCollection* collection = initMeshCollection(id, flags);
 	MeshInfo* mi = initMeshInfo(collection, id);
 
 	// find texture file, look in pak file first:
@@ -1550,6 +1556,7 @@ void MeshStore::loadMeshCylinder(std::string id, MeshFlagsCollection flags, std:
 	}
 
 	meshInfo.available = true;
+	meshInfo.collection = initMeshCollection(id, flags);
 	meshes[id] = std::move(meshInfo);
 	if (flags.hasFlag(MeshFlags::MESHLET_GENERATE)) {
 		aquireMeshletData(id, id, true);
@@ -1752,6 +1759,7 @@ uint64_t MeshStore::getUsedStorageSize() {
 bool MeshStore::writeMeshletStorageFile(std::string id, string fileBaseName)
 {
 	auto* coll = engine->meshStore.getMeshCollection(id);
+    assert(coll);
 
 	// open meshlet file for write:
     // concatenate mesh name with .meshlet extension
