@@ -157,7 +157,13 @@ void MeshStore::loadMesh(string filename, string id, MeshFlagsCollection flags)
     }
 #endif
 	bool regenerate = flags.hasFlag(MeshFlags::MESHLET_GENERATE);
-	aquireMeshletData(filename, id, regenerate);
+	if (regenerate) {
+		for (auto& mesh : coll->meshInfos) {
+			aquireMeshletData(filename, mesh->id, regenerate);
+		}
+	} else {
+		aquireMeshletData(filename, id, regenerate);
+	}
 }
 
 MeshCollection* MeshStore::getMeshCollection(std::string id)
@@ -293,7 +299,7 @@ bool MeshStore::isGPULodCompatible(WorldObject* wo)
 {
 	// get mesh collection for this object:
 	MeshCollection* coll = engine->meshStore.getMeshCollection(wo->mesh->id);
-	if (coll != nullptr || coll->meshInfos.size() != 10) {
+	if (coll == nullptr || coll->meshInfos.size() != 10) {
 		return false;
     }
 	return true;
