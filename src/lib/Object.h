@@ -399,6 +399,8 @@ public:
 	bool loadMeshletStorageFile(std::string id, std::string fileBaseName);
     MeshCollection* getMeshCollection(std::string id);
 	void fillPushConstants(PBRPushConstants *pushConstants);
+	bool isGPULodCompatible(WorldObject* wo); // true if object can use GPU LOD selection
+    bool checkBoundingBoxPlausibility(std::string id); // check if bounding box is plausible (not inverted or zero size)
 private:
 	MeshCollection* loadMeshFile(std::string filename, std::string id, std::vector<std::byte> &fileBuffer, MeshFlagsCollection flags);
 	std::unordered_map<std::string, MeshInfo> meshes;

@@ -63,10 +63,7 @@ void PBRShader::fillTextureIndexesFromMesh(PBRTextureIndexes& ind, MeshInfo* mes
 
 void PBRShader::checkForGpuLodCompatibility(WorldObject* wo)
 {
-	// get mesh collection for this object:
-    MeshCollection* coll = engine->meshStore.getMeshCollection(wo->mesh->id);
-	assert(coll != nullptr);
-	assert(coll->meshInfos.size() == 10);
+	assert(engine->meshStore.isGPULodCompatible(wo));
 }
 
 void PBRShader::prefillModelParameters(FrameResources& fr)

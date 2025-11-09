@@ -149,6 +149,13 @@ void MeshStore::loadMesh(string filename, string id, MeshFlagsCollection flags)
 	if (coll->meshInfos.size() == 0) {
 		Error("No meshes found in glTF file " + filename);
     }
+#if defined(DEBUG)
+	for (auto& mesh : coll->meshInfos) {
+		if (!checkBoundingBoxPlausibility(mesh->id)) {
+            Error("Bounding box plausibility check failed for mesh " + mesh->id);
+		}
+    }
+#endif
 	bool regenerate = flags.hasFlag(MeshFlags::MESHLET_GENERATE);
 	aquireMeshletData(filename, id, regenerate);
 }
@@ -161,6 +168,37 @@ MeshCollection* MeshStore::getMeshCollection(std::string id)
 		}
     }
 	return nullptr;
+}
+
+bool MeshStore::checkBoundingBoxPlausibility(std::string id)
+{
+	MeshInfo* mi = getMesh(id);
+    mi->getBoundingBox(mi->boundingBox);
+    //Log("Bounding box for mesh " << id << ": Min(" << mi->boundingBox.min.x << ", " << mi->boundingBox.min.y << ", " << mi->boundingBox.min.z << "), Max(" << mi->boundingBox.max.x << ", " << mi->boundingBox.max.y << ", " << mi->boundingBox.max.z << ")\n");
+	// check positive size:
+	vec3 size = mi->boundingBox.max - mi->boundingBox.min;
+    bool ret = true;
+	if (size.x < 0 || size.y < 0 || size.z < 0) {
+		Log("ERROR: Inverted bounding box for mesh " << id << endl);
+		ret = false;
+	}
+    // anything below 1 mm is suspicious:
+    if (size.x < 0.001f || size.y < 0.001f || size.z < 0.001f) {
+		Log("ERROR: Very small bounding box for mesh " << id << ": Size(" << size.x << ", " << size.y << ", " << size.z << ")\n");
+		ret = false;
+    }
+    // anything above 10 km is suspicious:
+    if (size.x > 10000.0f || size.y > 10000.0f || size.z > 10000.0f) {
+		Log("ERROR: Very large bounding box for mesh " << id << ": Size(" << size.x << ", " << size.y << ", " << size.z << ")\n");
+		ret = false;
+	}
+	if (ret == false) {
+		Log("    bounding box error may mean vertices are off. This is the first triangle:\n");
+		// get vertices for first triangle:
+        logTriangleFromGlTF(0, mi);
+
+	}
+	return ret;
 }
 
 void MeshStore::aquireMeshletData(std::string filename, std::string id, bool regenerateMeshletData)
@@ -249,6 +287,16 @@ const vector<MeshInfo*> &MeshStore::getSortedList()
 		sortedList.push_back(&kv.second);
 	}
 	return sortedList;
+}
+
+bool MeshStore::isGPULodCompatible(WorldObject* wo)
+{
+	// get mesh collection for this object:
+	MeshCollection* coll = engine->meshStore.getMeshCollection(wo->mesh->id);
+	if (coll != nullptr || coll->meshInfos.size() != 10) {
+		return false;
+    }
+	return true;
 }
 
 // we either have single meshes in meshes or collections in meshCollections, delete all with flag available == true

@@ -335,3 +335,6 @@ ThemedTimer: PresentFrame
 
    GPU: volor pass #2 ~7000 microseconds
 
+debug glbLodMerger
+"C:\dev\cpp\data\pack\test\granite_rock.glb" "C:\dev\cpp\data\pack\test\pack"
+"C:\dev\cpp\data\granite_rock.glb" "C:\dev\cpp\data\pack"

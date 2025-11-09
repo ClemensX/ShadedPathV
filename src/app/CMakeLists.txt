@@ -77,7 +77,10 @@ add_executable(app
   ${VULKAN_SHADERS}
   ${SHADERINCLUDE_FILES}  # Add include files to the target
 )
-set_target_properties(app PROPERTIES LINK_FLAGS "/PROFILE")
+# set_target_properties(app PROPERTIES LINK_FLAGS "$<$<CONFIG:Release>:/PROFILE>")
+target_link_options(app PRIVATE
+    $<$<CONFIG:Release>:/PROFILE>
+)
 include_directories("${PROJECT_SOURCE_DIR}/src/lib")
 
 target_link_libraries(app PRIVATE shadedpath)

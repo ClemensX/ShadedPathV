@@ -46,9 +46,9 @@ int mainOne(int argc, char* argv[])
     //Incoming app;
     //LandscapeGenerator app; // vr ok with limited support
     //Loader app;
-    //MeshManager app;
+    MeshManager app;
     //Rocks app;
-    glbLodMerger app; // vr not supported
+    //glbLodMerger app; // vr not supported
 
     Log("main() start!\n");
     if (app.isCLITool) {
@@ -63,7 +63,7 @@ int mainOne(int argc, char* argv[])
         .setEnableLines(true)
         .setDebugWindowPosition(true)
         .setEnableUI(true)
-        .setEnableSound(true)
+        //.setEnableSound(true)
         //.setVR(true)
         //.setStereo(true)
         .failIfNoVR(true)

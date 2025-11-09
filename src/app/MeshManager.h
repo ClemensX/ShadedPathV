@@ -1,7 +1,7 @@
 #pragma once
 
 // Display Logo. May be used while big game loads in the background
-class MeshManager : ShadedPathApplication, public AppSupport
+class MeshManager : public ShadedPathApplication, public AppSupport
 {
 public:
     void run(ContinuationInfo* cont) override;

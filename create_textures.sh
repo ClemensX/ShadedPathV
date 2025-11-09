@@ -63,5 +63,8 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #node set-single-sided.mjs ../data/granite_rock_double_sided.glb ../data/granite_rock.glb
 #gltf-transform uastc ../data/granite_rock_lod.glb ../data/mesh/granite_rock_lod_cmp.glb --level 4 --zstd 18 --verbose
 #gltf-transform uastc ../data/granite_rock_lod.glb ../data/mesh/granite_rock_lod_cmp.glb --verbose
-../gltfpack -i input.gltf -o output_lod.gltf --lod 1,0.25,0.0625,0.015625,0.00390625,0.0009765625,0.000244140625,0.00006103515625,0.0000152587890625,0.000003814697265625
+#../gltfpack -i input.gltf -o output_lod.gltf --lod 1,0.25,0.0625,0.015625,0.00390625,0.0009765625,0.000244140625,0.00006103515625,0.0000152587890625,0.000003814697265625
 # ../../meshoptimizer/build/Debug/gltfpack.exe -i ./granite_rock_08.glb -o ./granite_rock_09.glb -si 0.25 -se 0.5 -v
+#gltf-transform uastc ../data/pack/granite_rock_00_merged.glb ../data/mesh/granite_rock_auto_lod_cmp.glb --verbose
+# single test mesh after gltfpack:
+gltf-transform uastc ../data/pack/granite_rock_06.glb ../data/mesh/granite_rock_06_cmp.glb --verbose

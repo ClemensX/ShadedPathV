@@ -71,8 +71,8 @@ void MeshManager::init() {
     world.createWorldGridAndCopyToLineVector(grid10, 10.0f);
     world.createWorldGridAndCopyToLineVector(grid100, 100.0f);
 
-    engine->textureStore.loadTexture("nebula.ktx2", "skyboxTexture");
-    //engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
+    //engine->textureStore.loadTexture("nebula.ktx2", "skyboxTexture");
+    engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
     // generating cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
     //engine->textureStore.generateCubemaps("skyboxTexture");
     engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);
@@ -157,7 +157,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
         Log("Loaded " << coll->meshInfos.size() << " meshes from file" << endl);
         float xpos = 0.0f;
         for (auto* mi : coll->meshInfos) {
-            Log("Mesh: " << mi->id << " triangles: " << mi->indices.size()/3 << " vertices: " << mi->vertices.size() << endl);
+            Log("    Mesh: " << mi->id << " triangles: " << mi->indices.size()/3 << " vertices: " << mi->vertices.size() << endl);
             vec3 pos = vec3(xpos, 0.0f, 0.0f);
             BoundingBox box;
             mi->getBoundingBox(box);
@@ -172,9 +172,11 @@ void MeshManager::prepareFrame(FrameResources* fr)
         }
         // add test object for GPU LOD:
         enableGpuLodObject = false;
-        gpuLodObject = engine->objectStore.addObject("group", coll->meshInfos[0]->id, vec3(-2.0f, 2.0f, 0.0f));
-        gpuLodObject->enabled = false;
-        gpuLodObject->useGpuLod = true;
+        if (objects.size() > 0 && engine->meshStore.isGPULodCompatible(objects[0])) {
+            gpuLodObject = engine->objectStore.addObject("group", coll->meshInfos[0]->id, vec3(-2.0f, 2.0f, 0.0f));
+            gpuLodObject->enabled = false;
+            gpuLodObject->useGpuLod = true;
+        }
 
         if (!object->mesh->meshletStorageFileFound) {
             Log("ERROR: Meshlet storage file not found for this object, meshlets will not be used for rendering" << endl);
