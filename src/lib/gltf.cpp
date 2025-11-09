@@ -104,14 +104,121 @@ void glTF::loadModel(Model &model, const unsigned char* data, int size, MeshColl
 	return;
 }
 
+static inline float DecodeComponent(int componentType, bool normalized, const void* src)
+{
+	switch (componentType) {
+	case TINYGLTF_COMPONENT_TYPE_FLOAT: {
+		float v;
+		std::memcpy(&v, src, sizeof(float));
+		return v;
+	}
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE: {
+		uint8_t v;
+		std::memcpy(&v, src, 1);
+		return normalized ? (float)v / 255.0f : (float)v;
+	}
+	case TINYGLTF_COMPONENT_TYPE_BYTE: {
+		int8_t v;
+		std::memcpy(&v, src, 1);
+		if (normalized) {
+			// Map to [-1,1]
+			return std::max(-1.0f, (float)v / 127.0f);
+		}
+		return (float)v;
+	}
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT: {
+		uint16_t v;
+		std::memcpy(&v, src, 2);
+		return normalized ? (float)v / 65535.0f : (float)v;
+	}
+	case TINYGLTF_COMPONENT_TYPE_SHORT: {
+		int16_t v;
+		std::memcpy(&v, src, 2);
+		if (normalized) {
+			return std::max(-1.0f, (float)v / 32767.0f);
+		}
+		return (float)v;
+	}
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT: {
+		uint32_t v;
+		std::memcpy(&v, src, 4);
+		return (float)v; // POSITION should not be UINT normally, but handle generically.
+	}
+	default:
+		Log("Unsupported vertex componentType: " << componentType << "\n");
+		return 0.0f;
+	}
+}
+
 void extractVertexAttribute(const tinygltf::Model& model, const tinygltf::Primitive& primitive, const std::string& attributeName, std::vector<float>& outData, int& stride) {
+	outData.clear();
+	stride = 0;
+
 	auto it = primitive.attributes.find(attributeName);
-	if (it != primitive.attributes.end()) {
-		const tinygltf::Accessor& accessor = model.accessors[it->second];
-		const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-		const float* bufferData = reinterpret_cast<const float*>(&(model.buffers[bufferView.buffer].data[accessor.byteOffset + bufferView.byteOffset]));
-		stride = accessor.ByteStride(bufferView) ? (accessor.ByteStride(bufferView) / sizeof(float)) : tinygltf::GetNumComponentsInType(accessor.type);
-		outData.assign(bufferData, bufferData + accessor.count * stride);
+	if (it == primitive.attributes.end()) return;
+
+	const tinygltf::Accessor& accessor = model.accessors[it->second];
+	if (accessor.bufferView < 0) {
+		Log("Accessor bufferView < 0 for attribute " << attributeName << "\n");
+		return;
+	}
+
+	const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+	const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+
+	const size_t numComponents = tinygltf::GetNumComponentsInType(accessor.type);
+	if (numComponents == 0) {
+		Log("Invalid accessor.type for attribute " << attributeName << "\n");
+		return;
+	}
+
+	// Bytes per single component.
+	int componentSize = 0;
+	switch (accessor.componentType) {
+	case TINYGLTF_COMPONENT_TYPE_FLOAT:          componentSize = 4; break;
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE:
+	case TINYGLTF_COMPONENT_TYPE_BYTE:           componentSize = 1; break;
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
+	case TINYGLTF_COMPONENT_TYPE_SHORT:          componentSize = 2; break;
+	case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:   componentSize = 4; break;
+	default:
+		Log("Unsupported vertex componentType: " << accessor.componentType << "\n");
+		return;
+	}
+
+	// Byte stride between consecutive vertices in the buffer.
+	const int byteStride = accessor.ByteStride(bufferView) > 0
+		? accessor.ByteStride(bufferView)
+		: int(numComponents) * componentSize;
+
+	if (byteStride < componentSize * int(numComponents)) {
+		// Spec allows >= packed size. Anything smaller is invalid.
+		Log("Invalid byteStride (" << byteStride << ") for attribute " << attributeName << "\n");
+		return;
+	}
+
+	const size_t start = bufferView.byteOffset + accessor.byteOffset;
+	// Last vertex must fit: start + (count-1)*byteStride + packedSize
+	const size_t packedSize = numComponents * size_t(componentSize);
+	const size_t lastByte = start + (accessor.count ? (accessor.count - 1) * size_t(byteStride) : 0) + packedSize;
+	if (lastByte > buffer.data.size()) {
+		Log("Buffer overrun risk while reading attribute " << attributeName << "\n");
+		return;
+	}
+
+	const unsigned char* basePtr = reinterpret_cast<const unsigned char*>(buffer.data.data() + start);
+
+	outData.resize(accessor.count * numComponents);
+	stride = int(numComponents); // number of float components per vertex
+
+	for (size_t i = 0; i < accessor.count; ++i) {
+		const unsigned char* elem = basePtr + i * byteStride;
+		// Components in the attribute are ALWAYS tightly packed starting at elem,
+		// even if vertex is interleaved (extra bytes follow after the attribute data).
+		for (size_t c = 0; c < numComponents; ++c) {
+			const void* compSrc = elem + c * componentSize;
+			outData[i * numComponents + c] = DecodeComponent(accessor.componentType, accessor.normalized, compSrc);
+		}
 	}
 }
 

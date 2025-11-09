@@ -188,7 +188,7 @@ bool MeshStore::checkBoundingBoxPlausibility(std::string id)
 		ret = false;
     }
     // anything above 10 km is suspicious:
-    if (size.x > 10000.0f || size.y > 10000.0f || size.z > 10000.0f) {
+    if (size.x > 20000.0f || size.y > 20000.0f || size.z > 20000.0f) {
 		Log("ERROR: Very large bounding box for mesh " << id << ": Size(" << size.x << ", " << size.y << ", " << size.z << ")\n");
 		ret = false;
 	}
