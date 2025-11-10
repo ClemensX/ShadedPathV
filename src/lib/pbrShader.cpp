@@ -466,7 +466,8 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 			Log("Called vkCmdDrawMeshTasksEXT successfully" << endl);
 		}
 	} else {
-		Log("No meshlets found for object: " << obj->objectNum << endl);
+		Log("WARNING: No meshlets found for object: " << obj->objectNum  << " Force enabling debug graphics." << endl);
+        obj->enableDebugGraphics = true;
 	}
 }
 
