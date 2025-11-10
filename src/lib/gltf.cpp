@@ -104,6 +104,93 @@ void glTF::loadModel(Model &model, const unsigned char* data, int size, MeshColl
 	return;
 }
 
+// Add after includes and before existing functions (e.g., near other static helpers).
+
+struct KHRTextureTransform {
+	bool present = false;
+	glm::vec2 offset{ 0.0f, 0.0f };
+	glm::vec2 scale{ 1.0f, 1.0f };
+	float rotation = 0.0f; // radians
+	int texCoordOverride = -1; // -1 means use TextureInfo.texCoord
+};
+
+static KHRTextureTransform ParseKHRTextureTransform(const tinygltf::ExtensionMap& extMap) {
+	KHRTextureTransform t{};
+	auto it = extMap.find("KHR_texture_transform");
+	if (it == extMap.end()) return t;
+
+	const tinygltf::Value& ext = it->second;
+	t.present = true;
+
+	if (ext.Has("offset")) {
+		const tinygltf::Value& arr = ext.Get("offset");
+		if (arr.IsArray() && arr.ArrayLen() >= 2) {
+			t.offset.x = static_cast<float>(arr.Get(0).Get<double>());
+			t.offset.y = static_cast<float>(arr.Get(1).Get<double>());
+		}
+	}
+	if (ext.Has("scale")) {
+		const tinygltf::Value& arr = ext.Get("scale");
+		if (arr.IsArray() && arr.ArrayLen() >= 2) {
+			t.scale.x = static_cast<float>(arr.Get(0).Get<double>());
+			t.scale.y = static_cast<float>(arr.Get(1).Get<double>());
+		}
+	}
+	if (ext.Has("rotation")) {
+		t.rotation = static_cast<float>(ext.Get("rotation").Get<double>());
+	}
+	if (ext.Has("texCoord")) {
+		t.texCoordOverride = ext.Get("texCoord").Get<int>();
+	}
+	return t;
+}
+
+static inline int ResolveTexCoordUsed(const int tiTexCoord, const KHRTextureTransform& t) {
+	return (t.texCoordOverride >= 0) ? t.texCoordOverride : tiTexCoord;
+}
+
+static inline glm::vec2 ApplyTransformToUV(glm::vec2 uv, const KHRTextureTransform& t) {
+	// Spec order: scale -> rotate -> translate, pivot at origin.
+	uv *= t.scale;
+	if (t.rotation != 0.0f) {
+		float c = std::cos(t.rotation);
+		float s = std::sin(t.rotation);
+		uv = glm::vec2(c * uv.x - s * uv.y, s * uv.x + c * uv.y);
+	}
+	uv += t.offset;
+	return uv;
+}
+
+static inline bool NearlyEqual(float a, float b, float eps = 1e-6f) {
+	return std::abs(a - b) <= eps;
+}
+static bool SameTransform(const KHRTextureTransform& a, const KHRTextureTransform& b) {
+	return a.present == b.present &&
+		NearlyEqual(a.offset.x, b.offset.x) &&
+		NearlyEqual(a.offset.y, b.offset.y) &&
+		NearlyEqual(a.scale.x, b.scale.x) &&
+		NearlyEqual(a.scale.y, b.scale.y) &&
+		NearlyEqual(a.rotation, b.rotation) &&
+		a.texCoordOverride == b.texCoordOverride;
+}
+
+static void ApplyTransformToMeshUVChannel(std::vector<PBRShader::Vertex>& verts, int uvSet, const KHRTextureTransform& t) {
+	if (!t.present) return;
+	if (uvSet < 0) return;
+	for (auto& v : verts) {
+		if (uvSet == 0) {
+			v.uv0 = ApplyTransformToUV(v.uv0, t);
+		}
+		else if (uvSet == 1) {
+			v.uv1 = ApplyTransformToUV(v.uv1, t);
+		}
+		else {
+			// Only TEXCOORD_0 and TEXCOORD_1 are supported by current vertex format.
+			// Silently ignore higher channels.
+		}
+	}
+}
+
 static inline float DecodeComponent(int componentType, bool normalized, const void* src)
 {
 	switch (componentType) {
@@ -413,50 +500,107 @@ void glTF::prepareTexturesAndMaterials(tinygltf::Model& model, MeshCollection* c
         //Log("sampler: " << model.samplers[i].name.c_str() << endl);
 	}
 
-	// texture UV coords are likely the same, but we parse their mem location and stride for all textures anyway:
+	// Parse KHR_texture_transform and resolve final texCoord per texture use
+	KHRTextureTransform tfBase, tfMR, tfNormal, tfOcc, tfEmi;
+	int tcBase = -1, tcMR = -1, tcNormal = -1, tcOcc = -1, tcEmi = -1;
+
+	if (baseColorTextureIndex >= 0) {
+		tfBase = ParseKHRTextureTransform(mat.pbrMetallicRoughness.baseColorTexture.extensions);
+		tcBase = ResolveTexCoordUsed(mat.pbrMetallicRoughness.baseColorTexture.texCoord, tfBase);
+	}
+	if (metallicRoughnessTextureIndex >= 0) {
+		tfMR = ParseKHRTextureTransform(mat.pbrMetallicRoughness.metallicRoughnessTexture.extensions);
+		tcMR = ResolveTexCoordUsed(mat.pbrMetallicRoughness.metallicRoughnessTexture.texCoord, tfMR);
+	}
+	if (normalTextureIndex >= 0) {
+		tfNormal = ParseKHRTextureTransform(mat.normalTexture.extensions);
+		tcNormal = ResolveTexCoordUsed(mat.normalTexture.texCoord, tfNormal);
+	}
+	if (occlusionTextureIndex >= 0) {
+		tfOcc = ParseKHRTextureTransform(mat.occlusionTexture.extensions);
+		tcOcc = ResolveTexCoordUsed(mat.occlusionTexture.texCoord, tfOcc);
+	}
+	if (emissiveTextureIndex >= 0) {
+		tfEmi = ParseKHRTextureTransform(mat.emissiveTexture.extensions);
+		tcEmi = ResolveTexCoordUsed(mat.emissiveTexture.texCoord, tfEmi);
+	}
+
+	// Bake transforms into vertex UVs per channel (only TEXCOORD_0 and TEXCOORD_1 supported).
+	// If multiple textures require different transforms on the same UV set, the first one wins; a warning is logged.
+	std::optional<KHRTextureTransform> perSet[2];
+
+	auto consider = [&](int tc, const KHRTextureTransform& t, const char* usage) {
+		if (tc < 0 || tc > 1 || !t.present) return;
+		if (!perSet[tc].has_value()) {
+			perSet[tc] = t;
+		}
+		else if (!SameTransform(perSet[tc].value(), t)) {
+			Log(std::string("WARNING: Different KHR_texture_transform for UV set ") + std::to_string(tc) +
+				" between textures; keeping first and ignoring '" + usage + "' transform\n");
+		}
+		};
+
+	consider(tcBase, tfBase, "baseColor");
+	consider(tcMR, tfMR, "metallicRoughness");
+	consider(tcNormal, tfNormal, "normal");
+	consider(tcOcc, tfOcc, "occlusion");
+	consider(tcEmi, tfEmi, "emissive");
+
+	if (perSet[0].has_value()) {
+		ApplyTransformToMeshUVChannel(mesh->vertices, 0, perSet[0].value());
+	}
+	if (perSet[1].has_value()) {
+		ApplyTransformToMeshUVChannel(mesh->vertices, 1, perSet[1].value());
+	}
+
+	// Now bind textures and pass the correct (possibly overridden) texCoord to TextureInfo
 	if (baseColorTextureIndex >= 0) {
 		mesh->baseColorTexture = coll->textureInfos[model.textures[baseColorTextureIndex].source];
-		getTextureUVCoordinates(model, primitive, mesh->baseColorTexture, mat.pbrMetallicRoughness.baseColorTexture.texCoord);
-        mesh->baseColorTexture->sampler = samplers[model.textures[baseColorTextureIndex].sampler];
-        mesh->baseColorTexture->type = TextureType::TEXTURE_TYPE_GLTF;
+		getTextureUVCoordinates(model, primitive, mesh->baseColorTexture, std::max(0, tcBase));
+		mesh->baseColorTexture->sampler = samplers[model.textures[baseColorTextureIndex].sampler];
+		mesh->baseColorTexture->type = TextureType::TEXTURE_TYPE_GLTF;
 	}
 	if (metallicRoughnessTextureIndex >= 0) {
 		mesh->metallicRoughnessTexture = coll->textureInfos[model.textures[metallicRoughnessTextureIndex].source];
-		getTextureUVCoordinates(model, primitive, mesh->metallicRoughnessTexture, mat.pbrMetallicRoughness.metallicRoughnessTexture.texCoord);
-        mesh->metallicRoughnessTexture->sampler = samplers[model.textures[metallicRoughnessTextureIndex].sampler];
-        mesh->metallicRoughnessTexture->type = TextureType::TEXTURE_TYPE_GLTF;
+		getTextureUVCoordinates(model, primitive, mesh->metallicRoughnessTexture, std::max(0, tcMR));
+		mesh->metallicRoughnessTexture->sampler = samplers[model.textures[metallicRoughnessTextureIndex].sampler];
+		mesh->metallicRoughnessTexture->type = TextureType::TEXTURE_TYPE_GLTF;
 	}
 	if (normalTextureIndex >= 0) {
-		mesh->normalTexture = coll->textureInfos[model.textures[normalTextureIndex].source ];
-		getTextureUVCoordinates(model, primitive, mesh->normalTexture, mat.normalTexture.texCoord);
-        mesh->normalTexture->sampler = samplers[model.textures[normalTextureIndex].sampler];
-        mesh->normalTexture->type = TextureType::TEXTURE_TYPE_GLTF;
+		mesh->normalTexture = coll->textureInfos[model.textures[normalTextureIndex].source];
+		getTextureUVCoordinates(model, primitive, mesh->normalTexture, std::max(0, tcNormal));
+		mesh->normalTexture->sampler = samplers[model.textures[normalTextureIndex].sampler];
+		mesh->normalTexture->type = TextureType::TEXTURE_TYPE_GLTF;
 	}
 	if (occlusionTextureIndex >= 0) {
 		mesh->occlusionTexture = coll->textureInfos[model.textures[occlusionTextureIndex].source];
-		getTextureUVCoordinates(model, primitive, mesh->occlusionTexture, mat.occlusionTexture.texCoord);
-        mesh->occlusionTexture->sampler = samplers[model.textures[occlusionTextureIndex].sampler];
-        mesh->occlusionTexture->type = TextureType::TEXTURE_TYPE_GLTF;
+		getTextureUVCoordinates(model, primitive, mesh->occlusionTexture, std::max(0, tcOcc));
+		mesh->occlusionTexture->sampler = samplers[model.textures[occlusionTextureIndex].sampler];
+		mesh->occlusionTexture->type = TextureType::TEXTURE_TYPE_GLTF;
 	}
 	if (emissiveTextureIndex >= 0) {
 		mesh->emissiveTexture = coll->textureInfos[model.textures[emissiveTextureIndex].source];
-		getTextureUVCoordinates(model, primitive, mesh->occlusionTexture, mat.emissiveTexture.texCoord);
-        mesh->emissiveTexture->sampler = samplers[model.textures[emissiveTextureIndex].sampler];
-        mesh->emissiveTexture->type = TextureType::TEXTURE_TYPE_GLTF;
+		// BUGFIX: was using occlusionTexture; must pass emissiveTexture
+		getTextureUVCoordinates(model, primitive, mesh->emissiveTexture, std::max(0, tcEmi));
+		mesh->emissiveTexture->sampler = samplers[model.textures[emissiveTextureIndex].sampler];
+		mesh->emissiveTexture->type = TextureType::TEXTURE_TYPE_GLTF;
 	}
+
 	if (mesh->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
 		return;
 	}
 	for (auto* tp : coll->textureInfos) {
 		engine->textureStore.setTextureActive(tp->id, true);
-    }
+	}
+
 	// now set the shaderMaterial fields from gltf material:
 	PBRShader::ShaderMaterial m{};
-	m.texCoordSets.baseColor = mat.pbrMetallicRoughness.baseColorTexture.texCoord;
-    m.texCoordSets.metallicRoughness = mat.pbrMetallicRoughness.metallicRoughnessTexture.texCoord;
-    m.texCoordSets.normal = mat.normalTexture.texCoord;
-    m.texCoordSets.occlusion = mat.occlusionTexture.texCoord;
-    m.texCoordSets.emissive = mat.emissiveTexture.texCoord;
+	// Use final, possibly overridden texCoord indices
+	m.texCoordSets.baseColor = std::max(0, tcBase);
+	m.texCoordSets.metallicRoughness = std::max(0, tcMR);
+	m.texCoordSets.normal = std::max(0, tcNormal);
+	m.texCoordSets.occlusion = std::max(0, tcOcc);
+	m.texCoordSets.emissive = std::max(0, tcEmi);
 
 	//m.texCoordSets.baseColor = 1;
 	//m.texCoordSets.metallicRoughness = 2;
@@ -652,9 +796,17 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
 		}
 		mesh->gltfMeshIndex = modelindex;
         mesh->name = m.name;
-		prepareTexturesAndMaterials(model, coll, modelindex);
+
+		// 1) Load geometry first (creates uv0/uv1 on vertices)
 		loadVertices(model, mesh, mesh->vertices, mesh->indices, modelindex);
+
+		// 2) Then prepare textures and materials, which will parse KHR_texture_transform
+		//    and bake transforms into mesh->vertices.uv0/uv1.
+		prepareTexturesAndMaterials(model, coll, modelindex);
+
+		// 3) Collect node transform
 		collectBaseTransform(model, mesh);
+
 		modelindex++;
 	}
 }
