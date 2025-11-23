@@ -148,6 +148,8 @@ void PBRShader::uploadToGPU(FrameResources& fr, UniformBufferObject& ubo, Unifor
     if (std::isnan(ubo.camPos.x) || std::isnan(ubo.camPos.y) || std::isnan(ubo.camPos.z)) {
         Error("PBRShader: camera position not set in UBO");
     }
+    ubo.frameNum = static_cast<uint32_t>(fr.frameNum);
+    ubo2.frameNum = ubo.frameNum;
 	auto& sub = globalSubShaders[fr.frameIndex];
     sub.uploadToGPU(fr, ubo, ubo2);
 }

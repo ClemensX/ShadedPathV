@@ -152,6 +152,7 @@ void main() {
     mat4 proj = ubo.proj;
     mat4 mvp = proj * view * model;
 
+    //debugPrintfEXT("TASK SHADER: object %u flags %d disabled %d\n", model_ubo.objectNum, model_ubo.flags, isRenderingDisabled);
     if (isRenderingDisabled) {
         // signal to mesh shader that this object is culled/disabled.
         payload.meshletIndex = PAYLOAD_CULLED;
@@ -159,15 +160,41 @@ void main() {
         //debugPrintfEXT("TASK SHADER: RENDERING DISABLED for object %d, payload %u\n", model_ubo.objectNum, payload.meshletIndexX);
         // Emit a single dummy mesh task so the pipeline/driver receives a mesh task invocation.
         // The mesh shader must test for payload.meshletIndex == PAYLOAD_CULLED and return immediately.
-        // debugPrintfEXT("TASK[%u:%u] object %u DISABLED -> payload.meshletIndex=%u (returning)\n", gl_WorkGroupID.x, gl_LocalInvocationID.x, model_ubo.objectNum, payload.meshletIndexX);
-        EmitMeshTasksEXT(1, 1, 1);
+        //debugPrintfEXT("TASK INV[%u,%u] frame %u OBJ %u disabled=%u\n", gl_WorkGroupID.x, gl_LocalInvocationID.x, ubo.frameNum, model_ubo.objectNum, isRenderingDisabled);
+        //EmitMeshTasksEXT(1, 1, 1);
+        EmitMeshTasksEXT(0, 0, 0);
         return;
     }
-
+    // spurious error: we get here in spite of the return; above... 
+    if (isRenderingDisabled) {
+        //debugPrintfEXT("TASK INV[%u,%u] frame %u OBJ %u disabled=%u\n", gl_WorkGroupID.x, gl_LocalInvocationID.x, ubo.frameNum, model_ubo.objectNum, isRenderingDisabled);
+        return;
+    }
+    if (true) {
+        // output passed object size and calculated width:
+        BoundingBox bb = model_ubo.boundingBox;
+        // get BB in world coords:
+        BoundingBox bbWorld = bb;
+        vec4 bbMinWorld = model * vec4(bb.min, 1.0);
+        vec4 bbMaxWorld = model * vec4(bb.max, 1.0);
+        bbWorld.min = bbMinWorld.xyz / bbMinWorld.w;
+        bbWorld.max = bbMaxWorld.xyz / bbMaxWorld.w;
+        // size is always bb max - bb min
+        float lengthWorld = length(bbWorld.max - bbWorld.min);
+        float width = bb.max.x - bb.min.x;
+        debugPrintfEXT("TASK SHADER: object %u calc width %f passed width %f, flags %d\n", model_ubo.objectNum, lengthWorld, width, model_ubo.flags);
+    }
     bool isOutside = isOutsideView(model_ubo.boundingBox, mvp);
     if (isOutside) {
         // Don't emit mesh tasks for this object � but emit one dummy so drivers stay happy.
         BoundingBox bb = model_ubo.boundingBox;
+        // get BB in world coords:
+        BoundingBox bbWorld = bb;
+        vec4 bbMinWorld = model * vec4(bb.min, 1.0);
+        vec4 bbMaxWorld = model * vec4(bb.max, 1.0);
+        bbWorld.min = bbMinWorld.xyz / bbMinWorld.w;
+        bbWorld.max = bbMaxWorld.xyz / bbMaxWorld.w;
+        debugPrintfEXT("TASK SHADER: OUTSIDE bb WORLD min X %f %f\n", bbWorld.min.x, bbWorld.max.x);
         //debugPrintfEXT("TASK SHADER: OUTSIDE bb min %f %f %f\n", bb.min.x, bb.min.y, bb.min.z);
         payload.meshletIndex = PAYLOAD_CULLED;
         payload.mvp = mvp;

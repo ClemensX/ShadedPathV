@@ -66,8 +66,8 @@ void Loader::init() {
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
     
     //engine->meshStore.loadMesh("granite_rock_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
-    engine->meshStore.loadMesh("granite_rock_auto_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
-    //engine->meshStore.loadMesh("granite_rock_06_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
+    //engine->meshStore.loadMesh("granite_rock_auto_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
+    engine->meshStore.loadMesh("granite_rock_06_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = true;  useDefaultNormalLineLength = false;
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox"); alterObjectCoords = true;  useDefaultNormalLineLength = false;
@@ -117,7 +117,7 @@ void Loader::init() {
         float scale = 1.0f / width;
         object->scale() = vec3(scale);
         object->enabled = true;
-        object->useGpuLod = true;
+        object->useGpuLod = false;
     }
 
     // 2 square km world size
@@ -177,8 +177,8 @@ void Loader::prepareFrame(FrameResources* fr)
     updateCameraPositioners(deltaSeconds);
     old_seconds = seconds;
 
-    if (spinningBox == false && seconds > 4.0f) {
-        spinningBox = true; // start spinning the logo after 4s
+    if (spinningBox == false && seconds > 18.0f) {
+        spinningBox = true; // start spinning the logo after 8s
         spinTimeSeconds = seconds;
     }
     if (seconds > 20.0f) {
@@ -217,6 +217,7 @@ void Loader::prepareFrame(FrameResources* fr)
         //WorldObject *wo = obj.get();
         PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
         mat4 modeltransform;
+        modeltransform = wo->mesh->baseTransform;
         if (spinningBox) {
             // Define a constant rotation speed (radians per second)
             double rotationSpeed = glm::radians(5.0f);
@@ -235,9 +236,10 @@ void Loader::prepareFrame(FrameResources* fr)
                 //    modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
                 //}
                 object->rot().y += rotationAngle;
+                glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), object->rot().y, glm::vec3(0.0f, 1.0f, 0.0f));
+                //modeltransform *= rotationY;
+                modeltransform = rotationY * modeltransform;
             }
-        } else {
-            modeltransform = wo->mesh->baseTransform;
         }
         // standard model matrix
         auto pos = wo->pos();
@@ -250,7 +252,7 @@ void Loader::prepareFrame(FrameResources* fr)
         glm::mat4 rotationMatrix = rotationZ * rotationY * rotationX;
         glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
         glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
-        modeltransform = trans * scaled * rotationMatrix;
+        //modeltransform = trans * scaled * rotationMatrix;
         buf->model = modeltransform;
         buf->params[0].intensity = 10.0f; // adjust sun light intensity
         if (!object->enabled)   buf->disableRendering();

@@ -349,6 +349,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
             wo->scale() = vec3(modelScale);
         }
         mat4 modeltransform;
+        modeltransform = wo->mesh->baseTransform;
         if (spinningBox) {
             // Define a constant rotation speed (radians per second)
             double rotationSpeed = glm::radians(4.0f);
@@ -363,22 +364,9 @@ void MeshManager::prepareFrame(FrameResources* fr)
                 // push actual rotation back to UI:
                 modelRotation = wo->rot() / vec3(PI_half);
             }
-        } else {
-            modeltransform = wo->mesh->baseTransform;
         }
 
-        auto pos = wo->pos();
-        auto rot = wo->rot();
-
-        auto scale = wo->scale();
-        glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), rot.x, glm::vec3(1.0f, 0.0f, 0.0f));
-        glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), rot.y, glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), rot.z, glm::vec3(0.0f, 0.0f, 1.0f));
-
-        glm::mat4 rotationMatrix = rotationZ * rotationY * rotationX;
-        glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
-        glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
-        modeltransform = trans * scaled * rotationMatrix;
+        wo->calculateStandardModelTransform(modeltransform);
         buf->model = modeltransform;
         // uncomment to enable more debug meshlet displays:
         //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
@@ -648,5 +636,12 @@ void MeshManager::buildCustomUI() {
         ImGui::InputFloat("Z", &modelTranslation.z, 0.5f, 10.0f, "%.3f");
         ImGui::SeparatorText("Object Scale");
         ImGui::InputFloat("Uniform Scale", &modelScale, 0.1f, 1.0f, "%.3f");
+        if (object != nullptr) {
+            ImGui::Text("Current Object: %s", object->mesh->name.c_str());
+            BoundingBox box;
+            object->getBoundingBox(box);
+            ImGui::Text("BBOX min: %.3f %.3f %.3f", box.min.x, box.min.y, box.min.z);
+            ImGui::Text("     max: %.3f %.3f %.3f", box.max.x, box.max.y, box.max.z);
+        }
     }
 }

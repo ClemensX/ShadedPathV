@@ -717,63 +717,127 @@ void glTF::loadVertices(const unsigned char* data, int size, MeshInfo* mesh, vec
 	loadVertices(model, mesh, verts, indexBuffer, 0);
 }
 
+
+static glm::mat4 BuildLocalNodeMatrix(const tinygltf::Node& node) {
+	// glTF spec:
+	// If node.matrix is provided (16 floats), use that directly.
+	// Otherwise compose TRS where rotation is a quaternion [x, y, z, w].
+	if (node.matrix.size() == 16) {
+		glm::mat4 m(1.0f);
+		// glTF uses column-major like GLM; values listed in array in column-major order.
+		// tinygltf keeps them in same order.
+		for (int col = 0; col < 4; ++col) {
+			for (int row = 0; row < 4; ++row) {
+				m[col][row] = static_cast<float>(node.matrix[col * 4 + row]);
+			}
+		}
+		return m;
+	}
+
+	glm::mat4 m(1.0f);
+
+	if (node.translation.size() == 3) {
+		m = glm::translate(m, glm::vec3(
+			static_cast<float>(node.translation[0]),
+			static_cast<float>(node.translation[1]),
+			static_cast<float>(node.translation[2])));
+	}
+
+	if (node.rotation.size() == 4) {
+		// glTF rotation is [x, y, z, w]; GLM quat constructor is (w, x, y, z).
+		glm::quat q(
+			static_cast<float>(node.rotation[3]),
+			static_cast<float>(node.rotation[0]),
+			static_cast<float>(node.rotation[1]),
+			static_cast<float>(node.rotation[2]));
+		m *= glm::toMat4(q);
+	}
+
+	if (node.scale.size() == 3) {
+		m = glm::scale(m, glm::vec3(
+			static_cast<float>(node.scale[0]),
+			static_cast<float>(node.scale[1]),
+			static_cast<float>(node.scale[2])));
+	}
+
+	return m;
+}
+
+static glm::mat4 ComputeWorldMatrixForMesh(const tinygltf::Model& model, int meshIndex) {
+	// Build child->parent map.
+	std::unordered_map<int, int> parentOf;
+	parentOf.reserve(model.nodes.size());
+	for (int i = 0; i < static_cast<int>(model.nodes.size()); ++i) {
+		const tinygltf::Node& n = model.nodes[i];
+		for (int c : n.children) {
+			parentOf[c] = i;
+		}
+	}
+
+	int foundNode = -1;
+	for (int i = 0; i < static_cast<int>(model.nodes.size()); ++i) {
+		const tinygltf::Node& n = model.nodes[i];
+		if (n.mesh == meshIndex) {
+			if (foundNode != -1) {
+				Error("gltf model has multiple nodes referencing the same mesh; not supported for baking.");
+			}
+			foundNode = i;
+		}
+	}
+	if (foundNode == -1) {
+		// No node references this mesh: return identity
+		return glm::mat4(1.0f);
+	}
+
+	// Collect chain bottom-up.
+	std::vector<int> chain;
+	int cur = foundNode;
+	while (cur >= 0) {
+		chain.push_back(cur);
+		auto it = parentOf.find(cur);
+		if (it == parentOf.end()) break;
+		cur = it->second;
+	}
+
+	// Build world: parent first.
+	glm::mat4 world(1.0f);
+	for (auto it = chain.rbegin(); it != chain.rend(); ++it) {
+		world = world * BuildLocalNodeMatrix(model.nodes[*it]);
+	}
+	return world;
+}
+
+static void BakeWorldTransformIntoVertices(const glm::mat4& world, std::vector<PBRShader::Vertex>& verts) {
+	if (verts.empty()) return;
+
+	glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(world)));
+
+	for (auto& v : verts) {
+		glm::vec4 p = world * glm::vec4(v.pos, 1.0f);
+		v.pos = glm::vec3(p);
+		// Only transform normal if it is non-zero
+		if (glm::length2(v.normal) > 0.0f) {
+			v.normal = glm::normalize(normalMatrix * v.normal);
+		}
+	}
+}
+
 void glTF::collectBaseTransform(tinygltf::Model& model, MeshInfo* mesh)
 {
-	Mesh& gltfMesh = model.meshes[mesh->gltfMeshIndex];
-	// collect node children to check uniqueness and have access to parents
-	// map children index to parent index (parent not directly available on tinygltf::Node)
-	unordered_map<int, int> childrenMap;
-	childrenMap[0] = -1; // add one node parent for root
+	// Compute world matrix for the node referencing this mesh.
+	glm::mat4 world = ComputeWorldMatrixForMesh(model, mesh->gltfMeshIndex);
 
-	// look for nodes for this mesh - we can only handle single reference!
-	int found = -1;
-	for (int i = 0; i < model.nodes.size(); i++) {
-		Node& node = model.nodes[i];
-		Log("node " << node.name.c_str() << endl);
-		if (node.mesh == mesh->gltfMeshIndex) {
-			if (found >= 0) {
-				// 2nd occurence not allowed
-				Error("gltf model has multiple nodes for mesh.");
-			} else {
-				found = i;
-			}
-		}
-		// store children to check well formed strict tree:
-		for (int child : node.children) {
-			if (childrenMap.count(child) > 0) {
-				//Error("Invalid node hierarchy found in gltf file");
-                Log("WARNING: Invalid node hierarchy found in gltf file" << endl);
-			} else {
-				childrenMap[child] = i;
-			}
-		}
-	}
-	if (found == -1) {
-		Log("no mesh reference found in gltf node hierarchy for " << gltfMesh.name.c_str() << " from file " << mesh->collection->filename.c_str() << endl);
-		mesh->baseTransform = glm::mat4(1.0f);
+	// Store for reference (if other systems still expect baseTransform).
+	mesh->baseTransform = world;
+
+	// Bake into vertex data.
+	if (!mesh->vertices.empty()) {
+		//BakeWorldTransformIntoVertices(world, mesh->vertices);
 	}
 
-	// collect node transform hierarchy:
-	glm::mat4 transform(1.0);
-	int curIndex = found;
-	do {
-		Node& node = model.nodes[curIndex];
-        if (node.skin > -1) {
-			Log("----> WARNING: gltf model has skinning, not supported\n");
-			;// Error("gltf model has skinning, not supported");
-		}
-		if (node.scale.size() == 3) {
-			glm::vec3 scaleVec(node.scale[0], node.scale[1], node.scale[2]);
-			transform = glm::scale(transform, scaleVec);
-		}
-		if (node.rotation.size() == 4) {
-			glm::quat quatVec((float)node.rotation[1], (float)node.rotation[2], (float)node.rotation[3], (float)node.rotation[0]);
-			glm::mat4 rotMatrix = glm::toMat4(quatVec);
-			transform = rotMatrix * transform;
-		}
-		curIndex = childrenMap[curIndex];
-	} while (curIndex != -1);
-	mesh->baseTransform = transform;
+	// After baking, downstream code should treat mesh->baseTransform as already applied.
+	// If desired, uncomment the next line to neutralize further usage:
+	// mesh->baseTransform = glm::mat4(1.0f);
 }
 
 void glTF::load(const unsigned char* data, int size, MeshCollection* coll, string filename)

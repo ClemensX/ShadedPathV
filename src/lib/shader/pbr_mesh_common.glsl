@@ -121,6 +121,8 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 view;
     mat4 proj;
     vec4 baseColor;
+	uint frameNum;      // new: current frame number
+	uint pad0;          // pad to 16-byte multiple if desired (optional)
     vec3 camPos;
 } ubo;
 

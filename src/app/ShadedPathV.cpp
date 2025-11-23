@@ -45,8 +45,8 @@ int mainOne(int argc, char* argv[])
     //LandscapeDemo app; // vr ok
     //Incoming app;
     //LandscapeGenerator app; // vr ok with limited support
-    Loader app;
-    //MeshManager app;
+    //Loader app;
+    MeshManager app;
     //Rocks app;
     //glbLodMerger app; // vr not supported
 

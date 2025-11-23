@@ -341,6 +341,24 @@ vec3& WorldObject::scale() {
 	return _scale;
 }
 
+void WorldObject::calculateStandardModelTransform(glm::mat4& modelToWorld)
+{
+	auto& pos = this->pos();
+	auto& rot = this->rot();
+	auto& scale = this->scale();
+	glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), rot.x, glm::vec3(1.0f, 0.0f, 0.0f));
+	glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), rot.y, glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), rot.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+	glm::mat4 rotationMatrix = rotationZ * rotationY * rotationX;
+	glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
+	glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
+
+	// Apply baseTransform first (rightmost), then Scale, then Rotate, then Translate:
+	modelToWorld = trans * rotationMatrix * scaled * this->mesh->baseTransform;
+
+}
+
 void MeshInfo::getBoundingBox(BoundingBox& box)
 {
 	if (boundingBoxAlreadySet) {
