@@ -264,7 +264,8 @@ struct MeshInfo
 	// copy gltf material info here, may also be overwritten in app code
 	bool isDoubleSided = false;
 
-	// get bounding box either from mesh data, will only be called once
+	// get bounding box directly from mesh data, will only be called once
+    // returns BB based on actual vertex positions, no transformations applied
 	void getBoundingBox(BoundingBox& box);
 	
 	void logInfo() const {
@@ -441,12 +442,10 @@ public:
 	// if maximise is true bounding box may increase with each call, depending on current animation
 	// (used to get max bounding box for animated objects)
 	void calculateBoundingBox(BoundingBox& box, bool maximise = false);
-	// override the bounding box from mesh data, useful for bone animated objects
-	void forceBoundingBox(BoundingBox box);
-	// get bounding box either from mesh data, or the one overridden by forceBoundingBox()
-	void getBoundingBox(BoundingBox& box);
+	// get bounding box with model transform applied
+	void getBoundingBoxWorld(BoundingBox& box, glm::mat4 modelToWorld);
 	// calculate bounding box in world coords of current object location/rotation/scale 
-	void calculateBoundingBoxWorld(glm::mat4 modelToWorld);
+	//void calculateBoundingBoxWorld(glm::mat4 modelToWorld);
 	// calculate bounding box and add to line list. bounding box is in world coords of current object location/rotation/scale 
 	void drawBoundingBox(std::vector<LineDef>& boxes, glm::mat4 modelToWorld, glm::vec4 color = Colors::Silver);
 	// calc distance. Currently refers to object origin which might be incorrect in some cases, TODO implement distance to bounding box center
@@ -477,7 +476,7 @@ private:
 
 	// 8 corners of bounding box in world coords:
 	// low y in first 4 corners, in clockwise order
-	BoundingBoxCorners boundingBoxCorners;
+	//BoundingBoxCorners boundingBoxCorners;
 };
 
 // WorldObject Store is for displaying loaded objects from MeshStore within the game world

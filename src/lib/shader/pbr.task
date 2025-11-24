@@ -153,6 +153,21 @@ void main() {
     mat4 mvp = proj * view * model;
 
     //debugPrintfEXT("TASK SHADER: object %u flags %d disabled %d\n", model_ubo.objectNum, model_ubo.flags, isRenderingDisabled);
+    if (!isRenderingDisabled) {
+        // check if object is outside frustrum
+        bool isOutside = isOutsideView(model_ubo.boundingBox, mvp);
+        if (isOutside) {
+            isRenderingDisabled = true;
+            BoundingBox bb = model_ubo.boundingBox;
+            // get BB in world coords:
+            BoundingBox bbWorld = bb;
+            vec4 bbMinWorld = model * vec4(bb.min, 1.0);
+            vec4 bbMaxWorld = model * vec4(bb.max, 1.0);
+            bbWorld.min = bbMinWorld.xyz / bbMinWorld.w;
+            bbWorld.max = bbMaxWorld.xyz / bbMaxWorld.w;
+            debugPrintfEXT("TASK SHADER: OUTSIDE bb WORLD min X %f %f\n", bbWorld.min.x, bbWorld.max.x);
+        }
+    }
     if (isRenderingDisabled) {
         // signal to mesh shader that this object is culled/disabled.
         payload.meshletIndex = PAYLOAD_CULLED;
@@ -170,6 +185,7 @@ void main() {
         //debugPrintfEXT("TASK INV[%u,%u] frame %u OBJ %u disabled=%u\n", gl_WorkGroupID.x, gl_LocalInvocationID.x, ubo.frameNum, model_ubo.objectNum, isRenderingDisabled);
         return;
     }
+    float diameter = 0;
     if (true) {
         // output passed object size and calculated width:
         BoundingBox bb = model_ubo.boundingBox;
@@ -179,27 +195,9 @@ void main() {
         vec4 bbMaxWorld = model * vec4(bb.max, 1.0);
         bbWorld.min = bbMinWorld.xyz / bbMinWorld.w;
         bbWorld.max = bbMaxWorld.xyz / bbMaxWorld.w;
-        // size is always bb max - bb min
-        float lengthWorld = length(bbWorld.max - bbWorld.min);
-        float width = bb.max.x - bb.min.x;
-        debugPrintfEXT("TASK SHADER: object %u calc width %f passed width %f, flags %d\n", model_ubo.objectNum, lengthWorld, width, model_ubo.flags);
-    }
-    bool isOutside = isOutsideView(model_ubo.boundingBox, mvp);
-    if (isOutside) {
-        // Don't emit mesh tasks for this object � but emit one dummy so drivers stay happy.
-        BoundingBox bb = model_ubo.boundingBox;
-        // get BB in world coords:
-        BoundingBox bbWorld = bb;
-        vec4 bbMinWorld = model * vec4(bb.min, 1.0);
-        vec4 bbMaxWorld = model * vec4(bb.max, 1.0);
-        bbWorld.min = bbMinWorld.xyz / bbMinWorld.w;
-        bbWorld.max = bbMaxWorld.xyz / bbMaxWorld.w;
-        debugPrintfEXT("TASK SHADER: OUTSIDE bb WORLD min X %f %f\n", bbWorld.min.x, bbWorld.max.x);
-        //debugPrintfEXT("TASK SHADER: OUTSIDE bb min %f %f %f\n", bb.min.x, bb.min.y, bb.min.z);
-        payload.meshletIndex = PAYLOAD_CULLED;
-        payload.mvp = mvp;
-        EmitMeshTasksEXT(1, 1, 1);
-        return;
+        // diameter is always bb max - bb min
+        diameter = length(bbWorld.max - bbWorld.min);
+        debugPrintfEXT("TASK SHADER: object %u calc diameter %f , flags %d\n", model_ubo.objectNum, diameter, model_ubo.flags);
     }
     // Visible: emit actual mesh tasks for meshlets
     if (gl_WorkGroupID.x > 10962)
@@ -212,17 +210,15 @@ void main() {
     //        return; // Skip invalid meshlet indices
     //    }
   
-    if (!isRenderingDisabled && !isOutside) {
+    if (!isRenderingDisabled) {
         // LOD selection:
         uint meshIndex = model_ubo.meshNumber; // default to exact mesh specified in model_ubo (for non-LOD rendering)
         //debugPrintfEXT("TASK SHADER: model_ubo flags: %u\n", model_ubo.flags);
         //debugPrintfEXT("TASK SHADER: isGpuLodEnabled: %d\n", isGpuLodEnabled ? 1 : 0);
         if (isGpuLodEnabled) {
-            // scale to have 1m width for LOD 0 object:
-            BoundingBox box = model_ubo.boundingBox;
-            float width = box.max.x - box.min.x;
-            float scale = 1.0f / width;
-            //debugPrintfEXT("TASK SHADER: width %f scale %f\n", width, scale);
+            // scale to have 1m cube diameter for LOD 0 object:
+            float scale = 1.732f / diameter;
+            debugPrintfEXT("TASK SHADER: diameter %f scale %f\n", diameter, scale);
             vec3 camPos = ubo.camPos;
             //debugPrintfEXT("TASK SHADER: camPos %f %f %f\n", camPos.x, camPos.y, camPos.z);
             vec3 objPos = model_ubo.objPos;

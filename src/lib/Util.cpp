@@ -626,6 +626,19 @@ void Util::recalculateBoundingBox(glm::mat4 toWorld, BoundingBox& box)
     }
 }
 
+void Util::extractBoundingBoxCorners(BoundingBox& box, BoundingBoxCorners& corners)
+{
+    auto& bbcorners = corners.corners;
+    bbcorners[0] = vec3(box.min.x, box.min.y, box.min.z);
+    bbcorners[1] = vec3(box.min.x, box.min.y, box.max.z);
+    bbcorners[2] = vec3(box.max.x, box.min.y, box.max.z);
+    bbcorners[3] = vec3(box.max.x, box.min.y, box.min.z);
+    bbcorners[4] = vec3(box.min.x, box.max.y, box.min.z);
+    bbcorners[5] = vec3(box.min.x, box.max.y, box.max.z);
+    bbcorners[6] = vec3(box.max.x, box.max.y, box.max.z);
+    bbcorners[7] = vec3(box.max.x, box.max.y, box.min.z);
+}
+
 void Util::calculateBoundingBox(glm::mat4 modelToWorld, BoundingBox& box, BoundingBoxCorners& bbcorners)
 {
     auto& corners = bbcorners.corners;

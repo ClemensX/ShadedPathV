@@ -228,11 +228,11 @@ void MeshManager::prepareFrame(FrameResources* fr)
         if (objects.size() != 10) {
             Error("Loaded objects not suitable for LOD claculations");
         }
-        // scale to have 1m width for LOD 0 object:
+        // scale to have 1m cube diameter for LOD 0 object:
         BoundingBox box;
-        objects[0]->getBoundingBox(box);
-        float width = box.max.x - box.min.x;
-        float scale = 1.0f / width;
+        objects[0]->getBoundingBoxWorld(box, objects[0]->mesh->baseTransform);
+        float diameter = length(box.max - box.min);
+        float scale = 1.732f / diameter;
         modelScale = scale;
         // we base all calculations on LOD 0:
         for (int i = 0; i < 10; i++) {
@@ -639,7 +639,7 @@ void MeshManager::buildCustomUI() {
         if (object != nullptr) {
             ImGui::Text("Current Object: %s", object->mesh->name.c_str());
             BoundingBox box;
-            object->getBoundingBox(box);
+            object->getBoundingBoxWorld(box, object->mesh->baseTransform);
             ImGui::Text("BBOX min: %.3f %.3f %.3f", box.min.x, box.min.y, box.min.z);
             ImGui::Text("     max: %.3f %.3f %.3f", box.max.x, box.max.y, box.max.z);
         }

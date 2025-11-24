@@ -50,7 +50,7 @@ void Rocks::run(ContinuationInfo* cont)
 void redoBB(WorldObject* obj) {
     mat4 modeltransform = mat4(0.0f);
     BoundingBox box;
-    obj->getBoundingBox(box); // get the unscaled mesh BB
+    obj->mesh->getBoundingBox(box); // get the unscaled mesh BB
     Util::calculateStandardModelTransform(modeltransform, obj->pos(), obj->scale(), obj->rot());
     Util::recalculateBoundingBox(modeltransform, box);
     obj->perFrameBB = box;
@@ -124,15 +124,16 @@ void Rocks::init() {
         object->rot() = vec3(PI_half, 0.0, 0.0f);
     }
     BoundingBox box;
-    object->getBoundingBox(box);
+    object->getBoundingBoxWorld(box, mat4(1.0f));
     Log(" object max values: " << box.max.x << " " << box.max.y << " " << box.max.z << std::endl);
-    // scale to have 1m width for LOD 0 object:
-    float width = box.max.x - box.min.x;
-    float scale = 1.0f / width;
+    float scale = 1.0f;
     if (true) {
+        // scale to have 1m cube diameter for LOD 0 object:
+        float diameter = length(box.max - box.min);
+        scale = 1.732f / diameter;
         object->scale() = vec3(scale);
         object->enabled = true;
-        object->useGpuLod = true;
+        object->useGpuLod = false;
         redoBB(object);
     }
 

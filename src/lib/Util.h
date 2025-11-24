@@ -57,6 +57,8 @@ public:
     static void calculateStandardModelTransform(glm::mat4& modelToWorld, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation);
     // recalculate bounding box, call this after resizing an object, make sure to pass object BB, not from the mesh!
     static void recalculateBoundingBox(glm::mat4 toWorld, BoundingBox& box);
+    // extract the 8 corner vertices from a BB
+    static void extractBoundingBoxCorners(BoundingBox& box, BoundingBoxCorners& corners);
     // calculate bounding box to world coords into corners
     static void calculateBoundingBox(glm::mat4 toWorld, BoundingBox& box, BoundingBoxCorners& corners);
     static void drawBoundingBox(std::vector<LineDef>& boxes, BoundingBox& box, BoundingBoxCorners& boundingBoxCorners, glm::mat4 modelToWorld, glm::vec4 color);

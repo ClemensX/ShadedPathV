@@ -291,7 +291,8 @@ void Incoming::prepareFrame(FrameResources* fr)
             glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
             glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
             modeltransform =  trans * scaled * rotationMatrix;
-            wo->calculateBoundingBoxWorld(modeltransform);
+            Error("handle next line correctly :-)");
+            //wo->calculateBoundingBoxWorld(modeltransform);
             if (enableLines) {
                 if (enableIntersectTest) {
                     if (wo->isLineIntersectingBoundingBox(intersectTestLine.start, intersectTestLine.end)) {

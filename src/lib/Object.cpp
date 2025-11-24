@@ -378,10 +378,10 @@ void MeshInfo::getBoundingBox(BoundingBox& box)
 	boundingBoxAlreadySet = true;
 }
 
-void WorldObject::getBoundingBox(BoundingBox& box)
-{
-    return mesh->getBoundingBox(box);
-}
+//void WorldObject::getBoundingBox(BoundingBox& box)
+//{
+//    return mesh->getBoundingBox(box);
+//}
 
 void WorldObjectStore::createGroup(string groupname, int groupId) {
 	if (groups.count(groupname) > 0) return;  // do not recreate groups
@@ -457,19 +457,32 @@ const vector<WorldObject*>& WorldObjectStore::getSortedList()
 	return sortedList;
 }
 
-void WorldObject::calculateBoundingBoxWorld(glm::mat4 modelToWorld)
+//void WorldObject::calculateBoundingBoxWorld(glm::mat4 modelToWorld)
+//{
+//	BoundingBox box;
+//	getBoundingBox(box);
+//    auto& corners = boundingBoxCorners.corners;
+//    Util::calculateBoundingBox(modelToWorld, box, boundingBoxCorners);
+//	return;
+//}
+
+void WorldObject::getBoundingBoxWorld(BoundingBox& box, glm::mat4 modelToWorld)
 {
-	BoundingBox box;
-	getBoundingBox(box);
-    auto& corners = boundingBoxCorners.corners;
-    Util::calculateBoundingBox(modelToWorld, box, boundingBoxCorners);
-	return;
+    // get BB in raw object coords:
+    box = mesh->boundingBox;
+	// get BB in world coords:
+	vec4 bbMinWorld = modelToWorld * vec4(box.min, 1.0);
+	vec4 bbMaxWorld = modelToWorld * vec4(box.max, 1.0);
+	box.min = vec3(bbMinWorld) / bbMinWorld.w;
+	box.max = vec3(bbMaxWorld) / bbMaxWorld.w;
 }
 
 void WorldObject::drawBoundingBox(std::vector<LineDef>& boxes, glm::mat4 modelToWorld, vec4 color)
 {
 	BoundingBox box;
-	getBoundingBox(box);
+	getBoundingBoxWorld(box, modelToWorld);
+    BoundingBoxCorners boundingBoxCorners;
+    Util::extractBoundingBoxCorners(box, boundingBoxCorners);
 	Util::drawBoundingBox(boxes, box, boundingBoxCorners, modelToWorld, color);
 }
 
@@ -516,6 +529,8 @@ void WorldObject::addVerticesToLineList(std::vector<LineDef>& lines, glm::vec3 o
 }
 
 bool WorldObject::isLineIntersectingBoundingBox(const vec3& lineStart, const vec3& lineEnd) {
+    Error("WorldObject::isLineIntersectingBoundingBox not implemented yet.");
+	BoundingBoxCorners boundingBoxCorners; // keep compiler happy
     const BoundingBoxCorners& box = boundingBoxCorners;
 	vec3 d = lineEnd - lineStart;
 	vec3 boxAxes[3] = {

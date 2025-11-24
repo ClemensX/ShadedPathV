@@ -162,7 +162,7 @@ void World::transformToWorld(WorldObject* terrain)
 
 	// current terrain size:
 	BoundingBox box;
-	terrain->getBoundingBox(box);
+    terrain->getBoundingBoxWorld(box, mat4(1.0f)); // assume terrain is at origin with no transform
 	Log(" old terrain size: " << box.max.x - box.min.x << " " << box.max.y - box.min.y << " " << box.max.z - box.min.z << std::endl);
 	float factor = sizex / (box.max.x - box.min.x);
 	int factorRounded = (int)round(factor);

@@ -111,9 +111,9 @@ void PBRShader::prefillModelParameters(FrameResources& fr)
         buf->material.irradiance = tiIrradiance->index;
 		buf->material.envcube = tiPrefileterdEnv->index;
 		//buf->material.texCoordSets.specularGlossiness = 27;
-        // calc and set bounding box
+        // calc and set bounding box from mesh data
         BoundingBox box;
-		obj->getBoundingBox(box);
+		obj->mesh->getBoundingBox(box);
         buf->boundingBox = box;
 		if (obj->useGpuLod) {
             buf->enableGpuLodRendering();
