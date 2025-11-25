@@ -203,8 +203,7 @@ void main() {
         // calc object position as middle of BB:
         realObjPos = (bbWorld.min + bbWorld.max) * 0.5f;
         // log realObjPos:
-        if (model_ubo.objectNum == 0)
-        debugPrintfEXT("TASK SHADER: object %u realObjPos %f %f %f\n", model_ubo.objectNum, realObjPos.x, realObjPos.y, realObjPos.z);
+        //if (model_ubo.objectNum == 0) debugPrintfEXT("TASK SHADER: object %u realObjPos %f %f %f\n", model_ubo.objectNum, realObjPos.x, realObjPos.y, realObjPos.z);
 
     }
     // Visible: emit actual mesh tasks for meshlets
@@ -228,7 +227,7 @@ void main() {
             float scale = 1.732f / diameter;
             //debugPrintfEXT("TASK SHADER: diameter %f scale %f\n", diameter, scale);
             vec3 camPos = ubo.camPos;
-            //debugPrintfEXT("TASK SHADER: camPos %f %f %f\n", camPos.x, camPos.y, camPos.z);
+            debugPrintfEXT("TASK SHADER: camPos %f %f %f\n", camPos.x, camPos.y, camPos.z);
             vec3 objPos = realObjPos; //model_ubo.objPos;
             //debugPrintfEXT("TASK SHADER: object %u objPos %f %f %f\n", model_ubo.objectNum, objPos.x, objPos.y, objPos.z);
             float dist = length(camPos - objPos);
@@ -236,8 +235,7 @@ void main() {
             //debugPrintfEXT("TASK SHADER: object %u dist %f scaled %f\n", model_ubo.objectNum, dist, distScaled);
 
             uint lodLevel = calculateLODIndex(dist);
-            if (model_ubo.objectNum == 0)
-            debugPrintfEXT("TASK SHADER: object %u dist %f scaled %f ==> level: %u\n", model_ubo.objectNum, dist, distScaled, lodLevel);
+            //if (model_ubo.objectNum == 0) debugPrintfEXT("TASK SHADER: object %u dist %f scaled %f ==> level: %u\n", model_ubo.objectNum, dist, distScaled, lodLevel);
             meshIndex = model_ubo.meshNumber + lodLevel; // we rely on proper selection of LOD 0 mesh number in app code!!
         }
         // meshIndex is the LOD mesh we want to render, determine its meshlet count:

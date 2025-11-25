@@ -123,6 +123,8 @@ layout(binding = 0) uniform UniformBufferObject {
     vec4 baseColor;
 	uint frameNum;      // new: current frame number
 	uint pad0;          // pad to 16-byte multiple if desired (optional)
+	uint pad1;          // pad to 16-byte multiple if desired (optional)
+	uint pad2;          // pad to 16-byte multiple if desired (optional)
     vec3 camPos;
 } ubo;
 

@@ -55,6 +55,8 @@ public:
 		glm::vec4 baseColor = glm::vec4(1.0f);
 		uint32_t frameNum;      // new: current frame number
 		uint32_t pad0;          // pad to 16-byte multiple if desired (optional)
+		uint32_t pad1;          // pad to 16-byte multiple if desired (optional)
+		uint32_t pad2;          // pad to 16-byte multiple if desired (optional)
 		glm::vec3 camPos = glm::vec3(std::numeric_limits<double>::quiet_NaN()); // signal that this is not set
 	};
 
