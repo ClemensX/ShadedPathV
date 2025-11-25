@@ -480,9 +480,8 @@ void WorldObject::getBoundingBoxWorld(BoundingBox& box, glm::mat4 modelToWorld)
 void WorldObject::drawBoundingBox(std::vector<LineDef>& boxes, glm::mat4 modelToWorld, vec4 color)
 {
 	BoundingBox box;
-	getBoundingBoxWorld(box, modelToWorld);
+    mesh->getBoundingBox(box);
     BoundingBoxCorners boundingBoxCorners;
-    Util::extractBoundingBoxCorners(box, boundingBoxCorners);
 	Util::drawBoundingBox(boxes, box, boundingBoxCorners, modelToWorld, color);
 }
 

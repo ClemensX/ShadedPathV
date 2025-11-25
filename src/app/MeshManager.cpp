@@ -639,7 +639,9 @@ void MeshManager::buildCustomUI() {
         if (object != nullptr) {
             ImGui::Text("Current Object: %s", object->mesh->name.c_str());
             BoundingBox box;
-            object->getBoundingBoxWorld(box, object->mesh->baseTransform);
+            mat4 modeltransform;
+            object->calculateStandardModelTransform(modeltransform);
+            object->getBoundingBoxWorld(box, modeltransform);
             ImGui::Text("BBOX min: %.3f %.3f %.3f", box.min.x, box.min.y, box.min.z);
             ImGui::Text("     max: %.3f %.3f %.3f", box.max.x, box.max.y, box.max.z);
         }

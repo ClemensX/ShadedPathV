@@ -158,14 +158,14 @@ void main() {
         bool isOutside = isOutsideView(model_ubo.boundingBox, mvp);
         if (isOutside) {
             isRenderingDisabled = true;
-            BoundingBox bb = model_ubo.boundingBox;
-            // get BB in world coords:
-            BoundingBox bbWorld = bb;
-            vec4 bbMinWorld = model * vec4(bb.min, 1.0);
-            vec4 bbMaxWorld = model * vec4(bb.max, 1.0);
-            bbWorld.min = bbMinWorld.xyz / bbMinWorld.w;
-            bbWorld.max = bbMaxWorld.xyz / bbMaxWorld.w;
-            debugPrintfEXT("TASK SHADER: OUTSIDE bb WORLD min X %f %f\n", bbWorld.min.x, bbWorld.max.x);
+//            BoundingBox bb = model_ubo.boundingBox;
+//            // get BB in world coords:
+//            BoundingBox bbWorld = bb;
+//            vec4 bbMinWorld = model * vec4(bb.min, 1.0);
+//            vec4 bbMaxWorld = model * vec4(bb.max, 1.0);
+//            bbWorld.min = bbMinWorld.xyz / bbMinWorld.w;
+//            bbWorld.max = bbMaxWorld.xyz / bbMaxWorld.w;
+//            debugPrintfEXT("TASK SHADER: OUTSIDE bb WORLD min X %f %f\n", bbWorld.min.x, bbWorld.max.x);
         }
     }
     if (isRenderingDisabled) {
@@ -186,6 +186,7 @@ void main() {
         return;
     }
     float diameter = 0;
+    vec3 realObjPos; // calc middle of BB
     if (true) {
         // output passed object size and calculated width:
         BoundingBox bb = model_ubo.boundingBox;
@@ -197,7 +198,14 @@ void main() {
         bbWorld.max = bbMaxWorld.xyz / bbMaxWorld.w;
         // diameter is always bb max - bb min
         diameter = length(bbWorld.max - bbWorld.min);
-        debugPrintfEXT("TASK SHADER: object %u calc diameter %f , flags %d\n", model_ubo.objectNum, diameter, model_ubo.flags);
+        //if (model_ubo.objectNum == 0)
+        //debugPrintfEXT("TASK SHADER: object %u calc diameter %f , flags %d\n", model_ubo.objectNum, diameter, model_ubo.flags);
+        // calc object position as middle of BB:
+        realObjPos = (bbWorld.min + bbWorld.max) * 0.5f;
+        // log realObjPos:
+        if (model_ubo.objectNum == 0)
+        debugPrintfEXT("TASK SHADER: object %u realObjPos %f %f %f\n", model_ubo.objectNum, realObjPos.x, realObjPos.y, realObjPos.z);
+
     }
     // Visible: emit actual mesh tasks for meshlets
     if (gl_WorkGroupID.x > 10962)
@@ -218,17 +226,18 @@ void main() {
         if (isGpuLodEnabled) {
             // scale to have 1m cube diameter for LOD 0 object:
             float scale = 1.732f / diameter;
-            debugPrintfEXT("TASK SHADER: diameter %f scale %f\n", diameter, scale);
+            //debugPrintfEXT("TASK SHADER: diameter %f scale %f\n", diameter, scale);
             vec3 camPos = ubo.camPos;
             //debugPrintfEXT("TASK SHADER: camPos %f %f %f\n", camPos.x, camPos.y, camPos.z);
-            vec3 objPos = model_ubo.objPos;
+            vec3 objPos = realObjPos; //model_ubo.objPos;
             //debugPrintfEXT("TASK SHADER: object %u objPos %f %f %f\n", model_ubo.objectNum, objPos.x, objPos.y, objPos.z);
             float dist = length(camPos - objPos);
             float distScaled = dist * scale;
             //debugPrintfEXT("TASK SHADER: object %u dist %f scaled %f\n", model_ubo.objectNum, dist, distScaled);
 
             uint lodLevel = calculateLODIndex(dist);
-            //debugPrintfEXT("TASK SHADER: object %u dist %f scaled %f ==> level: %u\n", model_ubo.objectNum, dist, distScaled, lodLevel);
+            if (model_ubo.objectNum == 0)
+            debugPrintfEXT("TASK SHADER: object %u dist %f scaled %f ==> level: %u\n", model_ubo.objectNum, dist, distScaled, lodLevel);
             meshIndex = model_ubo.meshNumber + lodLevel; // we rely on proper selection of LOD 0 mesh number in app code!!
         }
         // meshIndex is the LOD mesh we want to render, determine its meshlet count:

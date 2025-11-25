@@ -131,9 +131,11 @@ void Rocks::init() {
         // scale to have 1m cube diameter for LOD 0 object:
         float diameter = length(box.max - box.min);
         scale = 1.732f / diameter;
+        //scale *= 12.0f;
         object->scale() = vec3(scale);
         object->enabled = true;
-        object->useGpuLod = false;
+        object->useGpuLod = true;
+        object->enableDebugGraphics = true;
         redoBB(object);
     }
 
@@ -258,7 +260,7 @@ void Rocks::prepareFrame(FrameResources* fr)
         buf->params[0].intensity = 10.0f; // adjust sun light intensity
         //buf->boundingBox = wo->perFrameBB;
         if (!object->enabled)   buf->disableRendering();
-        if (wo->enableDebugGraphics) engine->meshStore.debugGraphics(wo, tr, modeltransform, false, true, false, false);
+        if (wo->enableDebugGraphics) engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false, false);
     }
     // lines
     engine->shaders.lineShader.prepareAddLines(tr);

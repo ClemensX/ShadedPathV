@@ -65,9 +65,9 @@ void Loader::init() {
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
     
-    //engine->meshStore.loadMesh("granite_rock_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
+    engine->meshStore.loadMesh("granite_rock_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
     //engine->meshStore.loadMesh("granite_rock_auto_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
-    engine->meshStore.loadMesh("granite_rock_06_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
+    //engine->meshStore.loadMesh("granite_rock_06_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = true;  useDefaultNormalLineLength = false;
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox"); alterObjectCoords = true;  useDefaultNormalLineLength = false;
@@ -117,7 +117,8 @@ void Loader::init() {
         float scale = 1.732f / diameter;
         object->scale() = vec3(scale);
         object->enabled = true;
-        object->useGpuLod = false;
+        object->useGpuLod = true;
+        object->enableDebugGraphics = true;
     }
 
     // 2 square km world size
@@ -275,7 +276,7 @@ void Loader::prepareFrame(FrameResources* fr)
         } else {
             //engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false);
         }
-        if (wo->enableDebugGraphics) engine->meshStore.debugGraphics(wo, tr, modeltransform, false, true, false, false);
+        if (wo->enableDebugGraphics) engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false, false);
     }
     // lines
     engine->shaders.lineShader.prepareAddLines(tr);
