@@ -54,6 +54,7 @@ public:
     static float getMaxCubeViewDistanceFromFarPlane(float f) {
         return sqrt((f * f) / 3.0f);
     }
+    // calculate standard model to world transform matrix from position, scale and rotation. Be careful: this does not take base mesh transform into account!
     static void calculateStandardModelTransform(glm::mat4& modelToWorld, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation);
     // recalculate bounding box, call this after resizing an object, make sure to pass object BB, not from the mesh!
     static void recalculateBoundingBox(glm::mat4 toWorld, BoundingBox& box);

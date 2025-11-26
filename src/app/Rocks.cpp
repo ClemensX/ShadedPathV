@@ -15,13 +15,10 @@ void Rocks::run(ContinuationInfo* cont)
         // camera initialization
         initCamera(glm::vec3(-0.640809f, -0.445347f, 2.82217f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        getFirstPersonCameraPositioner()->setMaxSpeed(0.1f);
-        //getFirstPersonCameraPositioner()->setMaxSpeed(200.0f);
-        getHMDCameraPositioner()->setMaxSpeed(0.1f);
         Movement mv;
         //camera->setConstantSpeed(mv.fallSpeedMS);
-        //camera->setConstantSpeed(mv.runSpeedMS);
-        camera->setConstantSpeed(mv.walkSpeedMS);
+        camera->setConstantSpeed(mv.runSpeedMS);
+        //camera->setConstantSpeed(mv.walkSpeedMS);
         // engine configuration
         enableEventsAndModes();
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
@@ -47,7 +44,7 @@ void Rocks::run(ContinuationInfo* cont)
     Log("Rocks ended" << endl);
 }
 
-void redoBB(WorldObject* obj) {
+void redoBBXXX(WorldObject* obj) {
     mat4 modeltransform = mat4(0.0f);
     BoundingBox box;
     obj->mesh->getBoundingBox(box); // get the unscaled mesh BB
@@ -78,8 +75,8 @@ void Rocks::addRandomRocks(std::vector<WorldObject*>& rocks, World& world, MeshI
         // scale between 1 and 10 meters:
         //float scale = MathHelper::RandF(scale1m, 10.0f * scale1m);
         float scale = MathHelper::RandF(1.0f, 3.0f);
-        scale = 1.0f;// scale1m;
-        scale = scale1m;
+        //scale = 1.0f;// scale1m;
+        //scale = scale1m;
         rock->scale() = vec3(scale);
         rock->enabled = true;
         rock->useGpuLod = true;
@@ -95,10 +92,10 @@ void Rocks::addRandomRocks(std::vector<WorldObject*>& rocks, World& world, MeshI
         //Util::calculateStandardModelTransform(modeltransform, rock->pos(), rock->scale(), rock->rot());
         //Util::recalculateBoundingBox(modeltransform, box);
         //rock->perFrameBB = box;
-        auto box = rock->perFrameBB;
-        redoBB(rock);
-        float width = box.max.x - box.min.x;
-        scale = 1.0f / width;
+        //auto box = rock->perFrameBB;
+        //redoBB(rock);
+        //float width = box.max.x - box.min.x;
+        //scale = 1.0f / width;
         //Log("add rocks: width " << width << " scale " << scale << endl);
         rocks.push_back(rock);
     }
@@ -132,11 +129,11 @@ void Rocks::init() {
         float diameter = length(box.max - box.min);
         scale = 1.732f / diameter;
         //scale *= 12.0f;
+        scale = 1.0f;
         object->scale() = vec3(scale);
         object->enabled = true;
         object->useGpuLod = true;
-        object->enableDebugGraphics = true;
-        redoBB(object);
+        object->enableDebugGraphics = false;
     }
 
     // 2 square km world size
@@ -227,41 +224,28 @@ void Rocks::prepareFrame(FrameResources* fr)
 
     engine->shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
 
-    for (auto& wo : engine->objectStore.getSortedList()) {
-        //Log(" adapt object " << obj.get()->objectNum << endl);
-        //WorldObject *wo = obj.get();
-        PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
-        mat4 modeltransform;
-        if (spinningBox) {
-            // Define a constant rotation speed (radians per second)
-            double rotationSpeed = glm::radians(5.0f);
-            if (!alterObjectCoords) {
-                rotationSpeed = glm::radians(15.0f);
-            }
-
-            // Calculate the rotation angle based on the elapsed time
-            //float rotationAngle = rotationSpeed * (seconds - spinTimeSeconds);
-            float rotationAngle = rotationSpeed * deltaSeconds;
-
-            // Apply the rotation to the modeltransform matrix
-            if (doRotation) {
-                //modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
-                //if (alterObjectCoords) {
-                //    modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
-                //}
-                object->rot().y += rotationAngle;
-            }
-        } else {
-            modeltransform = wo->mesh->baseTransform;
+    // we only need to update dynamic model UBOs for first few frames, afterwards they remain static
+    if (tr.frameNum < 4) {
+        for (auto& wo : engine->objectStore.getSortedList()) {
+            //Log(" adapt object " << obj.get()->objectNum << endl);
+            //WorldObject *wo = obj.get();
+            PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
+            // standard model matrix
+            mat4 modeltransform;
+            wo->calculateStandardModelTransform(modeltransform);
+            buf->model = modeltransform;
+            buf->params[0].intensity = 7.0f; // adjust sun light intensity
+            //if (wo->objectNum == 1) {
+            //    Log(" object 1 pos: " << wo->pos().x << " " << wo->pos().y << " " << wo->pos().z << endl);
+            //    Log("   bb in buf: " << buf->boundingBox.min.x << " " << buf->boundingBox.min.y << " " << buf->boundingBox.min.z << " - "
+            //        << buf->boundingBox.max.x << " " << buf->boundingBox.max.y << " " << buf->boundingBox.max.z << endl);
+            //}
+            //buf->boundingBox = wo->perFrameBB;
+            if (!object->enabled)   buf->disableRendering();
+            if (wo->enableDebugGraphics) engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false, false);
         }
-        // standard model matrix
-        Util::calculateStandardModelTransform(modeltransform, wo->pos(), wo->scale(), wo->rot());
-        buf->model = modeltransform;
-        buf->params[0].intensity = 10.0f; // adjust sun light intensity
-        //buf->boundingBox = wo->perFrameBB;
-        if (!object->enabled)   buf->disableRendering();
-        if (wo->enableDebugGraphics) engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false, false);
     }
+
     // lines
     engine->shaders.lineShader.prepareAddLines(tr);
     LineShader::UniformBufferObject lubo{};

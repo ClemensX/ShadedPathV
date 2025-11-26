@@ -113,8 +113,9 @@ void Loader::init() {
     Log(" object max values: " << box.max.x << " " << box.max.y << " " << box.max.z << std::endl);
     if (true) {
         // scale to have 1m cube diameter for LOD 0 object:
-        float diameter = length(box.max - box.min);
-        float scale = 1.732f / diameter;
+        //float diameter = length(box.max - box.min);
+        //float scale = 1.732f / diameter;
+        float scale = 1.0f;
         object->scale() = vec3(scale);
         object->enabled = true;
         object->useGpuLod = true;
@@ -217,8 +218,6 @@ void Loader::prepareFrame(FrameResources* fr)
         //Log(" adapt object " << obj.get()->objectNum << endl);
         //WorldObject *wo = obj.get();
         PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
-        mat4 modeltransform;
-        modeltransform = wo->mesh->baseTransform;
         if (spinningBox) {
             // Define a constant rotation speed (radians per second)
             double rotationSpeed = glm::radians(5.0f);
@@ -237,25 +236,13 @@ void Loader::prepareFrame(FrameResources* fr)
                 //    modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
                 //}
                 object->rot().y += rotationAngle;
-                glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), object->rot().y, glm::vec3(0.0f, 1.0f, 0.0f));
-                //modeltransform *= rotationY;
-                modeltransform = rotationY * modeltransform;
             }
         }
         // standard model matrix
-        auto pos = wo->pos();
-        auto rot = wo->rot();
-        auto scale = wo->scale();
-        glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), rot.x, glm::vec3(1.0f, 0.0f, 0.0f));
-        glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), rot.y, glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), rot.z, glm::vec3(0.0f, 0.0f, 1.0f));
-
-        glm::mat4 rotationMatrix = rotationZ * rotationY * rotationX;
-        glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
-        glm::mat4 scaled = glm::scale(mat4(1.0f), scale);
-        //modeltransform = trans * scaled * rotationMatrix;
+        mat4 modeltransform;
+        wo->calculateStandardModelTransform(modeltransform);
         buf->model = modeltransform;
-        buf->params[0].intensity = 10.0f; // adjust sun light intensity
+        buf->params[0].intensity = 7.0f; // adjust sun light intensity
         if (!object->enabled)   buf->disableRendering();
 
         // log object distance to camera

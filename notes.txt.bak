@@ -340,7 +340,3 @@ debug glbLodMerger
 "C:\dev\cpp\data\granite_rock.glb" "C:\dev\cpp\data\pack"
 
 { 0, 1, 5, 10, 15, 25, 30, 50, 70, 150 }
-
-TASK SHADER: model_ubo.boundingBox min -71.165359 -55.849598 -62.840740
-TASK SHADER: model_ubo.boundingBox max 74.323158 63.228664 32.198666
-TASK SHADER: object 0 BB -0.205851 0.204592 0.205167 --> -0.193889 0.194802 0.197353

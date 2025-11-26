@@ -135,12 +135,25 @@ uint calculateLODIndex(float distance) {
     return 0;
 }
 
+void logModelUbo() {
+    debugPrintfEXT("TASK SHADER: model_ubo.objectNum %u\n", model_ubo.objectNum);
+    debugPrintfEXT("TASK SHADER: model_ubo.meshNumber %u\n", model_ubo.meshNumber);
+    debugPrintfEXT("TASK SHADER: model_ubo.meshletsCount %u\n", model_ubo.meshletsCount);
+    debugPrintfEXT("TASK SHADER: model_ubo.flags %u\n", model_ubo.flags);
+    BoundingBox bb = model_ubo.boundingBox;
+    debugPrintfEXT("TASK SHADER: model_ubo.boundingBox min %f %f %f\n", bb.min.x, bb.min.y, bb.min.z);
+    debugPrintfEXT("TASK SHADER: model_ubo.boundingBox max %f %f %f\n", bb.max.x, bb.max.y, bb.max.z);
+}
+
 void main() {
     //check_inputs();
 
     //debugPrintfEXT("TASK SHADER: model flags: %d\n", model_ubo.flags);
     //debugPrintfEXT("TASK SHADER PUUUUSH: : %llx\n", pushConstants.meshStorageBufferAddress);
     //debugPrintfEXT("TASK SHADER: model_ubo.GPUMeshStorageBaseAddress %llx\n", model_ubo.GPUMeshStorageBaseAddress);
+    if (model_ubo.objectNum == 0) {
+        //logModelUbo();
+    }
     if (model_ubo.meshNumber == 0) {
         //debugPrintfEXT("TASK SHADER: model_ubo.meshNumber is ZERO! This is invalid!\n");
     }
@@ -198,8 +211,8 @@ void main() {
         bbWorld.max = bbMaxWorld.xyz / bbMaxWorld.w;
         // diameter is always bb max - bb min
         diameter = length(bbWorld.max - bbWorld.min);
-        //if (model_ubo.objectNum == 0)
-        //debugPrintfEXT("TASK SHADER: object %u calc diameter %f , flags %d\n", model_ubo.objectNum, diameter, model_ubo.flags);
+        //if (model_ubo.objectNum == 0) debugPrintfEXT("TASK SHADER: object %u BB %f %f %f --> %f %f %f\n", model_ubo.objectNum, bbWorld.min.x, bbWorld.min.y, bbWorld.min.z, bbWorld.max.x, bbWorld.max.y, bbWorld.max.z);
+        //if (model_ubo.objectNum == 0) debugPrintfEXT("TASK SHADER: object %u calc diameter %f , flags %d\n", model_ubo.objectNum, diameter, model_ubo.flags);
         // calc object position as middle of BB:
         realObjPos = (bbWorld.min + bbWorld.max) * 0.5f;
         // log realObjPos:
@@ -227,15 +240,15 @@ void main() {
             float scale = 1.732f / diameter;
             //debugPrintfEXT("TASK SHADER: diameter %f scale %f\n", diameter, scale);
             vec3 camPos = ubo.camPos;
-            debugPrintfEXT("TASK SHADER: camPos %f %f %f\n", camPos.x, camPos.y, camPos.z);
+            //debugPrintfEXT("TASK SHADER: camPos %f %f %f\n", camPos.x, camPos.y, camPos.z);
             vec3 objPos = realObjPos; //model_ubo.objPos;
             //debugPrintfEXT("TASK SHADER: object %u objPos %f %f %f\n", model_ubo.objectNum, objPos.x, objPos.y, objPos.z);
             float dist = length(camPos - objPos);
             float distScaled = dist * scale;
             //debugPrintfEXT("TASK SHADER: object %u dist %f scaled %f\n", model_ubo.objectNum, dist, distScaled);
 
-            uint lodLevel = calculateLODIndex(dist);
-            //if (model_ubo.objectNum == 0) debugPrintfEXT("TASK SHADER: object %u dist %f scaled %f ==> level: %u\n", model_ubo.objectNum, dist, distScaled, lodLevel);
+            uint lodLevel = calculateLODIndex(distScaled);
+            //if (model_ubo.objectNum == 0) debugPrintfEXT("TASK SHADER: object %u diameter %f dist %f dist scaled %f ==> level: %u\n", model_ubo.objectNum, diameter, dist, distScaled, lodLevel);
             meshIndex = model_ubo.meshNumber + lodLevel; // we rely on proper selection of LOD 0 mesh number in app code!!
         }
         // meshIndex is the LOD mesh we want to render, determine its meshlet count:
