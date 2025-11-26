@@ -52,7 +52,7 @@ void redoBBXXX(WorldObject* obj) {
     Util::recalculateBoundingBox(modeltransform, box);
     obj->perFrameBB = box;
 }
-void Rocks::addRandomRocks(std::vector<WorldObject*>& rocks, World& world, MeshInfo* meshInfo, float scale1m) {
+void Rocks::addRandomRocks(std::vector<WorldObject*>& rocks, World& world, MeshInfo* meshInfo) {
 
     unsigned long total_rocks = 10000;
     if (engine->isVR()) total_rocks /= 4; // reduce number of rocks for VR mode for performance reasons
@@ -84,19 +84,7 @@ void Rocks::addRandomRocks(std::vector<WorldObject*>& rocks, World& world, MeshI
         rotation.x = MathHelper::RandF(0.0f, PI);
         rotation.y = MathHelper::RandF(0.0f, PI);
         rotation.z = MathHelper::RandF(0.0f, PI);
-        //rock->rot() = vec3(PI_half, 0.0, 0.0f);
         rock->rot() = rotation;
-        //mat4 modeltransform = mat4(0.0f);
-        //BoundingBox box;
-        //rock->getBoundingBox(box); // get the unscaled mesh BB
-        //Util::calculateStandardModelTransform(modeltransform, rock->pos(), rock->scale(), rock->rot());
-        //Util::recalculateBoundingBox(modeltransform, box);
-        //rock->perFrameBB = box;
-        //auto box = rock->perFrameBB;
-        //redoBB(rock);
-        //float width = box.max.x - box.min.x;
-        //scale = 1.0f / width;
-        //Log("add rocks: width " << width << " scale " << scale << endl);
         rocks.push_back(rock);
     }
 }
@@ -154,7 +142,7 @@ void Rocks::init() {
     engine->shaders.cubeShader.setFarPlane(2000.0f);
 
     vector<WorldObject*> rocks;
-    addRandomRocks(rocks, world, object->mesh, scale);
+    addRandomRocks(rocks, world, object->mesh);
 
     PBRShader::LightSource ls;
     ls.color = vec3(1.0f);

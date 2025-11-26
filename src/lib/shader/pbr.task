@@ -126,6 +126,7 @@ float fixed_lod[10] = { 0, 1, 5, 10, 15, 25, 30, 50, 70, 150 };
 // distance: current camera-to-object distance, scaled to 1m width!!
 // Returns: LOD index in range 0..9 (0 = closest, 9 = farthest).
 uint calculateLODIndex(float distance) {
+    //return 9; // always use lowest LOD for testing
     // LOD 0 is always used for distance < lod[1]
     for (int i = 9; i >= 1; --i) {
         if (distance >= fixed_lod[i]) {
@@ -135,31 +136,26 @@ uint calculateLODIndex(float distance) {
     return 0;
 }
 
-void logModelUbo() {
-    debugPrintfEXT("TASK SHADER: model_ubo.objectNum %u\n", model_ubo.objectNum);
-    debugPrintfEXT("TASK SHADER: model_ubo.meshNumber %u\n", model_ubo.meshNumber);
-    debugPrintfEXT("TASK SHADER: model_ubo.meshletsCount %u\n", model_ubo.meshletsCount);
-    debugPrintfEXT("TASK SHADER: model_ubo.flags %u\n", model_ubo.flags);
-    BoundingBox bb = model_ubo.boundingBox;
-    debugPrintfEXT("TASK SHADER: model_ubo.boundingBox min %f %f %f\n", bb.min.x, bb.min.y, bb.min.z);
-    debugPrintfEXT("TASK SHADER: model_ubo.boundingBox max %f %f %f\n", bb.max.x, bb.max.y, bb.max.z);
-}
-
 void main() {
     //check_inputs();
 
     //debugPrintfEXT("TASK SHADER: model flags: %d\n", model_ubo.flags);
     //debugPrintfEXT("TASK SHADER PUUUUSH: : %llx\n", pushConstants.meshStorageBufferAddress);
     //debugPrintfEXT("TASK SHADER: model_ubo.GPUMeshStorageBaseAddress %llx\n", model_ubo.GPUMeshStorageBaseAddress);
-    if (model_ubo.objectNum == 0) {
-        //logModelUbo();
-    }
     if (model_ubo.meshNumber == 0) {
         //debugPrintfEXT("TASK SHADER: model_ubo.meshNumber is ZERO! This is invalid!\n");
     }
     bool isRenderingDisabled = (model_ubo.flags & MODEL_RENDER_FLAG_DISABLE) != 0;
     bool isGpuLodEnabled = (model_ubo.flags & MODEL_RENDER_FLAG_GPU_LOD) != 0;
 
+    // disable some objects for testing
+//    if ((model_ubo.objectNum > 50)) {
+//        isRenderingDisabled = true;
+//    }
+///   if ((model_ubo.objectNum & 1u) != 0) {
+//        isRenderingDisabled = true;
+//    }
+//
     mat4 model = model_ubo.model;
     mat4 view = ubo.view;
     mat4 proj = ubo.proj;

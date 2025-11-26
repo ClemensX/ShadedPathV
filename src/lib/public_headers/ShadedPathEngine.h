@@ -220,8 +220,10 @@ public:
         return *this;
     }
 
-    void setFixedPhysicalDeviceIndex(int i) {
+    ShadedPathEngine& setFixedPhysicalDeviceIndex(int i) {
+        fii();
         fixedPhysicalDeviceIndex = i;
+        return *this;
     }
 
     // if returned value is >= 0, the engine will use this device index for vulkan device creation

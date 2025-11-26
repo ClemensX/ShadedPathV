@@ -18,7 +18,7 @@ public:
     void processImage(FrameResources* fi) override;
     bool shouldClose() override;
     void handleInput(InputState& inputState) override;
-    void addRandomRocks(std::vector<WorldObject*>& rocks, World& world, MeshInfo* meshInfo, float scale1m);
+    void addRandomRocks(std::vector<WorldObject*>& rocks, World& world, MeshInfo* meshInfo);
 private:
     World world;
     WorldObject *object = nullptr;
