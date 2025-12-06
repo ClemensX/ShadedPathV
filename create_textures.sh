@@ -67,4 +67,6 @@ export PATH="/c/tools/ktx/bin:$PATH"
 # ../../meshoptimizer/build/Debug/gltfpack.exe -i ./granite_rock_08.glb -o ./granite_rock_09.glb -si 0.25 -se 0.5 -v
 #gltf-transform uastc ../data/pack/granite_rock_00_merged.glb ../data/mesh/granite_rock_auto_lod_cmp.glb --verbose
 # single test mesh after gltfpack:
-gltf-transform uastc ../data/pack/granite_rock_06.glb ../data/mesh/granite_rock_06_cmp.glb --verbose
+#gltf-transform uastc ../data/pack/granite_rock_06.glb ../data/mesh/granite_rock_06_cmp.glb --verbose
+#gltf-transform uastc N:/assets/WorldCreator/test/forest.glb ../data/mesh/terrain_forest_cmp.glb --level 2 --zstd 18 --verbose
+gltf-transform uastc N:/assets/WorldCreator/test/forest_small.glb ../data/mesh/terrain_forest_small_cmp.glb --level 2 --zstd 18 --verbose

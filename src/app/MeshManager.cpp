@@ -84,7 +84,8 @@ void MeshManager::init() {
     PBRShader::LightSource ls;
     ls.color = vec3(1.0f);
     //ls.position = vec3(75.0f, 0.5f, -20.0f);
-    ls.position = vec3(75.0f, -10.5f, -40.0f);
+    //ls.position = vec3(75.0f, -10.5f, -40.0f);
+    ls.position = vec3(75.0f, 30.5f, -40.0f);
     engine->shaders.pbrShader.changeLightSource(ls.color, ls.position);
     float curLod[10] = { 0, 1, 5, 10, 15, 25, 30, 50, 70, 150 };
     memcpy(lod, curLod, sizeof(float) * 10);
@@ -148,6 +149,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
             newid += "X";
         }
         engine->meshStore.loadMesh(filepath.filename().string(), newid);
+        //engine->meshStore.loadMesh(filepath.filename().string(), newid, MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
         if (object != nullptr) {
             object->enabled = false;
         }
@@ -313,6 +315,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
     vector<LineDef> boundingBoxes;
     for (auto& wo : engine->objectStore.getSortedList()) {
         PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
+        //buf->flags |= PBRShader::MODEL_RENDER_FLAG_USE_VERTEX_COLORS; // enable simple shading using vertex colors
         if (!wo->enabled) {
             buf->disableRendering();
             buf->objPos = wo->pos(); // get rid of uninitialized object position warning
@@ -322,6 +325,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
             buf->objPos = wo->pos();
         }
         buf->params[0].intensity = sunIntensity; // adjust sun light intensity
+        //buf->params[0].scaleIBLAmbient = 2.0f; // adjust IBL intensity
         if (addSunDirBeam) {
             // add a line to indicate sun direction:
             vec3 sunDir = normalize(buf->params[0].lightDir);

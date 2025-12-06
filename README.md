@@ -37,8 +37,9 @@ We plan to implement features according to this list:
 - V 0.5: Shadows
 
 **Table of content:**
-- [LOD System](#toc-lod)
 - [Current State](#toc-state)
+- [World Creator 2025](#toc-wc)
+- [LOD System](#toc-lod)
 - [Meshlet Rendering](#toc-meshlets)
 - [Linux Build](#toc-linux)
 - [Blog](#toc-blog)
@@ -49,6 +50,34 @@ We plan to implement features according to this list:
 - [Thread Model](#toc-threads)
 - [Coordinate System](#toc-coords)
 - [Misc](#toc-misc)
+
+<a id="toc-state"></a>
+
+## Current State (Q3 / 2025)
+
+<a id="toc-wc"></a>
+
+## World Creator 2025
+
+We changed our approach to import from World Creator (https://www.world-creator.com/). Now we use the Blender Bridge to prepare our scenes:
+
+1. Sync your scene in World Creator
+2. Import Terrain in Blender and bake all needed textures to enable proper glTF export.
+3. Export Object Instances in World Creator, parse the info in ShadedPath
+
+### Use Blender to export terrain as glTF
+
+We need terrain data as glTF, like for every other object. Creating a proper glTF terrain file with World Creator is a bit complicated, because World Creator cannot export a glTF file with all the details we need on it's own. So we use the Blender Bridge for that:
+
+
+
+### Place Object Instances
+
+Export object instances in World Creator according to this:
+https://docs.world-creator.com/reference/export/conventional-export#object-instances
+Then parse the info in ShadedPath
+
+(More details later)
 
 <a id="toc-lod"></a>
 
@@ -72,10 +101,6 @@ Usually, LOD info ist not contained in assets you aquired, so you must prepare t
 - Now apply the same steps for LOD 2 to LOD 9
 
 Obviously, this is just a suggestion. If you are an experienced artist or Blender user you might know better ways to create LOD levels. We just wanted to give a simple workflow example.
-
-<a id="toc-state"></a>
-
-## Current State (Q3 / 2025)
 
 <a id="toc-meshlets"></a>
 ## Meshlets
