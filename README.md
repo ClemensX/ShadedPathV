@@ -69,7 +69,26 @@ We changed our approach to import from World Creator (https://www.world-creator.
 
 We need terrain data as glTF, like for every other object. Creating a proper glTF terrain file with World Creator is a bit complicated, because World Creator cannot export a glTF file with all the details we need on it's own. So we use the Blender Bridge for that:
 
+After syncing in World Creator and importing the terrain in Blender you will have a complicated node structure like this:
 
+![Blender Bridge Import](images/wc_import1.png)
+
+Blender can *technically* export this scene to glTF, but the procedural setup does not export well. Blender is unable to create the needed glTF textures automatically. But we can do it manually: The idea is to create a new *Principled BSDF* node, create all textures manually and fill them with Blender's *Bake* function.
+
+Create new textures like here:
+
+![Blender Create New Texture Nodes](images/wc_import2.png).
+
+You have full control over the size and other attributes of your textures. Be sure to use a proper *Color Space*. Usually, sRGB for *Diffuse* and *Non-Color* for the rest. As our terrains end up too dark with sRGB we have got good results with *Khronos PBR Neutral*. Choose texture sizes according to your needs, especially for the diffuse texture containing the terrain base color.
+
+Baking: While only the texture node is selected where you want to bake to, switch to *Cycles* render mode and bake your texture. Don't forget to save your textures manually. Blender will not do that automatically.
+
+After all textures have been baked you just need to connect your BSDF output with the *Surface* input connector of your Material Output node. Finally you can export the scene to glTF and prepare the glTF file for use in ShadedPath like for every other asset (gltf-transform for compressing texture data and creating Meshlet Data).
+
+Here is our terrain rendered in ShadedPath with very high detail (16k diffuse texture):
+
+![Terrain Render 1](images/wc_import3.png)
+![Terrain Render 1](images/wc_import4.png)
 
 ### Place Object Instances
 
