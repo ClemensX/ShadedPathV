@@ -59,6 +59,23 @@ void Forest::init() {
     engine->objectStore.createGroup("group");
     object = engine->objectStore.addObject("group", "LogoBox", vec3());
 
+    engine->meshStore.loadMesh("box1_cmp.glb", "Flora_1", meshFlags);
+    engine->objectStore.createGroup("flora");
+    auto wc = engine->objectStore.getWorldCreator();
+    for (const auto& biomeObject : wc->biomeObjects) {
+        const auto& merged = biomeObject.MergedParsedTile;
+        if (merged.has_value()) {
+            for (const auto& instance : merged->instances) {
+                vec3 pos = vec3(instance.t.x, instance.t.y, instance.t.z);
+                pos *= vec3(1000.0f, 1.0f, 1000.0f); // World Creator exports in km, we use m ??? TODO check unit settings
+                auto obj = engine->objectStore.addObject("flora", "Flora_1", pos);
+                //obj->rot() = instance.rotation;
+                //float scale = instance.scale.x; // uniform scale
+                //obj->scale() = vec3(scale);
+            }
+        }
+    }
+
     object->enableDebugGraphics = false;
     if (alterObjectCoords) {
         // turn upside down

@@ -503,6 +503,7 @@ public:
     // both json file and csv files must be present in the same folder.
     // be sure to not use any file name twice in that folder! Each scene should have a unique name.
     void loadWorldCreatorInstances(std::string filename);
+	const WorldCreator* getWorldCreator() const { return &worldCreator; }
 
 private:
 	std::unordered_map<std::string, std::vector<std::unique_ptr<WorldObject>>> groups;

@@ -457,7 +457,7 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 	if (obj->mesh->outMeshletDesc.size() > 0) {
 		// groupCountX, groupCountY, groupCountZ: number of workgroups to dispatch
 		// Dispatch one workgroup per meshlet for better driver compatibility
-		Log("About to call vkCmdDrawMeshTasksEXT with " << obj->mesh->outMeshletDesc.size() << " meshlets" << endl);
+		//Log("About to call vkCmdDrawMeshTasksEXT with " << obj->mesh->outMeshletDesc.size() << " meshlets" << endl);
 		if (vkCmdDrawMeshTasksEXT_ == nullptr) {
 			Log("ERROR: vkCmdDrawMeshTasksEXT function pointer is null!" << endl);
 		} else {
@@ -465,7 +465,7 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 			//vkCmdDrawMeshTasksEXT(commandBuffer, static_cast<uint32_t>(obj->mesh->outMeshletDesc.size()), 1, 1);
             // only one workgroup, task shader will handle LOD selection and emit all draw calls for all meshlets
 			vkCmdDrawMeshTasksEXT(commandBuffer, 1, 1, 1);
-			Log("Called vkCmdDrawMeshTasksEXT successfully" << endl);
+			//Log("Called vkCmdDrawMeshTasksEXT successfully" << endl);
 		}
 	} else {
 		Log("WARNING: No meshlets found for object: " << obj->objectNum  << " Force enabling debug graphics." << endl);
