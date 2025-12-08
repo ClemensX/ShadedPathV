@@ -9,6 +9,8 @@
 #include <cstdint>
 #include <algorithm>
 #include <stdexcept>
+#include <unordered_map>
+#include <mutex>
 
 // JSON: add nlohmann/json.hpp to your project include path.
 // https://github.com/nlohmann/json
@@ -79,7 +81,7 @@ namespace wcil
         int TileX{};
         int TileY{};
         float TileSize{};
-        int DataOffset{};       // line offset in CSV (0-based or WC-specific)
+        int DataOffset{};       // line offset in CSV (0-based relative to first data line)
         int DataCount{};        // number of lines to read from offset
     };
 
@@ -228,26 +230,13 @@ namespace wcil
             return result;
         }
 
-        // Load and parse a single CSV tile (supports header, offset, count)
+        // Load and parse a single CSV tile (supports header, offset, count) using cache
         static std::vector<InstanceRecord> LoadTileCsv(
             const std::filesystem::path& csvPath,
             int dataOffset,
             int dataCount)
         {
-            std::ifstream in(csvPath, std::ios::binary);
-            if (!in) throw std::runtime_error("Failed to open CSV: " + csvPath.string());
-
-            std::string line;
-            std::vector<std::string> lines;
-            lines.reserve(1024);
-
-            // Read all lines
-            while (std::getline(in, line))
-            {
-                // trim CR
-                if (!line.empty() && line.back() == '\r') line.pop_back();
-                lines.emplace_back(std::move(line));
-            }
+            const auto& lines = ReadCsvLinesCached(csvPath);
             if (lines.empty()) return {};
 
             // Detect header
@@ -274,7 +263,7 @@ namespace wcil
             return out;
         }
 
-        // Convenience: load all tiles for a biome object from a base directory
+        // Convenience: load all tiles for a biome object from a base directory (CSV read once)
         static LoadedBiomeObject LoadAllTilesFor(
             const BiomeObject& bo,
             const std::filesystem::path& baseDir)
@@ -284,6 +273,7 @@ namespace wcil
 
             for (const auto& t : bo.Tiles)
             {
+                if (t.DataCount == 0) continue; // skip empty tiles, these are probably not available in data/instance folder anyway
                 if (!EqualNoCase(t.FileType, "csv")) continue;
                 LoadedTileData ltd;
                 ltd.tile = t;
@@ -294,7 +284,50 @@ namespace wcil
             return lbo;
         }
 
+        // Optional: clear whole CSV cache (e.g., when reloading a scene)
+        static void ClearCsvCache()
+        {
+            std::scoped_lock lock(s_cacheMutex);
+            s_csvCache.clear();
+        }
+
     private:
+        // CSV cache: path -> lines
+        static const std::vector<std::string>& ReadCsvLinesCached(const std::filesystem::path& csvPath)
+        {
+            // Key by generic string to avoid path equality pitfalls
+            const std::string key = csvPath.generic_string();
+
+            {
+                std::scoped_lock lock(s_cacheMutex);
+                auto it = s_csvCache.find(key);
+                if (it != s_csvCache.end())
+                {
+                    return it->second;
+                }
+            }
+
+            // Load file outside the lock to avoid I/O under mutex
+            std::vector<std::string> lines;
+            {
+                std::ifstream in(csvPath, std::ios::binary);
+                if (!in) throw std::runtime_error("Failed to open CSV: " + csvPath.string());
+
+                std::string line;
+                lines.reserve(1024);
+                while (std::getline(in, line))
+                {
+                    if (!line.empty() && line.back() == '\r') line.pop_back();
+                    lines.emplace_back(std::move(line));
+                }
+            }
+
+            // Store in cache
+            std::scoped_lock lock2(s_cacheMutex);
+            auto [it, inserted] = s_csvCache.emplace(key, std::move(lines));
+            return it->second;
+        }
+
         static bool IsHeaderLine(const std::string& s)
         {
             // Expect: tx,ty,tz,sx,sy,sz,qx,qy,qz,qw,gradient,seed
@@ -377,5 +410,9 @@ namespace wcil
             auto res = std::from_chars(first, last, out, 10);
             return res.ec == std::errc() && res.ptr == last;
         }
+
+        // Static cache storage
+        inline static std::unordered_map<std::string, std::vector<std::string>> s_csvCache{};
+        inline static std::mutex s_cacheMutex{};
     };
 }
