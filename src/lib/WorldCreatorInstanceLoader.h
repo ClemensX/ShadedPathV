@@ -85,14 +85,6 @@ namespace wcil
         int DataCount{};        // number of lines to read from offset
     };
 
-    struct BiomeObject
-    {
-        std::string Biome;
-        std::string Name;
-        ObjectInfo Info;
-        std::vector<InstanceTile> Tiles;
-    };
-
     struct InstanceRecord
     {
         Vec3 t;     // tx,ty,tz
@@ -108,10 +100,18 @@ namespace wcil
         std::vector<InstanceRecord> instances;
     };
 
-    struct LoadedBiomeObject
+    struct BiomeObject
     {
-        BiomeObject definition;
-        std::vector<LoadedTileData> tiles; // parsed CSVs per tile
+        std::string Biome;
+        std::string Name;
+        ObjectInfo Info;
+        std::vector<InstanceTile> Tiles;
+
+        // Parsed CSV instances per tile (filled by LoadParsedTilesFor)
+        std::vector<LoadedTileData> ParsedTiles;
+
+        // Optional: single merged tile containing all instances from ParsedTiles
+        std::optional<LoadedTileData> MergedParsedTile;
     };
 
     class WorldCreatorInstanceLoader
@@ -178,13 +178,13 @@ namespace wcil
                 bo.Info.UniformScaling = oi.at("UniformScaling").get<bool>();
 
                 auto readRange = [](const nlohmann::json& node, const char* key, RangeF& out)
+                {
+                    if (node.contains(key))
                     {
-                        if (node.contains(key))
-                        {
-                            out.Min = node.at(key).at("Min").get<float>();
-                            out.Max = node.at(key).at("Max").get<float>();
-                        }
-                    };
+                        out.Min = node.at(key).at("Min").get<float>();
+                        out.Max = node.at(key).at("Max").get<float>();
+                    }
+                };
 
                 readRange(oi, "ScaleRange", bo.Info.ScaleRange);
                 readRange(oi, "ScaleRangeX", bo.Info.ScaleRangeX);
@@ -230,7 +230,92 @@ namespace wcil
             return result;
         }
 
-        // Load and parse a single CSV tile (supports header, offset, count) using cache
+        // Parse and attach CSV instances:
+        // - If mergeIntoSingle == false: fills BiomeObject::ParsedTiles (per tile)
+        // - If mergeIntoSingle == true: fills BiomeObject::MergedParsedTile (single merged tile)
+        static void LoadParsedTilesFor(BiomeObject& bo, const std::filesystem::path& baseDir, bool mergeIntoSingle = true)
+        {
+            bo.ParsedTiles.clear();
+            bo.MergedParsedTile.reset();
+
+            if (!mergeIntoSingle)
+            {
+                for (const auto& t : bo.Tiles)
+                {
+                    if (t.DataCount == 0) continue;
+                    if (!EqualNoCase(t.FileType, "csv")) continue;
+
+                    LoadedTileData ltd;
+                    ltd.tile = t;
+
+                    const auto path = baseDir / t.FileName;
+                    ltd.instances = LoadTileCsv(path, t.DataOffset, t.DataCount);
+
+                    if (!ltd.instances.empty())
+                        bo.ParsedTiles.emplace_back(std::move(ltd));
+                }
+                return;
+            }
+
+            // Merge mode: concatenate all instances into one tile
+            LoadedTileData merged{};
+            merged.tile.FileName = "merged";
+            merged.tile.FileType = "csv";
+            merged.tile.IsEntity = false;
+            merged.tile.TileX = 0;
+            merged.tile.TileY = 0;
+            merged.tile.TileSize = 0.0f;
+            merged.tile.DataOffset = 0;
+            merged.tile.DataCount = 0;
+
+            // Precompute total size to reserve once
+            size_t total = 0;
+            for (const auto& t : bo.Tiles)
+            {
+                if (t.DataCount == 0) continue;
+                if (!EqualNoCase(t.FileType, "csv")) continue;
+
+                const auto path = baseDir / t.FileName;
+                const auto& lines = ReadCsvLinesCached(path);
+
+                int startIndex = IsHeaderLine(lines.empty() ? std::string{} : lines[0]) ? 1 : 0;
+                startIndex += std::max(0, t.DataOffset);
+                int endIndex = (t.DataCount > 0)
+                    ? std::min<int>(startIndex + t.DataCount, static_cast<int>(lines.size()))
+                    : static_cast<int>(lines.size());
+                if (endIndex > startIndex)
+                    total += static_cast<size_t>(endIndex - startIndex);
+            }
+            merged.instances.reserve(total);
+
+            // Append instances
+            for (const auto& t : bo.Tiles)
+            {
+                if (t.DataCount == 0) continue;
+                if (!EqualNoCase(t.FileType, "csv")) continue;
+
+                const auto path = baseDir / t.FileName;
+                const auto instances = LoadTileCsv(path, t.DataOffset, t.DataCount);
+                if (!instances.empty())
+                {
+                    merged.instances.insert(merged.instances.end(), instances.begin(), instances.end());
+                }
+            }
+
+            // Set merged tile (only if we actually collected instances)
+            if (!merged.instances.empty())
+                bo.MergedParsedTile = std::move(merged);
+        }
+
+        // Optional: clear whole CSV cache (e.g., when reloading a scene)
+        static void ClearCsvCache()
+        {
+            std::scoped_lock lock(s_cacheMutex);
+            s_csvCache.clear();
+        }
+
+    private:
+        // Load and parse a slice of a CSV using cache
         static std::vector<InstanceRecord> LoadTileCsv(
             const std::filesystem::path& csvPath,
             int dataOffset,
@@ -263,39 +348,9 @@ namespace wcil
             return out;
         }
 
-        // Convenience: load all tiles for a biome object from a base directory (CSV read once)
-        static LoadedBiomeObject LoadAllTilesFor(
-            const BiomeObject& bo,
-            const std::filesystem::path& baseDir)
-        {
-            LoadedBiomeObject lbo;
-            lbo.definition = bo;
-
-            for (const auto& t : bo.Tiles)
-            {
-                if (t.DataCount == 0) continue; // skip empty tiles, these are probably not available in data/instance folder anyway
-                if (!EqualNoCase(t.FileType, "csv")) continue;
-                LoadedTileData ltd;
-                ltd.tile = t;
-                const auto path = baseDir / t.FileName;
-                ltd.instances = LoadTileCsv(path, t.DataOffset, t.DataCount);
-                lbo.tiles.emplace_back(std::move(ltd));
-            }
-            return lbo;
-        }
-
-        // Optional: clear whole CSV cache (e.g., when reloading a scene)
-        static void ClearCsvCache()
-        {
-            std::scoped_lock lock(s_cacheMutex);
-            s_csvCache.clear();
-        }
-
-    private:
         // CSV cache: path -> lines
         static const std::vector<std::string>& ReadCsvLinesCached(const std::filesystem::path& csvPath)
         {
-            // Key by generic string to avoid path equality pitfalls
             const std::string key = csvPath.generic_string();
 
             {
@@ -331,19 +386,17 @@ namespace wcil
         static bool IsHeaderLine(const std::string& s)
         {
             // Expect: tx,ty,tz,sx,sy,sz,qx,qy,qz,qw,gradient,seed
-            // Cheap check: contains "tx,ty,tz" and ",seed"
             return s.find("tx,ty,tz") != std::string::npos && s.find(",seed") != std::string::npos;
         }
 
         static bool EqualNoCase(const std::string& a, const std::string& b)
         {
             return std::equal(a.begin(), a.end(), b.begin(), b.end(),
-                [](char c1, char c2) { return std::tolower(c1) == std::tolower(c2); });
+                              [](char c1, char c2) { return std::tolower(c1) == std::tolower(c2); });
         }
 
         static bool ParseCsvRow(const std::string& row, InstanceRecord& out)
         {
-            // Split by commas (no quoted fields in provided format)
             float values[11];
             uint32_t seedVal = 0;
 
@@ -367,14 +420,12 @@ namespace wcil
 
             if (cols.size() != 12) return false; // expected 12 columns
 
-            // Parse 11 floats
             for (int i = 0; i < 11; ++i)
             {
                 float f{};
                 if (!ParseFloat(cols[i], f)) return false;
                 values[i] = f;
             }
-            // Parse seed
             if (!ParseUint(cols[11], seedVal)) return false;
 
             out.t = { values[0], values[1], values[2] };
@@ -387,18 +438,15 @@ namespace wcil
 
         static bool ParseFloat(std::string_view sv, float& out)
         {
-            // std::from_chars for floats is supported in C++20
             const char* first = sv.data();
-            const char* last = sv.data() + sv.size();
+            const char* last  = sv.data() + sv.size();
             auto res = std::from_chars(first, last, out);
             if (res.ec == std::errc::invalid_argument || res.ptr != last)
             {
-                // Fallback: use std::stof for things like "-0"
                 try {
                     out = std::stof(std::string(sv));
                     return true;
-                }
-                catch (...) { return false; }
+                } catch (...) { return false; }
             }
             return res.ec == std::errc();
         }
@@ -406,12 +454,11 @@ namespace wcil
         static bool ParseUint(std::string_view sv, uint32_t& out)
         {
             const char* first = sv.data();
-            const char* last = sv.data() + sv.size();
+            const char* last  = sv.data() + sv.size();
             auto res = std::from_chars(first, last, out, 10);
             return res.ec == std::errc() && res.ptr == last;
         }
 
-        // Static cache storage
         inline static std::unordered_map<std::string, std::vector<std::string>> s_csvCache{};
         inline static std::mutex s_cacheMutex{};
     };

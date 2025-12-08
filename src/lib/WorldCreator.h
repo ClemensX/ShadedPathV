@@ -12,4 +12,7 @@ public:
     std::vector<wcil::BiomeObject> biomeObjects;
     // load CSV data for single biome
     void loadBiomeCSVData(const std::string& csvFilePath, wcil::BiomeObject& biome);
+    static const std::string getPathInstanceName(const wcil::BiomeObject& biome) {
+        return biome.Biome + "::" + biome.Info.Path + biome.Name;
+    }
 };

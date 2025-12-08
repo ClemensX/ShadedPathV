@@ -1968,6 +1968,11 @@ void WorldObjectStore::loadWorldCreatorInstances(std::string filename)
 
 	for (auto& biomeObj : worldCreator.biomeObjects) {
         worldCreator.loadBiomeCSVData(csvDir, biomeObj);
-		Log("Biome instances for " << biomeObj.Name << ": " /* << biomeObj.Instances.size()*/ << endl);
+        string name = WorldCreator::getPathInstanceName(biomeObj);
+		if (!biomeObj.MergedParsedTile) {
+			Log("WARNING: entries missing for " << name << endl);
+			continue;
+		}
+		Log("Biome instances for " << name << ": "  << biomeObj.MergedParsedTile.value().instances.size() << endl);
     }
 }

@@ -10,5 +10,5 @@ void WorldCreator::load(const std::string& filepath)
 
 void WorldCreator::loadBiomeCSVData(const std::string& csvDir, wcil::BiomeObject& biome)
 {
-    wcil::LoadedBiomeObject loaded = wcil::WorldCreatorInstanceLoader::LoadAllTilesFor(biome, csvDir);
+    wcil::WorldCreatorInstanceLoader::LoadParsedTilesFor(biome, csvDir);
 }
