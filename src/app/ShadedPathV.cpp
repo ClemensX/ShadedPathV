@@ -19,6 +19,7 @@
 #include "Loader.h"
 #include "MeshManager.h"
 #include "Rocks.h"
+#include "Forest.h"
 
 int mainOne(int argc, char* argv[]);
 int mainTwo(int argc, char* argv[]);
@@ -46,8 +47,9 @@ int mainOne(int argc, char* argv[])
     //Incoming app;
     //LandscapeGenerator app; // vr ok with limited support
     //Loader app;
-    MeshManager app;
+    //MeshManager app;
     //Rocks app;
+    Forest app;
     //glbLodMerger app; // vr not supported
 
     Log("main() start!\n");

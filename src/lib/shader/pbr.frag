@@ -203,7 +203,7 @@ void main() {
 	if ((model_ubo.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) {
 		outColor = inColor0;
 		//debugPrintfEXT("pbr frag MODEL_RENDER_FLAG_USE_VERTEX_COLORS\n");
-        //return;
+        return;
 	} 
 
 //    outColor = textureBindless2D(baseIndex, inUV0) * inColor0;
@@ -258,16 +258,16 @@ void main() {
 
 		// The albedo may be defined from a base texture or a flat color
 		if (material.baseColorTextureSet > -1) {
-			float sf = 10.0;
+			float sf = 5.0; // use higher value for light boost, TODO move to C++ code
 			vec4 f = vec4(sf, sf, sf, 1.0);
 			baseColor = SRGBtoLINEAR(textureBindless2D(material.baseColorTextureSet, material.texCoordSets.baseColor == 0 ? inUV0 : inUV1)) * material.baseColorFactor * f;
 			//debugPrintfEXT("pbr baseColor factor %f %f %f %f\n", material.baseColorFactor.r, material.baseColorFactor.g, material.baseColorFactor.b, material.baseColorFactor.a);
-			debugPrintfEXT("pbr frag baseColor %f %f %f %f with factor %f\n", baseColor.r, baseColor.g, baseColor.b, baseColor.a, material.baseColorFactor.r);
+			//debugPrintfEXT("pbr frag baseColor %f %f %f %f with factor %f\n", baseColor.r, baseColor.g, baseColor.b, baseColor.a, material.baseColorFactor.r);
 		} else {
 			baseColor = material.baseColorFactor;
 		}
 	}
-	if (true || (model_ubo.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) {
+	if (false || (model_ubo.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) {
 		outColor = baseColor;
 		return;
 	}

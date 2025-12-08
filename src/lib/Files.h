@@ -1,7 +1,7 @@
 #pragma once
 
 // all files hav an associated category
-enum class FileCategory { FX, TEXTURE, MESH, SOUND, TEXTUREPAK };
+enum class FileCategory { FX, TEXTURE, MESH, SOUND, TEXTUREPAK, INSTANCE };
 
 class PakEntry {
 public:
@@ -40,6 +40,7 @@ public:
 	const std::string TEXTURE_PATH = "texture";
 	const std::string MESH_PATH = "mesh";
 	const std::string SOUND_PATH = "sound";
+	const std::string INSTANCE_PATH = "instance";
 private:
 	// initiate pak files before any other file operation. Called from findAssetFolder()
 	void initPakFiles();

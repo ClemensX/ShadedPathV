@@ -72,6 +72,7 @@ add_executable(app
   SimpleMultiWin.cpp
   MeshManager.cpp
   Rocks.cpp
+  Forest.cpp
   glbLodMerger.cpp
   ShadedPathV.cpp
   ${VULKAN_SHADERS}

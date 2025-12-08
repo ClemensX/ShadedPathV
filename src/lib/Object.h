@@ -499,6 +499,10 @@ public:
 	// get sorted object list (sorted by type)
 	// meshes are only resorted if one was added in the meantime
 	const std::vector<WorldObject*>& getSortedList();
+    // load object instances from World Creator export files.
+    // both json file and csv files must be present in the same folder.
+    // be sure to not use any file name twice in that folder! Each scene should have a unique name.
+    void loadWorldCreatorInstances(std::string filename);
 
 private:
 	std::unordered_map<std::string, std::vector<std::unique_ptr<WorldObject>>> groups;
@@ -507,4 +511,5 @@ private:
 	MeshStore *meshStore;
 	std::vector<WorldObject*> sortedList;
     UINT numObjects = 0; // count all objects
+    WorldCreator worldCreator; // used to handle object instances as exported from World Creator
 };

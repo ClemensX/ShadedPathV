@@ -35,6 +35,7 @@ set (SOURCES
   imgui/imgui_tables.cpp
   imgui/imgui_widgets.cpp
   imgui/imgui.cpp
+  WorldCreator.cpp
 #  volk/volk.cpp
 )
 if (OPENXR_INC)

@@ -1,17 +1,17 @@
 #include "mainheader.h"
 #include "AppSupport.h"
-#include "Rocks.h"
+#include "Forest.h"
 
 using namespace std;
 using namespace glm;
 
-void Rocks::run(ContinuationInfo* cont)
+void Forest::run(ContinuationInfo* cont)
 {
-    Log("Rocks started" << endl);
+    Log("Forest started" << endl);
     {
         AppSupport::setEngine(engine);
         auto& shaders = engine->shaders;
-        engine->appname = "Rocks";
+        engine->appname = "Forest";
         // camera initialization
         initCamera(glm::vec3(-0.640809f, -0.445347f, 2.82217f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -41,59 +41,23 @@ void Rocks::run(ContinuationInfo* cont)
         init();
         engine->eventLoop();
     }
-    Log("Rocks ended" << endl);
+    Log("Forest ended" << endl);
 }
 
-void Rocks::addRandomRocks(std::vector<WorldObject*>& rocks, World& world, MeshInfo* meshInfo) {
-
-    unsigned long total_rocks = 10000;
-    if (engine->isVR()) total_rocks /= 4; // reduce number of rocks for VR mode for performance reasons
-
-    // create randomly positioned billboards for each vacXX texture we have:
-    for (unsigned long num = 0; num < total_rocks; num++) {
-        vec3 rnd = world.getRandomPos();
-        vec3 pos;
-        float denseFactor = 8.0f;
-        if (engine->isVR()) denseFactor *= 2.0f; // reduce density for VR mode for performance reasons
-        pos.x = rnd.x/denseFactor;
-        pos.y = rnd.y/denseFactor;
-        pos.z = rnd.z/denseFactor;
-        //pos.x = num * 1.0f;
-        //pos.y = 0.0f;
-        //pos.z = -300.0f;
-
-        WorldObject* rock = engine->objectStore.addObject("group", "LogoBox", pos);
-
-        // scale between 1 and 10 meters:
-        //float scale = MathHelper::RandF(scale1m, 10.0f * scale1m);
-        float scale = MathHelper::RandF(1.0f, 3.0f);
-        //scale = 1.0f;// scale1m;
-        //scale = scale1m;
-        rock->scale() = vec3(scale);
-        rock->enabled = true;
-        rock->useGpuLod = true;
-        vec3 rotation;
-        rotation.x = MathHelper::RandF(0.0f, PI);
-        rotation.y = MathHelper::RandF(0.0f, PI);
-        rotation.z = MathHelper::RandF(0.0f, PI);
-        rock->rot() = rotation;
-        rocks.push_back(rock);
-    }
-}
-
-void Rocks::init() {
+void Forest::init() {
     engine->sound.init(false);
 
     engine->textureStore.generateBRDFLUT();
 
+    engine->objectStore.loadWorldCreatorInstances("forest_InstanceInfo.json");
     MeshFlagsCollection meshFlags;
     //meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
-    engine->meshStore.loadMesh("granite_rock_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
-    //engine->meshStore.loadMesh("granite_rock_auto_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
+    engine->meshStore.loadMesh("terrain_forest_small_cmp.glb", "LogoBox", meshFlags);
+    //engine->meshStore.loadMesh("terrain_forest_cmp.glb", "LogoBox", meshFlags);// alterObjectCoords = true;
 
     engine->objectStore.createGroup("group");
-    object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.2f, 0.2f, 0.2f));
+    object = engine->objectStore.addObject("group", "LogoBox", vec3());
 
     object->enableDebugGraphics = false;
     if (alterObjectCoords) {
@@ -104,7 +68,7 @@ void Rocks::init() {
     object->getBoundingBoxWorld(box, mat4(1.0f));
     Log(" object max values: " << box.max.x << " " << box.max.y << " " << box.max.z << std::endl);
     float scale = 1.0f;
-    if (true) {
+    if (false) {
         // scale to have 1m cube diameter for LOD 0 object:
         float diameter = length(box.max - box.min);
         scale = 1.732f / diameter;
@@ -120,8 +84,8 @@ void Rocks::init() {
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     bool generateCubemaps = false;
     // transform terrain to world size
-    engine->textureStore.loadTexture("nebula.ktx2", "skyboxTexture");
-    //engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
+    //engine->textureStore.loadTexture("nebula.ktx2", "skyboxTexture");
+    engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
     if (generateCubemaps) {
         // generating cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
         engine->textureStore.generateCubemaps("skyboxTexture");
@@ -133,16 +97,13 @@ void Rocks::init() {
     engine->shaders.cubeShader.setSkybox("skyboxTexture");
     engine->shaders.cubeShader.setFarPlane(2000.0f);
 
-    vector<WorldObject*> rocks;
-    addRandomRocks(rocks, world, object->mesh);
-
     PBRShader::LightSource ls;
     ls.color = vec3(1.0f);
-    ls.position = vec3(75.0f, -10.5f, -40.0f);
+    ls.position = vec3(75.0f, 30.5f, -40.0f);
     engine->shaders.pbrShader.changeLightSource(ls.color, ls.position);
     engine->shaders.pbrShader.initialUpload();
     // window creation
-    prepareWindowOutput("Rocks");
+    prepareWindowOutput("Forest");
     engine->presentation.startUI();
 
     // load and play music
@@ -153,12 +114,12 @@ void Rocks::init() {
 
 }
 
-void Rocks::mainThreadHook()
+void Forest::mainThreadHook()
 {
 }
 
 // prepare drawing, guaranteed single thread
-void Rocks::prepareFrame(FrameResources* fr)
+void Forest::prepareFrame(FrameResources* fr)
 {
     FrameResources& tr = *fr;
     double seconds = engine->gameTime.getTimeSeconds();
@@ -240,7 +201,7 @@ void Rocks::prepareFrame(FrameResources* fr)
 }
 
 // draw from multiple threads
-void Rocks::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
+void Forest::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
 {
     if (topic == 0) {
         //engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
@@ -253,26 +214,26 @@ void Rocks::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
     }
     else if (topic == 1) {
         engine->shaders.pbrShader.addCommandBuffers(fr, drawResult);
-        //Log("Rocks::drawFrame: PBR shader command buffers added" << endl);
+        //Log("Forest::drawFrame: PBR shader command buffers added" << endl);
     }
 }
 
-void Rocks::postFrame(FrameResources* fr)
+void Forest::postFrame(FrameResources* fr)
 {
     engine->shaders.endShader.addCommandBuffers(fr, fr->getLatestCommandBufferArray());
 }
 
-void Rocks::processImage(FrameResources* fr)
+void Forest::processImage(FrameResources* fr)
 {
     present(fr);
 }
 
-bool Rocks::shouldClose()
+bool Forest::shouldClose()
 {
     return shouldStopEngine;
 }
 
-void Rocks::handleInput(InputState& inputState)
+void Forest::handleInput(InputState& inputState)
 {
     if (inputState.windowClosed != nullptr) {
         inputState.windowClosed = nullptr;

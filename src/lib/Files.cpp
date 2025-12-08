@@ -98,6 +98,9 @@ string Files::findFile(string filename, FileCategory cat, bool errorIfNotFound, 
 	case FileCategory::TEXTUREPAK:
 		asset_path = assetFolder / filename;
 		break;
+    case FileCategory::INSTANCE:
+		asset_path = assetFolder / INSTANCE_PATH / filename;
+        break;
 	}
 	if (generateFilenameMode) {
         return asset_path.generic_string();

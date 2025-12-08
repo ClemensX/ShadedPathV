@@ -1952,3 +1952,22 @@ bool MeshStore::loadMeshletStorageFile(std::string id, string fileBaseName)
 
 	return true;
 }
+
+void WorldObjectStore::loadWorldCreatorInstances(std::string filename)
+{
+	string filePath = meshStore->engine->files.findFile(filename, FileCategory::INSTANCE, false, false);
+	if (filePath.empty()) {
+		Log("ERROR: WorldObjectStore: World creator instances file not found: " << filename << endl);
+		return;
+	}
+	worldCreator.load(filePath);
+    // csv files have to be in same folder as the main file
+    // get parent folder of filePath
+    std::filesystem::path p(filePath);
+    std::string csvDir = p.parent_path().string();
+
+	for (auto& biomeObj : worldCreator.biomeObjects) {
+        worldCreator.loadBiomeCSVData(csvDir, biomeObj);
+		Log("Biome instances for " << biomeObj.Name << ": " /* << biomeObj.Instances.size()*/ << endl);
+    }
+}

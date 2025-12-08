@@ -161,6 +161,7 @@ void main()
 	    //locPos.y = -locPos.y;
 	    outVert[v].worldPos = locPos.xyz / locPos.w;
         //debugPrintfEXT("loc.w %f\n", locPos.w);
+        // change to true for special cases...
         if (false && (model_ubo.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) { // if model_ubo.flags & MODEL_FLAG_PRELIGHT_VERTICES
             // apply debug colors
             vec3 debugColor = DEBUG_COLORS[meshletIndex % 256];

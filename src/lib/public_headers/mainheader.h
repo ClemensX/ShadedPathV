@@ -92,6 +92,8 @@
 #include <glm/gtx/euler_angles.hpp>
 #include <glm/gtx/norm.hpp>
 
+#include "nlohmann/json.hpp"
+
 //
 // OpenXR Headers
 //
@@ -312,6 +314,9 @@ double static const PI_half = PI / 2.0;
 double static const PI_quarter = PI / 4.0;
 
 // engine headers
+
+#include "WorldCreatorInstanceLoader.h"
+#include "WorldCreator.h"
 
 #include "shader/common_cpp_shader.h"
 #include "Threads_independent.h"
