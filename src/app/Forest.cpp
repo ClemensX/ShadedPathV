@@ -16,8 +16,8 @@ void Forest::run(ContinuationInfo* cont)
         initCamera(glm::vec3(-0.640809f, -0.445347f, 2.82217f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         Movement mv;
-        //camera->setConstantSpeed(mv.fallSpeedMS);
-        camera->setConstantSpeed(mv.runSpeedMS);
+        camera->setConstantSpeed(mv.fallSpeedMS);
+        //camera->setConstantSpeed(mv.runSpeedMS);
         //camera->setConstantSpeed(mv.walkSpeedMS);
         // engine configuration
         enableEventsAndModes();
@@ -49,15 +49,17 @@ void Forest::init() {
 
     engine->textureStore.generateBRDFLUT();
 
-    engine->objectStore.loadWorldCreatorInstances("forest_InstanceInfo.json");
+    engine->objectStore.loadWorldCreatorInstances("ObjectTest_InstanceInfo.json");
     MeshFlagsCollection meshFlags;
     //meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
-    engine->meshStore.loadMesh("terrain_forest_small_cmp.glb", "LogoBox", meshFlags);
+    //engine->meshStore.loadMesh("terrain_forest_small_cmp.glb", "LogoBox", meshFlags);
+    engine->meshStore.loadMesh("ObjectTest_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("terrain_forest_cmp.glb", "LogoBox", meshFlags);// alterObjectCoords = true;
 
     engine->objectStore.createGroup("group");
-    object = engine->objectStore.addObject("group", "LogoBox", vec3());
+    //object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 14.38f * 2.5f, 0.0f));
+    object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 0.0f, 0.0f));
 
     engine->meshStore.loadMesh("box1_cmp.glb", "Flora_1", meshFlags);
     engine->objectStore.createGroup("flora");
@@ -66,8 +68,24 @@ void Forest::init() {
         const auto& merged = biomeObject.MergedParsedTile;
         if (merged.has_value()) {
             for (const auto& instance : merged->instances) {
-                vec3 pos = vec3(instance.t.x, instance.t.y, instance.t.z);
-                pos *= vec3(1000.0f, 1.0f, 1000.0f); // World Creator exports in km, we use m ??? TODO check unit settings
+                float y = instance.t.y / 1024.0f;
+                // check height within margin around 0.017788842
+
+                if (epsilonEqual(y, (float)0.017788842, 0.0000001f)) {
+                    static int count = 0;
+                    Log("YEAHHHHHHHH! " << ++count << " " << y << endl);
+                }
+
+                //vec3 pos = vec3(256.0f - instance.t.x, 2.5f * instance.t.y, instance.t.z - 256.0f);
+                vec3 pos = vec3(-1.0f * (instance.t.z - 256.0f), 2.5f * instance.t.y, -1.0f * (256.0f - instance.t.x));
+                pos.x = pos.x * -1.0f + 256;
+                // stretch terrain in y direction
+                float ystretch = (pos.y / 2.5f) - 14.3864f;
+                ystretch *= 10.0f;
+                pos.y = 2.5 * (ystretch + 14.3864f);
+
+                pos = vec3(instance.t.x, instance.t.y, -instance.t.z);
+                Log("Instance position: " << pos.x << " " << pos.y << " " << pos.z << std::endl);
                 auto obj = engine->objectStore.addObject("flora", "Flora_1", pos);
                 //obj->rot() = instance.rotation;
                 //float scale = instance.scale.x; // uniform scale
@@ -129,6 +147,10 @@ void Forest::init() {
     engine->sound.openSoundFile("loading_music.ogg", "BACKGROUND_MUSIC", true);
     engine->sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 0.2f, 5000);
 
+    vector<LineDef> lines;
+    engine->shaders.lineShader.addZeroCross(lines);
+    engine->shaders.lineShader.addFixedGlobalLines(lines);
+    engine->shaders.lineShader.uploadFixedGlobalLines();
 }
 
 void Forest::mainThreadHook()

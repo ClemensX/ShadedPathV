@@ -1974,5 +1974,37 @@ void WorldObjectStore::loadWorldCreatorInstances(std::string filename)
 			continue;
 		}
 		Log("Biome instances for " << name << ": "  << biomeObj.MergedParsedTile.value().instances.size() << endl);
-    }
+		if (true) {
+			// debug object position distribution:
+            float minX = FLT_MAX;
+            float maxX = -FLT_MAX;
+            float minY = FLT_MAX;
+            float maxY = -FLT_MAX;
+            float minZ = FLT_MAX;
+            float maxZ = -FLT_MAX;
+
+			for (const auto& instance : biomeObj.MergedParsedTile.value().instances) {
+				vec3 pos = vec3(instance.t.x, instance.t.y, instance.t.z);
+				pos *= vec3(1024.0f, 1024.0f, 1024.0f); // discord told to scale by 1024
+                if (pos.x < minX) minX = pos.x;
+                if (pos.x > maxX) maxX = pos.x;
+                if (pos.y < minY) minY = pos.y;
+                if (pos.y > maxY) maxY = pos.y;
+                if (pos.z < minZ) minZ = pos.z;
+                if (pos.z > maxZ) maxZ = pos.z;
+			}
+            Log("  Position ranges: " << endl);
+            Log("    X: " << minX << " to " << maxX << endl);
+            Log("    Y: " << minY << " to " << maxY << endl);
+            Log("    Z: " << minZ << " to " << maxZ << endl);
+		}
+		// apply the magical 1024 factor and switch y and z:
+		for (auto& instance : biomeObj.MergedParsedTile.value().instances) {
+			vec3 pos = vec3(instance.t.x, instance.t.y, instance.t.z);
+			pos *= vec3(1024.0f, 1024.0f, 1024.0f); // discord told to scale by 1024
+            instance.t.x = pos.x;
+            instance.t.y = pos.z;
+            instance.t.z = pos.y;
+		}
+	}
 }
