@@ -50,6 +50,7 @@ void Forest::init() {
     engine->textureStore.generateBRDFLUT();
 
     engine->objectStore.loadWorldCreatorInstances("ObjectTest_InstanceInfo.json");
+    //engine->objectStore.loadWorldCreatorInstances("forest_InstanceInfo.json");
     MeshFlagsCollection meshFlags;
     //meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
@@ -64,7 +65,12 @@ void Forest::init() {
     engine->meshStore.loadMesh("box1_cmp.glb", "Flora_1", meshFlags);
     engine->objectStore.createGroup("flora");
     auto wc = engine->objectStore.getWorldCreator();
+    string* limitBiomeName = nullptr;
+    //limitBiomeName = new string("Bush_A");
     for (const auto& biomeObject : wc->biomeObjects) {
+        if (limitBiomeName != nullptr && biomeObject.Name != *limitBiomeName) {
+            continue;
+        }
         const auto& merged = biomeObject.MergedParsedTile;
         if (merged.has_value()) {
             for (const auto& instance : merged->instances) {
@@ -85,7 +91,7 @@ void Forest::init() {
                 pos.y = 2.5 * (ystretch + 14.3864f);
 
                 pos = vec3(instance.t.x, instance.t.y, -instance.t.z);
-                Log("Instance position: " << pos.x << " " << pos.y << " " << pos.z << std::endl);
+                //Log("Instance position: " << pos.x << " " << pos.y << " " << pos.z << std::endl);
                 auto obj = engine->objectStore.addObject("flora", "Flora_1", pos);
                 //obj->rot() = instance.rotation;
                 //float scale = instance.scale.x; // uniform scale
