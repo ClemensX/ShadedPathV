@@ -256,21 +256,31 @@ Mac build, but realized that their Vulkan support is lacking too much. Maybe we 
 
 ### Windows 
 
-We use **vcpkg** for dependency management. If some of the required libraries are missing the build will fail. If all dependencies are setup correctly on your local machine the build is initiated like this. Please adapt the toolchain file path to yours!
+We use **vcpkg** for dependency management. If some of the required libraries are missing the build will fail. If all dependencies are setup correctly on your local machine the build is initiated like this. Be sure to have installed and configured *vcpkg* correctly!
 
 Clone the repo, then type commands in highest project folder:
 
-Create the VS2022 project:
+Create the VS2022 project using cmake: Be sure to run this in a *Developer PowerShell for VS* or from within the IDE, otherwise you will get errors about missing *cl.exe* or *ninja.exe*
 ```
-cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=C:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake
-```
-
-Now you can either open VS2022 from the ./build folder and build in the IDE, or run this command:
-```
-cmake --build ./build
+cmake --preset x64-debug
 ```
 
-If all goes well you will find the built app here: ``.build/src/app/Debug``
+Now cmake config phase is done and you can create the executable in the IDE, or run this command:
+```
+cmake --build --preset x64-debug
+```
+
+If all goes well you will find the built app here:
+```
+ cd .\out\build\x64-debug\src\app\
+ .\app.exe
+```
+
+#### Tests
+You should be able to see the test in Test Explorer or run all by selecting the cmake test target and right-click Debug it.
+
+You need to copy the folder *shader.bin* from `` .\out\build\x64-debug\src\app\shader.bin ``
+to `` .\out\build\x64-debug\src\test ``. Otherwise the test cases won't find the compiled shader files.
 
 #### Debugging
 

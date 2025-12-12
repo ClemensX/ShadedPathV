@@ -23,3 +23,9 @@ include_directories("${PROJECT_SOURCE_DIR}/src/lib")
 
 target_link_libraries(my_test PRIVATE GTest::gtest GTest::gtest_main shadedpath)
 target_precompile_headers(my_test REUSE_FROM shadedpath)
+
+include(GoogleTest)
+gtest_discover_tests(my_test
+  DISCOVERY_MODE PRE_TEST
+      WORKING_DIRECTORY $<TARGET_FILE_DIR:my_test>
+    )
