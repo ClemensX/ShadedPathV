@@ -70,4 +70,5 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #gltf-transform uastc ../data/pack/granite_rock_06.glb ../data/mesh/granite_rock_06_cmp.glb --verbose
 #gltf-transform uastc N:/assets/WorldCreator/test/forest.glb ../data/mesh/terrain_forest_cmp.glb --level 2 --zstd 18 --verbose
 #gltf-transform uastc N:/assets/WorldCreator/test/forest_small.glb ../data/mesh/terrain_forest_small_cmp.glb --level 2 --zstd 18 --verbose
-gltf-transform uastc N:/assets/WorldCreator/test/ObjectTest.glb ../data/mesh/ObjectTest_cmp.glb --level 2 --zstd 18 --verbose
+#gltf-transform uastc N:/assets/WorldCreator/test/ObjectTest.glb ../data/mesh/ObjectTest_cmp.glb --level 2 --zstd 18 --verbose
+gltf-transform uastc N:/assets/WorldCreator/test/forestv2.glb ../data/mesh/forestv2_cmp.glb --level 2 --zstd 18 --verbose

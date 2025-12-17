@@ -49,18 +49,20 @@ void Forest::init() {
 
     engine->textureStore.generateBRDFLUT();
 
-    engine->objectStore.loadWorldCreatorInstances("ObjectTest_InstanceInfo.json");
+    engine->objectStore.loadWorldCreatorInstances("forestv2_InstanceInfo.json");
+    //engine->objectStore.loadWorldCreatorInstances("ObjectTest_InstanceInfo.json");
     //engine->objectStore.loadWorldCreatorInstances("forest_InstanceInfo.json");
     MeshFlagsCollection meshFlags;
     //meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
+    engine->meshStore.loadMesh("forestv2_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("terrain_forest_small_cmp.glb", "LogoBox", meshFlags);
-    engine->meshStore.loadMesh("ObjectTest_cmp.glb", "LogoBox", meshFlags);
+    //engine->meshStore.loadMesh("ObjectTest_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("terrain_forest_cmp.glb", "LogoBox", meshFlags);// alterObjectCoords = true;
 
     engine->objectStore.createGroup("group");
     //object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 14.38f * 2.5f, 0.0f));
-    object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 0.0f, 0.0f));
+    object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 13.3f, 0.0f));
 
     engine->meshStore.loadMesh("box1_cmp.glb", "Flora_1", meshFlags);
     engine->objectStore.createGroup("flora");
