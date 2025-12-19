@@ -64,11 +64,12 @@ void Forest::init() {
     //object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 14.38f * 2.5f, 0.0f));
     object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 13.3f, 0.0f));
 
-    engine->meshStore.loadMesh("box1_cmp.glb", "Flora_1", meshFlags);
+    engine->meshStore.loadMesh("Grass_C_cmp.glb", "Flora_1", meshFlags);
+    //engine->meshStore.loadMesh("box1_cmp.glb", "Flora_1", meshFlags);
     engine->objectStore.createGroup("flora");
     auto wc = engine->objectStore.getWorldCreator();
     string* limitBiomeName = nullptr;
-    //limitBiomeName = new string("Bush_A");
+    limitBiomeName = new string("Grass_C");
     for (const auto& biomeObject : wc->biomeObjects) {
         if (limitBiomeName != nullptr && biomeObject.Name != *limitBiomeName) {
             continue;
