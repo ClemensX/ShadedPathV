@@ -1,5 +1,21 @@
 # Planning
 
+## Flora for World Creator Forest 001 sample:
+
+### Create Assets
+
+| **Asset** | LODs | Meshlets | LOD Selection
+| ---       | ---  | ---      | ---
+| Grass_C   |   x   |   x       | x
+| Grass_B   |	  |          |
+| DropSeed_C   |	  |          |
+| DropSeed_B   |	  |          |
+| Bush_A   |	  |          |
+| Bush_A(?)   |	  |          |
+| Acacia_B   |	  |          |
+| Acacia_A   |	  |          |
+
+# Old content - remove later
 ## Vulkan Resources Use
 
 Current use of Vulkan resources per shader:

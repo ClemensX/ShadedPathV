@@ -64,7 +64,9 @@ void Forest::init() {
     //object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 14.38f * 2.5f, 0.0f));
     object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 13.3f, 0.0f));
 
-    engine->meshStore.loadMesh("Grass_C_cmp.glb", "Flora_1", meshFlags);
+    engine->meshStore.loadMesh("Grass_C_lod_cmp.glb", "Flora_1", meshFlags);
+    engine->meshStore.getMesh("Flora_1")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
+
     //engine->meshStore.loadMesh("box1_cmp.glb", "Flora_1", meshFlags);
     engine->objectStore.createGroup("flora");
     auto wc = engine->objectStore.getWorldCreator();
@@ -96,6 +98,7 @@ void Forest::init() {
                 pos = vec3(instance.t.x, instance.t.y, -instance.t.z);
                 //Log("Instance position: " << pos.x << " " << pos.y << " " << pos.z << std::endl);
                 auto obj = engine->objectStore.addObject("flora", "Flora_1", pos);
+                obj->useGpuLod = true;
                 //obj->rot() = instance.rotation;
                 //float scale = instance.scale.x; // uniform scale
                 //obj->scale() = vec3(scale);

@@ -100,7 +100,7 @@ public:
 		float alphaMask;
 		float alphaMaskCutoff;
 		float emissiveStrength;
-		uint32_t pad0;
+        uint32_t lod_category; // from common_cpp_shader.h
 		uint32_t pad1;
 		TexCoordSets texCoordSets;
 	};

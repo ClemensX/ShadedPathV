@@ -34,7 +34,7 @@ struct ShaderMaterial {
 	float alphaMask;	
 	float alphaMaskCutoff;
 	float emissiveStrength;
-	uint pad0;
+	uint lod_category;
 	uint pad1;
 	TexCoordSets texCoordSets;
 };

@@ -28,6 +28,13 @@
 #define GLEXT_MESHLET_ENCODING NVMESHLET_ENCODING_PACKBASIC
 #endif
 
+// ShaderMaterial.lod_category:
+
+#define LOD_CATEGORY_GENERAL 0
+#define LOD_CATEGORY_SMALL_GRASS 1
+#define LOD_CATEGORY_INVISIBLE 100 // used to mark objects too far away to render
+
+
 #ifdef __cplusplus
 struct PBRVertex {
 	glm::vec3 pos; // 12 bytes

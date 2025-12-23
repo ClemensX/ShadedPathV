@@ -118,18 +118,45 @@ void check_inputs() {
 
 }
 
-float fixed_lod[10] = { 0, 1, 5, 10, 15, 25, 30, 50, 70, 150 };
+// all objects farther away as max_lod are invisible
+float max_lod[] = {
+  300.0, // LOD_CATEGORY_GENERAL
+   60.0, // LOD_CATEGORY_SMALL_GRASS
+};
+
+// max lod index used (assets must have at least that many LODs! 0..max)
+int max_lod_index[] = {
+  9, // LOD_CATEGORY_GENERAL
+  4, // LOD_CATEGORY_SMALL_GRASS
+};
+
+// select lod index based on distance thresholds (first entry irrelevant)
+float fixed_lod[][10] = {
+{ 0, 1, 5, 10, 15, 25, 30, 50, 70, 150 }, // LOD_CATEGORY_GENERAL
+{ 0, 15, 40, 50, 60, -1, -1, -1, -1, -1 }, // LOD_CATEGORY_SMALL_GRASS
+};
 
 
 // Calculates the LOD index based on the given lod distances and current distance.
 // lod: array of LOD distances (lod[1]..lod[9]), lod[0] is unused.
 // distance: current camera-to-object distance, scaled to 1m width!!
 // Returns: LOD index in range 0..9 (0 = closest, 9 = farthest).
-uint calculateLODIndex(float distance) {
+uint calculateLODIndex(uint lod_category, float distance) {
+    //debugPrintfEXT("TASK SHADER: LOD category %u distance %f\n", lod_category, distance);
+    //    if (lod_category == LOD_CATEGORY_SMALL_GRASS) {
+    //        return LOD_CATEGORY_INVISIBLE; // do not render this object at all
+    //    }
     //return 9; // always use lowest LOD for testing
     // LOD 0 is always used for distance < lod[1]
-    for (int i = 9; i >= 1; --i) {
-        if (distance >= fixed_lod[i]) {
+
+    if (distance >= max_lod[lod_category]) {
+        return LOD_CATEGORY_INVISIBLE; // do not render this object at all
+    }
+    int max_index = max_lod_index[lod_category];
+    for (int i = max_index; i >= 1; --i) {
+        float v = fixed_lod[lod_category][i];
+        if (v < 0) debugPrintfEXT("TASK SHADER: ERROR: invalid fixed_lod value %f for category %u index %d\n", v, lod_category, i);
+        if (distance >= v) {
             return i;
         }
     }
@@ -216,8 +243,8 @@ void main() {
 
     }
     // Visible: emit actual mesh tasks for meshlets
-    if (gl_WorkGroupID.x > 10962)
-    debugPrintfEXT("TASK SHADER: gl_WorkGroupID. x %d y %d z %d\n", gl_WorkGroupID.x, gl_WorkGroupID.y, gl_WorkGroupID.z);
+    //if (gl_WorkGroupID.x > 10962)
+    //debugPrintfEXT("TASK SHADER: gl_WorkGroupID. x %d y %d z %d\n", gl_WorkGroupID.x, gl_WorkGroupID.y, gl_WorkGroupID.z);
     // Now each workgroup handles exactly one meshlet
     uint meshletIndex = gl_WorkGroupID.x;  // Use workgroup ID instead of global invocation ID
     
@@ -243,7 +270,8 @@ void main() {
             float distScaled = dist * scale;
             //debugPrintfEXT("TASK SHADER: object %u dist %f scaled %f\n", model_ubo.objectNum, dist, distScaled);
 
-            uint lodLevel = calculateLODIndex(distScaled);
+            uint lodLevel = calculateLODIndex(model_ubo.material.lod_category, distScaled);
+            if (lodLevel == LOD_CATEGORY_INVISIBLE) return; // do not render this object at all
             //if (model_ubo.objectNum == 0) debugPrintfEXT("TASK SHADER: object %u diameter %f dist %f dist scaled %f ==> level: %u\n", model_ubo.objectNum, diameter, dist, distScaled, lodLevel);
             meshIndex = model_ubo.meshNumber + lodLevel; // we rely on proper selection of LOD 0 mesh number in app code!!
         }

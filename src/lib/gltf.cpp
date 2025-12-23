@@ -871,6 +871,9 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
 		// 3) Collect node transform
 		collectBaseTransform(model, mesh);
 
+		// set default lod category (should be overwritten in app code after mesh loading or per object)
+        mesh->material.lod_category = LOD_CATEGORY_GENERAL;
+
 		modelindex++;
 	}
 }
