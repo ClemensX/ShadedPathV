@@ -13,11 +13,11 @@ void Forest::run(ContinuationInfo* cont)
         auto& shaders = engine->shaders;
         engine->appname = "Forest";
         // camera initialization
-        initCamera(glm::vec3(-0.640809f, -0.445347f, 2.82217f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        initCamera(glm::vec3(-0.040809f, 14.445347f, 2.82217f), glm::vec3(5.0f, 14.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         Movement mv;
-        camera->setConstantSpeed(mv.fallSpeedMS);
-        //camera->setConstantSpeed(mv.runSpeedMS);
+        //camera->setConstantSpeed(mv.fallSpeedMS);
+        camera->setConstantSpeed(mv.runSpeedMS);
         //camera->setConstantSpeed(mv.walkSpeedMS);
         // engine configuration
         enableEventsAndModes();
@@ -64,16 +64,25 @@ void Forest::init() {
     //object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 14.38f * 2.5f, 0.0f));
     object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 13.3f, 0.0f));
 
-    engine->meshStore.loadMesh("Grass_C_lod_cmp.glb", "Flora_1", meshFlags);
-    engine->meshStore.getMesh("Flora_1")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
+    engine->meshStore.loadMesh("Grass_C_lod_cmp.glb", "Grass_C", meshFlags);
+    engine->meshStore.getMesh("Grass_C")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
+
+    engine->meshStore.loadMesh("Grass_B_lod_cmp.glb", "Grass_B", meshFlags);
+    engine->meshStore.getMesh("Grass_B")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
 
     //engine->meshStore.loadMesh("box1_cmp.glb", "Flora_1", meshFlags);
     engine->objectStore.createGroup("flora");
     auto wc = engine->objectStore.getWorldCreator();
     string* limitBiomeName = nullptr;
-    limitBiomeName = new string("Grass_C");
+    //limitBiomeName = new string("Grass_C");
     for (const auto& biomeObject : wc->biomeObjects) {
         if (limitBiomeName != nullptr && biomeObject.Name != *limitBiomeName) {
+            continue;
+        }
+        // check if we have loaded this asset, skip otherwise:
+        MeshInfo* mesh = engine->meshStore.getMesh(biomeObject.Name);
+        if (mesh == nullptr) {
+            Log("Skipping biome object " << biomeObject.Name << " as mesh not loaded" << endl);
             continue;
         }
         const auto& merged = biomeObject.MergedParsedTile;
@@ -97,7 +106,7 @@ void Forest::init() {
 
                 pos = vec3(instance.t.x, instance.t.y, -instance.t.z);
                 //Log("Instance position: " << pos.x << " " << pos.y << " " << pos.z << std::endl);
-                auto obj = engine->objectStore.addObject("flora", "Flora_1", pos);
+                auto obj = engine->objectStore.addObject("flora", biomeObject.Name, pos);
                 obj->useGpuLod = true;
                 //obj->rot() = instance.rotation;
                 //float scale = instance.scale.x; // uniform scale
