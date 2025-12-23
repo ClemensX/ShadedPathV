@@ -121,7 +121,7 @@ void check_inputs() {
 // all objects farther away as max_lod are invisible
 float max_lod[] = {
   300.0, // LOD_CATEGORY_GENERAL
-   60.0, // LOD_CATEGORY_SMALL_GRASS
+   600.0, // LOD_CATEGORY_SMALL_GRASS
 };
 
 // max lod index used (assets must have at least that many LODs! 0..max)

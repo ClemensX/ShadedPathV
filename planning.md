@@ -8,7 +8,7 @@
 | ---          | ---  | ---      | ---
 | Grass_C      |  x   |   x      | x
 | Grass_B      |  x   |   x      | x
-| DropSeed_C   |	  |          |
+| DropSeed_C   |  x   |   x      | x
 | DropSeed_B   |	  |          |
 | Bush_A       |	  |          |
 | Bush_A(?)    |	  |          |

@@ -74,4 +74,6 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #gltf-transform uastc N:/assets/WorldCreator/test/forestv2.glb ../data/mesh/forestv2_cmp.glb --level 2 --zstd 18 --verbose
 #gltf-transform uastc N:/assets/WorldCreator/assets/ObjectsPack2025_01/Grass_C.glb ../data/mesh/Grass_C_cmp.glb --level 2 --zstd 18 --verbose
 #gltf-transform uastc N:/assets/WorldCreator/Grass_C_lod.glb ../data/mesh/Grass_C_lod_cmp.glb --level 2 --zstd 18 --verbose
-gltf-transform uastc N:/assets/WorldCreator/Grass_B_lod.glb ../data/mesh/Grass_B_lod_cmp.glb --level 2 --zstd 18 --verbose
+#gltf-transform uastc N:/assets/WorldCreator/Grass_B_lod.glb ../data/mesh/Grass_B_lod_cmp.glb --level 2 --zstd 18 --verbose
+#gltf-transform uastc N:/assets/WorldCreator/DropSeed_C_lod.glb ../data/mesh/DropSeed_C_lod_cmp.glb --level 2 --zstd 18 --verbose
+gltf-transform uastc N:/assets/WorldCreator/DropSeed_B_lod.glb ../data/mesh/DropSeed_B_lod_cmp.glb --level 2 --zstd 18 --verbose

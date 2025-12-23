@@ -70,11 +70,17 @@ void Forest::init() {
     engine->meshStore.loadMesh("Grass_B_lod_cmp.glb", "Grass_B", meshFlags);
     engine->meshStore.getMesh("Grass_B")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
 
+    engine->meshStore.loadMesh("DropSeed_C_lod_cmp.glb", "DropSeed_C", meshFlags);
+    engine->meshStore.getMesh("DropSeed_C")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
+
+    engine->meshStore.loadMesh("DropSeed_B_lod_cmp.glb", "DropSeed_B", meshFlags);
+    engine->meshStore.getMesh("DropSeed_B")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
+
     //engine->meshStore.loadMesh("box1_cmp.glb", "Flora_1", meshFlags);
     engine->objectStore.createGroup("flora");
     auto wc = engine->objectStore.getWorldCreator();
     string* limitBiomeName = nullptr;
-    //limitBiomeName = new string("Grass_C");
+    //limitBiomeName = new string("DropSeed_B");
     for (const auto& biomeObject : wc->biomeObjects) {
         if (limitBiomeName != nullptr && biomeObject.Name != *limitBiomeName) {
             continue;
@@ -82,7 +88,7 @@ void Forest::init() {
         // check if we have loaded this asset, skip otherwise:
         MeshInfo* mesh = engine->meshStore.getMesh(biomeObject.Name);
         if (mesh == nullptr) {
-            Log("Skipping biome object " << biomeObject.Name << " as mesh not loaded" << endl);
+            Log("WARNING: Skipping biome object " << biomeObject.Name << " as mesh not loaded" << endl);
             continue;
         }
         const auto& merged = biomeObject.MergedParsedTile;
