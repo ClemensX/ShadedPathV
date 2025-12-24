@@ -9,10 +9,10 @@
 | Grass_C      |  x   |   x      | x
 | Grass_B      |  x   |   x      | x
 | DropSeed_C   |  x   |   x      | x
-| DropSeed_B   |	  |          |
+| DropSeed_B   |  x   |   x      | x
 | Bush_A       |	  |          |
 | Bush_A(?)    |	  |          |
-| Acacia_B     |	  |          |
+| Acacia_B     |  x	  |   x      |	
 | Acacia_A     |	  |          |
 
 # Old content - remove later
