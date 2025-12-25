@@ -160,6 +160,10 @@ void MeshManager::prepareFrame(FrameResources* fr)
         float xpos = 0.0f;
         for (auto* mi : coll->meshInfos) {
             Log("    Mesh: " << mi->id << " triangles: " << mi->indices.size()/3 << " vertices: " << mi->vertices.size() << endl);
+            if (mi->isAdditionalPrimitive()) {
+                Log("        (additional primitive, skipping object creation)" << endl);
+                continue;
+            }
             vec3 pos = vec3(xpos, 0.0f, 0.0f);
             BoundingBox box;
             mi->getBoundingBox(box);

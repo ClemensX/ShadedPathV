@@ -309,17 +309,22 @@ void extractVertexAttribute(const tinygltf::Model& model, const tinygltf::Primit
 	}
 }
 
-void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indexBuffer, int gltfMeshIndex) {
+void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indexBuffer, int gltfMeshIndex, int primitiveIndex) {
 	assert(mesh->gltfMeshIndex >= 0);
-	assert(mesh->gltfMeshIndex == gltfMeshIndex);
+    assert(mesh->gltfMeshIndex == gltfMeshIndex);
+    // primitive index must be valid
+    assert(primitiveIndex >= 0);
 
 	uint32_t indexStart = static_cast<uint32_t>(indexBuffer.size());
 	uint32_t vertexStart = static_cast<uint32_t>(verts.size());
 
 	if (model.meshes.size() > 0) {
 		const tinygltf::Mesh& gltfMesh = model.meshes[gltfMeshIndex];
-		if (gltfMesh.primitives.size() > 0) {
-			const tinygltf::Primitive& primitive = gltfMesh.primitives[0];
+        if (gltfMesh.primitives.size() > 0) {
+            if (primitiveIndex < 0 || primitiveIndex >= (int)gltfMesh.primitives.size()) {
+                Error("primitiveIndex out of range in loadVertices");
+            }
+            const tinygltf::Primitive& primitive = gltfMesh.primitives[primitiveIndex];
 			bool hasIndices = primitive.indices > -1;
 			if (!hasIndices) {
 				Error("Cannot parse mesh without indices");
@@ -356,7 +361,14 @@ void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, std::vector<PBRS
 				vert.pos = glm::vec3(positions[v * posStride], positions[v * posStride + 1], positions[v * posStride + 2]);
 
 				if (!colors.empty()) {
-					vert.color = glm::vec4(colors[v * colorStride], colors[v * colorStride + 1], colors[v * colorStride + 2], colors[v * colorStride + 3]);
+				// Access components safely: COLOR_0 may be vec3 or vec4. If alpha not present, default to 1.0f.
+				float cr = 0.0f, cg = 0.0f, cb = 0.0f, ca = 1.0f;
+				int base = static_cast<int>(v) * colorStride;
+				if (colorStride > 0) cr = colors[base + 0];
+				if (colorStride > 1) cg = colors[base + 1];
+				if (colorStride > 2) cb = colors[base + 2];
+				if (colorStride > 3) ca = colors[base + 3];
+				vert.color = glm::vec4(cr, cg, cb, ca);
 				}
 				else {
 					vert.color = glm::vec4(1.0f); // Default to white if no color attribute
@@ -455,7 +467,7 @@ void getTextureUVCoordinates(tinygltf::Model& model, tinygltf::Primitive& primit
 	getUVCoordinates(model, primitive, texInfo, texCoordSelector);
 }
 
-void glTF::prepareTexturesAndMaterials(tinygltf::Model& model, MeshCollection* coll, int gltfMeshIndex)
+void glTF::prepareTexturesAndMaterials(tinygltf::Model& model, MeshCollection* coll, int gltfMeshIndex, int primitiveIndex, MeshInfo* mesh)
 {
 	// make sure textures are already loded
 	assert(coll->textureInfos.size() >= model.samplers.size());
@@ -478,8 +490,11 @@ void glTF::prepareTexturesAndMaterials(tinygltf::Model& model, MeshCollection* c
 		auto& extMap = model.textures[i].extensions;
         assert(model.textures[i].source >= 0);
 	}
-	auto& primitive = model.meshes[gltfMeshIndex].primitives[0];
-	auto& mat = model.materials[primitive.material];
+    if (primitiveIndex < 0 || primitiveIndex >= (int)model.meshes[gltfMeshIndex].primitives.size()) {
+        Error("primitiveIndex out of range");
+    }
+    auto& primitive = model.meshes[gltfMeshIndex].primitives[primitiveIndex];
+    auto& mat = model.materials[primitive.material];
 	// assign mesh textures to pre-loaded texture index:
 	auto baseColorTextureIndex = mat.pbrMetallicRoughness.baseColorTexture.index;
 	auto metallicRoughnessTextureIndex = mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
@@ -487,7 +502,8 @@ void glTF::prepareTexturesAndMaterials(tinygltf::Model& model, MeshCollection* c
 	auto occlusionTextureIndex = mat.occlusionTexture.index;
 	auto emissiveTextureIndex = mat.emissiveTexture.index;
 
-	MeshInfo* mesh = coll->meshInfos[gltfMeshIndex];
+    // mesh pointer passed in directly (one MeshInfo per primitive)
+    // MeshInfo* mesh = coll->meshInfos[gltfMeshIndex];
     mesh->metallicRoughness = true; // default to metallic roughness workflow
     mesh->isDoubleSided = mat.doubleSided;
 
@@ -697,16 +713,15 @@ void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
 			Log("INFO: double sided gltf material used " << mat.name.c_str() << endl)
 		}
 	}
-	for (auto& m : model.meshes) {
-		//Log("  " << m.name.c_str() << endl);
-		size_t size = m.primitives.size();
-		//Log("  primitives: " << size << endl);
-		if (size != 1) {
-			stringstream s;
-			s << "gltf meshes need to have exactly one primitive: " << coll->filename << " " << m.name.c_str() << endl;
-			Error(s.str());
-		}
-	}
+    for (auto& m : model.meshes) {
+        // Accept multiple primitives per mesh. Log if zero primitives.
+        size_t size = m.primitives.size();
+        if (size == 0) {
+            stringstream s;
+            s << "gltf mesh has no primitives: " << coll->filename << " " << m.name.c_str() << endl;
+            Error(s.str());
+        }
+    }
 }
 
 // public methods
@@ -714,7 +729,7 @@ void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
 void glTF::loadVertices(const unsigned char* data, int size, MeshInfo* mesh, vector<PBRShader::Vertex>& verts, vector<uint32_t> &indexBuffer, string filename)
 {
 	Model model;
-	loadVertices(model, mesh, verts, indexBuffer, 0);
+    loadVertices(model, mesh, verts, indexBuffer, 0, 0);
 }
 
 
@@ -849,33 +864,43 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
 	// at this point all textures of gltf file are loaded. info: mesh->textureInfos[]
 	// vertices/indexes are not yet copied from gltf to our buffers
 	Log("Meshes in " << filename.c_str() << endl);
-	int modelindex = 0;
-	for (auto& m : model.meshes) {
-		Log("  " << m.name.c_str() << endl);
-		MeshInfo* mesh = nullptr;
-		if (modelindex > 0) {
-			mesh = engine->meshStore.initMeshInfo(coll, coll->id + "." + to_string(modelindex));
-		} else {
-			mesh = coll->meshInfos[0];
-		}
-		mesh->gltfMeshIndex = modelindex;
-        mesh->name = m.name;
+    // Iterate over meshes by index so we can assign the correct gltf mesh index
+    for (int meshIndex = 0; meshIndex < (int)model.meshes.size(); ++meshIndex) {
+        auto& m = model.meshes[meshIndex];
+        Log("  " << m.name.c_str() << endl);
+        MeshInfo* mesh = nullptr;
 
-		// 1) Load geometry first (creates uv0/uv1 on vertices)
-		loadVertices(model, mesh, mesh->vertices, mesh->indices, modelindex);
+        // For each primitive in the glTF mesh, create a MeshInfo entry so trunk and foliage can be separate
+        for (int prim = 0; prim < (int)m.primitives.size(); ++prim) {
+            if (meshIndex > 0 || prim > 0) {
+                // create unique id using meshIndex and primitive
+                std::string sid = coll->id + "." + to_string(meshIndex);
+                if (prim > 0) sid += "#" + to_string(prim);
+                mesh = engine->meshStore.initMeshInfo(coll, sid);
+            } else {
+                // reuse first MeshInfo for first mesh/primitive
+                mesh = coll->meshInfos[0];
+            }
 
-		// 2) Then prepare textures and materials, which will parse KHR_texture_transform
-		//    and bake transforms into mesh->vertices.uv0/uv1.
-		prepareTexturesAndMaterials(model, coll, modelindex);
+            // gltfMeshIndex must refer to the mesh index in model.meshes (not primitives)
+            mesh->gltfMeshIndex = meshIndex;
+            mesh->gltfPrimitiveIndex = prim;
+            mesh->name = m.name;
 
-		// 3) Collect node transform
-		collectBaseTransform(model, mesh);
+            // 1) Load geometry first (creates uv0/uv1 on vertices)
+            loadVertices(model, mesh, mesh->vertices, mesh->indices, meshIndex, prim);
 
-		// set default lod category (should be overwritten in app code after mesh loading or per object)
-        mesh->material.lod_category = LOD_CATEGORY_GENERAL;
+            // 2) Then prepare textures and materials, which will parse KHR_texture_transform
+            //    and bake transforms into mesh->vertices.uv0/uv1.
+            prepareTexturesAndMaterials(model, coll, meshIndex, prim, mesh);
 
-		modelindex++;
-	}
+            // 3) Collect node transform
+            collectBaseTransform(model, mesh);
+
+            // set default lod category (should be overwritten in app code after mesh loading or per object)
+            mesh->material.lod_category = LOD_CATEGORY_GENERAL;
+        }
+    }
 }
 
 void glTF::mapTinyGLTFSamplerToVulkan(const tinygltf::Sampler& gltfSampler, VkSamplerCreateInfo& vkSamplerInfo) {

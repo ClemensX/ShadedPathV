@@ -414,6 +414,11 @@ WorldObject* WorldObjectStore::addObject(string groupname, string id, vec3 pos) 
 void WorldObjectStore::addObjectPrivate(WorldObject* w, string id, vec3 pos, int userGroupId) {
 	if (ok_meshid_long_format(id) == false) {
 		stringstream s;
+        // check if id contains '#' char - this is used to designate additional primitives
+		if (id.find('#') != string::npos) {
+			s << "WorldObjectStore: trying to add object with '#' in id - this is reserved for additional primitives: " << id << endl;
+			Error(s.str());
+        }
 		s << "WorldObjectStore: trying to add object with wrong id format " << id << endl;
 		Error(s.str());
 	} else {

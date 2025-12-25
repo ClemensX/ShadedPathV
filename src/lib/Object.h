@@ -249,6 +249,8 @@ struct MeshInfo
 
 	// gltf mesh index, only valid during gltf parsing. -1 if not yet set
 	int gltfMeshIndex = -1;
+    // gltf primitive index within mesh. used when a gltf mesh contains multiple primitives
+    int gltfPrimitiveIndex = 0;
 	// base transform from gltf file (default to identity)
 	glm::mat4 baseTransform = glm::mat4(1.0f);
 
@@ -296,6 +298,12 @@ struct MeshInfo
 	uint64_t globalIndexOffset = 0; // offset into global mesh storage buffer
 	uint64_t vertexOffset = 0; // offset into global mesh storage buffer
     bool meshletStorageFileFound = false; // true if meshlet storage file was found and loaded
+	bool isAdditionalPrimitive() {
+		if (gltfPrimitiveIndex > 0) {
+			return true;
+        }
+		return false;
+	};
 };
 typedef MeshInfo* ObjectID;
 

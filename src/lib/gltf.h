@@ -28,11 +28,13 @@ public:
 private:
 	// load model from data pointer. Image data will also be parsed with results in MeshCollection->textureInfos[]
 	void loadModel(tinygltf::Model& model, const unsigned char* data, int size, MeshCollection* coll, std::string filename);
-	// copy model vertices and indices into vectors
-	// index buffer will be 32 bit wide in all cases (VK_INDEX_TYPE_UINT32)
-	void loadVertices(tinygltf::Model& model, MeshInfo* mesh, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indexBuffer, int gltfMeshIndex);
-	// assign textures to their proper PBR members in mesh and read or create texture samplers
-	void prepareTexturesAndMaterials(tinygltf::Model& model, MeshCollection* coll, int gltfMeshIndex);
+    // copy model vertices and indices into vectors
+    // index buffer will be 32 bit wide in all cases (VK_INDEX_TYPE_UINT32)
+    // now supports selecting a specific primitive within a glTF mesh
+    void loadVertices(tinygltf::Model& model, MeshInfo* mesh, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indexBuffer, int gltfMeshIndex, int primitiveIndex);
+    // assign textures to their proper PBR members in mesh and read or create texture samplers
+    // now supports selecting a specific primitive within a glTF mesh
+    void prepareTexturesAndMaterials(tinygltf::Model& model, MeshCollection* coll, int gltfMeshIndex, int primitiveIndex, MeshInfo* mesh);
 	// validate that gltf is within our parsable features
 	void validateModel(tinygltf::Model& model, MeshCollection* mesh);
 	// collect scale and rotation info from gltf nodes hierarchy and store in MeshInfo
