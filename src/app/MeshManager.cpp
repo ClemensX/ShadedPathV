@@ -156,9 +156,9 @@ void MeshManager::prepareFrame(FrameResources* fr)
         auto* coll = engine->meshStore.getMeshCollection(newid);
         objects.clear();
         simObjects.clear();
-        Log("Loaded " << coll->meshInfos.size() << " meshes from file" << endl);
+        Log("Loaded " << coll->meshCount() << " meshes from file" << endl); // <- updated
         float xpos = 0.0f;
-        for (auto* mi : coll->meshInfos) {
+        for (auto* mi : *coll) { // <- updated to iterate with accessor/iterators
             Log("    Mesh: " << mi->id << " triangles: " << mi->indices.size()/3 << " vertices: " << mi->vertices.size() << endl);
             if (mi->isAdditionalPrimitive()) {
                 Log("        (additional primitive, skipping object creation)" << endl);
@@ -179,7 +179,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
         // add test object for GPU LOD:
         enableGpuLodObject = false;
         if (objects.size() > 0 && engine->meshStore.isGPULodCompatible(objects[0])) {
-            gpuLodObject = engine->objectStore.addObject("group", coll->meshInfos[0]->id, vec3(-2.0f, 2.0f, 0.0f));
+            gpuLodObject = engine->objectStore.addObject("group", coll->getMeshInfoAt(0)->id, vec3(-2.0f, 2.0f, 0.0f)); // <- updated
             gpuLodObject->enabled = false;
             gpuLodObject->useGpuLod = true;
         }
@@ -560,22 +560,21 @@ void MeshManager::buildCustomUI() {
             clicked = 2; // prevent multiple clicks
         }
     }
-    bool selectEnabled = (meshCollection != nullptr && meshCollection->meshInfos.size() > 1);
+    bool selectEnabled = (meshCollection != nullptr && meshCollection->meshCount() > 1); // <- updated
     ImGui::BeginDisabled(!selectEnabled);
     if (ImGui::TreeNode("Select Mesh"))
     {
         static int selected = -1;
         static int prevSelected = -1;
-        for (int n = 0; n < meshCollection->meshInfos.size(); n++)
-        {
+        for (int n = 0; n < (int)meshCollection->meshCount(); n++) { // <- updated
             char buf[128];
-            string s = meshCollection->meshInfos[n]->name;
+            string s = meshCollection->getMeshInfoAt(n)->name; // <- updated
             sprintf(buf, "%s %d", s.c_str(), n);
             if (ImGui::Selectable(buf, selected == n))
                 selected = n;
         }
         if (selected != prevSelected && selected >= 0) {
-            meshSelectedFromCollection = meshCollection->meshInfos[selected];
+            meshSelectedFromCollection = meshCollection->getMeshInfoAt(selected); // <- updated
             prevSelected = selected;
         }
         ImGui::TreePop();

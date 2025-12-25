@@ -71,7 +71,7 @@ MeshInfo* MeshStore::initMeshInfo(MeshCollection* coll, std::string id)
     initialObject.meshNum = meshNumber++;
 	meshes[id] = initialObject;
 	MeshInfo* mi = &meshes[id];
-	coll->meshInfos.push_back(mi);
+	coll->pushMeshInfo(mi); // <- updated
 	return mi;
 }
 
@@ -112,7 +112,7 @@ void MeshStore::loadMeshWireframe(string filename, string id, vector<LineDef> &l
 	vector<byte> file_buffer;
 	MeshFlagsCollection flags;
 	MeshCollection* coll = loadMeshFile(filename, id, file_buffer, flags);
-	MeshInfo* obj = coll->meshInfos[0];
+	MeshInfo* obj = coll->getMeshInfoAt(0); // <- updated
 	string fileAndPath = coll->filename;
 	vector<PBRShader::Vertex> vertices;
 	vector<uint32_t> indexBuffer;
@@ -146,11 +146,11 @@ void MeshStore::loadMesh(string filename, string id, MeshFlagsCollection flags)
 	string fileAndPath = coll->filename;
 	gltf.load((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), coll, fileAndPath);
 	coll->available = true;
-	if (coll->meshInfos.size() == 0) {
+	if (coll->meshCount() == 0) { // <- updated
 		Error("No meshes found in glTF file " + filename);
     }
 #if defined(DEBUG)
-	for (auto& mesh : coll->meshInfos) {
+	for (auto& mesh : *coll) { // <- updated to iterate via accessor/iterators
 		if (!checkBoundingBoxPlausibility(mesh->id)) {
             Error("Bounding box plausibility check failed for mesh " + mesh->id);
 		}
@@ -158,7 +158,7 @@ void MeshStore::loadMesh(string filename, string id, MeshFlagsCollection flags)
 #endif
 	bool regenerate = flags.hasFlag(MeshFlags::MESHLET_GENERATE);
 	if (regenerate) {
-		for (auto& mesh : coll->meshInfos) {
+		for (auto& mesh : *coll) { // <- updated
 			aquireMeshletData(filename, mesh->id, regenerate);
 		}
 	} else {
@@ -299,7 +299,7 @@ bool MeshStore::isGPULodCompatible(WorldObject* wo)
 {
 	// get mesh collection for this object:
 	MeshCollection* coll = engine->meshStore.getMeshCollection(wo->mesh->id);
-	if (coll == nullptr || coll->meshInfos.size() != 10) {
+	if (coll == nullptr || coll->meshCount() != 10) { // <- updated
 		return false;
     }
 	return true;
@@ -310,8 +310,8 @@ MeshStore::~MeshStore()
 {
 	for (auto& coll : meshCollections) {
 		if (coll.available) {
-            for (auto& obj : coll.meshInfos) {
-                obj->available = false;
+			for (auto& obj : coll) { // <- updated: iterate via MeshCollection iterator
+				obj->available = false;
             }
 		}
 	}
@@ -1862,10 +1862,10 @@ bool MeshStore::writeMeshletStorageFile(std::string id, string fileBaseName)
 	const char fileType[16] = "SPMESHLETFILEv1";
 	mf.write(fileType, 16); // write file type string and trailing zero
 	// write number of meshes (NOT meshlets):
-    uint32_t numMeshes = coll->meshInfos.size();
+    uint32_t numMeshes = coll->meshCount();
     mf.write((char*)&numMeshes, sizeof(uint32_t));
 	// write meshlet data:
-	for (auto& meshInfo : coll->meshInfos) {
+	for (auto& meshInfo : *coll) {
 		MeshletStorageData meshletData;
 		meshletData.numMeshlets = meshInfo->outMeshletDesc.size();
 		meshletData.numLocalIndices = meshInfo->outLocalIndexPrimitivesBuffer.size();
@@ -1913,13 +1913,13 @@ bool MeshStore::loadMeshletStorageFile(std::string id, string fileBaseName)
     }
 	size_t offset = 16;
 	// check number of meshlet data sets
-	uint32_t numMeshesInCollection = coll->meshInfos.size();
+	uint32_t numMeshesInCollection = coll->meshCount();
 	uint32_t numMeshesFromeFile;
 	memcpy(&numMeshesFromeFile, file_buffer.data() + offset, sizeof(numMeshesFromeFile));
 	offset += sizeof(numMeshesFromeFile);
     assert(numMeshesInCollection == numMeshesFromeFile);
 
-	for (auto& meshInfo : coll->meshInfos) {
+	for (auto& meshInfo : *coll) {
 		// read meshlet buffer sizes:
 		MeshletStorageData meshletData;
 		if (file_buffer.size() < offset + sizeof(MeshletStorageData)) {

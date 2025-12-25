@@ -54,7 +54,8 @@ bool LoadImageDataKTX(Image* image, const int image_idx, std::string* err,
 		userData->collection->textureInfos.resize(image_idx + 1);
 	}
 	tvec[image_idx] = kTexture;
-	auto* texture = userData->engine->textureStore.createTextureSlotForMesh(userData->collection->meshInfos[0], image_idx);
+    auto* coll = userData->collection;
+	auto* texture = userData->engine->textureStore.createTextureSlotForMesh(coll->getMeshInfoAt(coll->meshCount()-1), image_idx);
     //texture->type = TextureType::TEXTURE_TYPE_GLTF;
 	userData->engine->textureStore.createVulkanTextureFromKTKTexture(kTexture, texture);
 	userData->collection->textureInfos[image_idx] = texture;
@@ -879,8 +880,8 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
                 mesh = engine->meshStore.initMeshInfo(coll, sid);
             } else {
                 // reuse first MeshInfo for first mesh/primitive
-                mesh = coll->meshInfos[0];
-            }
+				mesh = coll->getMeshInfoAt(0); // <- updated
+			}
 
             // gltfMeshIndex must refer to the mesh index in model.meshes (not primitives)
             mesh->gltfMeshIndex = meshIndex;

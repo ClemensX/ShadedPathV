@@ -184,13 +184,40 @@ public:
 
 // all meshes loaded from one gltf file. Textures are maintained here, meshes are contained
 struct MeshCollection {
-        std::string id;
-        std::string filename;
-        bool available = false; // true if this object is ready for use in shader code
-        std::vector<ktxTexture*> textureParseInfo;
-        std::vector<::TextureInfo*> textureInfos;
-        std::vector<MeshInfo*> meshInfos;
-		MeshFlagsCollection flags;
+	std::string id;
+	std::string filename;
+	bool available = false; // true if this object is ready for use in shader code
+	std::vector<ktxTexture*> textureParseInfo;
+	std::vector<::TextureInfo*> textureInfos;
+private:
+	std::vector<MeshInfo*> meshInfos;
+public:
+	MeshFlagsCollection flags;
+
+	// Iterators and accessors for meshInfos (keeps meshInfos encapsulated)
+	using iterator = std::vector<MeshInfo*>::iterator;
+	using const_iterator = std::vector<MeshInfo*>::const_iterator;
+
+	size_t meshCount() const { return meshInfos.size(); }
+
+	MeshInfo* getMeshInfoAt(size_t i) {
+		return (i < meshInfos.size()) ? meshInfos[i] : nullptr;
+	}
+	const MeshInfo* getMeshInfoAt(size_t i) const {
+		return (i < meshInfos.size()) ? meshInfos[i] : nullptr;
+	}
+
+	void pushMeshInfo(MeshInfo* mi) {
+		meshInfos.push_back(mi);
+	}
+
+	iterator begin() { return meshInfos.begin(); }
+	iterator end() { return meshInfos.end(); }
+	const_iterator begin() const { return meshInfos.begin(); }
+	const_iterator end() const { return meshInfos.end(); }
+
+	// Optional debug accessor if you need direct vector access in one-off tooling
+	const std::vector<MeshInfo*>& meshInfoVectorForDebugging() const { return meshInfos; }
 };
 
 enum class Axis { X, Y, Z };
