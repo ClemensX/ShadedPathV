@@ -158,7 +158,8 @@ void MeshManager::prepareFrame(FrameResources* fr)
         simObjects.clear();
         Log("Loaded " << coll->meshCount() << " meshes from file" << endl); // <- updated
         float xpos = 0.0f;
-        for (auto* mi : *coll) { // <- updated to iterate with accessor/iterators
+        auto majorMeshes = coll->majorMeshView();
+        for (auto* mi : majorMeshes) {
             Log("    Mesh: " << mi->id << " triangles: " << mi->indices.size()/3 << " vertices: " << mi->vertices.size() << endl);
             if (mi->isAdditionalPrimitive()) {
                 Log("        (additional primitive, skipping object creation)" << endl);

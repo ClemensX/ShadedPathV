@@ -2013,3 +2013,13 @@ void WorldObjectStore::loadWorldCreatorInstances(std::string filename)
 		}
 	}
 }
+
+std::vector<MeshInfo*> MeshCollection::getMajorMeshes() const {
+	std::vector<MeshInfo*> out;
+	out.reserve(meshInfos_.size());
+	for (auto* m : meshInfos_) {
+		if (m && !m->isAdditionalPrimitive()) out.push_back(m);
+	}
+	return out;
+}
+

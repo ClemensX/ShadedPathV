@@ -1,7 +1,9 @@
 #pragma once
 
+// forward declarations
 class Util;
 struct SoundDef;
+struct MeshInfo;
 
 enum class MeshFlags : int {
 	MESH_TYPE_INVALID = 0,
@@ -190,34 +192,61 @@ struct MeshCollection {
 	std::vector<ktxTexture*> textureParseInfo;
 	std::vector<::TextureInfo*> textureInfos;
 private:
-	std::vector<MeshInfo*> meshInfos;
+	// keep representation private so we can change it later
+	std::vector<MeshInfo*> meshInfos_;
+
 public:
 	MeshFlagsCollection flags;
 
-	// Iterators and accessors for meshInfos (keeps meshInfos encapsulated)
+	// --- basic accessors ---
 	using iterator = std::vector<MeshInfo*>::iterator;
 	using const_iterator = std::vector<MeshInfo*>::const_iterator;
 
-	size_t meshCount() const { return meshInfos.size(); }
+	iterator begin() noexcept { return meshInfos_.begin(); }
+	iterator end() noexcept { return meshInfos_.end(); }
+	const_iterator begin() const noexcept { return meshInfos_.begin(); }
+	const_iterator end() const noexcept { return meshInfos_.end(); }
+	const_iterator cbegin() const noexcept { return meshInfos_.cbegin(); }
+	const_iterator cend() const noexcept { return meshInfos_.cend(); }
 
-	MeshInfo* getMeshInfoAt(size_t i) {
-		return (i < meshInfos.size()) ? meshInfos[i] : nullptr;
+	size_t meshCount() const noexcept { return meshInfos_.size(); }
+
+	// add/remove helper used by MeshStore::initMeshInfo
+	void pushMeshInfo(MeshInfo* mi) { meshInfos_.push_back(mi); }
+	void clearMeshInfos() { meshInfos_.clear(); }
+
+	// safe indexed access (returns nullptr if out of range)
+	MeshInfo* getMeshInfoAt(size_t i) noexcept {
+		return (i < meshInfos_.size()) ? meshInfos_[i] : nullptr;
 	}
-	const MeshInfo* getMeshInfoAt(size_t i) const {
-		return (i < meshInfos.size()) ? meshInfos[i] : nullptr;
+	const MeshInfo* getMeshInfoAt(size_t i) const noexcept {
+		return (i < meshInfos_.size()) ? meshInfos_[i] : nullptr;
 	}
 
-	void pushMeshInfo(MeshInfo* mi) {
-		meshInfos.push_back(mi);
+	// --- filtered helpers for major (non-additional) meshes ---
+	// returns a vector copy; cheap for low counts, simple to use
+	std::vector<MeshInfo*> getMajorMeshes() const;
+
+	// templated visitor for all meshes
+	template<typename Fn>
+	void forEachMesh(Fn&& fn) {
+		for (auto* m : meshInfos_) {
+			if (m) fn(m);
+		}
 	}
 
-	iterator begin() { return meshInfos.begin(); }
-	iterator end() { return meshInfos.end(); }
-	const_iterator begin() const { return meshInfos.begin(); }
-	const_iterator end() const { return meshInfos.end(); }
+	// templated visitor for primary (non-additional) meshes
+	template<typename Fn>
+	void forEachMajorMesh(Fn&& fn) {
+		for (auto* m : meshInfos_) {
+			if (m && !m->isAdditionalPrimitive()) fn(m);
+		}
+	}
 
-	// Optional debug accessor if you need direct vector access in one-off tooling
-	const std::vector<MeshInfo*>& meshInfoVectorForDebugging() const { return meshInfos; }
+	// optional: C++20 lazy view (caller must #include <ranges> and use auto view = coll.majorMeshView(); for(auto *m : view) ...)
+#ifdef __cpp_lib_ranges
+	auto majorMeshView() const;
+#endif
 };
 
 enum class Axis { X, Y, Z };
@@ -333,6 +362,15 @@ struct MeshInfo
 	};
 };
 typedef MeshInfo* ObjectID;
+
+// optional: C++20 lazy view (caller must #include <ranges> and use auto view = coll.majorMeshView(); for(auto *m : view) ...)
+#ifdef __cpp_lib_ranges
+auto MeshCollection::majorMeshView() const {
+	using namespace std::views;
+	return meshInfos_ | filter([](MeshInfo* m) { return m && !m->isAdditionalPrimitive(); });
+}
+#endif
+
 
 // Bitfield for controlling meshlet behaviour
 enum class MeshletFlags : uint32_t {
