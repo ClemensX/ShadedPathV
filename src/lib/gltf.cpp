@@ -729,6 +729,7 @@ void glTF::validateModel(tinygltf::Model& model, MeshCollection* coll)
 
 void glTF::loadVertices(const unsigned char* data, int size, MeshInfo* mesh, vector<PBRShader::Vertex>& verts, vector<uint32_t> &indexBuffer, string filename)
 {
+    Error("glTF::loadVertices from memory not supported anymore, use full load()");
 	Model model;
     loadVertices(model, mesh, verts, indexBuffer, 0, 0);
 }
@@ -871,7 +872,7 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
         Log("  " << m.name.c_str() << endl);
         MeshInfo* mesh = nullptr;
 
-        // For each primitive in the glTF mesh, create a MeshInfo entry so trunk and foliage can be separate
+        // For each primitive in the glTF mesh, create a MeshInfo entry so e.g. trunk and foliage can be separate
         for (int prim = 0; prim < (int)m.primitives.size(); ++prim) {
             if (meshIndex > 0 || prim > 0) {
                 // create unique id using meshIndex and primitive
@@ -902,6 +903,28 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
             mesh->material.lod_category = LOD_CATEGORY_GENERAL;
         }
     }
+    // go over meshes a 2nd time and chain primitives if needed
+    // highly inefficient but implementation, but gltf files usually have few meshes/primitives and this will only ever be called once per load
+    MeshInfo* curChain = nullptr;
+	for (auto* major : coll->majorMeshView()) {
+        curChain = major;
+		for (int i = 0; i < coll->meshCount(); ++i) {
+			auto* mi = coll->getMeshInfoAt(i);
+            assert(curChain != nullptr && curChain->gltfNextPrimitiveIndex == -1);
+            if (curChain->gltfMeshIndex == mi->gltfMeshIndex) {
+				// we have same mesh index, now look for next primitive
+                if (mi->gltfPrimitiveIndex == curChain->gltfPrimitiveIndex + 1) {
+                    // chain it (use collection vector index, NOT mesh or primitive index)
+					curChain->gltfNextPrimitiveIndex = i;
+					curChain = mi;
+                }
+            }
+		}
+    }
+	// another loop for logging:
+	for (auto* mi : *coll) {
+		Log("Found mesh :" << mi->id << " gltfMeshIndex: " << mi->gltfMeshIndex << " gltfPrimitiveIndex: " << mi->gltfPrimitiveIndex << " gltfNextPrimitive: " << mi->gltfNextPrimitiveIndex << endl);
+	}
 }
 
 void glTF::mapTinyGLTFSamplerToVulkan(const tinygltf::Sampler& gltfSampler, VkSamplerCreateInfo& vkSamplerInfo) {

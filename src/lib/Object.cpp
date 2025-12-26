@@ -109,6 +109,7 @@ MeshCollection* MeshStore::loadMeshFile(string filename, string id, vector<byte>
 
 void MeshStore::loadMeshWireframe(string filename, string id, vector<LineDef> &lines)
 {
+    Error("MeshStore::loadMeshWireframe is deprecated, use loadMesh and generate wireframe from loaded mesh");
 	vector<byte> file_buffer;
 	MeshFlagsCollection flags;
 	MeshCollection* coll = loadMeshFile(filename, id, file_buffer, flags);
@@ -1331,7 +1332,28 @@ void MeshStore::checkVertexDuplication(std::string id)
 	}
 }
 
+MeshInfo* MeshStore::getNextPrimitiveMeshForObject(WorldObject* obj, MeshInfo* currentMesh)
+{
+    if (currentMesh == nullptr) {
+		return obj->mesh; // return first mesh
+	}
+	int nextMeshIndexOfCollection = currentMesh->gltfNextPrimitiveIndex;//obj->mesh->collection->getMeshInfoAt(currentMesh->;
+	if (nextMeshIndexOfCollection >= 0) {
+		return obj->mesh->collection->getMeshInfoAt(nextMeshIndexOfCollection);
+    }
+    return nullptr; // no more meshes
+}
+
 void MeshStore::debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, bool drawBoundingBox, bool drawVertices, bool drawNormals, bool drawMeshletBoundingBoxes, glm::vec4 colorVertices, glm::vec4 colorNormal, glm::vec4 colorBoxes, float normalLineLength)
+{
+    MeshInfo* primitiveMesh = getNextPrimitiveMeshForObject(obj, nullptr);
+	while (primitiveMesh != nullptr) {
+		debugGraphicsInternal(primitiveMesh, obj, fr, modelToWorld, drawBoundingBox, drawVertices, drawNormals, drawMeshletBoundingBoxes, colorVertices, colorNormal, colorBoxes, normalLineLength);
+		primitiveMesh = getNextPrimitiveMeshForObject(obj, primitiveMesh);
+	};
+}
+
+void MeshStore::debugGraphicsInternal(MeshInfo* primitiveMesh, WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, bool drawBoundingBox, bool drawVertices, bool drawNormals, bool drawMeshletBoundingBoxes, glm::vec4 colorVertices, glm::vec4 colorNormal, glm::vec4 colorBoxes, float normalLineLength)
 {
 	// get access to line shader
 	auto& lineShader = engine->shaders.lineShader;
@@ -1344,38 +1366,38 @@ void MeshStore::debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 mo
 		obj->drawBoundingBox(addLines, modelToWorld, colorNormal);
 	}
     if (drawMeshletBoundingBoxes) {
-		for (auto& m : obj->mesh->meshletsForMesh.meshlets) {
+		for (auto& m : primitiveMesh->meshletsForMesh.meshlets) {
 			BoundingBoxCorners bbcorners;
 			//Util::drawBoundingBox(addLines, m.boundingBox, bbcorners, modelToWorld, colorBoxes);
 		}
-		if (obj->mesh->outMeshletDesc.size() > 0) {
-			auto& packed = obj->mesh->outMeshletDesc[0];
+		if (primitiveMesh->outMeshletDesc.size() > 0) {
+			auto& packed = primitiveMesh->outMeshletDesc[0];
 			uint64_t bb = packed.getBoundingBox();
 			//Log("Meshlet 0 aabb: " << std::hex << bb << std::dec << endl);
 			BoundingBox meshletBB;
 			BoundingBox objectBB;
-			obj->mesh->getBoundingBox(objectBB);
+			primitiveMesh->getBoundingBox(objectBB);
 			Util::unpackBoundingBox48(bb, meshletBB, objectBB);
             //Log("  min: " << meshletBB.min.x << " " << meshletBB.min.y << " " << meshletBB.min.z);
             //Log("  max: " << meshletBB.max.x << " " << meshletBB.max.y << " " << meshletBB.max.z << endl);
 		}
-		for (auto& packed : obj->mesh->outMeshletDesc) {
+		for (auto& packed : primitiveMesh->outMeshletDesc) {
 			BoundingBoxCorners bbcorners;
 			uint64_t bb = packed.getBoundingBox();
 			BoundingBox meshletBB;
 			BoundingBox objectBB;
-			obj->mesh->getBoundingBox(objectBB);
+			primitiveMesh->getBoundingBox(objectBB);
 			Util::unpackBoundingBox48(bb, meshletBB, objectBB);
 			Util::drawBoundingBox(addLines, meshletBB, bbcorners, modelToWorld, colorBoxes);
 		}
     }
     // add vertices:
 	if (drawVertices) {
-		for (long i = 0; i < obj->mesh->indices.size(); i += 3) {
+		for (long i = 0; i < primitiveMesh->indices.size(); i += 3) {
 			l.color = colorVertices;
-			auto& v0 = obj->mesh->vertices[obj->mesh->indices[i + 0]];
-			auto& v1 = obj->mesh->vertices[obj->mesh->indices[i + 1]];
-			auto& v2 = obj->mesh->vertices[obj->mesh->indices[i + 2]];
+			auto& v0 = primitiveMesh->vertices[primitiveMesh->indices[i + 0]];
+			auto& v1 = primitiveMesh->vertices[primitiveMesh->indices[i + 1]];
+			auto& v2 = primitiveMesh->vertices[primitiveMesh->indices[i + 2]];
 			vec3 p0 = vec3(modelToWorld * vec4(v0.pos, 1.0f));
 			vec3 p1 = vec3(modelToWorld * vec4(v1.pos, 1.0f));
 			vec3 p2 = vec3(modelToWorld * vec4(v2.pos, 1.0f));

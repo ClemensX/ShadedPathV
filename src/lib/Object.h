@@ -307,6 +307,9 @@ struct MeshInfo
 	int gltfMeshIndex = -1;
     // gltf primitive index within mesh. used when a gltf mesh contains multiple primitives
     int gltfPrimitiveIndex = 0;
+	// next primitive index to use when creating additional primitives from same gltf mesh
+	// is index into collection vector, NOT mesh or primitive index)
+    int gltfNextPrimitiveIndex = -1;
 	// base transform from gltf file (default to identity)
 	glm::mat4 baseTransform = glm::mat4(1.0f);
 
@@ -475,7 +478,14 @@ public:
 	void fillPushConstants(PBRPushConstants *pushConstants);
 	bool isGPULodCompatible(WorldObject* wo); // true if object can use GPU LOD selection
     bool checkBoundingBoxPlausibility(std::string id); // check if bounding box is plausible (not inverted or zero size)
+    // get next available primitive mesh for a WorldObject within a collection
+    // start with currentMesh == nullptr to get first primitive
+    // return nullptr if no more primitives are available
+    MeshInfo* getNextPrimitiveMeshForObject(WorldObject* obj, MeshInfo*	currentMesh);
 private:
+	// debug graphics, bounding box, vertices and normals are added to line shader
+    // this internal method only draws a single mesh, called by public debugGraphics where primitive chaining is handled
+	void debugGraphicsInternal(MeshInfo* primitiveMesh, WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, bool drawBoundingBox = true, bool drawVertices = true, bool drawNormals = false, bool drawMeshletBoundingBoxes = false, glm::vec4 colorVertices = Colors::Black, glm::vec4 colorNormal = Colors::Red, glm::vec4 colorBoxes = Colors::Yellow, float normalLineLength = 0.01f);
 	MeshCollection* loadMeshFile(std::string filename, std::string id, std::vector<std::byte> &fileBuffer, MeshFlagsCollection flags);
 	std::unordered_map<std::string, MeshInfo> meshes;
 	std::vector<MeshCollection> meshCollections;
