@@ -190,6 +190,15 @@ void PBRSubShader::init(PBRShader* parent, std::string debugName) {
     Log("PBRSubShader init: " << debugName.c_str() << std::endl);
 }
 
+uint64_t PBRShader::reserveDynamicUniformBufferSlots(uint64_t num) {
+	uint64_t firstIndex = nextFreeDynamicUniformBufferIndex;
+	nextFreeDynamicUniformBufferIndex += num;
+	if (nextFreeDynamicUniformBufferIndex >= engine->getMaxObjects()) {
+		Error("PBRShader::reserveDynamicUniformBufferSlots: exceeded maximum number of dynamic UBOs");
+	}
+	return firstIndex;
+}
+
 void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 {
     frameResources = &tr;
@@ -410,41 +419,41 @@ void PBRSubShader::uploadToGPU(FrameResources& tr, PBRShader::UniformBufferObjec
 	}
 }
 
-void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& fr, WorldObject* obj, bool isRightEye, bool update)
+void PBRSubShader::recordDrawCommandInternal(VkCommandBuffer& commandBuffer, FrameResources& fr, MeshInfo* meshInfo, UINT objNum, bool isRightEye, bool update)
 {
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 	// Set the cull mode dynamically
-	VkCullModeFlags cullMode = obj->mesh->isDoubleSided ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT;
+	VkCullModeFlags cullMode = meshInfo->isDoubleSided ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT;
 	vkCmdSetCullMode(commandBuffer, cullMode);
 
-	auto buf = pbrShader->getAccessToModel(fr, obj->objectNum);
+	auto buf = pbrShader->getAccessToModel(fr, objNum);
 	//buf->flags = 0; // regular PBR rendering, do not overwrite pre-set flags
-	if (obj->mesh->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
+	if (meshInfo->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
 		buf->flags |= PBRShader::MODEL_RENDER_FLAG_USE_VERTEX_COLORS; // no textures, use vertex colors
 	}
-	if (obj->mesh->flags.hasFlag(MeshFlags::MESHLET_DEBUG_COLORS)) {
+	if (meshInfo->flags.hasFlag(MeshFlags::MESHLET_DEBUG_COLORS)) {
 		buf->flags |= PBRShader::MODEL_RENDER_FLAG_USE_VERTEX_COLORS; // no textures, use vertex colors
 	}
 
 	// meshlet resources:
 	// set meshlet count, not the best code location here, but should do
-	if (obj->mesh->outMeshletDesc.size() > 0) {
-        buf->meshletsCount = static_cast<uint32_t>(obj->mesh->outMeshletDesc.size());
-        // assert that the meshlet count is less than the max task work group count
-        bool okTasks = buf->meshletsCount < engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxTaskWorkGroupCount[0];
-        bool okMeshlets = buf->meshletsCount < engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxMeshWorkGroupCount[0];
+	if (meshInfo->outMeshletDesc.size() > 0) {
+		buf->meshletsCount = static_cast<uint32_t>(meshInfo->outMeshletDesc.size());
+		// assert that the meshlet count is less than the max task work group count
+		bool okTasks = buf->meshletsCount < engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxTaskWorkGroupCount[0];
+		bool okMeshlets = buf->meshletsCount < engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxMeshWorkGroupCount[0];
 		if (!okTasks || !okMeshlets) {
 			Error("Meshlet count " + to_string(buf->meshletsCount) + " exceeds device limits: max task work groups " + to_string(engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxTaskWorkGroupCount[0]) +
 				", max mesh work groups " + to_string(engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxMeshWorkGroupCount[0]) +
-				" for object " + to_string(obj->objectNum));
-        }
+				" for object " + to_string(objNum));
+		}
 	}
 	// bind global texture array:
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
 
 	// bind descriptor sets:
 	// One dynamic offset per dynamic descriptor to offset into the ubo containing all model matrices
-	uint32_t objId = obj->objectNum;
+	uint32_t objId = objNum;
 	uint32_t dynamicOffset = static_cast<uint32_t>(objId * pbrShader->alignedDynamicUniformBufferSize);
 	if (!isRightEye) {
 		// left eye
@@ -454,22 +463,40 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 		// right eye
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet2, 1, &dynamicOffset);
 	}
-	if (obj->mesh->outMeshletDesc.size() > 0) {
+	if (meshInfo->outMeshletDesc.size() > 0) {
 		// groupCountX, groupCountY, groupCountZ: number of workgroups to dispatch
 		// Dispatch one workgroup per meshlet for better driver compatibility
 		//Log("About to call vkCmdDrawMeshTasksEXT with " << obj->mesh->outMeshletDesc.size() << " meshlets" << endl);
 		if (vkCmdDrawMeshTasksEXT_ == nullptr) {
 			Log("ERROR: vkCmdDrawMeshTasksEXT function pointer is null!" << endl);
-		} else {
+		}
+		else {
 			// Dispatch one workgroup per meshlet instead of one workgroup for all meshlets
 			//vkCmdDrawMeshTasksEXT(commandBuffer, static_cast<uint32_t>(obj->mesh->outMeshletDesc.size()), 1, 1);
-            // only one workgroup, task shader will handle LOD selection and emit all draw calls for all meshlets
+			// only one workgroup, task shader will handle LOD selection and emit all draw calls for all meshlets
 			vkCmdDrawMeshTasksEXT(commandBuffer, 1, 1, 1);
 			//Log("Called vkCmdDrawMeshTasksEXT successfully" << endl);
 		}
-	} else {
-		Log("WARNING: No meshlets found for object: " << obj->objectNum  << " Force enabling debug graphics." << endl);
-        obj->enableDebugGraphics = true;
+	}
+	else {
+		Log("WARNING: No meshlets found for object: " << objNum << " Force enabling debug graphics." << endl);
+		//obj->enableDebugGraphics = true;
+	}
+}
+
+void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& fr, WorldObject* obj, bool isRightEye, bool update)
+{
+    MeshInfo* meshInfo = obj->mesh;
+	MeshInfo* primitiveMesh = engine->meshStore.getNextPrimitiveMeshForObject(obj, nullptr);
+	primitiveMesh = engine->meshStore.getNextPrimitiveMeshForObject(obj, primitiveMesh);
+	while (primitiveMesh != nullptr) {
+		if (primitiveMesh->outMeshletDesc.size() == 0) {
+			Log("WARNING: No meshlets found for object: " << obj->objectNum << " primitive " << primitiveMesh->gltfPrimitiveIndex << " Force enabling debug graphics." << endl);
+			obj->enableDebugGraphics = true;
+			return;
+		}
+		recordDrawCommandInternal(commandBuffer, fr, primitiveMesh, obj->objectNum, isRightEye, update);
+		primitiveMesh = engine->meshStore.getNextPrimitiveMeshForObject(obj, primitiveMesh);
 	}
 }
 

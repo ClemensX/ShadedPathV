@@ -144,6 +144,8 @@ public:
 	};
 	// Array entries of DynamicModelUBO have to respect hardware alignment rules
 	uint64_t alignedDynamicUniformBufferSize = 0;
+	// reserve slots for dynamic UBOs, returns first index
+	uint64_t reserveDynamicUniformBufferSlots(uint64_t num);
 
 	// MeshletOld descriptor, from NVIDIA Descriptor B in https://jcgt.org/published/0012/02/01/
 	// 128 bits = 16 bytes
@@ -266,6 +268,7 @@ private:
     uint64_t meshStorageNextFreePos = 0;
     // check that the object and its meshes are compatible with GPU LOD rendering
     void checkForGpuLodCompatibility(WorldObject *wo);
+	uint64_t nextFreeDynamicUniformBufferIndex = 0; // count used dynamic UBOs
 };
 
 // Hash combine utility
@@ -337,6 +340,7 @@ public:
 	void addRenderPassAndDrawCommands(FrameResources& tr, VkCommandBuffer* cmdBufferPtr, VkBuffer vertexBuffer);
 
 	void createGlobalCommandBufferAndRenderPass(FrameResources& tr, bool update = false);
+    // record draw command for one object, possibly containing multiple primitives
 	void recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, WorldObject* obj, bool isRightEye = false, bool update = false);
 	// per frame update of UBO / MVP
 	void uploadToGPU(FrameResources& tr, PBRShader::UniformBufferObject& ubo, PBRShader::UniformBufferObject& ubo2);
@@ -365,6 +369,8 @@ public:
 	VkPipelineLayout pipelineLayout = nullptr;
 
 private:
+	// record draw command for one primitive of one object
+	void recordDrawCommandInternal(VkCommandBuffer& commandBuffer, FrameResources& tr, MeshInfo* meshInfo, UINT objNum, bool isRightEye = false, bool update = false);
 	PBRShader* pbrShader = nullptr;
 	VulkanResources* vulkanResources = nullptr;
 	std::string name;

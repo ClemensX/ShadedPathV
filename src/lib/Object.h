@@ -363,6 +363,17 @@ struct MeshInfo
         }
 		return false;
 	};
+	int countPrimitives() const {
+		int counter = 1;
+        MeshInfo* current = const_cast<MeshInfo*>(this);
+		while (current != nullptr) {
+			if (current->gltfNextPrimitiveIndex > 0) {
+				counter++;
+			}
+			current = current->collection->getMeshInfoAt(current->gltfNextPrimitiveIndex);
+        }
+        return counter;
+    }
 };
 typedef MeshInfo* ObjectID;
 
@@ -551,6 +562,8 @@ public:
     BoundingBox perFrameBB; // bounding box updated per frame, e.g. for animated objects
     // calculate standard model to world transform from pos, rot, scale and the base transform from the mesh
     void calculateStandardModelTransform(glm::mat4& modelToWorld);
+    UINT dynamicModelUBOIndex = UINT_MAX; // index into per-frame dynamic model UBO array
+    int primitiveCount = 1; // number of primitives used by this object (1 for normal objects, more for objects using multiple gltf primitives)
 private:
 	glm::vec3 _pos;
 	glm::vec3 _rot;

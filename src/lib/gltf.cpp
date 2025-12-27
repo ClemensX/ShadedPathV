@@ -923,7 +923,8 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
     }
 	// another loop for logging:
 	for (auto* mi : *coll) {
-		Log("Found mesh :" << mi->id << " gltfMeshIndex: " << mi->gltfMeshIndex << " gltfPrimitiveIndex: " << mi->gltfPrimitiveIndex << " gltfNextPrimitive: " << mi->gltfNextPrimitiveIndex << endl);
+		Log("Found mesh :" << mi->id << " gltfMeshIndex: " << mi->gltfMeshIndex << " gltfPrimitiveIndex: " << mi->gltfPrimitiveIndex
+			<< " gltfNextPrimitive: " << mi->gltfNextPrimitiveIndex << " meshletDesc size: " << mi->outMeshletDesc.size() << endl);
 	}
 }
 

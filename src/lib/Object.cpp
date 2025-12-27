@@ -444,6 +444,9 @@ void WorldObjectStore::addObjectPrivate(WorldObject* w, string id, vec3 pos, int
 	if (!(w->objectNum < meshStore->engine->getMaxObjects())) {
 		Error("WorldObjectStore: too many objects, increase max objects in engine settings.");
     }
+    // check for additional primitives:
+	int primCount = mesh->countPrimitives();
+	w->dynamicModelUBOIndex = meshStore->engine->shaders.pbrShader.reserveDynamicUniformBufferSlots(primCount);
 }
 
 const vector<WorldObject*>& WorldObjectStore::getSortedList()
