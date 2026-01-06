@@ -2048,3 +2048,28 @@ std::vector<MeshInfo*> MeshCollection::getMajorMeshes() const {
 	return out;
 }
 
+PBRShader::DynamicModelUBO* WorldObjectStore::startWorking(FrameResources& tr, WorldObject* wo) {
+	PBRShader::DynamicModelUBO* buf = meshStore->engine->shaders.pbrShader.getAccessToModel(tr, wo);
+	startWorking(wo, buf);
+	return buf;
+}
+
+void WorldObjectStore::stopWorking(FrameResources& tr, WorldObject* obj)
+{
+	PBRShader::DynamicModelUBO* bufMain = meshStore->engine->shaders.pbrShader.getAccessToModel(tr, obj);
+	stopWorking(obj, bufMain);
+	int uboIndex = obj->dynamicModelUBOIndex;
+	// handle additional primitives:
+	forEachAdditionalPrimitiveMesh(obj, [&](MeshInfo* primMesh) {
+		PBRShader::DynamicModelUBO* bufMain = meshStore->engine->shaders.pbrShader.getAccessToModel(tr, obj);
+		int primIndex = primMesh->gltfPrimitiveIndex;
+		PBRShader::DynamicModelUBO* bufAdd = meshStore->engine->shaders.pbrShader.getAccessToModel(tr, obj->dynamicModelUBOIndex + primIndex);
+		// do something with primMesh
+		//Log(" WorldObjectStore::stopWorking: additional primitive mesh found: " << primMesh->name << " mesh index: " << primMesh->gltfMeshIndex << " prim index: " << primMesh->gltfPrimitiveIndex << "\n");
+        // copy all (possibly) changed data from main UBO to additional primitive UBO:
+        bufAdd->model = bufMain->model;
+		for (int i = 0; i < MAX_DYNAMIC_LIGHTS; i++) {
+			bufAdd->params[i] = bufMain->params[i];
+		}
+	});
+}

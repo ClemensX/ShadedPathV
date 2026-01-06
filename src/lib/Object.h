@@ -601,7 +601,38 @@ public:
     void loadWorldCreatorInstances(std::string filename);
 	const WorldCreator* getWorldCreator() const { return &worldCreator; }
 
+    // temp hack to silently handle objects with multiple primitives
+	PBRShader::DynamicModelUBO* startWorking(FrameResources& tr, WorldObject* wo);
+	void stopWorking(FrameResources& tr, WorldObject* wo);
+
+	// templated visitor for all additional primitives of an object
+	template<typename Fn>
+	void forEachAdditionalPrimitiveMesh(WorldObject* wo, Fn&& fn) {
+        auto& coll = wo->mesh->collection;
+        MeshInfo* current = wo->mesh;
+        assert(current->isAdditionalPrimitive() == false); // must start with main primitive
+		while (current != nullptr) {
+			if (current->gltfNextPrimitiveIndex > 0) {
+				current = coll->getMeshInfoAt(current->gltfNextPrimitiveIndex);
+				if (current && current->isAdditionalPrimitive()) {
+					fn(current);
+				}
+			} else {
+				current = nullptr;
+			}
+		}
+	}
+
 private:
+	void startWorking(WorldObject* wo, PBRShader::DynamicModelUBO* buf) {
+		if (buf->pad0 != 0) Error("Work on dynamic model UBO unfinished");
+		buf->pad0 = 1;
+	}
+	void stopWorking(WorldObject* wo, PBRShader::DynamicModelUBO* buf) {
+		if (buf->pad0 != 1) Error("Work on dynamic model did not begin with startWorking()");
+		buf->pad0 = 0;
+	}
+
 	std::unordered_map<std::string, std::vector<std::unique_ptr<WorldObject>>> groups;
 	StringIntMap groupNames;
 	void addObjectPrivate(WorldObject* w, std::string id, glm::vec3 pos, int userGroupId);

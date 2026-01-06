@@ -110,6 +110,7 @@ public:
 	static const unsigned int MODEL_RENDER_FLAG_DISABLE = 2; // disable rendering of this object for this frame
 	static const unsigned int MODEL_RENDER_FLAG_GPU_LOD = 4; // enable GPU LOD object manipulation
 	// the dynamic uniform buffer is peramnently mapped to CPU memory for fast updates
+    // TODO: major cleanup needed: move fixed values to material and redesign dynamic UBO to only contain per-frame changing values
 	struct alignas(16) DynamicModelUBO {
 		glm::mat4 model; // 16-byte aligned
 		glm::mat4 jointMatrix[MAX_NUM_JOINTS]; // 16-byte aligned
@@ -122,7 +123,7 @@ public:
         ShaderMaterial material; // 16-byte aligned
         BoundingBox boundingBox; // AABB in local object space
 		glm::vec3 objPos = glm::vec3(std::numeric_limits<double>::quiet_NaN()); // signal that this is not set
-		float pad0;
+        uint32_t pad0; // we hijack this padding field for flags on C++ side, should be reset after cleanup
 		uint32_t meshNumber; // link to MeshInfo
 		// helper methods
 		void disableRendering() {
@@ -227,9 +228,11 @@ public:
 	// add the pre-computed command buffer for the current object
 	virtual void addCommandBuffers(FrameResources* fr, DrawResult* drawResult) override;
 
-	// get access to dynamic uniform buffer for an object (individual ovjects, not a common mesh)
+	// get access to dynamic uniform buffer for an object (individual objects, not a common mesh)
 	DynamicModelUBO* getAccessToModel(FrameResources& tr, UINT num);
-	
+	// get access to dynamic uniform buffer for an object (individual objects, not a common mesh)
+	DynamicModelUBO* getAccessToModel(FrameResources& tr, WorldObject* wo);
+
 	// upload of all objects to GPU - only valid before first render
 	void initialUpload();
 
@@ -253,6 +256,7 @@ public:
 	PBRPushConstants pushConstants = {};
 
 private:
+	void prefillModelParametersSingleMesh(FrameResources& tr, MeshInfo* mi, WorldObject* obj, int uboIndex);
 	UniformBufferObject ubo = {};
 	UniformBufferObject updatedUBO = {};
 	bool disabled = false;
@@ -370,7 +374,7 @@ public:
 
 private:
 	// record draw command for one primitive of one object
-	void recordDrawCommandInternal(VkCommandBuffer& commandBuffer, FrameResources& tr, MeshInfo* meshInfo, UINT objNum, bool isRightEye = false, bool update = false);
+	void recordDrawCommandInternal(VkCommandBuffer& commandBuffer, FrameResources& tr, MeshInfo* meshInfo, WorldObject* wo, bool isRightEye = false, bool update = false);
 	PBRShader* pbrShader = nullptr;
 	VulkanResources* vulkanResources = nullptr;
 	std::string name;

@@ -319,11 +319,12 @@ void MeshManager::prepareFrame(FrameResources* fr)
     engine->shaders.lineShader.clearLocalLines(tr);
     vector<LineDef> boundingBoxes;
     for (auto& wo : engine->objectStore.getSortedList()) {
-        PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
+        PBRShader::DynamicModelUBO* buf = engine->objectStore.startWorking(tr, wo);
         //buf->flags |= PBRShader::MODEL_RENDER_FLAG_USE_VERTEX_COLORS; // enable simple shading using vertex colors
         if (!wo->enabled) {
             buf->disableRendering();
             buf->objPos = wo->pos(); // get rid of uninitialized object position warning
+            engine->objectStore.stopWorking(tr, wo);
             continue;
         } else {
             buf->enableRendering();
@@ -388,6 +389,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
             wo->enableDebugGraphics = true;
             engine->meshStore.debugGraphics(wo, tr, modeltransform, showBoundingBox, showMeshWireframe, false, showMeshletBoundingBoxes); // bb and wireframe
         }
+        engine->objectStore.stopWorking(tr, wo);
     }
     // lines
     LineShader::UniformBufferObject lubo{};

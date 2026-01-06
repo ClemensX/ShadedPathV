@@ -165,6 +165,7 @@ uint calculateLODIndex(uint lod_category, float distance) {
 
 void main() {
     //check_inputs();
+    //debugPrintfEXT("TASK SHADER: render model %d\n", model_ubo.meshNumber);
 
     //debugPrintfEXT("TASK SHADER: model flags: %d\n", model_ubo.flags);
     //debugPrintfEXT("TASK SHADER PUUUUSH: : %llx\n", pushConstants.meshStorageBufferAddress);
@@ -256,6 +257,7 @@ void main() {
     if (!isRenderingDisabled) {
         // LOD selection:
         uint meshIndex = model_ubo.meshNumber; // default to exact mesh specified in model_ubo (for non-LOD rendering)
+        //meshIndex = 1; // TEMP TESTING
         //debugPrintfEXT("TASK SHADER: model_ubo flags: %u\n", model_ubo.flags);
         //debugPrintfEXT("TASK SHADER: isGpuLodEnabled: %d\n", isGpuLodEnabled ? 1 : 0);
         if (isGpuLodEnabled) {

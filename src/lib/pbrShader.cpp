@@ -66,68 +66,84 @@ void PBRShader::checkForGpuLodCompatibility(WorldObject* wo)
 	assert(engine->meshStore.isGPULodCompatible(wo));
 }
 
-void PBRShader::prefillModelParameters(FrameResources& fr)
+void PBRShader::prefillModelParametersSingleMesh(FrameResources& fr, MeshInfo* mi, WorldObject* obj, int uboIndex)
 {
+	//Log(" WorldObject texture count: " << obj->mesh->textureInfos.size() << endl);
+	if (mi->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
+		return;
+	}
+
 	TextureInfo* tiBrdflut = engine->textureStore.getTexture(engine->textureStore.BRDFLUT_TEXTURE_ID);
 	TextureInfo* tiIrradiance = engine->textureStore.getTexture(engine->textureStore.IRRADIANCE_TEXTURE_ID);
 	TextureInfo* tiPrefileterdEnv = engine->textureStore.getTexture(engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
-	auto& objs = engine->objectStore.getSortedList();
-	for (auto obj : objs) {
-		//Log(" WorldObject texture count: " << obj->mesh->textureInfos.size() << endl);
-		if (obj->mesh->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
-            continue;
-        }
-		PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(fr, obj->objectNum);
-        buf->objectNum = obj->objectNum;
-        PBRTextureIndexes ind;
-        fillTextureIndexesFromMesh(ind, obj->mesh);
-		if (ind.baseColor == 9) {
-            // 9 10 13 12 11 --> 1 2 5 4 3
-            //ind.baseColor = 1; // override for testing
-			//ind.metallicRoughness = 2;
-			//ind.normal = 5;
-			//ind.occlusion = 4;
-			//ind.emissive = 3;
-		}
-        buf->indexes = ind;
-		buf->jointcount = 0;
-		shaderValuesParams params;
-		params.prefilteredCubeMipLevels = tiPrefileterdEnv->vulkanTexture.levelCount;
-		//params.lightDir = glm::vec4(
-		//	sin(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
-		//	sin(glm::radians(lightSource.rotation.y)),
-		//	cos(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
-		//	0.0f);
-		params.lightDir = glm::vec4(glm::normalize(lightSource.position), 0.0f);
-		buf->params[0] = params;
-		buf->meshNumber = obj->mesh->meshNum;
-        buf->material = obj->mesh->material;
-        buf->material.baseColorTextureSet = ind.baseColor;
-        buf->material.physicalDescriptorTextureSet = ind.metallicRoughness;
-        buf->material.normalTextureSet = ind.normal;
-        buf->material.occlusionTextureSet = ind.occlusion;
-        buf->material.emissiveTextureSet = ind.emissive;
-		buf->material.brdflut = tiBrdflut->index;
-        buf->material.irradiance = tiIrradiance->index;
-		buf->material.envcube = tiPrefileterdEnv->index;
-		//buf->material.texCoordSets.specularGlossiness = 27;
-        // calc and set bounding box from mesh data
-        BoundingBox box;
-		obj->mesh->getBoundingBox(box);
-        buf->boundingBox = box;
-		if (obj->useGpuLod) {
-            buf->enableGpuLodRendering();
-            buf->objPos = obj->pos();
-            checkForGpuLodCompatibility(obj);
-            // this check is probably obsolete, as we set objPos here
-			if (std::isnan(buf->objPos.x) || std::isnan(buf->objPos.y) || std::isnan(buf->objPos.z)) {
-				if (obj->enabled) {
-					Error("PBRShader: object position not set in UBO");
-				} else {
-					Log("WARNING: PBRShader: object position not set in UBO. Be sure to set objPos before enabling this object\n");
-				}
+
+	PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(fr, uboIndex);
+	buf->objectNum = obj->objectNum;
+	PBRTextureIndexes ind;
+	fillTextureIndexesFromMesh(ind, mi);
+	if (ind.baseColor == 9) {
+		// 9 10 13 12 11 --> 1 2 5 4 3
+		//ind.baseColor = 1; // override for testing
+		//ind.metallicRoughness = 2;
+		//ind.normal = 5;
+		//ind.occlusion = 4;
+		//ind.emissive = 3;
+	}
+	buf->indexes = ind;
+	buf->jointcount = 0;
+	shaderValuesParams params;
+	params.prefilteredCubeMipLevels = tiPrefileterdEnv->vulkanTexture.levelCount;
+	//params.lightDir = glm::vec4(
+	//	sin(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
+	//	sin(glm::radians(lightSource.rotation.y)),
+	//	cos(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
+	//	0.0f);
+	params.lightDir = glm::vec4(glm::normalize(lightSource.position), 0.0f);
+	buf->params[0] = params;
+	buf->meshNumber = mi->meshNum;
+	buf->material = mi->material;
+	buf->material.baseColorTextureSet = ind.baseColor;
+	buf->material.physicalDescriptorTextureSet = ind.metallicRoughness;
+	buf->material.normalTextureSet = ind.normal;
+	buf->material.occlusionTextureSet = ind.occlusion;
+	buf->material.emissiveTextureSet = ind.emissive;
+	buf->material.brdflut = tiBrdflut->index;
+	buf->material.irradiance = tiIrradiance->index;
+	buf->material.envcube = tiPrefileterdEnv->index;
+	//buf->material.texCoordSets.specularGlossiness = 27;
+	// calc and set bounding box from mesh data
+	BoundingBox box;
+	mi->getBoundingBox(box);
+	buf->boundingBox = box;
+	if (obj->useGpuLod) {
+		buf->enableGpuLodRendering();
+		buf->objPos = obj->pos();
+		checkForGpuLodCompatibility(obj);
+		// this check is probably obsolete, as we set objPos here
+		if (std::isnan(buf->objPos.x) || std::isnan(buf->objPos.y) || std::isnan(buf->objPos.z)) {
+			if (obj->enabled) {
+				Error("PBRShader: object position not set in UBO");
+			}
+			else {
+				Log("WARNING: PBRShader: object position not set in UBO. Be sure to set objPos before enabling this object\n");
 			}
 		}
+	}
+}
+
+void PBRShader::prefillModelParameters(FrameResources& fr)
+{
+	auto& objs = engine->objectStore.getSortedList();
+	for (auto obj : objs) {
+		int uboIndex = obj->dynamicModelUBOIndex;
+		prefillModelParametersSingleMesh(fr, obj->mesh, obj, uboIndex++);
+		// test prim visitor:
+		engine->objectStore.forEachAdditionalPrimitiveMesh(obj, [&](MeshInfo* primMesh) {
+			// do something with primMesh
+            Log(" PBRShader prefillModelParameters: additional primitive mesh found: " << primMesh->name << " mesh index: " << primMesh->gltfMeshIndex << " prim index: " << primMesh->gltfPrimitiveIndex << "\n");
+			prefillModelParametersSingleMesh(fr, primMesh, obj, uboIndex++);
+		});
+
 	}
 
 }
@@ -160,6 +176,11 @@ PBRShader::DynamicModelUBO* PBRShader::getAccessToModel(FrameResources& fr, UINT
 	char* c_ptr = static_cast<char*>(sub.dynamicUniformBufferCPUMemory);
 	c_ptr += num * alignedDynamicUniformBufferSize;
 	return (DynamicModelUBO*)c_ptr;
+}
+
+PBRShader::DynamicModelUBO* PBRShader::getAccessToModel(FrameResources& tr, WorldObject* wo)
+{
+	return getAccessToModel(tr, wo->dynamicModelUBOIndex);
 }
 
 PBRShader::~PBRShader()
@@ -419,14 +440,17 @@ void PBRSubShader::uploadToGPU(FrameResources& tr, PBRShader::UniformBufferObjec
 	}
 }
 
-void PBRSubShader::recordDrawCommandInternal(VkCommandBuffer& commandBuffer, FrameResources& fr, MeshInfo* meshInfo, UINT objNum, bool isRightEye, bool update)
+void PBRSubShader::recordDrawCommandInternal(VkCommandBuffer& commandBuffer, FrameResources& fr, MeshInfo* meshInfo, WorldObject* wo, bool isRightEye, bool update)
 {
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 	// Set the cull mode dynamically
 	VkCullModeFlags cullMode = meshInfo->isDoubleSided ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT;
 	vkCmdSetCullMode(commandBuffer, cullMode);
 
-	auto buf = pbrShader->getAccessToModel(fr, objNum);
+	//auto buf = pbrShader->getAccessToModel(fr, objNum);
+    int objDynIndex = wo->dynamicModelUBOIndex + meshInfo->gltfPrimitiveIndex;
+	PBRShader::DynamicModelUBO* buf = pbrShader->getAccessToModel(fr, objDynIndex);
+
 	//buf->flags = 0; // regular PBR rendering, do not overwrite pre-set flags
 	if (meshInfo->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
 		buf->flags |= PBRShader::MODEL_RENDER_FLAG_USE_VERTEX_COLORS; // no textures, use vertex colors
@@ -445,7 +469,7 @@ void PBRSubShader::recordDrawCommandInternal(VkCommandBuffer& commandBuffer, Fra
 		if (!okTasks || !okMeshlets) {
 			Error("Meshlet count " + to_string(buf->meshletsCount) + " exceeds device limits: max task work groups " + to_string(engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxTaskWorkGroupCount[0]) +
 				", max mesh work groups " + to_string(engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxMeshWorkGroupCount[0]) +
-				" for object " + to_string(objNum));
+				" for object " + to_string(wo->dynamicModelUBOIndex));
 		}
 	}
 	// bind global texture array:
@@ -453,8 +477,7 @@ void PBRSubShader::recordDrawCommandInternal(VkCommandBuffer& commandBuffer, Fra
 
 	// bind descriptor sets:
 	// One dynamic offset per dynamic descriptor to offset into the ubo containing all model matrices
-	uint32_t objId = objNum;
-	uint32_t dynamicOffset = static_cast<uint32_t>(objId * pbrShader->alignedDynamicUniformBufferSize);
+	uint32_t dynamicOffset = static_cast<uint32_t>(objDynIndex * pbrShader->alignedDynamicUniformBufferSize);
 	if (!isRightEye) {
 		// left eye
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 1, &dynamicOffset);
@@ -479,7 +502,7 @@ void PBRSubShader::recordDrawCommandInternal(VkCommandBuffer& commandBuffer, Fra
 		}
 	}
 	else {
-		Log("WARNING: No meshlets found for object: " << objNum << " Force enabling debug graphics." << endl);
+		Log("WARNING: No meshlets found for object: " << objDynIndex << " Force enabling debug graphics." << endl);
 		//obj->enableDebugGraphics = true;
 	}
 }
@@ -488,14 +511,14 @@ void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResour
 {
     MeshInfo* meshInfo = obj->mesh;
 	MeshInfo* primitiveMesh = engine->meshStore.getNextPrimitiveMeshForObject(obj, nullptr);
-	primitiveMesh = engine->meshStore.getNextPrimitiveMeshForObject(obj, primitiveMesh);
+	//primitiveMesh = engine->meshStore.getNextPrimitiveMeshForObject(obj, primitiveMesh);
 	while (primitiveMesh != nullptr) {
 		if (primitiveMesh->outMeshletDesc.size() == 0) {
-			Log("WARNING: No meshlets found for object: " << obj->objectNum << " primitive " << primitiveMesh->gltfPrimitiveIndex << " Force enabling debug graphics." << endl);
+			Log("WARNING: No meshlets found for dyn object: " << obj->dynamicModelUBOIndex << " primitive " << primitiveMesh->gltfPrimitiveIndex << " Force enabling debug graphics." << endl);
 			obj->enableDebugGraphics = true;
 			return;
 		}
-		recordDrawCommandInternal(commandBuffer, fr, primitiveMesh, obj->objectNum, isRightEye, update);
+		recordDrawCommandInternal(commandBuffer, fr, primitiveMesh, obj, isRightEye, update);
 		primitiveMesh = engine->meshStore.getNextPrimitiveMeshForObject(obj, primitiveMesh);
 	}
 }

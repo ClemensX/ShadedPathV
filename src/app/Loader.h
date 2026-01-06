@@ -27,6 +27,7 @@ private:
     bool spinningBox = false; // do not change - time dependent value
     double spinTimeSeconds = 0.0;
     bool alterObjectCoords = false; // some gltf examples objects require different object rotation params
+    bool useGpuLod = false; // can only be enabled for models with LOD meshes
     bool firstPersonMode = true;
     bool doRotation = false;
     bool useDefaultNormalLineLength = true; // to use different normal line length for some models

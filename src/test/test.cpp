@@ -7,6 +7,9 @@
 using namespace std;
 using namespace glm;
 
+// run single test manually in console, to see output:
+// .\out\build\x64-debug\src\test\my_test.exe --gtest_filter=Environment.FLOAT_PRECISION
+
 // we need to change working directory for all non-trivial engine tests.
 // Especially for tests that check log files.
 // each test runs in a sub folder with it's name, e.g. build\src\test\Debug\Logs"
@@ -83,6 +86,15 @@ TEST(Environment, FLOAT_PRECISION) {
     EXPECT_EQ(4, sizeof(float));
     EXPECT_EQ(8, sizeof(double));
     EXPECT_EQ(4, sizeof(m[0].x));
+
+    // we need to make sure of some size assumptions in the engine:
+    std::cout << "sizeof int: " << sizeof(int) << '\n';
+    std::cout << "sizeof int32_t: " << sizeof(int32_t) << '\n';
+    std::cout << "sizeof int64_t: " << sizeof(int64_t) << '\n';
+    EXPECT_EQ(4, sizeof(int));
+    EXPECT_EQ(4, sizeof(int32_t));
+    EXPECT_EQ(8, sizeof(int64_t));
+
 }
 
 TEST(Environment, GLFW) {

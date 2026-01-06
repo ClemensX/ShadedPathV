@@ -20,9 +20,11 @@ void Loader::run(ContinuationInfo* cont)
 
         // dolphin debug:
         //initCamera(glm::vec3(-0.204694f, 0.198027f, 0.220922f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-        // camery for damaged helmet video recording:
-        //cameraPosition = [-0.640809 - 0.445347 2.82217]
-        initCamera(glm::vec3(-0.640809f, -0.445347f, 2.82217f), glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        // camera for damaged helmet video recording:
+        //vec3 cameraPosition(-0.640809f, - 0.445347f, 2.82217f);
+        // camera for acacia tree: -5.60122 5.41301 50.4716 
+        vec3 cameraPosition(-5.60122f, 5.41301f, 50.4716f);
+        initCamera(cameraPosition, glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         getFirstPersonCameraPositioner()->setMaxSpeed(0.1f);
         //getFirstPersonCameraPositioner()->setMaxSpeed(10.1f);
@@ -65,10 +67,10 @@ void Loader::init() {
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
     
-    engine->meshStore.loadMesh("granite_rock_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
+    //engine->meshStore.loadMesh("granite_rock_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
     //engine->meshStore.loadMesh("granite_rock_auto_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
     //engine->meshStore.loadMesh("granite_rock_06_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
-    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
+    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = false; useGpuLod = false;
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = true;  useDefaultNormalLineLength = false;
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox"); alterObjectCoords = true;  useDefaultNormalLineLength = false;
 
@@ -87,6 +89,9 @@ void Loader::init() {
     //engine->meshStore.loadMesh("delfini6.glb", "LogoBox"); alterObjectCoords = false;
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = false;
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox"); alterObjectCoords = false;
+
+    // Acacia_B_cmp.glb
+    engine->meshStore.loadMesh("Acacia_B_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = false; useGpuLod = false;
 
     meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
@@ -118,7 +123,7 @@ void Loader::init() {
         float scale = 1.0f;
         object->scale() = vec3(scale);
         object->enabled = true;
-        object->useGpuLod = true;
+        object->useGpuLod = useGpuLod;
         object->enableDebugGraphics = true;
     }
 
@@ -217,7 +222,8 @@ void Loader::prepareFrame(FrameResources* fr)
     for (auto& wo : engine->objectStore.getSortedList()) {
         //Log(" adapt object " << obj.get()->objectNum << endl);
         //WorldObject *wo = obj.get();
-        PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
+        //PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
+        PBRShader::DynamicModelUBO* buf = engine->objectStore.startWorking(tr, wo);
         if (spinningBox) {
             // Define a constant rotation speed (radians per second)
             double rotationSpeed = glm::radians(5.0f);
@@ -264,6 +270,7 @@ void Loader::prepareFrame(FrameResources* fr)
             //engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false);
         }
         if (wo->enableDebugGraphics) engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false, false);
+        engine->objectStore.stopWorking(tr, wo);
     }
     // lines
     engine->shaders.lineShader.prepareAddLines(tr);
