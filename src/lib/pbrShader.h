@@ -234,7 +234,7 @@ public:
 	DynamicModelUBO* getAccessToModel(FrameResources& tr, WorldObject* wo);
 
 	// upload of all objects to GPU - only valid before first render
-	void initialUpload();
+	void initialUpload(bool listUploadedMeshes = false);
 
 	// per frame update of UBOs / MVPs
 	void uploadToGPU(FrameResources& tr, UniformBufferObject& ubo, UniformBufferObject& ubo2); // TODO automate handling of 2nd UBO

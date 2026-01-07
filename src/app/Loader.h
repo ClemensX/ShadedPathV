@@ -31,4 +31,5 @@ private:
     bool firstPersonMode = true;
     bool doRotation = false;
     bool useDefaultNormalLineLength = true; // to use different normal line length for some models
+    bool secondTestObject = true; // load second object for testing
 };

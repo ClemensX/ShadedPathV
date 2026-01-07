@@ -65,7 +65,7 @@ void Loader::init() {
     //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
     //meshFlags.setFlag(MeshFlags::MESHLET_GENERATE);
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
-    //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox");
+    //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox"); //useGpuLod = false;
     
     //engine->meshStore.loadMesh("granite_rock_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
     //engine->meshStore.loadMesh("granite_rock_auto_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
@@ -91,7 +91,7 @@ void Loader::init() {
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox"); alterObjectCoords = false;
 
     // Acacia_B_cmp.glb
-    engine->meshStore.loadMesh("Acacia_B_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = false; useGpuLod = false;
+    engine->meshStore.loadMesh("Acacia_B_cmp.glb", "LogoBox", meshFlags); useGpuLod = false;
 
     meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
@@ -141,6 +141,15 @@ void Loader::init() {
     engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);
     engine->textureStore.loadTexture("prefilter.ktx2", engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
 
+    if (secondTestObject) {
+        engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox2");
+        WorldObject* o2 = engine->objectStore.addObject("group", "LogoBox2", vec3(-10.2f, 0.2f, 0.2f));
+        o2->enabled = true;
+        o2->useGpuLod = false;
+        o2->enableDebugGraphics = true;
+
+    }
+
     engine->shaders.cubeShader.setSkybox("skyboxTexture");
     engine->shaders.cubeShader.setFarPlane(2000.0f);
 
@@ -148,7 +157,7 @@ void Loader::init() {
     ls.color = vec3(1.0f);
     ls.position = vec3(75.0f, 0.5f, -20.0f);
     engine->shaders.pbrShader.changeLightSource(ls.color, ls.position);
-    engine->shaders.pbrShader.initialUpload();
+    engine->shaders.pbrShader.initialUpload(true);
     // window creation
     prepareWindowOutput("Loader");
     engine->presentation.startUI();
@@ -213,7 +222,7 @@ void Loader::prepareFrame(FrameResources* fr)
 
     // be sure to add cam pos to UBO for PBR shader!!!
     applyViewProjection(pubo.view, pubo.proj, pubo2.view, pubo2.proj, &pubo.camPos, &pubo2.camPos);
-    Log("Camera position: " << pubo.camPos.x << " " << pubo.camPos.y << " " << pubo.camPos.z << endl); // Camera position: -0.0386716 0.2 0.51695
+    //Log("Camera position: " << pubo.camPos.x << " " << pubo.camPos.y << " " << pubo.camPos.z << endl); // Camera position: -0.0386716 0.2 0.51695
 
     engine->shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
     // change individual objects position:
@@ -249,7 +258,7 @@ void Loader::prepareFrame(FrameResources* fr)
         wo->calculateStandardModelTransform(modeltransform);
         buf->model = modeltransform;
         buf->params[0].intensity = 7.0f; // adjust sun light intensity
-        if (!object->enabled)   buf->disableRendering();
+        if (!wo->enabled)   buf->disableRendering();
 
         // log object distance to camera
         //float distanceToCamera = glm::length(pos - pubo.camPos);

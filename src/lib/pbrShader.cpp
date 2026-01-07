@@ -42,13 +42,22 @@ void PBRShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	//ug.allocateCommandBuffer(tr, &ug.commandBuffer, "PBR PERMANENT COMMAND BUFFER");
 }
 
-void PBRShader::initialUpload()
+void PBRShader::initialUpload(bool listUploadedMeshes)
 {
 	// upload all meshes from store:
     engine->meshStore.fillPushConstants(&pushConstants);
 	auto& list = engine->meshStore.getSortedList();
+    int i = 0;
 	for (auto meshptr : list) {
 		engine->meshStore.uploadMesh(meshptr);
+		if (listUploadedMeshes) {
+			if (i == 0) {
+				Log("" << list.size() << " uploaded meshes:\n");
+            }
+			Log(" " << i << " ");
+			meshptr->logInfo(); Log("\n");
+		}
+        i++;
 	}
 }
 
