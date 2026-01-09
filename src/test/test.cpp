@@ -871,6 +871,61 @@ TEST_F(MeshletTest, MeshletStorageFile) {
     }
 }
 
+TEST(MeshStoreTest, MeshCollectionStore) {
+    MeshCollectionStore meshCollectionStore;
+    EXPECT_EQ(0, meshCollectionStore.size());
+    EXPECT_TRUE(meshCollectionStore.getMeshCollectionByIndex(0) == nullptr);
+    auto mc1 = meshCollectionStore.addMeshCollection();
+    EXPECT_TRUE(mc1 != nullptr);
+    EXPECT_EQ(1, meshCollectionStore.size());
+    auto mc2 = meshCollectionStore.addMeshCollection();
+    EXPECT_EQ(2, meshCollectionStore.size());
+    // validate index:
+    for (size_t i = 0; i < meshCollectionStore.size(); ++i) {
+        auto mc = meshCollectionStore.getMeshCollectionByIndex(i);
+        EXPECT_EQ(i, mc->index);
+    }
+    //EXPECT_NE(m1[0].x, 1.0f);
+    //EXPECT_EQ(m2[0].x, 1.0f);
+    //EXPECT_TRUE(true);
+}
+
+TEST(MeshStoreTest, InitMultipleCollectionsDistinct) {
+    {
+        MeshStore store;
+
+        // pointer use - dangerous because pointers may leak
+        MeshCollection* a = store.initMeshCollection("collA", MeshFlagsCollection());
+        MeshCollection* b = store.initMeshCollection("collB", MeshFlagsCollection());
+
+        ASSERT_NE(a, nullptr);
+        ASSERT_NE(b, nullptr);
+        EXPECT_NE(a, b);
+
+        MeshCollection* foundA = store.getMeshCollection("collA");
+        MeshCollection* foundB = store.getMeshCollection("collB");
+        //EXPECT_EQ(foundA, a); may actually be different because of renewed array
+        //EXPECT_EQ(foundB, b);
+
+        EXPECT_EQ(foundA->meshCount(), 0u);
+        EXPECT_EQ(foundB->meshCount(), 0u);
+    }
+    {
+        MeshStore store;
+        // much better: index use, will always be valid
+        size_t indexA = store.initMeshCollection("collA", MeshFlagsCollection())->index;
+        size_t indexB = store.initMeshCollection("collB", MeshFlagsCollection())->index;
+
+        // check indices:
+        EXPECT_EQ(indexA, 0);
+        EXPECT_EQ(indexB, 1);
+        MeshCollection* foundA = store.getMeshCollection("collA");
+        MeshCollection* foundB = store.getMeshCollection("collB");
+        EXPECT_EQ(foundA->index, indexA);
+        EXPECT_EQ(foundB->index, indexB);
+    }
+}
+
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
     // enable single tests

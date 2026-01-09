@@ -191,6 +191,7 @@ struct MeshCollection {
 	bool available = false; // true if this object is ready for use in shader code
 	std::vector<ktxTexture*> textureParseInfo;
 	std::vector<::TextureInfo*> textureInfos;
+	size_t index;
 private:
 	// keep representation private so we can change it later
 	std::vector<MeshInfo*> meshInfos_;
@@ -247,6 +248,24 @@ public:
 #ifdef __cpp_lib_ranges
 	auto majorMeshView() const;
 #endif
+};
+
+class MeshCollectionStore {
+	public:
+	MeshCollectionStore() = default;
+	~MeshCollectionStore();
+	// get ptr to MeshCollection by index, nullptr if out of range, do not store pointer as the address may change after extending the collection store
+	MeshCollection* getMeshCollectionByIndex(int index);
+	// get ptr to new MeshCollection, do not store pointer as the address may change after extending the collection store
+	MeshCollection* addMeshCollection();
+	void clear() {
+        meshCollections_.clear();
+	};
+	size_t size() const noexcept {
+		return meshCollections_.size();
+    }
+private:
+    std::vector<MeshCollection> meshCollections_;
 };
 
 enum class Axis { X, Y, Z };
@@ -314,7 +333,8 @@ struct MeshInfo
 	glm::mat4 baseTransform = glm::mat4(1.0f);
 
 	// link back to collection
-	MeshCollection* collection = nullptr;
+	//MeshCollection* collection = nullptr;
+    size_t collectionIndex = SIZE_MAX;
 	PBRShader::ShaderMaterial material;
     // gltf loaded models are (currently) always PBR metallic roughness
 	bool isMetallicRoughness() {
@@ -363,17 +383,6 @@ struct MeshInfo
         }
 		return false;
 	};
-	int countPrimitives() const {
-		int counter = 1;
-        MeshInfo* current = const_cast<MeshInfo*>(this);
-		while (current != nullptr) {
-			if (current->gltfNextPrimitiveIndex > 0) {
-				counter++;
-			}
-			current = current->collection->getMeshInfoAt(current->gltfNextPrimitiveIndex);
-        }
-        return counter;
-    }
 };
 typedef MeshInfo* ObjectID;
 
@@ -436,6 +445,7 @@ public:
 	// initialize MeshInfo, also add to collection. id is expected to be in collection format like myid.2
 	// myid.0 is a synonym for myid
 	MeshInfo* initMeshInfo(MeshCollection* coll, std::string id);
+    // initialize MeshCollection and add to store, beware of leaking pointers after collection has been added!
     MeshCollection* initMeshCollection(std::string id, MeshFlagsCollection flags = MeshFlagsCollection());
 
 	MeshInfo* getMesh(std::string id);
@@ -493,13 +503,16 @@ public:
     // start with currentMesh == nullptr to get first primitive
     // return nullptr if no more primitives are available
     MeshInfo* getNextPrimitiveMeshForObject(WorldObject* obj, MeshInfo*	currentMesh);
+	MeshCollection* getMeshCollection(MeshInfo* mi);
+	MeshCollectionStore meshCollectionStore;
+	int countPrimitives(MeshInfo* mi);
 private:
 	// debug graphics, bounding box, vertices and normals are added to line shader
     // this internal method only draws a single mesh, called by public debugGraphics where primitive chaining is handled
 	void debugGraphicsInternal(MeshInfo* primitiveMesh, WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, bool drawBoundingBox = true, bool drawVertices = true, bool drawNormals = false, bool drawMeshletBoundingBoxes = false, glm::vec4 colorVertices = Colors::Black, glm::vec4 colorNormal = Colors::Red, glm::vec4 colorBoxes = Colors::Yellow, float normalLineLength = 0.01f);
 	MeshCollection* loadMeshFile(std::string filename, std::string id, std::vector<std::byte> &fileBuffer, MeshFlagsCollection flags);
 	std::unordered_map<std::string, MeshInfo> meshes;
-	std::vector<MeshCollection> meshCollections;
+	//std::vector<MeshCollection> meshCollections;
 	Util* util = nullptr;
 	std::vector<MeshInfo*> sortedList;
 	glTF gltf;
@@ -608,7 +621,8 @@ public:
 	// templated visitor for all additional primitives of an object
 	template<typename Fn>
 	void forEachAdditionalPrimitiveMesh(WorldObject* wo, Fn&& fn) {
-        auto& coll = wo->mesh->collection;
+		auto coll = meshStore->meshCollectionStore.getMeshCollectionByIndex(wo->mesh->collectionIndex);
+		//auto& coll = wo->mesh->collection;
         MeshInfo* current = wo->mesh;
         assert(current->isAdditionalPrimitive() == false); // must start with main primitive
 		while (current != nullptr) {

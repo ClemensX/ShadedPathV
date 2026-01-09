@@ -49,11 +49,9 @@ MeshInfo* MeshStore::getMesh(string id)
 
 MeshCollection* MeshStore::initMeshCollection(std::string id, MeshFlagsCollection flags)
 {
-	MeshCollection initialCollection;  // only used to initialize struct in texture store - do not access this after assignment to store
-	initialCollection.id = id;
-	initialCollection.flags = flags;
-	meshCollections.push_back(initialCollection);
-	MeshCollection* collection = &meshCollections.back();
+	MeshCollection* collection = meshCollectionStore.addMeshCollection();
+	collection->id = id;
+	collection->flags = flags;
 	return collection;
 }
 
@@ -66,7 +64,7 @@ MeshInfo* MeshStore::initMeshInfo(MeshCollection* coll, std::string id)
 
 	// add MeshInfo to global and collecion mesh lists
 	initialObject.id = id;
-	initialObject.collection = coll;
+	initialObject.collectionIndex = coll->index;
 	initialObject.flags = coll->flags;
     initialObject.meshNum = meshNumber++;
 	meshes[id] = initialObject;
@@ -169,11 +167,12 @@ void MeshStore::loadMesh(string filename, string id, MeshFlagsCollection flags)
 
 MeshCollection* MeshStore::getMeshCollection(std::string id)
 {
-	for (auto& coll : meshCollections) {
-		if (coll.id == id) {
-			return &coll;
+	for (size_t i = 0; i < meshCollectionStore.size(); ++i) {
+		auto mc = meshCollectionStore.getMeshCollectionByIndex(i);
+		if (mc->id == id) {
+			return mc;
 		}
-    }
+	}
 	return nullptr;
 }
 
@@ -299,7 +298,7 @@ const vector<MeshInfo*> &MeshStore::getSortedList()
 bool MeshStore::isGPULodCompatible(WorldObject* wo)
 {
 	// get mesh collection for this object:
-	MeshCollection* coll = engine->meshStore.getMeshCollection(wo->mesh->id);
+	MeshCollection* coll = engine->meshStore.getMeshCollection(wo->mesh);
 	if (coll == nullptr || coll->meshCount() != 10) { // <- updated
 		return false;
     }
@@ -309,13 +308,9 @@ bool MeshStore::isGPULodCompatible(WorldObject* wo)
 // we either have single meshes in meshes or collections in meshCollections, delete all with flag available == true
 MeshStore::~MeshStore()
 {
-	for (auto& coll : meshCollections) {
-		if (coll.available) {
-			for (auto& obj : coll) { // <- updated: iterate via MeshCollection iterator
-				obj->available = false;
-            }
-		}
-	}
+    // call destructor of meshCollectionStore first:
+
+    meshCollectionStore.~MeshCollectionStore();
 	for (auto& mapobj : meshes) {
 		if (mapobj.second.available) {
 			auto& obj = mapobj.second;
@@ -445,7 +440,7 @@ void WorldObjectStore::addObjectPrivate(WorldObject* w, string id, vec3 pos, int
 		Error("WorldObjectStore: too many objects, increase max objects in engine settings.");
     }
     // check for additional primitives:
-	int primCount = mesh->countPrimitives();
+	int primCount = meshStore->countPrimitives(mesh);
 	w->dynamicModelUBOIndex = meshStore->engine->shaders.pbrShader.reserveDynamicUniformBufferSlots(primCount);
 }
 
@@ -1342,7 +1337,8 @@ MeshInfo* MeshStore::getNextPrimitiveMeshForObject(WorldObject* obj, MeshInfo* c
 	}
 	int nextMeshIndexOfCollection = currentMesh->gltfNextPrimitiveIndex;//obj->mesh->collection->getMeshInfoAt(currentMesh->;
 	if (nextMeshIndexOfCollection >= 0) {
-		return obj->mesh->collection->getMeshInfoAt(nextMeshIndexOfCollection);
+		auto collection = this->getMeshCollection(obj->mesh);
+		return collection->getMeshInfoAt(nextMeshIndexOfCollection);
     }
     return nullptr; // no more meshes
 }
@@ -1672,7 +1668,7 @@ void MeshStore::loadMeshCylinder(std::string id, MeshFlagsCollection flags, std:
 	}
 
 	meshInfo.available = true;
-	meshInfo.collection = initMeshCollection(id, flags);
+	meshInfo.collectionIndex = initMeshCollection(id, flags)->index;
 	meshes[id] = std::move(meshInfo);
 	if (flags.hasFlag(MeshFlags::MESHLET_GENERATE)) {
 		aquireMeshletData(id, id, true);
@@ -2072,4 +2068,37 @@ void WorldObjectStore::stopWorking(FrameResources& tr, WorldObject* obj)
 			bufAdd->params[i] = bufMain->params[i];
 		}
 	});
+}
+
+MeshCollectionStore::~MeshCollectionStore() {
+}
+
+MeshCollection* MeshCollectionStore::getMeshCollectionByIndex(int index) {
+	if (index < 0 || index >= meshCollections_.size()) return nullptr;
+    return &meshCollections_[index];
+}
+
+MeshCollection* MeshCollectionStore::addMeshCollection() {
+	meshCollections_.emplace_back();
+	MeshCollection* ret = &meshCollections_.back();
+    ret->index = meshCollections_.size() - 1;
+    return ret;
+}
+
+MeshCollection* MeshStore::getMeshCollection(MeshInfo* mi)
+{
+	return meshCollectionStore.getMeshCollectionByIndex(mi->collectionIndex);
+}
+
+int MeshStore::countPrimitives(MeshInfo* mi) {
+	int counter = 1;
+	MeshInfo* current = mi;
+	while (current != nullptr) {
+		if (current->gltfNextPrimitiveIndex > 0) {
+			counter++;
+		}
+        auto col = meshCollectionStore.getMeshCollectionByIndex(current->collectionIndex);
+		current = col->getMeshInfoAt(current->gltfNextPrimitiveIndex);
+	}
+	return counter;
 }
