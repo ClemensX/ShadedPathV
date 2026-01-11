@@ -47,18 +47,18 @@ void PBRShader::initialUpload(bool listUploadedMeshes)
 	// upload all meshes from store:
     engine->meshStore.fillPushConstants(&pushConstants);
 	auto& list = engine->meshStore.getSortedList();
-    int i = 0;
 	for (auto meshptr : list) {
 		engine->meshStore.uploadMesh(meshptr);
-		if (listUploadedMeshes) {
-			if (i == 0) {
-				Log("" << list.size() << " uploaded meshes:\n");
-            }
-			Log(" " << i << " ");
-			meshptr->logInfo(); Log("\n");
-		}
-        i++;
 	}
+	if (listUploadedMeshes) {
+		Log("" << list.size() << " uploaded meshes:\n");
+		int i = 0;
+		for (auto meshptr : list) {
+			Log(" " << i << " ");
+			meshptr->logInfoLine();
+			i++;
+		}
+    }
 }
 
 void PBRShader::fillTextureIndexesFromMesh(PBRTextureIndexes& ind, MeshInfo* mesh)
@@ -72,7 +72,7 @@ void PBRShader::fillTextureIndexesFromMesh(PBRTextureIndexes& ind, MeshInfo* mes
 
 void PBRShader::checkForGpuLodCompatibility(WorldObject* wo)
 {
-	assert(engine->meshStore.isGPULodCompatible(wo));
+    if (!engine->meshStore.isGPULodCompatible(wo)) Error("PBRShader: Object " + wo->mesh->id + " is not compatible with GPU LOD rendering!");
 }
 
 void PBRShader::prefillModelParametersSingleMesh(FrameResources& fr, MeshInfo* mi, WorldObject* obj, int uboIndex)

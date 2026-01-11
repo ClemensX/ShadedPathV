@@ -76,6 +76,9 @@ void Forest::init() {
     engine->meshStore.loadMesh("DropSeed_B_lod_cmp.glb", "DropSeed_B", meshFlags);
     engine->meshStore.getMesh("DropSeed_B")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
 
+    engine->meshStore.loadMesh("Acacia_B_lod_cmp.glb", "Acacia_B", meshFlags);
+    engine->meshStore.getMesh("Acacia_B")->material.lod_category = LOD_CATEGORY_GENERAL;
+
     //engine->meshStore.loadMesh("box1_cmp.glb", "Flora_1", meshFlags);
     engine->objectStore.createGroup("flora");
     auto wc = engine->objectStore.getWorldCreator();

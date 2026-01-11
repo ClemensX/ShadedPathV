@@ -234,6 +234,7 @@ public:
 	DynamicModelUBO* getAccessToModel(FrameResources& tr, WorldObject* wo);
 
 	// upload of all objects to GPU - only valid before first render
+    // sepecial care needed for compond meshes with LODs: all LODs for one primitive must be uploaded insequence (LOD 0 .. n)
 	void initialUpload(bool listUploadedMeshes = false);
 
 	// per frame update of UBOs / MVPs

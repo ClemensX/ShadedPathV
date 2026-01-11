@@ -350,25 +350,45 @@ struct MeshInfo
 	void getBoundingBox(BoundingBox& box);
 	
 	void logInfo() const {
-        Log("Mesh ID: " << id << "\n");
-        if (baseColorTexture) {
-            Log("Base Color Texture ID: " << baseColorTexture->id << ", Index: " << baseColorTexture->index << "\n");
-        }
-        if (metallicRoughnessTexture) {
-            Log("Metallic Roughness Texture ID: " << metallicRoughnessTexture->id << ", Index: " << metallicRoughnessTexture->index << "\n");
-        }
-        if (normalTexture) {
-            Log("Normal Texture ID: " << normalTexture->id << ", Index: " << normalTexture->index << "\n");
-        }
-        if (occlusionTexture) {
-            Log("Occlusion Texture ID: " << occlusionTexture->id << ", Index: " << occlusionTexture->index << "\n");
-        }
-        if (emissiveTexture) {
-            Log("Emissive Texture ID: " << emissiveTexture->id << ", Index: " << emissiveTexture->index << "\n");
-        }
-        Log("Number of Vertices: " << vertices.size() << "\n");
-        Log("Number of Indices: " << indices.size() << "\n");
-    }
+		Log("Mesh ID: " << id << "\n");
+		if (baseColorTexture) {
+			Log("Base Color Texture ID: " << baseColorTexture->id << ", Index: " << baseColorTexture->index << "\n");
+		}
+		if (metallicRoughnessTexture) {
+			Log("Metallic Roughness Texture ID: " << metallicRoughnessTexture->id << ", Index: " << metallicRoughnessTexture->index << "\n");
+		}
+		if (normalTexture) {
+			Log("Normal Texture ID: " << normalTexture->id << ", Index: " << normalTexture->index << "\n");
+		}
+		if (occlusionTexture) {
+			Log("Occlusion Texture ID: " << occlusionTexture->id << ", Index: " << occlusionTexture->index << "\n");
+		}
+		if (emissiveTexture) {
+			Log("Emissive Texture ID: " << emissiveTexture->id << ", Index: " << emissiveTexture->index << "\n");
+		}
+		Log("Number of Vertices: " << vertices.size() << "\n");
+		Log("Number of Indices: " << indices.size() << "\n");
+	}
+	void logInfoLine() const {
+		Log("Mesh num: " << meshNum << " id " << id);
+		if (baseColorTexture) {
+			Log(" BC: " << baseColorTexture->id << ", ind: " << baseColorTexture->index);
+		}
+		if (metallicRoughnessTexture) {
+			Log(" MR: " << metallicRoughnessTexture->id << ", ind: " << metallicRoughnessTexture->index);
+		}
+		if (normalTexture) {
+			Log(" N: " << normalTexture->id << ", ind: " << normalTexture->index);
+		}
+		if (occlusionTexture) {
+			Log(" Occlusion Texture ID: " << occlusionTexture->id << ", ind: " << occlusionTexture->index);
+		}
+		if (emissiveTexture) {
+			Log(" Emissive Texture ID: " << emissiveTexture->id << ", ind: " << emissiveTexture->index);
+		}
+		Log(" v: " << vertices.size());
+		Log(" i: " << indices.size() << "\n");
+	}
 	bool boundingBoxAlreadySet = false;
 	BoundingBox boundingBox;
     uint64_t GPUMeshStorageBaseAddress = 0; // base address of global mesh storage buffer on GPU

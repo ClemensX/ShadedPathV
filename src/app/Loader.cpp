@@ -67,7 +67,7 @@ void Loader::init() {
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox"); //useGpuLod = false;
     
-    //engine->meshStore.loadMesh("granite_rock_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
+    //engine->meshStore.loadMesh("granite_rock_lod_cmp.glb", "LogoBox", meshFlags); useGpuLod = true;
     //engine->meshStore.loadMesh("granite_rock_auto_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
     //engine->meshStore.loadMesh("granite_rock_06_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = false; useGpuLod = false;
@@ -91,7 +91,7 @@ void Loader::init() {
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox"); alterObjectCoords = false;
 
     // Acacia_B_cmp.glb
-    engine->meshStore.loadMesh("Acacia_B_cmp.glb", "LogoBox", meshFlags); useGpuLod = false;
+    engine->meshStore.loadMesh("Acacia_B_lod_cmp.glb", "LogoBox", meshFlags); useGpuLod = true;
 
     meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
@@ -124,7 +124,7 @@ void Loader::init() {
         object->scale() = vec3(scale);
         object->enabled = true;
         object->useGpuLod = useGpuLod;
-        object->enableDebugGraphics = true;
+        object->enableDebugGraphics = false;
     }
 
     // 2 square km world size
@@ -148,6 +148,11 @@ void Loader::init() {
         o2->useGpuLod = false;
         o2->enableDebugGraphics = true;
 
+        engine->meshStore.loadMesh("Acacia_B_cmp.glb", "Tree3");
+        o2 = engine->objectStore.addObject("group", "Tree3", vec3(-12.2f, 0.2f, -4.2f));
+        o2->enabled = true;
+        o2->useGpuLod = false;
+        o2->enableDebugGraphics = false;
     }
 
     engine->shaders.cubeShader.setSkybox("skyboxTexture");

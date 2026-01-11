@@ -39,12 +39,17 @@ class UtilTest : public WorkingDirectoryTest {};
 class EngineTest : public WorkingDirectoryTest {};
 class EngineImageConsumer : public WorkingDirectoryTest {};
 class MeshletTest : public WorkingDirectoryTest {};
+class MeshStoreTestDynamic : public WorkingDirectoryTest {};
 
-static void minimalEngineInitialization(ShadedPathEngine* engine) {
+static void minimalEngineInitialization(ShadedPathEngine* engine, int maxMeshes = -1) {
     engine->files.findAssetFolder("data");
     engine->overrideCPUCores(4);
+    if (maxMeshes > 0) {
+        engine->setMaxMeshes(maxMeshes);
+    }
     engine->initGlobal();
     engine->shaders.addShader(engine->shaders.simpleShader);
+    engine->shaders.addShader(engine->shaders.pbrShader);
     engine->shaders.initActiveShaders();
     engine->textureStore.generateBRDFLUT();
 }
@@ -890,7 +895,7 @@ TEST(MeshStoreTest, MeshCollectionStore) {
     //EXPECT_TRUE(true);
 }
 
-TEST(MeshStoreTest, InitMultipleCollectionsDistinct) {
+TEST(MeshStoreTest, InitMultipleCollections) {
     {
         MeshStore store;
 
@@ -923,6 +928,27 @@ TEST(MeshStoreTest, InitMultipleCollectionsDistinct) {
         MeshCollection* foundB = store.getMeshCollection("collB");
         EXPECT_EQ(foundA->index, indexA);
         EXPECT_EQ(foundB->index, indexB);
+    }
+}
+
+TEST_F(MeshStoreTestDynamic, LoadMultiPrimitiveMesh) {
+    {
+        // init engine and mesh
+        ShadedPathEngine my_engine;
+        static ShadedPathEngine* engine = &my_engine;
+        minimalEngineInitialization(engine, 50);
+
+        engine->files.findAssetFolder("test_samples");
+        string glbFile = engine->files.findFile("test_multi_prim_lod_cmp.glb", FileCategory::MESH, false);
+        EXPECT_NE(0, glbFile.size()); // check that we found file
+        string meshletFile = engine->files.findFile("test_multi_prim_lod_cmp.glb.meshlet", FileCategory::MESH, false);
+        EXPECT_NE(0, meshletFile.size()); // check that we found file
+
+        engine->meshStore.loadMesh("test_multi_prim_lod_cmp.glb", "Sample");
+        engine->objectStore.createGroup("group");
+
+        WorldObject* object = engine->objectStore.addObject("group", "Sample", vec3(-0.2f, 0.2f, 0.2f));
+        EXPECT_TRUE(object != nullptr);
     }
 }
 
