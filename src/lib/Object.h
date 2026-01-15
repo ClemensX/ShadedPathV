@@ -192,6 +192,12 @@ struct MeshCollection {
 	std::vector<ktxTexture*> textureParseInfo;
 	std::vector<::TextureInfo*> textureInfos;
 	size_t index;
+    LodPrimitiveMap primMap; // map of LOD / meshIndex to primitive count
+    void fillPrimitiveMap();
+    void logLodMeshes() const;
+    // get meshInfo by LOD and primitive index, nullptr if not found.
+    // requires fillPrimitiveMap() to be called first.
+    MeshInfo* getMeshInfo(int lod, int primitive);
 private:
 	// keep representation private so we can change it later
 	std::vector<MeshInfo*> meshInfos_;
@@ -517,6 +523,7 @@ public:
 	bool loadMeshletStorageFile(std::string id, std::string fileBaseName);
     MeshCollection* getMeshCollection(std::string id);
 	void fillPushConstants(PBRPushConstants *pushConstants);
+    // we need 10 (major) meshes for being LOD compatible, also vertex count must not increase with each LOD level
 	bool isGPULodCompatible(WorldObject* wo); // true if object can use GPU LOD selection
     bool checkBoundingBoxPlausibility(std::string id); // check if bounding box is plausible (not inverted or zero size)
     // get next available primitive mesh for a WorldObject within a collection

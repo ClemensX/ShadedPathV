@@ -933,6 +933,14 @@ TEST(MeshStoreTest, InitMultipleCollections) {
 
 TEST_F(MeshStoreTestDynamic, LoadMultiPrimitiveMesh) {
     {
+        // test LodPrimitiveMap
+        LodPrimitiveMap lodMap;
+        EXPECT_EQ(-1, lodMap.get(0, 0));
+        EXPECT_ANY_THROW(lodMap.get(-1, 0));
+        EXPECT_ANY_THROW(lodMap.get(10, 0));
+        EXPECT_ANY_THROW(lodMap.get(0, 100));
+        lodMap.set(0, 0, 5);
+        EXPECT_EQ(5, lodMap.get(0, 0));
         // init engine and mesh
         ShadedPathEngine my_engine;
         static ShadedPathEngine* engine = &my_engine;
@@ -947,8 +955,14 @@ TEST_F(MeshStoreTestDynamic, LoadMultiPrimitiveMesh) {
         engine->meshStore.loadMesh("test_multi_prim_lod_cmp.glb", "Sample");
         engine->objectStore.createGroup("group");
 
+        auto mc = engine->meshStore.getMeshCollection("Sample");
+        mc->primMap.logContents();
+
         WorldObject* object = engine->objectStore.addObject("group", "Sample", vec3(-0.2f, 0.2f, 0.2f));
         EXPECT_TRUE(object != nullptr);
+        engine->shaders.pbrShader.initialUpload(true);
+        bool lodCompatible = engine->meshStore.isGPULodCompatible(object);
+        EXPECT_TRUE(lodCompatible);
     }
 }
 

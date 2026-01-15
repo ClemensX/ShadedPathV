@@ -299,9 +299,11 @@ bool MeshStore::isGPULodCompatible(WorldObject* wo)
 {
 	// get mesh collection for this object:
 	MeshCollection* coll = engine->meshStore.getMeshCollection(wo->mesh);
-	if (coll == nullptr || coll->meshCount() != 10) { // <- updated
+    if (coll == nullptr) return false;
+	if (coll->primMap.getMajorMeshCount() != 10) {
 		return false;
     }
+    coll->logLodMeshes();
 	return true;
 }
 
@@ -2088,6 +2090,43 @@ MeshCollection* MeshCollectionStore::addMeshCollection() {
 MeshCollection* MeshStore::getMeshCollection(MeshInfo* mi)
 {
 	return meshCollectionStore.getMeshCollectionByIndex(mi->collectionIndex);
+}
+
+void MeshCollection::fillPrimitiveMap()
+{
+	for (auto* major : majorMeshView()) {
+		auto* mi = major;
+        int lodIndex = 0; // each major mesh starts a new LOD chain
+		while (mi != nullptr) {
+			primMap.set(lodIndex++, mi->gltfMeshIndex, mi->gltfPrimitiveIndex);
+			auto nextIndex = mi->gltfNextPrimitiveIndex;
+			if (nextIndex >= 0) {
+				mi = getMeshInfoAt(nextIndex);
+			}
+			else {
+				mi = nullptr;
+			}
+		}
+	}
+}
+
+void MeshCollection::logLodMeshes() const
+{
+	for (int meshIndex = 0; meshIndex < primMap.getMajorMeshCount(); ++meshIndex) {
+        const MeshInfo* mi = getMeshInfoAt(meshIndex);
+		Log("Mesh collection major meshIndex " << meshIndex << " id " << mi->name << "\n");
+		for (int lodLevel = 0; lodLevel < 10; ++lodLevel) {
+			int primCount = primMap.get(lodLevel, meshIndex);
+            //auto primMesh = getMeshInfoAt(primCount);
+			if (primCount >= 0) Log("  " << primCount << " id " << endl);
+		}
+		Log("\n");
+	}
+}
+
+MeshInfo* MeshCollection::getMeshInfo(int lod, int primitive)
+{
+	return nullptr;
 }
 
 int MeshStore::countPrimitives(MeshInfo* mi) {

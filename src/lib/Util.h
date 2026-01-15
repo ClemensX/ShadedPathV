@@ -444,3 +444,87 @@ private:
     void markUsed(KDTreeNode* node, uint32_t idx);
     void nearestUnused(KDTreeNode* node, const glm::vec3& query, int depth, float& bestDist, uint32_t& bestIdx) const;
 };
+
+// a simple 2d map to store int values. It is fixed size to avoid any dynamic memory allocations
+class FixedSizeIntMap2D {
+public:
+    FixedSizeIntMap2D(int width, int height)
+        : width(width), height(height), data(width* height, 0) {
+    }
+
+    int get(int x, int y) const {
+        checkAccess(x, y);
+        int pos = y * width + x;
+        return data[pos];
+    }
+
+    void set(int x, int y, int value) {
+        checkAccess(x, y);
+        int pos = y * width + x;
+        data[pos] = value;
+    }
+
+private:
+    int width;
+    int height;
+    std::vector<int> data;
+    // check access bounds
+    void checkAccess(int x, int y) const {
+        if (x < 0 || x >= width || y < 0 || y >= height) {
+            throw std::out_of_range("FixedSizeIntMap2D: Coordinates out of bounds");
+        }
+    };
+};
+
+// a map to store per-LOD primitive counts, fixed size for efficiency, error checking for out-of-bounds access
+class LodPrimitiveMap : public FixedSizeIntMap2D {
+public:
+    // 10 LOD levels, with 100 primitives max
+    LodPrimitiveMap() : FixedSizeIntMap2D(10, 100) {
+        // initialize all to -1
+        for (int y = 0; y < 100; ++y) {
+            for (int x = 0; x < 10; ++x) {
+                set(x, y, -1);
+            }
+        }
+        majorMeshCount = 0;
+        maxPrimCount = 0;
+    }
+
+    int get(int lodLevel, int meshIndex) const {
+        return FixedSizeIntMap2D::get(lodLevel, meshIndex);
+    }
+
+    int getMajorMeshCount() const {
+        return majorMeshCount;
+    }
+
+    int getMaxPrimCount() const {
+        return maxPrimCount;
+    }
+
+    void set(int lodLevel, int meshIndex, int primitiveCount) {
+        FixedSizeIntMap2D::set(lodLevel, meshIndex, primitiveCount);
+        if (meshIndex + 1 > majorMeshCount) {
+            majorMeshCount = meshIndex + 1;
+        }
+        if (primitiveCount + 1 > maxPrimCount) {
+            maxPrimCount = primitiveCount + 1;
+        }
+    }
+
+    void logContents() const {
+        Log("LodPrimitiveMap contents:\n");
+        for (int meshIndex = 0; meshIndex < majorMeshCount; ++meshIndex) {
+            Log("Mesh " << meshIndex << ": ");
+            for (int lodLevel = 0; lodLevel < 10; ++lodLevel) {
+                int primCount = get(lodLevel, meshIndex);
+                if (primCount >= 0) Log(primCount << " ");
+            }
+            Log("\n");
+        }
+    }
+private:
+    int majorMeshCount = 0;
+    int maxPrimCount = 0;
+};
