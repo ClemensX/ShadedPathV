@@ -903,6 +903,11 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
             mesh->material.lod_category = LOD_CATEGORY_GENERAL;
         }
     }
+    // set collection indices for each meshinfo contained in the collection:
+    for (int i = 0; i < coll->meshCount(); ++i) {
+		auto* mi = coll->getMeshInfoAt(i);
+		mi->gltfCollectionIndex = i;
+    }
     // go over meshes a 2nd time and chain primitives if needed
     // highly inefficient implementation, but gltf files usually have few meshes/primitives and this will only ever be called once per load
     MeshInfo* curChain = nullptr;
@@ -945,7 +950,7 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
     coll->fillPrimitiveMap();
 	// another loop for logging:
 	for (auto* mi : *coll) {
-		Log("Found mesh :" << mi->id << " gltfMeshIndex: " << mi->gltfMeshIndex << " gltfPrimitiveIndex: " << mi->gltfPrimitiveIndex
+		Log("Found mesh :" << mi->id << " gltfCollectionIndex: " << mi->gltfCollectionIndex << " gltfPrimitiveIndex: " << mi->gltfPrimitiveIndex
 			<< " gltfNextPrimitive: " << mi->gltfNextPrimitiveIndex << " meshletDesc size: " << mi->outMeshletDesc.size() << endl);
 	}
 }

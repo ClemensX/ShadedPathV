@@ -330,7 +330,9 @@ struct MeshInfo
 
 	// gltf mesh index, only valid during gltf parsing. -1 if not yet set
 	int gltfMeshIndex = -1;
-    // gltf primitive index within mesh. used when a gltf mesh contains multiple primitives
+    // gltf collection index: position in collection vector of this mesh's collection
+	int gltfCollectionIndex = -1;
+	// gltf primitive index within mesh. used when a gltf mesh contains multiple primitives
     int gltfPrimitiveIndex = 0;
 	// next primitive index to use when creating additional primitives from same gltf mesh
 	// is index into collection vector, NOT mesh or primitive index)
@@ -338,9 +340,8 @@ struct MeshInfo
 	// base transform from gltf file (default to identity)
 	glm::mat4 baseTransform = glm::mat4(1.0f);
 
-	// link back to collection
-	//MeshCollection* collection = nullptr;
-    size_t collectionIndex = SIZE_MAX;
+	// link back to collection store
+    size_t collectionStoreIndex = SIZE_MAX;
 	PBRShader::ShaderMaterial material;
     // gltf loaded models are (currently) always PBR metallic roughness
 	bool isMetallicRoughness() {
@@ -648,7 +649,7 @@ public:
 	// templated visitor for all additional primitives of an object
 	template<typename Fn>
 	void forEachAdditionalPrimitiveMesh(WorldObject* wo, Fn&& fn) {
-		auto coll = meshStore->meshCollectionStore.getMeshCollectionByIndex(wo->mesh->collectionIndex);
+		auto coll = meshStore->meshCollectionStore.getMeshCollectionByIndex(wo->mesh->collectionStoreIndex);
 		//auto& coll = wo->mesh->collection;
         MeshInfo* current = wo->mesh;
         assert(current->isAdditionalPrimitive() == false); // must start with main primitive

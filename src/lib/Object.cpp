@@ -64,7 +64,7 @@ MeshInfo* MeshStore::initMeshInfo(MeshCollection* coll, std::string id)
 
 	// add MeshInfo to global and collecion mesh lists
 	initialObject.id = id;
-	initialObject.collectionIndex = coll->index;
+	initialObject.collectionStoreIndex = coll->index;
 	initialObject.flags = coll->flags;
     initialObject.meshNum = meshNumber++;
 	meshes[id] = initialObject;
@@ -1670,7 +1670,7 @@ void MeshStore::loadMeshCylinder(std::string id, MeshFlagsCollection flags, std:
 	}
 
 	meshInfo.available = true;
-	meshInfo.collectionIndex = initMeshCollection(id, flags)->index;
+	meshInfo.collectionStoreIndex = initMeshCollection(id, flags)->index;
 	meshes[id] = std::move(meshInfo);
 	if (flags.hasFlag(MeshFlags::MESHLET_GENERATE)) {
 		aquireMeshletData(id, id, true);
@@ -2089,16 +2089,16 @@ MeshCollection* MeshCollectionStore::addMeshCollection() {
 
 MeshCollection* MeshStore::getMeshCollection(MeshInfo* mi)
 {
-	return meshCollectionStore.getMeshCollectionByIndex(mi->collectionIndex);
+	return meshCollectionStore.getMeshCollectionByIndex(mi->collectionStoreIndex);
 }
 
 void MeshCollection::fillPrimitiveMap()
 {
+	int lodIndex = 0; // each major mesh is a new lod level
 	for (auto* major : majorMeshView()) {
 		auto* mi = major;
-        int lodIndex = 0; // each major mesh starts a new LOD chain
 		while (mi != nullptr) {
-			primMap.set(lodIndex++, mi->gltfMeshIndex, mi->gltfPrimitiveIndex);
+			primMap.set(lodIndex, mi->gltfPrimitiveIndex, mi->gltfCollectionIndex);
 			auto nextIndex = mi->gltfNextPrimitiveIndex;
 			if (nextIndex >= 0) {
 				mi = getMeshInfoAt(nextIndex);
@@ -2107,20 +2107,21 @@ void MeshCollection::fillPrimitiveMap()
 				mi = nullptr;
 			}
 		}
+		lodIndex++;
 	}
 }
 
 void MeshCollection::logLodMeshes() const
 {
-	for (int meshIndex = 0; meshIndex < primMap.getMajorMeshCount(); ++meshIndex) {
-        const MeshInfo* mi = getMeshInfoAt(meshIndex);
-		Log("Mesh collection major meshIndex " << meshIndex << " id " << mi->name << "\n");
-		for (int lodLevel = 0; lodLevel < 10; ++lodLevel) {
-			int primCount = primMap.get(lodLevel, meshIndex);
-            //auto primMesh = getMeshInfoAt(primCount);
-			if (primCount >= 0) Log("  " << primCount << " id " << endl);
+	Log("LODs and primitives in " << this->filename << endl);
+	for (int lodLevel = 0; lodLevel < primMap.getMajorMeshCount(); ++lodLevel) {
+        const MeshInfo* mi = getMeshInfoAt(lodLevel);
+		Log("Mesh collection major meshIndex (LOD) " << lodLevel << " id " << mi->id << "\n");
+		for (int primCount = 0; primCount < primMap.getWidth(); ++primCount) {
+			int collIndex = primMap.get(lodLevel, primCount);
+            auto primMesh = getMeshInfoAt(collIndex);
+			if (collIndex >= 0) Log(" collection index " << collIndex << " id " << primMesh->id << endl);
 		}
-		Log("\n");
 	}
 }
 
@@ -2136,7 +2137,7 @@ int MeshStore::countPrimitives(MeshInfo* mi) {
 		if (current->gltfNextPrimitiveIndex > 0) {
 			counter++;
 		}
-        auto col = meshCollectionStore.getMeshCollectionByIndex(current->collectionIndex);
+        auto col = meshCollectionStore.getMeshCollectionByIndex(current->collectionStoreIndex);
 		current = col->getMeshInfoAt(current->gltfNextPrimitiveIndex);
 	}
 	return counter;

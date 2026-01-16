@@ -960,9 +960,9 @@ TEST_F(MeshStoreTestDynamic, LoadMultiPrimitiveMesh) {
 
         WorldObject* object = engine->objectStore.addObject("group", "Sample", vec3(-0.2f, 0.2f, 0.2f));
         EXPECT_TRUE(object != nullptr);
-        engine->shaders.pbrShader.initialUpload(true);
         bool lodCompatible = engine->meshStore.isGPULodCompatible(object);
         EXPECT_TRUE(lodCompatible);
+        engine->shaders.pbrShader.initialUpload(true);
     }
 }
 

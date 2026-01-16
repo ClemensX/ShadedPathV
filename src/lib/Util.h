@@ -445,54 +445,63 @@ private:
     void nearestUnused(KDTreeNode* node, const glm::vec3& query, int depth, float& bestDist, uint32_t& bestIdx) const;
 };
 
-// a simple 2d map to store int values. It is fixed size to avoid any dynamic memory allocations
-class FixedSizeIntMap2D {
+// a simple 2d map to store arbitrary element types. It is fixed size to avoid dynamic memory allocations
+template<typename T>
+class FixedSizeMap2D {
 public:
-    FixedSizeIntMap2D(int width, int height)
-        : width(width), height(height), data(width* height, 0) {
+    FixedSizeMap2D(int width, int height, T defaultValue = T{})
+        : width(width), height(height), defaultValue(defaultValue), data(width * height, defaultValue) {
     }
 
-    int get(int x, int y) const {
+    T get(int x, int y) const {
         checkAccess(x, y);
         int pos = y * width + x;
         return data[pos];
     }
 
-    void set(int x, int y, int value) {
+    void set(int x, int y, T value) {
         checkAccess(x, y);
         int pos = y * width + x;
         data[pos] = value;
     }
 
+    int getWidth() const { return width; }
+    int getHeight() const { return height; }
+    T defaultValue;
+
 private:
     int width;
     int height;
-    std::vector<int> data;
+    std::vector<T> data;
+    
     // check access bounds
     void checkAccess(int x, int y) const {
         if (x < 0 || x >= width || y < 0 || y >= height) {
-            throw std::out_of_range("FixedSizeIntMap2D: Coordinates out of bounds");
+            throw std::out_of_range("FixedSizeMap2D: Coordinates out of bounds");
         }
-    };
+    }
 };
 
-// a map to store per-LOD primitive counts, fixed size for efficiency, error checking for out-of-bounds access
-class LodPrimitiveMap : public FixedSizeIntMap2D {
+// Convenience alias for int storage (backward compatibility)
+//using FixedSizeIntMap2D = FixedSizeMap2D<int>;
+
+// a map to store collection mesh indices per LOD / primitive, fixed size for efficiency, error checking for out-of-bounds access
+class LodPrimitiveMap : public FixedSizeMap2D<int> {
 public:
-    // 10 LOD levels, with 100 primitives max
-    LodPrimitiveMap() : FixedSizeIntMap2D(10, 100) {
-        // initialize all to -1
-        for (int y = 0; y < 100; ++y) {
-            for (int x = 0; x < 10; ++x) {
-                set(x, y, -1);
+    // 10 LOD levels (height), with 100 primitives max (width)
+    LodPrimitiveMap() : FixedSizeMap2D<int>(100, 10, -1) {
+        // initialize all to defaultValue
+        for (int y = 0; y < getHeight(); ++y) {
+            for (int x = 0; x < getWidth(); ++x) {
+                set(y, x, FixedSizeMap2D<int>::defaultValue);
             }
         }
-        majorMeshCount = 0;
-        maxPrimCount = 0;
+        majorMeshCount = 0; // should be 10
+        maxPrimCount = 0;   // should be > 0
     }
 
     int get(int lodLevel, int meshIndex) const {
-        return FixedSizeIntMap2D::get(lodLevel, meshIndex);
+        return FixedSizeMap2D<int>::get(meshIndex, lodLevel);
     }
 
     int getMajorMeshCount() const {
@@ -503,10 +512,10 @@ public:
         return maxPrimCount;
     }
 
-    void set(int lodLevel, int meshIndex, int primitiveCount) {
-        FixedSizeIntMap2D::set(lodLevel, meshIndex, primitiveCount);
-        if (meshIndex + 1 > majorMeshCount) {
-            majorMeshCount = meshIndex + 1;
+    void set(int lodLevel, int primitiveCount, int collMeshIndex) {
+        FixedSizeMap2D<int>::set(primitiveCount, lodLevel, collMeshIndex);
+        if (lodLevel + 1 > majorMeshCount) {
+            majorMeshCount = lodLevel + 1;
         }
         if (primitiveCount + 1 > maxPrimCount) {
             maxPrimCount = primitiveCount + 1;
@@ -515,11 +524,11 @@ public:
 
     void logContents() const {
         Log("LodPrimitiveMap contents:\n");
-        for (int meshIndex = 0; meshIndex < majorMeshCount; ++meshIndex) {
-            Log("Mesh " << meshIndex << ": ");
-            for (int lodLevel = 0; lodLevel < 10; ++lodLevel) {
-                int primCount = get(lodLevel, meshIndex);
-                if (primCount >= 0) Log(primCount << " ");
+        for(int lodLevel = 0; lodLevel < majorMeshCount; ++lodLevel) {
+            Log("LOD " << lodLevel << ": collection Mesh Indices: ");
+            for (int primCount = 0; primCount < getWidth(); ++primCount) {
+                int collMeshIndex = get(lodLevel, primCount);
+                if (collMeshIndex >= 0) Log(collMeshIndex << " ");
             }
             Log("\n");
         }
