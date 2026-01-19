@@ -255,6 +255,9 @@ public:
         lightSource.position = position;
     }
 	PBRPushConstants pushConstants = {};
+    
+    // Public accessor for logging/debugging
+    uint64_t getNextFreeDynamicUniformBufferIndex() const { return nextFreeDynamicUniformBufferIndex; }
 
 private:
 	void prefillModelParametersSingleMesh(FrameResources& tr, MeshInfo* mi, WorldObject* obj, int uboIndex);

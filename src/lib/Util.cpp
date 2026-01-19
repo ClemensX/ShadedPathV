@@ -1127,40 +1127,224 @@ void Util::GenerateCylinderMesh(
         indices.push_back(i0);
         indices.push_back(i1);
     }
+}
 
-    // Bottom cap
-    uint32_t bottomCenterIndex = static_cast<uint32_t>(vertices.size());
-    vertices.emplace_back(glm::vec3(0, -height / 2.0f, 0), glm::vec3(0, -1, 0), glm::vec2(0.5f, 0.5f));
-    for (int i = 0; i < segments; ++i) {
-        int next = (i + 1) % segments;
-        uint32_t i0 = i;
-        uint32_t i1 = next;
-        indices.push_back(bottomCenterIndex);
-        indices.push_back(i1);
-        indices.push_back(i0);
+void Util::logGPUStructuresMarkdown(std::string filename)
+{
+    std::stringstream md;
+    
+    // Header
+    md << "# GPU Structures Report\n\n";
+    md << "Generated: " << std::chrono::system_clock::now().time_since_epoch().count() << "\n\n";
+    md << "---\n\n";
+
+    // MeshStore Summary
+    md << "## MeshStore Overview\n\n";
+    auto& meshStore = engine->meshStore;
+    auto& sortedMeshes = meshStore.getSortedList();
+    md << "- **Total Meshes:** " << sortedMeshes.size() << "\n";
+    md << "- **Max Meshes:** " << engine->getMaxMeshes() << "\n";
+    md << "- **GPU Mesh Indices Size:** " << meshStore.getGPUMeshIndices().size() << "\n";
+    md << "- **GPU Mesh Infos Size:** " << meshStore.getGPUMeshInfos().size() << "\n\n";
+
+    // GPU Base Addresses
+    md << "## GPU Base Addresses\n\n";
+    auto* mem = engine->globalRendering.getCurrentGPUMemoryChunk();
+    md << "| Structure | Base Address (hex) | Base Address (dec) |\n";
+    md << "|-----------|-------------------|-------------------|\n";
+    md << "| Global GPU Memory Chunk | 0x" << std::hex << mem->address << std::dec << " | " << mem->address << " |\n";
+    md << "| Push Constants - Indices | 0x" << std::hex << engine->shaders.pbrShader.pushConstants.baseAddressIndices 
+       << std::dec << " | " << engine->shaders.pbrShader.pushConstants.baseAddressIndices << " |\n";
+    md << "| Push Constants - Infos | 0x" << std::hex << engine->shaders.pbrShader.pushConstants.baseAddressInfos 
+       << std::dec << " | " << engine->shaders.pbrShader.pushConstants.baseAddressInfos << " |\n\n";
+
+    // Mesh Collections
+    md << "## Mesh Collections\n\n";
+    md << "| Index | ID | Filename | Available | Meshes | Flags |\n";
+    md << "|-------|----|---------|-----------|---------|---------|\n";
+    
+    for (size_t i = 0; i < engine->meshStore.meshCollectionStore.size(); ++i) {
+        auto* mc = engine->meshStore.meshCollectionStore.getMeshCollectionByIndex(i);
+        if (mc) {
+            std::string fullPath = mc->filename;
+            if (!mc->filename.empty()) {
+                fullPath = engine->files.absoluteFilePath(mc->filename);
+            }
+            md << "| " << i << " | " << mc->id << " | " << fullPath << " | " 
+               << (mc->available ? "✓" : "✗") << " | " << mc->meshCount() << " | ";
+            
+            // List flags
+            if (mc->flags.hasFlag(MeshFlags::MESH_TYPE_PBR)) md << "PBR ";
+            if (mc->flags.hasFlag(MeshFlags::MESH_TYPE_SKINNED)) md << "SKINNED ";
+            if (mc->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) md << "NO_TEX ";
+            if (mc->flags.hasFlag(MeshFlags::MESH_TYPE_LOD)) md << "LOD ";
+            if (mc->flags.hasFlag(MeshFlags::MESHLET_DEBUG_COLORS)) md << "DEBUG ";
+            if (mc->flags.hasFlag(MeshFlags::MESHLET_GENERATE)) md << "GEN ";
+            
+            md << " |\n";
+        }
     }
+    md << "\n";
 
-    if (produceCrack) {
-        // if we produce a crack, we add more triangles at the top
-        // it0 and it1 are the indices at the top where we left out the first segment
-        uint32_t it0 = heightDivs * segments;
-        uint32_t it1 = heightDivs * segments + 1;
-        // il0 and il1 are one triangle lower than it0 and it1
-        uint32_t il0 = (heightDivs - 1) * segments;
-        uint32_t il1 = (heightDivs - 1) * segments + 1;
+    // Detailed Mesh Information
+    md << "## Detailed Mesh Information\n\n";
+    md << "| # | Mesh ID | Mesh Num | Collection | Available | Vertices | Indices | Meshlets | LOD |\n";
+    md << "|---|---------|----------|------------|-----------|----------|---------|----------|-----|\n";
+    
+    int meshIdx = 0;
+    for (auto* mesh : sortedMeshes) {
+        if (mesh) {
+            md << "| " << meshIdx++ << " | " << mesh->id << " | " << mesh->meshNum 
+               << " | " << mesh->collectionStoreIndex << " | " << (mesh->available ? "✓" : "✗")
+               << " | " << mesh->vertices.size() << " | " << mesh->indices.size()
+               << " | " << mesh->outMeshletDesc.size() 
+               << " | " << (mesh->meshNum % 10) << " |\n";
+        }
+    }
+    md << "\n";
 
-        // add triangles to close the gap
-        indices.push_back(topCenterIndex);
-        indices.push_back(it0);
-        indices.push_back(il0);
+    // GPU Mesh Storage Addresses
+    md << "## GPU Mesh Storage Addresses\n\n";
+    md << "| Mesh ID | Base Address | Vertex Offset | Global Idx Offset | Local Idx Offset | Meshlet Offset |\n";
+    md << "|---------|--------------|---------------|-------------------|------------------|----------------|\n";
+    
+    for (auto* mesh : sortedMeshes) {
+        if (mesh && mesh->GPUMeshStorageBaseAddress > 0) {
+            md << "| " << mesh->id 
+               << " | 0x" << std::hex << mesh->GPUMeshStorageBaseAddress << std::dec
+               << " | 0x" << std::hex << mesh->vertexOffset << std::dec
+               << " | 0x" << std::hex << mesh->globalIndexOffset << std::dec
+               << " | 0x" << std::hex << mesh->localIndexOffset << std::dec
+               << " | 0x" << std::hex << mesh->meshletOffset << std::dec << " |\n";
+        }
+    }
+    md << "\n";
 
-        indices.push_back(topCenterIndex);
-        indices.push_back(il1);
-        indices.push_back(it1);
+    // GPUMeshIndex Table
+    md << "## GPU Mesh Index Table\n\n";
+    md << "| LOD Group | LOD0 | LOD1 | LOD2 | LOD3 | LOD4 | LOD5 | LOD6 | LOD7 | LOD8 | LOD9 |\n";
+    md << "|-----------|------|------|------|------|------|------|------|------|------|------|\n";
+    
+    auto& gpuMeshIndices = meshStore.getGPUMeshIndices();
+    for (size_t i = 0; i < gpuMeshIndices.size(); ++i) {
+        auto& idx = gpuMeshIndices[i];
+        bool hasData = false;
+        for (int j = 0; j < 10; ++j) {
+            if (idx.gpuMeshInfoIndex[j] != 0) {
+                hasData = true;
+                break;
+            }
+        }
+        if (hasData) {
+            md << "| " << i;
+            for (int j = 0; j < 10; ++j) {
+                md << " | " << idx.gpuMeshInfoIndex[j];
+            }
+            md << " |\n";
+        }
+    }
+    md << "\n";
 
-        indices.push_back(topCenterIndex);
-        indices.push_back(il0);
-        indices.push_back(il1);
+    // GPUMeshInfo Details
+    md << "## GPU Mesh Info Details\n\n";
+    md << "| Index | Vertex Offset | Global Idx Offset | Local Idx Offset | Meshlet Offset | Meshlet Count |\n";
+    md << "|-------|---------------|-------------------|------------------|----------------|---------------|\n";
+    
+    auto& gpuMeshInfos = meshStore.getGPUMeshInfos();
+    for (size_t i = 0; i < gpuMeshInfos.size(); ++i) {
+        auto& info = gpuMeshInfos[i];
+        if (info.meshletCount > 0) {
+            md << "| " << i 
+               << " | 0x" << std::hex << info.vertexOffset << std::dec
+               << " | 0x" << std::hex << info.globalIndexOffset << std::dec
+               << " | 0x" << std::hex << info.localIndexOffset << std::dec
+               << " | 0x" << std::hex << info.meshletOffset << std::dec
+               << " | " << info.meshletCount << " |\n";
+        }
+    }
+    md << "\n";
+
+    // Meshlet Statistics
+    md << "## Meshlet Statistics\n\n";
+    md << "| Mesh ID | Total Meshlets | Avg Vertices | Avg Primitives | Storage File Found |\n";
+    md << "|---------|---------------|--------------|----------------|--------------------|\n";
+    
+    for (auto* mesh : sortedMeshes) {
+        if (mesh && mesh->outMeshletDesc.size() > 0) {
+            uint32_t totalVerts = 0;
+            uint32_t totalPrims = 0;
+            for (auto& desc : mesh->outMeshletDesc) {
+                totalVerts += desc.getNumVertices();
+                totalPrims += desc.getNumPrimitives();
+            }
+            float avgVerts = float(totalVerts) / mesh->outMeshletDesc.size();
+            float avgPrims = float(totalPrims) / mesh->outMeshletDesc.size();
+            
+            md << "| " << mesh->id << " | " << mesh->outMeshletDesc.size()
+               << " | " << std::fixed << std::setprecision(1) << avgVerts
+               << " | " << std::fixed << std::setprecision(1) << avgPrims
+               << " | " << (mesh->meshletStorageFileFound ? "✓" : "✗") << " |\n";
+        }
+    }
+    md << "\n";
+
+    // DynamicModelUBO Information
+    md << "## Dynamic Model UBO\n\n";
+    md << "- **Aligned Size:** " << engine->shaders.pbrShader.alignedDynamicUniformBufferSize << " bytes\n";
+    md << "- **Next Free Index:** " << engine->shaders.pbrShader.getNextFreeDynamicUniformBufferIndex() << "\n";
+    md << "- **Structure Size:** " << sizeof(PBRShader::DynamicModelUBO) << " bytes\n\n";
+
+    // Texture Information
+    md << "## Texture Usage by Mesh\n\n";
+    md << "| Mesh ID | Base Color | Metallic Roughness | Normal | Occlusion | Emissive |\n";
+    md << "|---------|------------|--------------------| -------|-----------|----------|\n";
+    
+    for (auto* mesh : sortedMeshes) {
+        if (mesh && mesh->available) {
+            md << "| " << mesh->id;
+            md << " | " << (mesh->baseColorTexture ? mesh->baseColorTexture->id : "-");
+            md << " | " << (mesh->metallicRoughnessTexture ? mesh->metallicRoughnessTexture->id : "-");
+            md << " | " << (mesh->normalTexture ? mesh->normalTexture->id : "-");
+            md << " | " << (mesh->occlusionTexture ? mesh->occlusionTexture->id : "-");
+            md << " | " << (mesh->emissiveTexture ? mesh->emissiveTexture->id : "-");
+            md << " |\n";
+        }
+    }
+    md << "\n";
+
+    // Bounding Box Information
+    md << "## Bounding Boxes\n\n";
+    md << "| Mesh ID | Min (x, y, z) | Max (x, y, z) | Size (x, y, z) |\n";
+    md << "|---------|---------------|---------------|----------------|\n";
+    
+    for (auto* mesh : sortedMeshes) {
+        if (mesh && mesh->boundingBoxAlreadySet) {
+            auto& bb = mesh->boundingBox;
+            glm::vec3 size = bb.max - bb.min;
+            md << "| " << mesh->id 
+               << " | (" << std::fixed << std::setprecision(2) << bb.min.x << ", " << bb.min.y << ", " << bb.min.z << ")"
+               << " | (" << bb.max.x << ", " << bb.max.y << ", " << bb.max.z << ")"
+               << " | (" << size.x << ", " << size.y << ", " << size.z << ") |\n";
+        }
+    }
+    md << "\n";
+
+    md << "---\n";
+    md << "End of Report\n";
+
+    // Output to file or log
+    if (filename.empty()) {
+        Log(md.str());
+    } else {
+        std::ofstream outFile(filename);
+        if (outFile.is_open()) {
+            outFile << md.str();
+            outFile.close();
+            std::string fullPath = engine->files.absoluteFilePath(filename);
+            Log("GPU structures markdown report written to: " << fullPath << "\n");
+        } else {
+            Error("Could not open file for writing: " + filename);
+        }
     }
 }
 

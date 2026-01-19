@@ -978,6 +978,8 @@ TEST_F(MeshStoreTestDynamic, LoadMultiPrimitiveMesh) {
         //    }
         //}
         engine->shaders.pbrShader.initialUpload(true);
+
+        engine->util.logGPUStructuresMarkdown("gpu_structures_report.md");
     }
 }
 

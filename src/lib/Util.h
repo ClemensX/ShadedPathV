@@ -266,6 +266,10 @@ public:
         return 0;
     }
 
+    // Generate extensive markdown formatted log of major GPU structures
+    // includes: Meshes, MeshCollections, DynamicModelUBO, Meshlet info, GPU addresses
+    void logGPUStructuresMarkdown(std::string filename = "");
+
 private:
     static uint8_t bit_reverse8(uint8_t n) {
         n = (n & 0xF0) >> 4 | (n & 0x0F) << 4;

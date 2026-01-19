@@ -547,6 +547,11 @@ public:
 	int countPrimitives(MeshInfo* mi);
 	// reorder collection for blocks of (10) consecutive lod meshes
 	void reorderForPrimitiveBlocks(MeshCollection* coll);
+    
+    // Public accessors for GPU structures (for logging/debugging)
+    const std::vector<GPUMeshIndex>& getGPUMeshIndices() const { return gpuMeshIndices; }
+    const std::vector<GPUMeshInfo>& getGPUMeshInfos() const { return gpuMeshInfos; }
+
 private:
 	// debug graphics, bounding box, vertices and normals are added to line shader
     // this internal method only draws a single mesh, called by public debugGraphics where primitive chaining is handled
