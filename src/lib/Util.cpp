@@ -1171,7 +1171,13 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     
     // Header
     md << "# GPU Structures Report\n\n";
-    md << "Generated: " << std::chrono::system_clock::now().time_since_epoch().count() << "\n\n";
+    
+    // Format current time as readable date/time
+    auto now = std::chrono::system_clock::now();
+    std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+    std::tm local_tm;
+    localtime_s(&local_tm, &now_time);
+    md << "Generated: " << std::put_time(&local_tm, "%Y-%m-%d %H:%M:%S") << "\n\n";
     md << "---\n\n";
 
     // MeshStore Summary
@@ -1193,6 +1199,56 @@ void Util::logGPUStructuresMarkdown(std::string filename)
        << std::dec << " | " << engine->shaders.pbrShader.pushConstants.baseAddressIndices << " |\n";
     md << "| Push Constants - Infos | 0x" << std::hex << engine->shaders.pbrShader.pushConstants.baseAddressInfos 
        << std::dec << " | " << engine->shaders.pbrShader.pushConstants.baseAddressInfos << " |\n\n";
+
+    // Push Constants Details
+    md << "## Push Constants Details\n\n";
+    md << "Push constants are used in the mesh shader to access GPU mesh data structures efficiently.\n\n";
+    
+    auto& gpuMeshIndices = meshStore.getGPUMeshIndices();
+    auto& gpuMeshInfos = meshStore.getGPUMeshInfos();
+    
+    md << "### Indices Array (`baseAddressIndices`)\n";
+    md << "- **Address:** 0x" << std::hex << engine->shaders.pbrShader.pushConstants.baseAddressIndices << std::dec << "\n";
+    md << "- **Element Type:** `GPUMeshIndex` (40 bytes each)\n";
+    md << "- **Array Size:** " << gpuMeshIndices.size() << " elements\n";
+    md << "- **Total Size:** " << (gpuMeshIndices.size() * sizeof(GPUMeshIndex)) << " bytes\n";
+    md << "- **Purpose:** Index into mesh info array for LOD levels 0-9\n";
+    md << "- **Non-empty entries:** ";
+    int nonEmptyIndices = 0;
+    for (const auto& idx : gpuMeshIndices) {
+        bool hasData = false;
+        for (int j = 0; j < 10; ++j) {
+            if (idx.gpuMeshInfoIndex[j] != 0) {
+                hasData = true;
+                break;
+            }
+        }
+        if (hasData) nonEmptyIndices++;
+    }
+    md << nonEmptyIndices << "\n\n";
+    
+    md << "### Infos Array (`baseAddressInfos`)\n";
+    md << "- **Address:** 0x" << std::hex << engine->shaders.pbrShader.pushConstants.baseAddressInfos << std::dec << "\n";
+    md << "- **Element Type:** `GPUMeshInfo` (40 bytes each)\n";
+    md << "- **Array Size:** " << gpuMeshInfos.size() << " elements\n";
+    md << "- **Total Size:** " << (gpuMeshInfos.size() * sizeof(GPUMeshInfo)) << " bytes\n";
+    md << "- **Purpose:** Contains offsets into global buffer for vertices, indices, and meshlets\n";
+    md << "- **Non-empty entries:** ";
+    int nonEmptyInfos = 0;
+    for (const auto& info : gpuMeshInfos) {
+        if (info.meshletCount > 0) nonEmptyInfos++;
+    }
+    md << nonEmptyInfos << "\n\n";
+    
+    md << "### Memory Layout\n";
+    md << "```\n";
+    md << "GPU Memory Chunk Base: 0x" << std::hex << mem->address << std::dec << "\n";
+    md << "├─ GPUMeshIndex Array [" << gpuMeshIndices.size() << " entries]\n";
+    md << "│  └─ Size: " << (gpuMeshIndices.size() * sizeof(GPUMeshIndex)) << " bytes\n";
+    md << "└─ GPUMeshInfo Array [" << gpuMeshInfos.size() << " entries]\n";
+    md << "   └─ Size: " << (gpuMeshInfos.size() * sizeof(GPUMeshInfo)) << " bytes\n";
+    md << "```\n\n";
+
 
     // Mesh Collections
     md << "## Mesh Collections\n\n";
