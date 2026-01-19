@@ -91,7 +91,8 @@ void Loader::init() {
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox"); alterObjectCoords = false;
 
     // Acacia_B_cmp.glb
-    engine->meshStore.loadMesh("Acacia_B_lod_cmp.glb", "LogoBox", meshFlags); useGpuLod = true;
+    engine->meshStore.loadMeshLod("Acacia_B_lod_cmp.glb", "LogoBox", meshFlags); useGpuLod = true;
+    //engine->meshStore.loadMeshLod("Acacia_B_cmp.glb", "LogoBox", meshFlags);
 
     meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);

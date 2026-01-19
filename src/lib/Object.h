@@ -11,8 +11,9 @@ enum class MeshFlags : int {
 	MESH_TYPE_SKINNED = 2,
 	MESH_TYPE_NO_TEXTURES = 3,
     MESH_TYPE_FLIP_WINDING_ORDER = 4, // flip clockwise <-> counter-clockwise winding order
-	MESHLET_DEBUG_COLORS = 5, // apply vertex color to all triangles of one meshlet
-    MESHLET_GENERATE = 6, // re-generate meshlet data if meshlet data file not found
+    MESH_TYPE_LOD = 5, // mesh contains LOD levels
+	MESHLET_DEBUG_COLORS = 6, // apply vertex color to all triangles of one meshlet
+    MESHLET_GENERATE = 7, // re-generate meshlet data if meshlet data file not found
 	MESH_TYPE_COUNT = -1 // always last
 };
 
@@ -192,7 +193,7 @@ struct MeshCollection {
 	std::vector<ktxTexture*> textureParseInfo;
 	std::vector<::TextureInfo*> textureInfos;
 	size_t index;
-    LodPrimitiveMap primMap; // map of LOD / meshIndex to primitive count
+    LodPrimitiveMap primMap; // map of collection mesh indices per LOD / primitive
     void fillPrimitiveMap();
     void logLodMeshes() const;
     // get meshInfo by LOD and primitive index, nullptr if not found.
@@ -221,6 +222,11 @@ public:
 	// add/remove helper used by MeshStore::initMeshInfo
 	void pushMeshInfo(MeshInfo* mi) { meshInfos_.push_back(mi); }
 	void clearMeshInfos() { meshInfos_.clear(); }
+	void overwriteMeshInfoAt(size_t i, MeshInfo* mi) {
+		if (i < meshInfos_.size()) {
+			meshInfos_[i] = mi;
+		}
+    }
 
 	// safe indexed access (returns nullptr if out of range)
 	MeshInfo* getMeshInfoAt(size_t i) noexcept {
@@ -459,6 +465,11 @@ public:
 	// id.gltf_mesh_name == mesh with name == gltf_mesh_name
 	// id.2 == mesh[2]
 	void loadMesh(std::string filename, std::string id, MeshFlagsCollection flags = MeshFlagsCollection());
+    // auto set LOD flags and load LOD meshes from glTF file
+	void loadMeshLod(std::string filename, std::string id, MeshFlagsCollection flags = MeshFlagsCollection()) {
+		flags.setFlag(MeshFlags::MESH_TYPE_LOD);
+        loadMesh(filename, id, flags);
+	}
 
 	// Generate and register a grid mesh with the given id
 	void loadMeshGrid(std::string id, MeshFlagsCollection flags = MeshFlagsCollection(), std::string baseColorTextureId = "", int gridSize = 9, float scale = 1.0f);
@@ -471,7 +482,7 @@ public:
 	void uploadMesh(MeshInfo* mesh);
 	// initialize MeshInfo, also add to collection. id is expected to be in collection format like myid.2
 	// myid.0 is a synonym for myid
-	MeshInfo* initMeshInfo(MeshCollection* coll, std::string id);
+	MeshInfo* initMeshInfo(MeshCollection* coll, std::string id, int lodLevel);
     // initialize MeshCollection and add to store, beware of leaking pointers after collection has been added!
     MeshCollection* initMeshCollection(std::string id, MeshFlagsCollection flags = MeshFlagsCollection());
 
@@ -534,6 +545,8 @@ public:
 	MeshCollection* getMeshCollection(MeshInfo* mi);
 	MeshCollectionStore meshCollectionStore;
 	int countPrimitives(MeshInfo* mi);
+	// reorder collection for blocks of (10) consecutive lod meshes
+	void reorderForPrimitiveBlocks(MeshCollection* coll);
 private:
 	// debug graphics, bounding box, vertices and normals are added to line shader
     // this internal method only draws a single mesh, called by public debugGraphics where primitive chaining is handled

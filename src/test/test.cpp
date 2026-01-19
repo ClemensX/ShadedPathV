@@ -952,16 +952,31 @@ TEST_F(MeshStoreTestDynamic, LoadMultiPrimitiveMesh) {
         string meshletFile = engine->files.findFile("test_multi_prim_lod_cmp.glb.meshlet", FileCategory::MESH, false);
         EXPECT_NE(0, meshletFile.size()); // check that we found file
 
-        engine->meshStore.loadMesh("test_multi_prim_lod_cmp.glb", "Sample");
+        // LOD meshes MUST have the MESH_TYPE_LOD flag set, either through manual flags, or by using loadMeshLod
+        engine->meshStore.loadMeshLod("test_multi_prim_lod_cmp.glb", "Sample");
         engine->objectStore.createGroup("group");
-
         auto mc = engine->meshStore.getMeshCollection("Sample");
-        mc->primMap.logContents();
+        ASSERT_TRUE(mc->flags.hasFlag(MeshFlags::MESH_TYPE_LOD));
+
+        //mc->primMap.logContents();
 
         WorldObject* object = engine->objectStore.addObject("group", "Sample", vec3(-0.2f, 0.2f, 0.2f));
         EXPECT_TRUE(object != nullptr);
+        MeshCollection* coll = engine->meshStore.getMeshCollection(object->mesh);
+        coll->logLodMeshes();
         bool lodCompatible = engine->meshStore.isGPULodCompatible(object);
         EXPECT_TRUE(lodCompatible);
+        // test that we have 10 consecutive mesh numbers for each primitive: (task shader relies on this)
+        //for (int prim = 0; prim < coll->primMap.getMaxPrimCount(); ++prim) {
+        //    auto globalBaseMeshNum = coll->getMeshInfo(0, prim)->meshNum;
+        //    for (int lod = 1; lod < 10; ++lod) {
+        //        auto lodMeshPtr = coll->getMeshInfo(lod, prim);
+        //        if (lodMeshPtr != nullptr) {
+        //            auto lodMeshNum = lodMeshPtr->meshNum;
+        //            ASSERT_EQ(globalBaseMeshNum + lod, lodMeshNum);
+        //        }
+        //    }
+        //}
         engine->shaders.pbrShader.initialUpload(true);
     }
 }

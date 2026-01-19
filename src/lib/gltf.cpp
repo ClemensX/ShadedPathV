@@ -878,7 +878,7 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
                 // create unique id using meshIndex and primitive
                 std::string sid = coll->id + "." + to_string(meshIndex);
                 if (prim > 0) sid += "#" + to_string(prim);
-                mesh = engine->meshStore.initMeshInfo(coll, sid);
+                mesh = engine->meshStore.initMeshInfo(coll, sid, prim);
             } else {
                 // reuse first MeshInfo for first mesh/primitive
 				mesh = coll->getMeshInfoAt(0); // <- updated
@@ -903,6 +903,8 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
             mesh->material.lod_category = LOD_CATEGORY_GENERAL;
         }
     }
+	// reorder collection for blocks of (10) lod meshes for one primitive
+	engine->meshStore.reorderForPrimitiveBlocks(coll);
     // set collection indices for each meshinfo contained in the collection:
     for (int i = 0; i < coll->meshCount(); ++i) {
 		auto* mi = coll->getMeshInfoAt(i);

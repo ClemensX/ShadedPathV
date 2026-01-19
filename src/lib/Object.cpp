@@ -55,7 +55,7 @@ MeshCollection* MeshStore::initMeshCollection(std::string id, MeshFlagsCollectio
 	return collection;
 }
 
-MeshInfo* MeshStore::initMeshInfo(MeshCollection* coll, std::string id)
+MeshInfo* MeshStore::initMeshInfo(MeshCollection* coll, std::string id, int lodLevel)
 {
 	if (!(meshes.size() < engine->getMaxMeshes())) {
         Error("MeshStore: too many meshes, increase max meshes in engine settings.");
@@ -85,7 +85,7 @@ MeshCollection* MeshStore::loadMeshFile(string filename, string id, vector<byte>
 	}
 	// create MeshCollection and one MeshInfo: we have at least one mesh per gltf file
     MeshCollection* collection = initMeshCollection(id, flags);
-	MeshInfo* mi = initMeshInfo(collection, id);
+	MeshInfo* mi = initMeshInfo(collection, id, 0);
 
 	// find texture file, look in pak file first:
 	PakEntry* pakFileEntry = nullptr;
@@ -286,12 +286,20 @@ const vector<MeshInfo*> &MeshStore::getSortedList()
 	if (sortedList.size() == meshes.size()) {
 		return sortedList;
 	}
-	// create list, TODO sorting
+	// create list and sort by meshNum
 	sortedList.clear();
 	sortedList.reserve(meshes.size());
+
 	for (auto& kv : meshes) {
 		sortedList.push_back(&kv.second);
 	}
+
+	// Sort by meshNum
+	std::sort(sortedList.begin(), sortedList.end(),
+		[](const MeshInfo* a, const MeshInfo* b) {
+			return a->meshNum < b->meshNum;
+		});
+
 	return sortedList;
 }
 
@@ -303,7 +311,25 @@ bool MeshStore::isGPULodCompatible(WorldObject* wo)
 	if (coll->primMap.getMajorMeshCount() != 10) {
 		return false;
     }
-    coll->logLodMeshes();
+	// check declining complexity with higher LODs:
+    long previousVertexCount = LONG_MAX;
+	for (int lodLevel = 0; lodLevel < coll->primMap.getMajorMeshCount(); ++lodLevel) {
+		long currentVertexCount = 0;
+		const MeshInfo* mi = coll->getMeshInfoAt(lodLevel);
+		for (int primCount = 0; primCount < coll->primMap.getWidth(); ++primCount) {
+			int collIndex = coll->primMap.get(lodLevel, primCount);
+			auto primMesh = coll->getMeshInfoAt(collIndex);
+			if (collIndex >= 0) {
+                currentVertexCount += primMesh->vertices.size();
+			}
+		}
+        //Log(" LOD " << lodLevel << " vertex count: " << currentVertexCount << endl);
+		if (currentVertexCount > previousVertexCount) {
+			return false;
+        }
+        previousVertexCount = currentVertexCount;
+	}
+
 	return true;
 }
 
@@ -2114,19 +2140,27 @@ void MeshCollection::fillPrimitiveMap()
 void MeshCollection::logLodMeshes() const
 {
 	Log("LODs and primitives in " << this->filename << endl);
+    Log(" Major mesh count (LODs): " << primMap.getMajorMeshCount() << " Max primitive count over all LODs: " << primMap.getMaxPrimCount() << endl);
 	for (int lodLevel = 0; lodLevel < primMap.getMajorMeshCount(); ++lodLevel) {
         const MeshInfo* mi = getMeshInfoAt(lodLevel);
-		Log("Mesh collection major meshIndex (LOD) " << lodLevel << " id " << mi->id << "\n");
+		Log("Mesh collection major meshIndex (LOD) " << lodLevel << endl);
 		for (int primCount = 0; primCount < primMap.getWidth(); ++primCount) {
 			int collIndex = primMap.get(lodLevel, primCount);
-            auto primMesh = getMeshInfoAt(collIndex);
-			if (collIndex >= 0) Log(" collection index " << collIndex << " id " << primMesh->id << endl);
+			if (collIndex >= 0) {
+				auto primMesh = getMeshInfoAt(collIndex);
+				Log(" collection index " << collIndex << " id " << primMesh->id << endl);
+			}
 		}
 	}
 }
 
 MeshInfo* MeshCollection::getMeshInfo(int lod, int primitive)
 {
+    auto collIndex = primMap.get(lod, primitive);
+	if (collIndex >= 0) {
+		auto primMesh = getMeshInfoAt(collIndex);
+        return primMesh;
+	}
 	return nullptr;
 }
 
@@ -2141,4 +2175,35 @@ int MeshStore::countPrimitives(MeshInfo* mi) {
 		current = col->getMeshInfoAt(current->gltfNextPrimitiveIndex);
 	}
 	return counter;
+}
+
+void MeshStore::reorderForPrimitiveBlocks(MeshCollection* coll)
+{
+	// reorder meshes in collection so that all primitives of a mesh are stored in continuous blocks
+    auto numberOfMeshes = coll->meshCount();
+	// fixed size std::array:
+	vector<MeshInfo*> reordered;
+    reordered.reserve(numberOfMeshes);
+
+    // calc max primitive count:
+	int maxPrimIndex = 0;
+	for (size_t i = 0; i < numberOfMeshes; i++) {
+		auto mi = coll->getMeshInfoAt(i);
+		if (mi->gltfPrimitiveIndex > maxPrimIndex) {
+            maxPrimIndex = mi->gltfPrimitiveIndex;
+		}
+    }
+	for (size_t pr = 0; pr <= maxPrimIndex; pr++) {
+		for (size_t i = 0; i < numberOfMeshes; i++) {
+			auto mi = coll->getMeshInfoAt(i);
+			if (mi->gltfPrimitiveIndex == pr) {
+				reordered.push_back(mi);
+            }
+		}
+	}
+    assert(reordered.size() == numberOfMeshes);
+	// now write back reordered meshes:
+	for (size_t i = 0; i < reordered.size(); i++) {
+		coll->overwriteMeshInfoAt(i, reordered[i]);
+    }
 }
