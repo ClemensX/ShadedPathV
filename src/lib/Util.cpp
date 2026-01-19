@@ -1249,6 +1249,78 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     md << "   └─ Size: " << (gpuMeshInfos.size() * sizeof(GPUMeshInfo)) << " bytes\n";
     md << "```\n\n";
 
+    // GPUMeshIndex Table
+    md << "## GPU Mesh Index Table (Indices Array Content)\n\n";
+    md << "| LOD Group | LOD0 | LOD1 | LOD2 | LOD3 | LOD4 | LOD5 | LOD6 | LOD7 | LOD8 | LOD9 |\n";
+    md << "|-----------|------|------|------|------|------|------|------|------|------|------|\n";
+
+    //auto& gpuMeshIndices = meshStore.getGPUMeshIndices();
+    for (size_t i = 0; i < gpuMeshIndices.size(); ++i) {
+        auto& idx = gpuMeshIndices[i];
+        bool hasData = false;
+        for (int j = 0; j < 10; ++j) {
+            if (idx.gpuMeshInfoIndex[j] != 0) {
+                hasData = true;
+                break;
+            }
+        }
+        if (hasData) {
+            md << "| " << i;
+            for (int j = 0; j < 10; ++j) {
+                md << " | " << idx.gpuMeshInfoIndex[j];
+            }
+            md << " |\n";
+        }
+    }
+    md << "\n";
+
+    // GPUMeshInfo Details
+    md << "## GPU Mesh Info Details (Infos Array Content)\n\n";
+    
+    // Build map from GPUMeshInfo index to Mesh ID(s)
+    std::map<size_t, std::vector<std::string>> meshInfoIndexToMeshIds;
+    for (size_t idxNum = 0; idxNum < gpuMeshIndices.size(); ++idxNum) {
+        const auto& idx = gpuMeshIndices[idxNum];
+        for (int lodLevel = 0; lodLevel < 10; ++lodLevel) {
+            uint32_t infoIndex = idx.gpuMeshInfoIndex[lodLevel];
+            if (infoIndex != 0) {
+                // Find mesh with this collection index and LOD level
+                for (auto* mesh : sortedMeshes) {
+                    if (mesh && mesh->collectionStoreIndex == idxNum && (mesh->meshNum % 10) == lodLevel) {
+                        meshInfoIndexToMeshIds[infoIndex].push_back(mesh->id);
+                    }
+                }
+            }
+        }
+    }
+    
+    md << "| Index | Mesh ID | Vertex Offset | Global Idx Offset | Local Idx Offset | Meshlet Offset | Meshlet Count |\n";
+    md << "|-------|---------|---------------|-------------------|------------------|----------------|---------------|\n";
+
+    //auto& gpuMeshInfos = meshStore.getGPUMeshInfos();
+    for (size_t i = 0; i < gpuMeshInfos.size(); ++i) {
+        auto& info = gpuMeshInfos[i];
+        if (info.meshletCount > 0) {
+            md << "| " << i << " | ";
+            // Add mesh IDs
+            if (meshInfoIndexToMeshIds.find(i) != meshInfoIndexToMeshIds.end()) {
+                const auto& ids = meshInfoIndexToMeshIds[i];
+                for (size_t k = 0; k < ids.size(); ++k) {
+                    if (k > 0) md << ", ";
+                    md << ids[k];
+                }
+            } else {
+                md << "-";
+            }
+            md << " | 0x" << std::hex << info.vertexOffset << std::dec
+                << " | 0x" << std::hex << info.globalIndexOffset << std::dec
+                << " | 0x" << std::hex << info.localIndexOffset << std::dec
+                << " | 0x" << std::hex << info.meshletOffset << std::dec
+                << " | " << info.meshletCount << " |\n";
+        }
+    }
+    md << "\n";
+
 
     // Mesh Collections
     md << "## Mesh Collections\n\n";
@@ -1308,50 +1380,6 @@ void Util::logGPUStructuresMarkdown(std::string filename)
                << " | 0x" << std::hex << mesh->globalIndexOffset << std::dec
                << " | 0x" << std::hex << mesh->localIndexOffset << std::dec
                << " | 0x" << std::hex << mesh->meshletOffset << std::dec << " |\n";
-        }
-    }
-    md << "\n";
-
-    // GPUMeshIndex Table
-    md << "## GPU Mesh Index Table\n\n";
-    md << "| LOD Group | LOD0 | LOD1 | LOD2 | LOD3 | LOD4 | LOD5 | LOD6 | LOD7 | LOD8 | LOD9 |\n";
-    md << "|-----------|------|------|------|------|------|------|------|------|------|------|\n";
-    
-    //auto& gpuMeshIndices = meshStore.getGPUMeshIndices();
-    for (size_t i = 0; i < gpuMeshIndices.size(); ++i) {
-        auto& idx = gpuMeshIndices[i];
-        bool hasData = false;
-        for (int j = 0; j < 10; ++j) {
-            if (idx.gpuMeshInfoIndex[j] != 0) {
-                hasData = true;
-                break;
-            }
-        }
-        if (hasData) {
-            md << "| " << i;
-            for (int j = 0; j < 10; ++j) {
-                md << " | " << idx.gpuMeshInfoIndex[j];
-            }
-            md << " |\n";
-        }
-    }
-    md << "\n";
-
-    // GPUMeshInfo Details
-    md << "## GPU Mesh Info Details\n\n";
-    md << "| Index | Vertex Offset | Global Idx Offset | Local Idx Offset | Meshlet Offset | Meshlet Count |\n";
-    md << "|-------|---------------|-------------------|------------------|----------------|---------------|\n";
-    
-    //auto& gpuMeshInfos = meshStore.getGPUMeshInfos();
-    for (size_t i = 0; i < gpuMeshInfos.size(); ++i) {
-        auto& info = gpuMeshInfos[i];
-        if (info.meshletCount > 0) {
-            md << "| " << i 
-               << " | 0x" << std::hex << info.vertexOffset << std::dec
-               << " | 0x" << std::hex << info.globalIndexOffset << std::dec
-               << " | 0x" << std::hex << info.localIndexOffset << std::dec
-               << " | 0x" << std::hex << info.meshletOffset << std::dec
-               << " | " << info.meshletCount << " |\n";
         }
     }
     md << "\n";
