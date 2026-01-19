@@ -1317,7 +1317,7 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     md << "| LOD Group | LOD0 | LOD1 | LOD2 | LOD3 | LOD4 | LOD5 | LOD6 | LOD7 | LOD8 | LOD9 |\n";
     md << "|-----------|------|------|------|------|------|------|------|------|------|------|\n";
     
-    auto& gpuMeshIndices = meshStore.getGPUMeshIndices();
+    //auto& gpuMeshIndices = meshStore.getGPUMeshIndices();
     for (size_t i = 0; i < gpuMeshIndices.size(); ++i) {
         auto& idx = gpuMeshIndices[i];
         bool hasData = false;
@@ -1342,7 +1342,7 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     md << "| Index | Vertex Offset | Global Idx Offset | Local Idx Offset | Meshlet Offset | Meshlet Count |\n";
     md << "|-------|---------------|-------------------|------------------|----------------|---------------|\n";
     
-    auto& gpuMeshInfos = meshStore.getGPUMeshInfos();
+    //auto& gpuMeshInfos = meshStore.getGPUMeshInfos();
     for (size_t i = 0; i < gpuMeshInfos.size(); ++i) {
         auto& info = gpuMeshInfos[i];
         if (info.meshletCount > 0) {
