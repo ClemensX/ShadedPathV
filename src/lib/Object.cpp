@@ -286,19 +286,24 @@ const vector<MeshInfo*> &MeshStore::getSortedList()
 	if (sortedList.size() == meshes.size()) {
 		return sortedList;
 	}
-	// create list and sort by meshNum
+	// create list and make room
 	sortedList.clear();
 	sortedList.reserve(meshes.size());
 
-	for (auto& kv : meshes) {
-		sortedList.push_back(&kv.second);
+    // go through collections and check that all adds up
+    size_t totalMeshCountByCollection = 0;
+    for (size_t i = 0; i < meshCollectionStore.size(); ++i) {
+		auto mc = meshCollectionStore.getMeshCollectionByIndex(i);
+		size_t countInCollection = mc->meshCount(); // <- updated
+        totalMeshCountByCollection += countInCollection;
 	}
-
-	// Sort by meshNum
-	std::sort(sortedList.begin(), sortedList.end(),
-		[](const MeshInfo* a, const MeshInfo* b) {
-			return a->meshNum < b->meshNum;
-		});
+    assert(totalMeshCountByCollection == meshes.size());
+	for (size_t i = 0; i < meshCollectionStore.size(); ++i) {
+		auto mc = meshCollectionStore.getMeshCollectionByIndex(i);
+		for (auto& mesh : *mc) {
+			sortedList.push_back(mesh);
+		}
+	}
 
 	return sortedList;
 }
@@ -2083,6 +2088,7 @@ void WorldObjectStore::stopWorking(FrameResources& tr, WorldObject* obj)
 	PBRShader::DynamicModelUBO* bufMain = meshStore->engine->shaders.pbrShader.getAccessToModel(tr, obj);
 	stopWorking(obj, bufMain);
 	int uboIndex = obj->dynamicModelUBOIndex;
+	bufMain->material.baseColorTextureSet = 2;
 	// handle additional primitives:
 	forEachAdditionalPrimitiveMesh(obj, [&](MeshInfo* primMesh) {
 		PBRShader::DynamicModelUBO* bufMain = meshStore->engine->shaders.pbrShader.getAccessToModel(tr, obj);
@@ -2095,6 +2101,7 @@ void WorldObjectStore::stopWorking(FrameResources& tr, WorldObject* obj)
 		for (int i = 0; i < MAX_DYNAMIC_LIGHTS; i++) {
 			bufAdd->params[i] = bufMain->params[i];
 		}
+		bufAdd->material.baseColorTextureSet = 5;
 	});
 }
 

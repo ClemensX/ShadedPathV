@@ -857,6 +857,7 @@ void glTF::collectBaseTransform(tinygltf::Model& model, MeshInfo* mesh)
 	// mesh->baseTransform = glm::mat4(1.0f);
 }
 
+// TODO: change this mess to a 2-pass system where first all meshes parsed and sorted, then in a 2nd pass added to mesh store
 void glTF::load(const unsigned char* data, int size, MeshCollection* coll, string filename)
 {
 	Model model;
@@ -948,11 +949,24 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
 			maxPrimCount = primCount;
 		}
 	}
-	Log(" # major meshes: " << majorMeshCount << " max primitives: " << maxPrimCount << endl);
-    coll->fillPrimitiveMap();
-	// another loop for logging:
+	int minMeshIndex = INT_MAX;
 	for (auto* mi : *coll) {
-		Log("Found mesh :" << mi->id << " gltfCollectionIndex: " << mi->gltfCollectionIndex << " gltfPrimitiveIndex: " << mi->gltfPrimitiveIndex
+        if (mi->meshNum < minMeshIndex) {
+			minMeshIndex = mi->meshNum;
+		}
+	}
+	// reorder mesh indices for this collection:
+	int first = minMeshIndex;
+	int last = first + coll->meshCount();
+	int i = 0;
+	for (auto* mi : *coll) {
+		mi->meshNum = first + i++;
+	}
+	coll->fillPrimitiveMap();
+	// another loop for logging:
+	Log(" # major meshes: " << majorMeshCount << " max primitives: " << maxPrimCount << endl);
+	for (auto* mi : *coll) {
+		Log("Found mesh: " << mi->id << " gltfCollectionIndex: " << mi->gltfCollectionIndex << " gltfPrimitiveIndex: " << mi->gltfPrimitiveIndex
 			<< " gltfNextPrimitive: " << mi->gltfNextPrimitiveIndex << " meshletDesc size: " << mi->outMeshletDesc.size() << endl);
 	}
 }

@@ -136,6 +136,8 @@ float fixed_lod[][10] = {
 { 0, 15, 40, 50, 60, -1, -1, -1, -1, -1 }, // LOD_CATEGORY_SMALL_GRASS
 };
 
+int indexMesh[] = {0,2,4,6,8,10,12,14,15,16,1,3,5,7,9,11,13,14,15,16};
+
 
 // Calculates the LOD index based on the given lod distances and current distance.
 // lod: array of LOD distances (lod[1]..lod[9]), lod[0] is unused.
@@ -260,6 +262,7 @@ void main() {
         //meshIndex = 1; // TEMP TESTING
         //debugPrintfEXT("TASK SHADER: model_ubo flags: %u\n", model_ubo.flags);
         //debugPrintfEXT("TASK SHADER: isGpuLodEnabled: %d\n", isGpuLodEnabled ? 1 : 0);
+        //debugPrintfEXT("TASK SHADER: model_ubo.meshNumber: %d\n", meshIndex);
         if (isGpuLodEnabled) {
             // scale to have 1m cube diameter for LOD 0 object:
             float scale = 1.732f / diameter;
@@ -275,11 +278,16 @@ void main() {
             uint lodLevel = calculateLODIndex(model_ubo.material.lod_category, distScaled);
             if (lodLevel == LOD_CATEGORY_INVISIBLE) return; // do not render this object at all
             //if (model_ubo.objectNum == 0) debugPrintfEXT("TASK SHADER: object %u diameter %f dist %f dist scaled %f ==> level: %u\n", model_ubo.objectNum, diameter, dist, distScaled, lodLevel);
+//            meshIndex = model_ubo.meshNumber * 10 + lodLevel; // we rely on proper selection of LOD 0 mesh number in app code!!
+//            meshIndex = indexMesh[meshIndex];
             meshIndex = model_ubo.meshNumber + lodLevel; // we rely on proper selection of LOD 0 mesh number in app code!!
+            //debugPrintfEXT("TASK SHADER: model_ubo.meshNumber: %d\n", meshIndex);
+            debugPrintfEXT("TASK SHADER: model_ubo.meshNumber: %d lod %d\n", meshIndex, lodLevel);
         }
         // meshIndex is the LOD mesh we want to render, determine its meshlet count:
+        //meshIndex = 1;//model_ubo.meshNumber;
         uint meshletsCount = gpuInfos.info[meshIndex].meshletCount;
-        //debugPrintfEXT("TASK SHADER: render mesh index %u with meshletsCount %u\n", meshIndex, meshletsCount);
+        debugPrintfEXT("TASK SHADER: render mesh index %u with meshletsCount %u lodEnabled=%d\n", meshIndex, meshletsCount, isGpuLodEnabled ? 1 : 0);
         // Emit selectedCount mesh shader workgroups.
         // We emit one mesh workgroup at a time so each gets a distinct payload.meshletIndex.
         payload.mvp = mvp;

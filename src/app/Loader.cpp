@@ -164,6 +164,8 @@ void Loader::init() {
     ls.position = vec3(75.0f, 0.5f, -20.0f);
     engine->shaders.pbrShader.changeLightSource(ls.color, ls.position);
     engine->shaders.pbrShader.initialUpload(true);
+    engine->util.logGPUStructuresMarkdown("gpu_structures_report.md");
+
     // window creation
     prepareWindowOutput("Loader");
     engine->presentation.startUI();
@@ -196,6 +198,8 @@ void Loader::prepareFrame(FrameResources* fr)
     }
     double deltaSeconds = seconds - old_seconds;
 
+    Movement mv;
+    camera->setConstantSpeed(mv.fallSpeedMS);
     updateCameraPositioners(deltaSeconds);
     old_seconds = seconds;
 
@@ -284,7 +288,7 @@ void Loader::prepareFrame(FrameResources* fr)
         } else {
             //engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false);
         }
-        if (wo->enableDebugGraphics) engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false, false);
+        if (wo->enableDebugGraphics) engine->meshStore.debugGraphics(wo, tr, modeltransform, true, true, false, true);
         engine->objectStore.stopWorking(tr, wo);
     }
     // lines

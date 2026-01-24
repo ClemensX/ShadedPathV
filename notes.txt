@@ -355,3 +355,18 @@ Notes:
 •	CSV parser is strict: 12 columns in the exact order shown.
 •	The float parser gracefully handles “-0” via a fallback.
 •	Add nlohmann/json.hpp to your project or replace with your preferred JSON library.
+
+0	LogoBox	0	0	✓	62305	280890	1119	0
+1	LogoBox.0#1	1	0	✓	9758	29394	1	1
+TASK SHADER: render model 0
+TASK SHADER: render mesh index 0 with meshletsCount 1119
+TASK SHADER: render model 1
+TASK SHADER: render mesh index 1 with meshletsCount 1
+
+
+0	LogoBox	0	0	✓	62305	280890	1119	0
+1	LogoBox.0#1	1	0	✓	9758	29394	154	1
+TASK SHADER: render model 0
+TASK SHADER: render mesh index 0 with meshletsCount 1119
+TASK SHADER: render model 1
+TASK SHADER: render mesh index 1 with meshletsCount 154

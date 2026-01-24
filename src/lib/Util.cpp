@@ -1432,6 +1432,63 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     }
     md << "\n";
 
+    // Global Textures
+    md << "## Global Textures\n\n";
+    md << "| Index | ID | Type | WxH | Mips | Format | Compressed | Filename |\n";
+    md << "|-------|----|------|-----|------|--------|------------|----------|\n";
+
+    // Collect available indices from the map to avoid querying non-available slots
+    std::vector<uint32_t> texIndices;
+    texIndices.reserve(engine->textureStore.size());
+    for (const auto& kv : engine->textureStore.getTexturesMap()) {
+        const TextureInfo& ti = kv.second;
+        if (ti.isAvailable()) {
+            texIndices.push_back(ti.index);
+        }
+    }
+    std::sort(texIndices.begin(), texIndices.end());
+    texIndices.erase(std::unique(texIndices.begin(), texIndices.end()), texIndices.end());
+
+    for (uint32_t idx : texIndices) {
+        TextureInfo* ti = engine->textureStore.getTextureByIndex(idx);
+        const auto& vt = ti->vulkanTexture;
+        VkFormat fmt = static_cast<VkFormat>(vt.imageFormat);
+        bool compressed = Util::isCompressedFormat(fmt);
+
+        // bpp or block size
+        std::string bppStr = "-";
+        try {
+            uint32_t bpp = Util::getBytesPerPixel(fmt);
+            if (compressed) {
+                std::stringstream ss;
+                ss << "block " << bpp;
+                bppStr = ss.str();
+            }
+            else {
+                std::stringstream ss;
+                ss << bpp << " B";
+                bppStr = ss.str();
+            }
+        }
+        catch (...) {
+            // leave as "-"
+        }
+
+        // TextureType as int
+        int typeInt = static_cast<int>(ti->type);
+
+        md << "| " << ti->index
+            << " | " << ti->id
+            << " | " << typeInt
+            << " | " << vt.width << "x" << vt.height
+            << " | " << vt.levelCount
+            << " | " << static_cast<int>(fmt) << " (" << bppStr << ")"
+            << " | " << (compressed ? "✓" : "✗")
+            << " | " << (ti->filename.empty() ? "-" : engine->files.absoluteFilePath(ti->filename))
+            << " |\n";
+    }
+    md << "\n";
+
     // Bounding Box Information
     md << "## Bounding Boxes\n\n";
     md << "| Mesh ID | Min (x, y, z) | Max (x, y, z) | Size (x, y, z) |\n";

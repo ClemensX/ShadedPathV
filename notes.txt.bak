@@ -340,3 +340,26 @@ debug glbLodMerger
 "C:\dev\cpp\data\granite_rock.glb" "C:\dev\cpp\data\pack"
 
 { 0, 1, 5, 10, 15, 25, 30, 50, 70, 150 }
+
+TASK SHADER: model_ubo.boundingBox min -71.165359 -55.849598 -62.840740
+TASK SHADER: model_ubo.boundingBox max 74.323158 63.228664 32.198666
+TASK SHADER: object 0 BB -0.205851 0.204592 0.205167 --> -0.193889 0.194802 0.197353
+
+How to use:
+•	Parse the JSON once to get all biome objects:
+•	auto bos = spv::WorldCreatorInstanceLoader::LoadInstanceInfo(jsonPath);
+•	For each biome object that references CSV tiles, load all tile rows:
+•	auto loaded = spv::WorldCreatorInstanceLoader::LoadAllTilesFor(bos[i], csvDir);
+Notes:
+•	DataOffset/DataCount are applied after skipping the optional header line. This matches your JSON describing subsets per object in the shared CSV.
+•	CSV parser is strict: 12 columns in the exact order shown.
+•	The float parser gracefully handles “-0” via a fallback.
+•	Add nlohmann/json.hpp to your project or replace with your preferred JSON library.
+
+0	LogoBox	0	0	✓	62305	280890	1119	0
+1	LogoBox.0#1	1	0	✓	9758	29394	1	1
+TASK SHADER: render model 0
+TASK SHADER: render mesh index 0 with meshletsCount 1119
+TASK SHADER: render model 1
+TASK SHADER: render mesh index 1 with meshletsCount 1
+
