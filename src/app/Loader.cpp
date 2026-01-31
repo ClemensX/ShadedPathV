@@ -149,10 +149,11 @@ void Loader::init() {
         o2->useGpuLod = false;
         o2->enableDebugGraphics = true;
 
-        engine->meshStore.loadMesh("Acacia_B_cmp.glb", "Tree3");
-        o2 = engine->objectStore.addObject("group", "Tree3", vec3(-12.2f, 0.2f, -4.2f));
+        //engine->meshStore.loadMesh("Acacia_B_cmp.glb", "Tree3");
+        //o2 = engine->objectStore.addObject("group", "Tree3", vec3(-12.2f, 0.2f, -4.2f));
+        o2 = engine->objectStore.addObject("group", "LogoBox", vec3(-32.2f, 0.5f, -40.2f));
         o2->enabled = true;
-        o2->useGpuLod = false;
+        o2->useGpuLod = true;
         o2->enableDebugGraphics = false;
     }
 

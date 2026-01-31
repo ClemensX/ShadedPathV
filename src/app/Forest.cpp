@@ -55,6 +55,10 @@ void Forest::init() {
     MeshFlagsCollection meshFlags;
     //meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
+
+    engine->meshStore.loadMesh("Acacia_B_lod_cmp.glb", "Acacia_B", meshFlags);
+    engine->meshStore.getMesh("Acacia_B")->material.lod_category = LOD_CATEGORY_GENERAL;
+
     engine->meshStore.loadMesh("forestv2_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("terrain_forest_small_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("ObjectTest_cmp.glb", "LogoBox", meshFlags);
@@ -75,9 +79,6 @@ void Forest::init() {
 
     engine->meshStore.loadMesh("DropSeed_B_lod_cmp.glb", "DropSeed_B", meshFlags);
     engine->meshStore.getMesh("DropSeed_B")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
-
-    engine->meshStore.loadMesh("Acacia_B_lod_cmp.glb", "Acacia_B", meshFlags);
-    engine->meshStore.getMesh("Acacia_B")->material.lod_category = LOD_CATEGORY_GENERAL;
 
     //engine->meshStore.loadMesh("box1_cmp.glb", "Flora_1", meshFlags);
     engine->objectStore.createGroup("flora");
@@ -239,12 +240,13 @@ void Forest::prepareFrame(FrameResources* fr)
         for (auto& wo : engine->objectStore.getSortedList()) {
             //Log(" adapt object " << obj.get()->objectNum << endl);
             //WorldObject *wo = obj.get();
-            PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
+            PBRShader::DynamicModelUBO* buf = engine->objectStore.startWorking(tr, wo);
+            //PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
             // standard model matrix
             mat4 modeltransform;
             wo->calculateStandardModelTransform(modeltransform);
             buf->model = modeltransform;
-            buf->params[0].intensity = 7.0f; // adjust sun light intensity
+            buf->params[0].intensity = 1.0f; // adjust sun light intensity
             //if (wo->objectNum == 1) {
             //    Log(" object 1 pos: " << wo->pos().x << " " << wo->pos().y << " " << wo->pos().z << endl);
             //    Log("   bb in buf: " << buf->boundingBox.min.x << " " << buf->boundingBox.min.y << " " << buf->boundingBox.min.z << " - "
@@ -253,6 +255,7 @@ void Forest::prepareFrame(FrameResources* fr)
             //buf->boundingBox = wo->perFrameBB;
             if (!object->enabled)   buf->disableRendering();
             if (wo->enableDebugGraphics) engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false, false);
+            engine->objectStore.stopWorking(tr, wo);
         }
     }
 

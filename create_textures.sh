@@ -81,4 +81,5 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #gltf-transform uastc N:/assets/WorldCreator/assets/ObjectsPack2025_01/Acacia_B.glb ../data/mesh/Acacia_B_cmp.glb --level 2 --zstd 18 --verbose
 #gltf-transform optimize N:/assets/WorldCreator/Acacia_B_simple.glb N:/assets/WorldCreator/Acacia_B_simple_opt.glb
 #gltf-transform prune N:/assets/WorldCreator/Acacia_B_simple.glb N:/assets/WorldCreator/Acacia_B_simple_opt.glb
-gltf-transform uastc N:/assets/WorldCreator/Acacia_B_simple_opt.glb ../data/mesh/test_multi_prim_lod_cmp.glb --level 2 --zstd 18 --verbose
+#gltf-transform uastc N:/assets/WorldCreator/Acacia_B_simple_opt.glb ../data/mesh/test_multi_prim_lod_cmp.glb --level 2 --zstd 18 --verbose
+gltf-transform uastc N:/assets/WorldCreator/forestv2HD.glb ../data/mesh/forestv2HD_cmp.glb --level 2 --zstd 18 --verbose
