@@ -2088,7 +2088,6 @@ void WorldObjectStore::stopWorking(FrameResources& tr, WorldObject* obj)
 	PBRShader::DynamicModelUBO* bufMain = meshStore->engine->shaders.pbrShader.getAccessToModel(tr, obj);
 	stopWorking(obj, bufMain);
 	int uboIndex = obj->dynamicModelUBOIndex;
-	bufMain->material.baseColorTextureSet = 2;
 	// handle additional primitives:
 	forEachAdditionalPrimitiveMesh(obj, [&](MeshInfo* primMesh) {
 		PBRShader::DynamicModelUBO* bufMain = meshStore->engine->shaders.pbrShader.getAccessToModel(tr, obj);
@@ -2101,7 +2100,6 @@ void WorldObjectStore::stopWorking(FrameResources& tr, WorldObject* obj)
 		for (int i = 0; i < MAX_DYNAMIC_LIGHTS; i++) {
 			bufAdd->params[i] = bufMain->params[i];
 		}
-		bufAdd->material.baseColorTextureSet = 5;
 	});
 }
 

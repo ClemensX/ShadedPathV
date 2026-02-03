@@ -7,6 +7,7 @@
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 #extension GL_EXT_nonuniform_qualifier : require
 
+
 #include "common_cpp_shader.h"
 #include "shadermaterial.glsl"
 #include "pbr_mesh_common.glsl"
@@ -166,6 +167,8 @@ float microfacetDistribution(PBRInfo pbrInputs)
 void main() {
 	//debugPrintfEXT("pbr.frag main\n");
 
+//	inUV0.x = 0.404832;
+//	inUV0.y = 0.386192;
 	ShaderMaterial material = model_ubo.material;
     //debugPrintfEXT("frag shader material workflow %f base set %d\n", material.workflow, material.baseColorTextureSet);
     //debugPrintfEXT("frag shader material workflow %f normal set %d\n", material.workflow, material.normalTextureSet);
@@ -226,7 +229,9 @@ void main() {
 		if (material.baseColorTextureSet > -1) {
 			// we only handle metallic roughness workflow, so we can simplify the next line
 			// baseColor = SRGBtoLINEAR(texture(colorMap, material.baseColorTextureSet == 0 ? inUV0 : inUV1)) * material.baseColorFactor;
-			baseColor = SRGBtoLINEAR(textureBindless2D(material.baseColorTextureSet, material.texCoordSets.baseColor == 0 ? inUV0 : inUV1)) * material.baseColorFactor;
+			// linearization is done automatically for sRGB formats
+			//baseColor = SRGBtoLINEAR(textureBindless2D(material.baseColorTextureSet, material.texCoordSets.baseColor == 0 ? inUV0 : inUV1)) * material.baseColorFactor;
+			baseColor = textureBindless2D(material.baseColorTextureSet, material.texCoordSets.baseColor == 0 ? inUV0 : inUV1) * material.baseColorFactor;
 		} else {
 			baseColor = material.baseColorFactor;
 		}
@@ -258,9 +263,13 @@ void main() {
 
 		// The albedo may be defined from a base texture or a flat color
 		if (material.baseColorTextureSet > -1) {
-			float sf = 5.0; // use higher value for light boost, TODO move to C++ code
-			vec4 f = vec4(sf, sf, sf, 1.0);
-			baseColor = SRGBtoLINEAR(textureBindless2D(material.baseColorTextureSet, material.texCoordSets.baseColor == 0 ? inUV0 : inUV1)) * material.baseColorFactor * f;
+			vec4 baseColorIn = textureBindless2D(material.baseColorTextureSet, material.texCoordSets.baseColor == 0 ? inUV0 : inUV1);
+			// linearization is done automatically for sRGB formats
+			//baseColor = SRGBtoLINEAR(baseColorIn) * material.baseColorFactor;
+			baseColor = baseColorIn * material.baseColorFactor;
+//			float sf = 5.0; // use higher value for light boost, TODO move to C++ code
+//			vec4 f = vec4(sf, sf, sf, 1.0);
+//			baseColor = SRGBtoLINEAR(textureBindless2D(material.baseColorTextureSet, material.texCoordSets.baseColor == 0 ? inUV0 : inUV1)) * material.baseColorFactor; // * f;
 			//debugPrintfEXT("pbr baseColor factor %f %f %f %f\n", material.baseColorFactor.r, material.baseColorFactor.g, material.baseColorFactor.b, material.baseColorFactor.a);
 			//debugPrintfEXT("pbr frag baseColor %f %f %f %f with factor %f\n", baseColor.r, baseColor.g, baseColor.b, baseColor.a, material.baseColorFactor.r);
 		} else {

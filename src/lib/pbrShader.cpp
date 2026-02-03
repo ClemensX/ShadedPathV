@@ -108,6 +108,8 @@ void PBRShader::prefillModelParametersSingleMesh(FrameResources& fr, MeshInfo* m
 	//	cos(glm::radians(lightSource.rotation.x)) * cos(glm::radians(lightSource.rotation.y)),
 	//	0.0f);
 	params.lightDir = glm::vec4(glm::normalize(lightSource.position), 0.0f);
+    // mimic Vulkan-glTF-PBR github sample light direction
+	//params.lightDir = glm::vec4(0.739942074, -0.642787576, 0.198266909, 0.00000000);
 	buf->params[0] = params;
 	buf->meshNumber = mi->meshNum;
 	buf->material = mi->material;

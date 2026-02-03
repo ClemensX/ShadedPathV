@@ -73,6 +73,7 @@ void MeshManager::init() {
 
     //engine->textureStore.loadTexture("nebula.ktx2", "skyboxTexture");
     engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
+    //engine->textureStore.loadTexture("papermill.ktx2", "skyboxTexture");
     // generating cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
     //engine->textureStore.generateCubemaps("skyboxTexture");
     engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);

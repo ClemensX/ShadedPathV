@@ -59,7 +59,8 @@ void Forest::init() {
     engine->meshStore.loadMesh("Acacia_B_lod_cmp.glb", "Acacia_B", meshFlags);
     engine->meshStore.getMesh("Acacia_B")->material.lod_category = LOD_CATEGORY_GENERAL;
 
-    engine->meshStore.loadMesh("forestv2_cmp.glb", "LogoBox", meshFlags);
+    //engine->meshStore.loadMesh("forestv2_cmp.glb", "LogoBox", meshFlags);
+    engine->meshStore.loadMesh("forestv2HD_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("terrain_forest_small_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("ObjectTest_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("terrain_forest_cmp.glb", "LogoBox", meshFlags);// alterObjectCoords = true;

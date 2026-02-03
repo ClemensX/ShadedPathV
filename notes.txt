@@ -370,3 +370,9 @@ TASK SHADER: render model 0
 TASK SHADER: render mesh index 0 with meshletsCount 1119
 TASK SHADER: render model 1
 TASK SHADER: render mesh index 1 with meshletsCount 154
+
+
+will pbr:
+GREEN 0.283619 0.375845 0.041672
+  base tex set 0 uv 0.404832 0.386192
+

@@ -167,7 +167,7 @@ uint calculateLODIndex(uint lod_category, float distance) {
 
 void main() {
     //check_inputs();
-    debugPrintfEXT("TASK SHADER: render model %d\n", model_ubo.meshNumber);
+    //debugPrintfEXT("TASK SHADER: render model %d\n", model_ubo.meshNumber);
 
     //debugPrintfEXT("TASK SHADER: model flags: %d\n", model_ubo.flags);
     //debugPrintfEXT("TASK SHADER PUUUUSH: : %llx\n", pushConstants.meshStorageBufferAddress);
@@ -214,7 +214,7 @@ void main() {
         //debugPrintfEXT("TASK SHADER: RENDERING DISABLED for object %d, payload %u\n", model_ubo.objectNum, payload.meshletIndexX);
         // Emit a single dummy mesh task so the pipeline/driver receives a mesh task invocation.
         // The mesh shader must test for payload.meshletIndex == PAYLOAD_CULLED and return immediately.
-        debugPrintfEXT("TASK INV[%u,%u] frame %u OBJ %u disabled=%u\n", gl_WorkGroupID.x, gl_LocalInvocationID.x, ubo.frameNum, model_ubo.objectNum, isRenderingDisabled);
+        //debugPrintfEXT("TASK INV[%u,%u] frame %u OBJ %u disabled=%u\n", gl_WorkGroupID.x, gl_LocalInvocationID.x, ubo.frameNum, model_ubo.objectNum, isRenderingDisabled);
         //EmitMeshTasksEXT(1, 1, 1);
         EmitMeshTasksEXT(0, 0, 0);
         return;
@@ -281,13 +281,12 @@ void main() {
 //            meshIndex = model_ubo.meshNumber * 10 + lodLevel; // we rely on proper selection of LOD 0 mesh number in app code!!
 //            meshIndex = indexMesh[meshIndex];
             meshIndex = model_ubo.meshNumber + lodLevel; // we rely on proper selection of LOD 0 mesh number in app code!!
-            //debugPrintfEXT("TASK SHADER: model_ubo.meshNumber: %d\n", meshIndex);
-            debugPrintfEXT("TASK SHADER: model_ubo.meshNumber: %d lod %d\n", meshIndex, lodLevel);
+            //debugPrintfEXT("TASK SHADER: model_ubo.meshNumber: %d lod %d\n", meshIndex, lodLevel);
         }
         // meshIndex is the LOD mesh we want to render, determine its meshlet count:
         //meshIndex = 1;//model_ubo.meshNumber;
         uint meshletsCount = gpuInfos.info[meshIndex].meshletCount;
-        debugPrintfEXT("TASK SHADER: render mesh index %u with meshletsCount %u lodEnabled=%d\n", meshIndex, meshletsCount, isGpuLodEnabled ? 1 : 0);
+        //debugPrintfEXT("TASK SHADER: render mesh index %u with meshletsCount %u lodEnabled=%d\n", meshIndex, meshletsCount, isGpuLodEnabled ? 1 : 0);
         // Emit selectedCount mesh shader workgroups.
         // We emit one mesh workgroup at a time so each gets a distinct payload.meshletIndex.
         payload.mvp = mvp;
