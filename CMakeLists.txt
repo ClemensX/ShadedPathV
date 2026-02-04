@@ -72,3 +72,14 @@ endif()
 #-DCMAKE_CXX_COMPILER=/usr/bin/g++ \
 #-DCMAKE_MAKE_PROGRAM=/usr/bin/make \
 #-DCMAKE_TOOLCHAIN_FILE=~/cpp/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+# run in developer power shell:
+# configure/build/test DEBUG:
+# cmake -S . -B "out/build/x64-debug" -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="C:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake"
+# cmake --build "out/build/x64-debug" --parallel
+# ctest --test-dir "out/build/x64-debug" -C Debug --output-on-failure --parallel
+
+# configure/build/test RELEASE:
+# cmake -S . -B "out/build/x64-release" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="C:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake"
+# cmake --build "out/build/x64-release" --parallel
+# ctest --test-dir "out/build/x64-release" -C Release --output-on-failure --parallel
