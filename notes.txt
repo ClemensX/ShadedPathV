@@ -376,3 +376,10 @@ will pbr:
 GREEN 0.283619 0.375845 0.041672
   base tex set 0 uv 0.404832 0.386192
 
+
+layout(location = 1) out PBRVertexOut outVert[];
+
+outVert[v].worldPos = worldPos;
+gl_MeshVerticesEXT[v].gl_Position =  ubo.proj * ubo.view * vec4(outVert[v].worldPos, 1.0);
+
+gl_MeshVerticesEXT[v].gl_Position =  ubo.proj * ubo.view * vec4(worldPos, 1.0);

@@ -140,34 +140,28 @@ void main()
         return; // no vertices marked for use
     }
     for (uint v = 0; v < vertexCount; ++v) {
-    //indexBufferOffset = 0;
         uint globalVertexIndex = globalIndexBuffer.index[indexBufferOffset + v];
         PBRVertex vert = vertices.vertex[globalVertexIndex];
-        gl_MeshVerticesEXT[v].gl_Position = payload.mvp * vec4(vert.position, 1.0);
         outVert[v].color0 = vert.color0;
-
         outVert[v].uv0 = vert.uv0;
         outVert[v].uv1 = vert.uv1;
-        //outVert[v].normal = vert.normal;
         outVert[v].weight0 = vert.weight0;
         outVertFlat[v].joint0 = vert.joint0;
-//	    if (vert.uv0.y < 1.0) {
-//		    debugPrintfEXT("PBR MESH in uv0 %f %f\n", vert.uv0.x, vert.uv0.y);
-//	    }
-//
+
         vec4 locPos;
 	    locPos = model_ubo.model * vec4(vert.position, 1.0);
 	    outVert[v].normal = normalize(transpose(inverse(mat3(model_ubo.model))) * vert.normal);
 	    //locPos.y = -locPos.y;
-	    outVert[v].worldPos = locPos.xyz / locPos.w;
-        //debugPrintfEXT("loc.w %f\n", locPos.w);
-        // change to true for special cases...
-        if (false && (model_ubo.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) { // if model_ubo.flags & MODEL_FLAG_PRELIGHT_VERTICES
-            // apply debug colors
-            vec3 debugColor = DEBUG_COLORS[meshletIndex % 256];
-            outVert[v].color0 = vec4(debugColor, 1.0); // apply debug color to vertex color
-        }
-        gl_MeshVerticesEXT[v].gl_Position =  ubo.proj * ubo.view * vec4(outVert[v].worldPos, 1.0);
+        vec3 worldPos = locPos.xyz / locPos.w;
+	    outVert[v].worldPos = worldPos;
+        gl_MeshVerticesEXT[v].gl_Position =  ubo.proj * ubo.view * vec4(worldPos, 1.0);
+
+//        change to true for special cases...
+//        if (false && (model_ubo.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) { // if model_ubo.flags & MODEL_FLAG_PRELIGHT_VERTICES
+//            // apply debug colors
+//            vec3 debugColor = DEBUG_COLORS[meshletIndex % 256];
+//            outVert[v].color0 = vec4(debugColor, 1.0); // apply debug color to vertex color
+//        }
     }
         
 
