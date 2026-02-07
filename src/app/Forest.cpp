@@ -181,6 +181,9 @@ void Forest::init() {
     ls.position = vec3(75.0f, 30.5f, -40.0f);
     engine->shaders.pbrShader.changeLightSource(ls.color, ls.position);
     engine->shaders.pbrShader.initialUpload();
+
+    gatherUIDetails();
+
     // window creation
     prepareWindowOutput("Forest");
     engine->presentation.startUI();
@@ -334,4 +337,37 @@ void Forest::handleInput(InputState& inputState)
         }
     }
     AppSupport::handleInput(inputState);
+}
+
+void Forest::buildCustomUI() {
+    ImGui::Text("Total Objects: %d", totalObjects);
+    if (ImGui::CollapsingHeader("Details", ImGuiTreeNodeFlags_None))
+    {
+        for ( auto& d : details) {
+            //ImGui::Checkbox((d.name + " (" + to_string(d.count) + ")").c_str(), &d.enabled);
+            ImGui::Text("%s: %d", d.name.c_str(), d.count);
+        }
+    }
+
+}
+
+void Forest::gatherUIDetails()
+{
+    details.clear();
+    totalObjects = 0;
+    for (const auto& biomeObject : engine->objectStore.getWorldCreator()->biomeObjects) {
+        MeshInfo* mesh = engine->meshStore.getMesh(biomeObject.Name);
+        if (mesh == nullptr) {
+            continue;
+        }
+        const auto& merged = biomeObject.MergedParsedTile;
+        if (merged.has_value()) {
+            int count = merged->instances.size();
+            totalObjects += count;
+            Details d;
+            d.name = biomeObject.Name;
+            d.count = count;
+            details.push_back(d);
+        }
+    }
 }

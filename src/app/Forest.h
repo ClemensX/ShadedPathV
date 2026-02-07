@@ -18,6 +18,8 @@ public:
     void processImage(FrameResources* fi) override;
     bool shouldClose() override;
     void handleInput(InputState& inputState) override;
+    void buildCustomUI() override;
+    void gatherUIDetails();
 private:
     World world;
     WorldObject *object = nullptr;
@@ -30,4 +32,13 @@ private:
     bool firstPersonMode = true;
     bool doRotation = false;
     bool useDefaultNormalLineLength = true; // to use different normal line length for some models
+    // UI related
+    bool showDetails = false;
+    int totalObjects = 0;
+    struct Details {
+        std::string name;
+        bool enabled = true;
+        int count = 0;
+    };
+    std::vector<Details> details;
 };
