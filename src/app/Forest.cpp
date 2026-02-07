@@ -66,20 +66,32 @@ void Forest::init() {
     //object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 14.38f * 2.5f, 0.0f));
     object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 13.3f, 0.0f));
 
-    engine->meshStore.loadMesh("Grass_C_lod_cmp.glb", "Grass_C", meshFlags);
-    engine->meshStore.getMesh("Grass_C")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
+    // true for single object type:
+    bool singleObjectType = false;
 
-    engine->meshStore.loadMesh("Grass_B_lod_cmp.glb", "Grass_B", meshFlags);
-    engine->meshStore.getMesh("Grass_B")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
+    if (!singleObjectType) {
+        engine->meshStore.loadMesh("Grass_C_lod_cmp.glb", "Grass_C", meshFlags);
+        engine->meshStore.getMesh("Grass_C")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
 
-    engine->meshStore.loadMesh("DropSeed_C_lod_cmp.glb", "DropSeed_C", meshFlags);
-    engine->meshStore.getMesh("DropSeed_C")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
+        engine->meshStore.loadMesh("Grass_B_lod_cmp.glb", "Grass_B", meshFlags);
+        engine->meshStore.getMesh("Grass_B")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
 
-    engine->meshStore.loadMesh("DropSeed_B_lod_cmp.glb", "DropSeed_B", meshFlags);
-    engine->meshStore.getMesh("DropSeed_B")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
+        engine->meshStore.loadMesh("DropSeed_C_lod_cmp.glb", "DropSeed_C", meshFlags);
+        engine->meshStore.getMesh("DropSeed_C")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
 
-    engine->meshStore.loadMesh("Acacia_B_lod_cmp.glb", "Acacia_B", meshFlags);
-    engine->meshStore.getMesh("Acacia_B")->material.lod_category = LOD_CATEGORY_GENERAL;
+        engine->meshStore.loadMesh("DropSeed_B_lod_cmp.glb", "DropSeed_B", meshFlags);
+        engine->meshStore.getMesh("DropSeed_B")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
+
+    }
+
+    if (!singleObjectType || singleObjectType) {
+        engine->meshStore.loadMesh("Bush_A_lod_cmp.glb", "Bush_A", meshFlags);
+        engine->meshStore.getMesh("Bush_A")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
+    }
+    if (!singleObjectType) {
+        engine->meshStore.loadMesh("Acacia_B_lod_cmp.glb", "Acacia_B", meshFlags);
+        engine->meshStore.getMesh("Acacia_B")->material.lod_category = LOD_CATEGORY_GENERAL;
+    }
 
     //engine->meshStore.loadMesh("box1_cmp.glb", "Flora_1", meshFlags);
     engine->objectStore.createGroup("flora");
@@ -93,7 +105,7 @@ void Forest::init() {
         // check if we have loaded this asset, skip otherwise:
         MeshInfo* mesh = engine->meshStore.getMesh(biomeObject.Name);
         if (mesh == nullptr) {
-            Log("WARNING: Skipping biome object " << biomeObject.Name << " as mesh not loaded" << endl);
+            Log("WARNING: Skipping biome object " << wc->getPathInstanceName(biomeObject) << " as mesh not loaded" << endl);
             continue;
         }
         const auto& merged = biomeObject.MergedParsedTile;

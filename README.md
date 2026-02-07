@@ -114,6 +114,8 @@ Usually, LOD info ist not contained in assets you aquired, so you must prepare t
 - Make sure you have LOD_1 selected, then add the *Decimate* modifier: Enable the *Triangulate* flag and set a *Ratio* of 0.25. You should see the changed mesh now. (Allow some time for Blender to work for very high triangle counts.)
 - Bake the modifier to the mesh by using *Apply* in the menu right of the mesh name.
 - Examine the mesh from all sides
+- To easily delete points and vertices that are not part of any triangle anymore, switch to *Edit Mode*,
+  and select loose geometry by Select menu -> Select all By Trait -> Loose Geometry. Then delete unwanted vertices/points.
 - If there are visible holes (these usually start to appear after you have applied some iterations): 
   - Use another modifier: *Remesh*: use *Sharp* mode and adjust *Octree Depth* to roughly get the triangle count you want. Also bake this modifier.
   - As you now have lost all UV mapping use *Data Transfer Modifier* to correct that: Select one of your older meshes as Source, then enable *Face Corner Data*, open it and choose *UVs* tab. Generate data by using the *Generate Data Layers* button. Also bake the result, once you are satisfied.
