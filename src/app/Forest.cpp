@@ -56,8 +56,8 @@ void Forest::init() {
     //meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
 
-    engine->meshStore.loadMesh("forestv2_cmp.glb", "LogoBox", meshFlags);
-    //engine->meshStore.loadMesh("forestv2HD_cmp.glb", "LogoBox", meshFlags);
+    //engine->meshStore.loadMesh("forestv2_cmp.glb", "LogoBox", meshFlags);
+    engine->meshStore.loadMesh("forestv2HD_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("terrain_forest_small_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("ObjectTest_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("terrain_forest_cmp.glb", "LogoBox", meshFlags);// alterObjectCoords = true;
@@ -66,10 +66,7 @@ void Forest::init() {
     //object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 14.38f * 2.5f, 0.0f));
     object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 13.3f, 0.0f));
 
-    // true for single object type:
-    bool singleObjectType = false;
-
-    if (!singleObjectType) {
+    if (true) {
         engine->meshStore.loadMesh("Grass_C_lod_cmp.glb", "Grass_C", meshFlags);
         engine->meshStore.getMesh("Grass_C")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
 
@@ -82,20 +79,27 @@ void Forest::init() {
         engine->meshStore.loadMesh("DropSeed_B_lod_cmp.glb", "DropSeed_B", meshFlags);
         engine->meshStore.getMesh("DropSeed_B")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
 
-    }
-
-    if (!singleObjectType || singleObjectType) {
         engine->meshStore.loadMesh("Bush_A_lod_cmp.glb", "Bush_A", meshFlags);
         engine->meshStore.getMesh("Bush_A")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
-    }
-    if (!singleObjectType) {
+
+        engine->meshStore.loadMesh("Bush_B_lod_cmp.glb", "Bush_A_1", meshFlags);
+        engine->meshStore.getMesh("Bush_A_1")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
+
         engine->meshStore.loadMesh("Acacia_B_lod_cmp.glb", "Acacia_B", meshFlags);
         engine->meshStore.getMesh("Acacia_B")->material.lod_category = LOD_CATEGORY_GENERAL;
+
+        engine->meshStore.loadMesh("Acacia_A_lod_cmp.glb", "Acacia_A", meshFlags);
+        engine->meshStore.getMesh("Acacia_A")->material.lod_category = LOD_CATEGORY_GENERAL;
+    } else {
+        engine->meshStore.loadMesh("Acacia_A_lod_cmp.glb", "Acacia_A", meshFlags);
+        engine->meshStore.getMesh("Acacia_A")->material.lod_category = LOD_CATEGORY_GENERAL;
     }
+
 
     //engine->meshStore.loadMesh("box1_cmp.glb", "Flora_1", meshFlags);
     engine->objectStore.createGroup("flora");
     auto wc = engine->objectStore.getWorldCreator();
+    //string* limitBiomeName = new string("Acacia_A");
     string* limitBiomeName = nullptr;
     //limitBiomeName = new string("DropSeed_B");
     for (const auto& biomeObject : wc->biomeObjects) {
