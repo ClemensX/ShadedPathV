@@ -16,8 +16,8 @@ void Forest::run(ContinuationInfo* cont)
         initCamera(glm::vec3(-0.040809f, 14.445347f, 2.82217f), glm::vec3(5.0f, 14.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         Movement mv;
-        //camera->setConstantSpeed(mv.fallSpeedMS);
-        camera->setConstantSpeed(mv.runSpeedMS);
+        camera->setConstantSpeed(mv.fallSpeedMS);
+        //camera->setConstantSpeed(mv.runSpeedMS);
         //camera->setConstantSpeed(mv.walkSpeedMS);
         // engine configuration
         enableEventsAndModes();
@@ -56,8 +56,8 @@ void Forest::init() {
     //meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
 
-    //engine->meshStore.loadMesh("forestv2_cmp.glb", "LogoBox", meshFlags);
-    engine->meshStore.loadMesh("forestv2HD_cmp.glb", "LogoBox", meshFlags);
+    engine->meshStore.loadMesh("forestv2_cmp.glb", "LogoBox", meshFlags);
+    //engine->meshStore.loadMesh("forestv2HD_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("terrain_forest_small_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("ObjectTest_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("terrain_forest_cmp.glb", "LogoBox", meshFlags);// alterObjectCoords = true;
@@ -91,8 +91,8 @@ void Forest::init() {
         engine->meshStore.loadMesh("Acacia_A_lod_cmp.glb", "Acacia_A", meshFlags);
         engine->meshStore.getMesh("Acacia_A")->material.lod_category = LOD_CATEGORY_GENERAL;
     } else {
-        engine->meshStore.loadMesh("Acacia_A_lod_cmp.glb", "Acacia_A", meshFlags);
-        engine->meshStore.getMesh("Acacia_A")->material.lod_category = LOD_CATEGORY_GENERAL;
+        engine->meshStore.loadMesh("Grass_C_lod_cmp.glb", "Grass_C", meshFlags);
+        engine->meshStore.getMesh("Grass_C")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
     }
 
 
@@ -123,21 +123,53 @@ void Forest::init() {
                     Log("YEAHHHHHHHH! " << ++count << " " << y << endl);
                 }
 
-                //vec3 pos = vec3(256.0f - instance.t.x, 2.5f * instance.t.y, instance.t.z - 256.0f);
-                vec3 pos = vec3(-1.0f * (instance.t.z - 256.0f), 2.5f * instance.t.y, -1.0f * (256.0f - instance.t.x));
-                pos.x = pos.x * -1.0f + 256;
-                // stretch terrain in y direction
-                float ystretch = (pos.y / 2.5f) - 14.3864f;
-                ystretch *= 10.0f;
-                pos.y = 2.5 * (ystretch + 14.3864f);
+                // position
+                ////vec3 pos = vec3(256.0f - instance.t.x, 2.5f * instance.t.y, instance.t.z - 256.0f);
+                //vec3 pos = vec3(-1.0f * (instance.t.z - 256.0f), 2.5f * instance.t.y, -1.0f * (256.0f - instance.t.x));
+                //pos.x = pos.x * -1.0f + 256;
+                //// stretch terrain in y direction
+                //float ystretch = (pos.y / 2.5f) - 14.3864f;
+                //ystretch *= 10.0f;
+                //pos.y = 2.5 * (ystretch + 14.3864f);
 
-                pos = vec3(instance.t.x, instance.t.y, -instance.t.z);
+                vec3 pos = vec3(instance.t.x, instance.t.y, -instance.t.z);
                 //Log("Instance position: " << pos.x << " " << pos.y << " " << pos.z << std::endl);
+
+                // rotation
+                // convert quaternion to euler angles:
+                vec4 q = vec4(instance.q.x, instance.q.z, instance.q.y, instance.q.w);
+                quat quatRotation(q.w, q.x, q.y, q.z); // glm uses
+                vec3 rotation = glm::eulerAngles(quatRotation);
+
+                float angle;
+                //MathHelper::getAxisAngleFromQuaternion(quatRotation, rotation, angle);
+
                 auto obj = engine->objectStore.addObject("flora", biomeObject.Name, pos);
+                obj->rot() = rotation;
                 obj->useGpuLod = true;
-                //obj->rot() = instance.rotation;
-                //float scale = instance.scale.x; // uniform scale
-                //obj->scale() = vec3(scale);
+
+                //float scale = instance.s.x; // uniform scale
+                //obj->scale() = vec3((100000.0f * scale) - 0.5f);
+                //obj->scale() = vec3(10.0f * biomeObject.Info.ModelScale * scale);
+                //obj->enableDebugGraphics = true;
+
+                // WC instance scale (uniform)
+                const float instanceScale = instance.s.x;
+
+                // WC layer ModelScale
+                const float modelScale = biomeObject.Info.ModelScale;
+
+                // Determine normalization factor so largest axis becomes 1.0 (if your GLBs are already normalized, this becomes ~1.0)
+                BoundingBox meshBB{};
+                mesh->getBoundingBox(meshBB); // local/model-space bounds of the mesh
+                const glm::vec3 bbSize = meshBB.max - meshBB.min;
+                const float largestAxis = std::max(bbSize.x, std::max(bbSize.y, bbSize.z));
+                const float normalizeFactor = (largestAxis > 0.0f) ? (1.0f / largestAxis) : 1.0f;
+
+                // Final uniform scale = normalization * WC ModelScale * per-instance scale
+                const float finalScale = normalizeFactor * modelScale * instanceScale;
+                obj->scale() = glm::vec3(finalScale * 1024.0f);
+
             }
         }
     }
