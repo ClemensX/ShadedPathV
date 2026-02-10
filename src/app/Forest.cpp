@@ -56,8 +56,8 @@ void Forest::init() {
     //meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
 
-    engine->meshStore.loadMesh("forestv2_cmp.glb", "LogoBox", meshFlags);
-    //engine->meshStore.loadMesh("forestv2HD_cmp.glb", "LogoBox", meshFlags);
+    //engine->meshStore.loadMesh("forestv2_cmp.glb", "LogoBox", meshFlags);
+    engine->meshStore.loadMesh("forestv2HD_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("terrain_forest_small_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("ObjectTest_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("terrain_forest_cmp.glb", "LogoBox", meshFlags);// alterObjectCoords = true;
@@ -140,6 +140,7 @@ void Forest::init() {
                 vec4 q = vec4(instance.q.x, instance.q.z, instance.q.y, instance.q.w);
                 quat quatRotation(q.w, q.x, q.y, q.z); // glm uses
                 vec3 rotation = glm::eulerAngles(quatRotation);
+                rotation.y -= PI_half; // rotate 180 degrees around y-axis to match GLB orientation
 
                 float angle;
                 //MathHelper::getAxisAngleFromQuaternion(quatRotation, rotation, angle);
@@ -298,7 +299,7 @@ void Forest::prepareFrame(FrameResources* fr)
             mat4 modeltransform;
             wo->calculateStandardModelTransform(modeltransform);
             buf->model = modeltransform;
-            buf->params[0].intensity = 1.0f; // adjust sun light intensity
+            buf->params[0].intensity = 2.0f; // adjust sun light intensity
             //if (wo->objectNum == 1) {
             //    Log(" object 1 pos: " << wo->pos().x << " " << wo->pos().y << " " << wo->pos().z << endl);
             //    Log("   bb in buf: " << buf->boundingBox.min.x << " " << buf->boundingBox.min.y << " " << buf->boundingBox.min.z << " - "
