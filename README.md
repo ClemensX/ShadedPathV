@@ -108,6 +108,8 @@ ShadedPath mandates a fixed set of 10 levels - LOD 0 to LOD 9. Higher numbers me
 
 Usually, LOD info ist not contained in assets you aquired, so you must prepare them yourself. We did not find a good way to automate LOD generation. Trying to automate this in Blender also was underwhelming. So, here is our suggested manual Blender workflow for creating LOD info:
 
+- You might want to clean-up your mesh first, e.g. by deleting all vertices that are not part of any triangle. This can be done in edit mode by selecting loose geometry and deleting it.
+  Also very powerful for some meshes it to use the *Merge by Distance* function in edit mode to merge vertices that are very close to each other. This can be used to reduce triangle count without losing much detail.
 - select LOD 0 in object mode and duplicate (Shift-D), right click to paste at the same location.
 - Rename the new mesh to something like **name_LOD_1**.
 - You might want to disable rendering of the older level in the *Outliner* to just see what you are currently working on.

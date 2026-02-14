@@ -104,6 +104,7 @@ namespace wcil
     {
         std::string Biome;
         std::string Name;
+        std::optional<std::string> ParentName; // Optional since some entries are subobjects
         ObjectInfo Info;
         std::vector<InstanceTile> Tiles;
 
@@ -134,8 +135,14 @@ namespace wcil
                 BiomeObject bo;
                 bo.Biome = e.at("Biome").get<std::string>();
                 bo.Name = e.at("Name").get<std::string>();
+                if (e.contains("ParentName"))
+                    bo.ParentName = e.at("ParentName").get<std::string>();
 
-                const auto& oi = e.at("ObjectInfo");
+                // The format can have either "ObjectInfo" or "SubobjectInfo"
+                const bool hasObjectInfo = e.contains("ObjectInfo");
+                const bool hasSubobjectInfo = e.contains("SubobjectInfo");
+                const auto& oi = hasObjectInfo ? e.at("ObjectInfo") : e.at("SubobjectInfo");
+
                 bo.Info.IsEntity = oi.at("IsEntity").get<bool>();
                 bo.Info.Path = oi.at("Path").get<std::string>();
                 bo.Info.ModelScale = oi.at("ModelScale").get<float>();
@@ -165,26 +172,40 @@ namespace wcil
                             m.TerrainBlendingRange.Min = mi["TerrainBlendingRange"].at("Min").get<float>();
                             m.TerrainBlendingRange.Max = mi["TerrainBlendingRange"].at("Max").get<float>();
                         }
+                        // Note: nested Gradient data exists in the JSON, but is not needed by current runtime.
                         bo.Info.Materials.emplace_back(std::move(m));
                     }
                 }
 
-                // Common numeric fields
-                bo.Info.InstanceDistance = oi.at("InstanceDistance").get<float>();
-                bo.Info.Density = oi.at("Density").get<float>();
-                bo.Info.AlignToNormal = oi.at("AlignToNormal").get<bool>();
-                bo.Info.HeightOffset = oi.at("HeightOffset").get<float>();
-                bo.Info.NormalOffset = oi.at("NormalOffset").get<float>();
-                bo.Info.UniformScaling = oi.at("UniformScaling").get<bool>();
+                // Common numeric fields (present in both ObjectInfo and SubobjectInfo)
+                auto get_or_default_float = [](const nlohmann::json& node, const char* key, float& out, float def = 0.0f)
+                    {
+                        if (node.contains(key)) out = node.at(key).get<float>(); else out = def;
+                    };
+                auto get_or_default_bool = [](const nlohmann::json& node, const char* key, bool& out, bool def = false)
+                    {
+                        if (node.contains(key)) out = node.at(key).get<bool>(); else out = def;
+                    };
+                auto get_or_default_uint = [](const nlohmann::json& node, const char* key, uint32_t& out, uint32_t def = 0u)
+                    {
+                        if (node.contains(key)) out = node.at(key).get<uint32_t>(); else out = def;
+                    };
+
+                get_or_default_float(oi, "InstanceDistance", bo.Info.InstanceDistance);
+                get_or_default_float(oi, "Density", bo.Info.Density, 1.0f);
+                get_or_default_bool(oi, "AlignToNormal", bo.Info.AlignToNormal);
+                get_or_default_float(oi, "HeightOffset", bo.Info.HeightOffset);
+                get_or_default_float(oi, "NormalOffset", bo.Info.NormalOffset);
+                get_or_default_bool(oi, "UniformScaling", bo.Info.UniformScaling, true);
 
                 auto readRange = [](const nlohmann::json& node, const char* key, RangeF& out)
-                {
-                    if (node.contains(key))
                     {
-                        out.Min = node.at(key).at("Min").get<float>();
-                        out.Max = node.at(key).at("Max").get<float>();
-                    }
-                };
+                        if (node.contains(key))
+                        {
+                            out.Min = node.at(key).at("Min").get<float>();
+                            out.Max = node.at(key).at("Max").get<float>();
+                        }
+                    };
 
                 readRange(oi, "ScaleRange", bo.Info.ScaleRange);
                 readRange(oi, "ScaleRangeX", bo.Info.ScaleRangeX);
@@ -194,17 +215,18 @@ namespace wcil
                 readRange(oi, "RotationRangeY", bo.Info.RotationRangeY);
                 readRange(oi, "RotationRangeZ", bo.Info.RotationRangeZ);
 
-                bo.Info.Seed = oi.at("Seed").get<uint32_t>();
-                bo.Info.UseDistributionDensityRange = oi.at("UseDistributionDensityRange").get<bool>();
+                get_or_default_uint(oi, "Seed", bo.Info.Seed);
+
+                get_or_default_bool(oi, "UseDistributionDensityRange", bo.Info.UseDistributionDensityRange);
                 readRange(oi, "DistributionDensityRange", bo.Info.DistributionDensityRange);
 
-                bo.Info.UseDistributionScaleRange = oi.at("UseDistributionScaleRange").get<bool>();
+                get_or_default_bool(oi, "UseDistributionScaleRange", bo.Info.UseDistributionScaleRange);
                 readRange(oi, "DistributionScaleRange", bo.Info.DistributionScaleRange);
 
-                bo.Info.UseDistributionGradientRange = oi.at("UseDistributionGradientRange").get<bool>();
+                get_or_default_bool(oi, "UseDistributionGradientRange", bo.Info.UseDistributionGradientRange);
                 readRange(oi, "DistributionGradientRange", bo.Info.DistributionGradientRange);
 
-                bo.Info.DistributionGradientRandomness = oi.at("DistributionGradientRandomness").get<float>();
+                get_or_default_float(oi, "DistributionGradientRandomness", bo.Info.DistributionGradientRandomness);
 
                 // Tiles
                 if (e.contains("InstanceDataFiles"))
@@ -392,7 +414,7 @@ namespace wcil
         static bool EqualNoCase(const std::string& a, const std::string& b)
         {
             return std::equal(a.begin(), a.end(), b.begin(), b.end(),
-                              [](char c1, char c2) { return std::tolower(c1) == std::tolower(c2); });
+                [](char c1, char c2) { return std::tolower(c1) == std::tolower(c2); });
         }
 
         static bool ParseCsvRow(const std::string& row, InstanceRecord& out)
@@ -439,14 +461,15 @@ namespace wcil
         static bool ParseFloat(std::string_view sv, float& out)
         {
             const char* first = sv.data();
-            const char* last  = sv.data() + sv.size();
+            const char* last = sv.data() + sv.size();
             auto res = std::from_chars(first, last, out);
             if (res.ec == std::errc::invalid_argument || res.ptr != last)
             {
                 try {
                     out = std::stof(std::string(sv));
                     return true;
-                } catch (...) { return false; }
+                }
+                catch (...) { return false; }
             }
             return res.ec == std::errc();
         }
@@ -454,7 +477,7 @@ namespace wcil
         static bool ParseUint(std::string_view sv, uint32_t& out)
         {
             const char* first = sv.data();
-            const char* last  = sv.data() + sv.size();
+            const char* last = sv.data() + sv.size();
             auto res = std::from_chars(first, last, out, 10);
             return res.ec == std::errc() && res.ptr == last;
         }

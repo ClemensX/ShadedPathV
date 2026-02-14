@@ -49,15 +49,15 @@ void Forest::init() {
 
     engine->textureStore.generateBRDFLUT();
 
-    engine->objectStore.loadWorldCreatorInstances("forestv2_InstanceInfo.json");
+    engine->objectStore.loadWorldCreatorInstances("forestv4_InstanceInfo.json");
     //engine->objectStore.loadWorldCreatorInstances("ObjectTest_InstanceInfo.json");
     //engine->objectStore.loadWorldCreatorInstances("forest_InstanceInfo.json");
     MeshFlagsCollection meshFlags;
     //meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
 
-    //engine->meshStore.loadMesh("forestv2_cmp.glb", "LogoBox", meshFlags);
-    engine->meshStore.loadMesh("forestv2HD_cmp.glb", "LogoBox", meshFlags);
+    engine->meshStore.loadMesh("forestv2_cmp.glb", "LogoBox", meshFlags);
+    //engine->meshStore.loadMesh("forestv2HD_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("terrain_forest_small_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("ObjectTest_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("terrain_forest_cmp.glb", "LogoBox", meshFlags);// alterObjectCoords = true;
