@@ -122,18 +122,21 @@ void check_inputs() {
 float max_lod[] = {
   300.0, // LOD_CATEGORY_GENERAL
    600.0, // LOD_CATEGORY_SMALL_GRASS
+   600.0, // LOD_CATEGORY_SIMPLE_STONE
 };
 
 // max lod index used (assets must have at least that many LODs! 0..max)
 int max_lod_index[] = {
   9, // LOD_CATEGORY_GENERAL
   4, // LOD_CATEGORY_SMALL_GRASS
+  4, // LOD_CATEGORY_SIMPLE_STONE
 };
 
 // select lod index based on distance thresholds (first entry irrelevant)
 float fixed_lod[][10] = {
 { 0, 1, 5, 10, 15, 25, 30, 50, 70, 150 }, // LOD_CATEGORY_GENERAL
 { 0, 15, 40, 50, 60, -1, -1, -1, -1, -1 }, // LOD_CATEGORY_SMALL_GRASS
+{ 0, 70, 170, 300, 500, -1, -1, -1, -1, -1 }, // LOD_CATEGORY_SIMPLE_STONE
 };
 
 int indexMesh[] = {0,2,4,6,8,10,12,14,15,16,1,3,5,7,9,11,13,14,15,16};

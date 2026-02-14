@@ -47,9 +47,9 @@ int mainOne(int argc, char* argv[])
     //Incoming app;
     //LandscapeGenerator app; // vr ok with limited support
     //Loader app;
-    MeshManager app;
+    //MeshManager app;
     //Rocks app;
-    //Forest app;
+    Forest app;
     //glbLodMerger app; // vr not supported
 
     Log("main() start!\n");
@@ -74,7 +74,7 @@ int mainOne(int argc, char* argv[])
         .overrideCPUCores(4)
         .configureParallelAppDrawCalls(2)
         .setMaxTextures(50)
-        .setMaxMeshes(100)
+        .setMaxMeshes(1000)
         .setMeshStorageSizeGB(0.19999f) //        .setMeshStorageSizeGB(3.9999f)
         //.setMeshStorageSizeGB(4.0f)
         //.setFixedPhysicalDeviceIndex(1) // if GPU card is available it should be device 0. device 1 is usually the integrated Intel/AMD GPU

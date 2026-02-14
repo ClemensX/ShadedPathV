@@ -16,8 +16,8 @@ void Forest::run(ContinuationInfo* cont)
         initCamera(glm::vec3(-0.040809f, 14.445347f, 2.82217f), glm::vec3(5.0f, 14.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         Movement mv;
-        camera->setConstantSpeed(mv.fallSpeedMS);
-        //camera->setConstantSpeed(mv.runSpeedMS);
+        //camera->setConstantSpeed(mv.fallSpeedMS);
+        camera->setConstantSpeed(mv.runSpeedMS);
         //camera->setConstantSpeed(mv.walkSpeedMS);
         // engine configuration
         enableEventsAndModes();
@@ -56,8 +56,8 @@ void Forest::init() {
     //meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
 
-    engine->meshStore.loadMesh("forestv2_cmp.glb", "LogoBox", meshFlags);
-    //engine->meshStore.loadMesh("forestv2HD_cmp.glb", "LogoBox", meshFlags);
+    //engine->meshStore.loadMesh("forestv2_cmp.glb", "LogoBox", meshFlags);
+    engine->meshStore.loadMesh("forestv2HD_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("terrain_forest_small_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("ObjectTest_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("terrain_forest_cmp.glb", "LogoBox", meshFlags);// alterObjectCoords = true;
@@ -90,9 +90,21 @@ void Forest::init() {
 
         engine->meshStore.loadMesh("Acacia_A_lod_cmp.glb", "Acacia_A", meshFlags);
         engine->meshStore.getMesh("Acacia_A")->material.lod_category = LOD_CATEGORY_GENERAL;
+
+        engine->meshStore.loadMesh("Rock_B_lod_cmp.glb", "Rock_A", meshFlags);
+        engine->meshStore.getMesh("Rock_A")->material.lod_category = LOD_CATEGORY_SIMPLE_STONE;
+
+        engine->meshStore.loadMesh("Rock_C_lod_cmp.glb", "Rock_C", meshFlags);
+        engine->meshStore.getMesh("Rock_C")->material.lod_category = LOD_CATEGORY_SIMPLE_STONE;
+
+        engine->meshStore.loadMesh("smallrock_B_lod_cmp.glb", "SmallRock_B", meshFlags);
+        engine->meshStore.getMesh("SmallRock_B")->material.lod_category = LOD_CATEGORY_GENERAL;
+
+        engine->meshStore.loadMesh("smallrock_C_lod_cmp.glb", "SmallRock_C", meshFlags);
+        engine->meshStore.getMesh("SmallRock_C")->material.lod_category = LOD_CATEGORY_GENERAL;
     } else {
-        engine->meshStore.loadMesh("Grass_C_lod_cmp.glb", "Grass_C", meshFlags);
-        engine->meshStore.getMesh("Grass_C")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
+        engine->meshStore.loadMesh("smallrock_C_lod_cmp.glb", "SmallRock_C", meshFlags);
+        engine->meshStore.getMesh("SmallRock_C")->material.lod_category = LOD_CATEGORY_GENERAL;
     }
 
 

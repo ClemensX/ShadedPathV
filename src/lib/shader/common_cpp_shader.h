@@ -32,6 +32,7 @@
 
 #define LOD_CATEGORY_GENERAL 0
 #define LOD_CATEGORY_SMALL_GRASS 1
+#define LOD_CATEGORY_SIMPLE_STONE 2
 #define LOD_CATEGORY_INVISIBLE 100 // used to mark objects too far away to render
 
 
