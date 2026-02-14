@@ -654,7 +654,14 @@ public:
 	// get sorted object list (sorted by type)
 	// meshes are only resorted if one was added in the meantime
 	const std::vector<WorldObject*>& getSortedList();
-    // load object instances from World Creator export files.
+	// clear all objects from store
+	void clear() {
+		groups.clear();
+		groupNames = StringIntMap();
+		sortedList.clear();
+		numObjects = 0;
+	}
+	// load object instances from World Creator export files.
     // both json file and csv files must be present in the same folder.
     // be sure to not use any file name twice in that folder! Each scene should have a unique name.
     void loadWorldCreatorInstances(std::string filename);

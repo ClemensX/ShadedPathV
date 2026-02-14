@@ -60,19 +60,6 @@ if(PROJECT_IS_TOP_LEVEL)
 #]=]
 endif()
 
-# call chain:
-# cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=~/dev/cpp/vcpkg/scripts/buildsystems/vcpkg.cmake
-# cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=~/cpp/vcpkg/scripts/buildsystems/vcpkg.cmake
-# cmake -S . -B ./build -DCMAKE_TOOLCHAIN_FILE=C:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake
-# cmake --build ./build
-
-# if you get errors about missing libraries, re-run after cleaning build folder
-# rm -r ./build
-#cmake -S . -B ./build -DCMAKE_C_COMPILER=/usr/bin/gcc \
-#-DCMAKE_CXX_COMPILER=/usr/bin/g++ \
-#-DCMAKE_MAKE_PROGRAM=/usr/bin/make \
-#-DCMAKE_TOOLCHAIN_FILE=~/cpp/vcpkg/scripts/buildsystems/vcpkg.cmake
-
 # run in developer power shell:
 # configure/build/test DEBUG:
 # cmake -S . -B "out/build/x64-debug" -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE="C:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake"

@@ -56,9 +56,6 @@ void MeshManager::init() {
 
     engine->textureStore.generateBRDFLUT();
 
-
-    engine->objectStore.createGroup("group");
-
     //object->enableDebugGraphics = true;
     //if (alterObjectCoords) {
     //    // turn upside down
@@ -143,6 +140,9 @@ void MeshManager::prepareFrame(FrameResources* fr)
         }
         Log("Loading new file: " << filepath.filename() << endl);
         displayNoMeshletDataWarning = false;
+        engine->objectStore.clear(); // clear old objects, otherwise they will still be rendered and cause issues with the new meshes
+        engine->objectStore.createGroup("group");
+
         //engine->meshStore.loadMesh(filepath.filename().string(), "newid", MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
         // generate new id for each loaded object:
         string newid = "newid";// +to_string(loadObjectNum++);
@@ -160,6 +160,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
         Log("Loaded " << coll->meshCount() << " meshes from file" << endl); // <- updated
         float xpos = 0.0f;
         auto majorMeshes = coll->majorMeshView();
+        loadObjectNum += coll->meshCount();
         for (auto* mi : majorMeshes) {
             Log("    Mesh: " << mi->id << " triangles: " << mi->indices.size()/3 << " vertices: " << mi->vertices.size() << endl);
             if (mi->isAdditionalPrimitive()) {
