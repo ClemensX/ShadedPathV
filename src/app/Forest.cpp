@@ -49,15 +49,15 @@ void Forest::init() {
 
     engine->textureStore.generateBRDFLUT();
 
-    engine->objectStore.loadWorldCreatorInstances("forestv4_InstanceInfo.json");
+    engine->objectStore.loadWorldCreatorInstances("forestv5_InstanceInfo.json");
     //engine->objectStore.loadWorldCreatorInstances("ObjectTest_InstanceInfo.json");
     //engine->objectStore.loadWorldCreatorInstances("forest_InstanceInfo.json");
     MeshFlagsCollection meshFlags;
     //meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
     //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
 
-    //engine->meshStore.loadMesh("forestv2_cmp.glb", "LogoBox", meshFlags);
-    engine->meshStore.loadMesh("forestv2HD_cmp.glb", "LogoBox", meshFlags);
+    engine->meshStore.loadMesh("forestv2_cmp.glb", "LogoBox", meshFlags);
+    //engine->meshStore.loadMesh("forestv2HD_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("terrain_forest_small_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("ObjectTest_cmp.glb", "LogoBox", meshFlags);
     //engine->meshStore.loadMesh("terrain_forest_cmp.glb", "LogoBox", meshFlags);// alterObjectCoords = true;
@@ -103,8 +103,13 @@ void Forest::init() {
         engine->meshStore.loadMesh("smallrock_C_lod_cmp.glb", "SmallRock_C", meshFlags);
         engine->meshStore.getMesh("SmallRock_C")->material.lod_category = LOD_CATEGORY_GENERAL;
     } else {
-        engine->meshStore.loadMesh("smallrock_C_lod_cmp.glb", "SmallRock_C", meshFlags);
-        engine->meshStore.getMesh("SmallRock_C")->material.lod_category = LOD_CATEGORY_GENERAL;
+        engine->meshStore.loadMesh("Acacia_A_lod_cmp.glb", "Acacia_A", meshFlags);
+        engine->meshStore.getMesh("Acacia_A")->material.lod_category = LOD_CATEGORY_GENERAL;
+
+        engine->meshStore.loadMesh("Rock_B_lod_cmp.glb", "Rock_A", meshFlags);
+        engine->meshStore.getMesh("Rock_A")->material.lod_category = LOD_CATEGORY_SIMPLE_STONE;
+        //engine->meshStore.loadMesh("smallrock_B_lod_cmp.glb", "SmallRock_B", meshFlags);
+        //engine->meshStore.getMesh("SmallRock_B")->material.lod_category = LOD_CATEGORY_GENERAL;
     }
 
 
@@ -150,6 +155,7 @@ void Forest::init() {
                 // rotation
                 // convert quaternion to euler angles:
                 vec4 q = vec4(instance.q.x, instance.q.z, instance.q.y, instance.q.w);
+                //Log("Instance rotation: " << q.x << " " << q.y << " " << q.z << " " << q.w << std::endl);
                 quat quatRotation(q.w, q.x, q.y, q.z); // glm uses
                 vec3 rotation = glm::eulerAngles(quatRotation);
                 rotation.y -= PI_half; // rotate 180 degrees around y-axis to match GLB orientation
