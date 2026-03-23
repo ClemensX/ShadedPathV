@@ -232,6 +232,7 @@ public:
 	DynamicModelUBO* getAccessToModel(FrameResources& tr, UINT num);
 	// get access to dynamic uniform buffer for an object (individual objects, not a common mesh)
 	DynamicModelUBO* getAccessToModel(FrameResources& tr, WorldObject* wo);
+	void copyStagingDynamicUBO(FrameResources& fr);
 
 	// upload of all objects to GPU - only valid before first render
     // sepecial care needed for compond meshes with LODs: all LODs for one primitive must be uploaded insequence (LOD 0 .. n)
@@ -338,6 +339,7 @@ public:
 		meshShaderModule = sm;
 	}
 	void initSingle(FrameResources& tr, ShaderState& shaderState);
+    void createDeviceLocalDynamicUBO();
 	void setVulkanResources(VulkanResources* vr) {
 		vulkanResources = vr;
 	}
@@ -376,6 +378,8 @@ public:
 	void* dynamicUniformBufferCPUMemory = nullptr;
 	VkPipelineLayout pipelineLayout = nullptr;
 
+	VkBuffer stagingBuffer = nullptr;
+	VkDeviceMemory stagingBufferMemory = nullptr;
 private:
 	// record draw command for one primitive of one object
 	void recordDrawCommandInternal(VkCommandBuffer& commandBuffer, FrameResources& tr, MeshInfo* meshInfo, WorldObject* wo, bool isRightEye = false, bool update = false);

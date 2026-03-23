@@ -194,6 +194,19 @@ PBRShader::DynamicModelUBO* PBRShader::getAccessToModel(FrameResources& tr, Worl
 	return getAccessToModel(tr, wo->dynamicModelUBOIndex);
 }
 
+void PBRShader::copyStagingDynamicUBO(FrameResources& fr)
+{
+	auto& sub = globalSubShaders[fr.frameIndex];
+	auto bufSize = alignedDynamicUniformBufferSize * engine->getMaxObjects();
+	engine->globalRendering.copyBuffer(
+		sub.stagingBuffer,
+		sub.dynamicUniformBuffer,
+		bufSize,
+		0,
+		GlobalRendering::QueueSelector::GRAPHICS
+	);
+}
+
 PBRShader::~PBRShader()
 {
 	Log("PBRShader destructor\n");
@@ -231,6 +244,30 @@ uint64_t PBRShader::reserveDynamicUniformBufferSlots(uint64_t num) {
 	return firstIndex;
 }
 
+void PBRSubShader::createDeviceLocalDynamicUBO() {
+	// Create device-local buffer
+	auto bufSize = pbrShader->alignedDynamicUniformBufferSize * engine->getMaxObjects();
+	pbrShader->global->createBuffer(
+		bufSize,
+		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,  // ← Device-local!
+		dynamicUniformBuffer,
+		dynamicUniformBufferMemory,
+		"PBR dynamic UBO device local"
+	);
+
+	// Keep host-visible staging buffer for updates
+	pbrShader->global->createBuffer(
+		bufSize,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		stagingBuffer,
+		stagingBufferMemory,
+		"PBR dynamic UBO staging"
+	);
+	vkMapMemory(device, stagingBufferMemory, 0, bufSize, 0, &dynamicUniformBufferCPUMemory);
+}
+
 void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 {
     frameResources = &tr;
@@ -245,7 +282,8 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
     }
 	// dynamic uniform buffer
 	auto bufSize = pbrShader->alignedDynamicUniformBufferSize * engine->getMaxObjects();//pbrShader->MaxObjects;
-	pbrShader->createUniformBuffer(dynamicUniformBuffer, bufSize, dynamicUniformBufferMemory);
+	//pbrShader->createUniformBuffer(dynamicUniformBuffer, bufSize, dynamicUniformBufferMemory);
+	createDeviceLocalDynamicUBO();
 	engine->util.debugNameObjectBuffer(dynamicUniformBuffer, "PBR dynamic UBO");
 	engine->util.debugNameObjectDeviceMemory(dynamicUniformBufferMemory, "PBR dynamic UBO Memory");
 	// permanently map the dynamic buffer to CPU memory:

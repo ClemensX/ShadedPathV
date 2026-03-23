@@ -38,6 +38,7 @@ We plan to implement features according to this list:
 
 **Table of content:**
 - [Current State](#toc-state)
+- [Terrain Rendering](#toc-scene)
 - [World Creator 2025](#toc-wc)
 - [LOD System](#toc-lod)
 - [Meshlet Rendering](#toc-meshlets)
@@ -52,8 +53,17 @@ We plan to implement features according to this list:
 - [Misc](#toc-misc)
 
 <a id="toc-state"></a>
+## Current State (Q1 / 2026)
 
-## Current State (Q3 / 2025)
+<a id="toc-state"></a>
+## Terrain Rendering
+Even with out LOD system in place scene rendering with very high number of objects is still too slow.
+Here we have our forest scene with 140.000 object, rendering at only 20 FPS:
+![Forest Scene](images/forest_scene1.png)
+
+We are currently implementing a more advanced system.
+
+## Q3 / 2025
 
 <a id="toc-wc"></a>
 

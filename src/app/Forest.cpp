@@ -328,6 +328,7 @@ void Forest::prepareFrame(FrameResources* fr)
             if (wo->enableDebugGraphics) engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false, false);
             engine->objectStore.stopWorking(tr, wo);
         }
+        engine->shaders.pbrShader.copyStagingDynamicUBO(tr);
     }
 
     // lines
