@@ -165,11 +165,7 @@ void UI::buildUI()
         bool open = false;
         bool* p_open = NULL;//&open; // no close button
 
-        // displayed text:
-        bool enableMouseTracking = false; // switch for displaying mouse pos in overlay
-        //string fps("60.0");
         string fps = engine->fpsCounter.getFPSAsString();
-        //string appname("SimpleAp");
         string appname = engine->appname;
         appname = "ShadedPath " + appname + " FPS: " + fps;
 
@@ -193,13 +189,27 @@ void UI::buildUI()
         ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
         if (ImGui::Begin("ShadedPathV", p_open, window_flags))
         {
-            ImGui::Text(appname.c_str());
-            if (enableMouseTracking) {
+            if (hasRenderFlag(UIRenderFlags::UIRender_FPS)) {
+                ImGui::Text(appname.c_str());
+            }
+            if (hasRenderFlag(UIRenderFlags::UIRender_MouseTracking)) {
                 ImGui::Separator();
                 if (ImGui::IsMousePosValid())
                     ImGui::Text("Mouse Position: (%.1f,%.1f)", io.MousePos.x, io.MousePos.y);
                 else
                     ImGui::Text("Mouse Position: <invalid>");
+            }
+            if (hasRenderFlag(UIRenderFlags::UIRender_CameraPosDir)) {
+                ImGui::Separator();
+                if (cameraForTracking) {
+                    auto p = cameraForTracking->getPosition();
+                    auto l = cameraForTracking->getLookAt();
+                    ImGui::Separator();
+                    ImGui::Text("Camera Position: (%.1f,%.1f,%.1f)", p.x, p.y, p.z);
+                    ImGui::Text("Camera Direction: (%.2f,%.2f,%.2f)", l.x, l.y, l.z);
+                } else {
+                    Error("cameraForTracking not set in UI class");
+                }
             }
             engine->app->buildCustomUI();
             if (ImGui::BeginPopupContextWindow())

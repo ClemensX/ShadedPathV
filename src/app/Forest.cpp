@@ -46,8 +46,9 @@ void Forest::run(ContinuationInfo* cont)
 
 void Forest::init() {
     engine->sound.init(false);
-
     engine->textureStore.generateBRDFLUT();
+    engine->ui.setRenderFlags(UIRender_FPS | UIRender_CameraPosDir);
+    engine->ui.setCameraForTracking(camera);
 
     engine->objectStore.loadWorldCreatorInstances("forestv5_InstanceInfo.json");
     //engine->objectStore.loadWorldCreatorInstances("ObjectTest_InstanceInfo.json");
@@ -66,7 +67,7 @@ void Forest::init() {
     //object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 14.38f * 2.5f, 0.0f));
     object = engine->objectStore.addObject("group", "LogoBox", vec3(0.0f, 13.3f, 0.0f));
 
-    if (true) {
+    if (false) {
         engine->meshStore.loadMesh("Grass_C_lod_cmp.glb", "Grass_C", meshFlags);
         engine->meshStore.getMesh("Grass_C")->material.lod_category = LOD_CATEGORY_SMALL_GRASS;
 
