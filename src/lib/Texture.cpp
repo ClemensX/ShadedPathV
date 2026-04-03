@@ -10,6 +10,8 @@ void TextureStore::init(ShadedPathEngine* engine, size_t maxTextures) {
 	// and command pool. Save the handles to these in a struct called vkctx.
 	// ktx VulkanDeviceInfo is used to pass these with the expectation that
 	// apps are likely to upload a large number of textures.
+	Log("ERROR: Validation layer is active: " << (engine->globalRendering.isValidationLayerActive() ? "Yes" : "No") << endl);
+	Log("Validation Pre-Warning: ktxVulkanDeviceInfo_Construct() might produce warnings if legacy-detection validation is enabled\n");
 	auto ktxresult = ktxVulkanDeviceInfo_Construct(&vdi, engine->globalRendering.physicalDevice, engine->globalRendering.device, engine->globalRendering.graphicsQueue, engine->globalRendering.commandPool, nullptr);
 	if (ktxresult != KTX_SUCCESS) {
 		Log("ERROR: in ktxVulkanDeviceInfo_Construct " << ktxresult);

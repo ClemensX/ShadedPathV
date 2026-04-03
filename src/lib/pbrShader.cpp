@@ -582,6 +582,8 @@ void PBRSubShader::destroy()
 	vkFreeMemory(device, uniformBufferMemory, nullptr);
 	vkDestroyBuffer(device, dynamicUniformBuffer, nullptr);
 	vkFreeMemory(device, dynamicUniformBufferMemory, nullptr);
+	vkDestroyBuffer(device, stagingBuffer, nullptr);
+	vkFreeMemory(device, stagingBufferMemory, nullptr);
 	if (engine->isStereo()) {
 		vkDestroyFramebuffer(device, framebuffer2, nullptr);
 		vkDestroyBuffer(device, uniformBuffer2, nullptr);

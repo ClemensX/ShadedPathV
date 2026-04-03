@@ -148,6 +148,7 @@ public:
 
 	std::vector<const char*> instanceExtensions = {
 		//VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
+// optionally enable VK_EXT_debug_utils for naming objects
 #   if defined(ENABLE_DEBUG_UTILS_EXTENSION)
 		VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
 #   endif
@@ -163,10 +164,10 @@ public:
 	};
 
 	std::vector<const char*> deviceExtensions = {
-		VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,
+		// VK_EXT_EXTENDED_DYNAMIC_STATE_EXTENSION_NAME,  // ❌ Remove - promoted to Vulkan 1.3 core
 		VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-		VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-		VK_EXT_MESH_SHADER_EXTENSION_NAME//,
+		// VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,   // ❌ Remove - promoted to Vulkan 1.2 core
+		VK_EXT_MESH_SHADER_EXTENSION_NAME
 		//VK_KHR_SYNCHRONIZATION_2_EXTENSION_NAME
 	};
 
@@ -347,7 +348,6 @@ public:
 		return ret;
 	}
 
-//private:
     std::vector<GPUMemoryChunk> gpuMemoryChunks;
 	void createGPUMemoryChunk(VkDeviceSize bufferSize) {
 		//VkDeviceSize bufferSize = engine.getMeshStorageSize();
@@ -362,6 +362,67 @@ public:
         chunk.size = bufferSize;
         gpuMemoryChunks.push_back(chunk);
 	}
+
+	bool isValidationLayerEnabled()
+	{
+		// VkConfig sets these environment variables
+		const char* vkInstanceLayers = std::getenv("VK_INSTANCE_LAYERS");
+		const char* vkLoaderLayers = std::getenv("VK_LOADER_LAYERS_ENABLE");
+		const char* vkLayerPath = std::getenv("VK_LAYER_PATH");
+
+		bool isActive = false;
+
+		if (vkInstanceLayers) {
+			Log("VK_INSTANCE_LAYERS: " << vkInstanceLayers << std::endl);
+			if (strstr(vkInstanceLayers, "VK_LAYER_KHRONOS_validation")) {
+				isActive = true;
+			}
+		}
+
+		if (vkLoaderLayers) {
+			Log("VK_LOADER_LAYERS_ENABLE: " << vkLoaderLayers << std::endl);
+			if (strstr(vkLoaderLayers, "VK_LAYER_KHRONOS_validation")) {
+				isActive = true;
+			}
+		}
+
+		if (vkLayerPath) {
+			Log("VK_LAYER_PATH: " << vkLayerPath << std::endl);
+		}
+
+		return isActive;
+
+		//uint32_t layerCount;
+		//vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+
+		//std::vector<VkLayerProperties> availableLayers(layerCount);
+		//vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
+		//// Check if Khronos validation is available and enabled
+		//for (const auto& layerProperties : availableLayers) {
+		//	if (strcmp(layerProperties.layerName, "VK_LAYER_KHRONOS_validation") == 0) {
+		//		return true;
+		//	}
+		//}
+		//return false;
+	}
+private:
+	VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
+	static bool validationMessageReceived;
+	bool validationLayerActive = false;
+
+	// Static callback function (must be static for Vulkan)
+	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+		VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+		VkDebugUtilsMessageTypeFlagsEXT messageType,
+		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+		void* pUserData);
+
+	void detectValidationLayer();
+
+public:
+	bool isValidationLayerActive() const { return validationLayerActive; }
+
 private:
 	// gather all cmd buffers from the DrawResults of the current frame and copy into single list cmdBufs
 	void consolidateCommandBuffers(CommandBufferArray& cmdBufs, FrameResources* fr);

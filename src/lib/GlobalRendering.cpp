@@ -33,12 +33,13 @@ void GlobalRendering::gatherDeviceInfos()
     vkEnumeratePhysicalDevices(vkInstance, &deviceCount, devices.data());
     Log("Found " << deviceCount << " Vulkan - supported devices : " << std::endl);
     for (const auto& device : devices) {
-        VkPhysicalDeviceProperties properties{};
+        //VkPhysicalDeviceProperties properties{};
         VkPhysicalDeviceProperties2 properties2{};
         properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-        VkPhysicalDeviceFeatures features;
-        vkGetPhysicalDeviceProperties(device, &properties);
-        vkGetPhysicalDeviceFeatures(device, &features);
+        VkPhysicalDeviceFeatures2 features2{};
+        features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
+        vkGetPhysicalDeviceProperties2(device, &properties2);
+        vkGetPhysicalDeviceFeatures2(device, &features2);
 
         VkPhysicalDeviceMeshShaderPropertiesEXT meshShaderProperties = {};
         meshShaderProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MESH_SHADER_PROPERTIES_EXT;
@@ -58,12 +59,13 @@ void GlobalRendering::gatherDeviceInfos()
             << endl);
         //Log("Mesh Shader max output per vertex attributes: " << meshShaderProperties.maxMeshOutputVertexAttributes << endl);
 
+        auto& properties = properties2.properties;
         DeviceInfo info;
         info.device = device;
-        info.properties = properties;
+        info.properties = properties2.properties;
         info.properties2 = properties2;
         info.meshShaderProperties = meshShaderProperties;
-        info.features = features;
+        info.features = features2.features;
         Log("  " << properties.deviceName << " API version: " << Util::decodeVulkanVersion(properties.apiVersion).c_str() << " driver version: " << Util::decodeVulkanVersion(properties.driverVersion).c_str() << " type: " << Util::decodeDeviceType(properties.deviceType) << endl);
         // get available device extensions:
         getDeviceExtensionSupport(device, &info.extensions);
@@ -102,8 +104,10 @@ bool GlobalRendering::checkFeatureMeshShader(DeviceInfo& info)
 bool GlobalRendering::checkFeatureCompressedTextures(DeviceInfo& info)
 {
     // check compressed texture support:
-    VkFormatProperties fp{};
-    vkGetPhysicalDeviceFormatProperties(info.device, VK_FORMAT_BC7_SRGB_BLOCK, &fp);
+    VkFormatProperties2 fp2{};
+    fp2.sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2;
+    vkGetPhysicalDeviceFormatProperties2(info.device, VK_FORMAT_BC7_SRGB_BLOCK, &fp2);
+    VkFormatProperties& fp = fp2.formatProperties;
     // 0x01d401
     VkFormatFeatureFlags flagsToCheck = VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT | VK_FORMAT_FEATURE_BLIT_SRC_BIT | VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT | VK_FORMAT_FEATURE_TRANSFER_SRC_BIT | VK_FORMAT_FEATURE_TRANSFER_DST_BIT;
     if ((fp.linearTilingFeatures & flagsToCheck) == 0) {
@@ -299,7 +303,8 @@ void GlobalRendering::initVulkanInstance()
     appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.pEngineName = "ShadedPathV";
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_3;//VP_KHR_ROADMAP_2022_MIN_API_VERSION;//API_VERSION;
+    appInfo.apiVersion = VK_API_VERSION_1_4;//VP_KHR_ROADMAP_2022_MIN_API_VERSION;//API_VERSION;
+
 
     VkInstanceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -318,6 +323,8 @@ void GlobalRendering::initVulkanInstance()
             Error("failed to create instance!");
         }
     }
+    // Detect validation layer status
+    detectValidationLayer();
 }
 
 
@@ -326,12 +333,14 @@ QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, b
     QueueFamilyIndices indices;
 
     uint32_t queueFamilyCount = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+    vkGetPhysicalDeviceQueueFamilyProperties2(device, &queueFamilyCount, nullptr);
 
-    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+    std::vector<VkQueueFamilyProperties2> queueFamilies(queueFamilyCount, VkQueueFamilyProperties2{VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2});
+    vkGetPhysicalDeviceQueueFamilyProperties2(device, &queueFamilyCount, queueFamilies.data());
     int i = 0;
-    for (const auto& queueFamily : queueFamilies) {
+    for (const auto& queueFamily2 : queueFamilies) {
+        const auto& queueFamily = queueFamily2.queueFamilyProperties;
+
         if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
             indices.graphicsFamily = i;
             indices.presentFamily = i; // all graohics queues are also presentation queues
@@ -360,7 +369,8 @@ QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, b
     }
     i = 0;
     // try to find transfer only queue (supposedly better DMA performance)
-    for (const auto& queueFamily : queueFamilies) {
+    for (const auto& queueFamily2 : queueFamilies) {
+        const auto& queueFamily = queueFamily2.queueFamilyProperties;
         if (queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT) {
             auto flags = queueFamily.queueFlags;
             // cancel out irrelevant bits:
@@ -413,11 +423,12 @@ string GlobalRendering::getQueueFlagsString(VkQueueFlags flags)
 }
 
 uint32_t GlobalRendering::findMemoryTypeIndex(uint32_t typeBits, VkMemoryPropertyFlags properties) {
-    VkPhysicalDeviceMemoryProperties deviceMemoryProperties;
-    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &deviceMemoryProperties);
-    for (uint32_t i = 0; i < deviceMemoryProperties.memoryTypeCount; i++) {
+    VkPhysicalDeviceMemoryProperties2 deviceMemoryProperties{};
+    deviceMemoryProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2;
+    vkGetPhysicalDeviceMemoryProperties2(physicalDevice, &deviceMemoryProperties);
+    for (uint32_t i = 0; i < deviceMemoryProperties.memoryProperties.memoryTypeCount; i++) {
         if ((typeBits & 1) == 1) {
-            if ((deviceMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+            if ((deviceMemoryProperties.memoryProperties.memoryTypes[i].propertyFlags & properties) == properties) {
                 return i;
             }
         }
@@ -486,6 +497,7 @@ void GlobalRendering::createLogicalDevice()
 
     VkPhysicalDeviceVulkan12Features deviceFeatures12{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+        .storageBuffer8BitAccess = VK_TRUE,
         .uniformAndStorageBuffer8BitAccess = VK_TRUE,
         .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
         .descriptorBindingSampledImageUpdateAfterBind = VK_TRUE,
@@ -494,6 +506,7 @@ void GlobalRendering::createLogicalDevice()
         .descriptorBindingPartiallyBound = VK_TRUE,
         .descriptorBindingVariableDescriptorCount = VK_TRUE,
         .runtimeDescriptorArray = VK_TRUE,
+        .scalarBlockLayout = VK_TRUE,
         .timelineSemaphore = VK_TRUE,
         .bufferDeviceAddress = VK_TRUE,
         .vulkanMemoryModel = VK_TRUE,
@@ -545,6 +558,13 @@ void GlobalRendering::createLogicalDevice()
     if (isSynchronization2()) {
         chainNextDeviceFeature(&createInfo, &synchronization2Features);
     }
+    // get rid of validation warning about VkPhysicalDevice16BitStorageFeatures / storageBuffer16BitAccess
+    VkPhysicalDevice16BitStorageFeatures storage16BitFeatures{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES,
+        .storageBuffer16BitAccess = VK_TRUE,
+    };
+    chainNextDeviceFeature(&createInfo, &storage16BitFeatures);
+
 #   if defined(__APPLE__)
     chainNextDeviceFeature(&createInfo, &portability);
 #   endif
@@ -1393,4 +1413,87 @@ void GlobalRendering::destroyImage(GPUImage* image)
 {
     destroyImageView(image->fba.view);
     destroyImage(image->fba.image, image->fba.memory);
+}
+
+// Define the static member variable
+bool GlobalRendering::validationMessageReceived = false;
+
+// Static callback implementation
+VKAPI_ATTR VkBool32 VKAPI_CALL GlobalRendering::debugCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void* pUserData)
+{
+    // Set the flag when any validation message is received
+    validationMessageReceived = true;
+
+    // Log the message
+    if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+        Log("Validation: " << pCallbackData->pMessage << endl);
+    }
+
+    return VK_FALSE;
+}
+
+void GlobalRendering::detectValidationLayer()
+{
+    // Step 1: Create debug messenger
+    auto vkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)
+        vkGetInstanceProcAddr(vkInstance, "vkCreateDebugUtilsMessengerEXT");
+
+    if (!vkCreateDebugUtilsMessengerEXT) {
+        Log("✗ VK_EXT_debug_utils NOT available" << endl);
+        validationLayerActive = false;
+        return;
+    }
+
+    VkDebugUtilsMessengerCreateInfoEXT createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    createInfo.pfnUserCallback = debugCallback;
+    createInfo.pUserData = nullptr;  // Could pass 'this' if needed
+
+    if (vkCreateDebugUtilsMessengerEXT(vkInstance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
+        Log("✗ Failed to create debug messenger" << endl);
+        validationLayerActive = false;
+        return;
+    }
+
+    // Step 2: Reset flag and trigger a validation event
+    validationMessageReceived = false;
+
+    // Trigger a validation message
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(vkInstance, &deviceCount, nullptr);
+    if (deviceCount > 0) {
+        std::vector<VkPhysicalDevice> devices(deviceCount);
+        vkEnumeratePhysicalDevices(vkInstance, &deviceCount, devices.data());
+        // This legacy call triggers a validation warning
+        VkPhysicalDeviceProperties props;
+        vkGetPhysicalDeviceProperties(devices[0], &props);
+    }
+
+    // Step 3: Check if callback was triggered
+    if (validationMessageReceived) {
+        Log("✓ Validation layer IS ACTIVE (message received)" << endl);
+        validationLayerActive = true;
+    }
+    else {
+        Log("✗ Validation layer NOT active (no messages received)" << endl);
+        validationLayerActive = false;
+    }
+    // Clean up messenger - we only needed it to detect if validation layers are active
+    auto vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)
+        vkGetInstanceProcAddr(vkInstance, "vkDestroyDebugUtilsMessengerEXT");
+    if (vkDestroyDebugUtilsMessengerEXT) {
+        vkDestroyDebugUtilsMessengerEXT(vkInstance, debugMessenger, nullptr);
+        debugMessenger = VK_NULL_HANDLE;
+    }
 }
