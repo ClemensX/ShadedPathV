@@ -363,53 +363,14 @@ public:
         gpuMemoryChunks.push_back(chunk);
 	}
 
-	bool isValidationLayerEnabled()
-	{
-		// VkConfig sets these environment variables
-		const char* vkInstanceLayers = std::getenv("VK_INSTANCE_LAYERS");
-		const char* vkLoaderLayers = std::getenv("VK_LOADER_LAYERS_ENABLE");
-		const char* vkLayerPath = std::getenv("VK_LAYER_PATH");
-
-		bool isActive = false;
-
-		if (vkInstanceLayers) {
-			Log("VK_INSTANCE_LAYERS: " << vkInstanceLayers << std::endl);
-			if (strstr(vkInstanceLayers, "VK_LAYER_KHRONOS_validation")) {
-				isActive = true;
-			}
-		}
-
-		if (vkLoaderLayers) {
-			Log("VK_LOADER_LAYERS_ENABLE: " << vkLoaderLayers << std::endl);
-			if (strstr(vkLoaderLayers, "VK_LAYER_KHRONOS_validation")) {
-				isActive = true;
-			}
-		}
-
-		if (vkLayerPath) {
-			Log("VK_LAYER_PATH: " << vkLayerPath << std::endl);
-		}
-
-		return isActive;
-
-		//uint32_t layerCount;
-		//vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
-
-		//std::vector<VkLayerProperties> availableLayers(layerCount);
-		//vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
-
-		//// Check if Khronos validation is available and enabled
-		//for (const auto& layerProperties : availableLayers) {
-		//	if (strcmp(layerProperties.layerName, "VK_LAYER_KHRONOS_validation") == 0) {
-		//		return true;
-		//	}
-		//}
-		//return false;
-	}
 private:
 	VkDebugUtilsMessengerEXT debugMessenger = VK_NULL_HANDLE;
-	static bool validationMessageReceived;
-	bool validationLayerActive = false;
+	static bool validationMessageReceived_General;
+	static bool validationMessageReceived_LegacyDetection;
+	// general indicator for validation layer activation in vkconfig
+	bool validationLayer_active = false;
+	// check if 'Legacy Detection' is activated in vkconfig
+	bool validationLayer_LegacyDetection_active = false;
 
 	// Static callback function (must be static for Vulkan)
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
@@ -421,7 +382,8 @@ private:
 	void detectValidationLayer();
 
 public:
-	bool isValidationLayerActive() const { return validationLayerActive; }
+	bool isValidationLayer_Active() const { return validationLayer_active; }
+	bool isValidationLayer_LegacyDetectionActive() const { return validationLayer_LegacyDetection_active; }
 
 private:
 	// gather all cmd buffers from the DrawResults of the current frame and copy into single list cmdBufs

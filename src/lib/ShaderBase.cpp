@@ -75,7 +75,9 @@ void ShaderBase::createDescriptorPool(vector<VkDescriptorPoolSize>& poolSizes, v
 void ShaderBase::createRenderPassAndFramebuffer(FrameResources& tr, ShaderState shaderState, VkRenderPass& renderPass, VkFramebuffer& frameBuffer, VkFramebuffer& frameBuffer2)
 {
 	// depth buffer attachement
-	VkAttachmentDescription depthAttachment{};
+	VkAttachmentDescription2 depthAttachment{};
+	depthAttachment.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;  // NEW: Need sType
+	depthAttachment.pNext = nullptr;
 	depthAttachment.format = engine->globalRendering.depthFormat;
 	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
@@ -91,12 +93,17 @@ void ShaderBase::createRenderPassAndFramebuffer(FrameResources& tr, ShaderState 
 		depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 	}
 
-	VkAttachmentReference depthAttachmentRef{};
+	VkAttachmentReference2 depthAttachmentRef{};
+	depthAttachmentRef.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;  // NEW: Need sType
+	depthAttachmentRef.pNext = nullptr;
 	depthAttachmentRef.attachment = 1;
 	depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	depthAttachmentRef.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;  // NEW: Can specify aspect mask
 
 	// attachment
-	VkAttachmentDescription colorAttachment{};
+	VkAttachmentDescription2 colorAttachment{};
+	colorAttachment.sType = VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_2;  // NEW: Need sType
+	colorAttachment.pNext = nullptr;
 	colorAttachment.format = engine->globalRendering.ImageFormat;
 	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
@@ -115,35 +122,58 @@ void ShaderBase::createRenderPassAndFramebuffer(FrameResources& tr, ShaderState 
 	}
 
 	// subpasses and attachment references
-	VkAttachmentReference colorAttachmentRef{};
+	VkAttachmentReference2 colorAttachmentRef{};
+	colorAttachmentRef.sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2;  // NEW: Need sType
+	colorAttachmentRef.pNext = nullptr;
 	colorAttachmentRef.attachment = 0;
 	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	VkSubpassDescription subpass{};
+	colorAttachmentRef.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;  // NEW: Can specify aspect mask
+
+	VkSubpassDescription2 subpass{};
+	subpass.sType = VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_2;  // NEW: Need sType
+	subpass.pNext = nullptr;
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpass.viewMask = 0;  // NEW: For multiview rendering (0 = disabled)
 	subpass.colorAttachmentCount = 1;
 	subpass.pColorAttachments = &colorAttachmentRef;
 	subpass.pDepthStencilAttachment = &depthAttachmentRef;
+	subpass.pResolveAttachments = nullptr;
+	subpass.preserveAttachmentCount = 0;
+	subpass.pPreserveAttachments = nullptr;
+	subpass.pInputAttachments = nullptr;
+	subpass.inputAttachmentCount = 0;
 
 	// subpasses
-	VkSubpassDependency dependency{};
+	VkSubpassDependency2 dependency{};
+	dependency.sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2;
+	dependency.pNext = nullptr;
 	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 	dependency.dstSubpass = 0;
 	dependency.srcAccessMask = 0;
 	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	dependency.viewOffset = 0;  // NEW: For multiview rendering
+	
 	// render pass
-	array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
-	VkRenderPassCreateInfo renderPassInfo{};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	array<VkAttachmentDescription2, 2> attachments = { colorAttachment, depthAttachment };
+	VkRenderPassCreateInfo2 renderPassInfo{};
+	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2;
+	renderPassInfo.pNext = nullptr;
 	renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
 	renderPassInfo.pAttachments = attachments.data();
 	renderPassInfo.subpassCount = 1;
 	renderPassInfo.pSubpasses = &subpass;
 	renderPassInfo.dependencyCount = 1;
 	renderPassInfo.pDependencies = &dependency;
+	renderPassInfo.correlatedViewMaskCount = 0;  // NEW: For multiview rendering
+	renderPassInfo.pCorrelatedViewMasks = nullptr;
 
-	if (vkCreateRenderPass(engine->globalRendering.device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+    if (engine->globalRendering.isValidationLayer_LegacyDetectionActive()) {
+		// Validation Pre-Warning: ktx library: VulkanDeviceInfo_Construct() might produce warnings if legacy-detection validation is enabled\n");
+		Log("Validation Pre-Warning: We should switch from vkCreateRenderPass2() to dynamic rendering\n");
+	}
+	if (vkCreateRenderPass2(engine->globalRendering.device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
 		Error("failed to create render pass!");
 	}
 

@@ -287,7 +287,8 @@ void PBRSubShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 	engine->util.debugNameObjectBuffer(dynamicUniformBuffer, "PBR dynamic UBO");
 	engine->util.debugNameObjectDeviceMemory(dynamicUniformBufferMemory, "PBR dynamic UBO Memory");
 	// permanently map the dynamic buffer to CPU memory:
-	vkMapMemory(device, dynamicUniformBufferMemory, 0, bufSize, 0, &dynamicUniformBufferCPUMemory);
+	//vkMapMemory(device, dynamicUniformBufferMemory, 0, bufSize, 0, &dynamicUniformBufferCPUMemory);
+    assert(dynamicUniformBufferCPUMemory != nullptr); // we already bound this to the staging buffer, so this should never be null
 	// initialize the array of model_ubo's:
 	for (size_t i = 0; i < engine->getMaxObjects(); i++) {
 		char* c_ptr = static_cast<char*>(dynamicUniformBufferCPUMemory);

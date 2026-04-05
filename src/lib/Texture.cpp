@@ -10,8 +10,9 @@ void TextureStore::init(ShadedPathEngine* engine, size_t maxTextures) {
 	// and command pool. Save the handles to these in a struct called vkctx.
 	// ktx VulkanDeviceInfo is used to pass these with the expectation that
 	// apps are likely to upload a large number of textures.
-	Log("ERROR: Validation layer is active: " << (engine->globalRendering.isValidationLayerActive() ? "Yes" : "No") << endl);
-	Log("Validation Pre-Warning: ktxVulkanDeviceInfo_Construct() might produce warnings if legacy-detection validation is enabled\n");
+	if (engine->globalRendering.isValidationLayer_LegacyDetectionActive()) {
+		Log("Validation Pre-Warning: ktx library: VulkanDeviceInfo_Construct() might produce warnings if legacy-detection validation is enabled\n");
+	}
 	auto ktxresult = ktxVulkanDeviceInfo_Construct(&vdi, engine->globalRendering.physicalDevice, engine->globalRendering.device, engine->globalRendering.graphicsQueue, engine->globalRendering.commandPool, nullptr);
 	if (ktxresult != KTX_SUCCESS) {
 		Log("ERROR: in ktxVulkanDeviceInfo_Construct " << ktxresult);
@@ -905,6 +906,9 @@ void TextureStore::generateBRDFLUT()
 	renderPassCI.pDependencies = dependencies.data();
 
 	VkRenderPass renderpass;
+	if (engine->globalRendering.isValidationLayer_LegacyDetectionActive()) {
+		Log("Validation Pre-Warning: we still use legacy render pass in generateBRDFLUT()\n");
+	}
 	if (vkCreateRenderPass(device, &renderPassCI, nullptr, &renderpass) != VK_SUCCESS) {
 		Error("Cannot create render pass in BRDFLUT generation");
 	}

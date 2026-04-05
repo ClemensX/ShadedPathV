@@ -518,6 +518,7 @@ void GlobalRendering::createLogicalDevice()
 
     VkPhysicalDeviceVulkan13Features deviceFeatures13{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
+        .shaderDemoteToHelperInvocation = VK_TRUE, // allow to use discard in frag shader
         .synchronization2 = VK_TRUE,
         .maintenance4 = VK_TRUE,
     };
@@ -1416,7 +1417,8 @@ void GlobalRendering::destroyImage(GPUImage* image)
 }
 
 // Define the static member variable
-bool GlobalRendering::validationMessageReceived = false;
+bool GlobalRendering::validationMessageReceived_General = false;
+bool GlobalRendering::validationMessageReceived_LegacyDetection = false;
 
 // Static callback implementation
 VKAPI_ATTR VkBool32 VKAPI_CALL GlobalRendering::debugCallback(
@@ -1425,15 +1427,17 @@ VKAPI_ATTR VkBool32 VKAPI_CALL GlobalRendering::debugCallback(
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void* pUserData)
 {
-    // Set the flag when any validation message is received
-    validationMessageReceived = true;
-
-    // Log the message
-    if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-        Log("Validation: " << pCallbackData->pMessage << endl);
+    //if (strcmp(pCallbackData->pMessageIdName, "VALIDATION_TEST") == 0) {
+    //    validationMessageReceived_General = true;
+    //}
+    if (strcmp(pCallbackData->pMessageIdName, "WARNING-legacy-gpdp2") == 0) {
+        validationMessageReceived_LegacyDetection = true;
+        // we found no good way to check general validation layer presence, but it is safe to say that
+        // if this legacy warning is present, then validation layers are active
+        validationMessageReceived_General = true;
     }
 
-    return VK_FALSE;
+    return VK_TRUE;
 }
 
 void GlobalRendering::detectValidationLayer()
@@ -1444,7 +1448,7 @@ void GlobalRendering::detectValidationLayer()
 
     if (!vkCreateDebugUtilsMessengerEXT) {
         Log("✗ VK_EXT_debug_utils NOT available" << endl);
-        validationLayerActive = false;
+        validationLayer_LegacyDetection_active = false;
         return;
     }
 
@@ -1461,13 +1465,22 @@ void GlobalRendering::detectValidationLayer()
     createInfo.pUserData = nullptr;  // Could pass 'this' if needed
 
     if (vkCreateDebugUtilsMessengerEXT(vkInstance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS) {
-        Log("✗ Failed to create debug messenger" << endl);
-        validationLayerActive = false;
+        Log("ERROR: Failed to create debug messenger" << endl);
+        validationLayer_LegacyDetection_active = false;
+        return;
+    }
+
+    auto vkSubmitDebugUtilsMessageEXT = (PFN_vkSubmitDebugUtilsMessageEXT)
+        vkGetInstanceProcAddr(vkInstance, "vkSubmitDebugUtilsMessageEXT");
+
+    if (!vkSubmitDebugUtilsMessageEXT) {
+        Log("ERROR: vkSubmitDebugUtilsMessageEXT not available" << endl);
+        validationLayer_active = false;
         return;
     }
 
     // Step 2: Reset flag and trigger a validation event
-    validationMessageReceived = false;
+    validationMessageReceived_General = false;
 
     // Trigger a validation message
     uint32_t deviceCount = 0;
@@ -1475,19 +1488,43 @@ void GlobalRendering::detectValidationLayer()
     if (deviceCount > 0) {
         std::vector<VkPhysicalDevice> devices(deviceCount);
         vkEnumeratePhysicalDevices(vkInstance, &deviceCount, devices.data());
+
         // This legacy call triggers a validation warning
         VkPhysicalDeviceProperties props;
-        vkGetPhysicalDeviceProperties(devices[0], &props);
+        Log("Validation Pre-Warning: Ignore this legacy warning\n");
+        vkGetPhysicalDeviceProperties(devices[0], &props); // vkGetPhysicalDeviceProperties() will trigger warninig if 'Legacy Detection' is active
+
+        //VkDebugUtilsMessengerCallbackDataEXT callbackData{};
+        //callbackData.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CALLBACK_DATA_EXT;
+        //callbackData.pMessage = "Validation layer detection test message";
+        //callbackData.messageIdNumber = 0;
+        //callbackData.pMessageIdName = "VALIDATION_TEST";
+
+        //// Submit a test info message
+        //vkSubmitDebugUtilsMessageEXT(
+        //    vkInstance,
+        //    VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT,
+        //    VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT,
+        //    &callbackData
+        //);
     }
 
     // Step 3: Check if callback was triggered
-    if (validationMessageReceived) {
-        Log("✓ Validation layer IS ACTIVE (message received)" << endl);
-        validationLayerActive = true;
+    if (validationMessageReceived_General) {
+        //Log("Validation layer IS ACTIVE (message received)" << endl);
+        validationLayer_active = true;
     }
     else {
-        Log("✗ Validation layer NOT active (no messages received)" << endl);
-        validationLayerActive = false;
+        //Log("Validation layer NOT active (no messages received)" << endl);
+        validationLayer_active = false;
+    }
+    if (validationMessageReceived_LegacyDetection) {
+        //Log("Validation layer IS ACTIVE (message received)" << endl);
+        validationLayer_LegacyDetection_active = true;
+    }
+    else {
+        //Log("Validation layer NOT active (no messages received)" << endl);
+        validationLayer_LegacyDetection_active = false;
     }
     // Clean up messenger - we only needed it to detect if validation layers are active
     auto vkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)
