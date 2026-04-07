@@ -11,7 +11,7 @@ void TextureStore::init(ShadedPathEngine* engine, size_t maxTextures) {
 	// ktx VulkanDeviceInfo is used to pass these with the expectation that
 	// apps are likely to upload a large number of textures.
 	if (engine->globalRendering.isValidationLayer_LegacyDetectionActive()) {
-		Log("Validation Pre-Warning: ktx library: VulkanDeviceInfo_Construct() might produce warnings if legacy-detection validation is enabled\n");
+		Log("Validation Pre-Warning: ktx library: ktxVulkanDeviceInfo_Construct() might produce warnings if legacy-detection validation is enabled\n");
 	}
 	auto ktxresult = ktxVulkanDeviceInfo_Construct(&vdi, engine->globalRendering.physicalDevice, engine->globalRendering.device, engine->globalRendering.graphicsQueue, engine->globalRendering.commandPool, nullptr);
 	if (ktxresult != KTX_SUCCESS) {
@@ -126,6 +126,9 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 		auto format = ktxTexture_GetVkFormat(kTexture);
 		// we should have VK_FORMAT_BC7_UNORM_BLOCK = 145 or VK_FORMAT_BC7_SRGB_BLOCK = 146,
 		Log("format: " << format << endl);
+		if (engine->globalRendering.isValidationLayer_LegacyDetectionActive()) {
+			Log("Validation Pre-Warning: ktx library: ktxTexture2_VkUploadEx() might produce warnings if legacy-detection validation is enabled\n");
+		}
 		auto ktxresult = ktxTexture2_VkUploadEx(t2, &vdi, &texture->vulkanTexture, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		if (ktxresult != KTX_SUCCESS) {
 			Log("ERROR: in ktxTexture2_VkUploadEx " << ktxresult);
