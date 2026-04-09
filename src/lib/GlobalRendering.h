@@ -269,9 +269,9 @@ public:
 	VkCommandBuffer commandBufferSingle = nullptr;
 	void createCommandPool(VkCommandPool& pool, std::string name = "");
 	void createCommandPoolTransfer(VkCommandPool& pool);
-	// single time commands with optional syncing
-	VkCommandBuffer beginSingleTimeCommands(bool sync = false, QueueSelector queue = QueueSelector::GRAPHICS);
-	void endSingleTimeCommands(VkCommandBuffer commandBuffer, bool sync = false, QueueSelector queue = QueueSelector::GRAPHICS, uint64_t flags = 0L);
+	// single time commands with enforced global syncing (vkQueueWaitIdle)
+	VkCommandBuffer beginSingleTimeCommandsIdle(QueueSelector queue = QueueSelector::GRAPHICS);
+	void endSingleTimeCommandsIdle(VkCommandBuffer commandBuffer, QueueSelector queue = QueueSelector::GRAPHICS, uint64_t flags = 0L);
 	void createTextureSampler();
 	static std::string getVulkanAPIString();
 

@@ -398,7 +398,7 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
                 Error("Cannot create offscreen framebuffer in cubemap generation");
             }
 
-			VkCommandBuffer layoutCmd = global.beginSingleTimeCommands();
+			VkCommandBuffer layoutCmd = global.beginSingleTimeCommandsIdle();
 			VkImageMemoryBarrier imageMemoryBarrier{};
 			imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 			imageMemoryBarrier.image = offscreen.image;
@@ -408,7 +408,7 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 			imageMemoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 			imageMemoryBarrier.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 			vkCmdPipelineBarrier(layoutCmd, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
-			global.endSingleTimeCommands(layoutCmd, true);
+			global.endSingleTimeCommandsIdle(layoutCmd);
 		}
 
         // Descriptors
@@ -647,7 +647,7 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 		// Change image layout for all cubemap faces to transfer destination
 		{
 			//vulkanDevice->beginCommandBuffer(cmdBuf);
-			cmdBuf = global.beginSingleTimeCommands();
+			cmdBuf = global.beginSingleTimeCommandsIdle();
 			VkImageMemoryBarrier imageMemoryBarrier{};
 			imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 			imageMemoryBarrier.image = cubemap->vulkanTexture.image;
@@ -658,14 +658,14 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 			imageMemoryBarrier.subresourceRange = subresourceRange;
 			vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
 			//vulkanDevice->flushCommandBuffer(cmdBuf, queue, false);
-			global.endSingleTimeCommands(cmdBuf, true);
+			global.endSingleTimeCommandsIdle(cmdBuf);
 		}
 
 		for (uint32_t m = 0; m < numMips; m++) {
 			for (uint32_t f = 0; f < 6; f++) {
 
 				//vulkanDevice->beginCommandBuffer(cmdBuf);
-				cmdBuf = global.beginSingleTimeCommands();
+				cmdBuf = global.beginSingleTimeCommandsIdle();
 
 				viewport.width = static_cast<float>(dim * std::pow(0.5f, m));
 				viewport.height = static_cast<float>(dim * std::pow(0.5f, m));
@@ -760,13 +760,13 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 				}
 
 //				vulkanDevice->flushCommandBuffer(cmdBuf, queue, false);
-				global.endSingleTimeCommands(cmdBuf, true);
+				global.endSingleTimeCommandsIdle(cmdBuf);
 			}
 		}
 
 		{
 			//vulkanDevice->beginCommandBuffer(cmdBuf);
-			cmdBuf = global.beginSingleTimeCommands();
+			cmdBuf = global.beginSingleTimeCommandsIdle();
 			VkImageMemoryBarrier imageMemoryBarrier{};
 			imageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 			imageMemoryBarrier.image = cubemap->vulkanTexture.image;
@@ -777,7 +777,7 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 			imageMemoryBarrier.subresourceRange = subresourceRange;
 			vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
 			//vulkanDevice->flushCommandBuffer(cmdBuf, queue, false);
-			global.endSingleTimeCommands(cmdBuf, true);
+			global.endSingleTimeCommandsIdle(cmdBuf);
 		}
 		cubemap->sampler = cubemapSampler;
 		cubemap->vulkanTexture.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -1048,7 +1048,7 @@ void TextureStore::generateBRDFLUT()
 	renderPassBeginInfo.pClearValues = clearValues;
 	renderPassBeginInfo.framebuffer = framebuffer;
 
-	auto cmdBuf = global.beginSingleTimeCommands();
+	auto cmdBuf = global.beginSingleTimeCommandsIdle();
 	vkCmdBeginRenderPass(cmdBuf, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 	if (true) {
 
@@ -1069,7 +1069,7 @@ void TextureStore::generateBRDFLUT()
 		vkCmdDraw(cmdBuf, 3, 1, 0, 0);
 	}
 	vkCmdEndRenderPass(cmdBuf);
-	global.endSingleTimeCommands(cmdBuf, true);
+	global.endSingleTimeCommandsIdle(cmdBuf);
 
 	vkDestroyPipeline(device, pipeline, nullptr);
 	vkDestroyPipelineLayout(device, pipelinelayout, nullptr);

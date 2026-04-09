@@ -298,6 +298,12 @@ public:
     bool isBeforeRendering() {
         return !eventLoopRunning;
     }
+    // fail if already rendering. Util method for creating Error if engine is already in rendering phase
+    void fir() {
+        if (!isBeforeRendering()) {
+            Error("Engine already in rendering phase. Intended operation is not permitted\n");
+        }
+    }
 private:
 
     // bool configuration flags:
@@ -399,7 +405,7 @@ private:
     void startUpdateThread();
     std::vector<WindowInfo*> windowInfos;
     ContinuationInfo* continuationInfo = nullptr;
-    // fail if initialized. Util method for checking failing if engine is already initialized
+    // fail if initialized. Util method for creating Error engine is already initialized
     void fii() {
         if (initialized) {
             Error("Engine already initialized. Cannot change this parameter after initialization\n");

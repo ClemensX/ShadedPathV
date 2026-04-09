@@ -32,9 +32,9 @@ void DirectImage::dumpToFile(GPUImage* gpui)
 	global.createDumpImage(target);
 	engine->util.debugNameObjectImage(target.fba.image, "dumpToFile target image");
 	//engine->util.debugNameObjectImage(gpui->image, "dumptToFile source image");
-	auto commandBuffer = global.beginSingleTimeCommands(false);
+	auto commandBuffer = global.beginSingleTimeCommandsIdle();
     copyBackbufferImage(gpui, &target, commandBuffer);
-	global.endSingleTimeCommands(commandBuffer);
+	global.endSingleTimeCommandsIdle(commandBuffer);
 
 	// now copy image data to file:
 	stringstream name;
@@ -203,15 +203,15 @@ void DirectImage::openForCPUWriteAccess(GPUImage* gpui, GPUImage* writeable)
 		Error("DirectImage::openForCPUWriteAccess: writeable image has no imagedata. Did you use GlobalRendering::createDumpImage() to create it?");
     }
 	engine->util.debugNameObjectImage(writeable->fba.image, "copy target for write access");
-	auto commandBuffer = global.beginSingleTimeCommands(false);
+	auto commandBuffer = global.beginSingleTimeCommandsIdle();
 	copyBackbufferImage(gpui, writeable, commandBuffer);
-	global.endSingleTimeCommands(commandBuffer);
+	global.endSingleTimeCommandsIdle(commandBuffer);
 }
 
 void DirectImage::closeCPUWriteAccess(GPUImage* gpui, GPUImage* writeable)
 {
 	auto& global = engine->globalRendering;
-	auto commandBuffer = global.beginSingleTimeCommands(false);
+	auto commandBuffer = global.beginSingleTimeCommandsIdle();
 	copyBackbufferImage(writeable, gpui, commandBuffer);
-	global.endSingleTimeCommands(commandBuffer);
+	global.endSingleTimeCommandsIdle(commandBuffer);
 }

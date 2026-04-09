@@ -668,7 +668,8 @@ void GlobalRendering::createCommandPools()
     }
 }
 
-VkCommandBuffer GlobalRendering::beginSingleTimeCommands(bool sync, QueueSelector queue) {
+VkCommandBuffer GlobalRendering::beginSingleTimeCommandsIdle(QueueSelector queue) {
+    engine->fir();
     //Log("beginSingleTimeCommands. Copy Buffers?\n");
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -689,7 +690,8 @@ VkCommandBuffer GlobalRendering::beginSingleTimeCommands(bool sync, QueueSelecto
     return commandBuffer;
 }
 
-void GlobalRendering::endSingleTimeCommands(VkCommandBuffer commandBuffer, bool sync, QueueSelector queue, uint64_t flags) {
+void GlobalRendering::endSingleTimeCommandsIdle(VkCommandBuffer commandBuffer, QueueSelector queue, uint64_t flags) {
+    engine->fir();
     vkEndCommandBuffer(commandBuffer);
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -748,13 +750,13 @@ void GlobalRendering::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, 
 }
 
 void GlobalRendering::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size, uint64_t pos, QueueSelector queue, uint64_t flags) {
-    auto commandBuffer = beginSingleTimeCommands(false, queue);
+    auto commandBuffer = beginSingleTimeCommandsIdle(queue);
     VkBufferCopy copyRegion{};
     copyRegion.srcOffset = 0; // Optional
     copyRegion.dstOffset = pos; // Optional
     copyRegion.size = size;
     vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
-    endSingleTimeCommands(commandBuffer, false, queue);
+    endSingleTimeCommandsIdle(commandBuffer, queue);
 }
 
 VkDeviceSize GlobalRendering::minAlign(VkDeviceSize size, VkDeviceSize alignment)
@@ -988,7 +990,7 @@ void GlobalRendering::createCubeMapFrom2dTexture(string textureName2d, string te
     createImageCube(twoD->vulkanTexture.width, twoD->vulkanTexture.height, twoD->vulkanTexture.levelCount, VK_SAMPLE_COUNT_1_BIT, twoD->vulkanTexture.imageFormat, VK_IMAGE_TILING_OPTIMAL,
         VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         attachment.image, attachment.memory, textureNameCube.c_str());
-    auto cmd = beginSingleTimeCommands(true);
+    auto cmd = beginSingleTimeCommandsIdle();
 
     auto subresourceRangeSrc = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, twoD->vulkanTexture.levelCount, 0, 1 };
     auto subresourceRangeDest = VkImageSubresourceRange{ VK_IMAGE_ASPECT_COLOR_BIT, 0, twoD->vulkanTexture.levelCount, 0, 6 };
@@ -1064,7 +1066,7 @@ void GlobalRendering::createCubeMapFrom2dTexture(string textureName2d, string te
     vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
         0, 0, nullptr, 0, nullptr, 1, &srcBarrier);
 
-    endSingleTimeCommands(cmd);
+    endSingleTimeCommandsIdle(cmd);
 
     ::TextureInfo* texture = engine->textureStore.createTextureSlot(textureNameCube);
     // copy base ktx texture fields and the adapt for new cube map:
@@ -1314,7 +1316,7 @@ void GlobalRendering::writeCubemapToFile(TextureInfo* cubemap, const std::string
 
     // Change image layout for all cubemap faces to transfer destination
     {
-        VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+        VkCommandBuffer commandBuffer = beginSingleTimeCommandsIdle();
         VkImageSubresourceRange subresourceRange{};
         subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         subresourceRange.baseMipLevel = 0;
@@ -1332,11 +1334,11 @@ void GlobalRendering::writeCubemapToFile(TextureInfo* cubemap, const std::string
         imageMemoryBarrier.subresourceRange = subresourceRange;
         vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
         //vulkanDevice->flushCommandBuffer(cmdBuf, queue, false);
-        endSingleTimeCommands(commandBuffer, true);
+        endSingleTimeCommandsIdle(commandBuffer);
     }
 
     // Copy data from Vulkan cubemap to staging buffer
-    VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = beginSingleTimeCommandsIdle();
     VkDeviceSize bufferOffset = 0;
     for (uint32_t level = 0; level < cubemap->vulkanTexture.levelCount; ++level) {
         for (uint32_t face = 0; face < 6; ++face) {
@@ -1368,7 +1370,7 @@ void GlobalRendering::writeCubemapToFile(TextureInfo* cubemap, const std::string
         }
     }
 
-    endSingleTimeCommands(commandBuffer, true);
+    endSingleTimeCommandsIdle(commandBuffer);
 
     // Map the staging buffer and copy data to KTX texture
     void* data;
