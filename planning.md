@@ -1,5 +1,27 @@
 # Planning
 
+## Rendering Object Data Fast Track
+Put object data from model_ubo into general purpose GPU buffers
+and only use neede values
+
+### pbr shader needs values:
+
+| **model_ubo field**   | pbr shader (first use)
+| ---                   | ---  
+| flags                 | task shader
+| model					| *
+| boundingBox			| *
+| meshNumber			| *	
+| material.lod_category | *
+| --	      			| mesh shader
+| params[0]				| frag shader
+| material				| *
+| uboParams.prefilteredCubeMipLevels | *
+| uboParams.scaleIBLAmbient | *
+| uboParams.lightDir | *
+| uboParams.intensity | *
+
+
 ## Flora for World Creator Forest 001 sample:
 
 ### Create Assets
@@ -10,10 +32,10 @@
 | Grass_B      |  x   |   x      | x
 | DropSeed_C   |  x   |   x      | x
 | DropSeed_B   |  x   |   x      | x
-| Bush_A       |	  |          |
-| Bush_A(?)    |	  |          |
-| Acacia_B     |  x	  |   x      |	
-| Acacia_A     |	  |          |
+| Bush_A       |  x	  |   x      | x
+| Bush_A(?)    |  x	  |   x      | x
+| Acacia_B     |  x	  |   x      | x	
+| Acacia_A     |  x	  |   x      | x
 
 # Old content - remove later
 ## Vulkan Resources Use

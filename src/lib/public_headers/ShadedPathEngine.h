@@ -300,6 +300,7 @@ public:
     }
     // fail if already rendering. Util method for creating Error if engine is already in rendering phase
     void fir() {
+        return;
         if (!isBeforeRendering()) {
             Error("Engine already in rendering phase. Intended operation is not permitted\n");
         }

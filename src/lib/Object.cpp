@@ -15,7 +15,10 @@ void MeshStore::init(ShadedPathEngine* engine) {
 	VkDeviceSize size = gpuMeshIndices.size() * sizeof(GPUMeshIndex)
         + gpuMeshInfos.size() * sizeof(GPUMeshInfo);
 	uint64_t pos = engine->globalRendering.reserveInGlobalBuffer(size, mem);
-
+	// new GPU buffers:
+    engine->globalRendering.gpuMemory.defineBuffer(BufferType::MeshIndices, sizeof(GPUMeshIndex), engine->getMaxMeshes());
+    engine->globalRendering.gpuMemory.defineBuffer(BufferType::MeshInfos, sizeof(GPUMeshInfo), engine->getMaxMeshes() * 10);
+    engine->globalRendering.gpuMemory.allocateBuffers();
 }
 
 // simple id, only letters, numbers and underscore

@@ -18,6 +18,7 @@ file(GLOB VULKAN_SHADERS
   ${ShaderFolder}/filtercube.vert
   ${ShaderFolder}/irradiancecube.frag
   ${ShaderFolder}/prefilterenvmap.frag
+  ${ShaderFolder}/test.task
 )
 
 # Define dependencies for each shader file

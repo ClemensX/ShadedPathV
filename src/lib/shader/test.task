@@ -1,0 +1,72 @@
+#version 460
+#extension GL_EXT_debug_printf : enable
+#extension GL_EXT_mesh_shader : enable
+#extension GL_ARB_gpu_shader_int64 : require
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_buffer_reference_uvec2 : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+
+// test glsl packing rules
+layout(local_size_x = 1) in; // not using the usual 32 threads per workgroup, but only 1 as we implement object culling and LOD object selection here
+
+struct GPUMeshIndex {
+    uint gpuMeshInfoIndex[10]; // index into mesh info array for LOD 0..9
+};
+
+struct GPUMeshInfo {
+//	uint64_t meshletOffset; // offset into global mesh storage buffer
+//	uint64_t localIndexOffset; // offset into global mesh storage buffer
+//	uint64_t globalIndexOffset; // offset into global mesh storage buffer
+//	uint64_t vertexOffset; // offset into global mesh storage buffer
+//    uint meshletCount; // number of meshlets for this LOD
+//    uint pad0;
+    vec3 f1;
+};
+
+// mesh infos on GPU global buffer:
+layout(buffer_reference, std430) buffer GPUMeshIndexBuffer {
+    GPUMeshIndex index[];
+};
+
+layout(buffer_reference, std430) buffer GPUMeshInfoBuffer {
+    GPUMeshInfo info[];
+};
+
+// see pbrShader.h
+layout(push_constant) uniform PushConstants {
+    uint64_t meshIndicesAddress;
+    uint64_t meshInfosAddress;
+    uint64_t uniformBufferAddress;
+    uint64_t storageBufferAddress;
+    uint64_t vertexBufferAddress;
+    uint64_t indexBufferAddress;
+    uint64_t indirectBufferAddress;
+    uint64_t textureBufferAddress;
+} pushConstants;
+
+struct TaskPayload {
+    mat4 mvp;
+    uint meshIndex; // LOD selection
+    uint meshletIndex; // only used for discarding
+    // single meshlet to draw DO NOT iterate meshletIndex, emit multiple mesh shader calls at once with EmitMeshTasksEXT(meshletsCount, 1, 1);
+};
+
+taskPayloadSharedEXT TaskPayload payload;
+
+GPUMeshIndexBuffer gpuIndices = GPUMeshIndexBuffer(pushConstants.meshIndicesAddress + 0);
+GPUMeshInfoBuffer gpuInfos = GPUMeshInfoBuffer(pushConstants.meshInfosAddress + 0);
+
+void main() {
+    uint meshIndex = 42;
+    //debugPrintfEXT("test.task main: meshIndex %u\n", meshIndex);
+    //uint meshletsCount = gpuInfos.info[meshIndex].meshletCount;
+    //float meshletsCount = gpuInfos.info[meshIndex].f;
+    debugPrintfEXT("TASK SHADER PUUUUSH: : %llx %llx\n", pushConstants.meshIndicesAddress, pushConstants.meshInfosAddress);
+    for ( int i = 0; i < 100; i++) {
+        float f = gpuInfos.info[i].f1.x;
+        debugPrintfEXT(" %f", f);
+    }
+    debugPrintfEXT("\n");
+    //debugPrintfEXT("f %f", meshletsCount);
+}
+

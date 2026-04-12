@@ -329,6 +329,7 @@ double static const PI_quarter = PI / 4.0;
 #include "GameTime.h"
 #include "Util.h"
 #include "Texture.h"
+#include "GPUMemory.h"
 #include "GlobalRendering.h"
 #include "Threads.h"
 #include "ImageConsumer.h"

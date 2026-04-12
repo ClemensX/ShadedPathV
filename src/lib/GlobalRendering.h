@@ -128,6 +128,7 @@ public:
 	GlobalRendering(ShadedPathEngine* s) {
 		Log("GlobalRendering c'tor\n");
         setEngine(s);
+		gpuMemory.init(s);
 		// log vulkan version as string
 		Log("Vulkan API Version: " << getVulkanAPIString().c_str() << std::endl);
 	};
@@ -135,6 +136,7 @@ public:
 	~GlobalRendering() {
 		Log("GlobalRendering destructor\n");
 		//samplerCache.~SamplerCache();
+        gpuMemory.cleanup();
 		for (auto& chunk : gpuMemoryChunks) {
 			if (chunk.buffer != nullptr) {
 				vkDestroyBuffer(device, chunk.buffer, nullptr);
@@ -348,6 +350,7 @@ public:
 		return ret;
 	}
 
+	GPUMemory gpuMemory;
     std::vector<GPUMemoryChunk> gpuMemoryChunks;
 	void createGPUMemoryChunk(VkDeviceSize bufferSize) {
 		//VkDeviceSize bufferSize = engine.getMeshStorageSize();

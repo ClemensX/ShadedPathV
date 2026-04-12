@@ -8,7 +8,7 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	resources.setResourceDefinition(&vulkanResourceDefinition);
 
 	// create shader modules
-	taskShaderModule = resources.createShaderModule("pbr.task.spv");
+	taskShaderModule = resources.createShaderModule("test.task.spv");
 	meshShaderModule = resources.createShaderModule("pbr.mesh.spv");
 	fragShaderModule = resources.createShaderModule("pbr.frag.spv");
 
@@ -446,13 +446,24 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 	PBRPushConstants* push = &pbrShader->pushConstants;
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     uint64_t meshStorageBufferDeviceAddress = engine->globalRendering.getCurrentGPUMemoryChunk()->address;
+	//vkCmdPushConstants(
+	//	commandBuffer,
+	//	pipelineLayout,
+	//	VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
+	//	0,
+	//	sizeof(PBRPushConstants),
+	//	push // your buffer address
+	//);
+	GPUMemoryPushConstants gpuMemPush;
+	engine->globalRendering.gpuMemory.fillPushConstants(&gpuMemPush);
+
 	vkCmdPushConstants(
 		commandBuffer,
 		pipelineLayout,
-		VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
+		VK_SHADER_STAGE_ALL_GRAPHICS,
 		0,
-		sizeof(PBRPushConstants),
-		push // your buffer address
+		sizeof(GPUMemoryPushConstants),
+		&gpuMemPush
 	);
 	// add draw commands for all valid objects:
 	for (auto obj : objs) {
