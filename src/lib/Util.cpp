@@ -1195,10 +1195,10 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     md << "| Structure | Base Address (hex) | Base Address (dec) |\n";
     md << "|-----------|-------------------|-------------------|\n";
     md << "| Global GPU Memory Chunk | 0x" << std::hex << mem->address << std::dec << " | " << mem->address << " |\n";
-    md << "| Push Constants - Indices | 0x" << std::hex << engine->shaders.pbrShader.pushConstants.baseAddressIndices 
-       << std::dec << " | " << engine->shaders.pbrShader.pushConstants.baseAddressIndices << " |\n";
-    md << "| Push Constants - Infos | 0x" << std::hex << engine->shaders.pbrShader.pushConstants.baseAddressInfos 
-       << std::dec << " | " << engine->shaders.pbrShader.pushConstants.baseAddressInfos << " |\n\n";
+    md << "| Push Constants - Indices | 0x" << std::hex << engine->shaders.pbrShader.gpuMemPush.meshIndicesAddress 
+       << std::dec << " | " << engine->shaders.pbrShader.gpuMemPush.meshIndicesAddress << " |\n";
+    md << "| Push Constants - Infos | 0x" << std::hex << engine->shaders.pbrShader.gpuMemPush.meshInfosAddress 
+       << std::dec << " | " << engine->shaders.pbrShader.gpuMemPush.meshInfosAddress << " |\n\n";
 
     // Push Constants Details
     md << "## Push Constants Details\n\n";
@@ -1207,8 +1207,8 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     auto& gpuMeshIndices = meshStore.getGPUMeshIndices();
     auto& gpuMeshInfos = meshStore.getGPUMeshInfos();
     
-    md << "### Indices Array (`baseAddressIndices`)\n";
-    md << "- **Address:** 0x" << std::hex << engine->shaders.pbrShader.pushConstants.baseAddressIndices << std::dec << "\n";
+    md << "### Indices Array (`meshIndicesAddress`)\n";
+    md << "- **Address:** 0x" << std::hex << engine->shaders.pbrShader.gpuMemPush.meshIndicesAddress << std::dec << "\n";
     md << "- **Element Type:** `GPUMeshIndex` (40 bytes each)\n";
     md << "- **Array Size:** " << gpuMeshIndices.size() << " elements\n";
     md << "- **Total Size:** " << (gpuMeshIndices.size() * sizeof(GPUMeshIndex)) << " bytes\n";
@@ -1227,8 +1227,8 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     }
     md << nonEmptyIndices << "\n\n";
     
-    md << "### Infos Array (`baseAddressInfos`)\n";
-    md << "- **Address:** 0x" << std::hex << engine->shaders.pbrShader.pushConstants.baseAddressInfos << std::dec << "\n";
+    md << "### Infos Array (`meshInfosAddress`)\n";
+    md << "- **Address:** 0x" << std::hex << engine->shaders.pbrShader.gpuMemPush.meshInfosAddress << std::dec << "\n";
     md << "- **Element Type:** `GPUMeshInfo` (40 bytes each)\n";
     md << "- **Array Size:** " << gpuMeshInfos.size() << " elements\n";
     md << "- **Total Size:** " << (gpuMeshInfos.size() * sizeof(GPUMeshInfo)) << " bytes\n";

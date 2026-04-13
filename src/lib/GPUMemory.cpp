@@ -100,9 +100,15 @@ void GPUMemory::flushBuffer(BufferType type)
     }
 
     if (state->requiresStaging) {
+        // get address of staging buffer memory (should already be mapped)
+        void* stagingData = state->mappedMemory;
+        // test: copy float to buffer starting at offset 0:
+        float value = 3.14159265f;
+        memcpy(stagingData, &value, sizeof(float)); // just for testing, copy value as float to buffer
         // Copy from staging buffer to device buffer
         VkDeviceSize bufferSize = state->config.elementSize * state->config.maxElementCount;
         rendering->copyBuffer(state->stagingBuffer, state->buffer, bufferSize, 0);
+        Log("WARNING: Flushed buffer " << getBufferTypeName(type) << " from staging to device buffer" << endl);
     }
     // For host-visible buffers, data is already in place
 

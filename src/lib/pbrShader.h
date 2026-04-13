@@ -6,17 +6,17 @@ class WorldObject;
 // forward
 class PBRSubShader;
 
-// make sure to match the push_constant layout in the shader
-struct PBRPushConstants {
-	uint64_t baseAddressIndices;
-	uint64_t baseAddressInfos;
-};
-
-const VkPushConstantRange pbrPushConstantRange = {
-	VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT, // stageFlags
-	0, // offset
-	sizeof(PBRPushConstants) // size
-};
+//// make sure to match the push_constant layout in the shader
+//struct PBRPushConstants {
+//	uint64_t baseAddressIndices;
+//	uint64_t baseAddressInfos;
+//};
+//
+//const VkPushConstantRange pbrPushConstantRange = {
+//	VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT, // stageFlags
+//	0, // offset
+//	sizeof(PBRPushConstants) // size
+//};
 
 // pbr shader draws objects read from glTF files with PBR lighing
 class PBRShader : public ShaderBase {
@@ -255,8 +255,9 @@ public:
         lightSource.color = color;
         lightSource.position = position;
     }
-	PBRPushConstants pushConstants = {};
-    
+	//PBRPushConstants pushConstants = {};
+	GPUMemoryPushConstants gpuMemPush;
+
     // Public accessor for logging/debugging
     uint64_t getNextFreeDynamicUniformBufferIndex() const { return nextFreeDynamicUniformBufferIndex; }
 

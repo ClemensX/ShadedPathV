@@ -228,13 +228,6 @@ void MeshStore::aquireMeshletData(std::string filename, std::string id, bool reg
 	calculateMeshlets(id, meshletFlags, GLEXT_MESHLET_VERTEX_COUNT, GLEXT_MESHLET_PRIMITIVE_COUNT - 1);
 }
 
-void MeshStore::fillPushConstants(PBRPushConstants* pushConstants)
-{
-	auto* mem = engine->globalRendering.getCurrentGPUMemoryChunk();
-    pushConstants->baseAddressIndices = mem->address;
-    pushConstants->baseAddressInfos = mem->address + gpuMeshIndices.size() * sizeof(GPUMeshIndex);
-}
-
 void MeshStore::uploadMesh(MeshInfo* mesh_ptr)
 {
 	assert(mesh_ptr->vertices.size() > 0);
@@ -282,6 +275,13 @@ void MeshStore::uploadMesh(MeshInfo* mesh_ptr)
 			Log(" First mesh GPUMeshInfo meshlet offset: " << std::hex << gpuMeshInfos[0].meshletOffset << std::dec << endl);
 		}
 	}
+    // test new gpu buffers:
+    auto& gb = engine->globalRendering.gpuMemory;
+	// set 1st element:
+    GPUMeshIndex testIndex;
+    testIndex.gpuMeshInfoIndex[0] = 12345;
+	gb.updateElement(BufferType::MeshIndices, testIndex, 0);
+	gb.flushAllBuffers();
 }
 
 const vector<MeshInfo*> &MeshStore::getSortedList()

@@ -30,7 +30,7 @@ struct GPUMemoryPushConstants {
 
 // Define the push constant range for GPUMemory
 const VkPushConstantRange gpuMemoryPushConstantRange = {
-    VK_SHADER_STAGE_ALL_GRAPHICS,  // Available to all shader stages
+    VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
     0,                              // offset
     sizeof(GPUMemoryPushConstants)  // size
 };

@@ -534,7 +534,6 @@ public:
     // load meshlet data for all meshes of a collection from file, return true if successful, error if #items and #meshlet data sets do not match
 	bool loadMeshletStorageFile(std::string id, std::string fileBaseName);
     MeshCollection* getMeshCollection(std::string id);
-	void fillPushConstants(PBRPushConstants *pushConstants);
     // we need 10 (major) meshes for being LOD compatible, also vertex count must not increase with each LOD level
 	bool isGPULodCompatible(WorldObject* wo); // true if object can use GPU LOD selection
     bool checkBoundingBoxPlausibility(std::string id); // check if bounding box is plausible (not inverted or zero size)

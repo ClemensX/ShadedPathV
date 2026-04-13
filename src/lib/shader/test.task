@@ -10,7 +10,8 @@
 layout(local_size_x = 1) in; // not using the usual 32 threads per workgroup, but only 1 as we implement object culling and LOD object selection here
 
 struct GPUMeshIndex {
-    uint gpuMeshInfoIndex[10]; // index into mesh info array for LOD 0..9
+    //uint gpuMeshInfoIndex[10]; // index into mesh info array for LOD 0..9
+    float gpuMeshInfoIndex[10]; // 5?
 };
 
 struct GPUMeshInfo {
@@ -62,8 +63,8 @@ void main() {
     //uint meshletsCount = gpuInfos.info[meshIndex].meshletCount;
     //float meshletsCount = gpuInfos.info[meshIndex].f;
     debugPrintfEXT("TASK SHADER PUUUUSH: : %llx %llx\n", pushConstants.meshIndicesAddress, pushConstants.meshInfosAddress);
-    for ( int i = 0; i < 100; i++) {
-        float f = gpuInfos.info[i].f1.x;
+    for ( int i = 0; i < 5; i++) {
+        float f = gpuIndices.index[0].gpuMeshInfoIndex[i];
         debugPrintfEXT(" %f", f);
     }
     debugPrintfEXT("\n");

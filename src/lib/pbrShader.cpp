@@ -17,7 +17,7 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	alignedDynamicUniformBufferSize = global->calcConstantBufferSize(sizeof(DynamicModelUBO));
 
 	// push constants
-	pushConstantRanges.push_back(pbrPushConstantRange);
+	pushConstantRanges.push_back(gpuMemoryPushConstantRange);
 
 
 	int fl = engine.getFramesInFlight();
@@ -45,7 +45,7 @@ void PBRShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 void PBRShader::initialUpload(bool listUploadedMeshes)
 {
 	// upload all meshes from store:
-    engine->meshStore.fillPushConstants(&pushConstants);
+	engine->globalRendering.gpuMemory.fillPushConstants(&gpuMemPush);
 	auto& list = engine->meshStore.getSortedList();
 	for (auto meshptr : list) {
 		engine->meshStore.uploadMesh(meshptr);
@@ -441,9 +441,6 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 
 	renderPassInfo.clearValueCount = 0;
 
-	assert(pbrShader->pushConstants.baseAddressIndices != 0);
-	assert(pbrShader->pushConstants.baseAddressInfos != 0);
-	PBRPushConstants* push = &pbrShader->pushConstants;
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     uint64_t meshStorageBufferDeviceAddress = engine->globalRendering.getCurrentGPUMemoryChunk()->address;
 	//vkCmdPushConstants(
@@ -454,16 +451,14 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 	//	sizeof(PBRPushConstants),
 	//	push // your buffer address
 	//);
-	GPUMemoryPushConstants gpuMemPush;
-	engine->globalRendering.gpuMemory.fillPushConstants(&gpuMemPush);
 
 	vkCmdPushConstants(
 		commandBuffer,
 		pipelineLayout,
-		VK_SHADER_STAGE_ALL_GRAPHICS,
+		gpuMemoryPushConstantRange.stageFlags,
 		0,
 		sizeof(GPUMemoryPushConstants),
-		&gpuMemPush
+		&pbrShader->gpuMemPush
 	);
 	// add draw commands for all valid objects:
 	for (auto obj : objs) {
