@@ -107,7 +107,8 @@ void GPUMemory::flushBuffer(BufferType type)
         memcpy(stagingData, &value, sizeof(float)); // just for testing, copy value as float to buffer
         // Copy from staging buffer to device buffer
         VkDeviceSize bufferSize = state->config.elementSize * state->config.maxElementCount;
-        rendering->copyBuffer(state->stagingBuffer, state->buffer, bufferSize, 0);
+        //rendering->copyBuffer(state->stagingBuffer, state->buffer, bufferSize, 0);
+        rendering->copyBuffer(state->stagingBuffer, state->chunk->buffer, bufferSize, state->relDeviceAddress);
         Log("WARNING: Flushed buffer " << getBufferTypeName(type) << " from staging to device buffer" << endl);
     }
     // For host-visible buffers, data is already in place
@@ -133,7 +134,7 @@ VkBuffer GPUMemory::getBuffer(BufferType type) const
 uint64_t GPUMemory::getDeviceAddress(BufferType type) const
 {
     const auto* state = getBufferState(type);
-    uint64_t ret = state ? state->deviceAddress : 0;
+    uint64_t ret = state && state->chunk ? state->relDeviceAddress + state->chunk->address: 0;
     if (ret == 0) {
         Error("GPUMemory::getDeviceAddress: Buffer type " + getBufferTypeName(type) + " not found or does not have device address");
     }
@@ -228,15 +229,20 @@ void GPUMemory::createBufferInternal(BufferState& state)
     string debugName = "GPUMemory_" + getBufferTypeName(state.config.type);
 
     if (state.requiresStaging) {
-        // Create device-local buffer
-        rendering->createBuffer(
-            bufferSize,
-            state.config.usage,
-            state.config.memoryProperties,
-            state.buffer,
-            state.memory,
-            debugName
-        );
+        //// Create device-local buffer
+        //rendering->createBuffer(
+        //    bufferSize,
+        //    state.config.usage,
+        //    state.config.memoryProperties,
+        //    state.buffer,
+        //    state.memory,
+        //    debugName
+        //);
+
+        auto* mem = getCurrentGPUMemoryChunk();
+        uint64_t pos = allocate(bufferSize, mem);
+        state.relDeviceAddress = pos;
+        state.chunk = mem;
 
         // Create staging buffer (host-visible)
         rendering->createBuffer(
@@ -253,30 +259,15 @@ void GPUMemory::createBufferInternal(BufferState& state)
             Error("GPUMemory::createBufferInternal: Failed to map staging buffer memory for type " +
                 getBufferTypeName(state.config.type));
         }
-    }
-    else {
-        // Create host-visible buffer
-        rendering->createBuffer(
-            bufferSize,
-            state.config.usage,
-            state.config.memoryProperties,
-            state.buffer,
-            state.memory,
-            debugName
-        );
-
-        // Map memory permanently for host-visible buffers
-        if (state.config.memoryProperties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
-            if (vkMapMemory(rendering->device, state.memory, 0, bufferSize, 0, &state.mappedMemory) != VK_SUCCESS) {
-                Error("GPUMemory::createBufferInternal: Failed to map buffer memory for type " +
-                    getBufferTypeName(state.config.type));
-            }
-        }
+    } else {
+        Error("GPUMemory::createBufferInternal: Direct buffer creation not supported for type " +
+            getBufferTypeName(state.config.type) + " because it is not host visible. Consider using staging buffer workflow.");
     }
 
     // Get device address if requested
     if (state.config.usage & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT) {
-        state.deviceAddress = rendering->getBufferDeviceAddress(state.buffer);
+        //state.deviceAddress = rendering->getBufferDeviceAddress(state.buffer);
+        assert(state.chunk != nullptr);
     }
 }
 
@@ -370,4 +361,25 @@ void GPUMemory::fillPushConstants(GPUMemoryPushConstants* pushConstants) const
     //pushConstants->textureBufferAddress = getDeviceAddress(TextureBuffer);
     Log("WARNING: GPUMemory::fillPushConstants: Filled push constants with buffer addresses: MeshIndices=" << std::hex << pushConstants->meshIndicesAddress <<
         ", MeshInfos=" << pushConstants->meshInfosAddress << std::dec << endl);
+}
+
+VkDeviceAddress GPUMemory::getBufferDeviceAddress(VkBuffer buffer) {
+    VkBufferDeviceAddressInfo bufferDeviceAI{};
+    bufferDeviceAI.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    bufferDeviceAI.buffer = buffer;
+    return vkGetBufferDeviceAddress(rendering->device, &bufferDeviceAI);
+}
+
+void GPUMemory::createGPUMemoryChunk(VkDeviceSize bufferSize) {
+    //VkDeviceSize bufferSize = engine.getMeshStorageSize();
+    bufferSize = minAlign(bufferSize, 16);
+    GPUMemoryChunk chunk;
+    chunk.chunkNumber = (int)gpuMemoryChunks.size();
+    std::string dbgName = "global GPU memory chunk " + chunk.chunkNumber;
+    rendering->createBuffer(bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT,
+        chunk.buffer, chunk.memory, dbgName);
+    chunk.address = getBufferDeviceAddress(chunk.buffer);
+    chunk.nextFreePos = 0;
+    chunk.size = bufferSize;
+    gpuMemoryChunks.push_back(chunk);
 }

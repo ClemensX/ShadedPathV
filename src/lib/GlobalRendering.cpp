@@ -263,6 +263,7 @@ void GlobalRendering::init()
     }
     engine->util.debugNameObjectFence(queueSubmitFence, "GlobalRendering.queueSubmitFence");
     createGPUMemoryChunk(engine->getMeshStorageSize());
+    gpuMemory.createGPUMemoryChunk(engine->getMeshStorageSize());
 }
 
 void GlobalRendering::shutdown()

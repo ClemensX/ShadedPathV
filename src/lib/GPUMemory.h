@@ -44,6 +44,17 @@ struct BufferConfiguration {
     VkMemoryPropertyFlags memoryProperties; // memory properties (host visible, device local, etc.)
 };
 
+// hold info for GPU memory chunks allocated (only one atm...)
+struct GPUMemoryChunk {
+    int chunkNumber = -1;
+    VkBuffer buffer = nullptr;
+    VkDeviceMemory memory = nullptr;
+    VkDeviceAddress address = 0;
+    uint64_t size = 0;
+    uint64_t nextFreePos = 0;
+    void reset() { nextFreePos = 0; }
+};
+
 // Internal buffer state for each configured buffer type
 struct BufferState {
     VkBuffer buffer = VK_NULL_HANDLE;
@@ -51,11 +62,12 @@ struct BufferState {
     VkBuffer stagingBuffer = VK_NULL_HANDLE;
     VkDeviceMemory stagingMemory = VK_NULL_HANDLE;
     void* mappedMemory = nullptr;           // for host-visible buffers
-    uint64_t deviceAddress = 0;             // for shader device address
+    uint64_t relDeviceAddress = 0;             // for shader device address
     uint32_t currentElementCount = 0;       // current number of elements in the buffer
     BufferConfiguration config;
     bool requiresStaging = true;            // true if using device-local memory (default)
     bool isDirty = false;                   // needs flushing to GPU
+    GPUMemoryChunk* chunk = nullptr;
 };
 
 // maintain GPU memory management
@@ -167,6 +179,45 @@ public:
             Error("GPUMemory: Element size " + std::to_string(elementSize) + " is not properly aligned for array storage. Must be 4 or 8 or a multiple of 16.");
         }
     }
+
+    // ====== GPU memory chunks ======
+
+    VkDeviceSize minAlign(VkDeviceSize size, VkDeviceSize alignment)
+    {
+        if (alignment == 0) {
+            return size; // no alignment needed
+        }
+        if (size % alignment == 0) {
+            return size; // already aligned
+        }
+        return ((size + alignment - 1) / alignment) * alignment; // round up to next multiple of alignment
+    }
+
+    // get current GPU memory chunk, currently we do not allocate another one if the first is full...
+    GPUMemoryChunk* getCurrentGPUMemoryChunk() {
+        if (gpuMemoryChunks.size() == 0) {
+            Error("No GPU memory chunk allocated");
+            return nullptr;
+        }
+        return &gpuMemoryChunks[0];
+    }
+    uint64_t allocate(uint64_t size, GPUMemoryChunk* chunk)
+    {
+        size = minAlign(size, 16);
+        if (chunk->nextFreePos + size > chunk->size) {
+            Error("Global Rendering: out of global mesh storage memory. Increase in engine settings or allocate new chunk.");
+        }
+        uint64_t ret = chunk->nextFreePos;
+        chunk->nextFreePos += size;
+        return ret;
+    }
+
+    VkDeviceAddress getBufferDeviceAddress(VkBuffer buffer);
+    void createGPUMemoryChunk(VkDeviceSize bufferSize);
+
+    std::vector<GPUMemoryChunk> gpuMemoryChunks;
+
+
 
 private:
     ShadedPathEngine* engine = nullptr;

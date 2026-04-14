@@ -111,16 +111,6 @@ private:
 	std::unordered_map<VkSamplerCreateInfo, VkSampler, SamplerCreateInfoHash, SamplerCreateInfoEqual> cache;
 };
 
-// hold info for GPU memory chunks allocated (only one atm...)
-struct GPUMemoryChunk {
-    int chunkNumber = -1;
-	VkBuffer buffer = nullptr;
-	VkDeviceMemory memory = nullptr;
-    VkDeviceAddress address = 0;
-	uint64_t size = 0;
-	uint64_t nextFreePos = 0;
-	void reset() { nextFreePos = 0; }
-};
 // global resources that are not changed in rendering threads.
 class GlobalRendering : public EngineParticipant
 {
