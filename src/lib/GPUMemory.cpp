@@ -31,6 +31,11 @@ void GPUMemory::defineBuffer(const BufferConfiguration& config)
     state.requiresStaging = (config.memoryProperties & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) &&
         !(config.memoryProperties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
+    // disable staging for None buffer type
+    if (config.type == BufferType::None) {
+        state.requiresStaging = false;
+    }
+
     buffers[config.type] = state;
 }
 
@@ -75,6 +80,9 @@ void GPUMemory::defineBuffer(BufferType type, uint32_t elementSize, uint32_t max
     case TextureBuffer:
         config.usage |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
         break;
+    case None:
+        config.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+        config.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     }
 
     defineBuffer(config);
@@ -100,11 +108,11 @@ void GPUMemory::flushBuffer(BufferType type)
     }
 
     if (state->requiresStaging) {
-        // get address of staging buffer memory (should already be mapped)
-        void* stagingData = state->mappedMemory;
-        // test: copy float to buffer starting at offset 0:
-        float value = 3.14159265f;
-        memcpy(stagingData, &value, sizeof(float)); // just for testing, copy value as float to buffer
+        //// get address of staging buffer memory (should already be mapped)
+        //void* stagingData = state->mappedMemory;
+        //// test: copy uint32_t to buffer starting at offset 0:
+        //uint32_t value = 42;
+        //memcpy(stagingData, &value, sizeof(uint32_t)); // just for testing, copy value as uint32_t to buffer
         // Copy from staging buffer to device buffer
         VkDeviceSize bufferSize = state->config.elementSize * state->config.maxElementCount;
         //rendering->copyBuffer(state->stagingBuffer, state->buffer, bufferSize, 0);
@@ -115,6 +123,33 @@ void GPUMemory::flushBuffer(BufferType type)
 
     state->isDirty = false;
 }
+
+uint64_t GPUMemory::copyToGlobalBuffer(VkDeviceSize bufferSize, const void* src)
+{
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+
+    // create staging buffer (host-visible)
+    rendering->createBuffer(bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        stagingBuffer, stagingBufferMemory, "Staging");
+
+    // copy data to staging buffer
+    void* data;
+    vkMapMemory(engine->globalRendering.device, stagingBufferMemory, 0, bufferSize, 0, &data);
+    memcpy(data, src, (size_t)bufferSize);
+    vkUnmapMemory(engine->globalRendering.device, stagingBufferMemory);
+
+    // allocate gpu memory
+    auto* mem = getCurrentGPUMemoryChunk();
+    uint64_t pos = allocate(bufferSize, mem);
+
+    engine->globalRendering.copyBuffer(stagingBuffer, mem->buffer, bufferSize, pos);
+
+    vkDestroyBuffer(engine->globalRendering.device, stagingBuffer, nullptr);
+    vkFreeMemory(engine->globalRendering.device, stagingBufferMemory, nullptr);
+    return pos;
+}
+
 
 void GPUMemory::flushAllBuffers()
 {

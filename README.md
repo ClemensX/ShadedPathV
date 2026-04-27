@@ -4,7 +4,15 @@ Game Engine in Development!
 
 ShadedPathV is a completely free C++ game engine built mainly on [Khronos standards](https://www.khronos.org/)
 
-**Please note:** ShadedPathV is in high development phase. We change something almost every day. At this time it is not recommended to use ShadedPath for anything else than tests. The interface from application to engine may change very much until release.
+## Disclaimer
+
+**This is no teaching project!** While we value code quality very high, we know of many shortcomings in the current code base.
+Following an iterative programming scheme, we want to have a working version every evening. We always add relative small changes to the existing code.
+This tends to cluttered code, not a code structure you would plan for at an empty table. From time to time we re-design a subsystem to make up for this.
+We will get better before release, but for now we just want to get things working.
+So, if you are looking for a clean code base to learn from, this is not the right place for you.
+
+ShadedPathV is in high development phase. We change something almost every day. At this time it is not recommended to use ShadedPath for anything else than tests. The interface from application to engine may change very much until release.
 
 However, if you find something useful here, please just use it in your own projects. The very liberal license allows almost any kind of usage of ShadedPath!
 

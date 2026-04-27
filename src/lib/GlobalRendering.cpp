@@ -826,6 +826,7 @@ uint64_t GlobalRendering::copyToGlobalBuffer(VkDeviceSize bufferSize, const void
 
 uint64_t GlobalRendering::uploadToGlobalBuffer(VkDeviceSize bufferSize, const void* src, GPUMemoryChunk* chunk, QueueSelector queue)
 {
+    Error("Deleted");
     if (bufferSize % 4 != 0) {
         Error("Buffer size must be a multiple of 4 bytes. You may want to use GlobalRendering::minAlign() to get corrected size.");
     }

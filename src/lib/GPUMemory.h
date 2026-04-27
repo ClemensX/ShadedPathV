@@ -3,8 +3,10 @@
 class ShadedPathEngine;
 class GlobalRendering;
 
+// types for named buffers, one buffer per name
 enum BufferType {
     // for each mesh, we have an array of 10 here 
+    None = 0, // for non-staging buffers
     MeshIndices,
     MeshInfos,
     UniformBuffer,
@@ -35,7 +37,7 @@ const VkPushConstantRange gpuMemoryPushConstantRange = {
     sizeof(GPUMemoryPushConstants)  // size
 };
 
-// for each buffer type we define the structure it uses
+// for each buffer 'BufferType' we define the structure it uses
 struct BufferConfiguration {
     BufferType type;
     uint32_t elementSize;        // size of one element in the buffer, e.g. sizeof(GPUMeshIndex) for MeshIndices
@@ -96,6 +98,10 @@ public:
     // Must be called after all defineBuffer() calls and before rendering
     void allocateBuffers();
 
+    // in addition to named BufferType buffers, we have simple one-time upload buffers. There is no maintained staging buffer.
+    // we use the returned device address in other structures to reference the data in shaders
+    uint64_t copyToGlobalBuffer(VkDeviceSize bufferSize, const void* src);
+
     // ====== RENDERING PHASE METHODS ======
 
     // Fill push constants structure with current buffer addresses
@@ -128,7 +134,13 @@ public:
 
     // Flush staged changes to GPU (for staging buffer workflow)
     // Call this after updating elements and before rendering with them
+    // staging buffer will be maintained, to enable another flush
     void flushBuffer(BufferType type);
+
+    // Flush staged changes to GPU (for staging buffer workflow)
+    // Call this after updating elements and before rendering with them
+    // staging buffer will be deleted after copying the data
+    void flushBufferAndDiscardStaging(BufferType type);
 
     // Flush all dirty buffers
     void flushAllBuffers();
@@ -150,6 +162,21 @@ public:
     // Reset element count to 0 (doesn't clear memory, just resets the counter)
     void resetElementCount(BufferType type);
 
+    // Get CPU-accessible address of an element in the staging buffer
+    // Returns nullptr if:
+    // - Buffer doesn't exist
+    // - No staging buffer available (not using device-local memory)
+    // - Memory is not mapped
+    // - Index is out of bounds
+    // Use this for direct memory writes, but remember to call flushBuffer() afterwards
+    template<typename T>
+    T* getElementAddress(BufferType type, uint32_t index);
+
+    // Get CPU-accessible address of a range of elements
+    // Same restrictions as getElementAddress()
+    template<typename T>
+    T* getElementsAddress(BufferType type, uint32_t startIndex, uint32_t count);
+    
     // ====== CLEANUP ======
 
     // Destroy all buffers and free memory
@@ -277,11 +304,99 @@ inline uint32_t GPUMemory::appendElements(BufferType type, const T* elements, ui
         Error("GPUMemory::appendElements: Buffer type " + getBufferTypeName(type) + " not found");
         return 0;
     }
-
+    
     checkBounds(type, state->currentElementCount, count);
-
+    
     uint32_t startIndex = state->currentElementCount;
     updateBufferInternal(type, elements, count, startIndex);
     state->currentElementCount += count;
     return startIndex;
+}
+
+template<typename T>
+inline T* GPUMemory::getElementAddress(BufferType type, uint32_t index)
+{
+    auto* state = getBufferState(type);
+    if (!state) {
+        Error("GPUMemory::getElementAddress: Buffer type " + getBufferTypeName(type) + " not found");
+        return nullptr;
+    }
+    
+    // Check if staging buffer is available
+    if (!state->requiresStaging && !(state->config.memoryProperties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
+        Error("GPUMemory::getElementAddress: Buffer type " + getBufferTypeName(type) + 
+              " has no CPU-accessible memory (not host-visible and no staging buffer)");
+        return nullptr;
+    }
+    
+    // Check if memory is mapped
+    if (!state->mappedMemory) {
+        Error("GPUMemory::getElementAddress: Buffer type " + getBufferTypeName(type) + " memory is not mapped");
+        return nullptr;
+    }
+    
+    // Check bounds
+    if (index >= state->config.maxElementCount) {
+        Error("GPUMemory::getElementAddress: Index " + std::to_string(index) + 
+              " out of bounds for buffer type " + getBufferTypeName(type) + 
+              " (max: " + std::to_string(state->config.maxElementCount) + ")");
+        return nullptr;
+    }
+    
+    // Verify element size matches
+    if (sizeof(T) != state->config.elementSize) {
+        Error("GPUMemory::getElementAddress: Template type size " + std::to_string(sizeof(T)) + 
+              " does not match configured element size " + std::to_string(state->config.elementSize) + 
+              " for buffer type " + getBufferTypeName(type));
+        return nullptr;
+    }
+    
+    // Calculate offset and return pointer
+    VkDeviceSize offset = index * state->config.elementSize;
+    char* basePtr = static_cast<char*>(state->mappedMemory);
+    return reinterpret_cast<T*>(basePtr + offset);
+}
+
+template<typename T>
+inline T* GPUMemory::getElementsAddress(BufferType type, uint32_t startIndex, uint32_t count)
+{
+    auto* state = getBufferState(type);
+    if (!state) {
+        Error("GPUMemory::getElementsAddress: Buffer type " + getBufferTypeName(type) + " not found");
+        return nullptr;
+    }
+    
+    // Check if staging buffer is available
+    if (!state->requiresStaging && !(state->config.memoryProperties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
+        Error("GPUMemory::getElementsAddress: Buffer type " + getBufferTypeName(type) + 
+              " has no CPU-accessible memory (not host-visible and no staging buffer)");
+        return nullptr;
+    }
+    
+    // Check if memory is mapped
+    if (!state->mappedMemory) {
+        Error("GPUMemory::getElementsAddress: Buffer type " + getBufferTypeName(type) + " memory is not mapped");
+        return nullptr;
+    }
+    
+    // Check bounds
+    if (startIndex + count > state->config.maxElementCount) {
+        Error("GPUMemory::getElementsAddress: Range [" + std::to_string(startIndex) + ", " + 
+              std::to_string(startIndex + count) + ") exceeds max element count " + 
+              std::to_string(state->config.maxElementCount) + " for buffer type " + getBufferTypeName(type));
+        return nullptr;
+    }
+    
+    // Verify element size matches
+    if (sizeof(T) != state->config.elementSize) {
+        Error("GPUMemory::getElementsAddress: Template type size " + std::to_string(sizeof(T)) + 
+              " does not match configured element size " + std::to_string(state->config.elementSize) + 
+              " for buffer type " + getBufferTypeName(type));
+        return nullptr;
+    }
+    
+    // Calculate offset and return pointer
+    VkDeviceSize offset = startIndex * state->config.elementSize;
+    char* basePtr = static_cast<char*>(state->mappedMemory);
+    return reinterpret_cast<T*>(basePtr + offset);
 }

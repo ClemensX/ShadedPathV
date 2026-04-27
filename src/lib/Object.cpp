@@ -12,9 +12,9 @@ void MeshStore::init(ShadedPathEngine* engine) {
 	auto* mem = engine->globalRendering.getCurrentGPUMemoryChunk();
     gpuMeshIndices.resize(engine->getMaxMeshes());
     gpuMeshInfos.resize(engine->getMaxMeshes() * 10);
-	VkDeviceSize size = gpuMeshIndices.size() * sizeof(GPUMeshIndex)
-        + gpuMeshInfos.size() * sizeof(GPUMeshInfo);
-	uint64_t pos = engine->globalRendering.reserveInGlobalBuffer(size, mem);
+	//VkDeviceSize size = gpuMeshIndices.size() * sizeof(GPUMeshIndex)
+ //       + gpuMeshInfos.size() * sizeof(GPUMeshInfo);
+	//uint64_t pos = engine->globalRendering.reserveInGlobalBuffer(size, mem);
 	// new GPU buffers:
     engine->globalRendering.gpuMemory.defineBuffer(BufferType::MeshIndices, sizeof(GPUMeshIndex), engine->getMaxMeshes());
     engine->globalRendering.gpuMemory.defineBuffer(BufferType::MeshInfos, sizeof(GPUMeshInfo), engine->getMaxMeshes() * 10);
@@ -230,6 +230,7 @@ void MeshStore::aquireMeshletData(std::string filename, std::string id, bool reg
 
 void MeshStore::uploadMesh(MeshInfo* mesh_ptr)
 {
+	auto& gb = engine->globalRendering.gpuMemory;
 	assert(mesh_ptr->vertices.size() > 0);
 	assert(mesh_ptr->indices.size() > 0);
 
@@ -242,23 +243,24 @@ void MeshStore::uploadMesh(MeshInfo* mesh_ptr)
 	if (meshletDescBufferSize > 0) {
         auto* mem = engine->globalRendering.getCurrentGPUMemoryChunk();
         // global storage buffer:
-		mesh_ptr->GPUMeshStorageBaseAddress = mem->address;
-		uint64_t pos = engine->globalRendering.uploadToGlobalBuffer(vertexBufferSize, mesh_ptr->vertices.data(), mem);
+		//mesh_ptr->GPUMeshStorageBaseAddress = mem->address;
+		//uint64_t pos = engine->globalRendering.uploadToGlobalBuffer(vertexBufferSize, mesh_ptr->vertices.data(), mem);
+		uint64_t pos = gb.copyToGlobalBuffer(vertexBufferSize, mesh_ptr->vertices.data());
 		mesh_ptr->vertexOffset = pos;
 
-		pos = engine->globalRendering.uploadToGlobalBuffer(globalIndexBufferSize, mesh_ptr->outGlobalIndexBuffer.data(), mem);
+		pos = gb.copyToGlobalBuffer(globalIndexBufferSize, mesh_ptr->outGlobalIndexBuffer.data());
 		mesh_ptr->globalIndexOffset = pos;
 
-		pos = engine->globalRendering.uploadToGlobalBuffer(localIndexBufferSize, mesh_ptr->outLocalIndexPrimitivesBuffer.data(), mem);
+		pos = gb.copyToGlobalBuffer(localIndexBufferSize, mesh_ptr->outLocalIndexPrimitivesBuffer.data());
 		mesh_ptr->localIndexOffset = pos;
 
-		pos = engine->globalRendering.uploadToGlobalBuffer(meshletDescBufferSize, mesh_ptr->outMeshletDesc.data(), mem);
+		pos = gb.copyToGlobalBuffer(meshletDescBufferSize, mesh_ptr->outMeshletDesc.data());
 		mesh_ptr->meshletOffset = pos;
         // update GPU mesh info structures:
 		int index = mesh_ptr->meshNum; // mesh index in global mesh store, increased with each new mesh, each LOD counts as one mesh
         int lodIndex = index / 10; // each 10 meshes are one LOD group
 		int lodLevel = index % 10; // lod level inside group
-		Log("Upload mesh info" << index << " to GPU\n");
+		Log("Upload mesh " << index << " to GPU\n");
         uint64_t sizeIndices = gpuMeshIndices.size() * sizeof(GPUMeshIndex);
         uint64_t sizeInfos = index * sizeof(GPUMeshInfo);
 		gpuMeshIndices[lodIndex].gpuMeshInfoIndex[lodLevel] = index;
@@ -267,20 +269,28 @@ void MeshStore::uploadMesh(MeshInfo* mesh_ptr)
         gpuMeshInfos[index].localIndexOffset = mesh_ptr->localIndexOffset;
         gpuMeshInfos[index].meshletOffset = mesh_ptr->meshletOffset;
         gpuMeshInfos[index].meshletCount = (uint32_t)mesh_ptr->outMeshletDesc.size();
+		// copy to staging
+		gb.updateElement(MeshIndices, gpuMeshIndices[lodIndex], lodIndex);
+
+		// validations
+		GPUMeshIndex* testMeshIndex = gb.getElementAddress<GPUMeshIndex>(MeshIndices, lodIndex);
+		assert(testMeshIndex->gpuMeshInfoIndex[0] == gpuMeshIndices[lodIndex].gpuMeshInfoIndex[0]);
+		assert(testMeshIndex->gpuMeshInfoIndex[lodLevel] == gpuMeshIndices[lodIndex].gpuMeshInfoIndex[lodLevel]);
+
+
         int indicesOffset = lodIndex * sizeof(GPUMeshIndex);
-		engine->globalRendering.copyToGlobalBuffer(sizeof(GPUMeshIndex), &gpuMeshIndices[lodIndex], mem, indicesOffset);
-		engine->globalRendering.copyToGlobalBuffer(sizeof(GPUMeshInfo), &gpuMeshInfos[index], mem, sizeIndices + sizeInfos);
+		//engine->globalRendering.copyToGlobalBuffer(sizeof(GPUMeshIndex), &gpuMeshIndices[lodIndex], mem, indicesOffset);
+		//engine->globalRendering.copyToGlobalBuffer(sizeof(GPUMeshInfo), &gpuMeshInfos[index], mem, sizeIndices + sizeInfos);
 		if (index == 0) {
 			Log(" First mesh GPUMeshIndex index: " << std::hex << gpuMeshIndices[0].gpuMeshInfoIndex[0] << std::dec << endl);
 			Log(" First mesh GPUMeshInfo meshlet offset: " << std::hex << gpuMeshInfos[0].meshletOffset << std::dec << endl);
 		}
 	}
     // test new gpu buffers:
-    auto& gb = engine->globalRendering.gpuMemory;
-	// set 1st element:
-    GPUMeshIndex testIndex;
-    testIndex.gpuMeshInfoIndex[0] = 12345;
-	gb.updateElement(BufferType::MeshIndices, testIndex, 0);
+	//// set 1st element:
+	//   GPUMeshIndex testIndex;
+	//   testIndex.gpuMeshInfoIndex[0] = 12345;
+	//gb.updateElement(BufferType::MeshIndices, testIndex, 0);
 	gb.flushAllBuffers();
 }
 
@@ -2151,7 +2161,7 @@ void MeshCollection::logLodMeshes() const
     Log(" Major mesh count (LODs): " << primMap.getMajorMeshCount() << " Max primitive count over all LODs: " << primMap.getMaxPrimCount() << endl);
 	for (int lodLevel = 0; lodLevel < primMap.getMajorMeshCount(); ++lodLevel) {
         const MeshInfo* mi = getMeshInfoAt(lodLevel);
-		Log("Mesh collection major meshIndex (LOD) " << lodLevel << endl);
+		Log("Mesh collection major testMeshIndex (LOD) " << lodLevel << endl);
 		for (int primCount = 0; primCount < primMap.getWidth(); ++primCount) {
 			int collIndex = primMap.get(lodLevel, primCount);
 			if (collIndex >= 0) {
