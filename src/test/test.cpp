@@ -877,7 +877,8 @@ TEST_F(MeshletTest, MeshletStorageFile) {
 }
 
 TEST(MeshStoreTest, MeshCollectionStore) {
-    MeshCollectionStore meshCollectionStore;
+    MeshStore fakeMeshStore;
+    MeshCollectionStore meshCollectionStore(&fakeMeshStore);
     EXPECT_EQ(0, meshCollectionStore.size());
     EXPECT_TRUE(meshCollectionStore.getMeshCollectionByIndex(0) == nullptr);
     auto mc1 = meshCollectionStore.addMeshCollection();

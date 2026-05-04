@@ -236,7 +236,7 @@ void Forest::init() {
     ls.color = vec3(1.0f);
     ls.position = vec3(75.0f, 30.5f, -40.0f);
     engine->shaders.pbrShader.changeLightSource(ls.color, ls.position);
-    engine->shaders.pbrShader.initialUpload();
+    engine->shaders.pbrShader.initialUpload(true);
 
     gatherUIDetails();
 

@@ -64,7 +64,8 @@ void GPUMemory::defineBuffer(BufferType type, uint32_t elementSize, uint32_t max
         config.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         break;
     case StorageBuffer:
-    case MeshIndices:
+    case CollectionIndices:
+    case CollectionInfos:
     case MeshInfos:
         config.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         break;
@@ -117,7 +118,15 @@ void GPUMemory::flushBuffer(BufferType type)
         VkDeviceSize bufferSize = state->config.elementSize * state->config.maxElementCount;
         //rendering->copyBuffer(state->stagingBuffer, state->buffer, bufferSize, 0);
         rendering->copyBuffer(state->stagingBuffer, state->chunk->buffer, bufferSize, state->relDeviceAddress);
-        Log("WARNING: Flushed buffer " << getBufferTypeName(type) << " from staging to device buffer" << endl);
+        // emit warning if flushing the same buffer multiple times:
+        if (state->wasAlreadyFlushed) {
+            Log("WARNING: Flushed buffer " << getBufferTypeName(type) << " from staging to device buffer multiple times" << endl);
+        }
+        state->wasAlreadyFlushed = true;
+        // emit warning if called during rendering phase
+        if (engine->isRenderingPhase()) {
+            Log("WARNING: Flushed buffer " << getBufferTypeName(type) << " from staging to device buffer during rendering phase" << endl);
+        }
     }
     // For host-visible buffers, data is already in place
 
@@ -363,15 +372,16 @@ void GPUMemory::checkBounds(BufferType type, uint32_t startIndex, uint32_t count
 string GPUMemory::getBufferTypeName(BufferType type) const
 {
     switch (type) {
-    case MeshIndices:    return "MeshIndices";
-    case MeshInfos:      return "MeshInfos";
-    case UniformBuffer:  return "UniformBuffer";
-    case StorageBuffer:  return "StorageBuffer";
-    case VertexBuffer:   return "VertexBuffer";
-    case IndexBuffer:    return "IndexBuffer";
-    case IndirectBuffer: return "IndirectBuffer";
-    case TextureBuffer:  return "TextureBuffer";
-    default:             return "Unknown";
+    case CollectionIndices:    return "CollectionIndices";
+    case CollectionInfos:      return "CollectionInfos";
+    case MeshInfos:            return "MeshInfos";
+    case UniformBuffer:        return "UniformBuffer";
+    case StorageBuffer:        return "StorageBuffer";
+    case VertexBuffer:         return "VertexBuffer";
+    case IndexBuffer:          return "IndexBuffer";
+    case IndirectBuffer:       return "IndirectBuffer";
+    case TextureBuffer:        return "TextureBuffer";
+    default:                   return "Unknown";
     }
 }
 
@@ -386,7 +396,8 @@ void GPUMemory::fillPushConstants(GPUMemoryPushConstants* pushConstants) const
     memset(pushConstants, 0, sizeof(GPUMemoryPushConstants));
 
     // Fill in device addresses for each buffer type that exists
-    pushConstants->meshIndicesAddress = getDeviceAddress(MeshIndices);
+    pushConstants->collectionIndicesAddress = getDeviceAddress(CollectionIndices);
+    pushConstants->collectionInfosAddress = getDeviceAddress(CollectionInfos);
     pushConstants->meshInfosAddress = getDeviceAddress(MeshInfos);
     //pushConstants->uniformBufferAddress = getDeviceAddress(UniformBuffer);
     //pushConstants->storageBufferAddress = getDeviceAddress(StorageBuffer);
@@ -394,7 +405,8 @@ void GPUMemory::fillPushConstants(GPUMemoryPushConstants* pushConstants) const
     //pushConstants->indexBufferAddress = getDeviceAddress(IndexBuffer);
     //pushConstants->indirectBufferAddress = getDeviceAddress(IndirectBuffer);
     //pushConstants->textureBufferAddress = getDeviceAddress(TextureBuffer);
-    Log("WARNING: GPUMemory::fillPushConstants: Filled push constants with buffer addresses: MeshIndices=" << std::hex << pushConstants->meshIndicesAddress <<
+    Log("WARNING: GPUMemory::fillPushConstants: Filled push constants with buffer addresses: CollectionIndices=" << std::hex << pushConstants->collectionIndicesAddress <<
+        ", CollectionInfos=" << pushConstants->collectionInfosAddress <<
         ", MeshInfos=" << pushConstants->meshInfosAddress << std::dec << endl);
 }
 

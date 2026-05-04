@@ -1165,6 +1165,7 @@ void Util::GenerateCylinderMesh(
     }
 }
 
+// TODO: needs serious rework after we changed the GPU mesh data structures
 void Util::logGPUStructuresMarkdown(std::string filename)
 {
     std::stringstream md;
@@ -1186,7 +1187,7 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     auto& sortedMeshes = meshStore.getSortedList();
     md << "- **Total Meshes:** " << sortedMeshes.size() << "\n";
     md << "- **Max Meshes:** " << engine->getMaxMeshes() << "\n";
-    md << "- **GPU Mesh Indices Size:** " << meshStore.getGPUMeshIndices().size() << "\n";
+    md << "- **GPU Mesh Collections Info Size:** " << meshStore.getGPUCollectionInfos().size() << "\n";
     md << "- **GPU Mesh Infos Size:** " << meshStore.getGPUMeshInfos().size() << "\n\n";
 
     // GPU Base Addresses
@@ -1195,30 +1196,32 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     md << "| Structure | Base Address (hex) | Base Address (dec) |\n";
     md << "|-----------|-------------------|-------------------|\n";
     md << "| Global GPU Memory Chunk | 0x" << std::hex << mem->address << std::dec << " | " << mem->address << " |\n";
-    md << "| Push Constants - Indices | 0x" << std::hex << engine->shaders.pbrShader.gpuMemPush.meshIndicesAddress 
-       << std::dec << " | " << engine->shaders.pbrShader.gpuMemPush.meshIndicesAddress << " |\n";
-    md << "| Push Constants - Infos | 0x" << std::hex << engine->shaders.pbrShader.gpuMemPush.meshInfosAddress 
+    md << "| Push Constants - Coll Indices | 0x" << std::hex << engine->shaders.pbrShader.gpuMemPush.collectionIndicesAddress
+        << std::dec << " | " << engine->shaders.pbrShader.gpuMemPush.collectionIndicesAddress << " |\n";
+    md << "| Push Constants - Coll Infos | 0x" << std::hex << engine->shaders.pbrShader.gpuMemPush.collectionInfosAddress
+        << std::dec << " | " << engine->shaders.pbrShader.gpuMemPush.collectionInfosAddress << " |\n";
+    md << "| Push Constants - Infos | 0x" << std::hex << engine->shaders.pbrShader.gpuMemPush.meshInfosAddress
        << std::dec << " | " << engine->shaders.pbrShader.gpuMemPush.meshInfosAddress << " |\n\n";
 
     // Push Constants Details
     md << "## Push Constants Details\n\n";
     md << "Push constants are used in the mesh shader to access GPU mesh data structures efficiently.\n\n";
     
-    auto& gpuMeshIndices = meshStore.getGPUMeshIndices();
+    auto& gpuCollectionIndices = meshStore.getGPUCollectionIndices();
     auto& gpuMeshInfos = meshStore.getGPUMeshInfos();
     
     md << "### Indices Array (`meshIndicesAddress`)\n";
-    md << "- **Address:** 0x" << std::hex << engine->shaders.pbrShader.gpuMemPush.meshIndicesAddress << std::dec << "\n";
-    md << "- **Element Type:** `GPUMeshIndex` (40 bytes each)\n";
-    md << "- **Array Size:** " << gpuMeshIndices.size() << " elements\n";
-    md << "- **Total Size:** " << (gpuMeshIndices.size() * sizeof(GPUMeshIndex)) << " bytes\n";
+    md << "- **Address:** 0x" << std::hex << engine->shaders.pbrShader.gpuMemPush.collectionIndicesAddress << std::dec << "\n";
+    md << "- **Element Type:** `GPUCollectionIndex`\n";
+    md << "- **Array Size:** " << gpuCollectionIndices.size() << " elements\n";
+    md << "- **Total Size:** " << (gpuCollectionIndices.size() * sizeof(GPUCollectionIndex)) << " bytes\n";
     md << "- **Purpose:** Index into mesh info array for LOD levels 0-9\n";
     md << "- **Non-empty entries:** ";
     int nonEmptyIndices = 0;
-    for (const auto& idx : gpuMeshIndices) {
+    for (const auto& idx : gpuCollectionIndices) {
         bool hasData = false;
         for (int j = 0; j < 10; ++j) {
-            if (idx.gpuMeshInfoIndex[j] != 0) {
+            if (idx.mainMeshCount != 0) {
                 hasData = true;
                 break;
             }
@@ -1243,8 +1246,8 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     md << "### Memory Layout\n";
     md << "```\n";
     md << "GPU Memory Chunk Base: 0x" << std::hex << mem->address << std::dec << "\n";
-    md << "├─ GPUMeshIndex Array [" << gpuMeshIndices.size() << " entries]\n";
-    md << "│  └─ Size: " << (gpuMeshIndices.size() * sizeof(GPUMeshIndex)) << " bytes\n";
+    md << "├─ GPUCollectionIndex Array [" << gpuCollectionIndices.size() << " entries]\n";
+    md << "│  └─ Size: " << (gpuCollectionIndices.size() * sizeof(GPUCollectionIndex)) << " bytes\n";
     md << "└─ GPUMeshInfo Array [" << gpuMeshInfos.size() << " entries]\n";
     md << "   └─ Size: " << (gpuMeshInfos.size() * sizeof(GPUMeshInfo)) << " bytes\n";
     md << "```\n\n";
@@ -1255,11 +1258,11 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     md << "|-----------|------|------|------|------|------|------|------|------|------|------|\n";
 
     //auto& gpuMeshIndices = meshStore.getGPUMeshIndices();
-    for (size_t i = 0; i < gpuMeshIndices.size(); ++i) {
-        auto& idx = gpuMeshIndices[i];
+    for (size_t i = 0; i < gpuCollectionIndices.size(); ++i) {
+        auto& idx = gpuCollectionIndices[i];
         bool hasData = false;
         for (int j = 0; j < 10; ++j) {
-            if (idx.gpuMeshInfoIndex[j] != 0) {
+            if (idx.mainMeshCount != 0) {
                 hasData = true;
                 break;
             }
@@ -1267,7 +1270,7 @@ void Util::logGPUStructuresMarkdown(std::string filename)
         if (hasData) {
             md << "| " << i;
             for (int j = 0; j < 10; ++j) {
-                md << " | " << idx.gpuMeshInfoIndex[j];
+                md << " | " << idx.gpuCollectionIndex;
             }
             md << " |\n";
         }
@@ -1279,10 +1282,10 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     
     // Build map from GPUMeshInfo index to Mesh ID(s)
     std::map<size_t, std::vector<std::string>> meshInfoIndexToMeshIds;
-    for (size_t idxNum = 0; idxNum < gpuMeshIndices.size(); ++idxNum) {
-        const auto& idx = gpuMeshIndices[idxNum];
+    for (size_t idxNum = 0; idxNum < gpuCollectionIndices.size(); ++idxNum) {
+        const auto& idx = gpuCollectionIndices[idxNum];
         for (int lodLevel = 0; lodLevel < 10; ++lodLevel) {
-            uint32_t infoIndex = idx.gpuMeshInfoIndex[lodLevel];
+            uint32_t infoIndex = idx.gpuCollectionIndex;
             if (infoIndex != 0) {
                 // Find mesh with this collection index and LOD level
                 for (auto* mesh : sortedMeshes) {
@@ -1600,4 +1603,17 @@ void KDTree3D::nearestUnused(KDTreeNode* node, const glm::vec3& query, int depth
     KDTreeNode* second = diff < 0 ? node->right : node->left;
     if (first) nearestUnused(first, query, depth + 1, bestDist, bestIdx);
     if (second && std::abs(diff) < bestDist) nearestUnused(second, query, depth + 1, bestDist, bestIdx);
+}
+
+std::string Util::to_string(const GPUMeshInfo& info)
+{
+    std::ostringstream oss;
+    oss << "MeshInfo: ";
+    oss << "vertexOffset: 0x" << std::setfill('0') << std::setw(8) << std::hex << info.vertexOffset << ", ";
+    oss << "globalIndexOffset: 0x" << std::setfill('0') << std::setw(8) << std::hex << info.globalIndexOffset << ", ";
+    oss << "localIndexOffset: 0x" << std::setfill('0') << std::setw(8) << std::hex << info.localIndexOffset << ", ";
+    oss << "meshletOffset: 0x" << std::setfill('0') << std::setw(8) << std::hex << info.meshletOffset << ", ";
+    oss << "meshletCount: 0x" << std::setfill('0') << std::setw(8) << std::hex << info.meshletCount;
+
+    return oss.str();
 }

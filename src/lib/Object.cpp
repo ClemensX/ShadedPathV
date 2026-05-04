@@ -10,14 +10,22 @@ void MeshStore::init(ShadedPathEngine* engine) {
 
 	// initialize structures on GPU global mesh storage:
 	auto* mem = engine->globalRendering.getCurrentGPUMemoryChunk();
-    gpuMeshIndices.resize(engine->getMaxMeshes());
-    gpuMeshInfos.resize(engine->getMaxMeshes() * 10);
+
+	// set array sizes, these are guarded and user needs to adjust them if too small at runtime
+    size_t maxMeshes = engine->getMaxMeshes() * 10; // max meshes is a user setting, roughly we need 10 meshes as each 'user mesh' has 10 LOD
+	size_t maxCollectionIndices = engine->getMaxCollections();
+	size_t maxCollectionInfos = maxCollectionIndices * 3; // rough estimate, on average we assume each collection to hav at most 3 main meshes
+
+    gpuCollectionIndices.resize(maxCollectionIndices);
+    gpuCollectionInfos.resize(maxCollectionInfos);
+    gpuMeshInfos.resize(maxMeshes);
 	//VkDeviceSize size = gpuMeshIndices.size() * sizeof(GPUMeshIndex)
  //       + gpuMeshInfos.size() * sizeof(GPUMeshInfo);
 	//uint64_t pos = engine->globalRendering.reserveInGlobalBuffer(size, mem);
 	// new GPU buffers:
-    engine->globalRendering.gpuMemory.defineBuffer(BufferType::MeshIndices, sizeof(GPUMeshIndex), engine->getMaxMeshes());
-    engine->globalRendering.gpuMemory.defineBuffer(BufferType::MeshInfos, sizeof(GPUMeshInfo), engine->getMaxMeshes() * 10);
+    engine->globalRendering.gpuMemory.defineBuffer(BufferType::CollectionIndices, sizeof(GPUCollectionIndex), maxCollectionIndices);
+    engine->globalRendering.gpuMemory.defineBuffer(BufferType::CollectionInfos, sizeof(GPUCollectionInfo), maxCollectionInfos);
+    engine->globalRendering.gpuMemory.defineBuffer(BufferType::MeshInfos, sizeof(GPUMeshInfo), maxMeshes);
     engine->globalRendering.gpuMemory.allocateBuffers();
 }
 
@@ -260,29 +268,43 @@ void MeshStore::uploadMesh(MeshInfo* mesh_ptr)
 		int index = mesh_ptr->meshNum; // mesh index in global mesh store, increased with each new mesh, each LOD counts as one mesh
         int lodIndex = index / 10; // each 10 meshes are one LOD group
 		int lodLevel = index % 10; // lod level inside group
-		Log("Upload mesh " << index << " to GPU\n");
-        uint64_t sizeIndices = gpuMeshIndices.size() * sizeof(GPUMeshIndex);
+        // get collection containing this mesh:
+		size_t collectionIndex = mesh_ptr->collectionStoreIndex;
+		auto coll = engine->meshStore.meshCollectionStore.getMeshCollectionByIndex(collectionIndex);
+        assert(coll->index == collectionIndex);
+		assert(coll->index < gpuCollectionIndices.size());
+		Log("Upload mesh global idx " << index << " to GPU (collection id " << coll->id << " index " << collectionIndex <<	"), coll index " << mesh_ptr->gltfCollectionIndex << endl);
+        uint64_t sizeIndices = gpuCollectionIndices.size() * sizeof(GPUCollectionIndex);
         uint64_t sizeInfos = index * sizeof(GPUMeshInfo);
-		gpuMeshIndices[lodIndex].gpuMeshInfoIndex[lodLevel] = index;
+		//gpuCollectionIndices[lodIndex].gpuMeshInfoIndex[lodLevel] = index;
         gpuMeshInfos[index].vertexOffset = mesh_ptr->vertexOffset;
-        gpuMeshInfos[index].globalIndexOffset = mesh_ptr->globalIndexOffset;
-        gpuMeshInfos[index].localIndexOffset = mesh_ptr->localIndexOffset;
-        gpuMeshInfos[index].meshletOffset = mesh_ptr->meshletOffset;
-        gpuMeshInfos[index].meshletCount = (uint32_t)mesh_ptr->outMeshletDesc.size();
+		gpuMeshInfos[index].globalIndexOffset = mesh_ptr->globalIndexOffset;
+		gpuMeshInfos[index].localIndexOffset = mesh_ptr->localIndexOffset;
+		gpuMeshInfos[index].meshletOffset = mesh_ptr->meshletOffset;
+		gpuMeshInfos[index].meshletCount = (uint32_t)mesh_ptr->outMeshletDesc.size();
+		//gpuMeshInfos[index].vertexOffset = 1;
+		//gpuMeshInfos[index].globalIndexOffset = 2;
+		//gpuMeshInfos[index].localIndexOffset = 3;
+		//gpuMeshInfos[index].meshletOffset = 4;
+		//gpuMeshInfos[index].meshletCount = 5;
+		if (index == 0x0b) {
+			Log("[" << index << "] " << Util::to_string(gpuMeshInfos[index]) << endl);
+		}
 		// copy to staging
-		gb.updateElement(MeshIndices, gpuMeshIndices[lodIndex], lodIndex);
+		gb.updateElement(CollectionIndices, gpuCollectionIndices[lodIndex], lodIndex);
+        gb.updateElement(MeshInfos, gpuMeshInfos[index], index);
 
 		// validations
-		GPUMeshIndex* testMeshIndex = gb.getElementAddress<GPUMeshIndex>(MeshIndices, lodIndex);
-		assert(testMeshIndex->gpuMeshInfoIndex[0] == gpuMeshIndices[lodIndex].gpuMeshInfoIndex[0]);
-		assert(testMeshIndex->gpuMeshInfoIndex[lodLevel] == gpuMeshIndices[lodIndex].gpuMeshInfoIndex[lodLevel]);
+		//GPUMeshIndex* testMeshIndex = gb.getElementAddress<GPUMeshIndex>(MeshIndices, lodIndex);
+		//assert(testMeshIndex->gpuMeshInfoIndex[0] == gpuMeshIndices[lodIndex].gpuMeshInfoIndex[0]);
+		//assert(testMeshIndex->gpuMeshInfoIndex[lodLevel] == gpuMeshIndices[lodIndex].gpuMeshInfoIndex[lodLevel]);
 
 
-        int indicesOffset = lodIndex * sizeof(GPUMeshIndex);
+        //int indicesOffset = lodIndex * sizeof(GPUMeshIndex);
 		//engine->globalRendering.copyToGlobalBuffer(sizeof(GPUMeshIndex), &gpuMeshIndices[lodIndex], mem, indicesOffset);
 		//engine->globalRendering.copyToGlobalBuffer(sizeof(GPUMeshInfo), &gpuMeshInfos[index], mem, sizeIndices + sizeInfos);
 		if (index == 0) {
-			Log(" First mesh GPUMeshIndex index: " << std::hex << gpuMeshIndices[0].gpuMeshInfoIndex[0] << std::dec << endl);
+			//Log(" First mesh GPUMeshIndex index: " << std::hex << gpuMeshIndices[0].gpuMeshInfoIndex[0] << std::dec << endl);
 			Log(" First mesh GPUMeshInfo meshlet offset: " << std::hex << gpuMeshInfos[0].meshletOffset << std::dec << endl);
 		}
 	}
@@ -291,7 +313,7 @@ void MeshStore::uploadMesh(MeshInfo* mesh_ptr)
 	//   GPUMeshIndex testIndex;
 	//   testIndex.gpuMeshInfoIndex[0] = 12345;
 	//gb.updateElement(BufferType::MeshIndices, testIndex, 0);
-	gb.flushAllBuffers();
+	//gb.flushAllBuffers();
 }
 
 const vector<MeshInfo*> &MeshStore::getSortedList()
@@ -2128,6 +2150,9 @@ MeshCollection* MeshCollectionStore::addMeshCollection() {
 	meshCollections_.emplace_back();
 	MeshCollection* ret = &meshCollections_.back();
     ret->index = meshCollections_.size() - 1;
+	if (ret->index >= this->meshStore_->getGPUCollectionIndices().size()) {
+		Error("MeshCollectionStore::addMeshCollection: index out of range. Increase by calling engine->setMaxCollections()");
+	}
     return ret;
 }
 

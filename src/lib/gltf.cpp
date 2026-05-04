@@ -969,6 +969,15 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
 		Log("Found mesh: " << mi->id << " gltfCollectionIndex: " << mi->gltfCollectionIndex << " gltfPrimitiveIndex: " << mi->gltfPrimitiveIndex
 			<< " gltfNextPrimitive: " << mi->gltfNextPrimitiveIndex << " meshletDesc size: " << mi->outMeshletDesc.size() << endl);
 	}
+	// assertions
+    assert(majorMeshCount == 1 || majorMeshCount == 10);
+
+	for (auto* mi : *coll) {
+		if (majorMeshCount == 10 && !mi->flags.hasFlag(MeshFlags::MESH_TYPE_LOD)) {
+			Log("INFO: LOD meshes detected based on major mesh count. Switching on LOD flag for mesh: " << mi->id << " Consider switching on LOD flag in app code." << endl);
+            mi->flags.setFlag(MeshFlags::MESH_TYPE_LOD);
+		}
+	}
 }
 
 void glTF::mapTinyGLTFSamplerToVulkan(const tinygltf::Sampler& gltfSampler, VkSamplerCreateInfo& vkSamplerInfo) {

@@ -4,6 +4,7 @@
 class Util;
 struct SoundDef;
 struct MeshInfo;
+class MeshStore;
 
 enum class MeshFlags : int {
 	MESH_TYPE_INVALID = 0,
@@ -264,7 +265,7 @@ public:
 
 class MeshCollectionStore {
 	public:
-	MeshCollectionStore() = default;
+	MeshCollectionStore(MeshStore* meshStore) : meshStore_(meshStore) {}
 	~MeshCollectionStore();
 	// get ptr to MeshCollection by index, nullptr if out of range, do not store pointer as the address may change after extending the collection store
 	MeshCollection* getMeshCollectionByIndex(int index);
@@ -278,6 +279,7 @@ class MeshCollectionStore {
     }
 private:
     std::vector<MeshCollection> meshCollections_;
+    MeshStore* meshStore_ = nullptr;
 };
 
 enum class Axis { X, Y, Z };
@@ -416,6 +418,9 @@ struct MeshInfo
         }
 		return false;
 	};
+    bool isLodMesh() {
+        return flags.hasFlag(MeshFlags::MESH_TYPE_LOD);
+    }
 };
 typedef MeshInfo* ObjectID;
 
@@ -437,8 +442,18 @@ enum class MeshletFlags : uint32_t {
 	MESHLET_SIMPLIFY_MESH = 16, // remove duplicate vertices and triangles
 };
 
-struct GPUMeshIndex {
-    uint32_t gpuMeshInfoIndex[10]; // base address of mesh storage buffer on GPU for LOD 0..9
+struct GPUCollectionIndex {
+    uint32_t gpuCollectionIndex; // index into CollectionInfos (== index of first major mesh of this collection)
+	uint32_t mainMeshCount; // number of main meshes in this collection
+};
+
+struct GPUCollectionInfo {
+	uint32_t collectionIndex; // 
+    uint32_t meshNumberInCollection; // # mesh num inside collection
+    uint32_t flags; // mesh flags, e.g. LOD
+    uint32_t meshIndex; // index into gpuMeshInfos
+    uint32_t next; // if > 0, index of next major mesh in collection, otherwise this is the last mesh of the collection
+	uint32_t pad0;
 };
 
 struct GPUMeshInfo {
@@ -453,6 +468,9 @@ struct GPUMeshInfo {
 // Mesh Store to organize objects loaded from gltf files.
 class MeshStore {
 public:
+	MeshStore(): meshCollectionStore(this) {
+
+	}
 	// init object store
 	void init(ShadedPathEngine* engine);
 	~MeshStore();
@@ -548,8 +566,9 @@ public:
 	void reorderForPrimitiveBlocks(MeshCollection* coll);
     
     // Public accessors for GPU structures (for logging/debugging)
-    const std::vector<GPUMeshIndex>& getGPUMeshIndices() const { return gpuMeshIndices; }
-    const std::vector<GPUMeshInfo>& getGPUMeshInfos() const { return gpuMeshInfos; }
+	const std::vector<GPUCollectionIndex>& getGPUCollectionIndices() const { return gpuCollectionIndices; }
+	const std::vector<GPUCollectionInfo>& getGPUCollectionInfos() const { return gpuCollectionInfos; }
+	const std::vector<GPUMeshInfo>& getGPUMeshInfos() const { return gpuMeshInfos; }
 
 private:
 	// debug graphics, bounding box, vertices and normals are added to line shader
@@ -572,8 +591,9 @@ private:
 	// generate or load meshlet data. will show error log message if meshlet file not found and regenerate == false
 	void aquireMeshletData(std::string filename, std::string id, bool regenerateMeshletData = false);
     int meshNumber = 0; // count all meshes
-    std::vector<GPUMeshIndex> gpuMeshIndices; // one per mesh
-    std::vector<GPUMeshInfo> gpuMeshInfos; // one per LOD level of each mesh
+	std::vector<GPUCollectionIndex> gpuCollectionIndices; // one per collection
+	std::vector<GPUCollectionInfo> gpuCollectionInfos; // one per major mesh in collection
+	std::vector<GPUMeshInfo> gpuMeshInfos; // one per LOD level of each mesh
 };
 
 // 

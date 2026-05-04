@@ -2,6 +2,7 @@
 class ThreadResources;
 struct LineDef;
 class World;
+struct GPUMeshInfo;
 
 // vulkan extensions function pointers:
 /* Put this somewhere in a header file and include it alongside (and after) vulkan.h: */
@@ -90,6 +91,9 @@ public:
         default: return "n/a";
         };
     }
+
+    // debug info for MeshInfo output
+    static std::string to_string(const GPUMeshInfo& info);
 
     Util(ShadedPathEngine* s) {
         Log("Util c'tor\n");

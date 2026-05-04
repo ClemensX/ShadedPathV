@@ -2,6 +2,21 @@
 
 #pragma once
 
+enum EnginePhase {
+    STARTING, // during initializer cascade, before c'tor()
+    INIT,     // engine and app initialization, before rendering loop
+    RENDERING // set at start of rendering loop
+};
+
+inline std::string to_string(EnginePhase phase) {
+    switch (phase) {
+    case STARTING:  return "STARTING";
+    case INIT:      return "INIT";
+    case RENDERING: return "RENDERING";
+    default:        return "UNKNOWN";
+    }
+}
+
 // all applications must implement this class and register with engine.
 // All callback methods are defined here
 class ShadedPathApplication : public EngineParticipant
@@ -54,6 +69,7 @@ public:
         limiter(60.0f)
     {
         Log("Engine c'tor\n");
+        setEnginePhase(EnginePhase::INIT);
 #if defined (USE_FIXED_PHYSICAL_DEVICE_INDEX)
         Log("override device selection to device " << PHYSICAL_DEVICE_INDEX << std::endl);
         setFixedPhysicalDeviceIndex(PHYSICAL_DEVICE_INDEX);
@@ -100,6 +116,8 @@ public:
     ShadedPathEngine& setMaxObjects(uint64_t mo) { fii(); MaxObjects = mo; return *this; }
     // set max number of meshes allowed
     ShadedPathEngine& setMaxMeshes(uint64_t mm) { fii(); MaxMeshes = mm; return *this; }
+    // set max number of collections allowed
+    ShadedPathEngine& setMaxCollections(uint64_t mc) { fii(); MaxCollections = mc; return *this; }
     // set mesh storage size in GB
     ShadedPathEngine& setMeshStorageSizeGB(float sizeGB) { fii(); meshStorageSize = 1024*1024*1024 * sizeGB; return *this; }
 
@@ -178,10 +196,20 @@ public:
         enabledMousButtonEvents = true;
     }
 
+    bool isRenderingPhase() {
+        return enginePhase == EnginePhase::RENDERING;
+    }
+
+    bool isInitPhase() {
+        return enginePhase == EnginePhase::INIT;
+    }
+
     // get max number of objects
     uint64_t getMaxObjects() const { return MaxObjects; }
     // get max number of meshes
     uint64_t getMaxMeshes() const { return MaxMeshes; }
+    // get max number of collections
+    uint64_t getMaxCollections() const { return MaxCollections; }
     // get mesh storage size in bytes
     uint64_t getMeshStorageSize() const { return meshStorageSize; }
 
@@ -294,16 +322,20 @@ public:
         backgroundThreadQueue.push(&backRes);
         return true;
     }
-    // some global settings can only be done before rendering starts
-    bool isBeforeRendering() {
-        return !eventLoopRunning;
-    }
+
     // fail if already rendering. Util method for creating Error if engine is already in rendering phase
     void fir() {
         return;
-        if (!isBeforeRendering()) {
+        if (isRenderingPhase()) {
             Error("Engine already in rendering phase. Intended operation is not permitted\n");
         }
+    }
+
+    void setEnginePhase(EnginePhase phase) {
+        if (enginePhase != phase) {
+            Log("WARNING: Engine phase changed from " << to_string(enginePhase) << " to " << to_string(phase) << std::endl);
+        }
+        enginePhase = phase;
     }
 private:
 
@@ -323,6 +355,8 @@ private:
     uint64_t MaxObjects = 10;
     // We have to set max number of meshes, as mesh data will be stored in one large storage buffer (meshlets, vertex, index data)
     uint64_t MaxMeshes = 5;
+    // We have to set max number of collections, as collection infos will be stored in 2 GPU structures: CollectionIndices and CollectionInfos
+    uint64_t MaxCollections = 1;
     // byte size of mesh storage buffer
     //uint64_t meshStorageSize = 100; // 1024 * 1024 * 1024; // default 1 GB
     uint64_t meshStorageSize = 1024 * 1024 * 300; // default 300 MB
@@ -334,7 +368,7 @@ private:
     size_t maxTextures = 5;
     bool limitFrameCountEnabled = false;
     bool initialized = false;
-    bool eventLoopRunning = false;
+    EnginePhase enginePhase = EnginePhase::STARTING;
     bool threadsAreFinished();
     bool enabledKeyEvents = false;
     bool enabledMouseMoveEvents = false;

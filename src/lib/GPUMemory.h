@@ -5,9 +5,13 @@ class GlobalRendering;
 
 // types for named buffers, one buffer per name
 enum BufferType {
-    // for each mesh, we have an array of 10 here 
-    None = 0, // for non-staging buffers
-    MeshIndices,
+     // for non-staging buffers
+    None = 0,
+    // index into CollectionInfos table, size: engine->MaxCollections
+    CollectionIndices,
+    // collectionInfos table, one entry per main mesh
+    CollectionInfos,
+    // MeshInfos table, one entry per mesh LOD (10 LODs per main mesh), size: engine->MaxMeshes
     MeshInfos,
     UniformBuffer,
     StorageBuffer,
@@ -20,7 +24,8 @@ enum BufferType {
 // Push constants structure for passing GPU buffer addresses to shaders
 // Make sure to match this in shader code (common_cpp_shader.h or similar)
 struct GPUMemoryPushConstants {
-    uint64_t meshIndicesAddress;
+    uint64_t collectionIndicesAddress;
+    uint64_t collectionInfosAddress;
     uint64_t meshInfosAddress;
     uint64_t uniformBufferAddress;
     uint64_t storageBufferAddress;
@@ -69,6 +74,7 @@ struct BufferState {
     BufferConfiguration config;
     bool requiresStaging = true;            // true if using device-local memory (default)
     bool isDirty = false;                   // needs flushing to GPU
+    bool wasAlreadyFlushed = false;         // has already been flushed to GPU (for warning about multiple flushing)
     GPUMemoryChunk* chunk = nullptr;
 };
 
