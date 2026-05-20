@@ -1,7 +1,7 @@
 
 #include "mainheader.h"
 #include "test.h"
-#include <gtest/gtest.h>
+//#include <gtest/gtest.h>
 
 
 using namespace std;
@@ -13,27 +13,21 @@ using namespace glm;
 // we need to change working directory for all non-trivial engine tests.
 // Especially for tests that check log files.
 // each test runs in a sub folder with it's name, e.g. build\src\test\Debug\Logs"
-class WorkingDirectoryTest : public ::testing::Test {
-protected:
-    void SetUp() override {
-        const ::testing::TestInfo* test_info = ::testing::UnitTest::GetInstance()->current_test_info();
-        std::string test_name = test_info->name();
-        original_path = std::filesystem::current_path();
-        test_directory = test_name;
-        if (!std::filesystem::exists(test_directory)) {
-            std::filesystem::create_directories(test_directory);
-        }
-        std::filesystem::current_path(test_directory);
+// Implementation of WorkingDirectoryTest
+void WorkingDirectoryTest::SetUp() {
+    const ::testing::TestInfo* test_info = ::testing::UnitTest::GetInstance()->current_test_info();
+    std::string test_name = test_info->name();
+    original_path = std::filesystem::current_path();
+    test_directory = test_name;
+    if (!std::filesystem::exists(test_directory)) {
+        std::filesystem::create_directories(test_directory);
     }
+    std::filesystem::current_path(test_directory);
+}
 
-    void TearDown() override {
-        std::filesystem::current_path(original_path);
-    }
-
-private:
-    std::filesystem::path original_path;
-    std::filesystem::path test_directory;
-};
+void WorkingDirectoryTest::TearDown() {
+    std::filesystem::current_path(original_path);
+}
 
 class UtilTest : public WorkingDirectoryTest {};
 class EngineTest : public WorkingDirectoryTest {};
@@ -41,7 +35,8 @@ class EngineImageConsumer : public WorkingDirectoryTest {};
 class MeshletTest : public WorkingDirectoryTest {};
 class MeshStoreTestDynamic : public WorkingDirectoryTest {};
 
-static void minimalEngineInitialization(ShadedPathEngine* engine, int maxMeshes = -1) {
+// Shared helper function - REMOVED 'static' keyword
+void minimalEngineInitialization(ShadedPathEngine* engine, int maxMeshes) {
     engine->files.findAssetFolder("data");
     engine->overrideCPUCores(4);
     if (maxMeshes > 0) {
