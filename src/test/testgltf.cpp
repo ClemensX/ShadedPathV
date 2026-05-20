@@ -117,17 +117,11 @@ protected:
 
 // Test 1: Single mesh with no primitives or LODs
 TEST_F(GLTFParserTest, SingleMesh_NoPrimitives) {
-    // This test requires a simple GLTF file like a cube or sphere
-    // For now, we'll use a generated mesh as placeholder
-    // TODO: Replace with actual GLTF file: "cube_single.gltf"
-
     engine->files.findAssetFolder("test_samples");
     string glbFile = engine->files.findFile("cube_single.gltf", FileCategory::MESH, false);
     EXPECT_NE(0, glbFile.size()); // check that we found file
 
     engine->meshStore.loadMesh("cube_single.gltf", "SingleMesh");
-    //engine->meshStore.loadMeshCylinder("SingleMesh",
-    //    MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
 
     MeshInfo* mi = engine->meshStore.getMesh("SingleMesh");
     validateMeshInfo(mi, "SingleMesh", 0);
@@ -135,7 +129,7 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives) {
     // Verify it's not LOD and not an additional primitive
     EXPECT_FALSE(mi->isLodMesh());
     EXPECT_FALSE(mi->isAdditionalPrimitive());
-    EXPECT_EQ(mi->gltfMeshIndex, -1); // Generated mesh, not from GLTF
+    EXPECT_NE(mi->gltfMeshIndex, -1); // mesh loaded from gltf file
     EXPECT_EQ(mi->gltfNextPrimitiveIndex, -1); // No chained primitives
 }
 
