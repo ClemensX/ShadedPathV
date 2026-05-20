@@ -79,6 +79,7 @@ struct TextureInfo
     bool hasFlag(TextureFlags flag) const {
         return ::hasFlag(flags, flag);
     }
+    size_t hash = 0; // generated from raw image data, used for texture reuse and validation
 private:
 	bool available = false; // only set by TextureStore
     friend class TextureStore;
@@ -144,6 +145,10 @@ public:
 	VkDescriptorSet descriptorSet = nullptr;
 	// activate / deactivate texture
     void setTextureActive(std::string id, bool active);
+	// validation: was hash generated?
+	void validateTexture(TextureInfo* ti);
+	// generate hash value from raw image data
+	size_t generateHash(const unsigned char* bytes, int size); 
 private:
 	std::unordered_map<std::string, ::TextureInfo> textures;
 	ShadedPathEngine* engine = nullptr;

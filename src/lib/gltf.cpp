@@ -34,7 +34,6 @@ void glTF::init(ShadedPathEngine* e) {
 
 // we need to finish texture processing within this method, as tinygltf overwrites some data between calls
 // Enhanced image loader that supports both KTX and standard image formats (PNG, JPG, etc.)
-// Enhanced image loader that supports both KTX and standard image formats (PNG, JPG, etc.)
 bool LoadImageDataKTX(Image* image, const int image_idx, std::string* err,
 	std::string* warn, int req_width, int req_height,
 	const unsigned char* bytes, int size, void* user_data) {

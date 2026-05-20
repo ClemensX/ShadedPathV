@@ -1100,12 +1100,34 @@ void TextureStore::setTextureActive(std::string id, bool active)
     auto ti = textures.find(id);
     if (ti != textures.end()) {
         ti->second.available = active;
+		validateTexture(&ti->second);
 		// recreate texture pool descriptor set
 		VulkanResources::updateDescriptorSetForTextures(engine);
 		//Log("tex added and descriptor set updated: " << ti->second.id.c_str() << " index: " << ti->second.index << endl);
 		return;
 	}
     Error("Texture not found");
+}
+
+void TextureStore::validateTexture(TextureInfo* ti)
+{
+    assert(ti->hash != 0);
+    //if (ti->hash == 0) Log("Error: Validating texture: " << ti->id.c_str() << " hash: " << ti->hash << " available: " << ti->available << endl);
+}
+
+size_t TextureStore::generateHash(const unsigned char* bytes, int size) {
+	// FNV-1a hash algorithm
+	// FNV offset basis for 64-bit
+	size_t hash = 14695981039346656037ULL;
+	// FNV prime for 64-bit
+	const size_t prime = 1099511628211ULL;
+
+	for (int i = 0; i < size; ++i) {
+		hash ^= static_cast<size_t>(bytes[i]);
+		hash *= prime;
+	}
+
+	return hash;
 }
 
 TextureStore::~TextureStore()
