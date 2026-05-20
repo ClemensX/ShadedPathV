@@ -266,14 +266,11 @@ void MeshStore::uploadMesh(MeshInfo* mesh_ptr)
 		mesh_ptr->meshletOffset = pos;
         // update GPU mesh info structures:
 		int index = mesh_ptr->meshNum; // mesh index in global mesh store, increased with each new mesh, each LOD counts as one mesh
-        int lodIndex = index / 10; // each 10 meshes are one LOD group
-		int lodLevel = index % 10; // lod level inside group
         // get collection containing this mesh:
 		size_t collectionIndex = mesh_ptr->collectionStoreIndex;
 		auto coll = engine->meshStore.meshCollectionStore.getMeshCollectionByIndex(collectionIndex);
         assert(coll->index == collectionIndex);
 		assert(coll->index < gpuCollectionIndices.size());
-		Log("Upload mesh global idx " << index << " to GPU (collection id " << coll->id << " index " << collectionIndex <<	"), coll index " << mesh_ptr->gltfCollectionIndex << endl);
         uint64_t sizeIndices = gpuCollectionIndices.size() * sizeof(GPUCollectionIndex);
         uint64_t sizeInfos = index * sizeof(GPUMeshInfo);
 		//gpuCollectionIndices[lodIndex].gpuMeshInfoIndex[lodLevel] = index;
@@ -287,11 +284,20 @@ void MeshStore::uploadMesh(MeshInfo* mesh_ptr)
 		//gpuMeshInfos[index].localIndexOffset = 3;
 		//gpuMeshInfos[index].meshletOffset = 4;
 		//gpuMeshInfos[index].meshletCount = 5;
+
+        auto& collIndex = gpuCollectionIndices[collectionIndex];
+		//assert(collIndex.gpuCollectionIndex == 0);
+		//assert(collIndex.mainMeshCount == 0);
+
+		collIndex.gpuCollectionIndex = coll->getMajorMeshes()[0]->meshNum;
+        collIndex.mainMeshCount = coll->meshCount();
+
+		Log("Upload mesh global idx " << index << " to GPU (collection id " << coll->id << " index " << collectionIndex << "), info start at index " << collIndex.gpuCollectionIndex << ", # main meshes: " << collIndex.mainMeshCount << endl);
 		if (index == 0x0b) {
 			Log("[" << index << "] " << Util::to_string(gpuMeshInfos[index]) << endl);
 		}
 		// copy to staging
-		gb.updateElement(CollectionIndices, gpuCollectionIndices[lodIndex], lodIndex);
+		gb.updateElement(CollectionIndices, gpuCollectionIndices[collectionIndex], collectionIndex);
         gb.updateElement(MeshInfos, gpuMeshInfos[index], index);
 
 		// validations

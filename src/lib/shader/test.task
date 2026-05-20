@@ -9,8 +9,10 @@
 // test glsl packing rules
 layout(local_size_x = 1) in; // not using the usual 32 threads per workgroup, but only 1 as we implement object culling and LOD object selection here
 
-struct GPUMeshIndex {
-    uint gpuMeshInfoIndex[10]; // index into mesh info array for LOD 0..9
+// see Object.h for C++ side
+struct GPUCollectionIndex {
+    uint gpuCollectionIndex; // index into CollectionInfos (== index of first major mesh of this collection)
+	uint mainMeshCount; // number of main meshes in this collection
 };
 
 struct GPUMeshInfo {
@@ -23,8 +25,8 @@ struct GPUMeshInfo {
 };
 
 // mesh infos on GPU global buffer:
-layout(buffer_reference, std430) buffer GPUMeshIndexBuffer {
-    GPUMeshIndex index[];
+layout(buffer_reference, std430) buffer GPUCollectionIndexBuffer {
+    GPUCollectionIndex index[];
 };
 
 layout(buffer_reference, std430) buffer GPUMeshInfoBuffer {
@@ -52,7 +54,7 @@ struct TaskPayload {
 
 taskPayloadSharedEXT TaskPayload payload;
 
-GPUMeshIndexBuffer gpuIndices = GPUMeshIndexBuffer(pushConstants.meshIndicesAddress + 0);
+GPUCollectionIndexBuffer gpuIndices = GPUCollectionIndexBuffer(pushConstants.meshIndicesAddress + 0);
 GPUMeshInfoBuffer gpuInfos = GPUMeshInfoBuffer(pushConstants.meshInfosAddress + 0);
 
 void main() {
@@ -65,14 +67,14 @@ void main() {
     if (debugIndices) {
         debugPrintfEXT("TEST TASK SHADER PUUUUSH: : %llx %llx\n", pushConstants.meshIndicesAddress, pushConstants.meshInfosAddress);
         for ( int i = 0; i < 5; i++) {
-            uint idx = gpuIndices.index[1].gpuMeshInfoIndex[i];
+            uint idx = gpuIndices.index[i].gpuCollectionIndex;
             debugPrintfEXT(" %x", idx);
         }
         debugPrintfEXT("\n");
     }
     if (debugInfos) {
         debugPrintfEXT("TEST TASK SHADER PUUUUSH: : %llx %llx\n", pushConstants.meshIndicesAddress, pushConstants.meshInfosAddress);
-        uint idx = gpuIndices.index[1].gpuMeshInfoIndex[0];
+        uint idx = gpuIndices.index[1].gpuCollectionIndex;
         GPUMeshInfo info = gpuInfos.info[idx];
         debugPrintfEXT("[ %x ] vertexOffset %llx globalIndexOffset %llx localIndexOffset %llx meshletOffset %llx meshletCount %u\n",
             idx, info.vertexOffset, info.globalIndexOffset, info.localIndexOffset, info.meshletOffset, info.meshletCount);
