@@ -19,7 +19,8 @@ protected:
         minimalEngineInitialization(engine);
 
         // Set up test data folder structure
-        setupTestDataFolder();
+        //setupTestDataFolder();
+        engine->files.findAssetFolder("test_samples");
     }
 
     void TearDown() override {
@@ -30,18 +31,18 @@ protected:
         WorkingDirectoryTest::TearDown();
     }
 
-    void setupTestDataFolder() {
-        auto cur_path = std::filesystem::current_path();
-        auto data_test_path = cur_path / "data_test";
-        if (!std::filesystem::exists(data_test_path)) {
-            std::filesystem::create_directory(data_test_path);
-        }
-        auto mesh_path = data_test_path / "mesh";
-        if (!std::filesystem::exists(mesh_path)) {
-            std::filesystem::create_directory(mesh_path);
-        }
-        engine->files.findAssetFolder("data_test");
-    }
+    //void setupTestDataFolder() {
+    //    auto cur_path = std::filesystem::current_path();
+    //    auto data_test_path = cur_path / "data_test";
+    //    if (!std::filesystem::exists(data_test_path)) {
+    //        std::filesystem::create_directory(data_test_path);
+    //    }
+    //    auto mesh_path = data_test_path / "mesh";
+    //    if (!std::filesystem::exists(mesh_path)) {
+    //        std::filesystem::create_directory(mesh_path);
+    //    }
+    //    engine->files.findAssetFolder("data_testXXX");
+    //}
 
     // Helper to validate basic MeshInfo structure
     void validateMeshInfo(MeshInfo* mi, const std::string& expectedId, int expectedPrimitiveIndex = 0) {
@@ -120,8 +121,13 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives) {
     // For now, we'll use a generated mesh as placeholder
     // TODO: Replace with actual GLTF file: "cube_single.gltf"
 
-    engine->meshStore.loadMeshCylinder("SingleMesh",
-        MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
+    engine->files.findAssetFolder("test_samples");
+    string glbFile = engine->files.findFile("cube_single.gltf", FileCategory::MESH, false);
+    EXPECT_NE(0, glbFile.size()); // check that we found file
+
+    engine->meshStore.loadMesh("cube_single.gltf", "SingleMesh");
+    //engine->meshStore.loadMeshCylinder("SingleMesh",
+    //    MeshFlagsCollection(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER));
 
     MeshInfo* mi = engine->meshStore.getMesh("SingleMesh");
     validateMeshInfo(mi, "SingleMesh", 0);
