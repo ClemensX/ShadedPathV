@@ -38,6 +38,15 @@ bool LoadImageDataKTX(Image* image, const int image_idx, std::string* err,
 	std::string* warn, int req_width, int req_height,
 	const unsigned char* bytes, int size, void* user_data) {
 	auto* userData = (glTF::gltfUserData*)user_data;
+	ktxTexture* kTexture = nullptr;
+    auto hash = userData->engine->textureStore.generateHash(bytes, size);
+    auto* existingTexture = userData->engine->textureStore.getTextureByHash(hash);
+    if (existingTexture) {
+        // Texture with the same hash already exists, reuse it
+		//userData->collection->textureInfos[image_idx] = existingTexture;
+        Log("Warning: Reusing existing global texture " << existingTexture->id << " for collection image index " << image_idx << " with hash " << hash << std::endl);
+		//return true;
+    }
 
 	// Check for KTX magic bytes: ab 4b 54 58 20 32 30 bb
 	string ktkMagic = "\xabKTX 20\xbb";
@@ -45,25 +54,8 @@ bool LoadImageDataKTX(Image* image, const int image_idx, std::string* err,
 
 	if (isKTX) {
 		// Handle KTX format (existing code)
-		ktxTexture* kTexture;
 		userData->engine->textureStore.createKTXFromMemory(bytes, size, &kTexture);
-
-		auto& tvec = userData->collection->textureParseInfo;
-		if (tvec.size() <= image_idx) {
-			tvec.resize(image_idx + 1);
-			userData->collection->textureInfos.resize(image_idx + 1);
-		}
-		tvec[image_idx] = kTexture;
-
-		auto* coll = userData->collection;
-		auto* texture = userData->engine->textureStore.createTextureSlotForMesh(
-			coll->getMeshInfoAt(coll->meshCount() - 1), image_idx);
-		userData->engine->textureStore.createVulkanTextureFromKTKTexture(kTexture, texture);
-		userData->collection->textureInfos[image_idx] = texture;
-		ktxTexture_Destroy(kTexture);
-		return true;
-	}
-	else {
+	} else {
 		// Handle standard image formats (PNG, JPG, BMP, etc.) using stb_image
 		int width, height, channels;
 		unsigned char* imageData = stbi_load_from_memory(bytes, size, &width, &height, &channels, STBI_rgb_alpha);
@@ -92,8 +84,8 @@ bool LoadImageDataKTX(Image* image, const int image_idx, std::string* err,
 		createInfo.isArray = KTX_FALSE;
 		createInfo.generateMipmaps = KTX_TRUE; // Enable mipmap generation
 
-		ktxTexture2* kTexture;
-		auto result = ktxTexture2_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, (ktxTexture2**)&kTexture);
+		ktxTexture2* kTexture2;
+		auto result = ktxTexture2_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, (ktxTexture2**)&kTexture2);
 
 		if (result != KTX_SUCCESS) {
 			stbi_image_free(imageData);
@@ -106,9 +98,9 @@ bool LoadImageDataKTX(Image* image, const int image_idx, std::string* err,
 		// Copy base level image data to KTX texture
 		size_t baseImageSize = width * height * 4; // 4 channels (RGBA)
 		size_t offset;
-		result = ktxTexture_GetImageOffset((ktxTexture*)kTexture, 0, 0, 0, &offset);
+		result = ktxTexture_GetImageOffset((ktxTexture*)kTexture2, 0, 0, 0, &offset);
 		if (result == KTX_SUCCESS) {
-			memcpy(ktxTexture_GetData((ktxTexture*)kTexture) + offset, imageData, baseImageSize);
+			memcpy(ktxTexture_GetData((ktxTexture*)kTexture2) + offset, imageData, baseImageSize);
 		}
 
 		// Generate mipmaps manually for each level
@@ -147,9 +139,9 @@ bool LoadImageDataKTX(Image* image, const int image_idx, std::string* err,
 			}
 
 			// Copy mip level to KTX texture
-			result = ktxTexture_GetImageOffset((ktxTexture*)kTexture, level, 0, 0, &offset);
+			result = ktxTexture_GetImageOffset((ktxTexture*)kTexture2, level, 0, 0, &offset);
 			if (result == KTX_SUCCESS) {
-				memcpy(ktxTexture_GetData((ktxTexture*)kTexture) + offset, nextLevelData, nextWidth * nextHeight * 4);
+				memcpy(ktxTexture_GetData((ktxTexture*)kTexture2) + offset, nextLevelData, nextWidth * nextHeight * 4);
 			}
 
 			// Clean up previous level if we allocated it
@@ -168,23 +160,24 @@ bool LoadImageDataKTX(Image* image, const int image_idx, std::string* err,
 			delete[] currentLevelData;
 		}
 		stbi_image_free(imageData);
-
-		// Process texture (same as KTX path)
-		auto& tvec = userData->collection->textureParseInfo;
-		if (tvec.size() <= image_idx) {
-			tvec.resize(image_idx + 1);
-			userData->collection->textureInfos.resize(image_idx + 1);
-		}
-		tvec[image_idx] = (ktxTexture*)kTexture;
-
-		auto* coll = userData->collection;
-		auto* texture = userData->engine->textureStore.createTextureSlotForMesh(
-			coll->getMeshInfoAt(coll->meshCount() - 1), image_idx);
-		userData->engine->textureStore.createVulkanTextureFromKTKTexture((ktxTexture*)kTexture, texture);
-		userData->collection->textureInfos[image_idx] = texture;
-		ktxTexture_Destroy((ktxTexture*)kTexture);
-		return true;
+        kTexture = (ktxTexture*)kTexture2;
 	}
+
+	auto& tvec = userData->collection->textureParseInfo;
+	if (tvec.size() <= image_idx) {
+		tvec.resize(image_idx + 1);
+		userData->collection->textureInfos.resize(image_idx + 1);
+	}
+	tvec[image_idx] = kTexture;
+
+	auto* coll = userData->collection;
+	auto* texture = userData->engine->textureStore.createTextureSlotForMesh(
+		coll->getMeshInfoAt(coll->meshCount() - 1), image_idx);
+    texture->hash = hash;
+	userData->engine->textureStore.createVulkanTextureFromKTKTexture(kTexture, texture);
+	userData->collection->textureInfos[image_idx] = texture;
+	ktxTexture_Destroy(kTexture);
+	return true;
 }
 void glTF::loadModel(Model &model, const unsigned char* data, int size, MeshCollection* coll, string filename)
 {

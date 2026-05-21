@@ -75,18 +75,15 @@ void TextureStore::loadTexture(string filename, string id, TextureType type, Tex
 	ktxTexture* kTexture;
 	createKTXFromMemory((const ktx_uint8_t*)file_buffer.data(), static_cast<int>(file_buffer.size()), &kTexture);
 	createVulkanTextureFromKTKTexture(kTexture, texture);
-	setTextureActive(texture->id, true);
+    void* data; size_t size;
+	getAccessToImageDataFromKTX(kTexture, size, &data);
+    texture->hash = generateHash((const unsigned char*)data, size);
 	if (hasFlag(flags, TextureFlags::KEEP_DATA_BUFFER)) {
 		assert(kTexture->numLevels == 1);
 		assert(texture->vulkanTexture.imageFormat == VK_FORMAT_R32_SFLOAT);
-		// store raw buffer for later use
-		int level = 0; int layer = 0; int faceSlice = 0; ktx_size_t offset; KTX_error_code result;
-		result = ktxTexture_GetImageOffset(kTexture, level, layer, faceSlice, &offset);
-		void* data = ktxTexture_GetData(kTexture) + offset;
-		auto size = ktxTexture_GetImageSize(kTexture, level);
 		assert(size == texture->vulkanTexture.width * texture->vulkanTexture.height * sizeof(float));
 		//texture->raw_buffer.insert(texture->raw_buffer.end(), (std::byte*)data, (std::byte*)data + size);
-		Log("size: " << size << endl);
+		//Log("size: " << size << endl);
 		float* floatData = (float*)data;
 		texture->float_buffer.insert(texture->float_buffer.end(), floatData, floatData + (size / sizeof(float)));
 		Log("size float: " << texture->float_buffer.size() << endl);
@@ -95,6 +92,7 @@ void TextureStore::loadTexture(string filename, string id, TextureType type, Tex
 		//}
         texture->flags = flags;
 	}
+	setTextureActive(texture->id, true);
 	ktxTexture_Destroy(kTexture);
 }
 
@@ -106,6 +104,16 @@ void TextureStore::createKTXFromMemory(const unsigned char* data, int size, ktxT
 		Error("Could not create texture from memory");
 	}
 
+}
+
+void TextureStore::getAccessToImageDataFromKTX(ktxTexture* kTexture, size_t& size, void** data)
+{
+	assert(kTexture->numLevels >= 1);
+	// store raw buffer for later use
+	int level = 0; int layer = 0; int faceSlice = 0; ktx_size_t offset; KTX_error_code result;
+	result = ktxTexture_GetImageOffset(kTexture, level, layer, faceSlice, &offset);
+	*data = ktxTexture_GetData(kTexture) + offset;
+	size = ktxTexture_GetImageSize(kTexture, level);
 }
 
 void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, TextureInfo* texture)
@@ -1078,6 +1086,9 @@ void TextureStore::generateBRDFLUT()
 	vkDestroyDescriptorSetLayout(device, descriptorsetlayout, nullptr);
     //vkDestroySampler(device, brdfSampler, nullptr); // destroyed in sampler cache
 
+	// create hash simply from frag shader bytes:
+	const unsigned char* fragShaderData = reinterpret_cast<const unsigned char*>(file_buffer_frag.data());
+	ti->hash = generateHash(fragShaderData, file_buffer_frag.size());
     setTextureActive(ti->id, true);
 }
 
@@ -1115,7 +1126,7 @@ void TextureStore::validateTexture(TextureInfo* ti)
     //if (ti->hash == 0) Log("Error: Validating texture: " << ti->id.c_str() << " hash: " << ti->hash << " available: " << ti->available << endl);
 }
 
-size_t TextureStore::generateHash(const unsigned char* bytes, int size) {
+size_t TextureStore::generateHash(const unsigned char* bytes, size_t size) {
 	// FNV-1a hash algorithm
 	// FNV offset basis for 64-bit
 	size_t hash = 14695981039346656037ULL;
@@ -1128,6 +1139,16 @@ size_t TextureStore::generateHash(const unsigned char* bytes, int size) {
 	}
 
 	return hash;
+}
+
+TextureInfo* TextureStore::getTextureByHash(size_t hash)
+{
+	for (auto& tex : textures) {
+		if (tex.second.hash == hash) {
+			return &tex.second;
+		}
+	}
+	return nullptr;
 }
 
 TextureStore::~TextureStore()

@@ -115,6 +115,24 @@ protected:
     }
 };
 
+TEST_F(GLTFParserTest, TextureReuse) {
+    string glbFile = engine->files.findFile("cube_single.gltf", FileCategory::MESH, false);
+    EXPECT_NE(0, glbFile.size()); // check that we found file
+
+    int cur_global_textures = engine->textureStore.size();
+    engine->meshStore.loadMesh("cube_single.gltf", "SingleMesh");
+    int textures_after_mesh_loading = engine->textureStore.size();
+    EXPECT_EQ(textures_after_mesh_loading, cur_global_textures + 3) << "Expected 3 new texture to be loaded";
+
+    // now load the same mesh again with a different name - should reuse textures:
+    //engine->meshStore.loadMesh("mesh_with_lods.gltf", "SingleMeshCopy");
+    engine->meshStore.loadMesh("cube_single.gltf", "SingleMeshCopy");
+    int textures_after_second_load = engine->textureStore.size();
+    //EXPECT_EQ(textures_after_second_load, textures_after_mesh_loading) << "Expected textures to be reused";
+
+}
+
+
 // Test 1: Single mesh with no primitives or LODs
 TEST_F(GLTFParserTest, SingleMesh_NoPrimitives) {
     engine->files.findAssetFolder("test_samples");

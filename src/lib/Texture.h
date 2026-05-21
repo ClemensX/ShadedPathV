@@ -127,6 +127,9 @@ public:
 	// create textures ready to be used in shader code. Either normal textures (VK_IMAGE_TYPE_2D) of cube maps (VK_IMAGE_VIEW_TYPE_CUBE).
 	// only ktx files are allowed with mipmaps already created.
 	void createVulkanTextureFromKTKTexture(ktxTexture* ktxTexture, ::TextureInfo* textureInfo);
+    // get access to first level 0 layer 0 of image data (== first mipmap level, first layer, first face)
+	// used either for image data storage of hash generation.
+    void getAccessToImageDataFromKTX(ktxTexture* ktxTexture, size_t &size, void ** data);
 	void destroyKTXIntermediate(ktxTexture* ktxTex);
 	// Generate a BRDF integration map storing roughness/NdotV as a look-up-table
 	// BRDF stands for Bidirectional Reflectance Distribution Function
@@ -148,7 +151,10 @@ public:
 	// validation: was hash generated?
 	void validateTexture(TextureInfo* ti);
 	// generate hash value from raw image data
-	size_t generateHash(const unsigned char* bytes, int size); 
+	size_t generateHash(const unsigned char* bytes, size_t size); 
+    // get texture by hash value, used for texture reuse and validation,
+    // simply iterates through textures and compares hash values, inefficient, but even for 1000s of textures should be fairly quickly
+	TextureInfo* getTextureByHash(size_t hash);
 private:
 	std::unordered_map<std::string, ::TextureInfo> textures;
 	ShadedPathEngine* engine = nullptr;

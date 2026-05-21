@@ -39,6 +39,7 @@ class MeshStoreTestDynamic : public WorkingDirectoryTest {};
 void minimalEngineInitialization(ShadedPathEngine* engine, int maxMeshes) {
     engine->files.findAssetFolder("data");
     engine->setMaxTextures(50);
+    engine->setMaxCollections(15);
     engine->overrideCPUCores(4);
     if (maxMeshes > 0) {
         engine->setMaxMeshes(maxMeshes);
