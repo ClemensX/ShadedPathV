@@ -191,7 +191,7 @@ struct MeshCollection {
 	std::string id;
 	std::string filename;
 	bool available = false; // true if this object is ready for use in shader code
-	std::vector<ktxTexture*> textureParseInfo;
+	//std::vector<ktxTexture*> textureParseInfo;
 	std::vector<::TextureInfo*> textureInfos;
 	size_t index;
     LodPrimitiveMap primMap; // map of collection mesh indices per LOD / primitive

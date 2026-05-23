@@ -9,6 +9,19 @@
 // test glsl packing rules
 layout(local_size_x = 1) in; // not using the usual 32 threads per workgroup, but only 1 as we implement object culling and LOD object selection here
 
+// see pbrShader.h
+struct GPUMemoryPushConstants {
+    uint64_t collectionIndicesAddress;
+    uint64_t collectionInfosAddress;
+    uint64_t meshInfosAddress;
+    uint64_t uniformBufferAddress;
+    uint64_t storageBufferAddress;
+    uint64_t vertexBufferAddress;
+    uint64_t indexBufferAddress;
+    uint64_t indirectBufferAddress;
+    uint64_t textureBufferAddress;
+};
+
 // see Object.h for C++ side
 struct GPUCollectionIndex {
     uint gpuCollectionIndex; // index into CollectionInfos (== index of first major mesh of this collection)
@@ -24,6 +37,27 @@ struct GPUMeshInfo {
     uint pad0;
 };
 
+layout(binding = 0) uniform UniformBufferObject {
+    mat4 model;
+    mat4 view;
+    mat4 proj;
+    vec4 baseColor;
+	uint frameNum;      // new: current frame number
+	uint pad0;          // pad to 16-byte multiple if desired (optional)
+	uint pad1;          // pad to 16-byte multiple if desired (optional)
+	uint pad2;          // pad to 16-byte multiple if desired (optional)
+    GPUMemoryPushConstants gpuMem;
+    vec3 camPos;
+} ubo;
+
+/* minmal set needed from 'old' model_ubo
+boundingBox
+meshNumber
+flags
+model
+material.lod_category
+*/
+
 // mesh infos on GPU global buffer:
 layout(buffer_reference, std430) buffer GPUCollectionIndexBuffer {
     GPUCollectionIndex index[];
@@ -33,17 +67,13 @@ layout(buffer_reference, std430) buffer GPUMeshInfoBuffer {
     GPUMeshInfo info[];
 };
 
-// see pbrShader.h
 layout(push_constant) uniform PushConstants {
-    uint64_t meshIndicesAddress;
-    uint64_t meshInfosAddress;
-    uint64_t uniformBufferAddress;
-    uint64_t storageBufferAddress;
-    uint64_t vertexBufferAddress;
-    uint64_t indexBufferAddress;
-    uint64_t indirectBufferAddress;
-    uint64_t textureBufferAddress;
+	uint objectNum;  // 4 bytes only!
+	uint pad0;          // pad to 16-byte multiple if desired (optional)
+	uint pad1;          // pad to 16-byte multiple if desired (optional)
+	uint pad2;          // pad to 16-byte multiple if desired (optional)
 } pushConstants;
+
 
 struct TaskPayload {
     mat4 mvp;
@@ -54,8 +84,8 @@ struct TaskPayload {
 
 taskPayloadSharedEXT TaskPayload payload;
 
-GPUCollectionIndexBuffer gpuIndices = GPUCollectionIndexBuffer(pushConstants.meshIndicesAddress + 0);
-GPUMeshInfoBuffer gpuInfos = GPUMeshInfoBuffer(pushConstants.meshInfosAddress + 0);
+GPUCollectionIndexBuffer gpuIndices = GPUCollectionIndexBuffer(ubo.gpuMem.collectionIndicesAddress + 0);
+GPUMeshInfoBuffer gpuInfos = GPUMeshInfoBuffer(ubo.gpuMem.meshInfosAddress + 0);
 
 void main() {
     bool debugIndices = true;
@@ -64,8 +94,12 @@ void main() {
     //debugPrintfEXT("test.task main: meshIndex %u\n", meshIndex);
     //uint meshletsCount = gpuInfos.info[meshIndex].meshletCount;
     //float meshletsCount = gpuInfos.info[meshIndex].f;
+    //debugPrintfEXT("test.task main ubo camPos.xyz: %f %f %f\n", ubo.camPos.x, ubo.camPos.y, ubo.camPos.z);
+    debugPrintfEXT("test.task ubo: frameNum %u\n", ubo.frameNum);
+    debugPrintfEXT("test.task push: objectNum %u\n", pushConstants.objectNum);
+    debugPrintfEXT("TEST TASK SHADER PUUUUSH: : %llx %llx\n", ubo.gpuMem.collectionIndicesAddress, ubo.gpuMem.meshInfosAddress);
     if (debugIndices) {
-        debugPrintfEXT("TEST TASK SHADER PUUUUSH: : %llx %llx\n", pushConstants.meshIndicesAddress, pushConstants.meshInfosAddress);
+        debugPrintfEXT("TEST TASK SHADER PUUUUSH: : %llx %llx\n", ubo.gpuMem.collectionIndicesAddress, ubo.gpuMem.meshInfosAddress);
         for ( int i = 0; i < 5; i++) {
             uint idx = gpuIndices.index[i].gpuCollectionIndex;
             debugPrintfEXT(" %x", idx);
@@ -73,8 +107,9 @@ void main() {
         debugPrintfEXT("\n");
     }
     if (debugInfos) {
-        debugPrintfEXT("TEST TASK SHADER PUUUUSH: : %llx %llx\n", pushConstants.meshIndicesAddress, pushConstants.meshInfosAddress);
+        debugPrintfEXT("TEST TASK SHADER PUUUUSH: : %llx %llx\n", ubo.gpuMem.collectionIndicesAddress, ubo.gpuMem.meshInfosAddress);
         uint idx = gpuIndices.index[1].gpuCollectionIndex;
+        idx = 11;
         GPUMeshInfo info = gpuInfos.info[idx];
         debugPrintfEXT("[ %x ] vertexOffset %llx globalIndexOffset %llx localIndexOffset %llx meshletOffset %llx meshletCount %u\n",
             idx, info.vertexOffset, info.globalIndexOffset, info.localIndexOffset, info.meshletOffset, info.meshletCount);

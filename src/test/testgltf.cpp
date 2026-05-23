@@ -128,7 +128,7 @@ TEST_F(GLTFParserTest, TextureReuse) {
     //engine->meshStore.loadMesh("mesh_with_lods.gltf", "SingleMeshCopy");
     engine->meshStore.loadMesh("cube_single.gltf", "SingleMeshCopy");
     int textures_after_second_load = engine->textureStore.size();
-    //EXPECT_EQ(textures_after_second_load, textures_after_mesh_loading) << "Expected textures to be reused";
+    EXPECT_EQ(textures_after_second_load, textures_after_mesh_loading) << "Expected textures to be reused";
 
 }
 

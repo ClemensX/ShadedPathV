@@ -34,7 +34,19 @@ public:
 	//struct Vertex : public ::PBRVertex {};
     using Vertex = ::PBRVertex;
 
-    // make sure structure matches UBOParams in pbr_mesh_common.glsl
+	// *** new buffer structures
+
+	// Push constants - Per draw call
+	struct DrawPushConstants {
+		uint32_t objectNum;  // 4 bytes only!
+		uint32_t pad0;          // pad to 16-byte multiple if desired (optional)
+		uint32_t pad1;          // pad to 16-byte multiple if desired (optional)
+		uint32_t pad2;          // pad to 16-byte multiple if desired (optional)
+	};
+	
+	// *** new buffer structures end
+
+	// make sure structure matches UBOParams in pbr_mesh_common.glsl
 	struct shaderValuesParams {
 		glm::vec4 lightDir;
 		glm::vec4 lightColor;
@@ -48,6 +60,7 @@ public:
 		int type; // 0=directional, 1=point, 2=spot
 	};
 
+	// Per-frame UBO (binding 0) - Set ONCE per frame
 	struct UniformBufferObject {
 		glm::mat4 model;
 		glm::mat4 view;
@@ -57,6 +70,7 @@ public:
 		uint32_t pad0;          // pad to 16-byte multiple if desired (optional)
 		uint32_t pad1;          // pad to 16-byte multiple if desired (optional)
 		uint32_t pad2;          // pad to 16-byte multiple if desired (optional)
+		GPUMemoryPushConstants gpuMem;
 		glm::vec3 camPos = glm::vec3(std::numeric_limits<double>::quiet_NaN()); // signal that this is not set
 	};
 
@@ -257,7 +271,7 @@ public:
     }
 	//PBRPushConstants pushConstants = {};
 	GPUMemoryPushConstants gpuMemPush;
-
+    DrawPushConstants drawPush = {};
     // Public accessor for logging/debugging
     uint64_t getNextFreeDynamicUniformBufferIndex() const { return nextFreeDynamicUniformBufferIndex; }
 
@@ -368,6 +382,7 @@ public:
 	VkBuffer uniformBuffer2 = nullptr;
 	// Model buffers
 	VkBuffer dynamicUniformBuffer = nullptr;
+	VkBuffer dynamicUniformBufferPerFrame = nullptr;
 	// VP buffer device memory
 	VkDeviceMemory uniformBufferMemory = nullptr;
 	VkDeviceMemory uniformBufferMemory2 = nullptr;

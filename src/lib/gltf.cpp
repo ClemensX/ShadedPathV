@@ -41,11 +41,14 @@ bool LoadImageDataKTX(Image* image, const int image_idx, std::string* err,
 	ktxTexture* kTexture = nullptr;
     auto hash = userData->engine->textureStore.generateHash(bytes, size);
     auto* existingTexture = userData->engine->textureStore.getTextureByHash(hash);
-    if (existingTexture) {
+	if (userData->collection->textureInfos.size() <= image_idx) {
+		userData->collection->textureInfos.resize(image_idx + 1);
+	}
+	if (existingTexture) {
         // Texture with the same hash already exists, reuse it
-		//userData->collection->textureInfos[image_idx] = existingTexture;
+		userData->collection->textureInfos[image_idx] = existingTexture;
         Log("Warning: Reusing existing global texture " << existingTexture->id << " for collection image index " << image_idx << " with hash " << hash << std::endl);
-		//return true;
+		return true;
     }
 
 	// Check for KTX magic bytes: ab 4b 54 58 20 32 30 bb
@@ -163,12 +166,12 @@ bool LoadImageDataKTX(Image* image, const int image_idx, std::string* err,
         kTexture = (ktxTexture*)kTexture2;
 	}
 
-	auto& tvec = userData->collection->textureParseInfo;
-	if (tvec.size() <= image_idx) {
-		tvec.resize(image_idx + 1);
-		userData->collection->textureInfos.resize(image_idx + 1);
-	}
-	tvec[image_idx] = kTexture;
+	//auto& tvec = userData->collection->textureParseInfo;
+	//if (tvec.size() <= image_idx) {
+	//	tvec.resize(image_idx + 1);
+	//	userData->collection->textureInfos.resize(image_idx + 1);
+	//}
+	//tvec[image_idx] = nullptr;// kTexture;
 
 	auto* coll = userData->collection;
 	auto* texture = userData->engine->textureStore.createTextureSlotForMesh(

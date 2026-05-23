@@ -173,6 +173,9 @@ void PBRShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
 }
 
 void PBRShader::uploadToGPU(FrameResources& fr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
+    //engine->globalRendering.gpuMemory.fillPushConstants(&gpuMemPush); // already done in intialUpload()
+    ubo.gpuMem = gpuMemPush;
+    ubo2.gpuMem = gpuMemPush;
     if (std::isnan(ubo.camPos.x) || std::isnan(ubo.camPos.y) || std::isnan(ubo.camPos.z)) {
         Error("PBRShader: camera position not set in UBO");
     }
@@ -453,16 +456,29 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 	//	push // your buffer address
 	//);
 
-	vkCmdPushConstants(
-		commandBuffer,
-		pipelineLayout,
-		gpuMemoryPushConstantRange.stageFlags,
-		0,
-		sizeof(GPUMemoryPushConstants),
-		&pbrShader->gpuMemPush
-	);
+	//vkCmdPushConstants(
+	//	commandBuffer,
+	//	pipelineLayout,
+	//	gpuMemoryPushConstantRange.stageFlags,
+	//	0,
+	//	sizeof(GPUMemoryPushConstants),
+	//	&pbrShader->gpuMemPush
+	//);
 	// add draw commands for all valid objects:
 	for (auto obj : objs) {
+		pbrShader->drawPush.objectNum = obj->objectNum;
+		if (true) {
+			vkCmdPushConstants(
+				commandBuffer,
+				pipelineLayout,
+				gpuMemoryPushConstantRange.stageFlags,
+				0,
+				sizeof(PBRShader::DrawPushConstants),
+				&pbrShader->drawPush
+				//sizeof(GPUMemoryPushConstants), //GPUMemoryPushConstants),
+				//&pbrShader->gpuMemPush
+			);
+		}
 		recordDrawCommand(commandBuffer, tr, obj, false, update);
 	}
 	vkCmdEndRenderPass(commandBuffer);
