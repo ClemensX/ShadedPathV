@@ -194,6 +194,8 @@ void Forest::init() {
         }
     }
 
+    Log("INFO: Total objects created: " << engine->objectStore.getSortedList().size() << std::endl);
+
     object->enableDebugGraphics = false;
     if (alterObjectCoords) {
         // turn upside down
@@ -328,6 +330,11 @@ void Forest::prepareFrame(FrameResources* fr)
             if (!object->enabled)   buf->disableRendering();
             if (wo->enableDebugGraphics) engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false, false);
             engine->objectStore.stopWorking(tr, wo);
+            // debug info for one obect:
+            UINT debugObject = 42;
+            if (wo->objectNum == debugObject) {
+                wo->prettyPrint();
+            }
         }
         engine->shaders.pbrShader.copyStagingDynamicUBO(tr);
     }

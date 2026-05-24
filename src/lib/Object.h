@@ -642,6 +642,8 @@ public:
     void calculateStandardModelTransform(glm::mat4& modelToWorld);
     UINT dynamicModelUBOIndex = UINT_MAX; // index into per-frame dynamic model UBO array
     int primitiveCount = 1; // number of primitives used by this object (1 for normal objects, more for objects using multiple gltf primitives)
+	// log essential obect info
+	void prettyPrint() const; 
 private:
 	glm::vec3 _pos;
 	glm::vec3 _rot;

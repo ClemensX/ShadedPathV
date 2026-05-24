@@ -411,6 +411,23 @@ vec3& WorldObject::scale() {
 	return _scale;
 }
 
+// Add implementation:
+void WorldObject::prettyPrint() const {
+	Log("WorldObject #" << objectNum);
+	Log("  Position: (" << _pos.x << ", " << _pos.y << ", " << _pos.z << ")");
+	Log("  Rotation: (" << _rot.x << ", " << _rot.y << ", " << _rot.z << ")");
+	Log("  Scale: (" << _scale.x << ", " << _scale.y << ", " << _scale.z << ")");
+	Log("  Alpha: " << alpha);
+	Log("  Visible: " << visible << " | Enabled: " << enabled);
+	if (mesh) {
+		Log("  Mesh: " << mesh->id);
+	}
+	else {
+		Log("  Mesh: nullptr");
+	}
+    Log("\n");
+}
+
 void WorldObject::calculateStandardModelTransform(glm::mat4& modelToWorld)
 {
 	auto& pos = this->pos();

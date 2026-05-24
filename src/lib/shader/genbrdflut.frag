@@ -1,6 +1,8 @@
 #version 460
 #extension GL_EXT_debug_printf : enable
 
+// added isnan() checks to prevent shader warnings in GPU validation
+
 layout (location = 0) in vec2 inUV;
 layout (location = 0) out vec4 outColor;
 layout (constant_id = 0) const uint NUM_SAMPLES = 1024u;
@@ -38,6 +40,10 @@ vec3 importanceSample_GGX(vec2 Xi, float roughness, vec3 normal)
 	float phi = 2.0 * PI * Xi.x + random(normal.xz) * 0.1;
 	float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (alpha*alpha - 1.0) * Xi.y));
 	float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+//	if (isnan(cosTheta)) debugPrintfEXT("cosTheta is NaN: Xi %f %f, roughness %f\n", Xi.x, Xi.y, roughness);
+//	if (isnan(sinTheta)) debugPrintfEXT("sinTheta is NaN: cosTheta %f\n", cosTheta);
+//	if (isnan(phi)) debugPrintfEXT("phi is NaN: Xi %f %f, roughness %f\n", Xi.x, Xi.y, roughness);
+//	if (isnan(alpha)) debugPrintfEXT("alpha is NaN: Xi %f %f, roughness %f\n", Xi.x, Xi.y, roughness);
 	vec3 H = vec3(sinTheta * cos(phi), sinTheta * sin(phi), cosTheta);
 
 	// Tangent space
@@ -45,6 +51,7 @@ vec3 importanceSample_GGX(vec2 Xi, float roughness, vec3 normal)
 	vec3 tangentX = normalize(cross(up, normal));
 	vec3 tangentY = normalize(cross(normal, tangentX));
 
+	//if (isnan(H.x)) debugPrintfEXT("H.x is NaN: Xi %f %f, roughness %f, normal %f %f %f\n", Xi.x, Xi.y, roughness, normal.x, normal.y, normal.z);
 	// Convert to world Space
 	return normalize(tangentX * H.x + tangentY * H.y + normal * H.z);
 }
@@ -68,18 +75,27 @@ vec2 BRDF(float NoV, float roughness)
 	for(uint i = 0u; i < NUM_SAMPLES; i++) {
 		vec2 Xi = hammersley2d(i, NUM_SAMPLES);
 		vec3 H = importanceSample_GGX(Xi, roughness, N);
+		//if (isnan(dot(V, H))) debugPrintfEXT("dot(V, H) is NaN: V %f %f %f, H %f %f %f\n", V.x, V.y, V.z, H.x, H.y, H.z);
 		vec3 L = 2.0 * dot(V, H) * H - V;
+		float dot_nl = dot(N, L);
+		//if (abs(dot_nl) < 0.00005) debugPrintfEXT("dot_nl: %f\n", dot_nl);
+		//if (isnan(dot_nl)) debugPrintfEXT("dot_nl: N %f %f %f, L %f %f %f\n", N.x, N.y, N.z, L.x, L.y, L.z);
 
-		float dotNL = max(dot(N, L), 0.0);
-		float dotNV = max(dot(N, V), 0.0);
-		float dotVH = max(dot(V, H), 0.0); 
-		float dotNH = max(dot(H, N), 0.0);
+		if (isnan(H.x) || isnan(H.y) || isnan(H.z)) {
+			//debugPrintfEXT("H is NaN: Xi %f %f, roughness %f\n", Xi.x, Xi.y, roughness);
+		}
+		else {
+			float dotNL = max(dot(N, L), 0.0);
+			if (dotNL > 0.0) {
+				float dotNV = max(dot(N, V), 0.0);
+				float dotVH = max(dot(V, H), 0.0); 
+				float dotNH = max(dot(H, N), 0.0);
 
-		if (dotNL > 0.0) {
-			float G = G_SchlicksmithGGX(dotNL, dotNV, roughness);
-			float G_Vis = (G * dotVH) / (dotNH * dotNV);
-			float Fc = pow(1.0 - dotVH, 5.0);
-			LUT += vec2((1.0 - Fc) * G_Vis, Fc * G_Vis);
+				float G = G_SchlicksmithGGX(dotNL, dotNV, roughness);
+				float G_Vis = (G * dotVH) / (dotNH * dotNV);
+				float Fc = pow(1.0 - dotVH, 5.0);
+				LUT += vec2((1.0 - Fc) * G_Vis, Fc * G_Vis);
+			}
 		}
 	}
 	return LUT / float(NUM_SAMPLES);

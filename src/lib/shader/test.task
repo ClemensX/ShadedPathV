@@ -6,8 +6,101 @@
 #extension GL_EXT_buffer_reference_uvec2 : require
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 
+#include "common_cpp_shader.h"
+
+// to throw away later
+struct UBOParams {
+	vec4 lightDir;
+    vec4 lightColor;
+	float exposure;
+	float gamma;
+	float prefilteredCubeMipLevels;
+	float scaleIBLAmbient;
+	float debugViewInputs;
+	float debugViewEquation;
+	float intensity;
+	int type; // 0=directional, 1=point, 2=spot
+};
+
+struct PBRTextureIndexes {
+    uint baseColor;
+    uint metallicRoughness;
+    uint normal;
+    uint occlusion;
+    uint emissive;
+    uint pad0;
+    uint pad1;
+    uint pad2;
+};
+
+struct TexCoordSets {
+	uint baseColor;
+	uint metallicRoughness;
+	uint specularGlossiness;
+	uint normal;
+	uint occlusion;
+	uint emissive;
+	uint pad0;
+	uint pad1;
+};
+
+struct ShaderMaterial {
+	vec4 baseColorFactor;
+	vec4 emissiveFactor;
+	vec4 diffuseFactor;
+	vec4 specularFactor;
+	float workflow;
+	int baseColorTextureSet;
+	int physicalDescriptorTextureSet;
+	int normalTextureSet;	
+	int occlusionTextureSet;
+	int emissiveTextureSet;
+	int brdflut;
+	int irradiance;
+	int envcube;
+	float metallicFactor;	
+	float roughnessFactor;	
+	float alphaMask;	
+	float alphaMaskCutoff;
+	float emissiveStrength;
+	uint lod_category;
+	uint pad1;
+	TexCoordSets texCoordSets;
+};
+
+struct BoundingBox {
+	vec3 min;
+    float pad0; // padding to align to vec4
+	vec3 max;
+    float pad1; // padding to align to vec4
+};
+
+// throw away end
+
 // test glsl packing rules
 layout(local_size_x = 1) in; // not using the usual 32 threads per workgroup, but only 1 as we implement object culling and LOD object selection here
+
+// Add this struct definition before the uniform block (around line 78):
+struct UboInstanceData {
+    mat4 model; 
+    mat4 jointMatrix[MAX_NUM_JOINTS];
+    uint jointcount;
+    uint flags;
+    uint meshletsCount;
+    uint objectNum;
+    PBRTextureIndexes indexes;
+    UBOParams params[MAX_DYNAMIC_LIGHTS];
+    ShaderMaterial material;
+    BoundingBox boundingBox;
+    vec3 objPos;
+    float pad0;
+    uint meshNumber;
+};
+
+// Then change the uniform block to use this struct:
+layout (binding = 1) uniform UboInstance {
+    UboInstanceData data;
+} model_ubo;
 
 // see pbrShader.h
 struct GPUMemoryPushConstants {
@@ -88,15 +181,18 @@ GPUCollectionIndexBuffer gpuIndices = GPUCollectionIndexBuffer(ubo.gpuMem.collec
 GPUMeshInfoBuffer gpuInfos = GPUMeshInfoBuffer(ubo.gpuMem.meshInfosAddress + 0);
 
 void main() {
-    bool debugIndices = true;
+    bool debugIndices = false;
     bool debugInfos = true;
+    UboInstanceData wo = model_ubo.data; // just to test if we can read the data correctly, throw away later
     //uint meshIndex = 42;
     //debugPrintfEXT("test.task main: meshIndex %u\n", meshIndex);
     //uint meshletsCount = gpuInfos.info[meshIndex].meshletCount;
     //float meshletsCount = gpuInfos.info[meshIndex].f;
     //debugPrintfEXT("test.task main ubo camPos.xyz: %f %f %f\n", ubo.camPos.x, ubo.camPos.y, ubo.camPos.z);
     debugPrintfEXT("test.task ubo: frameNum %u\n", ubo.frameNum);
+    //if (pushConstants.objectNum > 139000)
     debugPrintfEXT("test.task push: objectNum %u\n", pushConstants.objectNum);
+    debugPrintfEXT("test.task model_ubo.meshNumber: %u pos %f %f %f\n", wo.meshNumber, wo.objPos.x, wo.objPos.y, wo.objPos.z);
     debugPrintfEXT("TEST TASK SHADER PUUUUSH: : %llx %llx\n", ubo.gpuMem.collectionIndicesAddress, ubo.gpuMem.meshInfosAddress);
     if (debugIndices) {
         debugPrintfEXT("TEST TASK SHADER PUUUUSH: : %llx %llx\n", ubo.gpuMem.collectionIndicesAddress, ubo.gpuMem.meshInfosAddress);
