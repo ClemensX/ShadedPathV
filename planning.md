@@ -2,24 +2,24 @@
 
 ## Rendering Object Data Fast Track
 Put object data from model_ubo into general purpose GPU buffers
-and only use neede values
+and only use needed values
 
 ### pbr shader needs values:
 
-| **model_ubo field**   | pbr shader (first use)
-| ---                   | ---  
-| flags                 | task shader
-| model					| *
-| boundingBox			| *
-| meshNumber			| *	
-| material.lod_category | *
-| --	      			| mesh shader
-| params[0]				| frag shader
-| material				| *
-| uboParams.prefilteredCubeMipLevels | *
-| uboParams.scaleIBLAmbient | *
-| uboParams.lightDir | *
-| uboParams.intensity | *
+| **model_ubo field**   | pbr shader (first use) | new location
+| ---                   | ---  | ---
+| flags                 | task shader            | new model array
+| model					| *                      | new model array
+| boundingBox			| *                      | new model array
+| meshNumber			| *                      | new model array
+| material.lod_category | *                      | new model array
+| --	      			| mesh shader |
+| params[0]				| frag shader            | ubo (constant per frame)
+| material				| *                      | new material array
+| uboParams.prefilteredCubeMipLevels | *         | ubo (constant per frame)
+| uboParams.scaleIBLAmbient | *                  | ubo (constant per frame)
+| uboParams.lightDir | *                         | ubo (constant per frame)
+| uboParams.intensity | *                        | ubo (constant per frame)
 
 
 ## Flora for World Creator Forest 001 sample:
