@@ -21,6 +21,13 @@ and only use needed values
 | uboParams.lightDir | *                         | ubo (constant per frame)
 | uboParams.intensity | *                        | ubo (constant per frame)
 
+### Implementation
+
+| **structure/buffer name** <br>(Object.h and shader include)  | array name in shader | implemented | tested (test.task) |
+| ---                         | ---                  | ---         | ---                |
+| GPUCollectionIndex/Buffer     | gpuIndices         | x           | x                  |
+| GPUMeshInfo/Buffer            | gpuInfos			 | x           | x                  |
+
 
 ## Flora for World Creator Forest 001 sample:
 

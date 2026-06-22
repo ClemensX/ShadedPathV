@@ -14,7 +14,7 @@ void MeshStore::init(ShadedPathEngine* engine) {
 	// set array sizes, these are guarded and user needs to adjust them if too small at runtime
     size_t maxMeshes = engine->getMaxMeshes() * 10; // max meshes is a user setting, roughly we need 10 meshes as each 'user mesh' has 10 LOD
 	size_t maxCollectionIndices = engine->getMaxCollections();
-	size_t maxCollectionInfos = maxCollectionIndices * 3; // rough estimate, on average we assume each collection to hav at most 3 main meshes
+	size_t maxCollectionInfos = maxCollectionIndices * 3; // rough estimate, on average we assume each collection to have at most 3 main meshes
 
     gpuCollectionIndices.resize(maxCollectionIndices);
     gpuCollectionInfos.resize(maxCollectionInfos);
@@ -63,6 +63,11 @@ MeshCollection* MeshStore::initMeshCollection(std::string id, MeshFlagsCollectio
 	MeshCollection* collection = meshCollectionStore.addMeshCollection();
 	collection->id = id;
 	collection->flags = flags;
+    // init GPU collection index for this collection, will be updated during mesh upload
+    assert(collection->index < gpuCollectionIndices.size());
+	auto& collIndex = gpuCollectionIndices[collection->index];
+	collIndex.gpuCollectionInfoIndex = 0;
+    collIndex.mainMeshCount = 0;
 	return collection;
 }
 
@@ -174,6 +179,7 @@ void MeshStore::loadMesh(string filename, string id, MeshFlagsCollection flags)
 	} else {
 		aquireMeshletData(filename, id, regenerate);
 	}
+	engine->mstore.loadMesh(filename, id, flags);
 }
 
 MeshCollection* MeshStore::getMeshCollection(std::string id)
@@ -268,7 +274,7 @@ void MeshStore::uploadMesh(MeshInfo* mesh_ptr)
 		int index = mesh_ptr->meshNum; // mesh index in global mesh store, increased with each new mesh, each LOD counts as one mesh
         // get collection containing this mesh:
 		size_t collectionIndex = mesh_ptr->collectionStoreIndex;
-		auto coll = engine->meshStore.meshCollectionStore.getMeshCollectionByIndex(collectionIndex);
+		auto coll = meshCollectionStore.getMeshCollectionByIndex(collectionIndex);
         assert(coll->index == collectionIndex);
 		assert(coll->index < gpuCollectionIndices.size());
         uint64_t sizeIndices = gpuCollectionIndices.size() * sizeof(GPUCollectionIndex);
@@ -286,16 +292,22 @@ void MeshStore::uploadMesh(MeshInfo* mesh_ptr)
 		//gpuMeshInfos[index].meshletCount = 5;
 
         auto& collIndex = gpuCollectionIndices[collectionIndex];
+		updateMeshCollectionGPUStructures(coll, mesh_ptr);
 		//assert(collIndex.gpuCollectionIndex == 0);
 		//assert(collIndex.mainMeshCount == 0);
 
-		collIndex.gpuCollectionIndex = coll->getMajorMeshes()[0]->meshNum;
-        collIndex.mainMeshCount = coll->meshCount();
+		//collIndex.gpuCollectionInfoIndex = coll->getMajorMeshes()[0]->meshNum;
+        //collIndex.mainMeshCount = coll->getMajorMeshes().size();
 
-		Log("Upload mesh global idx " << index << " to GPU (collection id " << coll->id << " index " << collectionIndex << "), info start at index " << collIndex.gpuCollectionIndex << ", # main meshes: " << collIndex.mainMeshCount << endl);
+		Log("Update mesh collection info for collection id " << coll->id << " index " << collectionIndex << " major meshes # " << collIndex.mainMeshCount << " all meshes # " << coll->meshCount() << endl);
+		Log("Upload mesh global idx " << index << " to GPU (collection id " << coll->id << " index " << collectionIndex << "), info start at index " << collIndex.gpuCollectionInfoIndex << ", # main meshes: " << collIndex.mainMeshCount << endl);
 		if (index == 0x0b) {
 			Log("[" << index << "] " << Util::to_string(gpuMeshInfos[index]) << endl);
 		}
+
+		// collection info array:
+        //assert(gpuCollectionInfos.size() > 0);
+
 		// copy to staging
 		gb.updateElement(CollectionIndices, gpuCollectionIndices[collectionIndex], collectionIndex);
         gb.updateElement(MeshInfos, gpuMeshInfos[index], index);
@@ -320,6 +332,12 @@ void MeshStore::uploadMesh(MeshInfo* mesh_ptr)
 	//   testIndex.gpuMeshInfoIndex[0] = 12345;
 	//gb.updateElement(BufferType::MeshIndices, testIndex, 0);
 	//gb.flushAllBuffers();
+}
+
+void MeshStore::updateMeshCollectionGPUStructures(MeshCollection* collection, MeshInfo* mi)
+{
+	auto& collIndex = gpuCollectionIndices[collection->index];
+    collIndex.mainMeshCount = collection->getMajorMeshes().size();
 }
 
 const vector<MeshInfo*> &MeshStore::getSortedList()

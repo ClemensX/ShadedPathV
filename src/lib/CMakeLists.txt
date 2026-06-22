@@ -26,6 +26,7 @@ set (SOURCES
   Game.cpp
   Camera.cpp
   Object.cpp
+  mstore.cpp
   Sound.cpp
   gltf.cpp
   imgui/imgui_demo.cpp

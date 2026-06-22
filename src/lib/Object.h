@@ -6,41 +6,6 @@ struct SoundDef;
 struct MeshInfo;
 class MeshStore;
 
-enum class MeshFlags : int {
-	MESH_TYPE_INVALID = 0,
-	MESH_TYPE_PBR = 1,
-	MESH_TYPE_SKINNED = 2,
-	MESH_TYPE_NO_TEXTURES = 3,
-    MESH_TYPE_FLIP_WINDING_ORDER = 4, // flip clockwise <-> counter-clockwise winding order
-    MESH_TYPE_LOD = 5, // mesh contains LOD levels
-	MESHLET_DEBUG_COLORS = 6, // apply vertex color to all triangles of one meshlet
-    MESHLET_GENERATE = 7, // re-generate meshlet data if meshlet data file not found
-	MESH_TYPE_COUNT = -1 // always last
-};
-
-class MeshFlagsCollection {
-private:
-	std::bitset<32> flags;
-
-public:
-	MeshFlagsCollection() : flags(0) {}
-	MeshFlagsCollection(MeshFlags flag) : flags(0) {
-        setFlag(flag);
-	}
-
-	void setFlag(MeshFlags flag) {
-		flags.set(static_cast<size_t>(flag));
-	}
-
-	void clearFlag(MeshFlags flag) {
-		flags.reset(static_cast<size_t>(flag));
-	}
-
-	bool hasFlag(MeshFlags flag) const {
-		return flags.test(static_cast<size_t>(flag));
-	}
-};
-
 // store vertex relashionships for the whole mesh
 struct GlobalMeshletVertex {
     uint32_t globalIndex; // index into global vertex buffer
@@ -271,6 +236,7 @@ class MeshCollectionStore {
 	MeshCollection* getMeshCollectionByIndex(int index);
 	// get ptr to new MeshCollection, do not store pointer as the address may change after extending the collection store
 	MeshCollection* addMeshCollection();
+
 	void clear() {
         meshCollections_.clear();
 	};
@@ -280,6 +246,7 @@ class MeshCollectionStore {
 private:
     std::vector<MeshCollection> meshCollections_;
     MeshStore* meshStore_ = nullptr;
+    int nextFreeCollectionInfoIndex_ = 0;
 };
 
 enum class Axis { X, Y, Z };
@@ -442,29 +409,6 @@ enum class MeshletFlags : uint32_t {
 	MESHLET_SIMPLIFY_MESH = 16, // remove duplicate vertices and triangles
 };
 
-struct GPUCollectionIndex {
-    uint32_t gpuCollectionIndex; // index into CollectionInfos (== index of first major mesh of this collection)
-	uint32_t mainMeshCount; // number of main meshes in this collection
-};
-
-struct GPUCollectionInfo {
-	uint32_t collectionIndex; // 
-    uint32_t meshNumberInCollection; // # mesh num inside collection
-    uint32_t flags; // mesh flags, e.g. LOD
-    uint32_t meshIndex; // index into gpuMeshInfos
-    uint32_t next; // if > 0, index of next major mesh in collection, otherwise this is the last mesh of the collection
-	uint32_t pad0;
-};
-
-struct GPUMeshInfo {
-	uint64_t meshletOffset = 0; // offset into global mesh storage buffer
-	uint64_t localIndexOffset = 0; // offset into global mesh storage buffer
-	uint64_t globalIndexOffset = 0; // offset into global mesh storage buffer
-	uint64_t vertexOffset = 0; // offset into global mesh storage buffer
-	uint32_t meshletCount; // number of meshlets for this LOD
-	uint32_t pad0;
-};
-
 // Mesh Store to organize objects loaded from gltf files.
 class MeshStore {
 public:
@@ -498,6 +442,8 @@ public:
 	const std::vector<MeshInfo*> &getSortedList();
 	// upload single model to GPU
 	void uploadMesh(MeshInfo* mesh);
+	// during mesh upload we update mesh collection info
+	void updateMeshCollectionGPUStructures(MeshCollection* collection, MeshInfo* mi);
 	// initialize MeshInfo, also add to collection. id is expected to be in collection format like myid.2
 	// myid.0 is a synonym for myid
 	MeshInfo* initMeshInfo(MeshCollection* coll, std::string id, int lodLevel);
@@ -594,6 +540,7 @@ private:
 	std::vector<GPUCollectionIndex> gpuCollectionIndices; // one per collection
 	std::vector<GPUCollectionInfo> gpuCollectionInfos; // one per major mesh in collection
 	std::vector<GPUMeshInfo> gpuMeshInfos; // one per LOD level of each mesh
+    size_t nextFreeGPUCollectionIndex = 0;
 };
 
 // 

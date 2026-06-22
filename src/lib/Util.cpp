@@ -1270,7 +1270,7 @@ void Util::logGPUStructuresMarkdown(std::string filename)
         if (hasData) {
             md << "| " << i;
             for (int j = 0; j < 10; ++j) {
-                md << " | " << idx.gpuCollectionIndex;
+                md << " | " << idx.gpuCollectionInfoIndex;
             }
             md << " |\n";
         }
@@ -1285,7 +1285,7 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     for (size_t idxNum = 0; idxNum < gpuCollectionIndices.size(); ++idxNum) {
         const auto& idx = gpuCollectionIndices[idxNum];
         for (int lodLevel = 0; lodLevel < 10; ++lodLevel) {
-            uint32_t infoIndex = idx.gpuCollectionIndex;
+            uint32_t infoIndex = idx.gpuCollectionInfoIndex;
             if (infoIndex != 0) {
                 // Find mesh with this collection index and LOD level
                 for (auto* mesh : sortedMeshes) {

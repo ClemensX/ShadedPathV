@@ -286,6 +286,7 @@ public:
 public:
     TextureStore textureStore;
     MeshStore meshStore;
+    MStore mstore;
     WorldObjectStore objectStore;
     Sound sound;
 
