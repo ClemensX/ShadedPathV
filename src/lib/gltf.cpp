@@ -34,6 +34,193 @@ void glTF::init(ShadedPathEngine* e) {
 
 // we need to finish texture processing within this method, as tinygltf overwrites some data between calls
 // Enhanced image loader that supports both KTX and standard image formats (PNG, JPG, etc.)
+bool LoadImageDataKTX2(Image* image, const int image_idx, std::string* err,
+	std::string* warn, int req_width, int req_height,
+	const unsigned char* bytes, int size, void* user_data) {
+	auto* userData = (glTF::gltfUserData*)user_data;
+	ktxTexture* kTexture = nullptr;
+	auto hash = userData->engine->textureStore.generateHash(bytes, size);
+	auto* existingTexture = userData->engine->textureStore.getTextureByHash(hash);
+	if (existingTexture) {
+		// Texture with the same hash already exists, reuse it
+		//userData->collection->textureInfos[image_idx] = existingTexture;
+		userData->engine->mstore.gltf.mapFileTextureIndexToGlobalTextureArray(image_idx, existingTexture->index);
+		Log("Warning: Reusing existing global texture " << existingTexture->id << " for collection image index " << image_idx << " with hash " << hash << std::endl);
+		return true;
+	}
+
+	// Check for KTX magic bytes: ab 4b 54 58 20 32 30 bb
+	string ktkMagic = "\xabKTX 20\xbb";
+	bool isKTX = (size >= 8 && strncmp((const char*)bytes, ktkMagic.c_str(), 8) == 0);
+
+	if (isKTX) {
+		// Handle KTX format (existing code)
+		userData->engine->textureStore.createKTXFromMemory(bytes, size, &kTexture);
+	}
+	else {
+		// Handle standard image formats (PNG, JPG, BMP, etc.) using stb_image
+		int width, height, channels;
+		unsigned char* imageData = stbi_load_from_memory(bytes, size, &width, &height, &channels, STBI_rgb_alpha);
+
+		if (!imageData) {
+			if (err) {
+				*err = "Failed to load image: " + std::string(stbi_failure_reason());
+			}
+			return false;
+		}
+
+		// Calculate number of mipmap levels
+		const uint32_t numMips = static_cast<uint32_t>(floor(log2(std::max(width, height)))) + 1;
+
+		// Convert to KTX format with mipmap generation
+		ktxTextureCreateInfo createInfo;
+		createInfo.glInternalformat = 0; // Not used for VkFormat
+		createInfo.vkFormat = VK_FORMAT_R8G8B8A8_UNORM;
+		createInfo.baseWidth = width;
+		createInfo.baseHeight = height;
+		createInfo.baseDepth = 1;
+		createInfo.numDimensions = 2;
+		createInfo.numLevels = numMips;
+		createInfo.numLayers = 1;
+		createInfo.numFaces = 1;
+		createInfo.isArray = KTX_FALSE;
+		createInfo.generateMipmaps = KTX_TRUE; // Enable mipmap generation
+
+		ktxTexture2* kTexture2;
+		auto result = ktxTexture2_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, (ktxTexture2**)&kTexture2);
+
+		if (result != KTX_SUCCESS) {
+			stbi_image_free(imageData);
+			if (err) {
+				*err = "Failed to create KTX texture from PNG/JPG data";
+			}
+			return false;
+		}
+
+		// Copy base level image data to KTX texture
+		size_t baseImageSize = width * height * 4; // 4 channels (RGBA)
+		size_t offset;
+		result = ktxTexture_GetImageOffset((ktxTexture*)kTexture2, 0, 0, 0, &offset);
+		if (result == KTX_SUCCESS) {
+			memcpy(ktxTexture_GetData((ktxTexture*)kTexture2) + offset, imageData, baseImageSize);
+		}
+
+		// Generate mipmaps manually for each level
+		unsigned char* currentLevelData = imageData;
+		int currentWidth = width;
+		int currentHeight = height;
+		bool ownsCurrentData = false;
+
+		for (uint32_t level = 1; level < numMips; level++) {
+			int nextWidth = std::max(1, currentWidth / 2);
+			int nextHeight = std::max(1, currentHeight / 2);
+
+			unsigned char* nextLevelData = new unsigned char[nextWidth * nextHeight * 4];
+
+			// Simple box filter for mipmap generation
+			for (int y = 0; y < nextHeight; y++) {
+				for (int x = 0; x < nextWidth; x++) {
+					int srcX = x * 2;
+					int srcY = y * 2;
+
+					// Sample 4 pixels and average them
+					for (int c = 0; c < 4; c++) {
+						int sum = 0;
+						int count = 0;
+
+						for (int dy = 0; dy < 2 && (srcY + dy) < currentHeight; dy++) {
+							for (int dx = 0; dx < 2 && (srcX + dx) < currentWidth; dx++) {
+								sum += currentLevelData[((srcY + dy) * currentWidth + (srcX + dx)) * 4 + c];
+								count++;
+							}
+						}
+
+						nextLevelData[(y * nextWidth + x) * 4 + c] = sum / count;
+					}
+				}
+			}
+
+			// Copy mip level to KTX texture
+			result = ktxTexture_GetImageOffset((ktxTexture*)kTexture2, level, 0, 0, &offset);
+			if (result == KTX_SUCCESS) {
+				memcpy(ktxTexture_GetData((ktxTexture*)kTexture2) + offset, nextLevelData, nextWidth * nextHeight * 4);
+			}
+
+			// Clean up previous level if we allocated it
+			if (ownsCurrentData) {
+				delete[] currentLevelData;
+			}
+
+			currentLevelData = nextLevelData;
+			currentWidth = nextWidth;
+			currentHeight = nextHeight;
+			ownsCurrentData = true;
+		}
+
+		// Clean up
+		if (ownsCurrentData) {
+			delete[] currentLevelData;
+		}
+		stbi_image_free(imageData);
+		kTexture = (ktxTexture*)kTexture2;
+	}
+
+	//auto* coll = userData->collection;
+    int sz = userData->engine->textureStore.size();
+    string textureId = "gltf_texture_" + std::to_string(sz);
+	auto* texture = userData->engine->textureStore.createTextureSlot(textureId);
+	texture->hash = hash;
+	userData->engine->textureStore.createVulkanTextureFromKTKTexture(kTexture, texture);
+	userData->engine->mstore.gltf.mapFileTextureIndexToGlobalTextureArray(image_idx, texture->index);
+
+	ktxTexture_Destroy(kTexture);
+	return true;
+}
+
+void glTF::loadModel2(Model& model, const unsigned char* data, int size, string filename)
+{
+	TinyGLTF loader;
+	string err;
+	string warn;
+	gltfUserData userData{ engine, nullptr };
+	initTextureMap();
+	loader.SetImageLoader(&LoadImageDataKTX2, (void*)&userData);
+	if (size < 4) {
+		Error("invalid glTF file");
+	}
+	bool isBinary = false;
+	if (data[0] == 'g' && data[1] == 'l' && data[2] == 'T' &&
+		data[3] == 'F') {
+		isBinary = true;
+	}
+
+	bool ret;
+	if (isBinary) {
+		ret = loader.LoadBinaryFromMemory(&model, &err, &warn, data, size);
+	}
+	else {
+		filesystem::path p = filename.c_str();
+		string dir = p.parent_path().string();
+		ret = loader.LoadASCIIFromString(&model, &err, &warn, (const char*)data, (unsigned int)size, dir);
+	}
+	if (!warn.empty()) {
+		printf("Warn: %s\n", warn.c_str());
+	}
+
+	if (!err.empty()) {
+		printf("Err: %s\n", err.c_str());
+	}
+
+	if (!ret) {
+		printf("Failed to parse glTF\n");
+		Error("Failed to parse glTF");
+		return;
+	}
+	return;
+}
+
+// we need to finish texture processing within this method, as tinygltf overwrites some data between calls
+// Enhanced image loader that supports both KTX and standard image formats (PNG, JPG, etc.)
 bool LoadImageDataKTX(Image* image, const int image_idx, std::string* err,
 	std::string* warn, int req_width, int req_height,
 	const unsigned char* bytes, int size, void* user_data) {
@@ -973,6 +1160,14 @@ void glTF::collectBaseTransform(tinygltf::Model& model, MeshInfo* mesh)
 	// After baking, downstream code should treat mesh->baseTransform as already applied.
 	// If desired, uncomment the next line to neutralize further usage:
 	// mesh->baseTransform = glm::mat4(1.0f);
+}
+
+// TODO: change this mess to a 2-pass system where first all meshes parsed and sorted, then in a 2nd pass added to mesh store
+void glTF::load2(const unsigned char* data, int size, string filename)
+{
+	Model model;
+	// parse full gltf file with all meshes and textures. Textures are already pre-loaded into texture store
+	loadModel2(model, data, size, filename);
 }
 
 // TODO: change this mess to a 2-pass system where first all meshes parsed and sorted, then in a 2nd pass added to mesh store

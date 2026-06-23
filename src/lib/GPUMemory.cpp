@@ -37,6 +37,12 @@ void GPUMemory::defineBuffer(const BufferConfiguration& config)
     }
 
     buffers[config.type] = state;
+    Log("WARNING GPUMemory::defineBuffer: Defined buffer type " + getBufferTypeName(config.type) +
+        " with element size " + std::to_string(config.elementSize) +
+        ", max element count " + std::to_string(config.maxElementCount) +
+        ", usage flags " + std::to_string(config.usage) +
+        ", memory properties " + std::to_string(config.memoryProperties) +
+        ", requires staging: " + (state.requiresStaging ? "true" : "false") << endl);
 }
 
 void GPUMemory::defineBuffer(BufferType type, uint32_t elementSize, uint32_t maxElementCount,
@@ -396,8 +402,8 @@ void GPUMemory::fillPushConstants(GPUMemoryPushConstants* pushConstants) const
     memset(pushConstants, 0, sizeof(GPUMemoryPushConstants));
 
     // Fill in device addresses for each buffer type that exists
-    pushConstants->collectionIndicesAddress = getDeviceAddress(CollectionIndices);
-    pushConstants->collectionInfosAddress = getDeviceAddress(CollectionInfos);
+    //pushConstants->collectionIndicesAddress = getDeviceAddress(CollectionIndices);
+    //pushConstants->collectionInfosAddress = getDeviceAddress(CollectionInfos);
     pushConstants->meshInfosAddress = getDeviceAddress(MeshInfos);
     //pushConstants->uniformBufferAddress = getDeviceAddress(UniformBuffer);
     //pushConstants->storageBufferAddress = getDeviceAddress(StorageBuffer);

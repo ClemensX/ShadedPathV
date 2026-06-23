@@ -19,14 +19,12 @@ void MeshStore::init(ShadedPathEngine* engine) {
     gpuCollectionIndices.resize(maxCollectionIndices);
     gpuCollectionInfos.resize(maxCollectionInfos);
     gpuMeshInfos.resize(maxMeshes);
-	//VkDeviceSize size = gpuMeshIndices.size() * sizeof(GPUMeshIndex)
- //       + gpuMeshInfos.size() * sizeof(GPUMeshInfo);
-	//uint64_t pos = engine->globalRendering.reserveInGlobalBuffer(size, mem);
+
 	// new GPU buffers:
-    engine->globalRendering.gpuMemory.defineBuffer(BufferType::CollectionIndices, sizeof(GPUCollectionIndex), maxCollectionIndices);
-    engine->globalRendering.gpuMemory.defineBuffer(BufferType::CollectionInfos, sizeof(GPUCollectionInfo), maxCollectionInfos);
-    engine->globalRendering.gpuMemory.defineBuffer(BufferType::MeshInfos, sizeof(GPUMeshInfo), maxMeshes);
-    engine->globalRendering.gpuMemory.allocateBuffers();
+    //engine->globalRendering.gpuMemory.defineBuffer(BufferType::CollectionIndices, sizeof(GPUCollectionIndex), maxCollectionIndices);
+    //engine->globalRendering.gpuMemory.defineBuffer(BufferType::CollectionInfos, sizeof(GPUCollectionInfo), maxCollectionInfos);
+    //engine->globalRendering.gpuMemory.defineBuffer(BufferType::MeshInfos, sizeof(GPUMeshInfo), maxMeshes);
+    //engine->globalRendering.gpuMemory.allocateBuffers();
 }
 
 // simple id, only letters, numbers and underscore
@@ -309,7 +307,7 @@ void MeshStore::uploadMesh(MeshInfo* mesh_ptr)
         //assert(gpuCollectionInfos.size() > 0);
 
 		// copy to staging
-		gb.updateElement(CollectionIndices, gpuCollectionIndices[collectionIndex], collectionIndex);
+		//gb.updateElement(CollectionIndices, gpuCollectionIndices[collectionIndex], collectionIndex);
         gb.updateElement(MeshInfos, gpuMeshInfos[index], index);
 
 		// validations

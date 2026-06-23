@@ -4,6 +4,7 @@
 
 class MStore : public EngineParticipant {
 public:
+	void init();
     void setLimits(size_t maxMeshes) {
         this->maxMeshes = maxMeshes;
     }
@@ -14,7 +15,9 @@ public:
 	// id.gltf_mesh_name == mesh with name == gltf_mesh_name
 	// id.2 == mesh[2]
 	void loadMesh(std::string filename, std::string id, MeshFlagsCollection flags = MeshFlagsCollection());
+	glTF gltf;
 private:
     size_t maxMeshes = 0; // maximum number of meshes that can be stored, set setLimits()
     void loadFile(std::string filename, std::vector<std::byte>& fileBuffer);
+
 };

@@ -18,17 +18,27 @@ public:
 	// only load vertex and index info from model. Useful for wireframe rendering
 	void loadVertices(const unsigned char* data, int size, MeshInfo* mesh, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indexBuffer, std::string filename);
 	// load model and prepare for PBR rendering
-	void load(const unsigned char* data, int size, MeshCollection *mesh, std::string filename);
+	void load(const unsigned char* data, int size, MeshCollection* mesh, std::string filename);
+	// load model and prepare for PBR rendering
+	void load2(const unsigned char* data, int size, std::string filename);
 	// used for hook into tinygltf image loading:
 	struct gltfUserData {
 		ShadedPathEngine* engine = nullptr;
 		MeshCollection* collection = nullptr;
 	};
 	void mapTinyGLTFSamplerToVulkan(const tinygltf::Sampler& gltfSampler, VkSamplerCreateInfo& vkSamplerInfo);
+	void initTextureMap() {
+		indexMap.clear();
+	}
+	void mapFileTextureIndexToGlobalTextureArray(int image_idx, int global_idx) {
+		indexMap[image_idx] = global_idx;
+	}
 private:
 	// load model from data pointer. Image data will also be parsed with results in MeshCollection->textureInfos[]
 	void loadModel(tinygltf::Model& model, const unsigned char* data, int size, MeshCollection* coll, std::string filename);
-    // copy model vertices and indices into vectors
+	// new load model from data pointer. Image data will also be parsed with results in global texture store
+	void loadModel2(tinygltf::Model& model, const unsigned char* data, int size, std::string filename);
+	// copy model vertices and indices into vectors
     // index buffer will be 32 bit wide in all cases (VK_INDEX_TYPE_UINT32)
     // now supports selecting a specific primitive within a glTF mesh
     void loadVertices(tinygltf::Model& model, MeshInfo* mesh, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indexBuffer, int gltfMeshIndex, int primitiveIndex);
@@ -41,33 +51,6 @@ private:
 	void collectBaseTransform(tinygltf::Model& model, MeshInfo *mesh);
 	ShadedPathEngine* engine = nullptr;
 
-	//VkSamplerAddressMode getVkWrapMode(int32_t wrapMode)
-	//{
-	//	switch (wrapMode) {
-	//	case 10497:
-	//		return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	//	case 33071:
-	//		return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	//	case 33648:
-	//		return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-	//	}
-	//}
-
-	//VkFilter getVkFilterMode(int32_t filterMode)
-	//{
-	//	switch (filterMode) {
-	//	case 9728:
-	//		return VK_FILTER_NEAREST;
-	//	case 9729:
-	//		return VK_FILTER_LINEAR;
-	//	case 9984:
-	//		return VK_FILTER_NEAREST;
-	//	case 9985:
-	//		return VK_FILTER_NEAREST;
-	//	case 9986:
-	//		return VK_FILTER_LINEAR;
-	//	case 9987:
-	//		return VK_FILTER_LINEAR;
-	//	}
-	//}
+	// map local texture index to global texture array index:
+	std::map<int, int> indexMap;
 };

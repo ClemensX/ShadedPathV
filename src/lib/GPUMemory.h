@@ -69,7 +69,7 @@ struct BufferState {
     VkBuffer stagingBuffer = VK_NULL_HANDLE;
     VkDeviceMemory stagingMemory = VK_NULL_HANDLE;
     void* mappedMemory = nullptr;           // for host-visible buffers
-    uint64_t relDeviceAddress = 0;             // for shader device address
+    uint64_t relDeviceAddress = 0;          // for shader device address
     uint32_t currentElementCount = 0;       // current number of elements in the buffer
     BufferConfiguration config;
     bool requiresStaging = true;            // true if using device-local memory (default)
@@ -107,6 +107,20 @@ public:
     // in addition to named BufferType buffers, we have simple one-time upload buffers. There is no maintained staging buffer.
     // we use the returned device address in other structures to reference the data in shaders
     uint64_t copyToGlobalBuffer(VkDeviceSize bufferSize, const void* src);
+
+    // Get staging buffer as typed array for C++ side access (read-only)
+    // Returns nullptr if buffer doesn't exist, memory is not mapped, or maxIndex exceeds buffer size
+    // Note: This returns the staging buffer memory which is host-visible
+    // maxIndex: The highest index you plan to access (e.g., if you want to access elements [0..9], pass 9)
+    template<typename T>
+    const T* getCppBuffer(BufferType type, uint32_t maxIndex) const;
+
+    // Get staging buffer as typed array for C++ side access (mutable)
+    // Returns nullptr if buffer doesn't exist, memory is not mapped, or maxIndex exceeds buffer size
+    // Note: This returns the staging buffer memory - remember to call flushBuffer() afterwards!
+    // maxIndex: The highest index you plan to access (e.g., if you want to access elements [0..9], pass 9)
+    template<typename T>
+    T* getCppBuffer(BufferType type, uint32_t maxIndex);
 
     // ====== RENDERING PHASE METHODS ======
 
@@ -405,4 +419,37 @@ inline T* GPUMemory::getElementsAddress(BufferType type, uint32_t startIndex, ui
     VkDeviceSize offset = startIndex * state->config.elementSize;
     char* basePtr = static_cast<char*>(state->mappedMemory);
     return reinterpret_cast<T*>(basePtr + offset);
+}
+
+template<typename T>
+inline const T* GPUMemory::getCppBuffer(BufferType type, uint32_t maxIndex) const
+{
+    auto* state = getBufferState(type);
+    if (!state || !state->mappedMemory) {
+        return nullptr;
+    }
+
+    // Verify element size matches
+    if (sizeof(T) != state->config.elementSize) {
+        Error("GPUMemory::getCppBuffer: Template type size " + std::to_string(sizeof(T)) +
+            " does not match configured element size " + std::to_string(state->config.elementSize) +
+            " for buffer type " + getBufferTypeName(type));
+        return nullptr;
+    }
+
+    // Check that maxIndex is within bounds
+    if (maxIndex >= state->config.maxElementCount) {
+        Error("GPUMemory::getCppBuffer: maxIndex " + std::to_string(maxIndex) +
+            " exceeds max element count " + std::to_string(state->config.maxElementCount) +
+            " for buffer type " + getBufferTypeName(type));
+        return nullptr;
+    }
+
+    return reinterpret_cast<const T*>(state->mappedMemory);
+}
+
+template<typename T>
+inline T* GPUMemory::getCppBuffer(BufferType type, uint32_t maxIndex)
+{
+    return const_cast<T*>(static_cast<const GPUMemory*>(this)->getCppBuffer<T>(type, maxIndex));
 }
