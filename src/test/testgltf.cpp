@@ -142,6 +142,7 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives) {
     engine->meshStore.loadMesh("cube_single.gltf", "SingleMesh");
 
     MeshInfo* mi = engine->meshStore.getMesh("SingleMesh");
+    ASSERT_NE(mi, nullptr) << "MeshInfo should not be null for id: SingleMesh";
     validateMeshInfo(mi, "SingleMesh", 0);
 
     // Verify it's not LOD and not an additional primitive
@@ -149,6 +150,46 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives) {
     EXPECT_FALSE(mi->isAdditionalPrimitive());
     EXPECT_NE(mi->gltfMeshIndex, -1); // mesh loaded from gltf file
     EXPECT_EQ(mi->gltfNextPrimitiveIndex, -1); // No chained primitives
+}
+
+// Test new gltf implementation
+TEST_F(GLTFParserTest, SingleMesh_NoPrimitives_NT) {
+    engine->files.findAssetFolder("test_samples");
+    string glbFile = engine->files.findFile("cube_single.gltf", FileCategory::MESH, false);
+    EXPECT_NE(0, glbFile.size()); // check that we found file
+
+    int cur_global_textures = engine->textureStore.size();
+    auto meshCount = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos);
+    engine->mstore.loadMesh("cube_single.gltf", "SingleMesh");
+    int textures_after_mesh_loading = engine->textureStore.size();
+
+    EXPECT_EQ(textures_after_mesh_loading, cur_global_textures + 3) << "Expected 3 new texture to be loaded";
+
+    // access textures of the mesh:
+    size_t textureCount = engine->mstore.gltf.getTextureCount();
+    EXPECT_EQ(textureCount, 3) << "Expected 3 textures for SingleMesh";
+    for (size_t i = 0; i < textureCount; ++i) {
+        auto globIdx = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(i));
+        auto* texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(globIdx));
+        Log("Texture " << i << ": global index = " << globIdx << ", id = " << texInfo->id << ", filename = " << texInfo->filename << "\n");
+    }
+    auto meshCountAfterLoad = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos);
+    EXPECT_GT(meshCountAfterLoad, meshCount) << "Expected mesh count to increase after loading";
+
+    // access newest mesh info, from the file just loaded:
+    const GPUMeshInfo* meshInfoPtr = engine->globalRendering.gpuMemory.getCppBuffer<GPUMeshInfo>(BufferType::MeshInfos, 0);
+    const GPUMaterial* materialInfoPtr = engine->globalRendering.gpuMemory.getCppBuffer<GPUMaterial>(BufferType::Materials, 0);
+    const auto& meshInfo = meshInfoPtr[meshCount]; // access the last loaded mesh info
+    const auto& materialInfo = materialInfoPtr[meshInfo.material]; // access the corresponding material info
+    EXPECT_GT(materialInfo.baseColor, 0);
+    EXPECT_GT(materialInfo.metallicRoughness, 0);
+    EXPECT_GT(materialInfo.normal, 0);
+    EXPECT_TRUE(materialInfo.occlusion == -1);
+    EXPECT_TRUE(materialInfo.emissive == -1);
+
+    //assert(meshInfoPtr != nullptr);
+    //assert(meshInfoPtr->globalIndexOffset == 0);
+    //assert(meshInfoPtr[0].localIndexOffset == 0);
 }
 
 // Test 2: Single mesh with LOD levels (10 LODs)

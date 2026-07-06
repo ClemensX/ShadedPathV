@@ -33,6 +33,16 @@ public:
 	void mapFileTextureIndexToGlobalTextureArray(int image_idx, int global_idx) {
 		indexMap[image_idx] = global_idx;
 	}
+	size_t getTextureCount() const {
+		return indexMap.size();
+	}
+	size_t getGlobalTextureIndex(int image_idx) const {
+		auto it = indexMap.find(image_idx);
+		if (it != indexMap.end()) {
+			return it->second;
+		}
+		return static_cast<size_t>(-1); // or some other invalid value
+	}
 private:
 	// load model from data pointer. Image data will also be parsed with results in MeshCollection->textureInfos[]
 	void loadModel(tinygltf::Model& model, const unsigned char* data, int size, MeshCollection* coll, std::string filename);
@@ -53,4 +63,7 @@ private:
 
 	// map local texture index to global texture array index:
 	std::map<int, int> indexMap;
+
+	// after basic glTF parsing, this function will parse all meshes and store them in the mesh store
+	void parseMeshes(tinygltf::Model& model);
 };

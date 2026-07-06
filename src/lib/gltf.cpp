@@ -49,13 +49,13 @@ bool LoadImageDataKTX2(Image* image, const int image_idx, std::string* err,
 		return true;
 	}
 
-	// Check for KTX magic bytes: ab 4b 54 58 20 32 30 bb
-	string ktkMagic = "\xabKTX 20\xbb";
-	bool isKTX = (size >= 8 && strncmp((const char*)bytes, ktkMagic.c_str(), 8) == 0);
-
-	if (isKTX) {
+	int sz = userData->engine->textureStore.size();
+	string textureId = "gltf_texture_" + std::to_string(sz);
+	string imageFormat = Util::getImageFileTypeFromRawBytes(bytes, size);
+	if (imageFormat == "KTX20") {
 		// Handle KTX format (existing code)
 		userData->engine->textureStore.createKTXFromMemory(bytes, size, &kTexture);
+		Log("gltf texture loader: " << textureId << " (" << imageFormat << ") (" << kTexture->baseWidth << "x" << kTexture->baseHeight << ", " << kTexture->numLayers << " layers)\n");
 	}
 	else {
 		// Handle standard image formats (PNG, JPG, BMP, etc.) using stb_image
@@ -68,6 +68,8 @@ bool LoadImageDataKTX2(Image* image, const int image_idx, std::string* err,
 			}
 			return false;
 		}
+
+		Log("gltf texture loader: " << textureId << " (" << imageFormat << ") (" << width << "x" << height << ", " << channels << " channels)\n");
 
 		// Calculate number of mipmap levels
 		const uint32_t numMips = static_cast<uint32_t>(floor(log2(std::max(width, height)))) + 1;
@@ -110,6 +112,7 @@ bool LoadImageDataKTX2(Image* image, const int image_idx, std::string* err,
 		int currentWidth = width;
 		int currentHeight = height;
 		bool ownsCurrentData = false;
+        int mipsCreated = 0; // count actual mips created
 
 		for (uint32_t level = 1; level < numMips; level++) {
 			int nextWidth = std::max(1, currentWidth / 2);
@@ -144,6 +147,7 @@ bool LoadImageDataKTX2(Image* image, const int image_idx, std::string* err,
 			result = ktxTexture_GetImageOffset((ktxTexture*)kTexture2, level, 0, 0, &offset);
 			if (result == KTX_SUCCESS) {
 				memcpy(ktxTexture_GetData((ktxTexture*)kTexture2) + offset, nextLevelData, nextWidth * nextHeight * 4);
+                mipsCreated++;
 			}
 
 			// Clean up previous level if we allocated it
@@ -157,6 +161,8 @@ bool LoadImageDataKTX2(Image* image, const int image_idx, std::string* err,
 			ownsCurrentData = true;
 		}
 
+        Log("gltf texture loader: generated " << mipsCreated << " mipmap levels for texture " << textureId << std::endl);
+
 		// Clean up
 		if (ownsCurrentData) {
 			delete[] currentLevelData;
@@ -165,15 +171,14 @@ bool LoadImageDataKTX2(Image* image, const int image_idx, std::string* err,
 		kTexture = (ktxTexture*)kTexture2;
 	}
 
-	//auto* coll = userData->collection;
-    int sz = userData->engine->textureStore.size();
-    string textureId = "gltf_texture_" + std::to_string(sz);
 	auto* texture = userData->engine->textureStore.createTextureSlot(textureId);
 	texture->hash = hash;
 	userData->engine->textureStore.createVulkanTextureFromKTKTexture(kTexture, texture);
 	userData->engine->mstore.gltf.mapFileTextureIndexToGlobalTextureArray(image_idx, texture->index);
-
+    userData->engine->textureStore.setTextureActive(textureId, true);
 	ktxTexture_Destroy(kTexture);
+
+    //Log("gltf texture loader: created global texture " << texture->id << " for gltf image index " << image_idx << " with hash " << hash << std::endl);
 	return true;
 }
 
@@ -1162,12 +1167,13 @@ void glTF::collectBaseTransform(tinygltf::Model& model, MeshInfo* mesh)
 	// mesh->baseTransform = glm::mat4(1.0f);
 }
 
-// TODO: change this mess to a 2-pass system where first all meshes parsed and sorted, then in a 2nd pass added to mesh store
+// new gltf parser
 void glTF::load2(const unsigned char* data, int size, string filename)
 {
 	Model model;
 	// parse full gltf file with all meshes and textures. Textures are already pre-loaded into texture store
 	loadModel2(model, data, size, filename);
+	parseMeshes(model);
 }
 
 // TODO: change this mess to a 2-pass system where first all meshes parsed and sorted, then in a 2nd pass added to mesh store
@@ -1340,4 +1346,55 @@ void glTF::mapTinyGLTFSamplerToVulkan(const tinygltf::Sampler& gltfSampler, VkSa
 	vkSamplerInfo.mipLodBias = 0.0f;
 	vkSamplerInfo.minLod = 0.0f;
 	vkSamplerInfo.maxLod = VK_LOD_CLAMP_NONE;
+}
+
+void glTF::parseMeshes(tinygltf::Model& model)
+{
+    // 1st step: count meshes, materials and textures (each primitive is a separate mesh in our system)
+    size_t meshCount = 0;
+    size_t materialCount = model.materials.size();
+    size_t textureCount = model.textures.size();
+
+	for (int meshIndex = 0; meshIndex < (int)model.meshes.size(); ++meshIndex) {
+		auto& m = model.meshes[meshIndex];
+		//Log("  " << m.name.c_str() << endl);
+        meshCount += m.primitives.size();
+	}
+	Log("glTF file contains " << meshCount << " meshes, " << materialCount << " materials, " << textureCount << " textures" << endl);
+
+	// initialize std::vector for infos and materials. Textures are already in global buffer, we just have to adapt texture indices
+    vector<GPUMeshInfo> gpuMeshInfos(meshCount);
+    vector<GPUMaterial> gpuMaterialInfos(materialCount);
+
+	size_t curMeshIndex = 0;
+	for (int mi = 0; mi < (int)model.meshes.size(); ++mi) {
+		auto& m = model.meshes[mi];
+        for (int prim = 0; prim < (int)m.primitives.size(); ++prim) {
+            auto& p = m.primitives[prim];
+            // fill gpuMeshInfos[curMeshIndex] with data from p and m
+            gpuMeshInfos[curMeshIndex].material = p.material;
+            gpuMeshInfos[curMeshIndex].index = curMeshIndex;
+            gpuMeshInfos[curMeshIndex].next = (prim < (int)m.primitives.size() - 1) ? curMeshIndex + 1 : 0;
+            curMeshIndex++;
+        }
+	}
+
+    for (int matIndex = 0; matIndex < (int)model.materials.size(); ++matIndex) {
+        auto& mat = model.materials[matIndex];
+        // fill gpuMaterialInfos[matIndex] with data from mat
+		gpuMaterialInfos[matIndex].baseColor = mat.pbrMetallicRoughness.baseColorTexture.index;
+		gpuMaterialInfos[matIndex].metallicRoughness = mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
+		gpuMaterialInfos[matIndex].normal = mat.normalTexture.index;
+		gpuMaterialInfos[matIndex].occlusion = mat.occlusionTexture.index;
+		gpuMaterialInfos[matIndex].emissive = mat.emissiveTexture.index;
+	}
+
+    engine->mstore.addToGlobalBuffers(gpuMeshInfos, gpuMaterialInfos);
+
+	// test access:
+ //   auto test = gpuMeshInfos[0];
+	//test.pad0 = 42;
+ //   gpuMeshInfos[0] = test;
+ //   Log("gpuMeshInfos[0].pad0 = " << gpuMeshInfos[0].pad0 << endl);
+ //   test = gpuMeshInfos[1]; // ERROR
 }

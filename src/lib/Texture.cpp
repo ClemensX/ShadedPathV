@@ -133,7 +133,7 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 		}
 		auto format = ktxTexture_GetVkFormat(kTexture);
 		// we should have VK_FORMAT_BC7_UNORM_BLOCK = 145 or VK_FORMAT_BC7_SRGB_BLOCK = 146,
-		Log("format: " << format << endl);
+		//Log("format: " << format << endl);
 		if (engine->globalRendering.isValidationLayer_LegacyDetectionActive()) {
 			Log("Validation Pre-Warning: ktx library: ktxTexture2_VkUploadEx() might produce warnings if legacy-detection validation is enabled\n");
 		}
@@ -162,7 +162,7 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 	} else {
 		// KTX 1 handling
 		auto format = ktxTexture_GetVkFormat(kTexture);
-		Log("format: " << format << endl);
+		//Log("format: " << format << endl);
 		auto ktxresult = ktxTexture_VkUploadEx(kTexture, &vdi, &texture->vulkanTexture, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		if (ktxresult != KTX_SUCCESS) {
 			Log("ERROR: in ktxTexture_VkUploadEx " << ktxresult);

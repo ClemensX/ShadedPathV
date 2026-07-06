@@ -1617,3 +1617,43 @@ std::string Util::to_string(const GPUMeshInfo& info)
 
     return oss.str();
 }
+
+std::string Util::getImageFileTypeFromRawBytes(const unsigned char* bytes, size_t size)
+{
+    // Determine the image format by checking magic bytes
+    std::string imageFormat = "UNKNOWN";
+    if (size >= 8) {
+        // PNG: 89 50 4E 47 0D 0A 1A 0A
+        if (bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47) {
+            imageFormat = "PNG";
+        }
+        // JPEG: FF D8 FF
+        else if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF) {
+            imageFormat = "JPEG";
+        }
+        // BMP: 42 4D
+        else if (bytes[0] == 0x42 && bytes[1] == 0x4D) {
+            imageFormat = "BMP";
+        }
+        // GIF: 47 49 46 38
+        else if (bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x38) {
+            imageFormat = "GIF";
+        }
+        // TGA: check last 18 bytes for signature if simple check fails
+        // WebP: 52 49 46 46 ... 57 45 42 50
+        else if (size >= 12 && bytes[0] == 0x52 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x46 &&
+            bytes[8] == 0x57 && bytes[9] == 0x45 && bytes[10] == 0x42 && bytes[11] == 0x50) {
+            imageFormat = "WEBP";
+        }
+        else {
+            // Check for KTX magic bytes: ab 4b 54 58 20 32 30 bb
+            string ktkMagic = "\xabKTX 20\xbb";
+            bool isKTX = (size >= 8 && strncmp((const char*)bytes, ktkMagic.c_str(), 8) == 0);
+            if (isKTX) {
+                imageFormat = "KTX20";
+            }
+        }
+
+    }
+    return imageFormat;
+}

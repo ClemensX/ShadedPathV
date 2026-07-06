@@ -13,8 +13,8 @@ enum BufferType {
     CollectionInfos,
     // MeshInfos table, one entry per mesh LOD (10 LODs per main mesh), size: engine->MaxMeshes
     MeshInfos,
-    UniformBuffer,
-    StorageBuffer,
+    Models,
+    Materials,
     VertexBuffer,
     IndexBuffer,
     IndirectBuffer,

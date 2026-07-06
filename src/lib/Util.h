@@ -92,6 +92,8 @@ public:
         };
     }
 
+    static std::string getImageFileTypeFromRawBytes(const unsigned char* bytes, size_t size);
+
     // debug info for MeshInfo output
     static std::string to_string(const GPUMeshInfo& info);
 

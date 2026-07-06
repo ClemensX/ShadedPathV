@@ -57,6 +57,9 @@ struct GPUMeshInfo {
 	uint64_t globalIndexOffset = 0; // offset into global mesh storage buffer
 	uint64_t vertexOffset = 0; // offset into global mesh storage buffer
 	uint32_t meshletCount; // number of meshlets for this LOD
+    uint32_t material; // during parsing: local material index, during GPU upload: global material index
+	uint32_t index; // global mesh index
+	uint32_t next; // next primitive (0 == no next primitive)
 	uint32_t pad0;
 };
 
@@ -67,4 +70,13 @@ struct GPUModel {
 	uint32_t material_lod_category;
 	uint32_t materialIndex; // index into global material array
 	BoundingBox boundingBox;
+};
+
+struct GPUMaterial {
+	int32_t baseColor;
+	int32_t metallicRoughness;
+	int32_t normal;
+	int32_t occlusion;
+	int32_t emissive;
+
 };

@@ -60,16 +60,16 @@ void GPUMemory::defineBuffer(BufferType type, uint32_t elementSize, uint32_t max
     config.memoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
     // Add shader device address support for storage buffers
-    if (type == StorageBuffer || type == VertexBuffer || type == IndexBuffer) {
-        config.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-    }
+    //if (type == StorageBuffer || type == VertexBuffer || type == IndexBuffer) {
+    //    config.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+    //}
 
     // Add appropriate buffer type usage flags
     switch (type) {
-    case UniformBuffer:
+    case Models:
         config.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         break;
-    case StorageBuffer:
+    case Materials:
     case CollectionIndices:
     case CollectionInfos:
     case MeshInfos:
@@ -381,8 +381,8 @@ string GPUMemory::getBufferTypeName(BufferType type) const
     case CollectionIndices:    return "CollectionIndices";
     case CollectionInfos:      return "CollectionInfos";
     case MeshInfos:            return "MeshInfos";
-    case UniformBuffer:        return "UniformBuffer";
-    case StorageBuffer:        return "StorageBuffer";
+    case Models:               return "Models";
+    case Materials:            return "Materials";
     case VertexBuffer:         return "VertexBuffer";
     case IndexBuffer:          return "IndexBuffer";
     case IndirectBuffer:       return "IndirectBuffer";
