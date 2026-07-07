@@ -191,11 +191,7 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives_NT) {
     EXPECT_TRUE(material->emissive == -1);
 
     auto* texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->baseColor));
-    Log("Texture: global index = " << material->baseColor << ", id = " << texInfo->id << ", filename = " << texInfo->filename << "\n");
-
-    // Analyze texture data using TextureAnalyzer
-    auto stats = TextureAnalyzer::analyzeTexture(engine, texInfo);
-    TextureAnalyzer::printStats(stats, "BaseColor Texture");
+    //Log("Texture: global index = " << material->baseColor << ", id = " << texInfo->id << ", filename = " << texInfo->filename << "\n");
 
     // Example validations:
     // 1. Check if texture has expected color distribution
@@ -210,7 +206,30 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives_NT) {
     // 3. Check if texture is mostly a solid color
     // bool isSolid = TextureAnalyzer::isSolidColor(stats);
     // Log("Is solid color: " << (isSolid ? "yes" : "no") << "\n");
-    auto colorResult = TextureAnalyzer::validateDominantColor(stats, glm::vec3(0.80f, 0.32f, 0.32f));
+
+    // Analyze texture data using TextureAnalyzer
+    auto lightRedColor = glm::vec3(0.80f, 0.32f, 0.32f);
+    auto darkRedColor = glm::vec3(0.40f, 0.149f, 0.149f);
+    auto greenColor = glm::vec3(0.0f, 0.502f, 0.0f);
+    auto normalColor = glm::vec3(0.502f, 0.502f, 1.0f);
+    auto stats = TextureAnalyzer::analyzeTexture(engine, texInfo);
+    //TextureAnalyzer::printStats(stats, "BaseColor Texture");
+
+    auto colorResult = TextureAnalyzer::validateDominantColor(stats, lightRedColor, 0.50f);
+    EXPECT_TRUE(colorResult.passed) << colorResult.message;
+    colorResult = TextureAnalyzer::validateDominantColor(stats, darkRedColor, 0.50f);
+    EXPECT_TRUE(colorResult.passed) << colorResult.message;
+
+    texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->metallicRoughness));
+    stats = TextureAnalyzer::analyzeTexture(engine, texInfo);
+    EXPECT_TRUE(TextureAnalyzer::isSolidColor(stats));
+    colorResult = TextureAnalyzer::validateDominantColor(stats, greenColor, 1.00f);
+    EXPECT_TRUE(colorResult.passed) << colorResult.message;
+
+    texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->normal));
+    stats = TextureAnalyzer::analyzeTexture(engine, texInfo);
+    EXPECT_TRUE(TextureAnalyzer::isSolidColor(stats));
+    colorResult = TextureAnalyzer::validateDominantColor(stats, normalColor, 1.00f);
     EXPECT_TRUE(colorResult.passed) << colorResult.message;
 }
 
