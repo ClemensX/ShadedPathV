@@ -1375,6 +1375,7 @@ void glTF::parseMeshes(tinygltf::Model& model)
             gpuMeshInfos[curMeshIndex].material = p.material;
             gpuMeshInfos[curMeshIndex].index = curMeshIndex;
             gpuMeshInfos[curMeshIndex].next = (prim < (int)m.primitives.size() - 1) ? curMeshIndex + 1 : 0;
+            gpuMeshInfos[curMeshIndex].name = m.name;
             curMeshIndex++;
         }
 	}

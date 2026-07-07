@@ -176,20 +176,21 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives_NT) {
     auto meshCountAfterLoad = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos);
     EXPECT_GT(meshCountAfterLoad, meshCount) << "Expected mesh count to increase after loading";
 
-    // access newest mesh info, from the file just loaded:
-    const GPUMeshInfo* meshInfoPtr = engine->globalRendering.gpuMemory.getCppBuffer<GPUMeshInfo>(BufferType::MeshInfos, 0);
-    const GPUMaterial* materialInfoPtr = engine->globalRendering.gpuMemory.getCppBuffer<GPUMaterial>(BufferType::Materials, 0);
-    const auto& meshInfo = meshInfoPtr[meshCount]; // access the last loaded mesh info
-    const auto& materialInfo = materialInfoPtr[meshInfo.material]; // access the corresponding material info
-    EXPECT_GT(materialInfo.baseColor, 0);
-    EXPECT_GT(materialInfo.metallicRoughness, 0);
-    EXPECT_GT(materialInfo.normal, 0);
-    EXPECT_TRUE(materialInfo.occlusion == -1);
-    EXPECT_TRUE(materialInfo.emissive == -1);
+    auto loaded = engine->mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
+    EXPECT_EQ(loaded->meshes.size(), 1); // should be 1 mesh
+    auto meshInfo = engine->mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
+    EXPECT_EQ(meshInfo->name, "Cube");
 
-    //assert(meshInfoPtr != nullptr);
-    //assert(meshInfoPtr->globalIndexOffset == 0);
-    //assert(meshInfoPtr[0].localIndexOffset == 0);
+    // access newest mesh info, from the file just loaded:
+    const GPUMaterial* material = engine->mstore.getGPUMaterial(meshInfo->material);
+    EXPECT_GT(material->baseColor, 0);
+    EXPECT_GT(material->metallicRoughness, 0);
+    EXPECT_GT(material->normal, 0);
+    EXPECT_TRUE(material->occlusion == -1);
+    EXPECT_TRUE(material->emissive == -1);
+
+    auto* texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->baseColor));
+    Log("Texture: global index = " << material->baseColor << ", id = " << texInfo->id << ", filename = " << texInfo->filename << "\n");
 }
 
 // Test 2: Single mesh with LOD levels (10 LODs)

@@ -37,8 +37,31 @@ void MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection 
 	//assert(meshInfoPtr->globalIndexOffset == 0);
  //   assert(meshInfoPtr[0].localIndexOffset == 0);
 
+	auto meshNumStart = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos);
 	string fileOrPath = (path) ? path.value() : filename;
 	gltf.load2((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), fileOrPath);
+	auto meshNumCount = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos) - meshNumStart;
+    Log("MStore::loadMesh: Loaded " << meshNumCount << " meshes from file: " << filename << "\n");
+    MeshFile meshFile{};
+    meshFile.id = id;
+    meshFile.flags = flags;
+	const GPUMeshInfo* meshInfoPtr = engine->globalRendering.gpuMemory.getCppBuffer<GPUMeshInfo>(BufferType::MeshInfos, 0);
+	for (int i = 0; i < meshNumCount; ++i) {
+        MeshFileEntry entry{};
+        entry.name = meshInfoPtr[meshNumStart + i].name;
+        entry.meshIndex = meshNumStart + i;
+        meshFile.meshes.push_back(entry);
+    }
+    meshFiles.push_back(meshFile);
+    addMeshFileID(id, static_cast<int32_t>(meshFiles.size() - 1));
+}
+
+const GPUMeshInfo* MStore::getGPUMeshInfo(int32_t index) const {
+	return engine->globalRendering.gpuMemory.getCppBuffer<GPUMeshInfo>(BufferType::MeshInfos, index);
+}
+
+const GPUMaterial* MStore::getGPUMaterial(int32_t index) const {
+	return engine->globalRendering.gpuMemory.getCppBuffer<GPUMaterial>(BufferType::Materials, index);
 }
 
 std::optional<std::string> MStore::loadFile(std::string filename, std::vector<std::byte>& fileBuffer)

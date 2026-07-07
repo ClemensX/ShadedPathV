@@ -61,6 +61,8 @@ struct GPUMeshInfo {
 	uint32_t index; // global mesh index
 	uint32_t next; // next primitive (0 == no next primitive)
 	uint32_t pad0;
+	// following entries will not be transferred to GPU
+	std::string name;
 };
 
 struct GPUModel {
@@ -79,4 +81,15 @@ struct GPUMaterial {
 	int32_t occlusion;
 	int32_t emissive;
 
+};
+
+struct MeshFileEntry {
+	std::string name;
+    int32_t meshIndex;
+};
+
+struct MeshFile {
+    std::string id;
+    MeshFlagsCollection flags;
+	std::vector<MeshFileEntry> meshes;
 };
