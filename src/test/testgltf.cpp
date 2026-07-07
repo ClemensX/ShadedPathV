@@ -1,6 +1,7 @@
 
 #include "mainheader.h"
 #include "test.h"
+#include "TextureAnalyzer.h"
 //#include <gtest/gtest.h>
 
 
@@ -191,6 +192,26 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives_NT) {
 
     auto* texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->baseColor));
     Log("Texture: global index = " << material->baseColor << ", id = " << texInfo->id << ", filename = " << texInfo->filename << "\n");
+
+    // Analyze texture data using TextureAnalyzer
+    auto stats = TextureAnalyzer::analyzeTexture(engine, texInfo);
+    TextureAnalyzer::printStats(stats, "BaseColor Texture");
+
+    // Example validations:
+    // 1. Check if texture has expected color distribution
+    // glm::vec4 expectedMean(0.5f, 0.5f, 0.5f, 1.0f); // Gray with full alpha
+    // auto colorResult = TextureAnalyzer::validateColorRange(stats, expectedMean, 0.2f);
+    // EXPECT_TRUE(colorResult.passed) << colorResult.message;
+
+    // 2. Check if texture has reasonable variance (not solid color or too noisy)
+    // auto varianceResult = TextureAnalyzer::validateVariance(stats, 0.05f, 0.3f);
+    // EXPECT_TRUE(varianceResult.passed) << varianceResult.message;
+
+    // 3. Check if texture is mostly a solid color
+    // bool isSolid = TextureAnalyzer::isSolidColor(stats);
+    // Log("Is solid color: " << (isSolid ? "yes" : "no") << "\n");
+    auto colorResult = TextureAnalyzer::validateDominantColor(stats, glm::vec3(0.80f, 0.32f, 0.32f));
+    EXPECT_TRUE(colorResult.passed) << colorResult.message;
 }
 
 // Test 2: Single mesh with LOD levels (10 LODs)
