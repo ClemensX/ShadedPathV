@@ -620,14 +620,120 @@ void extractVertexAttribute(const tinygltf::Model& model, const tinygltf::Primit
 	}
 }
 
+void glTF::loadVerticesCore(tinygltf::Model& model, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indexBuffer, int gltfMeshIndex, int primitiveIndex)
+{
+	uint32_t indexStart = static_cast<uint32_t>(indexBuffer.size());
+	uint32_t vertexStart = static_cast<uint32_t>(verts.size());
+
+	const tinygltf::Mesh& gltfMesh = model.meshes[gltfMeshIndex];
+	const tinygltf::Primitive& primitive = gltfMesh.primitives[primitiveIndex];
+
+	bool hasIndices = primitive.indices > -1;
+	if (!hasIndices) {
+		Error("Cannot parse mesh without indices");
+	}
+
+	// Extract positions
+	std::vector<float> positions;
+	int posStride;
+	extractVertexAttribute(model, primitive, "POSITION", positions, posStride);
+
+	// Extract colors
+	std::vector<float> colors;
+	int colorStride;
+	extractVertexAttribute(model, primitive, "COLOR_0", colors, colorStride);
+
+	// Extract texture coordinates
+	std::vector<float> texCoords;
+	int texCoordStride;
+	extractVertexAttribute(model, primitive, "TEXCOORD_0", texCoords, texCoordStride);
+
+	// Extract 2nd texture coordinates
+	std::vector<float> texCoords2;
+	int texCoordStride2;
+	extractVertexAttribute(model, primitive, "TEXCOORD_1", texCoords2, texCoordStride2);
+
+	// Extract normals
+	std::vector<float> normals;
+	int normalStride;
+	extractVertexAttribute(model, primitive, "NORMAL", normals, normalStride);
+
+	// Populate vertices, all floats are auto initialized to 0.0f
+	for (size_t v = 0; v < positions.size() / posStride; v++) {
+		PBRShader::Vertex vert{};
+		vert.pos = glm::vec3(positions[v * posStride], positions[v * posStride + 1], positions[v * posStride + 2]);
+
+		if (!colors.empty()) {
+			// Access components safely: COLOR_0 may be vec3 or vec4. If alpha not present, default to 1.0f.
+			float cr = 0.0f, cg = 0.0f, cb = 0.0f, ca = 1.0f;
+			int base = static_cast<int>(v) * colorStride;
+			if (colorStride > 0) cr = colors[base + 0];
+			if (colorStride > 1) cg = colors[base + 1];
+			if (colorStride > 2) cb = colors[base + 2];
+			if (colorStride > 3) ca = colors[base + 3];
+			vert.color = glm::vec4(cr, cg, cb, ca);
+		}
+		else {
+			vert.color = glm::vec4(1.0f); // Default to white if no color attribute
+		}
+
+		if (!texCoords.empty()) {
+			vert.uv0 = glm::vec2(texCoords[v * texCoordStride], texCoords[v * texCoordStride + 1]);
+		}
+		if (!texCoords2.empty()) {
+			vert.uv1 = glm::vec2(texCoords2[v * texCoordStride2], texCoords2[v * texCoordStride2 + 1]);
+		}
+		if (!normals.empty()) {
+			vert.normal = glm::vec3(normals[v * normalStride], normals[v * normalStride + 1], normals[v * normalStride + 2]);
+		}
+
+		verts.push_back(vert);
+	}
+
+	// Parse indices
+	const tinygltf::Accessor& accessor = model.accessors[primitive.indices];
+	const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
+	const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
+
+	uint32_t indexCount = static_cast<uint32_t>(accessor.count);
+	const void* dataPtr = &(buffer.data[accessor.byteOffset + bufferView.byteOffset]);
+
+	switch (accessor.componentType) {
+	case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT: {
+		const uint32_t* buf = static_cast<const uint32_t*>(dataPtr);
+		for (size_t index = 0; index < accessor.count; index++) {
+			indexBuffer.push_back(buf[index] + vertexStart);
+		}
+		break;
+	}
+	case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT: {
+		const uint16_t* buf = static_cast<const uint16_t*>(dataPtr);
+		for (size_t index = 0; index < accessor.count; index++) {
+			indexBuffer.push_back(buf[index] + vertexStart);
+		}
+		break;
+	}
+	case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE: {
+		const uint8_t* buf = static_cast<const uint8_t*>(dataPtr);
+		for (size_t index = 0; index < accessor.count; index++) {
+			indexBuffer.push_back(buf[index] + vertexStart);
+		}
+		break;
+	}
+	default:
+		Error("Index component type not supported!");
+	}
+
+	Log("Verts loaded: " << verts.size() << endl);
+	Log("Indices loaded: " << indexBuffer.size() << endl);
+	assert(indexBuffer.size() % 3 == 0); // Ensure triangles
+}
+
 void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indexBuffer, int gltfMeshIndex, int primitiveIndex) {
 	assert(mesh->gltfMeshIndex >= 0);
     assert(mesh->gltfMeshIndex == gltfMeshIndex);
     // primitive index must be valid
     assert(primitiveIndex >= 0);
-
-	uint32_t indexStart = static_cast<uint32_t>(indexBuffer.size());
-	uint32_t vertexStart = static_cast<uint32_t>(verts.size());
 
 	if (model.meshes.size() > 0) {
 		const tinygltf::Mesh& gltfMesh = model.meshes[gltfMeshIndex];
@@ -636,105 +742,7 @@ void glTF::loadVertices(tinygltf::Model& model, MeshInfo* mesh, std::vector<PBRS
                 Error("primitiveIndex out of range in loadVertices");
             }
             const tinygltf::Primitive& primitive = gltfMesh.primitives[primitiveIndex];
-			bool hasIndices = primitive.indices > -1;
-			if (!hasIndices) {
-				Error("Cannot parse mesh without indices");
-			}
-
-			// Extract positions
-			std::vector<float> positions;
-			int posStride;
-			extractVertexAttribute(model, primitive, "POSITION", positions, posStride);
-
-			// Extract colors
-			std::vector<float> colors;
-			int colorStride;
-			extractVertexAttribute(model, primitive, "COLOR_0", colors, colorStride);
-
-			// Extract texture coordinates
-			std::vector<float> texCoords;
-			int texCoordStride;
-			extractVertexAttribute(model, primitive, "TEXCOORD_0", texCoords, texCoordStride);
-
-			// Extract 2nd texture coordinates
-			std::vector<float> texCoords2;
-			int texCoordStride2;
-			extractVertexAttribute(model, primitive, "TEXCOORD_1", texCoords2, texCoordStride2);
-
-			// Extract normals
-			std::vector<float> normals;
-			int normalStride;
-			extractVertexAttribute(model, primitive, "NORMAL", normals, normalStride);
-
-            // Populate vertices, all floats are auto initialized to 0.0f
-			for (size_t v = 0; v < positions.size() / posStride; v++) {
-				PBRShader::Vertex vert{};
-				vert.pos = glm::vec3(positions[v * posStride], positions[v * posStride + 1], positions[v * posStride + 2]);
-
-				if (!colors.empty()) {
-				// Access components safely: COLOR_0 may be vec3 or vec4. If alpha not present, default to 1.0f.
-				float cr = 0.0f, cg = 0.0f, cb = 0.0f, ca = 1.0f;
-				int base = static_cast<int>(v) * colorStride;
-				if (colorStride > 0) cr = colors[base + 0];
-				if (colorStride > 1) cg = colors[base + 1];
-				if (colorStride > 2) cb = colors[base + 2];
-				if (colorStride > 3) ca = colors[base + 3];
-				vert.color = glm::vec4(cr, cg, cb, ca);
-				}
-				else {
-					vert.color = glm::vec4(1.0f); // Default to white if no color attribute
-				}
-
-				if (!texCoords.empty()) {
-					vert.uv0 = glm::vec2(texCoords[v * texCoordStride], texCoords[v * texCoordStride + 1]);
-				}
-				if (!texCoords2.empty()) {
-					vert.uv1 = glm::vec2(texCoords2[v * texCoordStride2], texCoords2[v * texCoordStride2 + 1]);
-				}
-				if (!normals.empty()) {
-                    vert.normal = glm::vec3(normals[v * normalStride], normals[v * normalStride + 1], normals[v * normalStride + 2]);
-                }
-
-				verts.push_back(vert);
-			}
-
-			// Parse indices
-			const tinygltf::Accessor& accessor = model.accessors[primitive.indices];
-			const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-			const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
-
-			uint32_t indexCount = static_cast<uint32_t>(accessor.count);
-			const void* dataPtr = &(buffer.data[accessor.byteOffset + bufferView.byteOffset]);
-
-			switch (accessor.componentType) {
-			case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT: {
-				const uint32_t* buf = static_cast<const uint32_t*>(dataPtr);
-				for (size_t index = 0; index < accessor.count; index++) {
-					indexBuffer.push_back(buf[index] + vertexStart);
-				}
-				break;
-			}
-			case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT: {
-				const uint16_t* buf = static_cast<const uint16_t*>(dataPtr);
-				for (size_t index = 0; index < accessor.count; index++) {
-					indexBuffer.push_back(buf[index] + vertexStart);
-				}
-				break;
-			}
-			case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE: {
-				const uint8_t* buf = static_cast<const uint8_t*>(dataPtr);
-				for (size_t index = 0; index < accessor.count; index++) {
-					indexBuffer.push_back(buf[index] + vertexStart);
-				}
-				break;
-			}
-			default:
-				Error("Index component type not supported!");
-			}
-
-			Log("Verts loaded: " << verts.size() << endl);
-			Log("Indices loaded: " << indexBuffer.size() << endl);
-			assert(indexBuffer.size() % 3 == 0); // Ensure triangles
+			loadVerticesCore(model, verts, indexBuffer, gltfMeshIndex, primitiveIndex);
 
 			if (mesh->flags.hasFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER)) {
 				// Flip winding order
@@ -1376,6 +1384,7 @@ void glTF::parseMeshes(tinygltf::Model& model)
             gpuMeshInfos[curMeshIndex].index = curMeshIndex;
             gpuMeshInfos[curMeshIndex].next = (prim < (int)m.primitives.size() - 1) ? curMeshIndex + 1 : 0;
             gpuMeshInfos[curMeshIndex].name = m.name;
+            loadVerticesCore(model, gpuMeshInfos[curMeshIndex].vertices, gpuMeshInfos[curMeshIndex].indices, mi, prim);
             curMeshIndex++;
         }
 	}

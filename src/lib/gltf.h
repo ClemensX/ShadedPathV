@@ -52,6 +52,8 @@ private:
     // index buffer will be 32 bit wide in all cases (VK_INDEX_TYPE_UINT32)
     // now supports selecting a specific primitive within a glTF mesh
     void loadVertices(tinygltf::Model& model, MeshInfo* mesh, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indexBuffer, int gltfMeshIndex, int primitiveIndex);
+	// load vertices core:
+    void loadVerticesCore(tinygltf::Model& model, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indexBuffer, int gltfMeshIndex, int primitiveIndex);
     // assign textures to their proper PBR members in mesh and read or create texture samplers
     // now supports selecting a specific primitive within a glTF mesh
     void prepareTexturesAndMaterials(tinygltf::Model& model, MeshCollection* coll, int gltfMeshIndex, int primitiveIndex, MeshInfo* mesh);

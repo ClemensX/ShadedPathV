@@ -63,6 +63,9 @@ struct GPUMeshInfo {
 	uint32_t pad0;
 	// following entries will not be transferred to GPU
 	std::string name;
+	// gltf data: valid after object load, should be cleared after upload
+	std::vector<PBRVertex> vertices;
+	std::vector<uint32_t> indices;
 };
 
 struct GPUModel {

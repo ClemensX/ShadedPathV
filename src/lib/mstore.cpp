@@ -42,6 +42,7 @@ void MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection 
 	gltf.load2((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), fileOrPath);
 	auto meshNumCount = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos) - meshNumStart;
     Log("MStore::loadMesh: Loaded " << meshNumCount << " meshes from file: " << filename << "\n");
+ 
     MeshFile meshFile{};
     meshFile.id = id;
     meshFile.flags = flags;
@@ -54,6 +55,12 @@ void MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection 
     }
     meshFiles.push_back(meshFile);
     addMeshFileID(id, static_cast<int32_t>(meshFiles.size() - 1));
+
+	// work on flags:
+    for (MeshFileEntry & entry : meshFile.meshes) {
+        GPUMeshInfo* meshInfo = const_cast<GPUMeshInfo*>(engine->globalRendering.gpuMemory.getCppBuffer<GPUMeshInfo>(BufferType::MeshInfos, entry.meshIndex));
+        handleFlags(*meshInfo, flags);
+    }
 }
 
 const GPUMeshInfo* MStore::getGPUMeshInfo(int32_t index) const {
@@ -110,4 +117,15 @@ void MStore::addToGlobalBuffers(const std::vector<GPUMeshInfo>& gpuMeshInfos, co
         engine->globalRendering.gpuMemory.appendElement(BufferType::MeshInfos, globalMeshInfo);
         i++;
     }
+}
+
+void MStore::handleFlags(GPUMeshInfo& mesh, MeshFlagsCollection flags)
+{
+	if (flags.hasFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER)) {
+		// Flip winding order
+		for (size_t i = 0; i < mesh.indices.size(); i += 3) {
+			std::swap(mesh.indices[i], mesh.indices[i + 2]);
+		}
+	}
+
 }

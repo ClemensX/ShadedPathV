@@ -208,6 +208,7 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives_NT) {
     // Log("Is solid color: " << (isSolid ? "yes" : "no") << "\n");
 
     // Analyze texture data using TextureAnalyzer
+    
     auto lightRedColor = glm::vec3(0.80f, 0.32f, 0.32f);
     auto darkRedColor = glm::vec3(0.40f, 0.149f, 0.149f);
     auto greenColor = glm::vec3(0.0f, 0.502f, 0.0f);
@@ -231,6 +232,10 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives_NT) {
     EXPECT_TRUE(TextureAnalyzer::isSolidColor(stats));
     colorResult = TextureAnalyzer::validateDominantColor(stats, normalColor, 1.00f);
     EXPECT_TRUE(colorResult.passed) << colorResult.message;
+
+    // check vertices and indices
+    EXPECT_GT(meshInfo->vertices.size(), 0);
+    EXPECT_GT(meshInfo->indices.size(), 0);
 }
 
 // Test 2: Single mesh with LOD levels (10 LODs)

@@ -51,4 +51,6 @@ private:
 	std::optional<std::string> loadFile(std::string filename, std::vector<std::byte>& fileBuffer);
     std::vector<MeshFile> meshFiles; // list of loaded mesh files
     std::map<std::string, int32_t> meshFileIDs; // map from mesh file ID to index in meshFiles
+    // some flags may require additional work on the gltf base data, called from loadMesh()
+    void handleFlags(GPUMeshInfo& meshInfo, MeshFlagsCollection flags);
 };
