@@ -19,6 +19,9 @@ void MStore::init() {
 	engine->globalRendering.gpuMemory.defineBuffer(BufferType::Models, sizeof(GPUModel), maxModels);
 	engine->globalRendering.gpuMemory.defineBuffer(BufferType::Materials, sizeof(GPUMaterial), maxMaterials);
 	engine->globalRendering.gpuMemory.allocateBuffers();
+
+    // we need a 1 to 1 mapping of GPUMeshInfo to MeshInfoMetadata for CPU side operations, so we preallocate the vector to maxMeshes
+    meshMetadata.resize(maxMeshes);
 }
 
 void MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection flags)
@@ -46,10 +49,11 @@ void MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection 
     MeshFile meshFile{};
     meshFile.id = id;
     meshFile.flags = flags;
-	const GPUMeshInfo* meshInfoPtr = engine->globalRendering.gpuMemory.getCppBuffer<GPUMeshInfo>(BufferType::MeshInfos, 0);
 	for (int i = 0; i < meshNumCount; ++i) {
-        MeshFileEntry entry{};
-        entry.name = meshInfoPtr[meshNumStart + i].name;
+		auto meshInfo = getGPUMeshInfo(meshNumStart + i);
+        auto metadata = getMeshMetadata(meshNumStart + i);
+		MeshFileEntry entry{};
+        entry.name = metadata->name;
         entry.meshIndex = meshNumStart + i;
         meshFile.meshes.push_back(entry);
     }
@@ -71,6 +75,20 @@ const GPUMaterial* MStore::getGPUMaterial(int32_t index) const {
 	return engine->globalRendering.gpuMemory.getCppBuffer<GPUMaterial>(BufferType::Materials, index);
 }
 
+MeshInfoMetadata* MStore::getMeshMetadata(int32_t index) {
+	if (index >= 0 && index < meshMetadata.size()) {
+		return &meshMetadata[index];
+	}
+	return nullptr;
+}
+
+const MeshInfoMetadata* MStore::getMeshMetadata(int32_t index) const {
+	if (index >= 0 && index < meshMetadata.size()) {
+		return &meshMetadata[index];
+	}
+	return nullptr;
+}
+
 std::optional<std::string> MStore::loadFile(std::string filename, std::vector<std::byte>& fileBuffer)
 {
 	// find texture file, look in pak file first:
@@ -89,7 +107,7 @@ std::optional<std::string> MStore::loadFile(std::string filename, std::vector<st
 	}
 }
 
-void MStore::addToGlobalBuffers(const std::vector<GPUMeshInfo>& gpuMeshInfos, const std::vector<GPUMaterial>& gpuMaterialInfos)
+void MStore::addToGlobalBuffers(const std::vector<GPUMeshInfo>& gpuMeshInfos, const std::vector<MeshInfoMetadata>& gpuMeshMetadata, const std::vector<GPUMaterial>& gpuMaterialInfos)
 {
 	// Materials:
     auto globalMaterialStart = engine->globalRendering.gpuMemory.getElementCount(BufferType::Materials);
@@ -115,16 +133,18 @@ void MStore::addToGlobalBuffers(const std::vector<GPUMeshInfo>& gpuMeshInfos, co
         globalMeshInfo.index = globalMeshStart + i; // convert local mesh index to global mesh index
         globalMeshInfo.next = (meshInfo.next > 0) ? globalMeshStart + meshInfo.next : 0; // convert local next index to global next index
         engine->globalRendering.gpuMemory.appendElement(BufferType::MeshInfos, globalMeshInfo);
+		meshMetadata[globalMeshStart + i] = gpuMeshMetadata[i];
         i++;
     }
 }
 
 void MStore::handleFlags(GPUMeshInfo& mesh, MeshFlagsCollection flags)
 {
+    auto metadata = getMeshMetadata(mesh.index);
 	if (flags.hasFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER)) {
 		// Flip winding order
-		for (size_t i = 0; i < mesh.indices.size(); i += 3) {
-			std::swap(mesh.indices[i], mesh.indices[i + 2]);
+		for (size_t i = 0; i < metadata->indices.size(); i += 3) {
+			std::swap(metadata->indices[i], metadata->indices[i + 2]);
 		}
 	}
 

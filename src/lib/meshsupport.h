@@ -61,12 +61,14 @@ struct GPUMeshInfo {
 	uint32_t index; // global mesh index
 	uint32_t next; // next primitive (0 == no next primitive)
 	uint32_t pad0;
-	// following entries will not be transferred to GPU
+};
+
+// structure for CPU-side metadata of meshes, not transferred to GPU
+struct MeshInfoMetadata {
 	std::string name;
-	// gltf data: valid after object load, should be cleared after upload
 	std::vector<PBRVertex> vertices;
 	std::vector<uint32_t> indices;
-};
+}; 
 
 struct GPUModel {
 	glm::mat4 model;

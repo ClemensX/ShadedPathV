@@ -35,22 +35,33 @@ public:
     }
     const GPUMeshInfo* getGPUMeshInfo(int32_t index) const;
     const GPUMaterial* getGPUMaterial(int32_t index) const;
+    const MeshInfoMetadata* getMeshMetadata(int32_t index) const;
+
     // after parsing glTF file, this function will iterate through all meshes and materials and put them
     // into global buffers. All local indices will be converted to global indices.
-    void addToGlobalBuffers(const std::vector<GPUMeshInfo>& gpuMeshInfos, const std::vector<GPUMaterial>& gpuMaterialInfos);
+    void addToGlobalBuffers(const std::vector<GPUMeshInfo>& gpuMeshInfos, const std::vector<MeshInfoMetadata>& gpuMeshMetadata, const std::vector<GPUMaterial>& gpuMaterialInfos);
     // get the glTF parser instance
     glTF* getGLTF() { return &gltf; }
 
 	glTF gltf;
 private:
+    size_t maxMeshes = 0; // maximum number of meshes that can be stored, set setLimits()
+    std::optional<std::string> loadFile(std::string filename, std::vector<std::byte>& fileBuffer);
+
+    // some flags may require additional work on the gltf base data, called from loadMesh()
+    void handleFlags(GPUMeshInfo& meshInfo, MeshFlagsCollection flags);
+
+    // handle gltf file info
+
     // add a mesh file ID to find MeshFile by name
     void addMeshFileID(std::string id, int32_t index) {
         meshFileIDs[id] = index;
     }
-    size_t maxMeshes = 0; // maximum number of meshes that can be stored, set setLimits()
-	std::optional<std::string> loadFile(std::string filename, std::vector<std::byte>& fileBuffer);
     std::vector<MeshFile> meshFiles; // list of loaded mesh files
     std::map<std::string, int32_t> meshFileIDs; // map from mesh file ID to index in meshFiles
-    // some flags may require additional work on the gltf base data, called from loadMesh()
-    void handleFlags(GPUMeshInfo& meshInfo, MeshFlagsCollection flags);
+
+    // maintain a list of mesh metadata for each loaded mesh, used for CPU-side operations
+    std::vector<MeshInfoMetadata> meshMetadata;
+    MeshInfoMetadata* getMeshMetadata(int32_t index);
+
 };

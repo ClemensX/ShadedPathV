@@ -65,6 +65,7 @@ public:
     static void calculateBoundingBox(glm::mat4 toWorld, BoundingBox& box, BoundingBoxCorners& corners);
     static void drawBoundingBox(std::vector<LineDef>& boxes, BoundingBox& box, BoundingBoxCorners& boundingBoxCorners, glm::mat4 modelToWorld, glm::vec4 color);
     static void drawBoxFromAxes(std::vector<LineDef>& boxes, glm::vec3* axes);
+    static void drawMeshAsLines(std::vector<LineDef>& lines, const std::vector<PBRVertex>& vertices, const std::vector<uint32_t>& indices, glm::vec4 color = Colors::White, glm::mat4 modelToWorld = glm::mat4(1.0f));
     static void printCStringList(std::vector<const char*>& exts) {
         for (uint32_t i = 0; i < exts.size(); i++) {
             Log("  " << exts[i] << std::endl);

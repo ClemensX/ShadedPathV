@@ -65,7 +65,7 @@ void Loader::init() {
     //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
     //meshFlags.setFlag(MeshFlags::MESHLET_GENERATE);
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
-    //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox"); //useGpuLod = false;
+    engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox"); //useGpuLod = false;
     
     //engine->meshStore.loadMesh("granite_rock_lod_cmp.glb", "LogoBox", meshFlags); useGpuLod = true;
     //engine->meshStore.loadMesh("granite_rock_auto_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
@@ -91,7 +91,7 @@ void Loader::init() {
     //engine->meshStore.loadMesh("delfini7.glb", "LogoBox"); alterObjectCoords = false;
 
     // Acacia_B_cmp.glb
-    engine->meshStore.loadMeshLod("Acacia_B_lod_cmp.glb", "LogoBox", meshFlags); useGpuLod = true;
+    //engine->meshStore.loadMeshLod("Acacia_B_lod_cmp.glb", "LogoBox", meshFlags); useGpuLod = true;
     //engine->meshStore.loadMeshLod("Acacia_B_cmp.glb", "LogoBox", meshFlags);
 
     meshFlags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER);
@@ -127,6 +127,19 @@ void Loader::init() {
         object->useGpuLod = useGpuLod;
         object->enableDebugGraphics = false;
     }
+
+    // use new mstore:
+    const MStore& mstore = engine->mstore;
+    engine->mstore.loadMesh("test/cube_single.gltf", "SingleMesh");
+    auto loaded = mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
+    auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
+    const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
+    Log("Loaded mesh: " << loaded->id << ", mesh index: " << loaded->meshes[0].meshIndex << ", global mesh index: " << meshInfo->index << ", material index: " << meshInfo->material << std::endl);
+    Log("Mesh metadata: vertices " << meshMetadata->vertices.size() << " indices: " << meshMetadata->indices.size() << std::endl);
+    // add mesh vertices to line shader for debug display:
+    vector<LineDef> lines;
+    Util::drawMeshAsLines(lines, meshMetadata->vertices, meshMetadata->indices, Colors::Yellow);
+
 
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
@@ -178,10 +191,9 @@ void Loader::init() {
     engine->sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 0.2f, 5000);
 
     // uncomment next block to enable zero cross display
-    //vector<LineDef> lines;
-    //LineShader::addZeroCross(lines);
-    //engine->shaders.lineShader.addFixedGlobalLines(lines);
-    //engine->shaders.lineShader.uploadFixedGlobalLines();
+    LineShader::addZeroCross(lines);
+    engine->shaders.lineShader.addFixedGlobalLines(lines);
+    engine->shaders.lineShader.uploadFixedGlobalLines();
 }
 
 void Loader::mainThreadHook()

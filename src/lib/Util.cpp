@@ -1657,3 +1657,26 @@ std::string Util::getImageFileTypeFromRawBytes(const unsigned char* bytes, size_
     }
     return imageFormat;
 }
+
+void Util::drawMeshAsLines(std::vector<LineDef>& lines, const std::vector<PBRVertex>& vertices, const std::vector<uint32_t>& indices, glm::vec4 color, glm::mat4 modelToWorld)
+{
+    LineDef l;
+    for (long i = 0; i < indices.size(); i += 3) {
+        l.color = color;
+        auto& v0 = vertices[indices[i + 0]];
+        auto& v1 = vertices[indices[i + 1]];
+        auto& v2 = vertices[indices[i + 2]];
+        vec3 p0 = vec3(modelToWorld * vec4(v0.pos, 1.0f));
+        vec3 p1 = vec3(modelToWorld * vec4(v1.pos, 1.0f));
+        vec3 p2 = vec3(modelToWorld * vec4(v2.pos, 1.0f));
+        l.start = p0;
+        l.end = p1;
+        lines.push_back(l);
+        l.start = p1;
+        l.end = p2;
+        lines.push_back(l);
+        l.start = p2;
+        l.end = p0;
+        lines.push_back(l);
+    }
+}

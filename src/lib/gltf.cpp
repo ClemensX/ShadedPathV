@@ -1371,8 +1371,9 @@ void glTF::parseMeshes(tinygltf::Model& model)
 	Log("glTF file contains " << meshCount << " meshes, " << materialCount << " materials, " << textureCount << " textures" << endl);
 
 	// initialize std::vector for infos and materials. Textures are already in global buffer, we just have to adapt texture indices
-    vector<GPUMeshInfo> gpuMeshInfos(meshCount);
-    vector<GPUMaterial> gpuMaterialInfos(materialCount);
+	vector<GPUMeshInfo> gpuMeshInfos(meshCount);
+	vector<MeshInfoMetadata> gpuMeshMetadata(meshCount);
+	vector<GPUMaterial> gpuMaterialInfos(materialCount);
 
 	size_t curMeshIndex = 0;
 	for (int mi = 0; mi < (int)model.meshes.size(); ++mi) {
@@ -1383,8 +1384,8 @@ void glTF::parseMeshes(tinygltf::Model& model)
             gpuMeshInfos[curMeshIndex].material = p.material;
             gpuMeshInfos[curMeshIndex].index = curMeshIndex;
             gpuMeshInfos[curMeshIndex].next = (prim < (int)m.primitives.size() - 1) ? curMeshIndex + 1 : 0;
-            gpuMeshInfos[curMeshIndex].name = m.name;
-            loadVerticesCore(model, gpuMeshInfos[curMeshIndex].vertices, gpuMeshInfos[curMeshIndex].indices, mi, prim);
+            gpuMeshMetadata[curMeshIndex].name = m.name;
+            loadVerticesCore(model, gpuMeshMetadata[curMeshIndex].vertices, gpuMeshMetadata[curMeshIndex].indices, mi, prim);
             curMeshIndex++;
         }
 	}
@@ -1399,7 +1400,7 @@ void glTF::parseMeshes(tinygltf::Model& model)
 		gpuMaterialInfos[matIndex].emissive = mat.emissiveTexture.index;
 	}
 
-    engine->mstore.addToGlobalBuffers(gpuMeshInfos, gpuMaterialInfos);
+    engine->mstore.addToGlobalBuffers(gpuMeshInfos, gpuMeshMetadata, gpuMaterialInfos);
 
 	// test access:
  //   auto test = gpuMeshInfos[0];

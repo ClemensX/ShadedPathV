@@ -155,6 +155,7 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives) {
 
 // Test new gltf implementation
 TEST_F(GLTFParserTest, SingleMesh_NoPrimitives_NT) {
+    const MStore& mstore = engine->mstore;
     engine->files.findAssetFolder("test_samples");
     string glbFile = engine->files.findFile("cube_single.gltf", FileCategory::MESH, false);
     EXPECT_NE(0, glbFile.size()); // check that we found file
@@ -167,23 +168,24 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives_NT) {
     EXPECT_EQ(textures_after_mesh_loading, cur_global_textures + 3) << "Expected 3 new texture to be loaded";
 
     // access textures of the mesh:
-    size_t textureCount = engine->mstore.gltf.getTextureCount();
+    size_t textureCount = mstore.gltf.getTextureCount();
     EXPECT_EQ(textureCount, 3) << "Expected 3 textures for SingleMesh";
     for (size_t i = 0; i < textureCount; ++i) {
-        auto globIdx = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(i));
+        auto globIdx = mstore.gltf.getGlobalTextureIndex(static_cast<int>(i));
         auto* texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(globIdx));
         Log("Texture " << i << ": global index = " << globIdx << ", id = " << texInfo->id << ", filename = " << texInfo->filename << "\n");
     }
     auto meshCountAfterLoad = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos);
     EXPECT_GT(meshCountAfterLoad, meshCount) << "Expected mesh count to increase after loading";
 
-    auto loaded = engine->mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
+    auto loaded = mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
     EXPECT_EQ(loaded->meshes.size(), 1); // should be 1 mesh
-    auto meshInfo = engine->mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
-    EXPECT_EQ(meshInfo->name, "Cube");
+    auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
+    const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
+    EXPECT_EQ(meshMetadata->name, "Cube");
 
     // access newest mesh info, from the file just loaded:
-    const GPUMaterial* material = engine->mstore.getGPUMaterial(meshInfo->material);
+    const GPUMaterial* material = mstore.getGPUMaterial(meshInfo->material);
     EXPECT_GT(material->baseColor, 0);
     EXPECT_GT(material->metallicRoughness, 0);
     EXPECT_GT(material->normal, 0);
@@ -234,8 +236,8 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives_NT) {
     EXPECT_TRUE(colorResult.passed) << colorResult.message;
 
     // check vertices and indices
-    EXPECT_GT(meshInfo->vertices.size(), 0);
-    EXPECT_GT(meshInfo->indices.size(), 0);
+    EXPECT_GT(meshMetadata->vertices.size(), 0);
+    EXPECT_GT(meshMetadata->indices.size(), 0);
 }
 
 // Test 2: Single mesh with LOD levels (10 LODs)
