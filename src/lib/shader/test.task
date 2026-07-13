@@ -139,7 +139,6 @@ struct GPUMeshInfo {
     uint material; // during parsing: local material index, during GPU upload: global material index
 	uint index; // global mesh index
 	uint next; // next primitive (0 == no next primitive)
-	uint pad0;
 };
 
 struct GPUModel {
@@ -181,6 +180,10 @@ layout(buffer_reference, std430) buffer GPUMeshInfoBuffer {
     GPUMeshInfo info[];
 };
 
+layout(buffer_reference, std430) buffer VertexBuffer {
+    PBRVertex vertex[];
+};
+
 layout(push_constant) uniform PushConstants {
 	uint objectNum;  // 4 bytes only!
 	uint pad0;          // pad to 16-byte multiple if desired (optional)
@@ -206,12 +209,16 @@ void printGPUBufferAddresses() {
 }
 
 void printGPUMeshInfo(GPUMeshInfo info) {
-    debugPrintfEXT("GPUMeshInfo: vertexOffset %llx globalIndexOffset %llx localIndexOffset %llx meshletOffset %llx meshletCount %u material %u index %u next %u\n",
-        info.vertexOffset, info.globalIndexOffset, info.localIndexOffset, info.meshletOffset, info.meshletCount, info.material, info.index, info.next);
+    debugPrintfEXT("GPUMeshInfo: meshletOffset %llx localIndexOffset %llx globalIndexOffset %llx vertexOffset %llx meshletCount %u material %u index %u next %u\n",
+        info.meshletOffset, info.localIndexOffset, info.globalIndexOffset, info.vertexOffset, info.meshletCount, info.material, info.index, info.next);
 }
 void printGPUCollectionIndex(uint index) {
     GPUCollectionIndex idx = gpuIndices.index[index];
     debugPrintfEXT("GPUCollectionIndex %u: gpuCollectionInfoIndex %u mainMeshCount %u\n", index, idx.gpuCollectionInfoIndex, idx.mainMeshCount);
+}
+
+void printVertex( PBRVertex v) {
+    debugPrintfEXT("PBRVertex: pos %f %f %f normal %f %f %f uv0 %f %f uv1 %f %f\n", v.position.x, v.position.y, v.position.z, v.normal.x, v.normal.y, v.normal.z, v.uv0.x, v.uv0.y, v.uv1.x, v.uv1.y);
 }
 
 void main() {
@@ -220,6 +227,13 @@ void main() {
     // get 1st GPUMeshInfo:
     GPUMeshInfo info = gpuInfos.info[0];
     printGPUMeshInfo(info);
+    VertexBuffer vertices = VertexBuffer(info.vertexOffset);
+    for (int i = 0; i < 24; i++) {
+        PBRVertex v = vertices.vertex[i];
+        printVertex(v);
+        //debugPrintfEXT("Vertex %d: pos %f %f %f normal %f %f %f uv0 %f %f uv1 %f %f\n", i, v.pos.x, v.pos.y, v.pos.z, v.normal.x, v.normal.y, v.normal.z, v.uv0.x, v.uv0.y, v.uv1.x, v.uv1.y);
+    }
+
     return;
 
     bool debugIndices = false;

@@ -163,7 +163,7 @@ uint64_t GPUMemory::copyToGlobalBuffer(VkDeviceSize bufferSize, const void* src)
 
     vkDestroyBuffer(engine->globalRendering.device, stagingBuffer, nullptr);
     vkFreeMemory(engine->globalRendering.device, stagingBufferMemory, nullptr);
-    return pos;
+    return mem->address + pos;
 }
 
 
@@ -409,7 +409,7 @@ void GPUMemory::fillPushConstants(GPUMemoryPushConstants* pushConstants) const
     pushConstants->meshInfosAddress = getDeviceAddress(MeshInfos);
     //pushConstants->uniformBufferAddress = getDeviceAddress(UniformBuffer);
     //pushConstants->storageBufferAddress = getDeviceAddress(StorageBuffer);
-    //pushConstants->vertexBufferAddress = getDeviceAddress(VertexBuffer);
+   //pushConstants->vertexBufferAddress = getDeviceAddress(VertexBuffer);
     //pushConstants->indexBufferAddress = getDeviceAddress(IndexBuffer);
     //pushConstants->indirectBufferAddress = getDeviceAddress(IndirectBuffer);
     //pushConstants->textureBufferAddress = getDeviceAddress(TextureBuffer);

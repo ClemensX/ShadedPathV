@@ -62,7 +62,6 @@ struct GPUMeshInfo {
     uint32_t material; // during parsing: local material index, during GPU upload: global material index
 	uint32_t index; // global mesh index
 	uint32_t next; // next primitive (0 == no next primitive)
-	uint32_t pad0;
 };
 
 // structure for CPU-side metadata of meshes, not transferred to GPU

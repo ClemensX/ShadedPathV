@@ -40,7 +40,8 @@ public:
     GPUModel* getGPUMovingModel(int32_t index);
     SceneObject* getSceneObject(int32_t index);
     SceneObject* getMovingSceneObject(int32_t index);
-
+    // upload all meshes during init phase, called from PBRShader
+    void uploadAllMeshes();
 
     // after parsing glTF file, this function will iterate through all meshes and materials and put them
     // into global buffers. All local indices will be converted to global indices.
@@ -52,7 +53,11 @@ public:
 
     // objects
 
+    // add a new object to the scene, returns pointer to SceneObject. The mesh_index is the index of the mesh in the global mesh buffer.
+    // for moving objects, the MeshFlagsCollection should have the RENDER_TYPE_MOVING flag set.
     SceneObject* addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsCollection flags = MeshFlagsCollection());
+
+
 
 private:
     size_t maxMeshes = 0; // maximum number of meshes that can be stored, set setLimits()
@@ -61,6 +66,8 @@ private:
     // some flags may require additional work on the gltf base data, called from loadMesh()
     void handleFlags(GPUMeshInfo& meshInfo, MeshFlagsCollection flags);
 
+    GPUMeshInfo* getGPUMeshInfo(int32_t index);
+    void uploadMesh(GPUMeshInfo* mi);
     // handle gltf file info
 
     // add a mesh file ID to find MeshFile by name

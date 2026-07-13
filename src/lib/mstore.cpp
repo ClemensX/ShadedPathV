@@ -69,12 +69,45 @@ void MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection 
         GPUMeshInfo* meshInfo = const_cast<GPUMeshInfo*>(engine->globalRendering.gpuMemory.getCppBuffer<GPUMeshInfo>(BufferType::MeshInfos, entry.meshIndex));
         handleFlags(*meshInfo, flags);
 		// debug test
-		meshInfo->meshletOffset = 0x42;
-    }
+		//meshInfo->meshletOffset = 0x42;
+		//meshInfo->localIndexOffset = 0x43;
+		//meshInfo->globalIndexOffset = 0x44;
+		//meshInfo->vertexOffset = 0x45;
+		//meshInfo->meshletCount = 1;
+		//meshInfo->material = 2;
+		//meshInfo->index = 3;
+		//meshInfo->next = 4;
+	}
 
 }
 
+void MStore::uploadMesh(GPUMeshInfo* mi)
+{
+	auto& gb = engine->globalRendering.gpuMemory;
+    auto metadata = getMeshMetadata(mi->index);
+	assert(metadata->vertices.size() > 0);
+	assert(metadata->indices.size() > 0);
+
+	// upload vec3 vertex buffer:
+	size_t vertexBufferSize = GlobalRendering::minAlign(metadata->vertices.size() * sizeof(PBRShader::Vertex));
+	uint64_t pos = gb.copyToGlobalBuffer(vertexBufferSize, metadata->vertices.data());
+	mi->vertexOffset = pos;
+}
+
+void MStore::uploadAllMeshes()
+{
+    auto meshcount = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos);
+    for (int i = 0; i < meshcount; i++) {
+        GPUMeshInfo* meshInfo = getGPUMeshInfo(i);
+		uploadMesh(meshInfo);
+    }
+}
+
 const GPUMeshInfo* MStore::getGPUMeshInfo(int32_t index) const {
+	return engine->globalRendering.gpuMemory.getCppBuffer<GPUMeshInfo>(BufferType::MeshInfos, index);
+}
+
+GPUMeshInfo* MStore::getGPUMeshInfo(int32_t index) {
 	return engine->globalRendering.gpuMemory.getCppBuffer<GPUMeshInfo>(BufferType::MeshInfos, index);
 }
 

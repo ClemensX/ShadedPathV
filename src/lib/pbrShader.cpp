@@ -46,6 +46,7 @@ void PBRShader::initialUpload(bool listUploadedMeshes)
 {
 	// new
 	engine->globalRendering.gpuMemory.fillPushConstants(&gpuMemPush);
+	engine->mstore.uploadAllMeshes();
 	engine->globalRendering.gpuMemory.flushAllBuffers();
 
 

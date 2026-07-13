@@ -177,7 +177,7 @@ void MeshStore::loadMesh(string filename, string id, MeshFlagsCollection flags)
 	} else {
 		aquireMeshletData(filename, id, regenerate);
 	}
-	engine->mstore.loadMesh(filename, id, flags);
+	//engine->mstore.loadMesh(filename, id, flags);
 }
 
 MeshCollection* MeshStore::getMeshCollection(std::string id)
