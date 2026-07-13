@@ -114,6 +114,8 @@ public:
     ShadedPathEngine& enableMeshShader() { fii(); meshShaderEnabled = true; return *this; }
     // set max number of objects allowed
     ShadedPathEngine& setMaxObjects(uint64_t mo) { fii(); MaxObjects = mo; return *this; }
+    // set max number of moving objects allowed
+    ShadedPathEngine& setMaxMovingObjects(uint64_t mmo) { fii(); MaxMovingObjects = mmo; return *this; }
     // set max number of meshes allowed
     ShadedPathEngine& setMaxMeshes(uint64_t mm) { fii(); MaxMeshes = mm; return *this; }
     // set max number of collections allowed
@@ -206,6 +208,8 @@ public:
 
     // get max number of objects
     uint64_t getMaxObjects() const { return MaxObjects; }
+    // get max number of moving objects
+    uint64_t getMaxMovingObjects() const { return MaxMovingObjects; }
     // get max number of meshes
     uint64_t getMaxMeshes() const { return MaxMeshes; }
     // get max number of collections
@@ -352,8 +356,10 @@ private:
     bool meshShaderEnabled = false; // enable mesh shaders, if supported by GPU
     ImageConsumer* imageConsumer = nullptr;
     ImageConsumerNullify imageConsumerNullify;
-    // We have to set max number of objects, as dynamic uniform buffers have to be allocated (one entry for each object in a large buffer)
+    // We have to set max number of objects, as buffers have to be allocated (one entry for each object in a large buffer)
+    // total # of objects is MaxObejects + MaxMovingObjects
     uint64_t MaxObjects = 10;
+    uint64_t MaxMovingObjects = 5;
     // We have to set max number of meshes, as mesh data will be stored in one large storage buffer (meshlets, vertex, index data)
     uint64_t MaxMeshes = 5;
     // We have to set max number of collections, as collection infos will be stored in 2 GPU structures: CollectionIndices and CollectionInfos

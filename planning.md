@@ -5,6 +5,12 @@ Put object data from model_ubo into general purpose GPU buffers
 and only use needed values
 
 ### pbr shader needs values:
+| **Structure**         | Content Examples | Remarks
+| ---                   | ---  | ---
+| new model array       | model matrix, BoundingBox            | for each object in scene <br> one array for each frame index
+| new material array    | Texture Indexes                      | for each mesh loaded
+| ubo                   | lights, env maps                     | global scene parameters
+
 
 | **model_ubo field**   | pbr shader (first use) | new location
 | ---                   | ---  | ---

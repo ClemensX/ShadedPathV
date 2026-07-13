@@ -2,6 +2,7 @@
 
 #pragma once
 
+// mesh and object flags, some are only useful for gltf file loading, some for object instances
 enum class MeshFlags : int {
 	MESH_TYPE_INVALID = 0,
 	MESH_TYPE_PBR = 1,
@@ -11,6 +12,7 @@ enum class MeshFlags : int {
 	MESH_TYPE_LOD = 5, // mesh contains LOD levels
 	MESHLET_DEBUG_COLORS = 6, // apply vertex color to all triangles of one meshlet
 	MESHLET_GENERATE = 7, // re-generate meshlet data if meshlet data file not found
+    RENDER_TYPE_MOVING = 8, // object may change position and rotation
 	MESH_TYPE_COUNT = -1 // always last
 };
 
@@ -77,6 +79,14 @@ struct GPUModel {
 	uint32_t material_lod_category;
 	uint32_t materialIndex; // index into global material array
 	BoundingBox boundingBox;
+};
+
+// structure for CPU-side representation of objects, not transferred to GPU
+struct SceneObject {
+	glm::vec3 pos;
+	glm::vec3 rot;
+	glm::vec3 scale;
+    int32_t index; // index into global model and object array
 };
 
 struct GPUMaterial {

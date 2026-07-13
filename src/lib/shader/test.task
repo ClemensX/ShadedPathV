@@ -121,13 +121,25 @@ struct GPUCollectionIndex {
 	uint mainMeshCount; // number of main meshes in this collection
 };
 
-struct GPUMeshInfo {
+struct GPUMeshInfoOLD {
 	uint64_t meshletOffset; // offset into global mesh storage buffer
 	uint64_t localIndexOffset; // offset into global mesh storage buffer
 	uint64_t globalIndexOffset; // offset into global mesh storage buffer
 	uint64_t vertexOffset; // offset into global mesh storage buffer
     uint meshletCount; // number of meshlets for this LOD
     uint pad0;
+};
+
+struct GPUMeshInfo {
+	uint64_t meshletOffset; // offset into global mesh storage buffer
+	uint64_t localIndexOffset; // offset into global mesh storage buffer
+	uint64_t globalIndexOffset; // offset into global mesh storage buffer
+	uint64_t vertexOffset; // offset into global mesh storage buffer
+	uint meshletCount; // number of meshlets for this LOD
+    uint material; // during parsing: local material index, during GPU upload: global material index
+	uint index; // global mesh index
+	uint next; // next primitive (0 == no next primitive)
+	uint pad0;
 };
 
 struct GPUModel {
@@ -189,14 +201,29 @@ taskPayloadSharedEXT TaskPayload payload;
 GPUCollectionIndexBuffer gpuIndices = GPUCollectionIndexBuffer(ubo.gpuMem.collectionIndicesAddress + 0);
 GPUMeshInfoBuffer gpuInfos = GPUMeshInfoBuffer(ubo.gpuMem.meshInfosAddress + 0);
 
+void printGPUBufferAddresses() {
+    debugPrintfEXT("TEST TASK SHADER PUUUUSH Buffer addresses:\n  %llx \n  meshInfosAddress %llx\n", ubo.gpuMem.collectionIndicesAddress, ubo.gpuMem.meshInfosAddress);
+}
+
+void printGPUMeshInfo(GPUMeshInfo info) {
+    debugPrintfEXT("GPUMeshInfo: vertexOffset %llx globalIndexOffset %llx localIndexOffset %llx meshletOffset %llx meshletCount %u material %u index %u next %u\n",
+        info.vertexOffset, info.globalIndexOffset, info.localIndexOffset, info.meshletOffset, info.meshletCount, info.material, info.index, info.next);
+}
 void printGPUCollectionIndex(uint index) {
     GPUCollectionIndex idx = gpuIndices.index[index];
     debugPrintfEXT("GPUCollectionIndex %u: gpuCollectionInfoIndex %u mainMeshCount %u\n", index, idx.gpuCollectionInfoIndex, idx.mainMeshCount);
 }
 
 void main() {
-    bool debugIndices = true;
-    bool debugInfos = true;
+    printGPUBufferAddresses();
+
+    // get 1st GPUMeshInfo:
+    GPUMeshInfo info = gpuInfos.info[0];
+    printGPUMeshInfo(info);
+    return;
+
+    bool debugIndices = false;
+    bool debugInfos = false;
     UboInstanceData wo = model_ubo.data; // just to test if we can read the data correctly, throw away later
     //uint meshIndex = 42;
     //debugPrintfEXT("test.task main: meshIndex %u\n", meshIndex);

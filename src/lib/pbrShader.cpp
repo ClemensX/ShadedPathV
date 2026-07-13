@@ -44,22 +44,30 @@ void PBRShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 
 void PBRShader::initialUpload(bool listUploadedMeshes)
 {
-	// upload all meshes from store:
+	// new
 	engine->globalRendering.gpuMemory.fillPushConstants(&gpuMemPush);
-	auto& list = engine->meshStore.getSortedList();
-	for (auto meshptr : list) {
-		engine->meshStore.uploadMesh(meshptr);
-	}
-    engine->globalRendering.gpuMemory.flushAllBuffers();
-	if (listUploadedMeshes) {
-		Log("" << list.size() << " uploaded meshes:\n");
-		int i = 0;
+	engine->globalRendering.gpuMemory.flushAllBuffers();
+
+
+	// old
+	if (false) {
+		// upload all meshes from store:
+		engine->globalRendering.gpuMemory.fillPushConstants(&gpuMemPush);
+		auto& list = engine->meshStore.getSortedList();
 		for (auto meshptr : list) {
-			Log(" " << i << " ");
-			meshptr->logInfoLine();
-			i++;
+			engine->meshStore.uploadMesh(meshptr);
 		}
-    }
+		engine->globalRendering.gpuMemory.flushAllBuffers();
+		if (listUploadedMeshes) {
+			Log("" << list.size() << " uploaded meshes:\n");
+			int i = 0;
+			for (auto meshptr : list) {
+				Log(" " << i << " ");
+				meshptr->logInfoLine();
+				i++;
+			}
+		}
+	}
 }
 
 void PBRShader::fillTextureIndexesFromMesh(PBRTextureIndexes& ind, MeshInfo* mesh)

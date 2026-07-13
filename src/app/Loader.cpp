@@ -136,9 +136,14 @@ void Loader::init() {
     const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
     Log("Loaded mesh: " << loaded->id << ", mesh index: " << loaded->meshes[0].meshIndex << ", global mesh index: " << meshInfo->index << ", material index: " << meshInfo->material << std::endl);
     Log("Mesh metadata: vertices " << meshMetadata->vertices.size() << " indices: " << meshMetadata->indices.size() << std::endl);
+
+    // test GPUMeshInfo fields: (inaccessible, debug test in mstore...)
+    //meshInfo->meshletOffset = 42;
+
     // add mesh vertices to line shader for debug display:
     vector<LineDef> lines;
     Util::drawMeshAsLines(lines, meshMetadata->vertices, meshMetadata->indices, Colors::Yellow);
+    SceneObject* object = engine->mstore.addObject(meshInfo->index, vec3(0.0f, 0.0f, 0.0f));
 
 
     // 2 square km world size
@@ -191,7 +196,7 @@ void Loader::init() {
     engine->sound.playSound("BACKGROUND_MUSIC", SoundCategory::MUSIC, 0.2f, 5000);
 
     // uncomment next block to enable zero cross display
-    LineShader::addZeroCross(lines);
+    //LineShader::addZeroCross(lines);
     engine->shaders.lineShader.addFixedGlobalLines(lines);
     engine->shaders.lineShader.uploadFixedGlobalLines();
 }
@@ -251,58 +256,61 @@ void Loader::prepareFrame(FrameResources* fr)
     // change individual objects position:
     //auto grp = engine->objectStore.getGroup("knife_group");
     vector<LineDef> boundingBoxes;
-    for (auto& wo : engine->objectStore.getSortedList()) {
-        //Log(" adapt object " << obj.get()->objectNum << endl);
-        //WorldObject *wo = obj.get();
-        //PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
-        PBRShader::DynamicModelUBO* buf = engine->objectStore.startWorking(tr, wo);
-        if (spinningBox) {
-            // Define a constant rotation speed (radians per second)
-            double rotationSpeed = glm::radians(5.0f);
-            if (!alterObjectCoords) {
-                rotationSpeed = glm::radians(15.0f);
+    if (false) {
+        for (auto& wo : engine->objectStore.getSortedList()) {
+            //Log(" adapt object " << obj.get()->objectNum << endl);
+            //WorldObject *wo = obj.get();
+            //PBRShader::DynamicModelUBO* buf = engine->shaders.pbrShader.getAccessToModel(tr, wo->objectNum);
+            PBRShader::DynamicModelUBO* buf = engine->objectStore.startWorking(tr, wo);
+            if (spinningBox) {
+                // Define a constant rotation speed (radians per second)
+                double rotationSpeed = glm::radians(5.0f);
+                if (!alterObjectCoords) {
+                    rotationSpeed = glm::radians(15.0f);
+                }
+
+                // Calculate the rotation angle based on the elapsed time
+                //float rotationAngle = rotationSpeed * (seconds - spinTimeSeconds);
+                float rotationAngle = rotationSpeed * deltaSeconds;
+
+                // Apply the rotation to the modeltransform matrix
+                if (doRotation) {
+                    //modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
+                    //if (alterObjectCoords) {
+                    //    modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
+                    //}
+                    object->rot().y += rotationAngle;
+                }
             }
+            // standard model matrix
+            mat4 modeltransform;
+            wo->calculateStandardModelTransform(modeltransform);
+            buf->model = modeltransform;
+            buf->params[0].intensity = 7.0f; // adjust sun light intensity
+            if (!wo->enabled)   buf->disableRendering();
 
-            // Calculate the rotation angle based on the elapsed time
-            //float rotationAngle = rotationSpeed * (seconds - spinTimeSeconds);
-            float rotationAngle = rotationSpeed * deltaSeconds;
+            // log object distance to camera
+            //float distanceToCamera = glm::length(pos - pubo.camPos);
+            //Log(" Object " << wo->objectNum << " distance to camera: " << distanceToCamera << endl);
 
-            // Apply the rotation to the modeltransform matrix
-            if (doRotation) {
-                //modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 1.0f, 0.0f));
-                //if (alterObjectCoords) {
-                //    modeltransform = glm::rotate(wo->mesh->baseTransform, -rotationAngle, glm::vec3(0.0f, 0.0f, 1.0f));
-                //}
-                object->rot().y += rotationAngle;
+            //buf->material.specularFactor = vec4(30.0f);
+            //buf->material.workflow = 1.3f;
+            //buf->material.baseColorTextureSet = 4;
+            //buf->flags |= 0x1; // set flag for dicard rendering
+
+            //engine->meshStore.debugRenderMeshlet(wo, tr, modeltransform);
+            //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform, 185);
+            //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
+
+            if (useDefaultNormalLineLength) {
+                //engine->meshStore.debugGraphics(wo, tr, modeltransform);
             }
+            else {
+                //engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false);
+            }
+            if (wo->enableDebugGraphics) engine->meshStore.debugGraphics(wo, tr, modeltransform, true, true, false, true);
+            engine->objectStore.stopWorking(tr, wo);
         }
-        // standard model matrix
-        mat4 modeltransform;
-        wo->calculateStandardModelTransform(modeltransform);
-        buf->model = modeltransform;
-        buf->params[0].intensity = 7.0f; // adjust sun light intensity
-        if (!wo->enabled)   buf->disableRendering();
-
-        // log object distance to camera
-        //float distanceToCamera = glm::length(pos - pubo.camPos);
-        //Log(" Object " << wo->objectNum << " distance to camera: " << distanceToCamera << endl);
-
-        //buf->material.specularFactor = vec4(30.0f);
-        //buf->material.workflow = 1.3f;
-        //buf->material.baseColorTextureSet = 4;
-        //buf->flags |= 0x1; // set flag for dicard rendering
-
-        //engine->meshStore.debugRenderMeshlet(wo, tr, modeltransform);
-        //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform, 185);
-        //engine->meshStore.debugRenderMeshletFromBuffers(wo, tr, modeltransform);
-
-        if (useDefaultNormalLineLength) {
-            //engine->meshStore.debugGraphics(wo, tr, modeltransform);
-        } else {
-            //engine->meshStore.debugGraphics(wo, tr, modeltransform, true, false, false);
-        }
-        if (wo->enableDebugGraphics) engine->meshStore.debugGraphics(wo, tr, modeltransform, true, true, false, true);
-        engine->objectStore.stopWorking(tr, wo);
     }
     // lines
     engine->shaders.lineShader.prepareAddLines(tr);

@@ -240,6 +240,55 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives_NT) {
     EXPECT_GT(meshMetadata->indices.size(), 0);
 }
 
+// Test access to mesh info, textures, model and material
+TEST_F(GLTFParserTest, SingleMesh_CheckShaderData) {
+    const MStore& mstore = engine->mstore;
+    engine->mstore.loadMesh("cube_single.gltf", "SingleMesh");
+
+    const MeshFile* meshFile = mstore.getMeshFileByID("SingleMesh");
+    int32_t meshIndex = meshFile->meshes[0].meshIndex;
+    const GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
+    const MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
+    const GPUMaterial* material = mstore.getGPUMaterial(meshInfo->material);
+
+    EXPECT_NE(meshInfo, nullptr);
+    EXPECT_NE(meshMetadata, nullptr);
+    EXPECT_NE(material, nullptr);
+
+    // material and textures
+    EXPECT_GT(material->baseColor, 0);
+    EXPECT_GT(material->metallicRoughness, 0);
+    EXPECT_GT(material->normal, 0);
+    TextureInfo* texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->baseColor));
+    EXPECT_NE(texInfo, nullptr);
+    texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->metallicRoughness));
+    EXPECT_NE(texInfo, nullptr);
+    texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->normal));
+    EXPECT_NE(texInfo, nullptr);
+
+    // mesh vertex data:
+    EXPECT_EQ(meshMetadata->vertices.size(), 24); // cube_single.gltf has 24 vertices
+    EXPECT_EQ(meshMetadata->indices.size(), 36); // cube_single.gltf has 36 indices (12 triangles)
+
+    // stationary objects:
+    for (int i = 0; i < engine->getMaxObjects(); ++i) {
+        auto obj = engine->mstore.addObject(meshIndex, glm::vec3(0.0f, 0.0f, 0.0f));
+        EXPECT_TRUE(obj != nullptr) << "Failed to add object at index " << i;
+        EXPECT_EQ(obj->index, i);
+    }
+    // adding another object should exit()
+    //engine->mstore.addObject(meshIndex, glm::vec3(0.0f, 0.0f, 0.0f));
+
+    // moving objects:
+    for (int i = 0; i < engine->getMaxMovingObjects(); ++i) {
+        MeshFlagsCollection flagsMoving;
+        flagsMoving.setFlag(MeshFlags::RENDER_TYPE_MOVING);
+        auto obj = engine->mstore.addObject(meshIndex, glm::vec3(0.0f, 0.0f, 0.0f), flagsMoving);
+        EXPECT_TRUE(obj != nullptr) << "Failed to add moving object at index " << i;
+        EXPECT_EQ(obj->index, i);
+    }
+}
+
 // Test 2: Single mesh with LOD levels (10 LODs)
 TEST_F(GLTFParserTest, SingleMesh_WithLODs) {
     // This test requires a GLTF file with 10 LOD levels

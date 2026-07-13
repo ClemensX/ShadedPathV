@@ -14,6 +14,7 @@ enum BufferType {
     // MeshInfos table, one entry per mesh LOD (10 LODs per main mesh), size: engine->MaxMeshes
     MeshInfos,
     Models,
+    ModelsMoving,
     Materials,
     VertexBuffer,
     IndexBuffer,

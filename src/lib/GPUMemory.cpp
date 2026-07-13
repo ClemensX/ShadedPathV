@@ -67,6 +67,7 @@ void GPUMemory::defineBuffer(BufferType type, uint32_t elementSize, uint32_t max
     // Add appropriate buffer type usage flags
     switch (type) {
     case Models:
+    case ModelsMoving:
         config.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         break;
     case Materials:
@@ -382,6 +383,7 @@ string GPUMemory::getBufferTypeName(BufferType type) const
     case CollectionInfos:      return "CollectionInfos";
     case MeshInfos:            return "MeshInfos";
     case Models:               return "Models";
+    case ModelsMoving:         return "ModelsMoving";
     case Materials:            return "Materials";
     case VertexBuffer:         return "VertexBuffer";
     case IndexBuffer:          return "IndexBuffer";

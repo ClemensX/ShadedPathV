@@ -13,15 +13,19 @@ void MStore::init() {
 	// set array sizes, these are guarded and user needs to adjust them if too small at runtime
 	size_t maxMeshes = engine->getMaxMeshes() * 10; // max meshes is a user setting, roughly we need 10 meshes as each 'user mesh' has 10 LOD
     size_t maxModels = engine->getMaxObjects();
+    size_t maxMovingModels = engine->getMaxMovingObjects();
 	size_t maxMaterials = engine->getMaxCollections();
 
 	engine->globalRendering.gpuMemory.defineBuffer(BufferType::MeshInfos, sizeof(GPUMeshInfo), maxMeshes);
 	engine->globalRendering.gpuMemory.defineBuffer(BufferType::Models, sizeof(GPUModel), maxModels);
+	engine->globalRendering.gpuMemory.defineBuffer(BufferType::ModelsMoving, sizeof(GPUModel), maxMovingModels);
 	engine->globalRendering.gpuMemory.defineBuffer(BufferType::Materials, sizeof(GPUMaterial), maxMaterials);
 	engine->globalRendering.gpuMemory.allocateBuffers();
 
     // we need a 1 to 1 mapping of GPUMeshInfo to MeshInfoMetadata for CPU side operations, so we preallocate the vector to maxMeshes
     meshMetadata.resize(maxMeshes);
+    sceneObjects.resize(maxModels);
+    movingSceneObjects.resize(maxMovingModels);
 }
 
 void MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection flags)
@@ -64,7 +68,10 @@ void MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection 
     for (MeshFileEntry & entry : meshFile.meshes) {
         GPUMeshInfo* meshInfo = const_cast<GPUMeshInfo*>(engine->globalRendering.gpuMemory.getCppBuffer<GPUMeshInfo>(BufferType::MeshInfos, entry.meshIndex));
         handleFlags(*meshInfo, flags);
+		// debug test
+		meshInfo->meshletOffset = 0x42;
     }
+
 }
 
 const GPUMeshInfo* MStore::getGPUMeshInfo(int32_t index) const {
@@ -73,6 +80,22 @@ const GPUMeshInfo* MStore::getGPUMeshInfo(int32_t index) const {
 
 const GPUMaterial* MStore::getGPUMaterial(int32_t index) const {
 	return engine->globalRendering.gpuMemory.getCppBuffer<GPUMaterial>(BufferType::Materials, index);
+}
+
+GPUModel* MStore::getGPUModel(int32_t index) {
+	return engine->globalRendering.gpuMemory.getCppBuffer<GPUModel>(BufferType::Models, index);
+}
+
+GPUModel* MStore::getGPUMovingModel(int32_t index) {
+	return engine->globalRendering.gpuMemory.getCppBuffer<GPUModel>(BufferType::ModelsMoving, index);
+}
+
+SceneObject* MStore::getSceneObject(int32_t index) {
+	return &sceneObjects[index];
+}
+
+SceneObject* MStore::getMovingSceneObject(int32_t index) {
+	return &movingSceneObjects[index];
 }
 
 MeshInfoMetadata* MStore::getMeshMetadata(int32_t index) {
@@ -148,4 +171,40 @@ void MStore::handleFlags(GPUMeshInfo& mesh, MeshFlagsCollection flags)
 		}
 	}
 
+}
+
+SceneObject* MStore::addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsCollection flags) {
+	if (flags.hasFlag(MeshFlags::RENDER_TYPE_MOVING)) {
+		if (mesh_index < 0 || mesh_index >= static_cast<int32_t>(movingSceneObjects.size())) {
+			Error("MStore::addObject: Invalid mesh index");
+			return nullptr; // keep compiler happy
+		}
+		// current index:
+		auto objectIndex = engine->globalRendering.gpuMemory.getElementCount(BufferType::ModelsMoving);
+		if (objectIndex >= movingSceneObjects.size()) Error("MStore::addObject: Exceeded maximum number of moving objects");
+
+		GPUModel* model = getGPUMovingModel(objectIndex);
+		SceneObject* obj = getMovingSceneObject(objectIndex);
+		obj->index = objectIndex;
+		obj->pos = pos;
+		model->meshNumber = mesh_index;
+		engine->globalRendering.gpuMemory.appendElement(BufferType::ModelsMoving, model);
+		return obj;
+	} else {
+		if (mesh_index < 0 || mesh_index >= static_cast<int32_t>(sceneObjects.size())) {
+			Error("MStore::addObject: Invalid mesh index");
+			return nullptr; // keep compiler happy
+		}
+		// current index:
+		auto objectIndex = engine->globalRendering.gpuMemory.getElementCount(BufferType::Models);
+		if (objectIndex >= sceneObjects.size()) Error("MStore::addObject: Exceeded maximum number of stationary objects");
+
+		GPUModel* model = getGPUModel(objectIndex);
+		SceneObject* obj = getSceneObject(objectIndex);
+		obj->index = objectIndex;
+		obj->pos = pos;
+		model->meshNumber = mesh_index;
+		engine->globalRendering.gpuMemory.appendElement(BufferType::Models, model);
+		return obj;
+	}
 }

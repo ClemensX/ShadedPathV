@@ -36,6 +36,11 @@ public:
     const GPUMeshInfo* getGPUMeshInfo(int32_t index) const;
     const GPUMaterial* getGPUMaterial(int32_t index) const;
     const MeshInfoMetadata* getMeshMetadata(int32_t index) const;
+    GPUModel* getGPUModel(int32_t index);
+    GPUModel* getGPUMovingModel(int32_t index);
+    SceneObject* getSceneObject(int32_t index);
+    SceneObject* getMovingSceneObject(int32_t index);
+
 
     // after parsing glTF file, this function will iterate through all meshes and materials and put them
     // into global buffers. All local indices will be converted to global indices.
@@ -44,6 +49,11 @@ public:
     glTF* getGLTF() { return &gltf; }
 
 	glTF gltf;
+
+    // objects
+
+    SceneObject* addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsCollection flags = MeshFlagsCollection());
+
 private:
     size_t maxMeshes = 0; // maximum number of meshes that can be stored, set setLimits()
     std::optional<std::string> loadFile(std::string filename, std::vector<std::byte>& fileBuffer);
@@ -64,4 +74,7 @@ private:
     std::vector<MeshInfoMetadata> meshMetadata;
     MeshInfoMetadata* getMeshMetadata(int32_t index);
 
+    // maintain a list of scene objects. Used for CPU-side of GPUModels
+    std::vector<SceneObject> sceneObjects;
+    std::vector<SceneObject> movingSceneObjects;
 };
