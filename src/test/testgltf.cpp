@@ -155,7 +155,7 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives) {
 
 // Test new gltf implementation
 TEST_F(GLTFParserTest, SingleMesh_NoPrimitives_NT) {
-    const MStore& mstore = engine->mstore;
+    MStore& mstore = engine->mstore;
     engine->files.findAssetFolder("test_samples");
     string glbFile = engine->files.findFile("cube_single.gltf", FileCategory::MESH, false);
     EXPECT_NE(0, glbFile.size()); // check that we found file
@@ -166,6 +166,10 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives_NT) {
     int textures_after_mesh_loading = engine->textureStore.size();
 
     EXPECT_EQ(textures_after_mesh_loading, cur_global_textures + 3) << "Expected 3 new texture to be loaded";
+
+    // check mesh count in file:
+    MeshFile* meshFile = mstore.getMeshFileByID("SingleMesh");
+    EXPECT_EQ(meshFile->meshes.size(), 1) << "Expected 1 mesh in gltf file cube_single.gltf";
 
     // access textures of the mesh:
     size_t textureCount = mstore.gltf.getTextureCount();
@@ -242,14 +246,14 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives_NT) {
 
 // Test access to mesh info, textures, model and material
 TEST_F(GLTFParserTest, SingleMesh_CheckShaderData) {
-    const MStore& mstore = engine->mstore;
+    MStore& mstore = engine->mstore;
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh");
 
-    const MeshFile* meshFile = mstore.getMeshFileByID("SingleMesh");
+    MeshFile* meshFile = mstore.getMeshFileByID("SingleMesh");
     int32_t meshIndex = meshFile->meshes[0].meshIndex;
-    const GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
-    const MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
-    const GPUMaterial* material = mstore.getGPUMaterial(meshInfo->material);
+    GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
+    MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
+    GPUMaterial* material = mstore.getGPUMaterial(meshInfo->material);
 
     EXPECT_NE(meshInfo, nullptr);
     EXPECT_NE(meshMetadata, nullptr);
@@ -269,6 +273,9 @@ TEST_F(GLTFParserTest, SingleMesh_CheckShaderData) {
     // mesh vertex data:
     EXPECT_EQ(meshMetadata->vertices.size(), 24); // cube_single.gltf has 24 vertices
     EXPECT_EQ(meshMetadata->indices.size(), 36); // cube_single.gltf has 36 indices (12 triangles)
+    mstore.getBoundingBox(meshInfo->boundingBox, *meshInfo);
+    EXPECT_EQ(meshInfo->boundingBox.min, glm::vec3(-1.0f, -1.0f, -1.0f));
+    EXPECT_EQ(meshInfo->boundingBox.max, glm::vec3(1.0f, 1.0f, 1.0f));
 
     // stationary objects:
     for (int i = 0; i < engine->getMaxObjects(); ++i) {

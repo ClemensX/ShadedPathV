@@ -62,6 +62,7 @@ struct GPUMeshInfo {
     uint32_t material; // during parsing: local material index, during GPU upload: global material index
 	uint32_t index; // global mesh index
 	uint32_t next; // next primitive (0 == no next primitive)
+	BoundingBox boundingBox;
 };
 
 // structure for CPU-side metadata of meshes, not transferred to GPU
@@ -69,6 +70,7 @@ struct MeshInfoMetadata {
 	std::string name;
 	std::vector<PBRVertex> vertices;
 	std::vector<uint32_t> indices;
+    bool boundingBoxAlreadySet = false;
 }; 
 
 struct GPUModel {
@@ -77,7 +79,7 @@ struct GPUModel {
 	uint32_t meshNumber; // link to MeshInfo
 	uint32_t material_lod_category;
 	uint32_t materialIndex; // index into global material array
-	BoundingBox boundingBox;
+	//BoundingBox boundingBox; // probably not needed
 };
 
 // structure for CPU-side representation of objects, not transferred to GPU

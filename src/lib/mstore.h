@@ -30,16 +30,16 @@ public:
         Error("MStore::getMeshFileIndexByID: Mesh file ID not found:");
         return -1; // keep compiler happy
     }
-    const MeshFile* getMeshFileByID(std::string id) const {
+    MeshFile* getMeshFileByID(std::string id) {
                 return &meshFiles[getMeshFileIndexByID(id)];
     }
-    const GPUMeshInfo* getGPUMeshInfo(int32_t index) const;
-    const GPUMaterial* getGPUMaterial(int32_t index) const;
-    const MeshInfoMetadata* getMeshMetadata(int32_t index) const;
+    GPUMeshInfo* getGPUMeshInfo(int32_t index) ;
+    MeshInfoMetadata* getMeshMetadata(int32_t index);
     GPUModel* getGPUModel(int32_t index);
     GPUModel* getGPUMovingModel(int32_t index);
     SceneObject* getSceneObject(int32_t index);
     SceneObject* getMovingSceneObject(int32_t index);
+    GPUMaterial* getGPUMaterial(int32_t index);
     // upload all meshes during init phase, called from PBRShader
     void uploadAllMeshes();
 
@@ -57,7 +57,13 @@ public:
     // for moving objects, the MeshFlagsCollection should have the RENDER_TYPE_MOVING flag set.
     SceneObject* addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsCollection flags = MeshFlagsCollection());
 
+    // Util methods
 
+    // return the mesh bounding box from raw mesh data. No transforms applied. Will never change after initial calculation.
+    void getBoundingBox(BoundingBox& box, GPUMeshInfo& meshInfo);
+    bool checkBoundingBoxPlausibility(int32_t meshIndex);
+    void logVertex(const PBRShader::Vertex& v);
+    void logTriangleFromGlTF(int num, GPUMeshInfo* mesh);
 
 private:
     size_t maxMeshes = 0; // maximum number of meshes that can be stored, set setLimits()
@@ -66,7 +72,6 @@ private:
     // some flags may require additional work on the gltf base data, called from loadMesh()
     void handleFlags(GPUMeshInfo& meshInfo, MeshFlagsCollection flags);
 
-    GPUMeshInfo* getGPUMeshInfo(int32_t index);
     void uploadMesh(GPUMeshInfo* mi);
     // handle gltf file info
 
@@ -79,7 +84,6 @@ private:
 
     // maintain a list of mesh metadata for each loaded mesh, used for CPU-side operations
     std::vector<MeshInfoMetadata> meshMetadata;
-    MeshInfoMetadata* getMeshMetadata(int32_t index);
 
     // maintain a list of scene objects. Used for CPU-side of GPUModels
     std::vector<SceneObject> sceneObjects;

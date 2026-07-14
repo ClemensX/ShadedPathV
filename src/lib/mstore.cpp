@@ -34,16 +34,6 @@ void MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection 
 	vector<byte> file_buffer;
 	auto path = loadFile(filename, file_buffer);
     
-	// test
-	//GPUMeshInfo meshInfo{};
- //   engine->globalRendering.gpuMemory.appendElement(BufferType::MeshInfos, meshInfo);
- //   size_t count = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos);
-	//assert(count > 0);
-	//const GPUMeshInfo* meshInfoPtr = engine->globalRendering.gpuMemory.getCppBuffer<GPUMeshInfo>(BufferType::MeshInfos, 0);
-	//assert(meshInfoPtr != nullptr);
-	//assert(meshInfoPtr->globalIndexOffset == 0);
- //   assert(meshInfoPtr[0].localIndexOffset == 0);
-
 	auto meshNumStart = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos);
 	string fileOrPath = (path) ? path.value() : filename;
 	gltf.load2((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), fileOrPath);
@@ -64,6 +54,13 @@ void MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection 
     meshFiles.push_back(meshFile);
     addMeshFileID(id, static_cast<int32_t>(meshFiles.size() - 1));
 
+#if defined(DEBUG)
+	for (auto& m : meshFile.meshes) {
+		if (!checkBoundingBoxPlausibility(m.meshIndex)) {
+			Error("Bounding box plausibility check failed for mesh " + m.name);
+		}
+	}
+#endif
 	// work on flags:
     for (MeshFileEntry & entry : meshFile.meshes) {
         GPUMeshInfo* meshInfo = const_cast<GPUMeshInfo*>(engine->globalRendering.gpuMemory.getCppBuffer<GPUMeshInfo>(BufferType::MeshInfos, entry.meshIndex));
@@ -103,15 +100,11 @@ void MStore::uploadAllMeshes()
     }
 }
 
-const GPUMeshInfo* MStore::getGPUMeshInfo(int32_t index) const {
-	return engine->globalRendering.gpuMemory.getCppBuffer<GPUMeshInfo>(BufferType::MeshInfos, index);
-}
-
 GPUMeshInfo* MStore::getGPUMeshInfo(int32_t index) {
 	return engine->globalRendering.gpuMemory.getCppBuffer<GPUMeshInfo>(BufferType::MeshInfos, index);
 }
 
-const GPUMaterial* MStore::getGPUMaterial(int32_t index) const {
+GPUMaterial* MStore::getGPUMaterial(int32_t index) {
 	return engine->globalRendering.gpuMemory.getCppBuffer<GPUMaterial>(BufferType::Materials, index);
 }
 
@@ -132,13 +125,6 @@ SceneObject* MStore::getMovingSceneObject(int32_t index) {
 }
 
 MeshInfoMetadata* MStore::getMeshMetadata(int32_t index) {
-	if (index >= 0 && index < meshMetadata.size()) {
-		return &meshMetadata[index];
-	}
-	return nullptr;
-}
-
-const MeshInfoMetadata* MStore::getMeshMetadata(int32_t index) const {
 	if (index >= 0 && index < meshMetadata.size()) {
 		return &meshMetadata[index];
 	}
@@ -241,3 +227,77 @@ SceneObject* MStore::addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsColle
 		return obj;
 	}
 }
+
+// Util methods
+void MStore::getBoundingBox(BoundingBox& box, GPUMeshInfo& meshInfo)
+{
+    auto meta = getMeshMetadata(meshInfo.index);
+
+	if (meta->boundingBoxAlreadySet) {
+		box = meshInfo.boundingBox;
+		return;
+	}
+	// iterate through vertices and find min/max:
+	for (auto& v : meta->vertices) {
+		if (v.pos.x < box.min.x) box.min.x = v.pos.x;
+		if (v.pos.y < box.min.y) box.min.y = v.pos.y;
+		if (v.pos.z < box.min.z) box.min.z = v.pos.z;
+		if (v.pos.x > box.max.x) box.max.x = v.pos.x;
+		if (v.pos.y > box.max.y) box.max.y = v.pos.y;
+		if (v.pos.z > box.max.z) box.max.z = v.pos.z;
+	}
+	meshInfo.boundingBox = box;
+	meta->boundingBoxAlreadySet = true;
+}
+
+bool MStore::checkBoundingBoxPlausibility(int32_t meshIndex)
+{
+    GPUMeshInfo* mi = getGPUMeshInfo(meshIndex);
+	getBoundingBox(mi->boundingBox, *mi);
+	string id = std::to_string(meshIndex);
+	//Log("Bounding box for mesh " << id << ": Min(" << mi->boundingBox.min.x << ", " << mi->boundingBox.min.y << ", " << mi->boundingBox.min.z << "), Max(" << mi->boundingBox.max.x << ", " << mi->boundingBox.max.y << ", " << mi->boundingBox.max.z << ")\n");
+	// check positive size:
+	vec3 size = mi->boundingBox.max - mi->boundingBox.min;
+	bool ret = true;
+	if (size.x < 0 || size.y < 0 || size.z < 0) {
+		Log("ERROR: Inverted bounding box for mesh " << id << endl);
+		ret = false;
+	}
+	// anything below 1 mm is suspicious:
+	if (size.x < 0.001f || size.y < 0.001f || size.z < 0.001f) {
+		Log("ERROR: Very small bounding box for mesh " << id << ": Size(" << size.x << ", " << size.y << ", " << size.z << ")\n");
+		ret = false;
+	}
+	// anything above 10 km is suspicious:
+	if (size.x > 20000.0f || size.y > 20000.0f || size.z > 20000.0f) {
+		Log("ERROR: Very large bounding box for mesh " << id << ": Size(" << size.x << ", " << size.y << ", " << size.z << ")\n");
+		ret = false;
+	}
+	if (ret == false) {
+		Log("    bounding box error may mean vertices are off. This is the first triangle:\n");
+		// get vertices for first triangle:
+		logTriangleFromGlTF(0, mi);
+
+	}
+	return ret;
+}
+
+void MStore::logVertex(const PBRShader::Vertex& v)
+{
+	Log("Vertex: pos: " << v.pos.x << " " << v.pos.y << " " << v.pos.z
+		<< ", normal: " << v.normal.x << " " << v.normal.y << " " << v.normal.z
+		<< ", color: " << v.color.x << " " << v.color.y << " " << v.color.z
+		<< ", uv: " << v.uv0.x << " " << v.uv0.y
+		<< endl);
+}
+
+void MStore::logTriangleFromGlTF(int num, GPUMeshInfo* mesh)
+{
+    auto meta = getMeshMetadata(mesh->index);
+	Log("Triangle " << num << ":" << endl);
+	for (int i = 0; i < 3; ++i) {
+		auto& v = meta->vertices[meta->indices[num * 3 + i]];
+		Log("  Vertex " << i << " "); logVertex(v);
+	}
+}
+

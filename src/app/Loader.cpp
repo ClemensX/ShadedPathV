@@ -129,7 +129,7 @@ void Loader::init() {
     }
 
     // use new mstore:
-    const MStore& mstore = engine->mstore;
+    MStore& mstore = engine->mstore;
     engine->mstore.loadMesh("test/cube_single.gltf", "SingleMesh");
     auto loaded = mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
     auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
