@@ -61,6 +61,8 @@ void MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection 
 		}
 	}
 #endif
+	aquireMeshletData(&meshFile, flags.hasFlag(MeshFlags::MESHLET_GENERATE));
+
 	// work on flags:
     for (MeshFileEntry & entry : meshFile.meshes) {
         GPUMeshInfo* meshInfo = const_cast<GPUMeshInfo*>(engine->globalRendering.gpuMemory.getCppBuffer<GPUMeshInfo>(BufferType::MeshInfos, entry.meshIndex));
@@ -301,3 +303,98 @@ void MStore::logTriangleFromGlTF(int num, GPUMeshInfo* mesh)
 	}
 }
 
+void MStore::checkVertexDuplication(GPUMeshInfo* mesh)
+{
+    auto meta = getMeshMetadata(mesh->index);
+	std::unordered_set<PBRShader::Vertex> uniqueVertices;
+	for (auto& v : meta->vertices) {
+		if (!uniqueVertices.insert(v).second) {
+			// duplicate found, log v:
+			//Log("duplicate vertex: "); logVertex(v);
+			//logVertexIndex(v, mesh->vertices);
+		}
+	}
+	size_t numDuplicates = meta->vertices.size() - uniqueVertices.size();
+	if (numDuplicates > 0) {
+		float percentage = (float)numDuplicates / (float)meta->vertices.size() * 100.0f;
+		Log("WARNING: Mesh " << meta->name << " has duplicated vertices: " << numDuplicates << " (" << std::round(percentage) << "%) - you should consider cleaning up the mesh before usage." << endl);
+	}
+}
+
+void MStore::aquireMeshletData(MeshFile* mfile, bool regenerateMeshletData)
+{
+	bool loadedFromFile = loadMeshletStorageFile(mfile);
+	if (loadedFromFile) {
+		return;
+	}
+
+	// not loaded - we have to regenerate meshlet data
+	if (!regenerateMeshletData) {
+		Log("ERROR: no meshlet file for mesh and regenerate not set - mesh is unusable: " << mfile->id << endl);
+		return;
+	}
+
+	uint32_t meshletFlags = (uint32_t)MeshletFlags::MESHLET_ALG_GREEDY_DISTANCE; // | (uint32_t)MeshletFlags::MESHLET_SORT;
+
+    // generate meshlet data for each mesh in the file:
+	for (MeshFileEntry& entry : mfile->meshes) {
+		calculateMeshlets(getGPUMeshInfo(entry.meshIndex), meshletFlags, GLEXT_MESHLET_VERTEX_COUNT, GLEXT_MESHLET_PRIMITIVE_COUNT - 1);
+	}
+}
+
+bool MStore::loadMeshletStorageFile(MeshFile* mfile)
+{
+	return false;
+}
+
+void MStore::calculateMeshlets(GPUMeshInfo* mesh, uint32_t meshlet_flags, uint32_t vertexLimit, uint32_t primitiveLimit)
+{
+#   if defined(DEBUG)
+	checkVertexDuplication(mesh);
+#   endif
+	assert(primitiveLimit < GLEXT_MESHLET_PRIMITIVE_COUNT); // we need one more primitive for adding the 'rest'
+	assert(vertexLimit <= GLEXT_MESHLET_VERTEX_COUNT);
+
+	//mesh->
+	// min	[-0.040992 -0.046309 -0.053326]	glm::vec<3,float,0>
+	// max	[0.040992 0.067943 0.132763]	glm::vec<3,float,0>
+	BoundingBox box;
+	getBoundingBox(box, *mesh);
+	Log("bounding box min: " << box.min.x << " " << box.min.y << " " << box.min.z << endl);
+	Log("bounding box max: " << box.max.x << " " << box.max.y << " " << box.max.z << endl);
+
+	if (meshlet_flags & static_cast<uint32_t>(MeshletFlags::MESHLET_SORT)) {
+		Log("WARNING: MESHLET_SORT was specified, but pre-sorting vertices is no longer available" << endl);
+	}
+
+	MeshletIn in{ mesh->vertices, mesh->indices, primitiveLimit, vertexLimit, box };
+	MeshletOut out{ mesh->meshletsForMesh.meshlets, mesh->outMeshletDesc, mesh->outLocalIndexPrimitivesBuffer, mesh->outGlobalIndexBuffer };
+	mesh->meshletsForMesh.calculateTrianglesAndNeighbours(in);
+
+
+	if (meshlet_flags & static_cast<uint32_t>(MeshletFlags::MESHLET_ALG_SIMPLE)) {
+		mesh->meshletsForMesh.applyMeshletAlgorithmSimple(in, out);
+	}
+	else if (meshlet_flags & static_cast<uint32_t>(MeshletFlags::MESHLET_ALG_GREEDY_VERT)) {
+		mesh->meshletsForMesh.applyMeshletAlgorithmGreedy(in, out, true);
+	}
+	else if (meshlet_flags & static_cast<uint32_t>(MeshletFlags::MESHLET_ALG_GREEDY_DISTANCE)) {
+		mesh->meshletsForMesh.applyMeshletAlgorithmGreedyDistance(in, out);
+	}
+	else {
+		Log("WARNING: No meshlet algorithm specified, using greedy algorithm by default." << endl);
+		mesh->meshletsForMesh.applyMeshletAlgorithmGreedy(in, out, true);
+	}
+	// testing generated meshlets:
+	mesh->meshletsForMesh.verifyMeshletCoverage(true);
+	mesh->meshletsForMesh.verifyMeshletAdjacency(true);
+
+
+	if (mesh->flags.hasFlag(MeshFlags::MESHLET_DEBUG_COLORS)) {
+		applyDebugMeshletColorsToVertices(mesh);
+		applyDebugMeshletColorsToMeshlets(mesh);
+	}
+	mesh->meshletsForMesh.fillMeshletOutputBuffers(in, out);
+	logMeshletStats(mesh);
+
+}

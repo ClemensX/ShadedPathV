@@ -51,11 +51,24 @@ public:
 
 	glTF gltf;
 
+    // to render an object using meshlets we need:
+    // 1. meshlet desc buffer, most important: get global index start for each meshlet
+    // 2. global index buffer, which contains indices into the global vertex buffer
+    // 3. local index buffer, byte buffer which maps local meshlet vertex index to global index buffer: byte val + global index start is the index where the actual vertex is found
+    void calculateMeshlets(GPUMeshInfo* m, uint32_t meshlet_flags, uint32_t vertexLimit = GLEXT_MESHLET_VERTEX_COUNT, uint32_t primitiveLimit = GLEXT_MESHLET_PRIMITIVE_COUNT);
+
     // objects
 
     // add a new object to the scene, returns pointer to SceneObject. The mesh_index is the index of the mesh in the global mesh buffer.
     // for moving objects, the MeshFlagsCollection should have the RENDER_TYPE_MOVING flag set.
     SceneObject* addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsCollection flags = MeshFlagsCollection());
+
+    // Meshlets
+
+    // write meshlet data for all meshes in the collection to file, return true if successful
+    bool writeMeshletStorageFile(MeshFile* mfile);
+    // load meshlet data for all meshes of a collection from file, return true if successful, error if #items and #meshlet data sets do not match
+    bool loadMeshletStorageFile(MeshFile* mfile);
 
     // Util methods
 
@@ -72,9 +85,13 @@ private:
     // some flags may require additional work on the gltf base data, called from loadMesh()
     void handleFlags(GPUMeshInfo& meshInfo, MeshFlagsCollection flags);
 
+    // generate or load meshlet data. will show error log message if meshlet file not found and regenerate == false
+    void aquireMeshletData(MeshFile* mfile, bool regenerateMeshletData = false);
+
     void uploadMesh(GPUMeshInfo* mi);
     // handle gltf file info
 
+    void checkVertexDuplication(GPUMeshInfo* mesh);
     // add a mesh file ID to find MeshFile by name
     void addMeshFileID(std::string id, int32_t index) {
         meshFileIDs[id] = index;

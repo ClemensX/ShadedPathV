@@ -31,19 +31,31 @@ protected:
         }
         WorkingDirectoryTest::TearDown();
     }
+};
 
-    //void setupTestDataFolder() {
-    //    auto cur_path = std::filesystem::current_path();
-    //    auto data_test_path = cur_path / "data_test";
-    //    if (!std::filesystem::exists(data_test_path)) {
-    //        std::filesystem::create_directory(data_test_path);
-    //    }
-    //    auto mesh_path = data_test_path / "mesh";
-    //    if (!std::filesystem::exists(mesh_path)) {
-    //        std::filesystem::create_directory(mesh_path);
-    //    }
-    //    engine->files.findAssetFolder("data_testXXX");
-    //}
+class GLTF_OLD : public WorkingDirectoryTest {
+protected:
+    ShadedPathEngine* engine = nullptr;
+
+    void SetUp() override {
+        WorkingDirectoryTest::SetUp();
+
+        // Create engine instance
+        engine = new ShadedPathEngine();
+        minimalEngineInitialization(engine);
+
+        // Set up test data folder structure
+        //setupTestDataFolder();
+        engine->files.findAssetFolder("test_samples");
+    }
+
+    void TearDown() override {
+        if (engine) {
+            delete engine;
+            engine = nullptr;
+        }
+        WorkingDirectoryTest::TearDown();
+    }
 
     // Helper to validate basic MeshInfo structure
     void validateMeshInfo(MeshInfo* mi, const std::string& expectedId, int expectedPrimitiveIndex = 0) {
@@ -116,7 +128,7 @@ protected:
     }
 };
 
-TEST_F(GLTFParserTest, TextureReuse) {
+TEST_F(GLTF_OLD, TextureReuse) {
     string glbFile = engine->files.findFile("cube_single.gltf", FileCategory::MESH, false);
     EXPECT_NE(0, glbFile.size()); // check that we found file
 
@@ -135,7 +147,7 @@ TEST_F(GLTFParserTest, TextureReuse) {
 
 
 // Test 1: Single mesh with no primitives or LODs
-TEST_F(GLTFParserTest, SingleMesh_NoPrimitives) {
+TEST_F(GLTF_OLD, SingleMesh_NoPrimitives) {
     engine->files.findAssetFolder("test_samples");
     string glbFile = engine->files.findFile("cube_single.gltf", FileCategory::MESH, false);
     EXPECT_NE(0, glbFile.size()); // check that we found file
@@ -154,7 +166,7 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives) {
 }
 
 // Test new gltf implementation
-TEST_F(GLTFParserTest, SingleMesh_NoPrimitives_NT) {
+TEST_F(GLTFParserTest, SingleMesh_NoPrimitives) {
     MStore& mstore = engine->mstore;
     engine->files.findAssetFolder("test_samples");
     string glbFile = engine->files.findFile("cube_single.gltf", FileCategory::MESH, false);
@@ -296,8 +308,29 @@ TEST_F(GLTFParserTest, SingleMesh_CheckShaderData) {
     }
 }
 
+// Test access to mesh info, textures, model and material
+TEST_F(GLTFParserTest, Meshlets) {
+    MStore& mstore = engine->mstore;
+    engine->mstore.loadMesh("cube_single.gltf", "SingleMesh");
+    MeshFile* meshFile = mstore.getMeshFileByID("SingleMesh");
+    int32_t meshIndex = meshFile->meshes[0].meshIndex;
+    GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
+
+    EXPECT_FALSE(meshInfo->hasMeshlets()) << "cube_single.gltf should not have meshlets without generating them";
+
+    // now load again with meshlet generation enabled:
+    MeshFlagsCollection flags;
+    flags.setFlag(MeshFlags::MESHLET_GENERATE);
+    engine->mstore.loadMesh("cube_single.gltf", "SingleMesh_Meshlets", flags);
+    meshFile = mstore.getMeshFileByID("SingleMesh");
+    meshIndex = meshFile->meshes[0].meshIndex;
+    meshInfo = mstore.getGPUMeshInfo(meshIndex);
+
+    EXPECT_TRUE(meshInfo->hasMeshlets()) << "cube_single.gltf meshlet regeneration failed";
+}
+
 // Test 2: Single mesh with LOD levels (10 LODs)
-TEST_F(GLTFParserTest, SingleMesh_WithLODs) {
+TEST_F(GLTF_OLD, SingleMesh_WithLODs) {
     // This test requires a GLTF file with 10 LOD levels
     // Expected file: "mesh_with_lods.gltf" in data_test/mesh/
     // TODO: Create test file with 10 LOD meshes named mesh_lod_0 through mesh_lod_9
@@ -325,7 +358,7 @@ TEST_F(GLTFParserTest, SingleMesh_WithLODs) {
 }
 
 // Test 3: Single mesh with multiple primitives (e.g., tree with trunk + foliage)
-TEST_F(GLTFParserTest, SingleMesh_MultiplePrimitives) {
+TEST_F(GLTF_OLD, SingleMesh_MultiplePrimitives) {
     // This test requires a GLTF file with one mesh containing multiple primitives
     // Expected file: "tree_primitives.gltf" with 1 mesh having 2 primitives
     // Primitive 0: trunk, Primitive 1: foliage
@@ -359,7 +392,7 @@ TEST_F(GLTFParserTest, SingleMesh_MultiplePrimitives) {
 }
 
 // Test 4: Multiple meshes with LODs and multiple primitives (complex case)
-TEST_F(GLTFParserTest, Complex_LODsAndPrimitives) {
+TEST_F(GLTF_OLD, Complex_LODsAndPrimitives) {
     // This test requires a complex GLTF file:
     // - 10 LOD levels (mesh_lod_0 through mesh_lod_9)
     // - Each LOD mesh has 2 primitives (trunk + foliage)
@@ -401,7 +434,7 @@ TEST_F(GLTFParserTest, Complex_LODsAndPrimitives) {
 }
 
 // Test 5: Verify primitive map correctness
-TEST_F(GLTFParserTest, PrimitiveMap_Validation) {
+TEST_F(GLTF_OLD, PrimitiveMap_Validation) {
     // This validates the LodPrimitiveMap structure after parsing
     // Using generated mesh for now
 
@@ -420,7 +453,7 @@ TEST_F(GLTFParserTest, PrimitiveMap_Validation) {
 }
 
 // Test 6: Boundary case - Empty GLTF file
-TEST_F(GLTFParserTest, EmptyFile_GracefulFailure) {
+TEST_F(GLTF_OLD, EmptyFile_GracefulFailure) {
     // Test error handling with empty or invalid GLTF
     Log("Test for empty/invalid GLTF file handling\n");
 
@@ -429,7 +462,7 @@ TEST_F(GLTFParserTest, EmptyFile_GracefulFailure) {
 }
 
 // Test 7: Multiple separate meshes (not LODs, just different objects)
-TEST_F(GLTFParserTest, MultipleSeparateMeshes) {
+TEST_F(GLTF_OLD, MultipleSeparateMeshes) {
     // This test requires a GLTF file with multiple independent meshes
     // Expected file: "multiple_objects.gltf" with 3 different meshes
     // e.g., cube, sphere, cylinder in one file

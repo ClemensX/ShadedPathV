@@ -63,14 +63,28 @@ struct GPUMeshInfo {
 	uint32_t index; // global mesh index
 	uint32_t next; // next primitive (0 == no next primitive)
 	BoundingBox boundingBox;
+    const bool hasMeshlets() const {
+        return meshletCount > 0 && vertexOffset > 0;
+    }
 };
+
+// forward declaration
+// MeshletsForMesh is a collection of meshlets for a single mesh
+class MeshletsForMesh;
 
 // structure for CPU-side metadata of meshes, not transferred to GPU
 struct MeshInfoMetadata {
 	std::string name;
 	std::vector<PBRVertex> vertices;
 	std::vector<uint32_t> indices;
-    bool boundingBoxAlreadySet = false;
+
+	MeshletsForMesh meshletsForMesh;
+	std::vector<uint32_t> meshletVertexIndices; // indices into vertices, used for meshlets
+	// output: needed on GPU side
+	std::vector<PBRShader::PackedMeshletDesc> outMeshletDesc;
+	std::vector<uint8_t> outLocalIndexPrimitivesBuffer;   // local indices for primitives (3 indices per triangle)
+	std::vector<uint32_t> outGlobalIndexBuffer; // vertex indices into vertex buffer
+	bool boundingBoxAlreadySet = false;
 }; 
 
 struct GPUModel {
