@@ -44,8 +44,9 @@ void MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection 
     meshFile.id = id;
     meshFile.flags = flags;
 	for (int i = 0; i < meshNumCount; ++i) {
-		auto meshInfo = getGPUMeshInfo(meshNumStart + i);
+		auto meshInfo = getGPUMeshInfoInternal(meshNumStart + i);
         auto metadata = getMeshMetadata(meshNumStart + i);
+		meshInfo->index = meshNumStart + i;
 		MeshFileEntry entry{};
         entry.name = metadata->name;
         entry.meshIndex = meshNumStart + i;
@@ -65,7 +66,7 @@ void MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection 
 
 	// work on flags:
     for (MeshFileEntry & entry : meshFile.meshes) {
-        GPUMeshInfo* meshInfo = const_cast<GPUMeshInfo*>(engine->globalRendering.gpuMemory.getCppBuffer<GPUMeshInfo>(BufferType::MeshInfos, entry.meshIndex));
+        GPUMeshInfo* meshInfo = const_cast<GPUMeshInfo*>(getGPUMeshInfo(entry.meshIndex));
         handleFlags(*meshInfo, flags);
 		// debug test
 		//meshInfo->meshletOffset = 0x42;
@@ -102,8 +103,16 @@ void MStore::uploadAllMeshes()
     }
 }
 
-GPUMeshInfo* MStore::getGPUMeshInfo(int32_t index) {
+GPUMeshInfo* MStore::getGPUMeshInfoInternal(int32_t index) {
 	return engine->globalRendering.gpuMemory.getCppBuffer<GPUMeshInfo>(BufferType::MeshInfos, index);
+}
+
+GPUMeshInfo* MStore::getGPUMeshInfo(int32_t index) {
+	auto mi = getGPUMeshInfoInternal(index);
+	if (!(mi != nullptr && mi->index == index)) {
+		Error("Invalid GPUMeshInfo index: " + std::to_string(index));
+	}
+	return mi;
 }
 
 GPUMaterial* MStore::getGPUMaterial(int32_t index) {
@@ -338,7 +347,8 @@ void MStore::aquireMeshletData(MeshFile* mfile, bool regenerateMeshletData)
 
     // generate meshlet data for each mesh in the file:
 	for (MeshFileEntry& entry : mfile->meshes) {
-		calculateMeshlets(getGPUMeshInfo(entry.meshIndex), meshletFlags, GLEXT_MESHLET_VERTEX_COUNT, GLEXT_MESHLET_PRIMITIVE_COUNT - 1);
+        auto meshInfo = getGPUMeshInfo(entry.meshIndex);
+		calculateMeshlets(meshInfo, meshletFlags, GLEXT_MESHLET_VERTEX_COUNT, GLEXT_MESHLET_PRIMITIVE_COUNT - 1);
 	}
 }
 
@@ -367,34 +377,32 @@ void MStore::calculateMeshlets(GPUMeshInfo* mesh, uint32_t meshlet_flags, uint32
 		Log("WARNING: MESHLET_SORT was specified, but pre-sorting vertices is no longer available" << endl);
 	}
 
-	MeshletIn in{ mesh->vertices, mesh->indices, primitiveLimit, vertexLimit, box };
-	MeshletOut out{ mesh->meshletsForMesh.meshlets, mesh->outMeshletDesc, mesh->outLocalIndexPrimitivesBuffer, mesh->outGlobalIndexBuffer };
-	mesh->meshletsForMesh.calculateTrianglesAndNeighbours(in);
+	auto meta = getMeshMetadata(mesh->index);
+	MeshletIn in{ meta->vertices, meta->indices, primitiveLimit, vertexLimit, box };
+	MeshletOut out{ meta->meshletsForMesh.meshlets, meta->outMeshletDesc, meta->outLocalIndexPrimitivesBuffer, meta->outGlobalIndexBuffer };
+	meta->meshletsForMesh.calculateTrianglesAndNeighbours(in);
 
 
 	if (meshlet_flags & static_cast<uint32_t>(MeshletFlags::MESHLET_ALG_SIMPLE)) {
-		mesh->meshletsForMesh.applyMeshletAlgorithmSimple(in, out);
+		meta->meshletsForMesh.applyMeshletAlgorithmSimple(in, out);
 	}
 	else if (meshlet_flags & static_cast<uint32_t>(MeshletFlags::MESHLET_ALG_GREEDY_VERT)) {
-		mesh->meshletsForMesh.applyMeshletAlgorithmGreedy(in, out, true);
+		meta->meshletsForMesh.applyMeshletAlgorithmGreedy(in, out, true);
 	}
 	else if (meshlet_flags & static_cast<uint32_t>(MeshletFlags::MESHLET_ALG_GREEDY_DISTANCE)) {
-		mesh->meshletsForMesh.applyMeshletAlgorithmGreedyDistance(in, out);
+		meta->meshletsForMesh.applyMeshletAlgorithmGreedyDistance(in, out);
 	}
 	else {
 		Log("WARNING: No meshlet algorithm specified, using greedy algorithm by default." << endl);
-		mesh->meshletsForMesh.applyMeshletAlgorithmGreedy(in, out, true);
+		meta->meshletsForMesh.applyMeshletAlgorithmGreedy(in, out, true);
 	}
 	// testing generated meshlets:
-	mesh->meshletsForMesh.verifyMeshletCoverage(true);
-	mesh->meshletsForMesh.verifyMeshletAdjacency(true);
+	meta->meshletsForMesh.verifyMeshletCoverage(true);
+	meta->meshletsForMesh.verifyMeshletAdjacency(true);
 
 
-	if (mesh->flags.hasFlag(MeshFlags::MESHLET_DEBUG_COLORS)) {
-		applyDebugMeshletColorsToVertices(mesh);
-		applyDebugMeshletColorsToMeshlets(mesh);
-	}
-	mesh->meshletsForMesh.fillMeshletOutputBuffers(in, out);
-	logMeshletStats(mesh);
+	// TODO: applyDebugMeshletColors and logMeshletStats not yet ported from MeshStore to MStore
+	meta->meshletsForMesh.fillMeshletOutputBuffers(in, out);
+	// TODO: logMeshletStats not yet ported from MeshStore to MStore
 
 }

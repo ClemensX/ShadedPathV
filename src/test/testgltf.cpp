@@ -314,19 +314,43 @@ TEST_F(GLTFParserTest, Meshlets) {
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh");
     MeshFile* meshFile = mstore.getMeshFileByID("SingleMesh");
     int32_t meshIndex = meshFile->meshes[0].meshIndex;
-    GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
+    MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
 
-    EXPECT_FALSE(meshInfo->hasMeshlets()) << "cube_single.gltf should not have meshlets without generating them";
+    EXPECT_FALSE(meshMetadata->hasMeshlets()) << "cube_single.gltf should not have meshlets without generating them";
 
     // now load again with meshlet generation enabled:
     MeshFlagsCollection flags;
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh_Meshlets", flags);
-    meshFile = mstore.getMeshFileByID("SingleMesh");
+    meshFile = mstore.getMeshFileByID("SingleMesh_Meshlets");
     meshIndex = meshFile->meshes[0].meshIndex;
-    meshInfo = mstore.getGPUMeshInfo(meshIndex);
+    meshMetadata = mstore.getMeshMetadata(meshIndex);
 
-    EXPECT_TRUE(meshInfo->hasMeshlets()) << "cube_single.gltf meshlet regeneration failed";
+    EXPECT_TRUE(meshMetadata->hasMeshlets()) << "cube_single.gltf meshlet regeneration failed";
+}
+
+// Test access to mesh info, textures, model and material
+TEST_F(GLTFParserTest, Mesh_Indices) {
+    MStore& mstore = engine->mstore;
+    engine->mstore.loadMesh("cube_single.gltf", "SingleMesh");
+    MeshFile* meshFile = mstore.getMeshFileByID("SingleMesh");
+    int32_t meshIndex = meshFile->meshes[0].meshIndex;
+    EXPECT_EQ(meshIndex, 0) << "Expected mesh index 0 for first mesh";
+    MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
+    EXPECT_GT(meshMetadata->vertices.size(), 0) << "Expected non-zero vertex count";
+    EXPECT_GT(meshMetadata->indices.size(), 0) << "Expected non-zero index count";
+    GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
+    EXPECT_EQ(meshInfo->index, meshIndex) << "GPUMeshInfo index should match mesh index";
+
+    // now load again and check higher indices:
+    engine->mstore.loadMesh("cube_single.gltf", "SingleMesh_Meshlets");
+    meshFile = mstore.getMeshFileByID("SingleMesh_Meshlets");
+    meshIndex = meshFile->meshes[0].meshIndex;
+    EXPECT_EQ(meshIndex, 1) << "Expected mesh index 1 for second mesh";
+    MeshInfoMetadata* meshMetadata2 = mstore.getMeshMetadata(meshIndex);
+    EXPECT_NE(meshMetadata2, meshMetadata) << "Expected new MeshInfoMetadata for second mesh";
+    meshInfo = mstore.getGPUMeshInfo(meshIndex);
+    EXPECT_EQ(meshInfo->index, meshIndex) << "GPUMeshInfo index should match mesh index for second mesh";
 }
 
 // Test 2: Single mesh with LOD levels (10 LODs)

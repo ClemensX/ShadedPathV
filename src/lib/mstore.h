@@ -105,4 +105,6 @@ private:
     // maintain a list of scene objects. Used for CPU-side of GPUModels
     std::vector<SceneObject> sceneObjects;
     std::vector<SceneObject> movingSceneObjects;
+    // no checks, directly access cpp buffer
+    GPUMeshInfo* getGPUMeshInfoInternal(int32_t index);
 };

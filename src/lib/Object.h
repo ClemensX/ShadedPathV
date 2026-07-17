@@ -109,9 +109,9 @@ public:
 	// output data:
 	std::vector<Meshlet> meshlets;
 	// output: needed on GPU side
-	std::vector<PBRShader::PackedMeshletDesc> outMeshletDesc;
-	std::vector<uint8_t> outLocalIndexPrimitivesBuffer;   // local indices for primitives (3 indices per triangle)
-	std::vector<uint32_t> outGlobalIndexBuffer; // vertex indices into vertex buffer
+	//std::vector<PBRShader::PackedMeshletDesc> outMeshletDesc;
+	//std::vector<uint8_t> outLocalIndexPrimitivesBuffer;   // local indices for primitives (3 indices per triangle)
+	//std::vector<uint32_t> outGlobalIndexBuffer; // vertex indices into vertex buffer
 
 	void calculateTrianglesAndNeighbours(MeshletIn& in);
     // log errors in adjacency relations (for whole mesh)
@@ -145,9 +145,9 @@ public:
 		globalVertices.clear();
 		indexVertexMap.clear();
 		meshlets.clear();
-		outMeshletDesc.clear();
-		outLocalIndexPrimitivesBuffer.clear();
-		outGlobalIndexBuffer.clear();
+		//outMeshletDesc.clear();
+		//outLocalIndexPrimitivesBuffer.clear();
+		//outGlobalIndexBuffer.clear();
     }
 };
 
