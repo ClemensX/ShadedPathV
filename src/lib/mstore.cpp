@@ -231,7 +231,7 @@ SceneObject* MStore::addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsColle
 		obj->index = objectIndex;
 		obj->pos = pos;
 		model->meshNumber = mesh_index;
-		engine->globalRendering.gpuMemory.appendElement(BufferType::ModelsMoving, model);
+		engine->globalRendering.gpuMemory.appendElement(BufferType::ModelsMoving, *model);
 		return obj;
 	} else {
 		if (mesh_index < 0 || mesh_index >= static_cast<int32_t>(sceneObjects.size())) {
@@ -247,7 +247,7 @@ SceneObject* MStore::addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsColle
 		obj->index = objectIndex;
 		obj->pos = pos;
 		model->meshNumber = mesh_index;
-		engine->globalRendering.gpuMemory.appendElement(BufferType::Models, model);
+		engine->globalRendering.gpuMemory.appendElement(BufferType::Models, *model);
 		return obj;
 	}
 }

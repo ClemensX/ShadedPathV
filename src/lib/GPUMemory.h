@@ -28,9 +28,9 @@ struct GPUMemoryPushConstants {
     uint64_t collectionIndicesAddress;
     uint64_t collectionInfosAddress;
     uint64_t meshInfosAddress;
-    uint64_t uniformBufferAddress;
-    uint64_t storageBufferAddress;
-    uint64_t vertexBufferAddress;
+    uint64_t modelsAddress;
+    uint64_t modelsMovingAddress;
+    uint64_t materialsAddress;
     uint64_t indexBufferAddress;
     uint64_t indirectBufferAddress;
     uint64_t textureBufferAddress;
@@ -144,7 +144,7 @@ public:
     // Append a single element to the buffer (auto-increments count)
     // Calls Error() if currentElementCount >= maxElementCount
     // Returns the element index
-    template<typename T>
+    template<typename T> requires (!std::is_pointer_v<T>)
     uint32_t appendElement(BufferType type, const T& element);
 
     // Append multiple elements to the buffer (auto-increments count)
@@ -300,7 +300,7 @@ inline uint32_t GPUMemory::updateElements(BufferType type, const T* elements, ui
     return startIndex;
 }
 
-template<typename T>
+template<typename T> requires (!std::is_pointer_v<T>)
 inline uint32_t GPUMemory::appendElement(BufferType type, const T& element)
 {
     auto* state = getBufferState(type);

@@ -147,6 +147,17 @@ void Loader::init() {
     vector<LineDef> lines;
     Util::drawMeshAsLines(lines, meshMetadata->vertices, meshMetadata->indices, Colors::Yellow);
     SceneObject* object = engine->mstore.addObject(meshInfo->index, vec3(0.0f, 0.0f, 0.0f));
+    SceneObject* object2 = engine->mstore.addObject(meshInfo->index, vec3(0.1f, 0.2f, 0.3f));
+
+
+    object2->rot = vec3(0.0f, 0.0f, 0.0f);
+    object2->scale = vec3(1.0f);
+    mat4 baseTransform = mat4(1.0); // get from gltf later
+    GPUModel* gpuModel = engine->mstore.getGPUModel(object2->index);
+    GPUMeshInfo* gpuMeshInfo = engine->mstore.getGPUMeshInfo(gpuModel->meshNumber);
+    object2->calculateStandardModelTransform(gpuModel->model, baseTransform);
+    gpuModel->material_lod_category = 42;
+    //engine->globalRendering.gpuMemory.getElementAddress<GPUMeshInfo>(BufferType::MeshInfos, index);
 
 
     // 2 square km world size

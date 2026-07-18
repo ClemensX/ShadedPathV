@@ -66,7 +66,6 @@ void GPUMemory::defineBuffer(BufferType type, uint32_t elementSize, uint32_t max
 
     // Add appropriate buffer type usage flags
     switch (type) {
-    case Models:
     case ModelsMoving:
         config.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         break;
@@ -74,6 +73,7 @@ void GPUMemory::defineBuffer(BufferType type, uint32_t elementSize, uint32_t max
     case CollectionIndices:
     case CollectionInfos:
     case MeshInfos:
+    case Models:
         config.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         break;
     case VertexBuffer:
@@ -122,7 +122,7 @@ void GPUMemory::flushBuffer(BufferType type)
         //uint32_t value = 42;
         //memcpy(stagingData, &value, sizeof(uint32_t)); // just for testing, copy value as uint32_t to buffer
         // Copy from staging buffer to device buffer
-        VkDeviceSize bufferSize = state->config.elementSize * state->config.maxElementCount;
+        VkDeviceSize bufferSize = state->config.elementSize * state->config.maxElementCount; // TODO unnecessary to copy full buffer size? Could optimize to only copy used size
         //rendering->copyBuffer(state->stagingBuffer, state->buffer, bufferSize, 0);
         rendering->copyBuffer(state->stagingBuffer, state->chunk->buffer, bufferSize, state->relDeviceAddress);
         // emit warning if flushing the same buffer multiple times:
@@ -407,6 +407,10 @@ void GPUMemory::fillPushConstants(GPUMemoryPushConstants* pushConstants) const
     //pushConstants->collectionIndicesAddress = getDeviceAddress(CollectionIndices);
     //pushConstants->collectionInfosAddress = getDeviceAddress(CollectionInfos);
     pushConstants->meshInfosAddress = getDeviceAddress(MeshInfos);
+    pushConstants->modelsAddress = getDeviceAddress(Models);
+    pushConstants->modelsMovingAddress = getDeviceAddress(ModelsMoving);
+    pushConstants->materialsAddress = getDeviceAddress(Materials);
+
     //pushConstants->uniformBufferAddress = getDeviceAddress(UniformBuffer);
     //pushConstants->storageBufferAddress = getDeviceAddress(StorageBuffer);
    //pushConstants->vertexBufferAddress = getDeviceAddress(VertexBuffer);

@@ -107,9 +107,9 @@ struct GPUMemoryPushConstants {
     uint64_t collectionIndicesAddress;
     uint64_t collectionInfosAddressX;
     uint64_t meshInfosAddress;
-    uint64_t uniformBufferAddressX;
-    uint64_t storageBufferAddressX;
-    uint64_t vertexBufferAddressX;
+    uint64_t modelsAddress;
+    uint64_t modelsMovingAddress;
+    uint64_t materialsAddress;
     uint64_t indexBufferAddressX;
     uint64_t indirectBufferAddressX;
     uint64_t textureBufferAddressX;
@@ -148,7 +148,16 @@ struct GPUModel {
 	uint meshNumber; // link to MeshInfo
 	uint material_lod_category;
 	uint materialIndex; // index into global material array
-	BoundingBox boundingBox;
+	//BoundingBox boundingBox;
+};
+
+struct GPUMaterial {
+	int baseColor;
+	int metallicRoughness;
+	int normal;
+	int occlusion;
+	int emissive;
+
 };
 
 layout(binding = 0) uniform UniformBufferObject {
@@ -181,6 +190,14 @@ layout(buffer_reference, std430) buffer GPUMeshInfoBuffer {
     GPUMeshInfo info[];
 };
 
+layout(buffer_reference, std430) buffer GPUModelBuffer {
+    GPUModel model[];
+};
+
+layout(buffer_reference, std430) buffer GPUMaterialBuffer {
+    GPUMaterial material[];
+};
+
 layout(buffer_reference, std430) buffer VertexBuffer {
     PBRVertex vertex[];
 };
@@ -204,9 +221,15 @@ taskPayloadSharedEXT TaskPayload payload;
 
 GPUCollectionIndexBuffer gpuIndices = GPUCollectionIndexBuffer(ubo.gpuMem.collectionIndicesAddress + 0);
 GPUMeshInfoBuffer gpuInfos = GPUMeshInfoBuffer(ubo.gpuMem.meshInfosAddress + 0);
+GPUModelBuffer gpuModels = GPUModelBuffer(ubo.gpuMem.modelsAddress + 0);
+GPUModelBuffer gpuModelsMoving = GPUModelBuffer(ubo.gpuMem.modelsMovingAddress + 0);
+GPUMaterialBuffer gpuMaterials = GPUMaterialBuffer(ubo.gpuMem.materialsAddress + 0);
 
 void printGPUBufferAddresses() {
     debugPrintfEXT("TEST TASK SHADER PUUUUSH Buffer addresses:\n  %llx \n  meshInfosAddress %llx\n", ubo.gpuMem.collectionIndicesAddress, ubo.gpuMem.meshInfosAddress);
+    debugPrintfEXT("  modelsAddress %llx\n", ubo.gpuMem.modelsAddress);
+    debugPrintfEXT("  modelsMovingAddress %llx\n", ubo.gpuMem.modelsMovingAddress);
+    debugPrintfEXT("  materialsAddress %llx\n", ubo.gpuMem.materialsAddress);
 }
 
 void printGPUMeshInfo(GPUMeshInfo info) {
@@ -221,6 +244,24 @@ void printGPUCollectionIndex(uint index) {
 
 void printVertex( PBRVertex v) {
     debugPrintfEXT("PBRVertex: pos %f %f %f normal %f %f %f uv0 %f %f uv1 %f %f\n", v.position.x, v.position.y, v.position.z, v.normal.x, v.normal.y, v.normal.z, v.uv0.x, v.uv0.y, v.uv1.x, v.uv1.y);
+}
+
+void verifyModel(uint index) {
+    debugPrintfEXT("verify model %u:\n", index);
+    GPUModel model = gpuModels.model[index];
+    debugPrintfEXT("GPUModel: flags %u meshNumber %u material_lod_category %u materialIndex %u\n",
+        model.flags, model.meshNumber, model.material_lod_category, model.materialIndex);
+    debugPrintfEXT("   transform: %f %f %f %f\n", model.model[0][0], model.model[0][1], model.model[0][2], model.model[0][3]);
+    debugPrintfEXT("   transform: %f %f %f %f\n", model.model[1][0], model.model[1][1], model.model[1][2], model.model[1][3]);
+    debugPrintfEXT("   transform: %f %f %f %f\n", model.model[2][0], model.model[2][1], model.model[2][2], model.model[2][3]);
+    debugPrintfEXT("   transform: %f %f %f %f\n", model.model[3][0], model.model[3][1], model.model[3][2], model.model[3][3]);
+}
+
+void verifyMaterial(uint index) {
+    debugPrintfEXT("verify material %u:\n", index);
+    GPUMaterial material = gpuMaterials.material[index];
+    debugPrintfEXT("GPUMaterial: baseColor %d metallicRoughness %d normal %d occlusion %d emissive %d\n",
+        material.baseColor, material.metallicRoughness, material.normal, material.occlusion, material.emissive);
 }
 
 void verifyMesh(uint index) {
@@ -238,7 +279,9 @@ void verifyMesh(uint index) {
 void main() {
     printGPUBufferAddresses();
 
-    verifyMesh(0);
+    //verifyMesh(0);
+    //verifyMaterial(0);
+    verifyModel(1);
 
     return;
 
