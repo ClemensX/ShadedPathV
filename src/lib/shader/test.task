@@ -223,11 +223,9 @@ void printVertex( PBRVertex v) {
     debugPrintfEXT("PBRVertex: pos %f %f %f normal %f %f %f uv0 %f %f uv1 %f %f\n", v.position.x, v.position.y, v.position.z, v.normal.x, v.normal.y, v.normal.z, v.uv0.x, v.uv0.y, v.uv1.x, v.uv1.y);
 }
 
-void main() {
-    printGPUBufferAddresses();
-
-    // get 1st GPUMeshInfo:
-    GPUMeshInfo info = gpuInfos.info[0];
+void verifyMesh(uint index) {
+    debugPrintfEXT("verify mesh %u:\n", index);
+    GPUMeshInfo info = gpuInfos.info[index];
     printGPUMeshInfo(info);
     VertexBuffer vertices = VertexBuffer(info.vertexOffset);
     for (int i = 0; i < 24; i++) {
@@ -235,6 +233,12 @@ void main() {
         printVertex(v);
         //debugPrintfEXT("Vertex %d: pos %f %f %f normal %f %f %f uv0 %f %f uv1 %f %f\n", i, v.pos.x, v.pos.y, v.pos.z, v.normal.x, v.normal.y, v.normal.z, v.uv0.x, v.uv0.y, v.uv1.x, v.uv1.y);
     }
+}
+
+void main() {
+    printGPUBufferAddresses();
+
+    verifyMesh(0);
 
     return;
 

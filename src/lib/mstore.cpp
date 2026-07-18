@@ -51,9 +51,10 @@ void MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection 
         entry.name = metadata->name;
         entry.meshIndex = meshNumStart + i;
         meshFile.meshes.push_back(entry);
+		metadata->meshFileIndex = meshFiles.size();
     }
     meshFiles.push_back(meshFile);
-    addMeshFileID(id, static_cast<int32_t>(meshFiles.size() - 1));
+    addMeshFileID(id, meshFiles.size() - 1);
 
 #if defined(DEBUG)
 	for (auto& m : meshFile.meshes) {
@@ -88,10 +89,22 @@ void MStore::uploadMesh(GPUMeshInfo* mi)
 	assert(metadata->vertices.size() > 0);
 	assert(metadata->indices.size() > 0);
 
-	// upload vec3 vertex buffer:
+	// calc aligned buffer sizes
 	size_t vertexBufferSize = GlobalRendering::minAlign(metadata->vertices.size() * sizeof(PBRShader::Vertex));
-	uint64_t pos = gb.copyToGlobalBuffer(vertexBufferSize, metadata->vertices.data());
-	mi->vertexOffset = pos;
+	size_t globalIndexBufferSize = GlobalRendering::minAlign(metadata->outGlobalIndexBuffer.size() * sizeof(metadata->outGlobalIndexBuffer[0]));
+	size_t localIndexBufferSize = GlobalRendering::minAlign(metadata->outLocalIndexPrimitivesBuffer.size() * sizeof(metadata->outLocalIndexPrimitivesBuffer[0]));
+	size_t meshletDescBufferSize = GlobalRendering::minAlign(metadata->outMeshletDesc.size() * sizeof(PBRShader::PackedMeshletDesc));
+
+	// copy vertices even if there is no meshlet data
+	mi->vertexOffset = gb.copyToGlobalBuffer(vertexBufferSize, metadata->vertices.data());
+
+    // rest of gpu data only makes sense if meshlet data is present
+    if (meshletDescBufferSize > 0) {
+		mi->globalIndexOffset = gb.copyToGlobalBuffer(globalIndexBufferSize, metadata->outGlobalIndexBuffer.data());
+		mi->localIndexOffset = gb.copyToGlobalBuffer(localIndexBufferSize, metadata->outLocalIndexPrimitivesBuffer.data());
+		mi->meshletOffset = gb.copyToGlobalBuffer(meshletDescBufferSize, metadata->outMeshletDesc.data());
+        mi->meshletCount = static_cast<uint32_t>(metadata->outMeshletDesc.size());
+	}
 }
 
 void MStore::uploadAllMeshes()
@@ -104,7 +117,7 @@ void MStore::uploadAllMeshes()
 }
 
 GPUMeshInfo* MStore::getGPUMeshInfoInternal(int32_t index) {
-	return engine->globalRendering.gpuMemory.getCppBuffer<GPUMeshInfo>(BufferType::MeshInfos, index);
+	return engine->globalRendering.gpuMemory.getElementAddress<GPUMeshInfo>(BufferType::MeshInfos, index);
 }
 
 GPUMeshInfo* MStore::getGPUMeshInfo(int32_t index) {
@@ -116,15 +129,15 @@ GPUMeshInfo* MStore::getGPUMeshInfo(int32_t index) {
 }
 
 GPUMaterial* MStore::getGPUMaterial(int32_t index) {
-	return engine->globalRendering.gpuMemory.getCppBuffer<GPUMaterial>(BufferType::Materials, index);
+	return engine->globalRendering.gpuMemory.getElementAddress<GPUMaterial>(BufferType::Materials, index);
 }
 
 GPUModel* MStore::getGPUModel(int32_t index) {
-	return engine->globalRendering.gpuMemory.getCppBuffer<GPUModel>(BufferType::Models, index);
+	return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::Models, index);
 }
 
 GPUModel* MStore::getGPUMovingModel(int32_t index) {
-	return engine->globalRendering.gpuMemory.getCppBuffer<GPUModel>(BufferType::ModelsMoving, index);
+	return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::ModelsMoving, index);
 }
 
 SceneObject* MStore::getSceneObject(int32_t index) {
@@ -399,10 +412,60 @@ void MStore::calculateMeshlets(GPUMeshInfo* mesh, uint32_t meshlet_flags, uint32
 	// testing generated meshlets:
 	meta->meshletsForMesh.verifyMeshletCoverage(true);
 	meta->meshletsForMesh.verifyMeshletAdjacency(true);
-
-
-	// TODO: applyDebugMeshletColors and logMeshletStats not yet ported from MeshStore to MStore
+    auto flags = meshFiles[meta->meshFileIndex].flags;
+	if (flags.hasFlag(MeshFlags::MESHLET_DEBUG_COLORS)) {
+		applyDebugMeshletColorsToVertices(mesh);
+		applyDebugMeshletColorsToMeshlets(mesh);
+	}
 	meta->meshletsForMesh.fillMeshletOutputBuffers(in, out);
-	// TODO: logMeshletStats not yet ported from MeshStore to MStore
+	logMeshletStats(mesh);
+}
 
+void MStore::applyDebugMeshletColorsToVertices(GPUMeshInfo* mesh)
+{
+	auto meta = getMeshMetadata(mesh->index);
+	// color the meshlets:
+	int meshletCount = 0;
+	static auto col = engine->util.generateColorPalette256();
+	for (auto& m : meta->meshletsForMesh.meshlets) {
+		auto color = col[meshletCount % 256]; // assign color from palette
+		meshletCount++;
+		for (auto& v : m.vertices) {
+			meta->vertices[v->globalIndex].color = color; // assign color to vertices in meshlet
+		}
+	}
+}
+
+void MStore::applyDebugMeshletColorsToMeshlets(GPUMeshInfo* mesh)
+{
+	auto meta = getMeshMetadata(mesh->index);
+	for (auto& m : meta->meshletsForMesh.meshlets) {
+		m.debugColors = true; // mark meshlet as having debug colors
+	}
+}
+
+void MStore::logMeshletStats(GPUMeshInfo* mesh)
+{
+	auto meta = getMeshMetadata(mesh->index);
+	assert(meta->meshletsForMesh.meshlets.size() > 0);
+	Log("Meshlet stats for mesh " << meta->name << endl);
+	Log("  Meshlets: " << meta->meshletsForMesh.meshlets.size() << endl);
+	//Log("  MeshletOld descriptors: " << meta->outMeshletDesc.size() << endl);
+	//Log("  MeshletOld triangles: " << mesh->meshlets.size() * 12 << endl); // each meshlet has 12 triangles
+	int localIndexCount = 0; // count indices used for all meshlets
+	int avgVertsPerMeshlet = 0;
+	int avgPrimsPerMeshlet = 0;
+
+	for (auto& m : meta->meshletsForMesh.meshlets) {
+		localIndexCount += m.verticesIndices.size();
+		avgPrimsPerMeshlet += m.triangles.size();
+		avgVertsPerMeshlet += m.vertices.size();
+		assert(m.vertices.size() <= 256); // we limit the number of vertices per meshlet to 256
+	}
+	avgPrimsPerMeshlet /= meta->meshletsForMesh.meshlets.size();
+	avgVertsPerMeshlet /= meta->meshletsForMesh.meshlets.size();
+	Log("  Average Meshlet verts / triangles: " << avgVertsPerMeshlet << " / " << avgPrimsPerMeshlet << endl);
+	Log("  local Vertex indices (b4 greedy alg): " << meta->meshletsForMesh.indexVertexMap.size() << endl);
+	Log("  local Vertex indices needed         : " << localIndexCount << endl);
+	Log("  vertices: " << meta->meshletsForMesh.globalVertices.size() << endl);
 }

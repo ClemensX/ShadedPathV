@@ -314,7 +314,8 @@ double static const PI2 = PI * 2.0;
 double static const PI_half = PI / 2.0;
 double static const PI_quarter = PI / 4.0;
 
-// engine headers
+// Engine headers — ORDER MATTERS. See deps:
+// common_cpp_shader.h -> meshsupport.h -> pbrShader.h -> Object.h -> meshInfoMetadata.h -> mstore.h
 
 #include "WorldCreatorInstanceLoader.h"
 #include "WorldCreator.h"

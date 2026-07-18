@@ -129,13 +129,16 @@ void Loader::init() {
     }
 
     // use new mstore:
+    MeshFlagsCollection flags;
+    flags.setFlag(MeshFlags::MESHLET_GENERATE);
     MStore& mstore = engine->mstore;
-    engine->mstore.loadMesh("test/cube_single.gltf", "SingleMesh");
+    engine->mstore.loadMesh("test/cube_single.gltf", "SingleMesh", flags);
     auto loaded = mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
     auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
     const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
     Log("Loaded mesh: " << loaded->id << ", mesh index: " << loaded->meshes[0].meshIndex << ", global mesh index: " << meshInfo->index << ", material index: " << meshInfo->material << std::endl);
     Log("Mesh metadata: vertices " << meshMetadata->vertices.size() << " indices: " << meshMetadata->indices.size() << std::endl);
+    Log("Mesh meshlets: " << meshMetadata->meshletsForMesh.meshlets.size() << std::endl);
 
     // test GPUMeshInfo fields: (inaccessible, debug test in mstore...)
     //meshInfo->meshletOffset = 42;

@@ -327,6 +327,11 @@ TEST_F(GLTFParserTest, Meshlets) {
     meshMetadata = mstore.getMeshMetadata(meshIndex);
 
     EXPECT_TRUE(meshMetadata->hasMeshlets()) << "cube_single.gltf meshlet regeneration failed";
+
+    // upload all to GPU
+    engine->shaders.pbrShader.initialUpload(true);
+    auto m = mstore.getGPUMeshInfo(meshIndex);
+    EXPECT_NE(m->vertexOffset, 0) << "GPUMeshInfo should not be null after upload";
 }
 
 // Test access to mesh info, textures, model and material
@@ -351,6 +356,14 @@ TEST_F(GLTFParserTest, Mesh_Indices) {
     EXPECT_NE(meshMetadata2, meshMetadata) << "Expected new MeshInfoMetadata for second mesh";
     meshInfo = mstore.getGPUMeshInfo(meshIndex);
     EXPECT_EQ(meshInfo->index, meshIndex) << "GPUMeshInfo index should match mesh index for second mesh";
+
+    // recheck GPUMeshInfo array:
+    EXPECT_EQ(engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos), 2) << "Expected 2 GPUMeshInfo entries after loading two meshes";
+    auto mesh0 = mstore.getGPUMeshInfo(0);
+    EXPECT_EQ(mesh0->index, 0) << "First GPUMeshInfo index should be 0";
+    auto mesh1 = mstore.getGPUMeshInfo(1);
+    EXPECT_EQ(mesh1->index, 1) << "Second GPUMeshInfo index should be 1";
+    EXPECT_NE(mesh0, mesh1) << "GPUMeshInfo entries should be distinct";
 }
 
 // Test 2: Single mesh with LOD levels (10 LODs)

@@ -15,6 +15,7 @@ struct MeshInfoMetadata {
     std::vector<PBRShader::PackedMeshletDesc> outMeshletDesc;
     std::vector<uint8_t> outLocalIndexPrimitivesBuffer;   // local indices for primitives (3 indices per triangle)
     std::vector<uint32_t> outGlobalIndexBuffer; // vertex indices into vertex buffer
+    uint32_t meshFileIndex; // link back to MeshFile vector
     bool boundingBoxAlreadySet = false;
     const bool hasMeshlets() const {
         return meshletsForMesh.meshlets.size() > 0 && outMeshletDesc.size() > 0;

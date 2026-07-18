@@ -77,6 +77,13 @@ public:
     bool checkBoundingBoxPlausibility(int32_t meshIndex);
     void logVertex(const PBRShader::Vertex& v);
     void logTriangleFromGlTF(int num, GPUMeshInfo* mesh);
+    // apply fixed colors to all vertices of one meshlet (useful for debugging)
+    // may not be totally correct if some vertices are shared between meshlets (color value will be overwritten)
+    void applyDebugMeshletColorsToVertices(GPUMeshInfo* mesh);
+    // apply same color to all triangles of the meshlets (useful for debugging)
+    // this simply marks the meshlet with a debug flag, the actual color is applied in the shader
+    void applyDebugMeshletColorsToMeshlets(GPUMeshInfo* mesh);
+    void logMeshletStats(GPUMeshInfo* mesh);
 
 private:
     size_t maxMeshes = 0; // maximum number of meshes that can be stored, set setLimits()
