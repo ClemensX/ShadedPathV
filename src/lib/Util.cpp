@@ -1196,12 +1196,12 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     md << "| Structure | Base Address (hex) | Base Address (dec) |\n";
     md << "|-----------|-------------------|-------------------|\n";
     md << "| Global GPU Memory Chunk | 0x" << std::hex << mem->address << std::dec << " | " << mem->address << " |\n";
-    md << "| Push Constants - Coll Indices | 0x" << std::hex << engine->shaders.pbrShader.gpuMemPush.collectionIndicesAddress
-        << std::dec << " | " << engine->shaders.pbrShader.gpuMemPush.collectionIndicesAddress << " |\n";
-    md << "| Push Constants - Coll Infos | 0x" << std::hex << engine->shaders.pbrShader.gpuMemPush.collectionInfosAddress
-        << std::dec << " | " << engine->shaders.pbrShader.gpuMemPush.collectionInfosAddress << " |\n";
-    md << "| Push Constants - Infos | 0x" << std::hex << engine->shaders.pbrShader.gpuMemPush.meshInfosAddress
-       << std::dec << " | " << engine->shaders.pbrShader.gpuMemPush.meshInfosAddress << " |\n\n";
+    md << "| Push Constants - Coll Indices | 0x" << std::hex << engine->shaders.pbrShader.gpuAddresses.collectionIndicesAddress
+        << std::dec << " | " << engine->shaders.pbrShader.gpuAddresses.collectionIndicesAddress << " |\n";
+    md << "| Push Constants - Coll Infos | 0x" << std::hex << engine->shaders.pbrShader.gpuAddresses.collectionInfosAddress
+        << std::dec << " | " << engine->shaders.pbrShader.gpuAddresses.collectionInfosAddress << " |\n";
+    md << "| Push Constants - Infos | 0x" << std::hex << engine->shaders.pbrShader.gpuAddresses.meshInfosAddress
+       << std::dec << " | " << engine->shaders.pbrShader.gpuAddresses.meshInfosAddress << " |\n\n";
 
     // Push Constants Details
     md << "## Push Constants Details\n\n";
@@ -1211,7 +1211,7 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     auto& gpuMeshInfos = meshStore.getGPUMeshInfos();
     
     md << "### Indices Array (`meshIndicesAddress`)\n";
-    md << "- **Address:** 0x" << std::hex << engine->shaders.pbrShader.gpuMemPush.collectionIndicesAddress << std::dec << "\n";
+    md << "- **Address:** 0x" << std::hex << engine->shaders.pbrShader.gpuAddresses.collectionIndicesAddress << std::dec << "\n";
     md << "- **Element Type:** `GPUCollectionIndex`\n";
     md << "- **Array Size:** " << gpuCollectionIndices.size() << " elements\n";
     md << "- **Total Size:** " << (gpuCollectionIndices.size() * sizeof(GPUCollectionIndex)) << " bytes\n";
@@ -1231,7 +1231,7 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     md << nonEmptyIndices << "\n\n";
     
     md << "### Infos Array (`meshInfosAddress`)\n";
-    md << "- **Address:** 0x" << std::hex << engine->shaders.pbrShader.gpuMemPush.meshInfosAddress << std::dec << "\n";
+    md << "- **Address:** 0x" << std::hex << engine->shaders.pbrShader.gpuAddresses.meshInfosAddress << std::dec << "\n";
     md << "- **Element Type:** `GPUMeshInfo` (40 bytes each)\n";
     md << "- **Array Size:** " << gpuMeshInfos.size() << " elements\n";
     md << "- **Total Size:** " << (gpuMeshInfos.size() * sizeof(GPUMeshInfo)) << " bytes\n";

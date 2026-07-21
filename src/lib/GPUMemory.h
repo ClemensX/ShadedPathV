@@ -21,7 +21,7 @@ enum BufferType {
 
 // Push constants structure for passing GPU buffer addresses to shaders
 // Make sure to match this in shader code (common_cpp_shader.h or similar)
-struct GPUMemoryPushConstants {
+struct GPUMemoryAddressConstants {
     uint64_t collectionIndicesAddress;
     uint64_t collectionInfosAddress;
     uint64_t meshInfosAddress;
@@ -35,7 +35,7 @@ struct GPUMemoryPushConstants {
 const VkPushConstantRange gpuMemoryPushConstantRange = {
     VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
     0,                              // offset
-    sizeof(GPUMemoryPushConstants)  // size
+    sizeof(GPUMemoryAddressConstants)  // size
 };
 
 // for each buffer 'BufferType' we define the structure it uses
@@ -120,9 +120,9 @@ public:
 
     // ====== RENDERING PHASE METHODS ======
 
-    // Fill push constants structure with current buffer addresses
-    // Call this once per frame/shader and pass to vkCmdPushConstants
-    void fillPushConstants(GPUMemoryPushConstants* pushConstants) const;
+    // Fill GPU memory address constants structure with current buffer addresses
+    // Call this once per frame/shader and pass to ubo
+    void fillGPUMemoryAddressConstants(GPUMemoryAddressConstants* pushConstants) const;
 
     // Copy a single element to the buffer at the specified index
     // Calls Error() if index >= maxElementCount

@@ -13,6 +13,9 @@ file(GLOB VULKAN_SHADERS
   ${ShaderFolder}/pbr.frag
   ${ShaderFolder}/pbr.task
   ${ShaderFolder}/pbr.mesh
+  ${ShaderFolder}/pbr2.frag
+  ${ShaderFolder}/pbr2.task
+  ${ShaderFolder}/pbr2.mesh
   ${ShaderFolder}/triangle.vert
   ${ShaderFolder}/triangle.frag
   ${ShaderFolder}/filtercube.vert
@@ -27,6 +30,7 @@ set(SHADER_DEPENDENCIES
   "${ShaderFolder}/pbr.vert|${ShaderFolder}/srgbtolinear.glsl"
   "${ShaderFolder}/pbr.vert|${ShaderFolder}/tonemapping.glsl"
   "${ShaderFolder}/pbr.task|${ShaderFolder}/pbr_mesh_common.glsl"
+  "${ShaderFolder}/pbr.task|${ShaderFolder}/pbr_mesh_common2.glsl"
   "${ShaderFolder}/pbr.mesh|${ShaderFolder}/debug_colors.glsl"
 )
 

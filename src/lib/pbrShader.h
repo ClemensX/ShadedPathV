@@ -70,7 +70,7 @@ public:
 		uint32_t pad0;          // pad to 16-byte multiple if desired (optional)
 		uint32_t pad1;          // pad to 16-byte multiple if desired (optional)
 		uint32_t pad2;          // pad to 16-byte multiple if desired (optional)
-		GPUMemoryPushConstants gpuMem;
+		GPUMemoryAddressConstants gpuMem;
 		glm::vec3 camPos = glm::vec3(std::numeric_limits<double>::quiet_NaN()); // signal that this is not set
 	};
 
@@ -286,7 +286,7 @@ public:
     void fillStandardFrameParams(GPUFrameParam& param);
 
 	//PBRPushConstants pushConstants = {};
-	GPUMemoryPushConstants gpuMemPush;
+	GPUMemoryAddressConstants gpuAddresses;
     DrawPushConstants drawPush = {};
     // Public accessor for logging/debugging
     uint64_t getNextFreeDynamicUniformBufferIndex() const { return nextFreeDynamicUniformBufferIndex; }

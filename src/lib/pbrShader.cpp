@@ -8,9 +8,10 @@ void PBRShader::init(ShadedPathEngine& engine, ShaderState& shaderState)
 	resources.setResourceDefinition(&vulkanResourceDefinition);
 
 	// create shader modules
-	taskShaderModule = resources.createShaderModule("test.task.spv");
-	meshShaderModule = resources.createShaderModule("pbr.mesh.spv");
-	fragShaderModule = resources.createShaderModule("pbr.frag.spv");
+	//taskShaderModule = resources.createShaderModule("test.task.spv");
+	taskShaderModule = resources.createShaderModule("pbr2.task.spv");
+	meshShaderModule = resources.createShaderModule("pbr2.mesh.spv");
+	fragShaderModule = resources.createShaderModule("pbr2.frag.spv");
 
 	// descriptor set (dynamic UBO - one large set, bind one for each object during command creation)
 	resources.createDescriptorSetResources(descriptorSetLayout, descriptorPool, this, 1);
@@ -45,7 +46,7 @@ void PBRShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 void PBRShader::initialUpload(bool listUploadedMeshes)
 {
 	// new
-	engine->globalRendering.gpuMemory.fillPushConstants(&gpuMemPush);
+	engine->globalRendering.gpuMemory.fillGPUMemoryAddressConstants(&gpuAddresses);
 	engine->mstore.uploadAllMeshes();
 	engine->globalRendering.gpuMemory.flushAllBuffers();
 
@@ -53,7 +54,7 @@ void PBRShader::initialUpload(bool listUploadedMeshes)
 	// old
 	if (false) {
 		// upload all meshes from store:
-		engine->globalRendering.gpuMemory.fillPushConstants(&gpuMemPush);
+		engine->globalRendering.gpuMemory.fillGPUMemoryAddressConstants(&gpuAddresses);
 		auto& list = engine->meshStore.getSortedList();
 		for (auto meshptr : list) {
 			engine->meshStore.uploadMesh(meshptr);
@@ -217,8 +218,8 @@ void PBRShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
 
 void PBRShader::uploadToGPU(FrameResources& fr, UniformBufferObject& ubo, UniformBufferObject& ubo2) {
     //engine->globalRendering.gpuMemory.fillPushConstants(&gpuMemPush); // already done in intialUpload()
-    ubo.gpuMem = gpuMemPush;
-    ubo2.gpuMem = gpuMemPush;
+    ubo.gpuMem = gpuAddresses;
+    ubo2.gpuMem = gpuAddresses;
     if (std::isnan(ubo.camPos.x) || std::isnan(ubo.camPos.y) || std::isnan(ubo.camPos.z)) {
         Error("PBRShader: camera position not set in UBO");
     }
@@ -457,6 +458,7 @@ void PBRSubShader::addRenderPassAndDrawCommands(FrameResources& tr, VkCommandBuf
 {
 }
 
+// TODO: reimplement with new GPU buffers 
 void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bool update)
 {
 	if (update) {

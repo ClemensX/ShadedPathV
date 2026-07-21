@@ -380,15 +380,15 @@ string GPUMemory::getBufferTypeName(BufferType type) const
     }
 }
 
-void GPUMemory::fillPushConstants(GPUMemoryPushConstants* pushConstants) const
+void GPUMemory::fillGPUMemoryAddressConstants(GPUMemoryAddressConstants* pushConstants) const
 {
     if (!pushConstants) {
-        Error("GPUMemory::fillPushConstants: pushConstants pointer is null");
+        Error("GPUMemory::fillGPUMemoryAddressConstants: pushConstants pointer is null");
         return;
     }
 
     // Zero out the structure first
-    memset(pushConstants, 0, sizeof(GPUMemoryPushConstants));
+    memset(pushConstants, 0, sizeof(GPUMemoryAddressConstants));
 
     // Fill in device addresses for each buffer type that exists
     //pushConstants->collectionIndicesAddress = getDeviceAddress(CollectionIndices);
@@ -405,7 +405,7 @@ void GPUMemory::fillPushConstants(GPUMemoryPushConstants* pushConstants) const
     //pushConstants->indexBufferAddress = getDeviceAddress(IndexBuffer);
     //pushConstants->indirectBufferAddress = getDeviceAddress(IndirectBuffer);
     //pushConstants->textureBufferAddress = getDeviceAddress(TextureBuffer);
-    Log("WARNING: GPUMemory::fillPushConstants: Filled push constants with buffer addresses: CollectionIndices=" << std::hex << pushConstants->collectionIndicesAddress <<
+    Log("WARNING: GPUMemory::fillGPUMemoryAddressConstants: Filled push constants with buffer addresses: CollectionIndices=" << std::hex << pushConstants->collectionIndicesAddress <<
         ", CollectionInfos=" << pushConstants->collectionInfosAddress <<
         ", MeshInfos=" << pushConstants->meshInfosAddress << std::dec << endl);
 }
