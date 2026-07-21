@@ -195,6 +195,15 @@ void Loader::init() {
     PBRShader::LightSource ls;
     ls.color = vec3(1.0f);
     ls.position = vec3(75.0f, 0.5f, -20.0f);
+
+    // new
+    GPUFrameParam frameParam;
+    engine->shaders.pbrShader.fillStandardFrameParams(frameParam);
+    engine->shaders.pbrShader.changeLightSource(frameParam, ls.color, ls.position);
+    frameParam.intensity = 7.0f; // adjust sun light intensity
+    engine->shaders.pbrShader.setFrameParam(frameParam, 0);
+
+    // old
     engine->shaders.pbrShader.changeLightSource(ls.color, ls.position);
     engine->shaders.pbrShader.initialUpload(true);
     engine->util.logGPUStructuresMarkdown("gpu_structures_report.md");

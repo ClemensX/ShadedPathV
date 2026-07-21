@@ -105,6 +105,25 @@ struct GPUMaterial {
 
 };
 
+// we prepare for MAX_DYNAMIC_LIGHTS entries for lights, but current implementation only supports one light source, so we only use the first entry
+
+// make sure structure matches UBOParams in pbr_mesh_common.glsl
+// holds light parameters and other global scene parameters for the PBR shader, to be uploaded to GPU.
+// these values usually remain constant for the whole frame
+struct GPUFrameParam {
+	glm::vec4 lightDir;
+	glm::vec4 lightColor;
+	float exposure = 4.5f;
+	float gamma = 2.2f;
+	float prefilteredCubeMipLevels;
+	float scaleIBLAmbient = 1.0f;
+	float debugViewInputs = 0;
+	float debugViewEquation = 0;
+	float intensity = 1.0f;
+	int type = 0; // 0=directional, 1=point, 2=spot
+};
+
+
 struct MeshFileEntry {
 	std::string name;
     int32_t meshIndex;

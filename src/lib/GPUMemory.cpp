@@ -74,19 +74,8 @@ void GPUMemory::defineBuffer(BufferType type, uint32_t elementSize, uint32_t max
     case CollectionInfos:
     case MeshInfos:
     case Models:
+    case FrameParams:
         config.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        break;
-    case VertexBuffer:
-        config.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-        break;
-    case IndexBuffer:
-        config.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-        break;
-    case IndirectBuffer:
-        config.usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-        break;
-    case TextureBuffer:
-        config.usage |= VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT;
         break;
     case None:
         config.usage |= VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
@@ -125,6 +114,7 @@ void GPUMemory::flushBuffer(BufferType type)
         VkDeviceSize bufferSize = state->config.elementSize * state->config.maxElementCount; // TODO unnecessary to copy full buffer size? Could optimize to only copy used size
         //rendering->copyBuffer(state->stagingBuffer, state->buffer, bufferSize, 0);
         rendering->copyBuffer(state->stagingBuffer, state->chunk->buffer, bufferSize, state->relDeviceAddress);
+        Log("INFO: Flushed buffer " << getBufferTypeName(type) << " from staging to device buffer, size: " << bufferSize << endl);
         // emit warning if flushing the same buffer multiple times:
         if (state->wasAlreadyFlushed) {
             Log("WARNING: Flushed buffer " << getBufferTypeName(type) << " from staging to device buffer multiple times" << endl);
@@ -385,10 +375,7 @@ string GPUMemory::getBufferTypeName(BufferType type) const
     case Models:               return "Models";
     case ModelsMoving:         return "ModelsMoving";
     case Materials:            return "Materials";
-    case VertexBuffer:         return "VertexBuffer";
-    case IndexBuffer:          return "IndexBuffer";
-    case IndirectBuffer:       return "IndirectBuffer";
-    case TextureBuffer:        return "TextureBuffer";
+    case FrameParams:          return "FrameParams";
     default:                   return "Unknown";
     }
 }
@@ -410,6 +397,7 @@ void GPUMemory::fillPushConstants(GPUMemoryPushConstants* pushConstants) const
     pushConstants->modelsAddress = getDeviceAddress(Models);
     pushConstants->modelsMovingAddress = getDeviceAddress(ModelsMoving);
     pushConstants->materialsAddress = getDeviceAddress(Materials);
+    pushConstants->frameParamsBufferAddress = getDeviceAddress(FrameParams);
 
     //pushConstants->uniformBufferAddress = getDeviceAddress(UniformBuffer);
     //pushConstants->storageBufferAddress = getDeviceAddress(StorageBuffer);

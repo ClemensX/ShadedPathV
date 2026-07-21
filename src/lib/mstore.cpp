@@ -20,6 +20,7 @@ void MStore::init() {
 	engine->globalRendering.gpuMemory.defineBuffer(BufferType::Models, sizeof(GPUModel), maxModels);
 	engine->globalRendering.gpuMemory.defineBuffer(BufferType::ModelsMoving, sizeof(GPUModel), maxMovingModels);
 	engine->globalRendering.gpuMemory.defineBuffer(BufferType::Materials, sizeof(GPUMaterial), maxMaterials);
+	engine->globalRendering.gpuMemory.defineBuffer(BufferType::FrameParams, sizeof(GPUFrameParam), MAX_DYNAMIC_LIGHTS);
 	engine->globalRendering.gpuMemory.allocateBuffers();
 
     // we need a 1 to 1 mapping of GPUMeshInfo to MeshInfoMetadata for CPU side operations, so we preallocate the vector to maxMeshes
@@ -138,6 +139,14 @@ GPUModel* MStore::getGPUModel(int32_t index) {
 
 GPUModel* MStore::getGPUMovingModel(int32_t index) {
 	return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::ModelsMoving, index);
+}
+
+GPUFrameParam* MStore::getGPUFrameParam(int32_t index) {
+	auto count = engine->globalRendering.gpuMemory.getElementCount(BufferType::FrameParams);
+	if (index < 0 || index >= count) {
+		return nullptr;
+	}
+	return engine->globalRendering.gpuMemory.getElementAddress<GPUFrameParam>(BufferType::FrameParams, index);
 }
 
 SceneObject* MStore::getSceneObject(int32_t index) {

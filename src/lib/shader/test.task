@@ -110,9 +110,7 @@ struct GPUMemoryPushConstants {
     uint64_t modelsAddress;
     uint64_t modelsMovingAddress;
     uint64_t materialsAddress;
-    uint64_t indexBufferAddressX;
-    uint64_t indirectBufferAddressX;
-    uint64_t textureBufferAddressX;
+    uint64_t frameParamsAddress;
 };
 
 // see Object.h for C++ side
@@ -160,6 +158,19 @@ struct GPUMaterial {
 
 };
 
+struct GPUFrameParam {
+	vec4 lightDir;
+    vec4 lightColor;
+	float exposure;
+	float gamma;
+	float prefilteredCubeMipLevels;
+	float scaleIBLAmbient;
+	float debugViewInputs;
+	float debugViewEquation;
+	float intensity;
+	int type; // 0=directional, 1=point, 2=spot
+};
+
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
@@ -198,6 +209,10 @@ layout(buffer_reference, std430) buffer GPUMaterialBuffer {
     GPUMaterial material[];
 };
 
+layout(buffer_reference, std430) buffer GPUFrameParamBuffer {
+    GPUFrameParam frameParam[];
+};
+
 layout(buffer_reference, std430) buffer VertexBuffer {
     PBRVertex vertex[];
 };
@@ -224,12 +239,14 @@ GPUMeshInfoBuffer gpuInfos = GPUMeshInfoBuffer(ubo.gpuMem.meshInfosAddress + 0);
 GPUModelBuffer gpuModels = GPUModelBuffer(ubo.gpuMem.modelsAddress + 0);
 GPUModelBuffer gpuModelsMoving = GPUModelBuffer(ubo.gpuMem.modelsMovingAddress + 0);
 GPUMaterialBuffer gpuMaterials = GPUMaterialBuffer(ubo.gpuMem.materialsAddress + 0);
+GPUFrameParamBuffer gpuFrameParams = GPUFrameParamBuffer(ubo.gpuMem.frameParamsAddress + 0);
 
 void printGPUBufferAddresses() {
     debugPrintfEXT("TEST TASK SHADER PUUUUSH Buffer addresses:\n  %llx \n  meshInfosAddress %llx\n", ubo.gpuMem.collectionIndicesAddress, ubo.gpuMem.meshInfosAddress);
     debugPrintfEXT("  modelsAddress %llx\n", ubo.gpuMem.modelsAddress);
     debugPrintfEXT("  modelsMovingAddress %llx\n", ubo.gpuMem.modelsMovingAddress);
     debugPrintfEXT("  materialsAddress %llx\n", ubo.gpuMem.materialsAddress);
+    debugPrintfEXT("  frameParamsAddress %llx\n", ubo.gpuMem.frameParamsAddress);
 }
 
 void printGPUMeshInfo(GPUMeshInfo info) {
@@ -276,12 +293,23 @@ void verifyMesh(uint index) {
     }
 }
 
+void verifyFrameParam(uint index) {
+    debugPrintfEXT("verify frame param %u:\n", index);
+    GPUFrameParam param = gpuFrameParams.frameParam[index];
+    debugPrintfEXT("GPUFrameParam: lightDir %f %f %f %f lightColor %f %f %f %f\n  exposure %f gamma %f prefilteredCubeMipLevels %f scaleIBLAmbient %f\n  debugViewInputs %f debugViewEquation %f intensity %f type %d\n",
+        param.lightDir.x, param.lightDir.y, param.lightDir.z, param.lightDir.w,
+        param.lightColor.x, param.lightColor.y, param.lightColor.z, param.lightColor.w,
+        param.exposure, param.gamma, param.prefilteredCubeMipLevels, param.scaleIBLAmbient,
+        param.debugViewInputs, param.debugViewEquation, param.intensity, param.type);
+}
+
 void main() {
     printGPUBufferAddresses();
 
     //verifyMesh(0);
     //verifyMaterial(0);
-    verifyModel(1);
+    //verifyModel(1);
+    verifyFrameParam(0);
 
     return;
 

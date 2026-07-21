@@ -40,6 +40,7 @@ public:
     SceneObject* getSceneObject(int32_t index);
     SceneObject* getMovingSceneObject(int32_t index);
     GPUMaterial* getGPUMaterial(int32_t index);
+    GPUFrameParam* getGPUFrameParam(int32_t index);
     // upload all meshes during init phase, called from PBRShader
     void uploadAllMeshes();
 

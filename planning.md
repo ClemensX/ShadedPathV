@@ -9,7 +9,7 @@ and only use needed values
 | ---                   | ---  | ---
 | new model array       | model matrix, BoundingBox            | for each object in scene <br> one array for each frame index
 | new material array    | Texture Indexes                      | for each mesh loaded
-| ubo                   | lights, env maps                     | global scene parameters
+| frame params (former ubo) | lights, env maps                 | global scene parameters
 
 
 | **model_ubo field**   | pbr shader (first use) | new location
@@ -20,12 +20,12 @@ and only use needed values
 | meshNumber			| *                      | new model array
 | material.lod_category | *                      | new model array
 | --	      			| mesh shader |
-| params[0]				| frag shader            | ubo (constant per frame)
+| params[0]				| frag shader            | frame params (constant per frame)
 | material				| *                      | new material array
-| uboParams.prefilteredCubeMipLevels | *         | ubo (constant per frame)
-| uboParams.scaleIBLAmbient | *                  | ubo (constant per frame)
-| uboParams.lightDir | *                         | ubo (constant per frame)
-| uboParams.intensity | *                        | ubo (constant per frame)
+| uboParams.prefilteredCubeMipLevels | *         | frame params (constant per frame)
+| uboParams.scaleIBLAmbient | *                  | frame params (constant per frame)
+| uboParams.lightDir | *                         | frame params (constant per frame)
+| uboParams.intensity | *                        | frame params (constant per frame)
 
 ### Implementation
 

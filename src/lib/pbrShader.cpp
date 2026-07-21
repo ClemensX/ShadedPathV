@@ -85,6 +85,40 @@ void PBRShader::checkForGpuLodCompatibility(WorldObject* wo)
     if (!engine->meshStore.isGPULodCompatible(wo)) Error("PBRShader: Object " + wo->mesh->id + " is not compatible with GPU LOD rendering!");
 }
 
+void PBRShader::fillStandardFrameParams(GPUFrameParam& param)
+{
+	TextureInfo* tiBrdflut = engine->textureStore.getTexture(engine->textureStore.BRDFLUT_TEXTURE_ID);
+	TextureInfo* tiIrradiance = engine->textureStore.getTexture(engine->textureStore.IRRADIANCE_TEXTURE_ID);
+	TextureInfo* tiPrefileterdEnv = engine->textureStore.getTexture(engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
+
+    if (tiBrdflut == nullptr || tiIrradiance == nullptr || tiPrefileterdEnv == nullptr) {
+        Error("PBRShader: Missing required textures for PBR rendering. Make sure to load BRDF LUT, irradiance and prefiltered environment textures before calling fillStandardFrameParams()");
+        return; // keep compiler happy
+    }
+	param.prefilteredCubeMipLevels = tiPrefileterdEnv->vulkanTexture.levelCount;
+}
+
+void PBRShader::setFrameParam(const GPUFrameParam param, int index)
+{
+	uint32_t count = engine->globalRendering.gpuMemory.getElementCount(BufferType::FrameParams);
+	if (count == 0) {
+        // GPUFrameParam array is unintialized, so we need to initialize it first
+		for (int i = 0; i < MAX_DYNAMIC_LIGHTS; i++) {
+			// Initialize each GPUFrameParam here
+            GPUFrameParam defaultParam;
+            engine->globalRendering.gpuMemory.appendElement(BufferType::FrameParams, defaultParam);
+		}
+	}
+
+    // we are sure to have an initialized array of GPUFrameParam, now we check if index is valid
+    if (index < 0 || index >= MAX_DYNAMIC_LIGHTS) {
+        Error("PBRShader: Trying to set GPUFrameParam for invalid index " + std::to_string(index));
+        return;
+    }
+	GPUFrameParam* gpuFrameParam = engine->mstore.getGPUFrameParam(0);
+	*gpuFrameParam = param;
+}
+
 void PBRShader::prefillModelParametersSingleMesh(FrameResources& fr, MeshInfo* mi, WorldObject* obj, int uboIndex)
 {
 	//Log(" WorldObject texture count: " << obj->mesh->textureInfos.size() << endl);

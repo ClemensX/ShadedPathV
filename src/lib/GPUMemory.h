@@ -16,10 +16,7 @@ enum BufferType {
     Models,
     ModelsMoving,
     Materials,
-    VertexBuffer,
-    IndexBuffer,
-    IndirectBuffer,
-    TextureBuffer
+    FrameParams
 };
 
 // Push constants structure for passing GPU buffer addresses to shaders
@@ -31,9 +28,7 @@ struct GPUMemoryPushConstants {
     uint64_t modelsAddress;
     uint64_t modelsMovingAddress;
     uint64_t materialsAddress;
-    uint64_t indexBufferAddress;
-    uint64_t indirectBufferAddress;
-    uint64_t textureBufferAddress;
+    uint64_t frameParamsBufferAddress;
 };
 
 // Define the push constant range for GPUMemory

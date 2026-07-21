@@ -264,11 +264,27 @@ public:
 		glm::vec3 position = glm::vec3(75.0f, 40.0f, 0.0f);
 	};
 	LightSource* getLightSource() { return &lightSource; }
-    void changeLightSource(glm::vec3 color, glm::vec3 position) {
+	void changeLightSource(glm::vec3 color, glm::vec3 position) {
 		if (commandBuffersCreated) Error("cannot change light source after command buffers have been created. Change for each model in app code!");
-        lightSource.color = color;
-        lightSource.position = position;
-    }
+		lightSource.color = color;
+		lightSource.position = position;
+	}
+    // we now can change the light source per frame
+	void changeLightSource(GPUFrameParam& param, glm::vec3 color, glm::vec3 position) {
+		lightSource.color = color;
+		lightSource.position = position;
+		param.lightDir = glm::vec4(glm::normalize(lightSource.position), 0.0f);
+        param.lightColor = glm::vec4(color, 1.0f);
+	}
+
+    // set GPUFrameParam for a specific frame index. This is used to set the light source and other parameters for each frame.
+	// also ensures that GPU buffers are initialized correctly.
+	void setFrameParam(const GPUFrameParam param, int index);
+
+	// fill GPUFrameParams with current light source and other parameters.
+	// Error if this is called before PBR textures are available
+    void fillStandardFrameParams(GPUFrameParam& param);
+
 	//PBRPushConstants pushConstants = {};
 	GPUMemoryPushConstants gpuMemPush;
     DrawPushConstants drawPush = {};
