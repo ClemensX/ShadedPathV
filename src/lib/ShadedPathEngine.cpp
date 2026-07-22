@@ -68,6 +68,7 @@ void ShadedPathEngine::initGlobal(string appname) {
 ShadedPathEngine::~ShadedPathEngine()
 {
     Log("Engine destructor\n");
+    if (globalRendering.device) vkDeviceWaitIdle(globalRendering.device);
     while (!windowInfos.empty()) {
         WindowInfo* lastWindowInfo = windowInfos.back();
         windowInfos.pop_back();
@@ -76,7 +77,6 @@ ShadedPathEngine::~ShadedPathEngine()
     for (auto& img : images) {
         globalRendering.destroyImage(&img);
     }
-    if (globalRendering.device) vkDeviceWaitIdle(globalRendering.device);
     if (threadsWorker) delete threadsWorker;
     //if (workerFutures) delete workerFutures;
     ThemedTimer::getInstance()->logInfo(TIMER_DRAW_FRAME);

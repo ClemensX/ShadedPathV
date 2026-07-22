@@ -137,10 +137,41 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 		if (engine->globalRendering.isValidationLayer_LegacyDetectionActive()) {
 			Log("Validation Pre-Warning: ktx library: ktxTexture2_VkUploadEx() might produce warnings if legacy-detection validation is enabled\n");
 		}
-		auto ktxresult = ktxTexture2_VkUploadEx(t2, &vdi, &texture->vulkanTexture, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		auto usage = VK_IMAGE_USAGE_SAMPLED_BIT
+			| VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+			| VK_IMAGE_USAGE_TRANSFER_DST_BIT; // required for upload copy
+		auto ktxresult = ktxTexture2_VkUploadEx(t2, &vdi, &texture->vulkanTexture, VK_IMAGE_TILING_OPTIMAL, usage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);//VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		if (ktxresult != KTX_SUCCESS) {
 			Log("ERROR: in ktxTexture2_VkUploadEx " << ktxresult);
 			Error("Could not upload texture to GPU ktxTexture2_VkUploadEx");
+		}
+		// pipeline barrier to get rid of Validation error: [ SYNC-HAZARD-WRITE-AFTER-WRITE ]
+		if (true)
+		{
+			VkCommandBuffer cmd = engine->globalRendering.beginSingleTimeCommandsIdle();
+
+			VkImageMemoryBarrier barrier{};
+			barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+			barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+			barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+			barrier.image = texture->vulkanTexture.image;
+			barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			barrier.subresourceRange.baseMipLevel = 0;
+			barrier.subresourceRange.levelCount = texture->vulkanTexture.levelCount;
+			barrier.subresourceRange.baseArrayLayer = 0;
+			barrier.subresourceRange.layerCount = kTexture->isCubemap ? 6 : 1;
+			barrier.srcAccessMask = VkAccessFlags2(0);
+			barrier.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+
+			vkCmdPipelineBarrier(
+				cmd,
+				VK_PIPELINE_STAGE_TRANSFER_BIT,
+				VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+				0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+			engine->globalRendering.endSingleTimeCommandsIdle(cmd);
 		}
 		if (texture->type == TextureType::TEXTURE_TYPE_MIPMAP_IMAGE && texture->vulkanTexture.levelCount < 2) {
 			stringstream s;
@@ -163,7 +194,10 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 		// KTX 1 handling
 		auto format = ktxTexture_GetVkFormat(kTexture);
 		//Log("format: " << format << endl);
-		auto ktxresult = ktxTexture_VkUploadEx(kTexture, &vdi, &texture->vulkanTexture, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT|VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		auto usage = VK_IMAGE_USAGE_SAMPLED_BIT
+			| VK_IMAGE_USAGE_TRANSFER_SRC_BIT
+			| VK_IMAGE_USAGE_TRANSFER_DST_BIT; // required for upload copy
+		auto ktxresult = ktxTexture_VkUploadEx(kTexture, &vdi, &texture->vulkanTexture, VK_IMAGE_TILING_OPTIMAL, usage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		if (ktxresult != KTX_SUCCESS) {
 			Log("ERROR: in ktxTexture_VkUploadEx " << ktxresult);
 			Error("Could not upload texture to GPU ktxTexture_VkUploadEx");

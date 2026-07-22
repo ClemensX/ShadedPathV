@@ -235,6 +235,16 @@ void GPUMemory::cleanup()
     }
 
     buffers.clear();
+    for (auto& chunk : gpuMemoryChunks) {
+        if (chunk.buffer != nullptr) {
+            vkDestroyBuffer(rendering->device, chunk.buffer, nullptr);
+            chunk.buffer = nullptr;
+        }
+        if (chunk.memory != nullptr) {
+            vkFreeMemory(rendering->device, chunk.memory, nullptr);
+            chunk.memory = nullptr;
+        }
+    }
 }
 
 // Private helper methods
@@ -422,7 +432,7 @@ void GPUMemory::createGPUMemoryChunk(VkDeviceSize bufferSize) {
     bufferSize = minAlign(bufferSize, 16);
     GPUMemoryChunk chunk;
     chunk.chunkNumber = (int)gpuMemoryChunks.size();
-    std::string dbgName = "global GPU memory chunk " + chunk.chunkNumber;
+    std::string dbgName = "GPUMemory global GPU memory chunk " + std::to_string(chunk.chunkNumber);
     rendering->createBuffer(bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT,
         chunk.buffer, chunk.memory, dbgName);
     chunk.address = getBufferDeviceAddress(chunk.buffer);

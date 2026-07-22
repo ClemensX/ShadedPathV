@@ -86,7 +86,7 @@ bool LoadImageDataKTX2(Image* image, const int image_idx, std::string* err,
 		createInfo.numLayers = 1;
 		createInfo.numFaces = 1;
 		createInfo.isArray = KTX_FALSE;
-		createInfo.generateMipmaps = KTX_TRUE; // Enable mipmap generation
+		createInfo.generateMipmaps = KTX_FALSE; // Enable mipmap generation
 
 		ktxTexture2* kTexture2;
 		auto result = ktxTexture2_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, (ktxTexture2**)&kTexture2);
@@ -98,75 +98,78 @@ bool LoadImageDataKTX2(Image* image, const int image_idx, std::string* err,
 			}
 			return false;
 		}
+		assert(kTexture2->numLevels == numMips);
 
-		// Copy base level image data to KTX texture
-		size_t baseImageSize = width * height * 4; // 4 channels (RGBA)
-		size_t offset;
-		result = ktxTexture_GetImageOffset((ktxTexture*)kTexture2, 0, 0, 0, &offset);
-		if (result == KTX_SUCCESS) {
-			memcpy(ktxTexture_GetData((ktxTexture*)kTexture2) + offset, imageData, baseImageSize);
-		}
+        if (true) {
+			// Copy base level image data to KTX texture
+			size_t baseImageSize = width * height * 4; // 4 channels (RGBA)
+			size_t offset;
+			result = ktxTexture_GetImageOffset((ktxTexture*)kTexture2, 0, 0, 0, &offset);
+			if (result == KTX_SUCCESS) {
+				memcpy(ktxTexture_GetData((ktxTexture*)kTexture2) + offset, imageData, baseImageSize);
+			}
 
-		// Generate mipmaps manually for each level
-		unsigned char* currentLevelData = imageData;
-		int currentWidth = width;
-		int currentHeight = height;
-		bool ownsCurrentData = false;
-        int mipsCreated = 0; // count actual mips created
+			// Generate mipmaps manually for each level
+			unsigned char* currentLevelData = imageData;
+			int currentWidth = width;
+			int currentHeight = height;
+			bool ownsCurrentData = false;
+			int mipsCreated = 0; // count actual mips created
 
-		for (uint32_t level = 1; level < numMips; level++) {
-			int nextWidth = std::max(1, currentWidth / 2);
-			int nextHeight = std::max(1, currentHeight / 2);
+			for (uint32_t level = 1; level < numMips; level++) {
+				int nextWidth = std::max(1, currentWidth / 2);
+				int nextHeight = std::max(1, currentHeight / 2);
 
-			unsigned char* nextLevelData = new unsigned char[nextWidth * nextHeight * 4];
+				unsigned char* nextLevelData = new unsigned char[nextWidth * nextHeight * 4];
 
-			// Simple box filter for mipmap generation
-			for (int y = 0; y < nextHeight; y++) {
-				for (int x = 0; x < nextWidth; x++) {
-					int srcX = x * 2;
-					int srcY = y * 2;
+				// Simple box filter for mipmap generation
+				for (int y = 0; y < nextHeight; y++) {
+					for (int x = 0; x < nextWidth; x++) {
+						int srcX = x * 2;
+						int srcY = y * 2;
 
-					// Sample 4 pixels and average them
-					for (int c = 0; c < 4; c++) {
-						int sum = 0;
-						int count = 0;
+						// Sample 4 pixels and average them
+						for (int c = 0; c < 4; c++) {
+							int sum = 0;
+							int count = 0;
 
-						for (int dy = 0; dy < 2 && (srcY + dy) < currentHeight; dy++) {
-							for (int dx = 0; dx < 2 && (srcX + dx) < currentWidth; dx++) {
-								sum += currentLevelData[((srcY + dy) * currentWidth + (srcX + dx)) * 4 + c];
-								count++;
+							for (int dy = 0; dy < 2 && (srcY + dy) < currentHeight; dy++) {
+								for (int dx = 0; dx < 2 && (srcX + dx) < currentWidth; dx++) {
+									sum += currentLevelData[((srcY + dy) * currentWidth + (srcX + dx)) * 4 + c];
+									count++;
+								}
 							}
-						}
 
-						nextLevelData[(y * nextWidth + x) * 4 + c] = sum / count;
+							nextLevelData[(y * nextWidth + x) * 4 + c] = sum / count;
+						}
 					}
 				}
-			}
 
-			// Copy mip level to KTX texture
-			result = ktxTexture_GetImageOffset((ktxTexture*)kTexture2, level, 0, 0, &offset);
-			if (result == KTX_SUCCESS) {
-				memcpy(ktxTexture_GetData((ktxTexture*)kTexture2) + offset, nextLevelData, nextWidth * nextHeight * 4);
-                mipsCreated++;
-			}
+				// Copy mip level to KTX texture
+				result = ktxTexture_GetImageOffset((ktxTexture*)kTexture2, level, 0, 0, &offset);
+				if (result == KTX_SUCCESS) {
+					memcpy(ktxTexture_GetData((ktxTexture*)kTexture2) + offset, nextLevelData, nextWidth * nextHeight * 4);
+					mipsCreated++;
+				}
 
-			// Clean up previous level if we allocated it
+				// Clean up previous level if we allocated it
+				if (ownsCurrentData) {
+					delete[] currentLevelData;
+				}
+
+				currentLevelData = nextLevelData;
+				currentWidth = nextWidth;
+				currentHeight = nextHeight;
+				ownsCurrentData = true;
+			}
 			if (ownsCurrentData) {
 				delete[] currentLevelData;
 			}
-
-			currentLevelData = nextLevelData;
-			currentWidth = nextWidth;
-			currentHeight = nextHeight;
-			ownsCurrentData = true;
 		}
 
-        Log("gltf texture loader: generated " << mipsCreated << " mipmap levels for texture " << textureId << std::endl);
+        //Log("gltf texture loader: generated " << mipsCreated << " mipmap levels for texture " << textureId << std::endl);
 
 		// Clean up
-		if (ownsCurrentData) {
-			delete[] currentLevelData;
-		}
 		stbi_image_free(imageData);
 		kTexture = (ktxTexture*)kTexture2;
 	}

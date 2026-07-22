@@ -347,7 +347,7 @@ public:
 		bufferSize = minAlign(bufferSize, 16);
 		GPUMemoryChunk chunk;
         chunk.chunkNumber = (int)gpuMemoryChunks.size();
-        std::string dbgName = "global GPU memory chunk " + chunk.chunkNumber;
+        std::string dbgName = "global GPU memory chunk " + std::to_string(chunk.chunkNumber);
 		createBuffer(bufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_2_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT,
 			chunk.buffer, chunk.memory, dbgName);
 		chunk.address = getBufferDeviceAddress(chunk.buffer);
