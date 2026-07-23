@@ -500,6 +500,9 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 	// bind global texture array:
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
 
+	// bind shader descriptor set:
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
+
 	// add draw commands for all valid objects:
 	for (int32_t objNum : statObjects) {
 		pbrShader->drawPush.objectNum = objNum;
@@ -520,6 +523,7 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 	if (engine->isStereo()) {
 		renderPassInfo.framebuffer = framebuffer2;
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet2, 0, nullptr);
 		for (int32_t objNum : statObjects) {
 			SceneObject* obj = engine->mstore.getSceneObject(objNum);
 			recordDrawCommand(commandBuffer, tr, obj, true, update);
@@ -562,14 +566,16 @@ void PBRSubShader::recordDrawCommandInternal2(VkCommandBuffer& commandBuffer, Fr
 	// TODO: add part for mesh flags: MESH_TYPE_NO_TEXTURES, MESHLET_DEBUG_COLORS
 
 	// TODO: remove later
-	uint32_t dynamicOffset = 0;
-	if (!isRightEye) {
-		// left eye
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 1, &dynamicOffset);
-	}
-	else {
-		// right eye
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet2, 1, &dynamicOffset);
+	if (false) {
+		uint32_t dynamicOffset = 0;
+		if (!isRightEye) {
+			// left eye
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 1, &dynamicOffset);
+		}
+		else {
+			// right eye
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet2, 1, &dynamicOffset);
+		}
 	}
 
 	MeshInfoMetadata* meta = engine->mstore.getMeshMetadata(meshInfo->index);

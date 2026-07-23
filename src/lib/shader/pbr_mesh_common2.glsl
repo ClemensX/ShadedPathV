@@ -65,6 +65,51 @@ struct GPUFrameParam {
 	int type; // 0=directional, 1=point, 2=spot
 };
 
+// Meshlet descriptor struct and unpack function (as in your vertex shader)
+struct MeshletDesc {
+    uint boundingBoxLow;
+    uint boundingBoxHigh;
+    uint numVertices;
+    uint numPrimitives;
+    uint vertexPack;
+    uint indexBufferOffset;
+    uint normalCone;
+};
+
+MeshletDesc unpackMeshletDesc(uvec4 packed) {
+    MeshletDesc desc;
+    uint low0 = packed.x;
+    uint low1 = packed.y;
+    uint high0 = packed.z;
+    uint high1 = packed.w;
+    desc.boundingBoxLow  = low0;
+    desc.boundingBoxHigh = low1 & 0xFFFF;
+    desc.numVertices = (low1 >> 16) & 0xFF;
+    desc.numPrimitives = (low1 >> 24) & 0xFF;
+    desc.vertexPack = high0 & 0xFF;
+    desc.indexBufferOffset = (high0 >> 8) | ((high1 & 0xFF) << 24);
+    desc.normalCone = (high1 >> 8) & 0xFFFFFF;
+    return desc;
+}
+
+// interpolated values (mesh -> frag shader)
+struct PBRVertexOut {
+    vec3 worldPos;
+    float pad0; // strange that we need padding for structure passed from mesh to frag shader...
+    vec3 normal;
+    float pad1;
+    vec2 uv0;
+    vec2 uv1;
+    //uvec4 joint0;
+    vec4 weight0;
+    vec4 color0;
+};
+
+// non interpolated values (mesh -> frag shader)
+struct PBRVertexOutFlat {
+    uvec4 joint0;
+};
+
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
@@ -117,8 +162,6 @@ struct TaskPayload {
     uint meshletIndex; // only used for discarding
     // single meshlet to draw DO NOT iterate meshletIndex, emit multiple mesh shader calls at once with EmitMeshTasksEXT(meshletsCount, 1, 1);
 };
-
-taskPayloadSharedEXT TaskPayload payload;
 
 GPUCollectionIndexBuffer gpuIndices = GPUCollectionIndexBuffer(ubo.gpuMem.collectionIndicesAddress + 0);
 GPUMeshInfoBuffer gpuInfos = GPUMeshInfoBuffer(ubo.gpuMem.meshInfosAddress + 0);

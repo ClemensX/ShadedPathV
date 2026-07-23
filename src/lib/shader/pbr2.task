@@ -9,6 +9,7 @@
 #include "common_cpp_shader.h"
 #include "pbr_mesh_common2.glsl"
 
+taskPayloadSharedEXT TaskPayload payload;
 
 // test glsl packing rules
 layout(local_size_x = 1) in; // not using the usual 32 threads per workgroup, but only 1 as we implement object culling and LOD object selection here

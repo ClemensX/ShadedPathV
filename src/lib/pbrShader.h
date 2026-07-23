@@ -25,7 +25,7 @@ public:
 
 	std::vector<VulkanResourceElement> vulkanResourceDefinition = {
 		{ VulkanResourceType::MVPBuffer },
-		{ VulkanResourceType::UniformBufferDynamic },
+//		{ VulkanResourceType::UniformBufferDynamic },
 		{ VulkanResourceType::GlobalTextureSet },
 		{ VulkanResourceType::VertexBufferStatic },
 		{ VulkanResourceType::MeshShader }
