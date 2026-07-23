@@ -382,7 +382,7 @@ public:
 
 	void createGlobalCommandBufferAndRenderPass(FrameResources& tr, bool update = false);
     // record draw command for one object, possibly containing multiple primitives
-	void recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, WorldObject* obj, bool isRightEye = false, bool update = false);
+	void recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& tr, SceneObject* obj, bool isRightEye = false, bool update = false);
 	// per frame update of UBO / MVP
 	void uploadToGPU(FrameResources& tr, PBRShader::UniformBufferObject& ubo, PBRShader::UniformBufferObject& ubo2);
 
@@ -415,6 +415,7 @@ public:
 private:
 	// record draw command for one primitive of one object
 	void recordDrawCommandInternal(VkCommandBuffer& commandBuffer, FrameResources& tr, MeshInfo* meshInfo, WorldObject* wo, bool isRightEye = false, bool update = false);
+	void recordDrawCommandInternal2(VkCommandBuffer& commandBuffer, FrameResources& tr, GPUMeshInfo* meshInfo, SceneObject* obj, bool isRightEye = false, bool update = false);
 	PBRShader* pbrShader = nullptr;
 	VulkanResources* vulkanResources = nullptr;
 	std::string name;
@@ -425,4 +426,8 @@ private:
 	ShadedPathEngine* engine = nullptr;
 	VkDevice device = nullptr;
 	FrameResources* frameResources = nullptr;
+
+	// local vars during draw command recording:
+	// TODO: do we need multi thread protection here?
+	VkCullModeFlags recording_cull_mode;
 };

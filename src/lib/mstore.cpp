@@ -226,11 +226,12 @@ void MStore::handleFlags(GPUMeshInfo& mesh, MeshFlagsCollection flags)
 }
 
 SceneObject* MStore::addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsCollection flags) {
+	auto maxMeshNumber = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos) - 1;
+	if (mesh_index < 0 || mesh_index > maxMeshNumber) {
+		Error("MStore::addObject: Invalid mesh index");
+		return nullptr; // keep compiler happy
+	}
 	if (flags.hasFlag(MeshFlags::RENDER_TYPE_MOVING)) {
-		if (mesh_index < 0 || mesh_index >= static_cast<int32_t>(movingSceneObjects.size())) {
-			Error("MStore::addObject: Invalid mesh index");
-			return nullptr; // keep compiler happy
-		}
 		// current index:
 		auto objectIndex = engine->globalRendering.gpuMemory.getElementCount(BufferType::ModelsMoving);
 		if (objectIndex >= movingSceneObjects.size()) Error("MStore::addObject: Exceeded maximum number of moving objects");
@@ -243,10 +244,6 @@ SceneObject* MStore::addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsColle
 		engine->globalRendering.gpuMemory.appendElement(BufferType::ModelsMoving, *model);
 		return obj;
 	} else {
-		if (mesh_index < 0 || mesh_index >= static_cast<int32_t>(sceneObjects.size())) {
-			Error("MStore::addObject: Invalid mesh index");
-			return nullptr; // keep compiler happy
-		}
 		// current index:
 		auto objectIndex = engine->globalRendering.gpuMemory.getElementCount(BufferType::Models);
 		if (objectIndex >= sceneObjects.size()) Error("MStore::addObject: Exceeded maximum number of stationary objects");
@@ -257,6 +254,7 @@ SceneObject* MStore::addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsColle
 		obj->pos = pos;
 		model->meshNumber = mesh_index;
 		engine->globalRendering.gpuMemory.appendElement(BufferType::Models, *model);
+		stationaryObjectIndices.push_back(objectIndex);
 		return obj;
 	}
 }

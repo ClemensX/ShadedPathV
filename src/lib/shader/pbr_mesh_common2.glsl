@@ -49,7 +49,7 @@ struct GPUMaterial {
 	int normal;
 	int occlusion;
 	int emissive;
-
+    int isDoubleSided;
 };
 
 struct GPUFrameParam {

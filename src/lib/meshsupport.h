@@ -102,7 +102,7 @@ struct GPUMaterial {
 	int32_t normal;
 	int32_t occlusion;
 	int32_t emissive;
-
+	bool isDoubleSided;
 };
 
 // we prepare for MAX_DYNAMIC_LIGHTS entries for lights, but current implementation only supports one light source, so we only use the first entry

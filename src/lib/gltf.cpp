@@ -1401,6 +1401,7 @@ void glTF::parseMeshes(tinygltf::Model& model)
 		gpuMaterialInfos[matIndex].normal = mat.normalTexture.index;
 		gpuMaterialInfos[matIndex].occlusion = mat.occlusionTexture.index;
 		gpuMaterialInfos[matIndex].emissive = mat.emissiveTexture.index;
+		gpuMaterialInfos[matIndex].isDoubleSided = mat.doubleSided;
 	}
 
     engine->mstore.addToGlobalBuffers(gpuMeshInfos, gpuMeshMetadata, gpuMaterialInfos);

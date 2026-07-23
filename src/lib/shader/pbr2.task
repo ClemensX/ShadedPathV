@@ -23,8 +23,12 @@ void main() {
     bool debugIndices = false;
     bool debugInfos = false;
     debugPrintfEXT("pbr.task ubo: frameNum %u\n", ubo.frameNum);
-    debugPrintfEXT("pbr.task push: objectNum %u\n", pushConstants.objectNum);
-    debugPrintfEXT("PBR TASK SHADER PUUUUSH: : %llx %llx\n", ubo.gpuMem.collectionIndicesAddress, ubo.gpuMem.meshInfosAddress);
+
+    GPUModel model = gpuModels.model[pushConstants.objectNum];
+    GPUMeshInfo mesh = gpuInfos.info[model.meshNumber];
+
+    debugPrintfEXT("pbr.task: draw objectNum %u from mesh %u with %u meshlets\n", pushConstants.objectNum, model.meshNumber, mesh.meshletCount);
+    //debugPrintfEXT("PBR TASK SHADER PUUUUSH: : %llx %llx\n", ubo.gpuMem.collectionIndicesAddress, ubo.gpuMem.meshInfosAddress);
 
     return;
 }

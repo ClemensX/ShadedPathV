@@ -64,6 +64,11 @@ public:
     // for moving objects, the MeshFlagsCollection should have the RENDER_TYPE_MOVING flag set.
     SceneObject* addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsCollection flags = MeshFlagsCollection());
 
+    // get the full list of stationary objects:
+    std::vector<int32_t> getStationaryObjects() {
+        return stationaryObjectIndices;
+    }
+
     // Meshlets
 
     // write meshlet data for all meshes in the collection to file, return true if successful
@@ -110,9 +115,11 @@ private:
     // maintain a list of mesh metadata for each loaded mesh, used for CPU-side operations
     std::vector<MeshInfoMetadata> meshMetadata;
 
-    // maintain a list of scene objects. Used for CPU-side of GPUModels
+    // maintain a list of scene objects. Used for CPU-side of GPUModels. These are GPU buffers. always allocated with their max entries
     std::vector<SceneObject> sceneObjects;
     std::vector<SceneObject> movingSceneObjects;
+
+    std::vector<int32_t> stationaryObjectIndices;
     // no checks, directly access cpp buffer
     GPUMeshInfo* getGPUMeshInfoInternal(int32_t index);
 };

@@ -458,7 +458,6 @@ void PBRSubShader::addRenderPassAndDrawCommands(FrameResources& tr, VkCommandBuf
 {
 }
 
-// TODO: reimplement with new GPU buffers 
 void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bool update)
 {
 	if (update) {
@@ -470,8 +469,8 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 	}
 	allocateCommandBuffer(tr, &commandBuffer, "PBR COMMAND BUFFER");
 
-    // always handle descriptors before recording commands:
-	auto& objs = engine->objectStore.getSortedList();
+	//auto& objs = engine->objectStore.getSortedList();
+	auto statObjects = engine->mstore.getStationaryObjects();
 
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -491,27 +490,19 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 	renderPassInfo.clearValueCount = 0;
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-    uint64_t meshStorageBufferDeviceAddress = engine->globalRendering.getCurrentGPUMemoryChunk()->address;
-	//vkCmdPushConstants(
-	//	commandBuffer,
-	//	pipelineLayout,
-	//	VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
-	//	0,
-	//	sizeof(PBRPushConstants),
-	//	push // your buffer address
-	//);
 
-	//vkCmdPushConstants(
-	//	commandBuffer,
-	//	pipelineLayout,
-	//	gpuMemoryPushConstantRange.stageFlags,
-	//	0,
-	//	sizeof(GPUMemoryPushConstants),
-	//	&pbrShader->gpuMemPush
-	//);
+	// init recording vars:
+	recording_cull_mode = VK_CULL_MODE_NONE;
+	
+	// set all entries we need for all objects
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+	vkCmdSetCullMode(commandBuffer, recording_cull_mode);
+	// bind global texture array:
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
+
 	// add draw commands for all valid objects:
-	for (auto obj : objs) {
-		pbrShader->drawPush.objectNum = obj->objectNum;
+	for (int32_t objNum : statObjects) {
+		pbrShader->drawPush.objectNum = objNum;
 		if (true) {
 			vkCmdPushConstants(
 				commandBuffer,
@@ -520,17 +511,17 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 				0,
 				sizeof(PBRShader::DrawPushConstants),
 				&pbrShader->drawPush
-				//sizeof(GPUMemoryPushConstants), //GPUMemoryPushConstants),
-				//&pbrShader->gpuMemPush
 			);
 		}
+		SceneObject* obj = engine->mstore.getSceneObject(objNum);
 		recordDrawCommand(commandBuffer, tr, obj, false, update);
 	}
 	vkCmdEndRenderPass(commandBuffer);
 	if (engine->isStereo()) {
 		renderPassInfo.framebuffer = framebuffer2;
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-		for (auto obj : objs) {
+		for (int32_t objNum : statObjects) {
+			SceneObject* obj = engine->mstore.getSceneObject(objNum);
 			recordDrawCommand(commandBuffer, tr, obj, true, update);
 		}
 		vkCmdEndRenderPass(commandBuffer);
@@ -555,6 +546,65 @@ void PBRSubShader::uploadToGPU(FrameResources& tr, PBRShader::UniformBufferObjec
 		vkMapMemory(device, uniformBufferMemory2, 0, sizeof(ubo2), 0, &data);
 		memcpy(data, &ubo2, sizeof(ubo2));
 		vkUnmapMemory(device, uniformBufferMemory2);
+	}
+}
+
+void PBRSubShader::recordDrawCommandInternal2(VkCommandBuffer& commandBuffer, FrameResources& tr, GPUMeshInfo* meshInfo, SceneObject* obj, bool isRightEye, bool update)
+{
+	GPUMaterial* material = engine->mstore.getGPUMaterial(meshInfo->material);
+	VkCullModeFlags cullMode = material->isDoubleSided ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT;
+	// only change cull mode if necessary
+	if (cullMode != recording_cull_mode) {
+		recording_cull_mode = cullMode;
+		vkCmdSetCullMode(commandBuffer, recording_cull_mode);
+	}
+
+	// TODO: add part for mesh flags: MESH_TYPE_NO_TEXTURES, MESHLET_DEBUG_COLORS
+
+	// TODO: remove later
+	uint32_t dynamicOffset = 0;
+	if (!isRightEye) {
+		// left eye
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 1, &dynamicOffset);
+	}
+	else {
+		// right eye
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet2, 1, &dynamicOffset);
+	}
+
+	MeshInfoMetadata* meta = engine->mstore.getMeshMetadata(meshInfo->index);
+	// meshlet resources:
+	// check HW meshlet support
+	int32_t meshletCount = meshInfo->meshletCount;
+	if (meshletCount > 0) {
+		//buf->meshletsCount = static_cast<uint32_t>(meshInfo->outMeshletDesc.size()); TODO check
+		// assert that the meshlet count is less than the max task work group count
+		bool okTasks = meshletCount < engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxTaskWorkGroupCount[0];
+		bool okMeshlets = meshletCount < engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxMeshWorkGroupCount[0];
+		if (!okTasks || !okMeshlets) {
+			Error("Meshlet count " + to_string(meshletCount) + " exceeds device limits: max task work groups " + to_string(engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxTaskWorkGroupCount[0]) +
+				", max mesh work groups " + to_string(engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxMeshWorkGroupCount[0]) +
+				" for object " + to_string(obj->index));
+		}
+	}
+	if (meshletCount > 0) {
+		// groupCountX, groupCountY, groupCountZ: number of workgroups to dispatch
+		// Dispatch one workgroup per meshlet for better driver compatibility
+		//Log("About to call vkCmdDrawMeshTasksEXT with " << obj->mesh->outMeshletDesc.size() << " meshlets" << endl);
+		if (vkCmdDrawMeshTasksEXT_ == nullptr) {
+			Log("ERROR: vkCmdDrawMeshTasksEXT function pointer is null!" << endl);
+		}
+		else {
+			// Dispatch one workgroup per meshlet instead of one workgroup for all meshlets
+			//vkCmdDrawMeshTasksEXT(commandBuffer, static_cast<uint32_t>(obj->mesh->outMeshletDesc.size()), 1, 1);
+			// only one workgroup, task shader will handle LOD selection and emit all draw calls for all meshlets
+			vkCmdDrawMeshTasksEXT(commandBuffer, 1, 1, 1);
+			//Log("Called vkCmdDrawMeshTasksEXT successfully" << endl);
+		}
+	}
+	else {
+		Log("WARNING: No meshlets found for object: " << obj->index << " Cannot render. (Maybe force enabling debug graphics.)" << endl);
+		//obj->enableDebugGraphics = true;
 	}
 }
 
@@ -625,20 +675,23 @@ void PBRSubShader::recordDrawCommandInternal(VkCommandBuffer& commandBuffer, Fra
 	}
 }
 
-void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& fr, WorldObject* obj, bool isRightEye, bool update)
+void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& fr, SceneObject* obj, bool isRightEye, bool update)
 {
-    MeshInfo* meshInfo = obj->mesh;
-	MeshInfo* primitiveMesh = engine->meshStore.getNextPrimitiveMeshForObject(obj, nullptr);
-	//primitiveMesh = engine->meshStore.getNextPrimitiveMeshForObject(obj, primitiveMesh);
-	while (primitiveMesh != nullptr) {
-		if (primitiveMesh->outMeshletDesc.size() == 0) {
-			Log("WARNING: No meshlets found for dyn object: " << obj->dynamicModelUBOIndex << " primitive " << primitiveMesh->gltfPrimitiveIndex << " Force enabling debug graphics." << endl);
-			obj->enableDebugGraphics = true;
-			return;
-		}
-		recordDrawCommandInternal(commandBuffer, fr, primitiveMesh, obj, isRightEye, update);
-		primitiveMesh = engine->meshStore.getNextPrimitiveMeshForObject(obj, primitiveMesh);
-	}
+	GPUModel* model = engine->mstore.getGPUModel(obj->index);
+	auto mesh = engine->mstore.getGPUMeshInfo(model->materialIndex);
+	recordDrawCommandInternal2(commandBuffer, fr, mesh, obj, isRightEye, update);
+ //   MeshInfo* meshInfo = obj->mesh;
+	//MeshInfo* primitiveMesh = engine->meshStore.getNextPrimitiveMeshForObject(obj, nullptr);
+	////primitiveMesh = engine->meshStore.getNextPrimitiveMeshForObject(obj, primitiveMesh);
+	//while (primitiveMesh != nullptr) {
+	//	if (primitiveMesh->outMeshletDesc.size() == 0) {
+	//		Log("WARNING: No meshlets found for dyn object: " << obj->dynamicModelUBOIndex << " primitive " << primitiveMesh->gltfPrimitiveIndex << " Force enabling debug graphics." << endl);
+	//		obj->enableDebugGraphics = true;
+	//		return;
+	//	}
+	//	recordDrawCommandInternal(commandBuffer, fr, primitiveMesh, obj, isRightEye, update);
+	//	primitiveMesh = engine->meshStore.getNextPrimitiveMeshForObject(obj, primitiveMesh);
+	//}
 }
 
 void PBRSubShader::destroy()
