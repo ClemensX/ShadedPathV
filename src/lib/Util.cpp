@@ -1680,3 +1680,11 @@ void Util::drawMeshAsLines(std::vector<LineDef>& lines, const std::vector<PBRVer
         lines.push_back(l);
     }
 }
+
+void Util::debugModels(MStore* mstore) {
+    int usedModelCount = mstore->getUsedModelCount();
+    for (int i = 0; i < usedModelCount; ++i) {
+        GPUModel* model = mstore->getGPUModel(i);
+        Log("GPUModel[" << i << "]: meshIndex=" << model->meshNumber << ", flags=" << model->flags << std::endl);
+    }
+}

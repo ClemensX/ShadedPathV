@@ -148,15 +148,20 @@ void Loader::init() {
     Util::drawMeshAsLines(lines, meshMetadata->vertices, meshMetadata->indices, Colors::Yellow);
     SceneObject* object = engine->mstore.addObject(meshInfo->index, vec3(0.0f, 0.0f, 0.0f));
     SceneObject* object2 = engine->mstore.addObject(meshInfo->index, vec3(0.1f, 0.2f, 0.3f));
-
+    // disable first object:
+    object->flags.setFlag(MeshFlags::RENDER_DISABLE);
 
     object2->rot = vec3(0.0f, 0.0f, 0.0f);
     object2->scale = vec3(1.0f);
     mat4 baseTransform = mat4(1.0); // get from gltf later
-    GPUModel* gpuModel = engine->mstore.getGPUModel(object2->index);
+    GPUModel* gpuModel = engine->mstore.getGPUModel(object->index);
+    GPUModel* gpuModel2 = engine->mstore.getGPUModel(object2->index);
+    gpuModel2->material_lod_category = 42;
+
+    object->prepareGPUModel(gpuModel, baseTransform);
+    object2->prepareGPUModel(gpuModel2, baseTransform);
+
     GPUMeshInfo* gpuMeshInfo = engine->mstore.getGPUMeshInfo(gpuModel->meshNumber);
-    object2->calculateStandardModelTransform(gpuModel->model, baseTransform);
-    gpuModel->material_lod_category = 42;
     //engine->globalRendering.gpuMemory.getElementAddress<GPUMeshInfo>(BufferType::MeshInfos, index);
 
 
@@ -202,6 +207,7 @@ void Loader::init() {
     engine->shaders.pbrShader.changeLightSource(frameParam, ls.color, ls.position);
     frameParam.intensity = 7.0f; // adjust sun light intensity
     engine->shaders.pbrShader.setFrameParam(frameParam, 0);
+    Util::debugModels(&engine->mstore);
 
     // old
     engine->shaders.pbrShader.changeLightSource(ls.color, ls.position);

@@ -36,6 +36,7 @@ public:
     GPUMeshInfo* getGPUMeshInfo(int32_t index) ;
     MeshInfoMetadata* getMeshMetadata(int32_t index);
     GPUModel* getGPUModel(int32_t index);
+    int getUsedModelCount() const;
     GPUModel* getGPUMovingModel(int32_t index);
     SceneObject* getSceneObject(int32_t index);
     SceneObject* getMovingSceneObject(int32_t index);

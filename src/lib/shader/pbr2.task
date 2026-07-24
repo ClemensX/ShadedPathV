@@ -28,7 +28,13 @@ void main() {
     GPUModel model = gpuModels.model[pushConstants.objectNum];
     GPUMeshInfo mesh = gpuInfos.info[model.meshNumber];
 
-    debugPrintfEXT("pbr.task: draw objectNum %u from mesh %u with %u meshlets\n", pushConstants.objectNum, model.meshNumber, mesh.meshletCount);
+    // check if object is disabled:
+    bool isRenderingDisabled = (model.flags & MODEL_RENDER_FLAG_DISABLE) != 0;
+    if (isRenderingDisabled) {
+        debugPrintfEXT("pbr.task: objectNum %u is disabled, skipping\n", pushConstants.objectNum);
+        return;
+    }
+    debugPrintfEXT("pbr.task: draw objectNum %u from mesh %u with %u meshlets, flags: %x\n", pushConstants.objectNum, model.meshNumber, mesh.meshletCount, model.flags);
     //debugPrintfEXT("PBR TASK SHADER PUUUUSH: : %llx %llx\n", ubo.gpuMem.collectionIndicesAddress, ubo.gpuMem.meshInfosAddress);
 
     return;

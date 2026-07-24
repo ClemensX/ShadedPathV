@@ -137,6 +137,10 @@ GPUModel* MStore::getGPUModel(int32_t index) {
 	return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::Models, index);
 }
 
+int MStore::getUsedModelCount() const {
+	return engine->globalRendering.gpuMemory.getElementCount(BufferType::Models);
+}
+
 GPUModel* MStore::getGPUMovingModel(int32_t index) {
 	return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::ModelsMoving, index);
 }
@@ -475,4 +479,29 @@ void MStore::logMeshletStats(GPUMeshInfo* mesh)
 	Log("  local Vertex indices (b4 greedy alg): " << meta->meshletsForMesh.indexVertexMap.size() << endl);
 	Log("  local Vertex indices needed         : " << localIndexCount << endl);
 	Log("  vertices: " << meta->meshletsForMesh.globalVertices.size() << endl);
+}
+
+void SceneObject::prepareGPUModel(GPUModel* gpuModel, glm::mat4& baseTransform)
+{
+	glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), rot.x, glm::vec3(1.0f, 0.0f, 0.0f));
+	glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), rot.y, glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), rot.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+	glm::mat4 rotationMatrix = rotationZ * rotationY * rotationX;
+	glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
+	glm::mat4 scaled = glm::scale(glm::mat4(1.0f), scale);
+
+	// Apply baseTransform first (rightmost), then Scale, then Rotate, then Translate:
+	gpuModel->model = trans * rotationMatrix * scaled * baseTransform;
+
+	// convert flags to GPUModel.flags:
+	if (flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
+		gpuModel->flags |= PBRShader::MODEL_RENDER_FLAG_USE_VERTEX_COLORS; // no textures, use vertex colors
+	}
+	if (flags.hasFlag(MeshFlags::MESHLET_DEBUG_COLORS)) {
+		gpuModel->flags |= PBRShader::MODEL_RENDER_FLAG_USE_VERTEX_COLORS; // no textures, use vertex colors
+	}
+	if (flags.hasFlag(MeshFlags::RENDER_DISABLE)) {
+		gpuModel->flags |= PBRShader::MODEL_RENDER_FLAG_DISABLE;
+	}
 }

@@ -5,6 +5,11 @@ struct BoundingBox {
     float pad1; // padding to align to vec4
 };
 
+const uint MODEL_RENDER_FLAG_NONE              = 0u;
+const uint MODEL_RENDER_FLAG_USE_VERTEX_COLORS = 1u << 0; // 1
+const uint MODEL_RENDER_FLAG_DISABLE           = 1u << 1; // 2
+const uint MODEL_RENDER_FLAG_GPU_LOD           = 1u << 2; // 4, enable GPU LOD object manipulation
+
 // see pbrShader.h
 struct GPUMemoryAddressConstants {
     uint64_t collectionIndicesAddress;

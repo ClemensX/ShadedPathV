@@ -1,8 +1,11 @@
 #pragma once
+
+// forward declarations:
 class ThreadResources;
 struct LineDef;
 class World;
 struct GPUMeshInfo;
+class MStore;
 
 // vulkan extensions function pointers:
 /* Put this somewhere in a header file and include it alongside (and after) vulkan.h: */
@@ -277,6 +280,7 @@ public:
     // includes: Meshes, MeshCollections, DynamicModelUBO, Meshlet info, GPU addresses
     void logGPUStructuresMarkdown(std::string filename = "");
 
+    static void debugModels(MStore* mstore);
 private:
     static uint8_t bit_reverse8(uint8_t n) {
         n = (n & 0xF0) >> 4 | (n & 0x0F) << 4;

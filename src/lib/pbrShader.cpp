@@ -563,21 +563,6 @@ void PBRSubShader::recordDrawCommandInternal2(VkCommandBuffer& commandBuffer, Fr
 		vkCmdSetCullMode(commandBuffer, recording_cull_mode);
 	}
 
-	// TODO: add part for mesh flags: MESH_TYPE_NO_TEXTURES, MESHLET_DEBUG_COLORS
-
-	// TODO: remove later
-	if (false) {
-		uint32_t dynamicOffset = 0;
-		if (!isRightEye) {
-			// left eye
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 1, &dynamicOffset);
-		}
-		else {
-			// right eye
-			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet2, 1, &dynamicOffset);
-		}
-	}
-
 	MeshInfoMetadata* meta = engine->mstore.getMeshMetadata(meshInfo->index);
 	// meshlet resources:
 	// check HW meshlet support
