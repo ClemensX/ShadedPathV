@@ -54,6 +54,7 @@ struct GPUCollectionInfo {
 	uint32_t pad0;
 };
 
+// we no longer use offets, all 64 bit addresses are absolute device addresses, TODO: rename ...offset to ...Address
 struct GPUMeshInfo {
 	uint64_t meshletOffset = 0; // offset into global mesh storage buffer
 	uint64_t localIndexOffset = 0; // offset into global mesh storage buffer
