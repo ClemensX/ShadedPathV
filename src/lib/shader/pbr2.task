@@ -20,10 +20,10 @@ void main() {
     //verifyMaterial(0);
     //verifyModel(1);
     //verifyFrameParam(0);
-
+    
     bool debugIndices = false;
     bool debugInfos = false;
-    debugPrintfEXT("pbr.task ubo: frameNum %u\n", ubo.frameNum);
+    //debugPrintfEXT("pbr.task ubo: frameNum %u\n", ubo.frameNum);
 
     GPUModel model = gpuModels.model[pushConstants.objectNum];
     GPUMeshInfo mesh = gpuInfos.info[model.meshNumber];
@@ -31,11 +31,52 @@ void main() {
     // check if object is disabled:
     bool isRenderingDisabled = (model.flags & MODEL_RENDER_FLAG_DISABLE) != 0;
     if (isRenderingDisabled) {
-        debugPrintfEXT("pbr.task: objectNum %u is disabled, skipping\n", pushConstants.objectNum);
+        //debugPrintfEXT("pbr.task: objectNum %u is disabled, skipping\n", pushConstants.objectNum);
         return;
     }
-    debugPrintfEXT("pbr.task: draw objectNum %u from mesh %u with %u meshlets, flags: %x\n", pushConstants.objectNum, model.meshNumber, mesh.meshletCount, model.flags);
-    //debugPrintfEXT("PBR TASK SHADER PUUUUSH: : %llx %llx\n", ubo.gpuMem.collectionIndicesAddress, ubo.gpuMem.meshInfosAddress);
+
+    mat4 modelmat = model.model;
+    mat4 view = ubo.view;
+    mat4 proj = ubo.proj;
+    mat4 mvp = proj * view * modelmat;
+
+    // bounding box checks:
+    if (!isRenderingDisabled) {
+        // check if object is outside frustrum
+        bool isOutside = isOutsideView(mesh.boundingBox, mvp);
+        if (isOutside) {
+            isRenderingDisabled = true;
+            debugPrintfEXT("pbr.task: objectNum %u OUTSIDE\n", pushConstants.objectNum);
+            return;
+        } else {
+            debugPrintfEXT("pbr.task: draw objectNum %u from mesh %u with %u meshlets, flags: %x\n", pushConstants.objectNum, model.meshNumber, mesh.meshletCount, model.flags);
+        }
+    }
+    // spurious error: we get here in spite of the return; above... 
+    if (isRenderingDisabled) {
+        debugPrintfEXT("ERROR!! TASK INV[%u,%u] frame %u OBJ %u disabled=%u\n", gl_WorkGroupID.x, gl_LocalInvocationID.x, ubo.frameNum, pushConstants.objectNum, isRenderingDisabled);
+        return;
+    }
+
+    vec4 posw = calcRealObjectPosition(mesh.boundingBox, modelmat);
+    vec3 realObjPos = posw.xyz;
+    float diameter = posw.w;
+
+    uint meshIndex = model.meshNumber; // default to exact mesh specified in model_ubo (for non-LOD rendering)
+    uint meshletsCount = mesh.meshletCount;
+    //debugPrintfEXT("TASK SHADER: render mesh index %u with meshletsCount %u lodEnabled=%d\n", meshIndex, meshletsCount, isGpuLodEnabled ? 1 : 0);
+    // Emit selectedCount mesh shader workgroups.
+    // We emit one mesh workgroup at a time so each gets a distinct payload.meshletIndex.
+    payload.mvp = mvp;
+    payload.meshIndex = meshIndex;
+    payload.meshletIndex = 0; // never used
+    //debugPrintfEXT("TASK SHADER: mesh loop mi %u meshletIndex %u\n", mi, payload.meshletIndex);
+    //logPayload();
+    // Optionally print once for debugging:
+    // if (mi == 0u) debugPrintfEXT("TASK: object %u LOD %u selectedCount %u dist %f\n", model_ubo.objectNum, lod, selectedCount, dist);
+    EmitMeshTasksEXT(meshletsCount, 1, 1);
+    //debugPrintfEXT("TASK[%u:%u] object %u emitting meshlet %u, is disabled == %u\n", gl_WorkGroupID.x, gl_LocalInvocationID.x, model_ubo.objectNum, meshletIndex, isRenderingDisabled ? 1 : 0);
+
 
     return;
 }

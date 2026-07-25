@@ -105,14 +105,11 @@ void GPUMemory::flushBuffer(BufferType type)
     }
 
     if (state->requiresStaging) {
-        //// get address of staging buffer memory (should already be mapped)
-        //void* stagingData = state->mappedMemory;
-        //// test: copy uint32_t to buffer starting at offset 0:
-        //uint32_t value = 42;
-        //memcpy(stagingData, &value, sizeof(uint32_t)); // just for testing, copy value as uint32_t to buffer
+        // get number of used slots in the buffer
+        auto usedElementCount = state->currentElementCount;
         // Copy from staging buffer to device buffer
-        VkDeviceSize bufferSize = state->config.elementSize * state->config.maxElementCount; // TODO unnecessary to copy full buffer size? Could optimize to only copy used size
-        //rendering->copyBuffer(state->stagingBuffer, state->buffer, bufferSize, 0);
+        VkDeviceSize bufferSize = state->config.elementSize * usedElementCount;
+
         rendering->copyBuffer(state->stagingBuffer, state->chunk->buffer, bufferSize, state->relDeviceAddress);
         Log("INFO: Flushed buffer " << getBufferTypeName(type) << " from staging to device buffer, size: " << bufferSize << endl);
         // emit warning if flushing the same buffer multiple times:

@@ -147,7 +147,7 @@ void Loader::init() {
     vector<LineDef> lines;
     Util::drawMeshAsLines(lines, meshMetadata->vertices, meshMetadata->indices, Colors::Yellow);
     SceneObject* object = engine->mstore.addObject(meshInfo->index, vec3(0.0f, 0.0f, 0.0f));
-    SceneObject* object2 = engine->mstore.addObject(meshInfo->index, vec3(0.1f, 0.2f, 0.3f));
+    SceneObject* object2 = engine->mstore.addObject(meshInfo->index, vec3(20.1f, 0.2f, 0.3f));
     // disable first object:
     object->flags.setFlag(MeshFlags::RENDER_DISABLE);
 

@@ -175,8 +175,73 @@ GPUModelBuffer gpuModelsMoving = GPUModelBuffer(ubo.gpuMem.modelsMovingAddress +
 GPUMaterialBuffer gpuMaterials = GPUMaterialBuffer(ubo.gpuMem.materialsAddress + 0);
 GPUFrameParamBuffer gpuFrameParams = GPUFrameParamBuffer(ubo.gpuMem.frameParamsAddress + 0);
 
+// utility functions
 
-// util methods
+// calc obj position as middle of bounding bos in world coords, diameter is returned in .w component of return value
+vec4 calcRealObjectPosition(BoundingBox bb, mat4 mvp) {
+    vec3 realObjPos;
+    // get BB in world coords:
+    BoundingBox bbWorld = bb;
+    vec4 bbMinWorld = mvp * vec4(bb.min, 1.0);
+    vec4 bbMaxWorld = mvp * vec4(bb.max, 1.0);
+    bbWorld.min = bbMinWorld.xyz / bbMinWorld.w;
+    bbWorld.max = bbMaxWorld.xyz / bbMaxWorld.w;
+    // diameter is always bb max - bb min
+    float diameter = length(bbWorld.max - bbWorld.min);
+    //debugPrintfEXT("TASK SHADER: BB %f %f %f --> %f %f %f\n", bbWorld.min.x, bbWorld.min.y, bbWorld.min.z, bbWorld.max.x, bbWorld.max.y, bbWorld.max.z);
+    //if (model_ubo.objectNum == 0) debugPrintfEXT("TASK SHADER: object %u calc diameter %f , flags %d\n", model_ubo.objectNum, diameter, model_ubo.flags);
+    // calc object position as middle of BB:
+    realObjPos = (bbWorld.min + bbWorld.max) * 0.5f;
+    // log realObjPos:
+    //debugPrintfEXT("UTIL: realObjPos %f %f %f, diameter %f\n", realObjPos.x, realObjPos.y, realObjPos.z, diameter);
+    return vec4(realObjPos, diameter);
+}
+
+// check if object AABB is completely outside view frustrum
+bool isOutsideView(BoundingBox bb, mat4 mvp) {
+    vec3 aabbMin = bb.min;
+    vec3 aabbMax = bb.max;
+
+    // generate 8 corners of AABB:
+    vec3 corners[8];
+    corners[0] = vec3(aabbMin.x, aabbMin.y, aabbMin.z);
+    corners[1] = vec3(aabbMax.x, aabbMin.y, aabbMin.z);
+    corners[2] = vec3(aabbMin.x, aabbMax.y, aabbMin.z);
+    corners[3] = vec3(aabbMax.x, aabbMax.y, aabbMin.z);
+    corners[4] = vec3(aabbMin.x, aabbMin.y, aabbMax.z);
+    corners[5] = vec3(aabbMax.x, aabbMin.y, aabbMax.z);
+    corners[6] = vec3(aabbMin.x, aabbMax.y, aabbMax.z);
+    corners[7] = vec3(aabbMax.x, aabbMax.y, aabbMax.z);
+
+    // Transform corners to clip space
+    vec4 clipCorners[8];
+    for (int i = 0; i < 8; ++i) {
+        clipCorners[i] = mvp * vec4(corners[i], 1.0);
+    }
+
+    // For each plane, if all corners are outside, the object is outside the frustum:
+    bool outside = false;
+    for (int plane = 0; plane < 6; ++plane) {
+        int outCount = 0;
+        for (int i = 0; i < 8; ++i) {
+            vec4 c = clipCorners[i];
+            if (plane == 0 && c.x < -c.w) outCount++; // left
+            if (plane == 1 && c.x >  c.w) outCount++; // right
+            if (plane == 2 && c.y < -c.w) outCount++; // bottom
+            if (plane == 3 && c.y >  c.w) outCount++; // top
+            if (plane == 4 && c.z <  0.0) outCount++; // near (Vulkan)
+            if (plane == 5 && c.z >  c.w) outCount++; // far
+        }
+        if (outCount == 8) {
+            outside = true;
+            break;
+        }
+    }
+
+    return outside;
+}
+
+// info and debug methods
 
 void printGPUBufferAddresses() {
     debugPrintfEXT("PBR TASK SHADER PUUUUSH Buffer addresses:\n  %llx \n  meshInfosAddress %llx\n", ubo.gpuMem.collectionIndicesAddress, ubo.gpuMem.meshInfosAddress);
