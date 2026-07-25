@@ -87,12 +87,41 @@ struct SceneObject {
 };
 
 struct GPUMaterial {
-	int32_t baseColor;
-	int32_t metallicRoughness;
-	int32_t normal;
-	int32_t occlusion;
-	int32_t emissive;
+	glm::vec4 baseColorFactor;
+	glm::vec4 emissiveFactor;
+	glm::vec4 diffuseFactor;
+	glm::vec4 specularFactor;
+
+	float workflow;
+
+    // indices into global texture array, -1 if not used
+	int baseColorTextureSet;
+	int physicalDescriptorTextureSet;
+	int normalTextureSet;
+	int occlusionTextureSet;
+	int emissiveTextureSet;
+	int brdflut;
+	int irradiance;
+	int envcube;
+
+	float metallicFactor;
+	float roughnessFactor;
+	float alphaMask;
+	float alphaMaskCutoff;
+	float emissiveStrength;
+
+	uint32_t lod_category;
+	uint32_t pad0;
+
+    // texture coordinate sets, 0 or 1
+	uint32_t coord_set_baseColor = 0;
+	uint32_t coord_set_metallicRoughness = 0;
+	uint32_t coord_set_specularGlossiness = 0;
+	uint32_t coord_set_normal = 0;
+	uint32_t coord_set_occlusion = 0;
+	uint32_t coord_set_emissive = 0;
 	bool isDoubleSided;
+	uint32_t pad1; // 4 bytes of padding to align the next member to 16 bytes. Do not use array on glsl side!!!
 };
 
 // we prepare for MAX_DYNAMIC_LIGHTS entries for lights, but current implementation only supports one light source, so we only use the first entry

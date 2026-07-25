@@ -1396,11 +1396,11 @@ void glTF::parseMeshes(tinygltf::Model& model)
     for (int matIndex = 0; matIndex < (int)model.materials.size(); ++matIndex) {
         auto& mat = model.materials[matIndex];
         // fill gpuMaterialInfos[matIndex] with data from mat
-		gpuMaterialInfos[matIndex].baseColor = mat.pbrMetallicRoughness.baseColorTexture.index;
-		gpuMaterialInfos[matIndex].metallicRoughness = mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
-		gpuMaterialInfos[matIndex].normal = mat.normalTexture.index;
-		gpuMaterialInfos[matIndex].occlusion = mat.occlusionTexture.index;
-		gpuMaterialInfos[matIndex].emissive = mat.emissiveTexture.index;
+		gpuMaterialInfos[matIndex].baseColorTextureSet = mat.pbrMetallicRoughness.baseColorTexture.index;
+		gpuMaterialInfos[matIndex].physicalDescriptorTextureSet = mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
+		gpuMaterialInfos[matIndex].normalTextureSet = mat.normalTexture.index;
+		gpuMaterialInfos[matIndex].occlusionTextureSet = mat.occlusionTexture.index;
+		gpuMaterialInfos[matIndex].emissiveTextureSet = mat.emissiveTexture.index;
 		gpuMaterialInfos[matIndex].isDoubleSided = mat.doubleSided;
 	}
 

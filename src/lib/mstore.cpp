@@ -193,11 +193,11 @@ void MStore::addToGlobalBuffers(const std::vector<GPUMeshInfo>& gpuMeshInfos, co
 
 	for (const auto& material : gpuMaterialInfos) {
 		GPUMaterial globalMaterial = material;
-		if (globalMaterial.baseColor >= 0)         globalMaterial.baseColor = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.baseColor));
-		if (globalMaterial.emissive >= 0)          globalMaterial.emissive = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.emissive));
-        if (globalMaterial.metallicRoughness >= 0) globalMaterial.metallicRoughness = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.metallicRoughness));
-        if (globalMaterial.normal >= 0)            globalMaterial.normal = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.normal));
-        if (globalMaterial.occlusion >= 0)         globalMaterial.occlusion = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.occlusion));
+		if (globalMaterial.baseColorTextureSet >= 0)         globalMaterial.baseColorTextureSet = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.baseColorTextureSet));
+		if (globalMaterial.emissiveTextureSet >= 0)          globalMaterial.emissiveTextureSet = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.emissiveTextureSet));
+        if (globalMaterial.physicalDescriptorTextureSet >= 0) globalMaterial.physicalDescriptorTextureSet = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.physicalDescriptorTextureSet));
+        if (globalMaterial.normalTextureSet >= 0)            globalMaterial.normalTextureSet = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.normalTextureSet));
+        if (globalMaterial.occlusionTextureSet >= 0)         globalMaterial.occlusionTextureSet = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.occlusionTextureSet));
 
 		engine->globalRendering.gpuMemory.appendElement(BufferType::Materials, globalMaterial);
 	}

@@ -49,12 +49,41 @@ struct GPUModel {
 };
 
 struct GPUMaterial {
-	int baseColor;
-	int metallicRoughness;
-	int normal;
-	int occlusion;
-	int emissive;
-    int isDoubleSided;
+	vec4 baseColorFactor;
+	vec4 emissiveFactor;
+	vec4 diffuseFactor;
+	vec4 specularFactor;
+
+	float workflow;
+
+    // indices into global texture array, -1 if not used
+	int baseColorTextureSet;
+	int physicalDescriptorTextureSet;
+	int normalTextureSet;	
+	int occlusionTextureSet;
+	int emissiveTextureSet;
+	int brdflut;
+	int irradiance;
+	int envcube;
+
+	float metallicFactor;	
+	float roughnessFactor;	
+	float alphaMask;	
+	float alphaMaskCutoff;
+	float emissiveStrength;
+
+	uint lod_category;
+	uint pad0;
+
+    // texture coordinate sets, 0 or 1
+	uint coord_set_baseColor;
+	uint coord_set_metallicRoughness;
+	uint coord_set_specularGlossiness;
+	uint coord_set_normal;
+	uint coord_set_occlusion;
+	uint coord_set_emissive;
+	bool isDoubleSided;
+	uint pad1; // 4 bytes of padding to align the next member to 16 bytes. Do not use array on glsl side!!!
 };
 
 struct GPUFrameParam {
@@ -333,8 +362,8 @@ void verifyModel(uint index) {
 void verifyMaterial(uint index) {
     debugPrintfEXT("verify material %u:\n", index);
     GPUMaterial material = gpuMaterials.material[index];
-    debugPrintfEXT("GPUMaterial: baseColor %d metallicRoughness %d normal %d occlusion %d emissive %d\n",
-        material.baseColor, material.metallicRoughness, material.normal, material.occlusion, material.emissive);
+    debugPrintfEXT("GPUMaterial: baseColorTextureSet %d physicalDescriptorTextureSet %d normalTextureSet %d occlusionTextureSet %d emissiveTextureSet %d\n",
+        material.baseColorTextureSet, material.physicalDescriptorTextureSet, material.normalTextureSet, material.occlusionTextureSet, material.emissiveTextureSet);
 }
 
 void verifyMesh(uint index) {

@@ -202,14 +202,14 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives) {
 
     // access newest mesh info, from the file just loaded:
     const GPUMaterial* material = mstore.getGPUMaterial(meshInfo->material);
-    EXPECT_GT(material->baseColor, 0);
-    EXPECT_GT(material->metallicRoughness, 0);
-    EXPECT_GT(material->normal, 0);
-    EXPECT_TRUE(material->occlusion == -1);
-    EXPECT_TRUE(material->emissive == -1);
+    EXPECT_GT(material->baseColorTextureSet, 0);
+    EXPECT_GT(material->physicalDescriptorTextureSet, 0);
+    EXPECT_GT(material->normalTextureSet, 0);
+    EXPECT_TRUE(material->occlusionTextureSet == -1);
+    EXPECT_TRUE(material->emissiveTextureSet == -1);
 
-    auto* texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->baseColor));
-    //Log("Texture: global index = " << material->baseColor << ", id = " << texInfo->id << ", filename = " << texInfo->filename << "\n");
+    auto* texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->baseColorTextureSet));
+    //Log("Texture: global index = " << material->baseColorTextureSet << ", id = " << texInfo->id << ", filename = " << texInfo->filename << "\n");
 
     // Example validations:
     // 1. Check if texture has expected color distribution
@@ -239,13 +239,13 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives) {
     colorResult = TextureAnalyzer::validateDominantColor(stats, darkRedColor, 0.50f);
     EXPECT_TRUE(colorResult.passed) << colorResult.message;
 
-    texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->metallicRoughness));
+    texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->physicalDescriptorTextureSet));
     stats = TextureAnalyzer::analyzeTexture(engine, texInfo);
     EXPECT_TRUE(TextureAnalyzer::isSolidColor(stats));
     colorResult = TextureAnalyzer::validateDominantColor(stats, greenColor, 1.00f);
     EXPECT_TRUE(colorResult.passed) << colorResult.message;
 
-    texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->normal));
+    texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->normalTextureSet));
     stats = TextureAnalyzer::analyzeTexture(engine, texInfo);
     EXPECT_TRUE(TextureAnalyzer::isSolidColor(stats));
     colorResult = TextureAnalyzer::validateDominantColor(stats, normalColor, 1.00f);
@@ -272,14 +272,14 @@ TEST_F(GLTFParserTest, SingleMesh_CheckShaderData) {
     EXPECT_NE(material, nullptr);
 
     // material and textures
-    EXPECT_GT(material->baseColor, 0);
-    EXPECT_GT(material->metallicRoughness, 0);
-    EXPECT_GT(material->normal, 0);
-    TextureInfo* texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->baseColor));
+    EXPECT_GT(material->baseColorTextureSet, 0);
+    EXPECT_GT(material->physicalDescriptorTextureSet, 0);
+    EXPECT_GT(material->normalTextureSet, 0);
+    TextureInfo* texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->baseColorTextureSet));
     EXPECT_NE(texInfo, nullptr);
-    texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->metallicRoughness));
+    texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->physicalDescriptorTextureSet));
     EXPECT_NE(texInfo, nullptr);
-    texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->normal));
+    texInfo = engine->textureStore.getTextureByIndex(static_cast<uint32_t>(material->normalTextureSet));
     EXPECT_NE(texInfo, nullptr);
 
     // mesh vertex data:
