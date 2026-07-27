@@ -18,6 +18,7 @@ layout(location = 1) in PBRVertexOut inVert; // flat removed
 GPUModel model = gpuModels.model[pushConstants.objectNum];
 GPUMeshInfo mesh = gpuInfos.info[model.meshNumber];
 GPUMaterial material = gpuMaterials.material[mesh.material];
+GPUFrameParam uboParams = gpuFrameParams.frameParam[0];
 
 // mode 0: pbr metallic roughness
 // mode 1: only use vertex color
@@ -49,8 +50,6 @@ vec4 textureBindless2D(uint textureid, vec2 uv) {
 	vec2 wrappedUV = uv;
 	return texture(global_textures2d[nonuniformEXT(textureid)], wrappedUV);
 }
-
-GPUFrameParam uboParams = gpuFrameParams.frameParam[0];
 
 // Encapsulate the various inputs used by the various functions in the shading equation
 // We store values in this struct to simplify the integration of alternative implementations
@@ -109,12 +108,12 @@ vec3 getIBLContribution(PBRInfo pbrInputs, vec3 n, vec3 reflection, GPUMaterial 
 	// retrieve a scale and bias to F0. See [1], Figure 3
 	//textureBindless2D(material.baseColorTextureSet
 	//n.y -= n.y;
-	vec3 brdf = (textureBindless2D(material.brdflut, vec2(pbrInputs.NdotV, 1.0 - pbrInputs.perceptualRoughness))).rgb;
-	vec3 diffuseLight = SRGBtoLINEAR(tonemap(textureBindless3D(material.irradiance, n))).rgb;
+	vec3 brdf = (textureBindless2D(uboParams.brdflut, vec2(pbrInputs.NdotV, 1.0 - pbrInputs.perceptualRoughness))).rgb;
+	vec3 diffuseLight = SRGBtoLINEAR(tonemap(textureBindless3D(uboParams.irradiance, n))).rgb;
 
 	vec3 myref = reflection;
 	//myref.y = -myref.y;
-	vec3 specularLight = SRGBtoLINEAR(tonemap(textureBindless3DLod(material.envcube, myref, lod))).rgb;
+	vec3 specularLight = SRGBtoLINEAR(tonemap(textureBindless3DLod(uboParams.envcube, myref, lod))).rgb;
 	//specularLight = vec3(0.0); // disable IBL for now
 
 	vec3 diffuse = diffuseLight * pbrInputs.diffuseColor;
@@ -248,6 +247,85 @@ void main() {
 		}
 	}
 
+	baseColor *= inColor0;
+
+	diffuseColor = baseColor.rgb * (vec3(1.0) - f0);
+	diffuseColor *= 1.0 - metallic;
+		
+	float alphaRoughness = perceptualRoughness * perceptualRoughness;
+
+	vec3 specularColor = mix(f0, baseColor.rgb, metallic);
+
+	// Compute reflectance.
+	float reflectance = max(max(specularColor.r, specularColor.g), specularColor.b);
+	//debugPrintfEXT("reflectance %f\n", reflectance);
+
+	// For typical incident reflectance range (between 4% to 100%) set the grazing reflectance to 100% for typical fresnel effect.
+	// For very low reflectance range on highly diffuse objects (below 4%), incrementally reduce grazing reflecance to 0%.
+	float reflectance90 = clamp(reflectance * 25.0, 0.0, 1.0);
+	vec3 specularEnvironmentR0 = specularColor.rgb;
+	vec3 specularEnvironmentR90 = vec3(1.0, 1.0, 1.0) * reflectance90;
+
+	vec3 n = (material.normalTextureSet > -1) ? getNormal(material) : normalize(inNormal);
+	//n.y *= -1.0f;
+	vec3 v = normalize(camPos - inWorldPos);    // Vector from surface point to camera
+	vec3 l = normalize(uboParams.lightDir.xyz);     // Vector from surface point to light
+	vec3 h = normalize(l+v);                        // Half vector between both l and v
+	vec3 reflection = normalize(reflect(-v, n));
+	//reflection.y = -reflection.y;
+
+	float NdotL = clamp(dot(n, l), 0.001, 1.0);
+	float NdotV = clamp(abs(dot(n, v)), 0.001, 1.0);
+	float NdotH = clamp(dot(n, h), 0.0, 1.0);
+	float LdotH = clamp(dot(l, h), 0.0, 1.0);
+	float VdotH = clamp(dot(v, h), 0.0, 1.0);
+
+	PBRInfo pbrInputs = PBRInfo(
+		NdotL,
+		NdotV,
+		NdotH,
+		LdotH,
+		VdotH,
+		perceptualRoughness,
+		metallic,
+		specularEnvironmentR0,
+		specularEnvironmentR90,
+		alphaRoughness,
+		diffuseColor,
+		specularColor
+	);
+
+	// Calculate the shading terms for the microfacet specular shading model
+	vec3 F = specularReflection(pbrInputs);
+	float G = geometricOcclusion(pbrInputs);
+	float D = microfacetDistribution(pbrInputs);
+
+	vec3 u_LightColor = vec3(1.0) * uboParams.intensity;
+
+	// Calculation of analytical lighting contribution
+	vec3 diffuseContrib = (1.0 - F) * diffuse(pbrInputs);
+	vec3 specContrib = F * G * D / (4.0 * NdotL * NdotV);
+	// Obtain final intensity as reflectance (BRDF) scaled by the energy of the light (cosine law)
+	vec3 color = NdotL * u_LightColor * (diffuseContrib + specContrib);
+
+	// Calculate lighting contribution from image based lighting source (IBL)
+	color += getIBLContribution(pbrInputs, n, reflection, material);
+
+	const float u_OcclusionStrength = 1.0f;
+	// Apply optional PBR terms for additional (optional) shading
+	if (material.occlusionTextureSet > -1) {
+		float ao = textureBindless2D(material.occlusionTextureSet, (material.coord_set_occlusion == 0 ? inUV0 : inUV1)).r;
+		color = mix(color, color * ao, u_OcclusionStrength);
+	}
+
+	vec3 emissive = material.emissiveFactor.rgb * material.emissiveStrength;
+	if (material.emissiveTextureSet > -1) {
+		emissive *= SRGBtoLINEAR(textureBindless2D(material.emissiveTextureSet, material.coord_set_emissive == 0 ? inUV0 : inUV1)).rgb;
+	};
+	color += emissive;
+	
+	outColor = vec4(color, baseColor.a);
+
 	//outColor = vec4(1, 1, 1, 1);
-	outColor = baseColor;
+	//outColor = baseColor;
 }

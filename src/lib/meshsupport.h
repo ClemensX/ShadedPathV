@@ -108,9 +108,9 @@ struct GPUMaterial {
 	int normalTextureSet;
 	int occlusionTextureSet;
 	int emissiveTextureSet;
-	int brdflut;
-	int irradiance;
-	int envcube;
+	int brdflutXXX;
+	int irradianceXXX;
+	int envcubeXXX;
 
 	float metallicFactor;
 	float roughnessFactor;
@@ -165,6 +165,9 @@ struct GPUFrameParam {
 	float debugViewEquation = 0;
 	float intensity = 1.0f;
 	int type = 0; // 0=directional, 1=point, 2=spot
+	int brdflut;
+	int irradiance;
+	int envcube;
 };
 
 

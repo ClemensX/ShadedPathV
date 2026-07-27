@@ -62,9 +62,9 @@ struct GPUMaterial {
 	int normalTextureSet;	
 	int occlusionTextureSet;
 	int emissiveTextureSet;
-	int brdflut;
-	int irradiance;
-	int envcube;
+	int brdflutXXX;
+	int irradianceXXX;
+	int envcubeXXX;
 
 	float metallicFactor;	
 	float roughnessFactor;	
@@ -97,6 +97,9 @@ struct GPUFrameParam {
 	float debugViewEquation;
 	float intensity;
 	int type; // 0=directional, 1=point, 2=spot
+	int brdflut;
+	int irradiance;
+	int envcube;
 };
 
 // Meshlet descriptor struct and unpack function (as in your vertex shader)
@@ -366,6 +369,7 @@ void verifyMaterial(uint index) {
         material.baseColorTextureSet, material.physicalDescriptorTextureSet, material.normalTextureSet, material.occlusionTextureSet, material.emissiveTextureSet);
     debugPrintfEXT("\n  lod: %d", material.lod_category);
     debugPrintfEXT("\n  alphaMask: %f", material.alphaMask);
+    //debugPrintfEXT("\n  brdflut: %d irradiance: %d envcube: %d", material.brdflut, material.irradiance, material.envcube);
     debugPrintfEXT("\n");
 }
 
@@ -389,4 +393,5 @@ void verifyFrameParam(uint index) {
         param.lightColor.x, param.lightColor.y, param.lightColor.z, param.lightColor.w,
         param.exposure, param.gamma, param.prefilteredCubeMipLevels, param.scaleIBLAmbient,
         param.debugViewInputs, param.debugViewEquation, param.intensity, param.type);
+    debugPrintfEXT("  brdflut %d irradiance %d envcube %d\n", param.brdflut, param.irradiance, param.envcube);
 }

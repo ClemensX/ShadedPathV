@@ -132,7 +132,8 @@ void Loader::init() {
     MeshFlagsCollection flags;
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
     MStore& mstore = engine->mstore;
-    engine->mstore.loadMesh("test/cube_single.gltf", "SingleMesh", flags);
+    //engine->mstore.loadMesh("test/cube_single.gltf", "SingleMesh", flags);
+    engine->mstore.loadMesh("loadingbox_cmp.glb", "SingleMesh", flags);
     auto loaded = mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
     auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
     const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);

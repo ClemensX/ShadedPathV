@@ -96,6 +96,9 @@ void PBRShader::fillStandardFrameParams(GPUFrameParam& param)
         Error("PBRShader: Missing required textures for PBR rendering. Make sure to load BRDF LUT, irradiance and prefiltered environment textures before calling fillStandardFrameParams()");
         return; // keep compiler happy
     }
+    param.brdflut = tiBrdflut->index;
+    param.irradiance = tiIrradiance->index;
+    param.envcube = tiPrefileterdEnv->index;
 	param.prefilteredCubeMipLevels = tiPrefileterdEnv->vulkanTexture.levelCount;
 }
 

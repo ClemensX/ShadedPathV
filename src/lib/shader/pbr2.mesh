@@ -28,13 +28,9 @@ GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(mesh.globalIndexOffset);
 PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(mesh.localIndexOffset);
 VertexBuffer vertices = VertexBuffer(mesh.vertexOffset);
 
-//MeshletDescs meshletDescs = MeshletDescs(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].meshletOffset);
-//GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].globalIndexOffset);
-//PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].localIndexOffset);
-//VertexBuffer vertices = VertexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].vertexOffset);
-//
 void main() {
-    verifyMaterial(0);
+    //verifyMaterial(0);
+    verifyFrameParam(0);
     // check for culled objects:
     if (payload.meshletIndex == PAYLOAD_CULLED || payload.meshletIndex > mesh.meshletCount) {
         //debugPrintfEXT("MESH SHADER: payload.meshletIndex: %u\n", payload.meshletIndex);
@@ -130,7 +126,7 @@ void main() {
 //            outVert[v].color0 = vec4(debugColor, 1.0); // apply debug color to vertex color
 //        }
     }
-        
+       
 
     // 2. Emit triangles using local indices from primitiveIndexBuffer
     // Each triangle is 3 bytes (local indices into meshlet vertex array)

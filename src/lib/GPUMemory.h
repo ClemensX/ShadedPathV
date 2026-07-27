@@ -33,7 +33,7 @@ struct GPUMemoryAddressConstants {
 
 // Define the push constant range for GPUMemory
 const VkPushConstantRange gpuMemoryPushConstantRange = {
-    VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT,
+    VK_SHADER_STAGE_TASK_BIT_EXT | VK_SHADER_STAGE_MESH_BIT_EXT | VK_SHADER_STAGE_FRAGMENT_BIT,
     0,                              // offset
     sizeof(GPUMemoryAddressConstants)  // size
 };
