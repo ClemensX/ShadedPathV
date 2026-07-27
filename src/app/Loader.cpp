@@ -161,8 +161,11 @@ void Loader::init() {
     object->prepareGPUModel(gpuModel, baseTransform);
     object2->prepareGPUModel(gpuModel2, baseTransform);
 
+    // debug info material:
+    GPUMaterial* mat = engine->mstore.getGPUMaterial(meshInfo->material);
+    Util::debugMaterial(&engine->mstore, meshInfo->material);
+
     GPUMeshInfo* gpuMeshInfo = engine->mstore.getGPUMeshInfo(gpuModel->meshNumber);
-    //engine->globalRendering.gpuMemory.getElementAddress<GPUMeshInfo>(BufferType::MeshInfos, index);
 
 
     // 2 square km world size

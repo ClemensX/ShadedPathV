@@ -7,7 +7,14 @@
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
 
 #include "common_cpp_shader.h"
+#include "pbr_mesh_common2.glsl"
 
+taskPayloadSharedEXT TaskPayload payload;
+
+// test glsl packing rules
+layout(local_size_x = 1) in; // not using the usual 32 threads per workgroup, but only 1 as we implement object culling and LOD object selection here
+
+#if 0
 // to throw away later
 struct UBOParams {
 	vec4 lightDir;
@@ -303,19 +310,21 @@ void verifyFrameParam(uint index) {
         param.debugViewInputs, param.debugViewEquation, param.intensity, param.type);
 }
 
+#endif 
+
 void main() {
-    printGPUBufferAddresses();
+    //printGPUBufferAddresses();
 
     //verifyMesh(0);
-    //verifyMaterial(0);
+    verifyMaterial(0);
     //verifyModel(1);
-    verifyFrameParam(0);
+    //verifyFrameParam(0);
 
     return;
 
     bool debugIndices = false;
     bool debugInfos = false;
-    UboInstanceData wo = model_ubo.data; // just to test if we can read the data correctly, throw away later
+    //UboInstanceData wo = model_ubo.data; // just to test if we can read the data correctly, throw away later
     //uint meshIndex = 42;
     //debugPrintfEXT("test.task main: meshIndex %u\n", meshIndex);
     //uint meshletsCount = gpuInfos.info[meshIndex].meshletCount;
@@ -324,7 +333,7 @@ void main() {
     debugPrintfEXT("test.task ubo: frameNum %u\n", ubo.frameNum);
     //if (pushConstants.objectNum > 139000)
     debugPrintfEXT("test.task push: objectNum %u\n", pushConstants.objectNum);
-    debugPrintfEXT("test.task model_ubo.meshNumber: %u pos %f %f %f\n", wo.meshNumber, wo.objPos.x, wo.objPos.y, wo.objPos.z);
+    //debugPrintfEXT("test.task model_ubo.meshNumber: %u pos %f %f %f\n", wo.meshNumber, wo.objPos.x, wo.objPos.y, wo.objPos.z);
     debugPrintfEXT("TEST TASK SHADER PUUUUSH: : %llx %llx\n", ubo.gpuMem.collectionIndicesAddress, ubo.gpuMem.meshInfosAddress);
     if (debugIndices) {
         debugPrintfEXT("TEST TASK SHADER gpuIndices (0..4):\n");

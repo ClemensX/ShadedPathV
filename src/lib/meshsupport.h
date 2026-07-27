@@ -2,6 +2,14 @@
 
 #pragma once
 
+struct KHRTextureTransform {
+	bool present = false;
+	glm::vec2 offset{ 0.0f, 0.0f };
+	glm::vec2 scale{ 1.0f, 1.0f };
+	float rotation = 0.0f; // radians
+	int texCoordOverride = -1; // -1 means use TextureInfo.texCoord
+};
+
 // mesh and object flags, some are only useful for gltf file loading, some for object instances
 enum class MeshFlags : int {
 	MESH_TYPE_INVALID = 0,
@@ -94,7 +102,7 @@ struct GPUMaterial {
 
 	float workflow;
 
-    // indices into global texture array, -1 if not used
+	// indices into global texture array, -1 if not used
 	int baseColorTextureSet;
 	int physicalDescriptorTextureSet;
 	int normalTextureSet;
@@ -113,7 +121,7 @@ struct GPUMaterial {
 	uint32_t lod_category;
 	uint32_t pad0;
 
-    // texture coordinate sets, 0 or 1
+	// texture coordinate sets, 0 or 1
 	uint32_t coord_set_baseColor = 0;
 	uint32_t coord_set_metallicRoughness = 0;
 	uint32_t coord_set_specularGlossiness = 0;
@@ -122,6 +130,23 @@ struct GPUMaterial {
 	uint32_t coord_set_emissive = 0;
 	bool isDoubleSided;
 	uint32_t pad1; // 4 bytes of padding to align the next member to 16 bytes. Do not use array on glsl side!!!
+};
+
+// additional fields we need on C++ side for gltf parsing
+struct MaterialMetadata {
+    // after this are fields only necessary for CPU-side representation of materials, not transferred to GPU
+	std::optional<KHRTextureTransform> perSet[2];
+	// named accessors for textures in above vector:
+	::TextureInfo* baseColorTexture = nullptr;
+	::TextureInfo* metallicRoughnessTexture = nullptr;
+	::TextureInfo* normalTexture = nullptr;
+	::TextureInfo* occlusionTexture = nullptr;
+	::TextureInfo* emissiveTexture = nullptr;
+	VkSampler samplerBaseColor = nullptr;
+	VkSampler samplerMetallicRoughness = nullptr;
+	VkSampler samplerNormal = nullptr;
+	VkSampler samplerOcclusion = nullptr;
+	VkSampler samplerEmissive = nullptr;
 };
 
 // we prepare for MAX_DYNAMIC_LIGHTS entries for lights, but current implementation only supports one light source, so we only use the first entry

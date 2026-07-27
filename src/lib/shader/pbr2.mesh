@@ -34,7 +34,7 @@ VertexBuffer vertices = VertexBuffer(mesh.vertexOffset);
 //VertexBuffer vertices = VertexBuffer(pushConstants.meshStorageBufferAddress + gpuInfos.info[meshIndex].vertexOffset);
 //
 void main() {
-
+    verifyMaterial(0);
     // check for culled objects:
     if (payload.meshletIndex == PAYLOAD_CULLED || payload.meshletIndex > mesh.meshletCount) {
         //debugPrintfEXT("MESH SHADER: payload.meshletIndex: %u\n", payload.meshletIndex);

@@ -14,6 +14,11 @@
 
 layout(location = 0) flat in PBRVertexOutFlat inVertFlat;
 layout(location = 1) in PBRVertexOut inVert; // flat removed
+
+GPUModel model = gpuModels.model[pushConstants.objectNum];
+GPUMeshInfo mesh = gpuInfos.info[model.meshNumber];
+GPUMaterial material = gpuMaterials.material[mesh.material];
+
 // mode 0: pbr metallic roughness
 // mode 1: only use vertex color
 
@@ -164,5 +169,10 @@ float microfacetDistribution(PBRInfo pbrInputs)
 }
 
 void main() {
-	outColor = vec4(1, 0.1, 0.1, 0.6);
+    //verifyMaterial(0);
+	if (material.lod_category == 42) {
+		outColor = vec4(0.1, 0.1, 1, 0.6);
+	} else {
+		outColor = vec4(1, 0.1, 0.1, 0.6);
+	}
 }

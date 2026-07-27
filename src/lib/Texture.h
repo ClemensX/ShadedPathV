@@ -80,6 +80,7 @@ struct TextureInfo
         return ::hasFlag(flags, flag);
     }
     size_t hash = 0; // generated from raw image data, used for texture reuse and validation
+    bool textureIsReused = false; // true if this texture info was reused from another texture with same hash value
 private:
 	bool available = false; // only set by TextureStore
     friend class TextureStore;
@@ -155,6 +156,25 @@ public:
     // get texture by hash value, used for texture reuse and validation,
     // simply iterates through textures and compares hash values, inefficient, but even for 1000s of textures should be fairly quickly
 	TextureInfo* getTextureByHash(size_t hash);
+    // we may reuse a texture with same hash value, we have to make sure that the sampler is the same, otherwise we have a problem with different samplers for same texture data
+    // this method will throw an error if the samplers are not the same. For eas of use an index < 0 can be passed, meaning texture unavailable
+	// (happens when a specific texture type is not available in a gltf model)
+	void setAndCheckSampler(int32_t index, VkSampler sampler) {
+        if (index < 0) return; // texture not available, nothing to check
+        TextureInfo* ti = getTextureByIndex(index);
+		if (ti->sampler != nullptr && ti->textureIsReused == false) {
+			Error("setAndCheckSampler: internal error texture index " + std::to_string(index) + " was tried to reuse but flag was not set");
+		}
+		if (ti->sampler != nullptr && ti->sampler != sampler) {
+			Error("setAndCheckSampler: texture index " + std::to_string(index) + " has different sampler than reused texture");
+		}
+		if (ti->sampler != nullptr) {
+            ti->textureIsReused = true; // mark texture as reused, so we can check for sampler consistency
+		}
+		if (ti->sampler == nullptr) {
+			ti->sampler = sampler;
+        }
+	}
 private:
 	std::unordered_map<std::string, ::TextureInfo> textures;
 	ShadedPathEngine* engine = nullptr;

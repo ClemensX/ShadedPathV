@@ -186,18 +186,50 @@ std::optional<std::string> MStore::loadFile(std::string filename, std::vector<st
 	}
 }
 
-void MStore::addToGlobalBuffers(const std::vector<GPUMeshInfo>& gpuMeshInfos, const std::vector<MeshInfoMetadata>& gpuMeshMetadata, const std::vector<GPUMaterial>& gpuMaterialInfos)
+void MStore::addToGlobalBuffers(const std::vector<GPUMeshInfo>& gpuMeshInfos, const std::vector<MeshInfoMetadata>& gpuMeshMetadata,
+	                            const std::vector<GPUMaterial>& gpuMaterialInfos, const std::vector<MaterialMetadata>& gpuMaterialMetadata)
 {
 	// Materials:
     auto globalMaterialStart = engine->globalRendering.gpuMemory.getElementCount(BufferType::Materials);
 
-	for (const auto& material : gpuMaterialInfos) {
-		GPUMaterial globalMaterial = material;
-		if (globalMaterial.baseColorTextureSet >= 0)         globalMaterial.baseColorTextureSet = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.baseColorTextureSet));
-		if (globalMaterial.emissiveTextureSet >= 0)          globalMaterial.emissiveTextureSet = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.emissiveTextureSet));
-        if (globalMaterial.physicalDescriptorTextureSet >= 0) globalMaterial.physicalDescriptorTextureSet = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.physicalDescriptorTextureSet));
-        if (globalMaterial.normalTextureSet >= 0)            globalMaterial.normalTextureSet = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.normalTextureSet));
-        if (globalMaterial.occlusionTextureSet >= 0)         globalMaterial.occlusionTextureSet = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.occlusionTextureSet));
+	for (int i = 0; i < gpuMaterialInfos.size(); i++) {
+		GPUMaterial material = gpuMaterialInfos[i];
+		MaterialMetadata materialMeta = gpuMaterialMetadata[i];
+        GPUMaterial globalMaterial = material;
+		if (globalMaterial.baseColorTextureSet >= 0) {
+			globalMaterial.baseColorTextureSet = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.baseColorTextureSet));
+			TextureInfo* ti = engine->textureStore.getTextureByIndex(globalMaterial.baseColorTextureSet);
+            ti->type = TextureType::TEXTURE_TYPE_GLTF;
+		}
+		if (globalMaterial.emissiveTextureSet >= 0) {
+			globalMaterial.emissiveTextureSet = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.emissiveTextureSet));
+			TextureInfo* ti = engine->textureStore.getTextureByIndex(globalMaterial.emissiveTextureSet);
+            ti->type = TextureType::TEXTURE_TYPE_GLTF;
+		}
+        if (globalMaterial.physicalDescriptorTextureSet >= 0) {
+			globalMaterial.physicalDescriptorTextureSet = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.physicalDescriptorTextureSet));
+			TextureInfo* ti = engine->textureStore.getTextureByIndex(globalMaterial.physicalDescriptorTextureSet);
+            ti->type = TextureType::TEXTURE_TYPE_GLTF;
+		}
+        if (globalMaterial.normalTextureSet >= 0) {
+			globalMaterial.normalTextureSet = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.normalTextureSet));
+			TextureInfo* ti = engine->textureStore.getTextureByIndex(globalMaterial.normalTextureSet);
+            ti->type = TextureType::TEXTURE_TYPE_GLTF;
+		}
+        if (globalMaterial.occlusionTextureSet >= 0) {
+			globalMaterial.occlusionTextureSet = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.occlusionTextureSet));
+			TextureInfo* ti = engine->textureStore.getTextureByIndex(globalMaterial.occlusionTextureSet);
+            ti->type = TextureType::TEXTURE_TYPE_GLTF;
+		}
+
+        // set the samplers for each texture. We must take care that for reused textures the sampler is the same as for the first usage.
+		engine->textureStore.setAndCheckSampler(globalMaterial.baseColorTextureSet, materialMeta.samplerBaseColor);
+		engine->textureStore.setAndCheckSampler(globalMaterial.emissiveTextureSet, materialMeta.samplerEmissive);
+		engine->textureStore.setAndCheckSampler(globalMaterial.physicalDescriptorTextureSet, materialMeta.samplerMetallicRoughness);
+		engine->textureStore.setAndCheckSampler(globalMaterial.normalTextureSet, materialMeta.samplerNormal);
+		engine->textureStore.setAndCheckSampler(globalMaterial.occlusionTextureSet, materialMeta.samplerOcclusion);
+
+		globalMaterial.lod_category = 42;
 
 		engine->globalRendering.gpuMemory.appendElement(BufferType::Materials, globalMaterial);
 	}

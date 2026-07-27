@@ -6,6 +6,7 @@
 namespace tinygltf {
 	class Model;
 	struct Sampler;
+    struct Material;
 }
 struct MeshInfo;
 struct MeshCollection;
@@ -67,5 +68,7 @@ private:
 	std::map<int, int> indexMap;
 
 	// after basic glTF parsing, this function will parse all meshes and store them in the mesh store
-	void parseMeshes(tinygltf::Model& model);
+	void parseGltfModel(tinygltf::Model& model);
+
+	inline bool IsMetallicRoughnessWorkflow(const tinygltf::Material& mat);
 };

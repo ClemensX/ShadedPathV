@@ -1688,3 +1688,11 @@ void Util::debugModels(MStore* mstore) {
         Log("GPUModel[" << i << "]: meshIndex=" << model->meshNumber << ", flags=" << model->flags << std::endl);
     }
 }
+
+void Util::debugMaterial(MStore* mstore, int32_t materialIndex) {
+    GPUMaterial* material = mstore->getGPUMaterial(materialIndex);
+    Log("GPUMaterial[" << materialIndex << "]: baseColorTextureSet=" << material->baseColorTextureSet);
+    Log("\n  coord set base color: " << material->coord_set_baseColor);
+    Log("\n  lod: " << material->lod_category);
+    Log(std::endl);
+}

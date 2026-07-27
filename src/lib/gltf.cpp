@@ -46,6 +46,7 @@ bool LoadImageDataKTX2(Image* image, const int image_idx, std::string* err,
 		//userData->collection->textureInfos[image_idx] = existingTexture;
 		userData->engine->mstore.gltf.mapFileTextureIndexToGlobalTextureArray(image_idx, existingTexture->index);
 		Log("Warning: Reusing existing global texture " << existingTexture->id << " for collection image index " << image_idx << " with hash " << hash << std::endl);
+        existingTexture->textureIsReused = true;
 		return true;
 	}
 
@@ -419,14 +420,6 @@ void glTF::loadModel(Model &model, const unsigned char* data, int size, MeshColl
 }
 
 // Add after includes and before existing functions (e.g., near other static helpers).
-
-struct KHRTextureTransform {
-	bool present = false;
-	glm::vec2 offset{ 0.0f, 0.0f };
-	glm::vec2 scale{ 1.0f, 1.0f };
-	float rotation = 0.0f; // radians
-	int texCoordOverride = -1; // -1 means use TextureInfo.texCoord
-};
 
 static KHRTextureTransform ParseKHRTextureTransform(const tinygltf::ExtensionMap& extMap) {
 	KHRTextureTransform t{};
@@ -1184,7 +1177,7 @@ void glTF::load2(const unsigned char* data, int size, string filename)
 	Model model;
 	// parse full gltf file with all meshes and textures. Textures are already pre-loaded into texture store
 	loadModel2(model, data, size, filename);
-	parseMeshes(model);
+	parseGltfModel(model);
 }
 
 // TODO: change this mess to a 2-pass system where first all meshes parsed and sorted, then in a 2nd pass added to mesh store
@@ -1359,12 +1352,32 @@ void glTF::mapTinyGLTFSamplerToVulkan(const tinygltf::Sampler& gltfSampler, VkSa
 	vkSamplerInfo.maxLod = VK_LOD_CLAMP_NONE;
 }
 
-void glTF::parseMeshes(tinygltf::Model& model)
+inline bool glTF::IsMetallicRoughnessWorkflow(const tinygltf::Material& mat)
+{
+	// glTF 2.0 default is MR unless overridden by spec/gloss extension.
+	return mat.extensions.find("KHR_materials_pbrSpecularGlossiness") == mat.extensions.end();
+}
+
+void glTF::parseGltfModel(tinygltf::Model& model)
 {
     // 1st step: count meshes, materials and textures (each primitive is a separate mesh in our system)
     size_t meshCount = 0;
     size_t materialCount = model.materials.size();
     size_t textureCount = model.textures.size();
+
+	// we have to parse gltf textures and look for KHR_texture_basisu extension,
+	// then set the source index of the texture accordingly
+	for (int i = 0; i < model.textures.size(); i++) {
+		auto& extMap = model.textures[i].extensions;
+		auto found = extMap.find("KHR_texture_basisu");
+		if (found != extMap.end()) {
+			if (found->second.Has("source")) {
+				int source = found->second.Get("source").Get<int>();
+				Log("WARNING:KHR_texture_basisu found: source " << source << endl);
+				model.textures[i].source = source;
+			}
+		}
+	}
 
 	for (int meshIndex = 0; meshIndex < (int)model.meshes.size(); ++meshIndex) {
 		auto& m = model.meshes[meshIndex];
@@ -1377,7 +1390,25 @@ void glTF::parseMeshes(tinygltf::Model& model)
 	vector<GPUMeshInfo> gpuMeshInfos(meshCount);
 	vector<MeshInfoMetadata> gpuMeshMetadata(meshCount);
 	vector<GPUMaterial> gpuMaterialInfos(materialCount);
+    vector<MaterialMetadata> gpuMaterialMetadata(materialCount);
 
+	// make sure we have a valid source index for all textures
+	for (int i = 0; i < model.textures.size(); i++) {
+		auto& extMap = model.textures[i].extensions;
+        // if this fails, we may have to deal with KHR_texture_basisu extension and set the source index accordingly, see commented code above
+		assert(model.textures[i].source >= 0);
+	}
+
+	// create samplers
+	vector<VkSampler> samplers(model.samplers.size());
+	for (int i = 0; i < model.samplers.size(); i++) {
+		VkSamplerCreateInfo vkSamplerInfo{};
+		mapTinyGLTFSamplerToVulkan(model.samplers[i], vkSamplerInfo);
+		samplers[i] = engine->globalRendering.samplerCache.getOrCreateSampler(engine->globalRendering.device, vkSamplerInfo);
+		//Log("sampler: " << model.samplers[i].name.c_str() << endl);
+	}
+
+	// meshes
 	size_t curMeshIndex = 0;
 	for (int mi = 0; mi < (int)model.meshes.size(); ++mi) {
 		auto& m = model.meshes[mi];
@@ -1393,18 +1424,145 @@ void glTF::parseMeshes(tinygltf::Model& model)
         }
 	}
 
+    // materials
     for (int matIndex = 0; matIndex < (int)model.materials.size(); ++matIndex) {
         auto& mat = model.materials[matIndex];
+        GPUMaterial& gpuMat = gpuMaterialInfos[matIndex];
+        MaterialMetadata& gpuMatMeta = gpuMaterialMetadata[matIndex];
         // fill gpuMaterialInfos[matIndex] with data from mat
-		gpuMaterialInfos[matIndex].baseColorTextureSet = mat.pbrMetallicRoughness.baseColorTexture.index;
-		gpuMaterialInfos[matIndex].physicalDescriptorTextureSet = mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
-		gpuMaterialInfos[matIndex].normalTextureSet = mat.normalTexture.index;
-		gpuMaterialInfos[matIndex].occlusionTextureSet = mat.occlusionTexture.index;
-		gpuMaterialInfos[matIndex].emissiveTextureSet = mat.emissiveTexture.index;
-		gpuMaterialInfos[matIndex].isDoubleSided = mat.doubleSided;
+		gpuMat.baseColorTextureSet = mat.pbrMetallicRoughness.baseColorTexture.index;
+		gpuMat.physicalDescriptorTextureSet = mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
+		gpuMat.normalTextureSet = mat.normalTexture.index;
+		gpuMat.occlusionTextureSet = mat.occlusionTexture.index;
+		gpuMat.emissiveTextureSet = mat.emissiveTexture.index;
+		gpuMat.isDoubleSided = mat.doubleSided;
+
+		// Parse KHR_texture_transform and resolve final texCoord per texture use
+		KHRTextureTransform tfBase, tfMR, tfNormal, tfOcc, tfEmi;
+		int tcBase = -1, tcMR = -1, tcNormal = -1, tcOcc = -1, tcEmi = -1;
+
+		if (gpuMat.baseColorTextureSet >= 0) {
+			tfBase = ParseKHRTextureTransform(mat.pbrMetallicRoughness.baseColorTexture.extensions);
+			tcBase = ResolveTexCoordUsed(mat.pbrMetallicRoughness.baseColorTexture.texCoord, tfBase);
+		}
+		if (gpuMat.physicalDescriptorTextureSet >= 0) {
+			tfMR = ParseKHRTextureTransform(mat.pbrMetallicRoughness.metallicRoughnessTexture.extensions);
+			tcMR = ResolveTexCoordUsed(mat.pbrMetallicRoughness.metallicRoughnessTexture.texCoord, tfMR);
+		}
+		if (gpuMat.normalTextureSet >= 0) {
+			tfNormal = ParseKHRTextureTransform(mat.normalTexture.extensions);
+			tcNormal = ResolveTexCoordUsed(mat.normalTexture.texCoord, tfNormal);
+		}
+		if (gpuMat.occlusionTextureSet >= 0) {
+			tfOcc = ParseKHRTextureTransform(mat.occlusionTexture.extensions);
+			tcOcc = ResolveTexCoordUsed(mat.occlusionTexture.texCoord, tfOcc);
+		}
+		if (gpuMat.emissiveTextureSet >= 0) {
+			tfEmi = ParseKHRTextureTransform(mat.emissiveTexture.extensions);
+			tcEmi = ResolveTexCoordUsed(mat.emissiveTexture.texCoord, tfEmi);
+		}
+		// Bake transforms into vertex UVs per channel (only TEXCOORD_0 and TEXCOORD_1 supported).
+		// If multiple textures require different transforms on the same UV set, the first one wins; a warning is logged.
+		std::optional<KHRTextureTransform> perSet[2];
+
+		auto consider = [&](int tc, const KHRTextureTransform& t, const char* usage) {
+			if (tc < 0 || tc > 1 || !t.present) return;
+			if (!perSet[tc].has_value()) {
+				perSet[tc] = t;
+			}
+			else if (!SameTransform(perSet[tc].value(), t)) {
+				Log(std::string("WARNING: Different KHR_texture_transform for UV set ") + std::to_string(tc) +
+					" between textures; keeping first and ignoring '" + usage + "' transform\n");
+			}
+			};
+
+		consider(tcBase, tfBase, "baseColor");
+		consider(tcMR, tfMR, "metallicRoughness");
+		consider(tcNormal, tfNormal, "normal");
+		consider(tcOcc, tfOcc, "occlusion");
+		consider(tcEmi, tfEmi, "emissive");
+
+		if (perSet[0].has_value()) {
+            Error("WARNING: KHR_texture_transform detected for UV set 0 in material " + mat.name + ". This is not supported in the current implementation. Please bake the transform into the texture or vertex data before loading.");
+			//ApplyTransformToMeshUVChannel(mesh->vertices, 0, perSet[0].value());
+		}
+		if (perSet[1].has_value()) {
+			Error("WARNING: KHR_texture_transform detected for UV set 1 in material " + mat.name + ". This is not supported in the current implementation. Please bake the transform into the texture or vertex data before loading.");
+			//ApplyTransformToMeshUVChannel(mesh->vertices, 1, perSet[1].value());
+		}
+        //gpuMat.perSet[0] = perSet[0];
+        //gpuMat.perSet[1] = perSet[1];
+
+		// save the sampler so we can access it in mstore
+		if (gpuMat.baseColorTextureSet >= 0) {
+            gpuMatMeta.samplerBaseColor = samplers[model.textures[gpuMat.baseColorTextureSet].sampler];
+		}
+		if (gpuMat.physicalDescriptorTextureSet >= 0) {
+            gpuMatMeta.samplerMetallicRoughness = samplers[model.textures[gpuMat.physicalDescriptorTextureSet].sampler];
+		}
+		if (gpuMat.normalTextureSet >= 0) {
+            gpuMatMeta.samplerNormal = samplers[model.textures[gpuMat.normalTextureSet].sampler];
+		}
+		if (gpuMat.occlusionTextureSet >= 0) {
+            gpuMatMeta.samplerOcclusion = samplers[model.textures[gpuMat.occlusionTextureSet].sampler];
+		}
+		if (gpuMat.emissiveTextureSet >= 0) {
+            gpuMatMeta.samplerEmissive = samplers[model.textures[gpuMat.emissiveTextureSet].sampler];
+		}
+		// now set the shaderMaterial fields from gltf material:
+		// Use final, possibly overridden texCoord indices
+		gpuMat.coord_set_baseColor = std::max(0, tcBase);
+		gpuMat.coord_set_metallicRoughness = std::max(0, tcMR);
+		gpuMat.coord_set_normal = std::max(0, tcNormal);
+		gpuMat.coord_set_occlusion = std::max(0, tcOcc);
+		gpuMat.coord_set_emissive = std::max(0, tcEmi);
+
+		//m.texCoordSets.baseColor = 1;
+		//m.texCoordSets.metallicRoughness = 2;
+		//m.texCoordSets.specularGlossiness = 3;
+		gpuMat.emissiveFactor = glm::vec4(mat.emissiveFactor[0], mat.emissiveFactor[1], mat.emissiveFactor[2], 1.0f);
+		// values from possible extensions:
+		if (mat.extensions.find("KHR_materials_unlit") != mat.extensions.end()) {
+            Log("WARNING: KHR_materials_unlit extension found in material " << mat.name << ". This is not supported in the current implementation. Please use a compatible material workflow.\n");
+			//m.unlit = true;
+		}
+		gpuMat.emissiveStrength = 1.0f; // default
+		if (mat.extensions.find("KHR_materials_emissive_strength") != mat.extensions.end()) {
+			auto ext = mat.extensions.find("KHR_materials_emissive_strength");
+			if (ext->second.Has("emissiveStrength")) {
+				auto value = ext->second.Get("emissiveStrength");
+				gpuMat.emissiveStrength = (float)value.Get<double>();
+			}
+		}
+
+        // make sure we have metallicRoughness workflow, not specular glossiness
+        if (!IsMetallicRoughnessWorkflow(mat)) {
+			Error("WARNING: KHR_materials_pbrSpecularGlossiness extension found in material " + mat.name + ". This is not supported in the current implementation. Please use a compatible material workflow.");
+        }
+
+		gpuMat.workflow = 0.0f; // metallic roughness workflow
+		gpuMat.baseColorFactor = glm::vec4(mat.pbrMetallicRoughness.baseColorFactor[0], mat.pbrMetallicRoughness.baseColorFactor[1], mat.pbrMetallicRoughness.baseColorFactor[2], mat.pbrMetallicRoughness.baseColorFactor[3]);
+		gpuMat.metallicFactor = mat.pbrMetallicRoughness.metallicFactor;
+		gpuMat.roughnessFactor = mat.pbrMetallicRoughness.roughnessFactor;
+
+		// handle alpha mode
+		if (mat.alphaMode == "MASK") {
+			gpuMat.alphaMask = 1.0f;
+			gpuMat.alphaMaskCutoff = mat.alphaCutoff;
+		}
+		else if (mat.alphaMode == "BLEND") {
+			// Approximate BLEND mode by setting a low alphaCutoff value
+			gpuMat.alphaMask = 1.0f;
+			gpuMat.alphaMaskCutoff = 0.1; // Set a low cutoff value for blending approximation
+			Log("WARNING: BLEND alpha mode not supported in material " << mat.name << ", approximated as MASK with alpha cutoff of 0.1" << endl);
+		}
+		else {
+			assert(mat.alphaMode == "OPAQUE");
+			gpuMat.alphaMask = 0.0f; // disables alpha masking in shader
+		}
 	}
 
-    engine->mstore.addToGlobalBuffers(gpuMeshInfos, gpuMeshMetadata, gpuMaterialInfos);
+    engine->mstore.addToGlobalBuffers(gpuMeshInfos, gpuMeshMetadata, gpuMaterialInfos, gpuMaterialMetadata);
 
 	// test access:
  //   auto test = gpuMeshInfos[0];

@@ -362,8 +362,10 @@ void verifyModel(uint index) {
 void verifyMaterial(uint index) {
     debugPrintfEXT("verify material %u:\n", index);
     GPUMaterial material = gpuMaterials.material[index];
-    debugPrintfEXT("GPUMaterial: baseColorTextureSet %d physicalDescriptorTextureSet %d normalTextureSet %d occlusionTextureSet %d emissiveTextureSet %d\n",
+    debugPrintfEXT("GPUMaterial: baseColorTextureSet %d physicalDescriptorTextureSet %d normalTextureSet %d occlusionTextureSet %d emissiveTextureSet %d",
         material.baseColorTextureSet, material.physicalDescriptorTextureSet, material.normalTextureSet, material.occlusionTextureSet, material.emissiveTextureSet);
+    debugPrintfEXT("\n  lod: %d", material.lod_category);
+    debugPrintfEXT("\n");
 }
 
 void verifyMesh(uint index) {

@@ -47,7 +47,8 @@ public:
 
     // after parsing glTF file, this function will iterate through all meshes and materials and put them
     // into global buffers. All local indices will be converted to global indices.
-    void addToGlobalBuffers(const std::vector<GPUMeshInfo>& gpuMeshInfos, const std::vector<MeshInfoMetadata>& gpuMeshMetadata, const std::vector<GPUMaterial>& gpuMaterialInfos);
+    void addToGlobalBuffers(const std::vector<GPUMeshInfo>& gpuMeshInfos, const std::vector<MeshInfoMetadata>& gpuMeshMetadata,
+                            const std::vector<GPUMaterial>& gpuMaterialInfos, const std::vector<MaterialMetadata>& gpuMaterialMetadata);
     // get the glTF parser instance
     glTF* getGLTF() { return &gltf; }
 
