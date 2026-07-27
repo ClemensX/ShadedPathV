@@ -176,6 +176,7 @@ public:
     std::vector<glm::vec4> generateColorPalette256();
     // Helper: HSV to RGB conversion
     glm::vec3 hsv2rgb(float h, float s, float v);
+    glm::vec4 getRandomColor();
     // Bit-reversal permutation for 8 bits
 
     // Generates a regular grid mesh (plane) with the given size and divisions.

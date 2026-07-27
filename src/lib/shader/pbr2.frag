@@ -168,11 +168,86 @@ float microfacetDistribution(PBRInfo pbrInputs)
 	return roughnessSq / (M_PI * f * f);
 }
 
-void main() {
+void test() {
     //verifyMaterial(0);
-	if (material.lod_category == 42) {
+	if (material.baseColorTextureSet > 0) {
+		outColor = vec4(0.1, 1, 0.1, 0.6);
+	} else if (material.lod_category == 42) {
 		outColor = vec4(0.1, 0.1, 1, 0.6);
 	} else {
 		outColor = vec4(1, 0.1, 0.1, 0.6);
 	}
+}
+
+void main() {
+	test();
+
+	if ((model.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) {
+		outColor = vec4(1, 1, 1, 1);
+		outColor = inColor0;
+		//debugPrintfEXT("pbr frag MODEL_RENDER_FLAG_USE_VERTEX_COLORS\n");
+        return;
+	} 
+    // from https://github.com/SaschaWillems/Vulkan-glTF-PBR/blob/master/data/shaders/material_pbr.frag
+	float perceptualRoughness;
+	float metallic;
+	vec3 diffuseColor;
+	vec4 baseColor = vec4(1.0);
+
+	vec3 f0 = vec3(0.04);
+
+	if (material.alphaMask == 1.0f) {
+		if (material.baseColorTextureSet > -1) {
+			// we only handle metallic roughness workflow, so we can simplify the next line
+			// baseColor = SRGBtoLINEAR(texture(colorMap, material.baseColorTextureSet == 0 ? inUV0 : inUV1)) * material.baseColorFactor;
+			// linearization is done automatically for sRGB formats
+			//baseColor = SRGBtoLINEAR(textureBindless2D(material.baseColorTextureSet, material.texCoordSets.baseColor == 0 ? inUV0 : inUV1)) * material.baseColorFactor;
+			baseColor = textureBindless2D(material.baseColorTextureSet, material.coord_set_baseColor == 0 ? inUV0 : inUV1) * material.baseColorFactor;
+		} else {
+			baseColor = material.baseColorFactor;
+		}
+		if (baseColor.a < material.alphaMaskCutoff) {
+			discard;
+		}
+	}
+
+	if (true /*material.workflow == PBR_WORKFLOW_METALLIC_ROUGHNESS*/) { // always true
+		// Metallic and Roughness material properties are packed together
+		// In glTF, these factors can be specified by fixed scalar values
+		// or from a metallic-roughness map
+		perceptualRoughness = material.roughnessFactor;
+		metallic = material.metallicFactor;
+		if (material.physicalDescriptorTextureSet > -1) {
+			// Roughness is stored in the 'g' channel, metallic is stored in the 'b' channel.
+			// This layout intentionally reserves the 'r' channel for (optional) occlusion map data
+			vec4 mrSample = textureBindless2D(material.physicalDescriptorTextureSet, material.coord_set_metallicRoughness == 0 ? inUV0 : inUV1);
+			perceptualRoughness = mrSample.g * perceptualRoughness;
+			metallic = mrSample.b * metallic;
+			//debugPrintfEXT("metallic %f\n", metallic);
+			//debugPrintfEXT("metallic %f sample %f rough %f\n", metallic, mrSample.b, perceptualRoughness);
+		} else {
+			perceptualRoughness = clamp(perceptualRoughness, c_MinRoughness, 1.0);
+			metallic = clamp(metallic, 0.0, 1.0);
+		}
+		// Roughness is authored as perceptual roughness; as is convention,
+		// convert to material roughness by squaring the perceptual roughness [2].
+
+		// The albedo may be defined from a base texture or a flat color
+		if (material.baseColorTextureSet > -1) {
+			vec4 baseColorIn = textureBindless2D(material.baseColorTextureSet, material.coord_set_baseColor == 0 ? inUV0 : inUV1);
+			// linearization is done automatically for sRGB formats
+			//baseColor = SRGBtoLINEAR(baseColorIn) * material.baseColorFactor;
+			baseColor = baseColorIn * material.baseColorFactor;
+//			float sf = 5.0; // use higher value for light boost, TODO move to C++ code
+//			vec4 f = vec4(sf, sf, sf, 1.0);
+//			baseColor = SRGBtoLINEAR(textureBindless2D(material.baseColorTextureSet, material.texCoordSets.baseColor == 0 ? inUV0 : inUV1)) * material.baseColorFactor; // * f;
+			//debugPrintfEXT("pbr baseColor factor %f %f %f %f\n", material.baseColorFactor.r, material.baseColorFactor.g, material.baseColorFactor.b, material.baseColorFactor.a);
+			//debugPrintfEXT("pbr frag baseColor %f %f %f %f with factor %f\n", baseColor.r, baseColor.g, baseColor.b, baseColor.a, material.baseColorFactor.r);
+		} else {
+			baseColor = material.baseColorFactor;
+		}
+	}
+
+	//outColor = vec4(1, 1, 1, 1);
+	outColor = baseColor;
 }

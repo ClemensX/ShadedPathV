@@ -927,6 +927,13 @@ std::vector<glm::vec4> Util::generateColorPalette256()
     return palette;
 }
 
+glm::vec4 Util::getRandomColor() {
+    float h = MathHelper::RandF(0.0f, 1.0f);
+    float s = MathHelper::RandF(0.5f, 1.0f);
+    float v = MathHelper::RandF(0.5f, 1.0f);
+    return glm::vec4(hsv2rgb(h, s, v), 1.0f);
+}
+
 void Util::GenerateGridMesh(
     int gridSize,
     std::vector<PBRVertex>& vertices,

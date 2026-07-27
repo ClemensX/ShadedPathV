@@ -153,6 +153,7 @@ void Loader::init() {
 
     object2->rot = vec3(0.0f, 0.0f, 0.0f);
     object2->scale = vec3(1.0f);
+    //object2->flags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
     mat4 baseTransform = mat4(1.0); // get from gltf later
     GPUModel* gpuModel = engine->mstore.getGPUModel(object->index);
     GPUModel* gpuModel2 = engine->mstore.getGPUModel(object2->index);

@@ -365,6 +365,7 @@ void verifyMaterial(uint index) {
     debugPrintfEXT("GPUMaterial: baseColorTextureSet %d physicalDescriptorTextureSet %d normalTextureSet %d occlusionTextureSet %d emissiveTextureSet %d",
         material.baseColorTextureSet, material.physicalDescriptorTextureSet, material.normalTextureSet, material.occlusionTextureSet, material.emissiveTextureSet);
     debugPrintfEXT("\n  lod: %d", material.lod_category);
+    debugPrintfEXT("\n  alphaMask: %f", material.alphaMask);
     debugPrintfEXT("\n");
 }
 

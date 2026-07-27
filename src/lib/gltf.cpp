@@ -671,6 +671,7 @@ void glTF::loadVerticesCore(tinygltf::Model& model, std::vector<PBRShader::Verte
 		}
 		else {
 			vert.color = glm::vec4(1.0f); // Default to white if no color attribute
+			//rt.color = engine->util.getRandomColor();
 		}
 
 		if (!texCoords.empty()) {
