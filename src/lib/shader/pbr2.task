@@ -15,11 +15,12 @@ taskPayloadSharedEXT TaskPayload payload;
 layout(local_size_x = 1) in; // not using the usual 32 threads per workgroup, but only 1 as we implement object culling and LOD object selection here
 
 void main() {
-    //printGPUBufferAddresses();
+    printGPUBufferAddresses();
     //verifyMesh(0);
     //verifyMaterial(0);
     //verifyModel(1);
     //verifyFrameParam(0);
+    verifyCamPos();
     
     bool debugIndices = false;
     bool debugInfos = false;
@@ -27,6 +28,8 @@ void main() {
 
     GPUModel model = gpuModels.model[pushConstants.objectNum];
     GPUMeshInfo mesh = gpuInfos.info[model.meshNumber];
+    GPUMaterial material = gpuMaterials.material[mesh.material];
+    verifyTextures(material);
 
     // check if object is disabled:
     bool isRenderingDisabled = (model.flags & MODEL_RENDER_FLAG_DISABLE) != 0;
@@ -49,7 +52,7 @@ void main() {
             debugPrintfEXT("pbr.task: objectNum %u OUTSIDE\n", pushConstants.objectNum);
             return;
         } else {
-            debugPrintfEXT("pbr.task: draw objectNum %u from mesh %u with %u meshlets, flags: %x\n", pushConstants.objectNum, model.meshNumber, mesh.meshletCount, model.flags);
+            //debugPrintfEXT("pbr.task: draw objectNum %u from mesh %u with %u meshlets, flags: %x\n", pushConstants.objectNum, model.meshNumber, mesh.meshletCount, model.flags);
         }
     }
     // spurious error: we get here in spite of the return; above... 

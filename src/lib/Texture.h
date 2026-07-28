@@ -168,9 +168,6 @@ public:
 		if (ti->sampler != nullptr && ti->sampler != sampler) {
 			Error("setAndCheckSampler: texture index " + std::to_string(index) + " has different sampler than reused texture");
 		}
-		if (ti->sampler != nullptr) {
-            ti->textureIsReused = true; // mark texture as reused, so we can check for sampler consistency
-		}
 		if (ti->sampler == nullptr) {
 			ti->sampler = sampler;
         }

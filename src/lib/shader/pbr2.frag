@@ -168,18 +168,19 @@ float microfacetDistribution(PBRInfo pbrInputs)
 }
 
 void test() {
+	//verifyTextures(material);
     //verifyMaterial(0);
-	if (material.baseColorTextureSet > 0) {
-		outColor = vec4(0.1, 1, 0.1, 0.6);
-	} else if (material.lod_category == 42) {
-		outColor = vec4(0.1, 0.1, 1, 0.6);
-	} else {
-		outColor = vec4(1, 0.1, 0.1, 0.6);
-	}
+//	if (material.baseColorTextureSet > 0) {
+//		outColor = vec4(0.1, 1, 0.1, 0.6);
+//	} else if (material.lod_category == 42) {
+//		outColor = vec4(0.1, 0.1, 1, 0.6);
+//	} else {
+//		outColor = vec4(1, 0.1, 0.1, 0.6);
+//	}
 }
 
 void main() {
-	test();
+	//test();
 
 	if ((model.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) {
 		outColor = vec4(1, 1, 1, 1);
@@ -194,6 +195,35 @@ void main() {
 	vec4 baseColor = vec4(1.0);
 
 	vec3 f0 = vec3(0.04);
+
+	if (false) {
+		// for debugging: return full texture
+		if (material.baseColorTextureSet > -1 && false) {
+			baseColor = textureBindless2D(material.baseColorTextureSet, material.coord_set_baseColor == 0 ? inUV0 : inUV1);
+		}
+		if (material.emissiveTextureSet > -1 && false) {
+			baseColor = textureBindless2D(material.emissiveTextureSet, material.coord_set_emissive == 0 ? inUV0 : inUV1);
+		}
+		if (material.normalTextureSet > -1 && true) {
+			baseColor = textureBindless2D(material.normalTextureSet, material.coord_set_normal == 0 ? inUV0 : inUV1);
+		}
+		if (material.occlusionTextureSet > -1 && false) {
+			baseColor = textureBindless2D(material.occlusionTextureSet, material.coord_set_occlusion == 0 ? inUV0 : inUV1);
+			baseColor.g = baseColor.b = 0.0;
+		}
+		if (material.physicalDescriptorTextureSet > -1 && false) {
+			baseColor = textureBindless2D(material.physicalDescriptorTextureSet, material.coord_set_metallicRoughness == 0 ? inUV0 : inUV1);
+			baseColor.r = 0.0;
+		}
+		if (material.physicalDescriptorTextureSet > -1 && false) {
+			// merged occ/metal/rough:
+			baseColor = textureBindless2D(material.physicalDescriptorTextureSet, material.coord_set_metallicRoughness == 0 ? inUV0 : inUV1);
+			vec4 occ = textureBindless2D(material.occlusionTextureSet, material.coord_set_occlusion == 0 ? inUV0 : inUV1);
+			baseColor.r = occ.r;
+		}
+		outColor = baseColor;
+		return;
+	}
 
 	if (material.alphaMask == 1.0f) {
 		if (material.baseColorTextureSet > -1) {
@@ -222,12 +252,15 @@ void main() {
 			vec4 mrSample = textureBindless2D(material.physicalDescriptorTextureSet, material.coord_set_metallicRoughness == 0 ? inUV0 : inUV1);
 			perceptualRoughness = mrSample.g * perceptualRoughness;
 			metallic = mrSample.b * metallic;
-			//debugPrintfEXT("metallic %f\n", metallic);
-			//debugPrintfEXT("metallic %f sample %f rough %f\n", metallic, mrSample.b, perceptualRoughness);
+			//if (metallic < 0.7) debugPrintfEXT("metallic %f\n", metallic);
+			//if (mrSample.b < 0.7) debugPrintfEXT("metallic %f sample %f rough %f\n", metallic, mrSample.b, perceptualRoughness);
+//			outColor = vec4(mrSample.b, 0, 0, 1);
+//			return;
 		} else {
 			perceptualRoughness = clamp(perceptualRoughness, c_MinRoughness, 1.0);
 			metallic = clamp(metallic, 0.0, 1.0);
 		}
+
 		// Roughness is authored as perceptual roughness; as is convention,
 		// convert to material roughness by squaring the perceptual roughness [2].
 
@@ -248,6 +281,8 @@ void main() {
 	}
 
 	baseColor *= inColor0;
+//	outColor = baseColor;
+//	return;
 
 	diffuseColor = baseColor.rgb * (vec3(1.0) - f0);
 	diffuseColor *= 1.0 - metallic;
@@ -266,6 +301,8 @@ void main() {
 	vec3 specularEnvironmentR0 = specularColor.rgb;
 	vec3 specularEnvironmentR90 = vec3(1.0, 1.0, 1.0) * reflectance90;
 
+	//debugPrintfEXT("frag camPos: %f %f %f\n", camPos.x, camPos.y, camPos.z);
+	//debugPrintfEXT("frag inWorldPos: %f %f %f\n", inWorldPos.x, inWorldPos.y, inWorldPos.z);
 	vec3 n = (material.normalTextureSet > -1) ? getNormal(material) : normalize(inNormal);
 	//n.y *= -1.0f;
 	vec3 v = normalize(camPos - inWorldPos);    // Vector from surface point to camera
@@ -301,15 +338,20 @@ void main() {
 	float D = microfacetDistribution(pbrInputs);
 
 	vec3 u_LightColor = vec3(1.0) * uboParams.intensity;
+	//debugPrintfEXT("frag uboParams.intensity %f:\n", uboParams.intensity);
 
 	// Calculation of analytical lighting contribution
 	vec3 diffuseContrib = (1.0 - F) * diffuse(pbrInputs);
 	vec3 specContrib = F * G * D / (4.0 * NdotL * NdotV);
 	// Obtain final intensity as reflectance (BRDF) scaled by the energy of the light (cosine law)
 	vec3 color = NdotL * u_LightColor * (diffuseContrib + specContrib);
+//	outColor = vec4(color, baseColor.a);
+//	return;
 
 	// Calculate lighting contribution from image based lighting source (IBL)
 	color += getIBLContribution(pbrInputs, n, reflection, material);
+	outColor = vec4(color, baseColor.a);
+	return;
 
 	const float u_OcclusionStrength = 1.0f;
 	// Apply optional PBR terms for additional (optional) shading
@@ -319,8 +361,13 @@ void main() {
 	}
 
 	vec3 emissive = material.emissiveFactor.rgb * material.emissiveStrength;
+	//debugPrintfEXT("frag material.emissiveFactor.rgb: %f %f %f\n", material.emissiveFactor.rgb.r, material.emissiveFactor.rgb.g, material.emissiveFactor.rgb.b);
+	//debugPrintfEXT("     material.emissiveStrength %f:\n", material.emissiveStrength);
+
 	if (material.emissiveTextureSet > -1) {
-		emissive *= SRGBtoLINEAR(textureBindless2D(material.emissiveTextureSet, material.coord_set_emissive == 0 ? inUV0 : inUV1)).rgb;
+		vec3 em = SRGBtoLINEAR(textureBindless2D(material.emissiveTextureSet, material.coord_set_emissive == 0 ? inUV0 : inUV1)).rgb;
+		//debugPrintfEXT("frag emissive texture: %f %f %f\n", em.r, em.g, em.b);
+		emissive *= em;
 	};
 	color += emissive;
 	

@@ -13,7 +13,7 @@ const uint MODEL_RENDER_FLAG_GPU_LOD           = 1u << 2; // 4, enable GPU LOD o
 // see pbrShader.h
 struct GPUMemoryAddressConstants {
     uint64_t collectionIndicesAddress;
-    uint64_t collectionInfosAddressX;
+    uint64_t collectionInfosAddress;
     uint64_t meshInfosAddress;
     uint64_t modelsAddress;
     uint64_t modelsMovingAddress;
@@ -157,6 +157,8 @@ layout(binding = 0) uniform UniformBufferObject {
 	uint pad1;          // pad to 16-byte multiple if desired (optional)
 	uint pad2;          // pad to 16-byte multiple if desired (optional)
     GPUMemoryAddressConstants gpuMem;
+    uint pad3;
+    uint pad4;
     vec3 camPos;
 } ubo;
 
@@ -330,7 +332,18 @@ void unpackBoundingBox48_from_uvec4(uvec4 packed4, vec3 sceneMin, vec3 sceneMax,
 // info and debug methods
 
 void printGPUBufferAddresses() {
-    debugPrintfEXT("PBR TASK SHADER PUUUUSH Buffer addresses:\n  %llx \n  meshInfosAddress %llx\n", ubo.gpuMem.collectionIndicesAddress, ubo.gpuMem.meshInfosAddress);
+    uint64_t collectionIndicesAddress;
+    uint64_t collectionInfosAddress;
+    uint64_t meshInfosAddress;
+    uint64_t modelsAddress;
+    uint64_t modelsMovingAddress;
+    uint64_t materialsAddress;
+    uint64_t frameParamsBufferAddress;
+
+    debugPrintfEXT("PBR TASK SHADER PUUUUSH Buffer addresses:\n");
+    debugPrintfEXT("  collectionIndicesAddress %llx\n", ubo.gpuMem.collectionIndicesAddress);
+    debugPrintfEXT("  collectionInfosAddress %llx\n", ubo.gpuMem.collectionInfosAddress);
+    debugPrintfEXT("  meshInfosAddress %llx\n", ubo.gpuMem.meshInfosAddress);
     debugPrintfEXT("  modelsAddress %llx\n", ubo.gpuMem.modelsAddress);
     debugPrintfEXT("  modelsMovingAddress %llx\n", ubo.gpuMem.modelsMovingAddress);
     debugPrintfEXT("  materialsAddress %llx\n", ubo.gpuMem.materialsAddress);
@@ -394,4 +407,16 @@ void verifyFrameParam(uint index) {
         param.exposure, param.gamma, param.prefilteredCubeMipLevels, param.scaleIBLAmbient,
         param.debugViewInputs, param.debugViewEquation, param.intensity, param.type);
     debugPrintfEXT("  brdflut %d irradiance %d envcube %d\n", param.brdflut, param.irradiance, param.envcube);
+}
+
+void verifyTextures(GPUMaterial m) {
+	debugPrintfEXT("Textures material.baseColorTextureSet %d:\n", m.baseColorTextureSet);
+	debugPrintfEXT("         material.physicalDescriptorTextureSet %d:\n", m.physicalDescriptorTextureSet);
+	debugPrintfEXT("         material.normalTextureSet %d:\n", m.normalTextureSet);
+	debugPrintfEXT("         material.occlusionTextureSet %d:\n", m.occlusionTextureSet);
+	debugPrintfEXT("         material.emissiveTextureSet %d:\n", m.emissiveTextureSet);
+}
+
+void verifyCamPos() {
+    debugPrintfEXT("Camera position: %f %f %f\n", ubo.camPos.x, ubo.camPos.y, ubo.camPos.z);
 }

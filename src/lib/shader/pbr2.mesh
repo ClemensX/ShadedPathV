@@ -21,6 +21,7 @@ layout(location = 1) out PBRVertexOut outVert[];
 
 uint meshIndex = payload.meshIndex;
 GPUMeshInfo mesh = gpuInfos.info[meshIndex];
+//GPUMaterial material = gpuMaterials.material[mesh.material];
 GPUModel model = gpuModels.model[pushConstants.objectNum];
 
 MeshletDescs meshletDescs = MeshletDescs(mesh.meshletOffset);
@@ -29,8 +30,9 @@ PrimitiveIndexBuffer primitiveIndexBuffer = PrimitiveIndexBuffer(mesh.localIndex
 VertexBuffer vertices = VertexBuffer(mesh.vertexOffset);
 
 void main() {
+    //verifyTextures(material);
     //verifyMaterial(0);
-    verifyFrameParam(0);
+    //verifyFrameParam(0);
     // check for culled objects:
     if (payload.meshletIndex == PAYLOAD_CULLED || payload.meshletIndex > mesh.meshletCount) {
         //debugPrintfEXT("MESH SHADER: payload.meshletIndex: %u\n", payload.meshletIndex);

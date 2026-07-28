@@ -26,9 +26,10 @@ void Loader::run(ContinuationInfo* cont)
         vec3 cameraPosition(-5.60122f, 5.41301f, 50.4716f);
         initCamera(cameraPosition, glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-        getFirstPersonCameraPositioner()->setMaxSpeed(0.1f);
-        //getFirstPersonCameraPositioner()->setMaxSpeed(10.1f);
-        getHMDCameraPositioner()->setMaxSpeed(0.1f);
+        Movement mv;
+        //camera->setConstantSpeed(mv.fallSpeedMS);
+        camera->setConstantSpeed(mv.runSpeedMS*8);
+        //camera->setConstantSpeed(mv.walkSpeedMS);
 
         // engine configuration
         enableEventsAndModes();
@@ -65,12 +66,12 @@ void Loader::init() {
     //meshFlags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
     //meshFlags.setFlag(MeshFlags::MESHLET_GENERATE);
     //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESH_TYPE_NO_TEXTURES));
-    engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox"); //useGpuLod = false;
+    //engine->meshStore.loadMesh("loadingbox_cmp.glb", "LogoBox"); //useGpuLod = false;
     
     //engine->meshStore.loadMesh("granite_rock_lod_cmp.glb", "LogoBox", meshFlags); useGpuLod = true;
     //engine->meshStore.loadMesh("granite_rock_auto_lod_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
     //engine->meshStore.loadMesh("granite_rock_06_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = true;
-    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", meshFlags); alterObjectCoords = false; useGpuLod = false;
+    //engine->meshStore.loadMesh("DamagedHelmet.glb", "LogoBox", meshFlags); alterObjectCoords = false; useGpuLod = false;
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox", MeshFlagsCollection(MeshFlags::MESHLET_DEBUG_COLORS)); alterObjectCoords = true;  useDefaultNormalLineLength = false;
     //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "LogoBox"); alterObjectCoords = true;  useDefaultNormalLineLength = false;
 
@@ -101,31 +102,33 @@ void Loader::init() {
     //engine->meshStore.loadMeshCylinder("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID, true); alterObjectCoords = false;
     //engine->meshStore.loadMeshGrid("LogoBox", meshFlags, engine->textureStore.BRDFLUT_TEXTURE_ID); alterObjectCoords = false;
 
-    engine->objectStore.createGroup("group");
-    //object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.5f, -1.0f, -1.0f));
-    object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.2f, 0.2f, 0.2f));
-    //object = engine->objectStore.addObject("group", "LogoBox.2", vec3(-0.2f, 0.2f, 0.2f)); // cc_facial body legs
+    if (false) {
+        engine->objectStore.createGroup("group");
+        //object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.5f, -1.0f, -1.0f));
+        object = engine->objectStore.addObject("group", "LogoBox", vec3(-0.2f, 0.2f, 0.2f));
+        //object = engine->objectStore.addObject("group", "LogoBox.2", vec3(-0.2f, 0.2f, 0.2f)); // cc_facial body legs
 
-    //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "newid");
-    //engine->objectStore.addObject("group", "newid", vec3(+0.5f, 0.2f, 0.2f));
+        //engine->meshStore.loadMesh("DamagedHelmet_cmp.glb", "newid");
+        //engine->objectStore.addObject("group", "newid", vec3(+0.5f, 0.2f, 0.2f));
 
-    object->enableDebugGraphics = false;
-    if (alterObjectCoords) {
-        // turn upside down
-        object->rot() = vec3(PI_half, 0.0, 0.0f);
-    }
-    BoundingBox box;
-    object->getBoundingBoxWorld(box, mat4(1.0f));
-    Log(" object max values: " << box.max.x << " " << box.max.y << " " << box.max.z << std::endl);
-    if (true) {
-        // scale to have 1m cube diameter for LOD 0 object:
-        //float diameter = length(box.max - box.min);
-        //float scale = 1.732f / diameter;
-        float scale = 1.0f;
-        object->scale() = vec3(scale);
-        object->enabled = true;
-        object->useGpuLod = useGpuLod;
         object->enableDebugGraphics = false;
+        if (alterObjectCoords) {
+            // turn upside down
+            object->rot() = vec3(PI_half, 0.0, 0.0f);
+        }
+        BoundingBox box;
+        object->getBoundingBoxWorld(box, mat4(1.0f));
+        Log(" object max values: " << box.max.x << " " << box.max.y << " " << box.max.z << std::endl);
+        if (true) {
+            // scale to have 1m cube diameter for LOD 0 object:
+            //float diameter = length(box.max - box.min);
+            //float scale = 1.732f / diameter;
+            float scale = 1.0f;
+            object->scale() = vec3(scale);
+            object->enabled = true;
+            object->useGpuLod = useGpuLod;
+            object->enableDebugGraphics = false;
+        }
     }
 
     // use new mstore:
@@ -133,7 +136,7 @@ void Loader::init() {
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
     MStore& mstore = engine->mstore;
     //engine->mstore.loadMesh("test/cube_single.gltf", "SingleMesh", flags);
-    engine->mstore.loadMesh("loadingbox_cmp.glb", "SingleMesh", flags);
+    engine->mstore.loadMesh("DamagedHelmet_cmp.glb", "SingleMesh", flags);
     auto loaded = mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
     auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
     const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
@@ -251,7 +254,7 @@ void Loader::prepareFrame(FrameResources* fr)
     double deltaSeconds = seconds - old_seconds;
 
     Movement mv;
-    camera->setConstantSpeed(mv.fallSpeedMS);
+    //camera->setConstantSpeed(mv.fallSpeedMS);
     updateCameraPositioners(deltaSeconds);
     old_seconds = seconds;
 
@@ -284,7 +287,7 @@ void Loader::prepareFrame(FrameResources* fr)
 
     // be sure to add cam pos to UBO for PBR shader!!!
     applyViewProjection(pubo.view, pubo.proj, pubo2.view, pubo2.proj, &pubo.camPos, &pubo2.camPos);
-    //Log("Camera position: " << pubo.camPos.x << " " << pubo.camPos.y << " " << pubo.camPos.z << endl); // Camera position: -0.0386716 0.2 0.51695
+    Log("Camera position: " << pubo.camPos.x << " " << pubo.camPos.y << " " << pubo.camPos.z << endl); // Camera position: -0.0386716 0.2 0.51695
 
     engine->shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
     // change individual objects position:

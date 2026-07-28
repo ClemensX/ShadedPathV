@@ -1188,9 +1188,15 @@ TextureInfo* TextureStore::getTextureByHash(size_t hash)
 TextureStore::~TextureStore()
 {
 	auto& device = engine->globalRendering.device;
+
+    for (int i = 0; i < textures.size(); i++) {
+        auto t = getTextureByIndex(i);
+		Log("Texture found: [" << i << "] " << t->id.c_str() << " " << t->filename.c_str() << " " << t->vulkanTexture.deviceMemory << endl);
+	}
+
 	for (auto& tex : textures) {
 		auto &ti = tex.second;
-		Log("Texture found: " << ti.id.c_str() << " " << ti.filename.c_str() << " " << ti.vulkanTexture.deviceMemory << endl);
+		//Log("Texture found: " << ti.id.c_str() << " " << ti.filename.c_str() << " " << ti.vulkanTexture.deviceMemory << endl);
 		if (ti.isAvailable()) {
 			vkDestroyImageView(engine->globalRendering.device, tex.second.imageView, nullptr);
 			if (ti.isKtxCreated) {

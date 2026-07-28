@@ -1431,36 +1431,46 @@ void glTF::parseGltfModel(tinygltf::Model& model)
         GPUMaterial& gpuMat = gpuMaterialInfos[matIndex];
         MaterialMetadata& gpuMatMeta = gpuMaterialMetadata[matIndex];
         // fill gpuMaterialInfos[matIndex] with data from mat
-		gpuMat.baseColorTextureSet = mat.pbrMetallicRoughness.baseColorTexture.index;
-		gpuMat.physicalDescriptorTextureSet = mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
-		gpuMat.normalTextureSet = mat.normalTexture.index;
-		gpuMat.occlusionTextureSet = mat.occlusionTexture.index;
-		gpuMat.emissiveTextureSet = mat.emissiveTexture.index;
 		gpuMat.isDoubleSided = mat.doubleSided;
 
 		// Parse KHR_texture_transform and resolve final texCoord per texture use
 		KHRTextureTransform tfBase, tfMR, tfNormal, tfOcc, tfEmi;
 		int tcBase = -1, tcMR = -1, tcNormal = -1, tcOcc = -1, tcEmi = -1;
 
-		if (gpuMat.baseColorTextureSet >= 0) {
+		if (mat.pbrMetallicRoughness.baseColorTexture.index >= 0) {
 			tfBase = ParseKHRTextureTransform(mat.pbrMetallicRoughness.baseColorTexture.extensions);
 			tcBase = ResolveTexCoordUsed(mat.pbrMetallicRoughness.baseColorTexture.texCoord, tfBase);
+			auto tindex = mat.pbrMetallicRoughness.baseColorTexture.index;
+			gpuMat.baseColorTextureSet = model.textures[tindex].source;
+			gpuMatMeta.samplerBaseColor = samplers[model.textures[tindex].sampler];
 		}
-		if (gpuMat.physicalDescriptorTextureSet >= 0) {
+		if (mat.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
 			tfMR = ParseKHRTextureTransform(mat.pbrMetallicRoughness.metallicRoughnessTexture.extensions);
 			tcMR = ResolveTexCoordUsed(mat.pbrMetallicRoughness.metallicRoughnessTexture.texCoord, tfMR);
+			auto tindex = mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
+			gpuMat.physicalDescriptorTextureSet = model.textures[tindex].source;
+            gpuMatMeta.samplerMetallicRoughness = samplers[model.textures[tindex].sampler];
 		}
-		if (gpuMat.normalTextureSet >= 0) {
+		if (mat.normalTexture.index >= 0) {
 			tfNormal = ParseKHRTextureTransform(mat.normalTexture.extensions);
 			tcNormal = ResolveTexCoordUsed(mat.normalTexture.texCoord, tfNormal);
+			auto tindex = mat.normalTexture.index;
+			gpuMat.normalTextureSet = model.textures[tindex].source;
+            gpuMatMeta.samplerNormal = samplers[model.textures[tindex].sampler];
 		}
-		if (gpuMat.occlusionTextureSet >= 0) {
+		if (mat.occlusionTexture.index >= 0) {
 			tfOcc = ParseKHRTextureTransform(mat.occlusionTexture.extensions);
 			tcOcc = ResolveTexCoordUsed(mat.occlusionTexture.texCoord, tfOcc);
+			auto tindex = mat.occlusionTexture.index;
+			gpuMat.occlusionTextureSet = model.textures[tindex].source;
+            gpuMatMeta.samplerOcclusion = samplers[model.textures[tindex].sampler];
 		}
-		if (gpuMat.emissiveTextureSet >= 0) {
+		if (mat.emissiveTexture.index >= 0) {
 			tfEmi = ParseKHRTextureTransform(mat.emissiveTexture.extensions);
 			tcEmi = ResolveTexCoordUsed(mat.emissiveTexture.texCoord, tfEmi);
+			auto tindex = mat.emissiveTexture.index;
+			gpuMat.emissiveTextureSet = model.textures[tindex].source;
+			gpuMatMeta.samplerEmissive = samplers[model.textures[tindex].sampler];
 		}
 		// Bake transforms into vertex UVs per channel (only TEXCOORD_0 and TEXCOORD_1 supported).
 		// If multiple textures require different transforms on the same UV set, the first one wins; a warning is logged.
@@ -1494,22 +1504,6 @@ void glTF::parseGltfModel(tinygltf::Model& model)
         //gpuMat.perSet[0] = perSet[0];
         //gpuMat.perSet[1] = perSet[1];
 
-		// save the sampler so we can access it in mstore
-		if (gpuMat.baseColorTextureSet >= 0) {
-            gpuMatMeta.samplerBaseColor = samplers[model.textures[gpuMat.baseColorTextureSet].sampler];
-		}
-		if (gpuMat.physicalDescriptorTextureSet >= 0) {
-            gpuMatMeta.samplerMetallicRoughness = samplers[model.textures[gpuMat.physicalDescriptorTextureSet].sampler];
-		}
-		if (gpuMat.normalTextureSet >= 0) {
-            gpuMatMeta.samplerNormal = samplers[model.textures[gpuMat.normalTextureSet].sampler];
-		}
-		if (gpuMat.occlusionTextureSet >= 0) {
-            gpuMatMeta.samplerOcclusion = samplers[model.textures[gpuMat.occlusionTextureSet].sampler];
-		}
-		if (gpuMat.emissiveTextureSet >= 0) {
-            gpuMatMeta.samplerEmissive = samplers[model.textures[gpuMat.emissiveTextureSet].sampler];
-		}
 		// now set the shaderMaterial fields from gltf material:
 		// Use final, possibly overridden texCoord indices
 		gpuMat.coord_set_baseColor = std::max(0, tcBase);

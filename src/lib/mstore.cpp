@@ -196,6 +196,7 @@ void MStore::addToGlobalBuffers(const std::vector<GPUMeshInfo>& gpuMeshInfos, co
 		GPUMaterial material = gpuMaterialInfos[i];
 		MaterialMetadata materialMeta = gpuMaterialMetadata[i];
         GPUMaterial globalMaterial = material;
+
 		if (globalMaterial.baseColorTextureSet >= 0) {
 			globalMaterial.baseColorTextureSet = engine->mstore.gltf.getGlobalTextureIndex(static_cast<int>(material.baseColorTextureSet));
 			TextureInfo* ti = engine->textureStore.getTextureByIndex(globalMaterial.baseColorTextureSet);
