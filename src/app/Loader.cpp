@@ -135,8 +135,8 @@ void Loader::init() {
     MeshFlagsCollection flags;
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
     MStore& mstore = engine->mstore;
-    //engine->mstore.loadMesh("test/cube_single.gltf", "SingleMesh", flags);
-    engine->mstore.loadMesh("DamagedHelmet_cmp.glb", "SingleMesh", flags);
+    engine->mstore.loadMesh("test/cube_single.gltf", "SingleMesh", flags);
+    //engine->mstore.loadMesh("DamagedHelmet_cmp.glb", "SingleMesh", flags);
     auto loaded = mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
     auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
     const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
@@ -155,7 +155,7 @@ void Loader::init() {
     // disable first object:
     object->flags.setFlag(MeshFlags::RENDER_DISABLE);
 
-    object2->rot = vec3(0.0f, 0.0f, 0.0f);
+    object2->rot = vec3(0.0f, 0.2f, 0.0f);
     object2->scale = vec3(1.0f);
     //object2->flags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
     mat4 baseTransform = mat4(1.0); // get from gltf later
@@ -213,7 +213,7 @@ void Loader::init() {
     GPUFrameParam frameParam;
     engine->shaders.pbrShader.fillStandardFrameParams(frameParam);
     engine->shaders.pbrShader.changeLightSource(frameParam, ls.color, ls.position);
-    frameParam.intensity = 7.0f; // adjust sun light intensity
+    frameParam.intensity = 1.0f; // adjust sun light intensity
     engine->shaders.pbrShader.setFrameParam(frameParam, 0);
     Util::debugModels(&engine->mstore);
 

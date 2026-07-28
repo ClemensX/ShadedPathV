@@ -162,9 +162,9 @@ public:
 	void setAndCheckSampler(int32_t index, VkSampler sampler) {
         if (index < 0) return; // texture not available, nothing to check
         TextureInfo* ti = getTextureByIndex(index);
-		if (ti->sampler != nullptr && ti->textureIsReused == false) {
-			Error("setAndCheckSampler: internal error texture index " + std::to_string(index) + " was tried to reuse but flag was not set");
-		}
+		//if (ti->sampler != nullptr && ti->textureIsReused == false) {
+		//	Error("setAndCheckSampler: internal error texture index " + std::to_string(index) + " was tried to reuse but flag was not set");
+		//}
 		if (ti->sampler != nullptr && ti->sampler != sampler) {
 			Error("setAndCheckSampler: texture index " + std::to_string(index) + " has different sampler than reused texture");
 		}

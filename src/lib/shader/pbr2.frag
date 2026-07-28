@@ -204,14 +204,14 @@ void main() {
 		if (material.emissiveTextureSet > -1 && false) {
 			baseColor = textureBindless2D(material.emissiveTextureSet, material.coord_set_emissive == 0 ? inUV0 : inUV1);
 		}
-		if (material.normalTextureSet > -1 && true) {
+		if (material.normalTextureSet > -1 && false) {
 			baseColor = textureBindless2D(material.normalTextureSet, material.coord_set_normal == 0 ? inUV0 : inUV1);
 		}
 		if (material.occlusionTextureSet > -1 && false) {
 			baseColor = textureBindless2D(material.occlusionTextureSet, material.coord_set_occlusion == 0 ? inUV0 : inUV1);
 			baseColor.g = baseColor.b = 0.0;
 		}
-		if (material.physicalDescriptorTextureSet > -1 && false) {
+		if (material.physicalDescriptorTextureSet > -1 && true) {
 			baseColor = textureBindless2D(material.physicalDescriptorTextureSet, material.coord_set_metallicRoughness == 0 ? inUV0 : inUV1);
 			baseColor.r = 0.0;
 		}
@@ -350,8 +350,8 @@ void main() {
 
 	// Calculate lighting contribution from image based lighting source (IBL)
 	color += getIBLContribution(pbrInputs, n, reflection, material);
-	outColor = vec4(color, baseColor.a);
-	return;
+//	outColor = vec4(color, baseColor.a);
+//	return;
 
 	const float u_OcclusionStrength = 1.0f;
 	// Apply optional PBR terms for additional (optional) shading

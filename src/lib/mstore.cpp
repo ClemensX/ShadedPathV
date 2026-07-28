@@ -230,8 +230,6 @@ void MStore::addToGlobalBuffers(const std::vector<GPUMeshInfo>& gpuMeshInfos, co
 		engine->textureStore.setAndCheckSampler(globalMaterial.normalTextureSet, materialMeta.samplerNormal);
 		engine->textureStore.setAndCheckSampler(globalMaterial.occlusionTextureSet, materialMeta.samplerOcclusion);
 
-		globalMaterial.lod_category = 42;
-
 		engine->globalRendering.gpuMemory.appendElement(BufferType::Materials, globalMaterial);
 	}
 

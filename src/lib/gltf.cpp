@@ -1429,6 +1429,11 @@ void glTF::parseGltfModel(tinygltf::Model& model)
     for (int matIndex = 0; matIndex < (int)model.materials.size(); ++matIndex) {
         auto& mat = model.materials[matIndex];
         GPUMaterial& gpuMat = gpuMaterialInfos[matIndex];
+		gpuMat.baseColorTextureSet = -1;
+		gpuMat.physicalDescriptorTextureSet = -1;
+		gpuMat.normalTextureSet = -1;
+		gpuMat.occlusionTextureSet = -1;
+		gpuMat.emissiveTextureSet = -1;
         MaterialMetadata& gpuMatMeta = gpuMaterialMetadata[matIndex];
         // fill gpuMaterialInfos[matIndex] with data from mat
 		gpuMat.isDoubleSided = mat.doubleSided;
