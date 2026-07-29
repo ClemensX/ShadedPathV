@@ -88,21 +88,22 @@ void main() {
         return;
     }
     SetMeshOutputsEXT(vertexCount, primCount);
+    //SetMeshOutputsEXT(vertexCount, 1);
     //debugPrintfEXT("MESH SHADER INFO: vertexCount %d primCount %d\n", vertexCount, primCount);
 
     // 1. Fetch meshlet-local to global vertex mapping
-    uint use = 0;
-    for (uint v = 0; v < vertexCount; ++v) {
-        uint globalVertexIndex = globalIndexBuffer.index[indexBufferOffset + v];
-        PBRVertex vert = vertices.vertex[globalVertexIndex];
-        outVert[v].pad0 = 0.5;
-        if (vert.color0.x == 0.42) {
-            use = 1; // use this vertex for testing
-        }
-    }
-    if (use == 0 && false) {
-        return; // no vertices marked for use
-    }
+//    uint use = 0;
+//    for (uint v = 0; v < vertexCount; ++v) {
+//        uint globalVertexIndex = globalIndexBuffer.index[indexBufferOffset + v];
+//        PBRVertex vert = vertices.vertex[globalVertexIndex];
+//        outVert[v].pad0 = 0.5;
+//        if (vert.color0.x == 0.42) {
+//            use = 1; // use this vertex for testing
+//        }
+//    }
+//    if (use == 0 && false) {
+//        return; // no vertices marked for use
+//    }
     for (uint v = 0; v < vertexCount; ++v) {
         uint globalVertexIndex = globalIndexBuffer.index[indexBufferOffset + v];
         PBRVertex vert = vertices.vertex[globalVertexIndex];
@@ -120,7 +121,7 @@ void main() {
         vec3 worldPos = locPos.xyz / locPos.w;
 	    outVert[v].worldPos = worldPos;
         gl_MeshVerticesEXT[v].gl_Position =  ubo.proj * ubo.view * vec4(worldPos, 1.0);
-
+        //debugPrintfEXT("vert[%d] position: %f %f %f\n", v, worldPos.x, worldPos.y, worldPos.z);
 //        change to true for special cases...
 //        if (false && (model_ubo.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) { // if model_ubo.flags & MODEL_FLAG_PRELIGHT_VERTICES
 //            // apply debug colors
@@ -152,6 +153,7 @@ void main() {
         //debugPrintfEXT("MESH SHADER uint index %d value %u\n", primIndex, primitiveIndexBuffer.primitiveIndices[primIndex]);
         //debugPrintfEXT("MESH SHADER uint index %d tri %d prim %d %d %d\n", primIndex, p, byteValue0, byteValue1, byteValue2);
         gl_PrimitiveTriangleIndicesEXT[p-primStart] = uvec3(byteValue0, byteValue1, byteValue2);
+        //if (p==2) gl_PrimitiveTriangleIndicesEXT[0] = uvec3(byteValue0, byteValue1, byteValue2);
         //if (meshletIndex < 1 && p == 90) debugPrintfEXT("MESH SHADER X count %d prim %d %d %d\n", primCount, byteValue0, byteValue1, byteValue2);
     }
     return;

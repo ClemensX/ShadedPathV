@@ -81,7 +81,7 @@ const float PBR_WORKFLOW_SPECULAR_GLOSSINESS = 1.0;
 
 // Find the normal for this fragment, pulling either from a predefined normal map
 // or from the interpolated mesh normal and tangent attributes.
-vec3 getNormal(GPUMaterial material)
+vec3 getNormalNaN(GPUMaterial material)
 {
 	// Perturb normal, see http://www.thetenthplanet.de/archives/1180
 	vec3 tangentNormal = textureBindless2D(material.normalTextureSet, material.coord_set_normal == 0 ? inUV0 : inUV1).xyz * 2.0 - 1.0;
@@ -97,6 +97,57 @@ vec3 getNormal(GPUMaterial material)
 	mat3 TBN = mat3(T, B, N);
 
 	return normalize(TBN * tangentNormal);
+	//return normalize(N);
+}
+
+// fixed getNormal():
+vec3 safeNormalize(vec3 v, vec3 fallback)
+{
+	float len2 = dot(v, v);
+	return (len2 > 1e-12) ? v * inversesqrt(len2) : fallback;
+}
+
+vec3 getNormal(GPUMaterial material)
+{
+	vec3 N = safeNormalize(inNormal, vec3(0.0, 0.0, 1.0));
+
+	if (material.normalTextureSet < 0) {
+		return N;
+	}
+
+	vec2 uv = (material.coord_set_normal == 0u) ? inUV0 : inUV1;
+
+	vec3 tangentNormal = textureBindless2D(material.normalTextureSet, uv).xyz * 2.0 - 1.0;
+	tangentNormal = safeNormalize(tangentNormal, vec3(0.0, 0.0, 1.0));
+
+	// If the normal map looks vertically inverted, enable this:
+	// tangentNormal.y = -tangentNormal.y;
+
+	vec3 q1 = dFdx(inWorldPos);
+	vec3 q2 = dFdy(inWorldPos);
+	vec2 st1 = dFdx(uv);
+	vec2 st2 = dFdy(uv);
+
+	vec3 Traw = q1 * st2.y - q2 * st1.y;
+	vec3 Braw = -q1 * st2.x + q2 * st1.x;
+
+	float tLen2 = dot(Traw, Traw);
+	float bLen2 = dot(Braw, Braw);
+
+	if (tLen2 <= 1e-12 || bLen2 <= 1e-12) {
+		return N;
+	}
+
+	vec3 T = normalize(Traw - N * dot(N, Traw));
+	vec3 B = normalize(Braw - N * dot(N, Braw));
+
+	// Keep a consistent handedness
+	if (dot(cross(N, T), B) < 0.0) {
+		B = -B;
+	}
+
+	mat3 TBN = mat3(T, B, N);
+	return safeNormalize(TBN * tangentNormal, N);
 }
 
 // Calculation of the lighting contribution from an optional Image Based Light source.
