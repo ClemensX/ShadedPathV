@@ -139,7 +139,11 @@ void CubeSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr)
 	handover.mvpBuffer = uniformBuffer;
 	handover.mvpBuffer2 = uniformBuffer2;
 	handover.mvpSize = sizeof(CubeShader::UniformBufferObject);
-	handover.imageView = cubeShader->skybox->imageView;
+    if (cubeShader->skybox == nullptr) {
+        Log("WARNING: CubeShader: No skybox texture set. Please call CubeShader::setSkybox() before creating command buffers.");
+    } else {
+        handover.imageView = cubeShader->skybox->imageView;
+    }
 	handover.descriptorSet = &descriptorSet;
 	handover.descriptorSet2 = &descriptorSet2;
 	handover.shader = cubeShader;

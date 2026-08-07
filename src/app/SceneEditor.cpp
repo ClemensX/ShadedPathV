@@ -27,7 +27,7 @@ void SceneEditor::run(ContinuationInfo* cont)
         // add shaders used in this app
         shaders
             .addShader(shaders.clearShader)
-            //.addShader(shaders.cubeShader)
+            .addShader(shaders.cubeShader)
             .addShader(shaders.pbrShader)
             .addShader(shaders.lineShader)
             ;
@@ -92,6 +92,30 @@ void SceneEditor::prepareFrame(FrameResources* fr)
     updateCameraPositioners(deltaSeconds);
     old_seconds = seconds;
 
+    // cube
+    CubeShader::UniformBufferObject cubo{};
+    CubeShader::UniformBufferObject cubo2{};
+    cubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    cubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    applyViewProjection(cubo.view, cubo.proj, cubo2.view, cubo2.proj);
+    // reset view matrix to camera orientation without using camera position (prevent camera movin out of skybox)
+    cubo.view = camera->getViewMatrixAtCameraPos();
+    cubo2.view = camera->getViewMatrixAtCameraPos();
+    engine->shaders.cubeShader.uploadToGPU(tr, cubo, cubo2);
+
+    // pbr
+    PBRShader::UniformBufferObject pubo{};
+    PBRShader::UniformBufferObject pubo2{};
+    mat4 modeltransform = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    pubo.model = modeltransform;
+    pubo2.model = modeltransform;
+    //pubo.baseColor = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+
+    // be sure to add cam pos to UBO for PBR shader!!!
+    applyViewProjection(pubo.view, pubo.proj, pubo2.view, pubo2.proj, &pubo.camPos, &pubo2.camPos);
+    //Log("Camera position: " << pubo.camPos.x << " " << pubo.camPos.y << " " << pubo.camPos.z << endl); // Camera position: -0.0386716 0.2 0.51695
+    engine->shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
+
     postUpdatePerFrame(tr);
     //camera->log();
     engine->shaders.clearShader.addCommandBuffers(fr, &fr->drawResults[0]); // put clear shader first
@@ -101,17 +125,9 @@ void SceneEditor::prepareFrame(FrameResources* fr)
 void SceneEditor::drawFrame(FrameResources* fr, int topic, DrawResult* drawResult)
 {
     if (topic == 0) {
-        //engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
         engine->shaders.cubeShader.addCommandBuffers(fr, drawResult);
-        if (engine->sound.enabled) {
-            engine->sound.Update(camera);
-        }
-        // draw lines
         engine->shaders.lineShader.addCommandBuffers(fr, drawResult);
-    }
-    else if (topic == 1) {
         engine->shaders.pbrShader.addCommandBuffers(fr, drawResult);
-        //Log("Loader::drawFrame: PBR shader command buffers added" << endl);
     }
 }
 
@@ -146,4 +162,15 @@ void SceneEditor::handleInput(InputState& inputState)
         }
     }
     AppSupport::handleInput(inputState);
+}
+
+void SceneEditor::buildCustomUI() {
+    if (ImGui::Button("Environment Cube Settings")) {
+        displayParams.showEnvCubeDialog = true;
+        ImGui::OpenPopup("EnvCubeSettings");
+    }
+    if (ImGui::BeginPopupModal("EnvCubeSettings", &displayParams.showEnvCubeDialog)) {
+        ImGui::Text("42");
+        ImGui::EndPopup();
+    }
 }
