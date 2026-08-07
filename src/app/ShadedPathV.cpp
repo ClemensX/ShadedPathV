@@ -20,6 +20,7 @@
 #include "MeshManager.h"
 #include "Rocks.h"
 #include "Forest.h"
+#include "SceneEditor.h"
 
 int mainOne(int argc, char* argv[]);
 int mainTwo(int argc, char* argv[]);
@@ -46,11 +47,12 @@ int mainOne(int argc, char* argv[])
     //LandscapeDemo app; // vr ok
     //Incoming app;
     //LandscapeGenerator app; // vr ok with limited support
-    Loader app;
+    //Loader app;
     //MeshManager app;
     //Rocks app;
     //Forest app;
     //glbLodMerger app; // vr not supported
+    SceneEditor app;
 
     Log("main() start!\n");
     if (app.isCLITool) {

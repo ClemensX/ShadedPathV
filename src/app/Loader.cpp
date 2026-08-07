@@ -135,8 +135,8 @@ void Loader::init() {
     MeshFlagsCollection flags;
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
     MStore& mstore = engine->mstore;
-    engine->mstore.loadMesh("test/cube_single.gltf", "SingleMesh", flags);
-    //engine->mstore.loadMesh("DamagedHelmet_cmp.glb", "SingleMesh", flags);
+    //engine->mstore.loadMesh("test/cube_single.gltf", "SingleMesh", flags);
+    engine->mstore.loadMesh("DamagedHelmet_cmp.glb", "SingleMesh", flags); alterObjectCoords = true;
     auto loaded = mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
     auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
     const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
@@ -149,22 +149,25 @@ void Loader::init() {
 
     // add mesh vertices to line shader for debug display:
     vector<LineDef> lines;
-    Util::drawMeshAsLines(lines, meshMetadata->vertices, meshMetadata->indices, Colors::Yellow);
+    //Util::drawMeshAsLines(lines, meshMetadata->vertices, meshMetadata->indices, Colors::Yellow);
     SceneObject* object = engine->mstore.addObject(meshInfo->index, vec3(0.0f, 0.0f, 0.0f));
-    SceneObject* object2 = engine->mstore.addObject(meshInfo->index, vec3(20.1f, 0.2f, 0.3f));
+    //SceneObject* object2 = engine->mstore.addObject(meshInfo->index, vec3(20.1f, 0.2f, 0.3f));
     // disable first object:
-    object->flags.setFlag(MeshFlags::RENDER_DISABLE);
+    //object->flags.setFlag(MeshFlags::RENDER_DISABLE);
 
-    object2->rot = vec3(0.0f, 0.2f, 0.0f);
-    object2->scale = vec3(1.0f);
+    if (alterObjectCoords) {
+        // turn upside down
+        object->rot = vec3(PI_half, 0.0, 0.0f);
+    }
+    object->scale = vec3(1.0f);
     //object2->flags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
     mat4 baseTransform = mat4(1.0); // get from gltf later
     GPUModel* gpuModel = engine->mstore.getGPUModel(object->index);
-    GPUModel* gpuModel2 = engine->mstore.getGPUModel(object2->index);
-    gpuModel2->material_lod_category = 42;
+    //GPUModel* gpuModel2 = engine->mstore.getGPUModel(object2->index);
+    //gpuModel2->material_lod_category = 42;
 
     object->prepareGPUModel(gpuModel, baseTransform);
-    object2->prepareGPUModel(gpuModel2, baseTransform);
+    //object2->prepareGPUModel(gpuModel2, baseTransform);
 
     // debug info material:
     GPUMaterial* mat = engine->mstore.getGPUMaterial(meshInfo->material);
