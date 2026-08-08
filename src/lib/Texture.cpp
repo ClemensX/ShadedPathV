@@ -213,6 +213,15 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 	}
 }
 
+void TextureStore::freeTexture(std::string id)
+{
+    auto t = textures.find(id);
+    if (t != textures.end()) {
+        textures.erase(t);
+        Log("WARNING: Freed texture: " << id << endl);
+    }
+}
+
 TextureInfo* TextureStore::createTextureSlot(string textureName)
 {
 	// make sure we do not already have this texture stored:
@@ -824,6 +833,8 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 		cubemap->sampler = cubemapSampler;
 		cubemap->vulkanTexture.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		cubemap->type = TextureType::TEXTURE_TYPE_GLTF; // uses the sampler from above
+		// for generated textures we create a fake hash from the id string
+		cubemap->hash = generateHash(reinterpret_cast<const unsigned char*>(cubemap->id.c_str()), cubemap->id.size());
 		setTextureActive(cubemap->id, true);
 		string filepath;
 		switch (target) {

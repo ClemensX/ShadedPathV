@@ -1703,3 +1703,18 @@ void Util::debugMaterial(MStore* mstore, int32_t materialIndex) {
     Log("\n  lod: " << material->lod_category);
     Log(std::endl);
 }
+
+namespace fs = std::filesystem;
+
+std::vector<std::string> Util::getFilesMatchingPattern(const fs::path& folder, const std::string& pattern) {
+    std::vector<std::string> result;
+    for (const auto& entry : fs::recursive_directory_iterator(folder)) {
+        if (entry.is_regular_file()) {
+            // Simple pattern match: ends with extension
+            if (pattern == "*" || entry.path().filename().string().find(pattern) != std::string::npos) {
+                result.push_back(entry.path().filename().string());
+            }
+        }
+    }
+    return result;
+}

@@ -283,6 +283,10 @@ public:
 
     static void debugModels(MStore* mstore);
     static void debugMaterial(MStore* mstore, int32_t materialIndex);
+
+    // UI helpers
+    static std::vector<std::string> getFilesMatchingPattern(const std::filesystem::path& folder, const std::string& pattern);
+
 private:
     static uint8_t bit_reverse8(uint8_t n) {
         n = (n & 0xF0) >> 4 | (n & 0x0F) << 4;

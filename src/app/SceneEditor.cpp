@@ -92,6 +92,12 @@ void SceneEditor::prepareFrame(FrameResources* fr)
     updateCameraPositioners(deltaSeconds);
     old_seconds = seconds;
 
+    // check for UI actions:
+    if (displayParams.loadNewEnvCube) {
+        displayParams.loadNewEnvCube = false;
+        loadNewEnvCube(displayParams.newEnvCubeFileName);
+    }
+
     // cube
     CubeShader::UniformBufferObject cubo{};
     CubeShader::UniformBufferObject cubo2{};
@@ -165,12 +171,49 @@ void SceneEditor::handleInput(InputState& inputState)
 }
 
 void SceneEditor::buildCustomUI() {
+    ImGui::Separator();
     if (ImGui::Button("Environment Cube Settings")) {
         displayParams.showEnvCubeDialog = true;
         ImGui::OpenPopup("EnvCubeSettings");
     }
     if (ImGui::BeginPopupModal("EnvCubeSettings", &displayParams.showEnvCubeDialog)) {
-        ImGui::Text("42");
+        // load file list from data folder
+        engine->files.findAssetFolder("data"); // maybe let the user change asset folder name?
+        filesystem::path textureFolder = engine->files.getAssetFolderPath() / engine->files.TEXTURE_PATH;
+        displayParams.filePattern = ".ktx2";
+        displayParams.files = Util::getFilesMatchingPattern(textureFolder, displayParams.filePattern);
+        ImGui::Text("Data folder: %s", textureFolder.string().c_str());
+        ImGui::Text("Choose a file:");
+        ImGui::Separator();
+
+        for (int i = 0; i < displayParams.files.size(); ++i) {
+            if (ImGui::Selectable(displayParams.files[i].c_str(), displayParams.selectedLine == i)) {
+                displayParams.selectedLine = i;
+                displayParams.showEnvCubeDialog = false; // Close after selection
+                displayParams.loadNewEnvCube = true;
+                displayParams.newEnvCubeFileName = (textureFolder / displayParams.files[i]).string();
+                ImGui::CloseCurrentPopup();
+            }
+        }
+
+        if (ImGui::Button("Cancel")) {
+            displayParams.showEnvCubeDialog = false;
+            ImGui::CloseCurrentPopup();
+        }
         ImGui::EndPopup();
     }
+}
+
+void SceneEditor::loadNewEnvCube(string textureFilePathName)
+{
+    filesystem::path filepath = textureFilePathName;
+    string filename = filepath.filename().string();
+    Log("WARNING: Loading new environment cube: " << filename << std::endl);
+
+    engine->textureStore.freeTexture("skyboxTexture");
+    engine->textureStore.loadTexture(filename, "skyboxTexture");
+    // generating cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
+    engine->textureStore.generateCubemaps("skyboxTexture");
+    //engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);
+    //engine->textureStore.loadTexture("prefilter.ktx2", engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
 }

@@ -10,7 +10,14 @@ struct SceneEditorDisplayParams
     bool showSunDirBeam = false;
     float sunIntensity = 1.0f;
 
+    // environment cube handling:
     bool showEnvCubeDialog = false;
+    std::vector<std::string> files;
+    std::string filePattern = "";
+    int selectedLine = -1;
+    // results:
+    bool loadNewEnvCube = false; // signal to load new file
+    std::string newEnvCubeFileName; // name of new file to load
 };
 
 // Display Logo. May be used while big game loads in the background
@@ -36,4 +43,5 @@ private:
     World world;
     bool shouldStopEngine = false;
     SceneEditorDisplayParams displayParams;
+    void loadNewEnvCube(std::string textureFileName);
 };

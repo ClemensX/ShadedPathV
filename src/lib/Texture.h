@@ -172,8 +172,14 @@ public:
 			ti->sampler = sampler;
         }
 	}
+	// reuse functions for render phase, use with care, may interrupt frame generation:
+
+    // free texture id from store - enables re-loading texture with same id.
+	// old texture is still on GPU, but should no longer be accessed
+    void freeTexture(std::string id);
 private:
 	std::unordered_map<std::string, ::TextureInfo> textures;
+    //std::vector<::TextureInfo> textures;
 	ShadedPathEngine* engine = nullptr;
 	Util* util = nullptr;
 	ktxVulkanDeviceInfo vdi = {};
