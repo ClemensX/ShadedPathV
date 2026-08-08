@@ -210,7 +210,7 @@ void SceneEditor::loadNewEnvCube(string textureFilePathName)
     string filename = filepath.filename().string();
     Log("WARNING: Loading new environment cube: " << filename << std::endl);
 
-    engine->textureStore.freeTexture("skyboxTexture");
+    engine->textureStore.freeTextureId("skyboxTexture");
     engine->textureStore.loadTexture(filename, "skyboxTexture");
     // generating cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
     engine->textureStore.generateCubemaps("skyboxTexture");

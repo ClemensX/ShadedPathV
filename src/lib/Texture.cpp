@@ -22,31 +22,43 @@ void TextureStore::init(ShadedPathEngine* engine, size_t maxTextures) {
 
 TextureInfo* TextureStore::getTextureByIndex(uint32_t index)
 {
-	auto& allTex = getTexturesMap();
-	for (auto& tex : allTex) {
-		auto& ti = tex.second;
-		if (ti.isAvailable()) {
-            if (ti.index == index) {
-                return getTexture(ti.id);
-            }
+	if (index >= textures.size()) {
+		Error("Texture not found by index");
+	}
+	TextureInfo* ti = &textures[index];
+	if (!ti->isAvailable()) {
+		Error("Requested texture not available");
+	}
+	return ti;
+}
+
+TextureInfo* TextureStore::findTextureById(const std::string& id)
+{
+	for (auto& texture : textures) {
+		if (texture.id == id) {
+			return &texture;
 		}
 	}
-    Error("Texture not found by index");
-    return nullptr; // keep compiler happy
+	return nullptr;
+}
+
+const TextureInfo* TextureStore::findTextureById(const std::string& id) const
+{
+	for (const auto& texture : textures) {
+		if (texture.id == id) {
+			return &texture;
+		}
+	}
+	return nullptr;
 }
 
 TextureInfo* TextureStore::getTexture(string id)
 {
-	TextureInfo* ret = &textures[id];
-	// simple validity check for now:
-	if (ret->id.size() > 0) {
-		// if there is no id the texture could not be loaded (wrong filename?)
-		if (!ret->isAvailable()) {
-			Error("Requested texture not available");
-		}
-		//ret->available = true;
+	TextureInfo* ret = findTextureById(id);
+	if (ret == nullptr || ret->id.empty()) {
+		Error("Requested texture not available");
 	}
-	else {
+	if (!ret->isAvailable()) {
 		Error("Requested texture not available");
 	}
 	return ret;
@@ -213,19 +225,21 @@ void TextureStore::createVulkanTextureFromKTKTexture(ktxTexture* kTexture, Textu
 	}
 }
 
-void TextureStore::freeTexture(std::string id)
+void TextureStore::freeTextureId(std::string id)
 {
-    auto t = textures.find(id);
-    if (t != textures.end()) {
-        textures.erase(t);
-        Log("WARNING: Freed texture: " << id << endl);
-    }
+	for (size_t i = 0; i < textures.size(); ++i) {
+		if (textures[i].id == id) {
+            textures[i].id.clear();
+			Log("WARNING: Freed texture id: " << id << endl);
+			return;
+		}
+	}
 }
 
 TextureInfo* TextureStore::createTextureSlot(string textureName)
 {
 	// make sure we do not already have this texture stored:
-	if (textures.find(textureName) != textures.end()) {
+	if (findTextureById(textureName) != nullptr) {
 		Error("texture already loaded");
 	}
 	return internalCreateTextureSlot(textureName);
@@ -238,7 +252,7 @@ TextureInfo* TextureStore::createTextureSlotForMesh(MeshInfo* mesh, int index)
 	idss << mesh->id << index;
 	// make sure we do not already have this texture stored:
 	string id = idss.str();
-	if (textures.find(id) != textures.end()) {
+	if (findTextureById(id) != nullptr) {
 		Error("texture already loded");
 	}
 	return internalCreateTextureSlot(id);
@@ -248,10 +262,10 @@ TextureInfo* TextureStore::internalCreateTextureSlot(string id)
 {
 	TextureInfo initialTexture;  // only used to initialize struct in texture store - do not access this after assignment to store
 	initialTexture.id = id;
-	textures[id] = initialTexture;
-	TextureInfo* texture = &textures[id];
+	textures.push_back(initialTexture);
+	TextureInfo* texture = &textures.back();
 	checkStoreSize();
-	texture->index = static_cast<uint32_t>(textures.size()-1);
+	texture->index = static_cast<uint32_t>(textures.size() - 1);
 	return texture;
 }
 
@@ -277,11 +291,13 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 		case IRRADIANCE:
             format = formatIrradiance;
 			dim = dimIrradiance;
+            texStore.freeTextureId(IRRADIANCE_TEXTURE_ID);
             cubemap = texStore.createTextureSlot(IRRADIANCE_TEXTURE_ID);
 			break;
 		case PREFILTEREDENV:
             format = formatPrefilteredEnv;
 			dim = dimPrefilteredEnv;
+			texStore.freeTextureId(PREFILTEREDENV_TEXTURE_ID);
 			cubemap = texStore.createTextureSlot(PREFILTEREDENV_TEXTURE_ID);
 			break;
 		};
@@ -1153,16 +1169,16 @@ void TextureStore::checkStoreSize()
 
 void TextureStore::setTextureActive(std::string id, bool active)
 {
-    auto ti = textures.find(id);
-    if (ti != textures.end()) {
-        ti->second.available = active;
-		validateTexture(&ti->second);
+	TextureInfo* ti = findTextureById(id);
+	if (ti != nullptr) {
+		ti->available = active;
+		validateTexture(ti);
 		// recreate texture pool descriptor set
 		VulkanResources::updateDescriptorSetForTextures(engine);
-		//Log("tex added and descriptor set updated: " << ti->second.id.c_str() << " index: " << ti->second.index << endl);
+		//Log("tex added and descriptor set updated: " << ti->id.c_str() << " index: " << ti->index << endl);
 		return;
 	}
-    Error("Texture not found");
+	Error("Texture not found");
 }
 
 void TextureStore::validateTexture(TextureInfo* ti)
@@ -1189,8 +1205,8 @@ size_t TextureStore::generateHash(const unsigned char* bytes, size_t size) {
 TextureInfo* TextureStore::getTextureByHash(size_t hash)
 {
 	for (auto& tex : textures) {
-		if (tex.second.hash == hash) {
-			return &tex.second;
+		if (tex.hash == hash) {
+			return &tex;
 		}
 	}
 	return nullptr;
@@ -1200,16 +1216,16 @@ TextureStore::~TextureStore()
 {
 	auto& device = engine->globalRendering.device;
 
-    for (int i = 0; i < textures.size(); i++) {
-        auto t = getTextureByIndex(i);
-		Log("Texture found: [" << i << "] " << t->id.c_str() << " " << t->filename.c_str() << " " << t->vulkanTexture.deviceMemory << endl);
+	for (size_t i = 0; i < textures.size(); i++) {
+		auto& t = textures[i];
+		Log("Texture found: [" << i << "] " << t.id.c_str() << " " << t.filename.c_str() << " " << t.vulkanTexture.deviceMemory << endl);
+        assert(i == t.index);
 	}
 
-	for (auto& tex : textures) {
-		auto &ti = tex.second;
+	for (auto& ti : textures) {
 		//Log("Texture found: " << ti.id.c_str() << " " << ti.filename.c_str() << " " << ti.vulkanTexture.deviceMemory << endl);
 		if (ti.isAvailable()) {
-			vkDestroyImageView(engine->globalRendering.device, tex.second.imageView, nullptr);
+			vkDestroyImageView(engine->globalRendering.device, ti.imageView, nullptr);
 			if (ti.isKtxCreated) {
 				ktxVulkanTexture_Destruct(&ti.vulkanTexture, engine->globalRendering.device, nullptr);
 			} else {
@@ -1218,9 +1234,9 @@ TextureStore::~TextureStore()
 			}
 		}
 	}
-    if (vdi.device == nullptr) {
-        Error("Texture store not properly initialized");
-    }
+	if (vdi.device == nullptr) {
+		Error("Texture store not properly initialized");
+	}
 	ktxVulkanDeviceInfo_Destruct(&vdi);
 	vkDestroyDescriptorSetLayout(device, layout, nullptr);
 	vkDestroyDescriptorPool(device, pool, nullptr);

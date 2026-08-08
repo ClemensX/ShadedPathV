@@ -407,13 +407,11 @@ void VulkanResources::updateDescriptorSetForTextures(ShadedPathEngine* engine) {
 
     // iterate over all textures and write descriptor sets
     // use empty local vectors
-    size_t numTextures = engine->textureStore.getTexturesMap().size();
+    size_t numTextures = engine->textureStore.getTextures().size();
     vector<VkDescriptorImageInfo> imageInfos(numTextures);
     vector<VkWriteDescriptorSet> descriptorSets;
 
-    TextureInfo* lastTexture = nullptr;
-    for (auto& texMapEntry : engine->textureStore.getTexturesMap()) {
-        auto& tex = texMapEntry.second;
+    for (const auto& tex : engine->textureStore.getTextures()) {
         //Log("tex: " << tex.id.c_str() << " index: " << tex.index << " ");
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -427,7 +425,6 @@ void VulkanResources::updateDescriptorSetForTextures(ShadedPathEngine* engine) {
             //Log("using default sampler\n");
         }
         imageInfos[tex.index] = imageInfo;
-        lastTexture = (TextureInfo*) &tex;
     }
     VkWriteDescriptorSet descSet{};
     descSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

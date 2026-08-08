@@ -107,7 +107,6 @@ void TextureViewer::init() {
     };
     vector<BillboardDef> billboards;
     //for_each(begin(myBillboards), end(myBillboards), [&billboards](BillboardDef l) {billboards.push_back(l); });
-    auto& allTex = engine->textureStore.getTexturesMap();
     vector<BillboardDef> billboardsToAdd;
     for (int i = 0; i < engine->textureStore.size(); i++) {
         TextureInfo* ti = engine->textureStore.getTextureByIndex(i);

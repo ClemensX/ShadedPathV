@@ -1447,11 +1447,10 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     md << "| Index | ID | Type | WxH | Mips | Format | Compressed | Filename |\n";
     md << "|-------|----|------|-----|------|--------|------------|----------|\n";
 
-    // Collect available indices from the map to avoid querying non-available slots
+    // Collect available indices to avoid querying non-available slots
     std::vector<uint32_t> texIndices;
     texIndices.reserve(engine->textureStore.size());
-    for (const auto& kv : engine->textureStore.getTexturesMap()) {
-        const TextureInfo& ti = kv.second;
+    for (const auto& ti : engine->textureStore.getTextures()) {
         if (ti.isAvailable()) {
             texIndices.push_back(ti.index);
         }

@@ -141,8 +141,8 @@ public:
 	size_t getMaxSize() {
 		return maxTextures;
 	}
-	// get const ref to map for easy and safe iteration:
-	const std::unordered_map<std::string, ::TextureInfo>& getTexturesMap() { return textures; }
+	// get const ref to texture list for easy and safe iteration:
+	const std::vector<::TextureInfo>& getTextures() const { return textures; }
 
 	VkDescriptorSetLayout layout = nullptr;
 	VkDescriptorPool pool = nullptr;
@@ -176,16 +176,17 @@ public:
 
     // free texture id from store - enables re-loading texture with same id.
 	// old texture is still on GPU, but should no longer be accessed
-    void freeTexture(std::string id);
+    void freeTextureId(std::string id);
 private:
-	std::unordered_map<std::string, ::TextureInfo> textures;
-    //std::vector<::TextureInfo> textures;
+	std::vector<::TextureInfo> textures;
 	ShadedPathEngine* engine = nullptr;
 	Util* util = nullptr;
 	ktxVulkanDeviceInfo vdi = {};
 	size_t maxTextures = 0;
 	// after adding a texture check that max size is not exceeded
 	void checkStoreSize();
+	::TextureInfo* findTextureById(const std::string& id);
+	const ::TextureInfo* findTextureById(const std::string& id) const;
 	// all creation methods have to call this internally:
 	::TextureInfo* internalCreateTextureSlot(std::string id);
 };
