@@ -201,6 +201,8 @@ void CubeShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
 
 void CubeShader::uploadToGPU(FrameResources& fr, UniformBufferObject& ubo, UniformBufferObject& ubo2, bool outsideMode) {
 	if (!enabled) return;
+    ubo.texIndex = skybox ? skybox->index : -1;
+	ubo2.texIndex = ubo.texIndex;
 	auto& sub = globalSubShaders[fr.frameIndex];
 	sub.uploadToGPU(fr, ubo, ubo2, outsideMode);
 }
@@ -211,6 +213,9 @@ void CubeSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResou
 	VkBuffer vertexBuffers[] = { cubeShader->vertexBuffer };
 	VkDeviceSize offsets[] = { 0 };
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+	// bind global texture array:
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 1, 1, &engine->textureStore.descriptorSet, 0, nullptr);
 
 	// bind descriptor set
 	if (!isRightEye) {

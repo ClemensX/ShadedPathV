@@ -10,7 +10,7 @@ public:
 
 	std::vector<VulkanResourceElement> vulkanResourceDefinition = {
 		{ VulkanResourceType::MVPBuffer },
-		{ VulkanResourceType::SingleTexture },
+		{ VulkanResourceType::GlobalTextureSet },
 		{ VulkanResourceType::VertexBufferStatic }
 	};
 	// Vertex is kind of fake as we do not need the actual vertex positions. They are const in the shader
@@ -23,6 +23,7 @@ public:
 		glm::mat4 proj;
 		float farFactor; // bloat factor for skybox cube
 		bool outside; // make upside down for outside view
+        int32_t texIndex = -1; // index into global texture array for skybox texture, will be filled by uploadToGPU() if skybox is set
 	};
 
 	static VkVertexInputBindingDescription getBindingDescription() {

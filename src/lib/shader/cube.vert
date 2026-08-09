@@ -7,10 +7,12 @@ layout(binding = 0) uniform UniformBufferObject {
     mat4 proj;
 	float bloat;
 	bool outside;
+	int texIndex;
 } ubo;
 
 layout(location = 0) in vec3 inPosition;
 layout (location=0) out vec3 dir;
+layout (location=1) out int texIndex;
 
 const vec3 pos[8] = vec3[8](
 	vec3(-1.0,-1.0, 1.0),
@@ -41,6 +43,7 @@ const int indices[36] = int[36](
 
 void main()
 {
+    //debugPrintfEXT("cube shader vert: texIndex: %d\n", ubo.texIndex);
     //debugPrintfEXT("ubo.model 0 0 is %f\n", ubo.model[0][0]);
     //debugPrintfEXT("ubo.view 0 0 is %f\n", ubo.view[0][0]);
     //debugPrintfEXT("ubo.proj 0 0 is %f\n", ubo.proj[0][0]);
@@ -55,6 +58,7 @@ void main()
 		updown.y *= -1;
 	}
 	dir = updown.xyz;
+	texIndex = ubo.texIndex;
 	//dir = pos[idx].xyz;
 	//debugPrintfEXT("  dir: %f %f %f\n", dir.x, dir.y, dir.z);
 

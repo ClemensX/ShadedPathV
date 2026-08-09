@@ -216,4 +216,11 @@ void SceneEditor::loadNewEnvCube(string textureFilePathName)
     engine->textureStore.generateCubemaps("skyboxTexture");
     //engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);
     //engine->textureStore.loadTexture("prefilter.ktx2", engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
+
+    engine->shaders.cubeShader.setSkybox("skyboxTexture");
+    engine->shaders.cubeShader.setFarPlane(2000.0f);
+    for (FrameResources& res : engine->getFrameResources()) {
+        engine->shaders.cubeShader.createCommandBuffer(res);
+    }
+    //engine->shaders.cubeShader.createCommandBuffer(*engine->getFrameResources(0));
 }
