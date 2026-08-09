@@ -219,8 +219,8 @@ void SceneEditor::loadNewEnvCube(string textureFilePathName)
 
     engine->shaders.cubeShader.setSkybox("skyboxTexture");
     engine->shaders.cubeShader.setFarPlane(2000.0f);
-    for (FrameResources& res : engine->getFrameResources()) {
-        engine->shaders.cubeShader.createCommandBuffer(res);
-    }
+    //for (FrameResources& res : engine->getFrameResources()) {
+    //    engine->shaders.cubeShader.createCommandBuffer(res);
+    //}
     //engine->shaders.cubeShader.createCommandBuffer(*engine->getFrameResources(0));
 }

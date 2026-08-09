@@ -11,7 +11,12 @@ layout(set = 1, binding = 0) uniform samplerCube global_textures3d[];
 
 void main()
 {
-    debugPrintfEXT("cube shader frag: texIndex: %d\n", texIndex);
+    //debugPrintfEXT("cube shader frag: texIndex: %d\n", texIndex);
+    if (texIndex < 0) {
+        out_FragColor = vec4(0.1, 0.1, 0.1, 1.0);
+        return;
+    }
+
     vec3 dir2 = vec3(1.0, 1.0, 1.0);
     //debugPrintfEXT("Cube dir: %f %f %f\n", dir.x, dir.y, dir.z);
     //debugPrintfEXT("Cube col tex: %f %f %f\n", out_FragColor.x, out_FragColor.y, out_FragColor.z);
