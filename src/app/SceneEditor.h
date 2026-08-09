@@ -44,4 +44,5 @@ private:
     bool shouldStopEngine = false;
     SceneEditorDisplayParams displayParams;
     void loadNewEnvCube(std::string textureFileName);
+    GPUFrameParam frameParam;
 };

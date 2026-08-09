@@ -228,6 +228,7 @@ void test() {
 //	} else {
 //		outColor = vec4(1, 0.1, 0.1, 0.6);
 //	}
+    debugPrintfEXT("pbr frag brdflut %d , env %d (levels %f), irr %d, ibl ambient %f\n", uboParams.brdflut, uboParams.envcube, uboParams.prefilteredCubeMipLevels, uboParams.irradiance, uboParams.scaleIBLAmbient);
 }
 
 void main() {
@@ -400,8 +401,9 @@ void main() {
 //	return;
 
 	// Calculate lighting contribution from image based lighting source (IBL)
-	color += getIBLContribution(pbrInputs, n, reflection, material);
-//	outColor = vec4(color, baseColor.a);
+	vec3 iblcolor = getIBLContribution(pbrInputs, n, reflection, material);
+	color += iblcolor;
+//	outColor = vec4(baseColor.rgb, baseColor.a);
 //	return;
 
 	const float u_OcclusionStrength = 1.0f;

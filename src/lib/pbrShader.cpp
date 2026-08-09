@@ -121,6 +121,7 @@ void PBRShader::setFrameParam(const GPUFrameParam param, int index)
     }
 	GPUFrameParam* gpuFrameParam = engine->mstore.getGPUFrameParam(0);
 	*gpuFrameParam = param;
+    engine->globalRendering.gpuMemory.updateElement(BufferType::FrameParams, param, 0);
 }
 
 void PBRShader::prefillModelParametersSingleMesh(FrameResources& fr, MeshInfo* mi, WorldObject* obj, int uboIndex)

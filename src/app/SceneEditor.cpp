@@ -43,6 +43,27 @@ void SceneEditor::run(ContinuationInfo* cont)
 void SceneEditor::init()
 {
     engine->textureStore.generateBRDFLUT();
+    {
+        // test object
+        // use new mstore:
+        MeshFlagsCollection flags;
+        flags.setFlag(MeshFlags::MESHLET_GENERATE);
+        MStore& mstore = engine->mstore;
+        //engine->mstore.loadMesh("test/cube_single.gltf", "SingleMesh", flags);
+        engine->mstore.loadMesh("DamagedHelmet_cmp.glb", "SingleMesh", flags);
+        auto loaded = mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
+        auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
+        const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
+        SceneObject* object = engine->mstore.addObject(meshInfo->index, vec3(0.0f, 0.0f, 0.0f));
+            // turn upside down
+            object->rot = vec3(PI_half, 0.0, 0.0f);
+        object->scale = vec3(1.0f);
+        mat4 baseTransform = mat4(1.0); // get from gltf later
+        GPUModel* gpuModel = engine->mstore.getGPUModel(object->index);
+
+        object->prepareGPUModel(gpuModel, baseTransform);
+    }
+
     // 2 square km world size
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     // Grid with 1m squares, floor on -10m, ceiling on 372m
@@ -52,7 +73,6 @@ void SceneEditor::init()
     ls.position = vec3(75.0f, 0.5f, -20.0f);
 
     // new
-    GPUFrameParam frameParam;
     //engine->shaders.pbrShader.fillStandardFrameParams(frameParam);
     engine->shaders.pbrShader.changeLightSource(frameParam, ls.color, ls.position);
     frameParam.intensity = 1.0f; // adjust sun light intensity
@@ -214,13 +234,18 @@ void SceneEditor::loadNewEnvCube(string textureFilePathName)
     engine->textureStore.loadTexture(filename, "skyboxTexture");
     // generating cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
     engine->textureStore.generateCubemaps("skyboxTexture");
-    //engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);
-    //engine->textureStore.loadTexture("prefilter.ktx2", engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
+    engine->textureStore.freeTextureId(engine->textureStore.IRRADIANCE_TEXTURE_ID);
+    engine->textureStore.freeTextureId(engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
+
+    engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);
+    engine->textureStore.loadTexture("prefilter.ktx2", engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
+
+    engine->shaders.pbrShader.fillStandardFrameParams(frameParam);
+    frameParam.scaleIBLAmbient = 1.0f; // adjust ambient light intensity
+    engine->shaders.pbrShader.setFrameParam(frameParam, 0);
+    engine->globalRendering.gpuMemory.flushAllBuffers();
+
 
     engine->shaders.cubeShader.setSkybox("skyboxTexture");
     engine->shaders.cubeShader.setFarPlane(2000.0f);
-    //for (FrameResources& res : engine->getFrameResources()) {
-    //    engine->shaders.cubeShader.createCommandBuffer(res);
-    //}
-    //engine->shaders.cubeShader.createCommandBuffer(*engine->getFrameResources(0));
 }
