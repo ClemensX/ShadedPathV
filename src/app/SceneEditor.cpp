@@ -234,11 +234,11 @@ void SceneEditor::loadNewEnvCube(string textureFilePathName)
     engine->textureStore.loadTexture(filename, "skyboxTexture");
     // generating cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
     engine->textureStore.generateCubemaps("skyboxTexture");
-    engine->textureStore.freeTextureId(engine->textureStore.IRRADIANCE_TEXTURE_ID);
-    engine->textureStore.freeTextureId(engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
+    //engine->textureStore.freeTextureId(engine->textureStore.IRRADIANCE_TEXTURE_ID);
+    //engine->textureStore.freeTextureId(engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
 
-    engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);
-    engine->textureStore.loadTexture("prefilter.ktx2", engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
+    //engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);
+    //engine->textureStore.loadTexture("prefilter.ktx2", engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
 
     engine->shaders.pbrShader.fillStandardFrameParams(frameParam);
     frameParam.scaleIBLAmbient = 1.0f; // adjust ambient light intensity

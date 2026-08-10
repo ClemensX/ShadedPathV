@@ -326,7 +326,7 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 			cubemap->vulkanTexture.width = dim;
 			cubemap->vulkanTexture.levelCount = numMips;
 			cubemap->isKtxCreated = false;
-			cubemap->imageView = global.createImageView(cubemap->vulkanTexture.image, cubemap->vulkanTexture.imageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+			cubemap->imageView = global.createImageViewCube(cubemap->vulkanTexture.image, cubemap->vulkanTexture.imageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 
 			// Sampler
 			VkSamplerCreateInfo samplerCI{};
@@ -840,7 +840,7 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 			imageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 			imageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			imageMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-			imageMemoryBarrier.dstAccessMask = VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
+			imageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT; //VK_ACCESS_HOST_WRITE_BIT | VK_ACCESS_TRANSFER_WRITE_BIT;
 			imageMemoryBarrier.subresourceRange = subresourceRange;
 			vkCmdPipelineBarrier(cmdBuf, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &imageMemoryBarrier);
 			//vulkanDevice->flushCommandBuffer(cmdBuf, queue, false);

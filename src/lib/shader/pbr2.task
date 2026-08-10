@@ -13,6 +13,7 @@ taskPayloadSharedEXT TaskPayload payload;
 
 // test glsl packing rules
 layout(local_size_x = 1) in; // not using the usual 32 threads per workgroup, but only 1 as we implement object culling and LOD object selection here
+GPUFrameParam uboParams = gpuFrameParams.frameParam[0];
 
 void main() {
     //printGPUBufferAddresses();
@@ -34,6 +35,12 @@ void main() {
 
     // check if object is disabled:
     bool isRenderingDisabled = (model.flags & MODEL_RENDER_FLAG_DISABLE) != 0;
+    // check if irradiance and prefilter are set correctly:
+    // usually irradiance and envcube are 0 if not set, but compating them seems more defensive style
+    if (uboParams.prefilteredCubeMipLevels == 0 || uboParams.irradiance == uboParams.envcube) {
+        //debugPrintfEXT("pbr.task: objectNum %u has invalid irradiance or prefilter texture indices, disabling rendering\n", pushConstants.objectNum);
+        isRenderingDisabled = true;
+    }
     if (isRenderingDisabled) {
         //debugPrintfEXT("pbr.task: objectNum %u is disabled, skipping\n", pushConstants.objectNum);
         return;
