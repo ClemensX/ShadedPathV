@@ -121,7 +121,7 @@ vec3 getNormal(GPUMaterial material)
 	tangentNormal = safeNormalize(tangentNormal, vec3(0.0, 0.0, 1.0));
 
 	// If the normal map looks vertically inverted, enable this:
-	// tangentNormal.y = -tangentNormal.y;
+	tangentNormal.y = -tangentNormal.y;
 
 	vec3 q1 = dFdx(inWorldPos);
 	vec3 q2 = dFdy(inWorldPos);
@@ -150,21 +150,51 @@ vec3 getNormal(GPUMaterial material)
 	return safeNormalize(TBN * tangentNormal, N);
 }
 
+// Add near other constants
+const int IBL_DEBUG_DIR_MODE = 3;
+// 0 = reflect(-v,n)    (expected physical)
+// 1 = -reflect(-v,n)
+// 2 = v
+// 3 = -v
+// 4 = n
+
+const vec3 IBL_CUBE_DIR_SIGN = vec3(1.0, 1.0, 1.0); // test axis flips here
+
+vec3 fixIblCubeDir(vec3 d)
+{
+	return normalize(d * IBL_CUBE_DIR_SIGN);
+}
+
+vec3 pickIblDir(vec3 n, vec3 v)
+{
+	vec3 r = normalize(reflect(-v, n));
+	if (IBL_DEBUG_DIR_MODE == 1) r = -r;
+	else if (IBL_DEBUG_DIR_MODE == 2) r = normalize(v);
+	else if (IBL_DEBUG_DIR_MODE == 3) r = normalize(-v);
+	else if (IBL_DEBUG_DIR_MODE == 4) r = normalize(n);
+	return normalize(r * IBL_CUBE_DIR_SIGN);
+}
+
 // Calculation of the lighting contribution from an optional Image Based Light source.
 // Precomputed Environment Maps are required uniform inputs and are computed as outlined in [1].
 // See our README.md on Environment Maps [3] for additional discussion.
 vec3 getIBLContribution(PBRInfo pbrInputs, vec3 n, vec3 reflection, GPUMaterial material)
 {
+//	vec3 nIbl = fixIblCubeDir(n);
+//	vec3 rIbl = fixIblCubeDir(reflection);
+	vec3 nIbl = n;
+	vec3 rIbl = reflection;
+
 	float lod = (pbrInputs.perceptualRoughness * uboParams.prefilteredCubeMipLevels);
 	// retrieve a scale and bias to F0. See [1], Figure 3
 	//textureBindless2D(material.baseColorTextureSet
 	//n.y -= n.y;
 	vec3 brdf = (textureBindless2D(uboParams.brdflut, vec2(pbrInputs.NdotV, 1.0 - pbrInputs.perceptualRoughness))).rgb;
-	vec3 diffuseLight = SRGBtoLINEAR(tonemap(textureBindless3D(uboParams.irradiance, n))).rgb;
+	vec3 diffuseLight = SRGBtoLINEAR(tonemap(textureBindless3D(uboParams.irradiance, nIbl))).rgb;
 
 	vec3 myref = reflection;
 	//myref.y = -myref.y;
-	vec3 specularLight = SRGBtoLINEAR(tonemap(textureBindless3DLod(uboParams.envcube, myref, lod))).rgb;
+	vec3 specularLight = SRGBtoLINEAR(tonemap(textureBindless3DLod(uboParams.envcube, rIbl, lod))).rgb;
 	//specularLight = vec3(0.0); // disable IBL for now
 
 	vec3 diffuse = diffuseLight * pbrInputs.diffuseColor;
@@ -361,6 +391,7 @@ void main() {
 	vec3 l = normalize(uboParams.lightDir.xyz);     // Vector from surface point to light
 	vec3 h = normalize(l+v);                        // Half vector between both l and v
 	vec3 reflection = normalize(reflect(-v, n));
+	reflection = pickIblDir(n, v);
 	//reflection.y = -reflection.y;
 
 	float NdotL = clamp(dot(n, l), 0.001, 1.0);

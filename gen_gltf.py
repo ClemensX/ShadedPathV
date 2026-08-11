@@ -2,7 +2,7 @@
 Blender Python script to generate GLTF test files with textures for parser validation
 Compatible with Blender 3.0+ and 4.0+
 Run in Blender: Open Blender > Scripting tab > Paste this script > Run Script
-Or run from command line: blender --background --python generate_gltf_test_files.py
+Or run from command line: blender --background --python .\gen_gltf.py
 """
 
 import bpy
@@ -519,6 +519,95 @@ def generate_multiple_objects():
     # Export all
     export_gltf(os.path.join(OUTPUT_DIR, "multiple_objects.gltf"))
 
+def create_mirror_material(name="MirrorMaterial"):
+    """Create a metallic-roughness mirror-like material for glTF export."""
+    mat = bpy.data.materials.new(name=name)
+
+    if not mat.use_nodes:
+        mat.use_nodes = True
+
+    nodes = mat.node_tree.nodes
+    links = mat.node_tree.links
+    nodes.clear()
+
+    bsdf = nodes.new(type='ShaderNodeBsdfPrincipled')
+    bsdf.location = (0, 0)
+
+    output = nodes.new(type='ShaderNodeOutputMaterial')
+    output.location = (300, 0)
+
+    links.new(bsdf.outputs['BSDF'], output.inputs['Surface'])
+
+    # glTF metallic-roughness mirror approximation:
+    # white base color + full metallic + near-zero roughness
+    bsdf.inputs['Base Color'].default_value = (1.0, 1.0, 1.0, 1.0)
+    bsdf.inputs['Metallic'].default_value = 1.0
+    bsdf.inputs['Roughness'].default_value = 0.0
+
+    return mat
+
+
+def generate_mirror_sphere():
+    """Generate mirror_sphere_4k.gltf - single mirror sphere (~4000 triangles)."""
+    print("\n=== Generating mirror_sphere_4k.gltf ===")
+    clear_scene()
+
+    # 2 * segments * (ring_count - 1) = triangle count
+    # 2 * 50 * (41 - 1) = 4000 triangles
+    segments = 500
+    ring_count = 410
+
+    bpy.ops.mesh.primitive_uv_sphere_add(
+        segments=segments,
+        ring_count=ring_count,
+        radius=1.0,
+        location=(0, 0, 0)
+    )
+    sphere = bpy.context.active_object
+    sphere.name = "MirrorSphere"
+
+    # Force triangulation so exported topology is triangles
+    bpy.ops.object.select_all(action='DESELECT')
+    sphere.select_set(True)
+    bpy.context.view_layer.objects.active = sphere
+
+    tri_mod = sphere.modifiers.new(name="Triangulate", type='TRIANGULATE')
+    bpy.ops.object.modifier_apply(modifier=tri_mod.name)
+
+    # Assign mirror material
+    mirror_mat = create_mirror_material("MirrorSphereMaterial")
+    sphere.data.materials.append(mirror_mat)
+
+    tri_count = sum(len(poly.vertices) - 2 for poly in sphere.data.polygons)
+    print(f"Mirror sphere triangles: {tri_count}")
+
+    export_gltf(os.path.join(OUTPUT_DIR, "mirror_sphere_4k.gltf"))
+
+def generate_mirror_cube():
+    """Generate mirror_cube_12.gltf - single mirror cube (12 triangles)."""
+    print("\n=== Generating mirror_cube_12.gltf ===")
+    clear_scene()
+
+    bpy.ops.mesh.primitive_cube_add(size=2.0, location=(0, 0, 0))
+    cube = bpy.context.active_object
+    cube.name = "MirrorCube"
+
+    # Force triangulation so 6 quad faces become 12 triangles
+    bpy.ops.object.select_all(action='DESELECT')
+    cube.select_set(True)
+    bpy.context.view_layer.objects.active = cube
+
+    tri_mod = cube.modifiers.new(name="Triangulate", type='TRIANGULATE')
+    bpy.ops.object.modifier_apply(modifier=tri_mod.name)
+
+    mirror_mat = create_mirror_material("MirrorCubeMaterial")
+    cube.data.materials.append(mirror_mat)
+
+    tri_count = sum(len(poly.vertices) - 2 for poly in cube.data.polygons)
+    print(f"Mirror cube triangles: {tri_count}")
+
+    export_gltf(os.path.join(OUTPUT_DIR, "mirror_cube_12.gltf"))
+    
 # =============================================================================
 # MAIN EXECUTION
 # =============================================================================
@@ -541,6 +630,8 @@ def main():
         generate_tree_primitives()
         generate_tree_lod_primitives()
         generate_multiple_objects()
+        generate_mirror_sphere()
+        generate_mirror_cube()
         
         print("=" * 60)
         print("✓ All test files with textures generated successfully!")

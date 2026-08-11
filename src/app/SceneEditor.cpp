@@ -48,15 +48,17 @@ void SceneEditor::init()
         // use new mstore:
         MeshFlagsCollection flags;
         flags.setFlag(MeshFlags::MESHLET_GENERATE);
+        //flags.setFlag(MeshFlags::RENDER_TYPE_MOVING);
         MStore& mstore = engine->mstore;
         //engine->mstore.loadMesh("test/cube_single.gltf", "SingleMesh", flags);
-        engine->mstore.loadMesh("DamagedHelmet_cmp.glb", "SingleMesh", flags);
+        //engine->mstore.loadMesh("DamagedHelmet_cmp.glb", "SingleMesh", flags);
+        engine->mstore.loadMesh("MirrorCube.glb", "SingleMesh", flags);
         auto loaded = mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
         auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
         const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
-        SceneObject* object = engine->mstore.addObject(meshInfo->index, vec3(0.0f, 0.0f, 0.0f));
-            // turn upside down
-            object->rot = vec3(PI_half, 0.0, 0.0f);
+        SceneObject* object = engine->mstore.addObject(meshInfo->index, vec3(0.0f, 0.0f, 0.0f), flags);
+        // turn upside down
+        //object->rot = vec3(PI_half, 0.0, 0.0f);
         object->scale = vec3(1.0f);
         mat4 baseTransform = mat4(1.0); // get from gltf later
         GPUModel* gpuModel = engine->mstore.getGPUModel(object->index);
