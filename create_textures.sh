@@ -86,8 +86,11 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #gltf-transform uastc N:/assets/WorldCreator/Bush_A_lod.glb ../data/mesh/Bush_A_lod_cmp.glb --level 2 --zstd 18 --verbose
 #gltf-transform uastc N:/assets/WorldCreator/Bush_B_lod.glb ../data/mesh/Bush_B_lod_cmp.glb --level 2 --zstd 18 --verbose
 #gltf-transform uastc N:/assets/WorldCreator/Acacia_A_lod.glb ../data/mesh/Acacia_A_lod_cmp.glb --level 2 --zstd 18 --verbose
-gltf-transform uastc N:/assets/WorldCreator/Rock_B_lod.glb ../data/mesh/Rock_B_lod_cmp.glb --level 2 --zstd 18 --verbose
-gltf-transform uastc N:/assets/WorldCreator/Rock_C_lod.glb ../data/mesh/Rock_C_lod_cmp.glb --level 2 --zstd 18 --verbose
-gltf-transform uastc N:/assets/WorldCreator/SmallRock_B_lod.glb ../data/mesh/SmallRock_B_lod_cmp.glb --level 2 --zstd 18 --verbose
-gltf-transform uastc N:/assets/WorldCreator/SmallRock_C_lod.glb ../data/mesh/SmallRock_C_lod_cmp.glb --level 2 --zstd 18 --verbose
+#gltf-transform uastc N:/assets/WorldCreator/Rock_B_lod.glb ../data/mesh/Rock_B_lod_cmp.glb --level 2 --zstd 18 --verbose
+#gltf-transform uastc N:/assets/WorldCreator/Rock_C_lod.glb ../data/mesh/Rock_C_lod_cmp.glb --level 2 --zstd 18 --verbose
+#gltf-transform uastc N:/assets/WorldCreator/SmallRock_B_lod.glb ../data/mesh/SmallRock_B_lod_cmp.glb --level 2 --zstd 18 --verbose
+#gltf-transform uastc N:/assets/WorldCreator/SmallRock_C_lod.glb ../data/mesh/SmallRock_C_lod_cmp.glb --level 2 --zstd 18 --verbose
 
+# create cubemap:
+# /c/dev/cpp/data/raw  ../../ShadedPathV/create_textures.sh
+toktx --genmipmap --uastc 3 --zcmp 18 --verbose --t2 --cubemap helipad_debug.ktx2 px.png nx.png py.png ny.png pz.png nz.png

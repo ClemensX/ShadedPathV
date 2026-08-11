@@ -172,6 +172,13 @@ public:
 			ti->sampler = sampler;
         }
 	}
+
+    // handle standard image formats (png, jpg, bmp, tga, ktx, etc.) and convert to ktx for vulkan usage
+	void loadCubemapFromEquirectangular(
+		std::string filename,
+		std::string id,
+		TextureType type = TextureType::TEXTURE_TYPE_MIPMAP_IMAGE);
+
 	// reuse functions for render phase, use with care, may interrupt frame generation:
 
     // free texture id from store - enables re-loading texture with same id.
@@ -189,6 +196,19 @@ private:
 	const ::TextureInfo* findTextureById(const std::string& id) const;
 	// all creation methods have to call this internally:
 	::TextureInfo* internalCreateTextureSlot(std::string id);
+	// add in class TextureStore private:
+	void createKTXFromStandardImageMemory(
+		const unsigned char* data,
+		int size,
+		bool generateMipmaps,
+		VkFormat format,
+		ktxTexture** ktxTex);
+
+	void createKTXCubemapFromPanoramaMemory(
+		const unsigned char* data,
+		int size,
+		VkFormat format,
+		ktxTexture** ktxTex);
 };
 
 // vertex def for cubemaps calculation

@@ -1,7 +1,380 @@
 #include "mainheader.h"
-#include "Texture.h"
+//#include "Texture.h"
+#include "tinygltf/stb_image.h"
 
 using namespace std;
+
+namespace
+{
+	constexpr float PI_F = 3.14159265358979323846f;
+
+	bool hasKtxExtension(const std::string& filename)
+	{
+		std::string ext = std::filesystem::path(filename).extension().string();
+		std::ranges::transform(ext, ext.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+		return ext == ".ktx" || ext == ".ktx2";
+	}
+
+	uint32_t calcMipCount(uint32_t width, uint32_t height)
+	{
+		return static_cast<uint32_t>(std::floor(std::log2(static_cast<float>(std::max(width, height))))) + 1u;
+	}
+
+	std::vector<unsigned char> downsampleRgba8(
+		const std::vector<unsigned char>& src,
+		uint32_t srcWidth,
+		uint32_t srcHeight)
+	{
+		const uint32_t dstWidth = std::max(1u, srcWidth / 2u);
+		const uint32_t dstHeight = std::max(1u, srcHeight / 2u);
+		std::vector<unsigned char> dst(dstWidth * dstHeight * 4u);
+
+		for (uint32_t y = 0; y < dstHeight; ++y) {
+			for (uint32_t x = 0; x < dstWidth; ++x) {
+				for (uint32_t c = 0; c < 4; ++c) {
+					uint32_t sum = 0;
+					uint32_t count = 0;
+					for (uint32_t oy = 0; oy < 2; ++oy) {
+						for (uint32_t ox = 0; ox < 2; ++ox) {
+							const uint32_t sx = std::min(srcWidth - 1u, x * 2u + ox);
+							const uint32_t sy = std::min(srcHeight - 1u, y * 2u + oy);
+							sum += src[(sy * srcWidth + sx) * 4u + c];
+							++count;
+						}
+					}
+					dst[(y * dstWidth + x) * 4u + c] = static_cast<unsigned char>(sum / count);
+				}
+			}
+		}
+
+		return dst;
+	}
+
+	glm::vec3 cubemapDirection(uint32_t face, float u, float v)
+	{
+		// u,v in [-1,1]
+		switch (face) {
+		case 0: return glm::normalize(glm::vec3(1.0f, -v, -u)); // +X
+		case 1: return glm::normalize(glm::vec3(-1.0f, -v, u)); // -X
+		case 2: return glm::normalize(glm::vec3(u, 1.0f, v)); // +Y
+		case 3: return glm::normalize(glm::vec3(u, -1.0f, -v)); // -Y
+		case 4: return glm::normalize(glm::vec3(u, -v, 1.0f)); // +Z
+		default:return glm::normalize(glm::vec3(-u, -v, -1.0f)); // -Z
+		}
+	}
+
+	glm::vec4 readPixelRGBA8(const unsigned char* pixels, int width, int height, int x, int y)
+	{
+		x = (x % width + width) % width;
+		y = std::clamp(y, 0, height - 1);
+		const size_t i = (static_cast<size_t>(y) * static_cast<size_t>(width) + static_cast<size_t>(x)) * 4ull;
+		return glm::vec4(
+			pixels[i + 0] / 255.0f,
+			pixels[i + 1] / 255.0f,
+			pixels[i + 2] / 255.0f,
+			pixels[i + 3] / 255.0f);
+	}
+
+	glm::vec4 sampleEquirectangularBilinear(const unsigned char* pixels, int width, int height, const glm::vec3& dir)
+	{
+		const float longitude = std::atan2(dir.z, dir.x);
+		const float latitude = std::asin(glm::clamp(dir.y, -1.0f, 1.0f));
+
+		const float s = (longitude + PI_F) / (2.0f * PI_F);
+		const float t = (PI_F * 0.5f - latitude) / PI_F;
+
+		const float fx = s * static_cast<float>(width) - 0.5f;
+		const float fy = t * static_cast<float>(height) - 0.5f;
+
+		const int x0 = static_cast<int>(std::floor(fx));
+		const int y0 = static_cast<int>(std::floor(fy));
+		const int x1 = x0 + 1;
+		const int y1 = y0 + 1;
+
+		const float tx = fx - static_cast<float>(x0);
+		const float ty = fy - static_cast<float>(y0);
+
+		const glm::vec4 c00 = readPixelRGBA8(pixels, width, height, x0, y0);
+		const glm::vec4 c10 = readPixelRGBA8(pixels, width, height, x1, y0);
+		const glm::vec4 c01 = readPixelRGBA8(pixels, width, height, x0, y1);
+		const glm::vec4 c11 = readPixelRGBA8(pixels, width, height, x1, y1);
+
+		const glm::vec4 cx0 = glm::mix(c00, c10, tx);
+		const glm::vec4 cx1 = glm::mix(c01, c11, tx);
+		return glm::mix(cx0, cx1, ty);
+	}
+
+	void writePixelRGBA8(std::vector<unsigned char>& dst, uint32_t width, uint32_t x, uint32_t y, const glm::vec4& c)
+	{
+		const size_t i = (static_cast<size_t>(y) * static_cast<size_t>(width) + static_cast<size_t>(x)) * 4ull;
+		dst[i + 0] = static_cast<unsigned char>(std::clamp(c.r, 0.0f, 1.0f) * 255.0f + 0.5f);
+		dst[i + 1] = static_cast<unsigned char>(std::clamp(c.g, 0.0f, 1.0f) * 255.0f + 0.5f);
+		dst[i + 2] = static_cast<unsigned char>(std::clamp(c.b, 0.0f, 1.0f) * 255.0f + 0.5f);
+		dst[i + 3] = static_cast<unsigned char>(std::clamp(c.a, 0.0f, 1.0f) * 255.0f + 0.5f);
+	}
+}
+
+void TextureStore::createKTXFromStandardImageMemory(
+	const unsigned char* data,
+	int size,
+	bool generateMipmaps,
+	VkFormat format,
+	ktxTexture** ktxTexAdr)
+{
+	int width = 0;
+	int height = 0;
+	int channels = 0;
+	unsigned char* imageData = stbi_load_from_memory(data, size, &width, &height, &channels, STBI_rgb_alpha);
+	if (!imageData) {
+		Error("Failed to decode standard image data");
+	}
+
+	const uint32_t numMips = generateMipmaps ? calcMipCount(static_cast<uint32_t>(width), static_cast<uint32_t>(height)) : 1u;
+
+	ktxTextureCreateInfo createInfo{};
+	createInfo.glInternalformat = 0;
+	createInfo.vkFormat = format;
+	createInfo.baseWidth = static_cast<ktx_uint32_t>(width);
+	createInfo.baseHeight = static_cast<ktx_uint32_t>(height);
+	createInfo.baseDepth = 1;
+	createInfo.numDimensions = 2;
+	createInfo.numLevels = numMips;
+	createInfo.numLayers = 1;
+	createInfo.numFaces = 1;
+	createInfo.isArray = KTX_FALSE;
+	createInfo.generateMipmaps = KTX_FALSE;
+
+	ktxTexture2* kTexture2 = nullptr;
+	auto result = ktxTexture2_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &kTexture2);
+	if (result != KTX_SUCCESS) {
+		stbi_image_free(imageData);
+		Error("Failed to create KTX texture from standard image");
+	}
+
+	std::vector<unsigned char> currentLevel(
+		imageData,
+		imageData + static_cast<size_t>(width) * static_cast<size_t>(height) * 4ull);
+
+	uint32_t currentWidth = static_cast<uint32_t>(width);
+	uint32_t currentHeight = static_cast<uint32_t>(height);
+
+	for (uint32_t level = 0; level < numMips; ++level) {
+		ktx_size_t offset = 0;
+		result = ktxTexture_GetImageOffset(reinterpret_cast<ktxTexture*>(kTexture2), level, 0, 0, &offset);
+		if (result != KTX_SUCCESS) {
+			stbi_image_free(imageData);
+			ktxTexture_Destroy(reinterpret_cast<ktxTexture*>(kTexture2));
+			Error("Failed to get KTX image offset");
+		}
+
+		std::memcpy(
+			ktxTexture_GetData(reinterpret_cast<ktxTexture*>(kTexture2)) + offset,
+			currentLevel.data(),
+			currentLevel.size());
+
+		if (level + 1 < numMips) {
+			currentLevel = downsampleRgba8(currentLevel, currentWidth, currentHeight);
+			currentWidth = std::max(1u, currentWidth / 2u);
+			currentHeight = std::max(1u, currentHeight / 2u);
+		}
+	}
+
+	stbi_image_free(imageData);
+	*ktxTexAdr = reinterpret_cast<ktxTexture*>(kTexture2);
+}
+
+void TextureStore::createKTXCubemapFromPanoramaMemory(
+	const unsigned char* data,
+	int size,
+	VkFormat format,
+	ktxTexture** ktxTexAdr)
+{
+	int width = 0;
+	int height = 0;
+	int channels = 0;
+	unsigned char* panorama = stbi_load_from_memory(data, size, &width, &height, &channels, STBI_rgb_alpha);
+	if (!panorama) {
+		Error("Failed to decode panorama image");
+	}
+
+	if (width != height * 2) {
+		stbi_image_free(panorama);
+		Error("Panorama must have 2:1 aspect ratio to create a cubemap");
+	}
+
+	const uint32_t faceSize = static_cast<uint32_t>(height / 2);
+	const uint32_t numMips = calcMipCount(faceSize, faceSize);
+	const uint32_t numFaces = 6;
+
+	ktxTextureCreateInfo createInfo{};
+	createInfo.glInternalformat = 0;
+	createInfo.vkFormat = format;
+	createInfo.baseWidth = faceSize;
+	createInfo.baseHeight = faceSize;
+	createInfo.baseDepth = 1;
+	createInfo.numDimensions = 2;
+	createInfo.numLevels = numMips;
+	createInfo.numLayers = 1;
+	createInfo.numFaces = numFaces;
+	createInfo.isArray = KTX_FALSE;
+	createInfo.generateMipmaps = KTX_FALSE;
+
+	ktxTexture2* kTexture2 = nullptr;
+	auto result = ktxTexture2_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &kTexture2);
+	if (result != KTX_SUCCESS) {
+		stbi_image_free(panorama);
+		Error("Failed to create cubemap KTX texture");
+	}
+
+	std::vector<std::vector<unsigned char>> mipFaces(numMips * numFaces);
+
+	for (uint32_t face = 0; face < numFaces; ++face) {
+		auto& dst = mipFaces[face];
+		dst.resize(static_cast<size_t>(faceSize) * static_cast<size_t>(faceSize) * 4ull);
+
+		for (uint32_t y = 0; y < faceSize; ++y) {
+			for (uint32_t x = 0; x < faceSize; ++x) {
+				const float u = ((static_cast<float>(x) + 0.5f) / static_cast<float>(faceSize)) * 2.0f - 1.0f;
+				const float v = ((static_cast<float>(y) + 0.5f) / static_cast<float>(faceSize)) * 2.0f - 1.0f;
+				const glm::vec3 dir = cubemapDirection(face, u, v);
+				const glm::vec4 sample = sampleEquirectangularBilinear(panorama, width, height, dir);
+				writePixelRGBA8(dst, faceSize, x, y, sample);
+			}
+		}
+	}
+
+	uint32_t mipWidth = faceSize;
+	uint32_t mipHeight = faceSize;
+	for (uint32_t level = 1; level < numMips; ++level) {
+		for (uint32_t face = 0; face < numFaces; ++face) {
+			mipFaces[level * numFaces + face] = downsampleRgba8(
+				mipFaces[(level - 1) * numFaces + face],
+				mipWidth,
+				mipHeight);
+		}
+		mipWidth = std::max(1u, mipWidth / 2u);
+		mipHeight = std::max(1u, mipHeight / 2u);
+	}
+
+	for (uint32_t level = 0; level < numMips; ++level) {
+		for (uint32_t face = 0; face < numFaces; ++face) {
+			ktx_size_t offset = 0;
+			result = ktxTexture_GetImageOffset(reinterpret_cast<ktxTexture*>(kTexture2), level, 0, face, &offset);
+			if (result != KTX_SUCCESS) {
+				stbi_image_free(panorama);
+				ktxTexture_Destroy(reinterpret_cast<ktxTexture*>(kTexture2));
+				Error("Failed to get cubemap KTX image offset");
+			}
+
+			const auto& src = mipFaces[level * numFaces + face];
+			std::memcpy(
+				ktxTexture_GetData(reinterpret_cast<ktxTexture*>(kTexture2)) + offset,
+				src.data(),
+				src.size());
+		}
+	}
+
+	stbi_image_free(panorama);
+	*ktxTexAdr = reinterpret_cast<ktxTexture*>(kTexture2);
+}
+
+void TextureStore::loadTexture(string filename, string id, TextureType type, TextureFlags flags)
+{
+	vector<byte> file_buffer;
+	TextureInfo* texture = createTextureSlot(id);
+	texture->type = type;
+	texture->filename = filename;
+
+	PakEntry* pakFileEntry = engine->files.findFileInPak(filename.c_str());
+	if (pakFileEntry == nullptr) {
+		string binFile = engine->files.findFile(filename.c_str(), FileCategory::TEXTURE);
+		texture->filename = binFile;
+		engine->files.readFile(texture->filename.c_str(), file_buffer, FileCategory::TEXTURE);
+	}
+	else {
+		engine->files.readFile(pakFileEntry, file_buffer, FileCategory::TEXTURE);
+	}
+
+	ktxTexture* kTexture = nullptr;
+	const bool isKtx = hasKtxExtension(filename);
+	const bool autoCubemap = !isKtx;
+
+	if (isKtx) {
+		createKTXFromMemory(reinterpret_cast<const ktx_uint8_t*>(file_buffer.data()), static_cast<int>(file_buffer.size()), &kTexture);
+	}
+	else if (autoCubemap) {
+		Log("Auto-routing 2:1 panorama to cubemap loader: " << filename << endl);
+		createKTXCubemapFromPanoramaMemory(
+			reinterpret_cast<const unsigned char*>(file_buffer.data()),
+			static_cast<int>(file_buffer.size()),
+			VK_FORMAT_R8G8B8A8_SRGB,
+			&kTexture);
+	}
+	else {
+		if (type != TextureType::TEXTURE_TYPE_MIPMAP_IMAGE) {
+			Error("Standard image loading is currently only supported for TEXTURE_TYPE_MIPMAP_IMAGE");
+		}
+		createKTXFromStandardImageMemory(
+			reinterpret_cast<const unsigned char*>(file_buffer.data()),
+			static_cast<int>(file_buffer.size()),
+			true,
+			VK_FORMAT_R8G8B8A8_SRGB,
+			&kTexture);
+	}
+
+	createVulkanTextureFromKTKTexture(kTexture, texture);
+
+	void* data = nullptr;
+	size_t size = 0;
+	getAccessToImageDataFromKTX(kTexture, size, &data);
+	texture->hash = generateHash(reinterpret_cast<const unsigned char*>(data), size);
+
+	if (hasFlag(flags, TextureFlags::KEEP_DATA_BUFFER)) {
+		assert(kTexture->numLevels == 1);
+		assert(texture->vulkanTexture.imageFormat == VK_FORMAT_R32_SFLOAT);
+		assert(size == texture->vulkanTexture.width * texture->vulkanTexture.height * sizeof(float));
+		float* floatData = static_cast<float*>(data);
+		texture->float_buffer.insert(texture->float_buffer.end(), floatData, floatData + (size / sizeof(float)));
+		texture->flags = flags;
+	}
+
+	setTextureActive(texture->id, true);
+	ktxTexture_Destroy(kTexture);
+}
+
+void TextureStore::loadCubemapFromEquirectangular(std::string filename, std::string id, TextureType type)
+{
+	vector<byte> file_buffer;
+	TextureInfo* texture = createTextureSlot(id);
+	texture->type = type;
+	texture->filename = filename;
+
+	PakEntry* pakFileEntry = engine->files.findFileInPak(filename.c_str());
+	if (pakFileEntry == nullptr) {
+		string binFile = engine->files.findFile(filename.c_str(), FileCategory::TEXTURE);
+		texture->filename = binFile;
+		engine->files.readFile(texture->filename.c_str(), file_buffer, FileCategory::TEXTURE);
+	}
+	else {
+		engine->files.readFile(pakFileEntry, file_buffer, FileCategory::TEXTURE);
+	}
+
+	if (hasKtxExtension(filename)) {
+		Error("loadCubemapFromEquirectangular expects a .jpg/.png panorama, not a .ktx/.ktx2");
+	}
+
+	ktxTexture* kTexture = nullptr;
+	createKTXCubemapFromPanoramaMemory(
+		reinterpret_cast<const unsigned char*>(file_buffer.data()),
+		static_cast<int>(file_buffer.size()),
+		VK_FORMAT_R8G8B8A8_SRGB,
+		&kTexture);
+
+	createVulkanTextureFromKTKTexture(kTexture, texture);
+	texture->hash = generateHash(reinterpret_cast<const unsigned char*>(file_buffer.data()), file_buffer.size());
+	setTextureActive(texture->id, true);
+	ktxTexture_Destroy(kTexture);
+}
 
 void TextureStore::init(ShadedPathEngine* engine, size_t maxTextures) {
 	this->engine = engine;
@@ -64,6 +437,7 @@ TextureInfo* TextureStore::getTexture(string id)
 	return ret;
 }
 
+#if defined(NIXOS)
 void TextureStore::loadTexture(string filename, string id, TextureType type, TextureFlags flags)
 {
 	vector<byte> file_buffer;
@@ -107,6 +481,7 @@ void TextureStore::loadTexture(string filename, string id, TextureType type, Tex
 	setTextureActive(texture->id, true);
 	ktxTexture_Destroy(kTexture);
 }
+#endif
 
 void TextureStore::createKTXFromMemory(const unsigned char* data, int size, ktxTexture** ktxTexAdr)
 {
