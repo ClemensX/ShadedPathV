@@ -61,7 +61,22 @@ We plan to implement features according to this list:
 - [Misc](#toc-misc)
 
 <a id="toc-state"></a>
-## Current State (Q1 / 2026)
+## Current State (Q3 / 2026)
+
+## Environment Maps
+
+You can now directly use standard image formats like png and jpg for environment maps.
+The engine will position the image center towards the -Z plane. All mipmaps are generated automatically.
+
+For performance reason you should still use ktx2 files. These can be gnerated from standard image formats with the
+*prep_env_cube.sh* script. the script is rather complicated and requires access to
+these tools: *ffmpeg, magick, toktx*.
+
+The tools take care of breaking up a panorama 2:1 image into 6 faces and organizes the faces suitable for toktx tool.
+Toktx expects faces ordered for a left-handed system, while we use a right-handed system. The script takes care of that by flipping the faces and rotating them to match our coordinate system.
+
+
+## Q1 / 2026
 
 <a id="toc-state"></a>
 ## Terrain Rendering

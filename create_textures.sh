@@ -89,10 +89,11 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #gltf-transform uastc N:/assets/WorldCreator/SmallRock_C_lod.glb ../data/mesh/SmallRock_C_lod_cmp.glb --level 2 --zstd 18 --verbose
 
 # create cubemaps:
-#./prep_env_cube.sh ../data/raw/papermill.jpg ../data/texture/papermill.ktx2
-#./prep_env_cube.sh ../data/raw/Arches_E_PineTree_1k.jpg ../data/texture/arches_pinetree_low.ktx2
-#./prep_env_cube.sh ../data/raw/Arches_E_PineTree_8k.jpg ../data/texture/arches_pinetree_high.ktx2
-#./prep_env_cube.sh ../data/raw/Scene_-_Root_diffuse.jpeg ../data/texture/nebula.ktx2
-#./prep_env_cube.sh ../data/raw/sky.png ../data/texture/sky.ktx2
-#./prep_env_cube.sh ../data/raw/ennis.jpg ../data/texture/ennis.ktx2
-#./prep_env_cube.sh ../data/raw/helipad.jpg ../data/texture/helipad.ktx2
+#./prep_env_cube.sh ../data/texture/papermill.jpg ../data/texture/papermill.ktx2
+#./prep_env_cube.sh ../data/texture/Arches_E_PineTree_1k.jpg ../data/texture/arches_pinetree_low.ktx2
+#./prep_env_cube.sh ../data/texture/Arches_E_PineTree_8k.jpg ../data/texture/arches_pinetree_high.ktx2
+#./prep_env_cube.sh ../data/texture/Scene_-_Root_diffuse.jpeg ../data/texture/nebula.ktx2
+#./prep_env_cube.sh ../data/texture/sky.png ../data/texture/sky.ktx2
+#./prep_env_cube.sh ../data/texture/ennis.jpg ../data/texture/ennis.ktx2
+#./prep_env_cube.sh ../data/texture/helipad.jpg ../data/texture/helipad.ktx2
+#./prep_env_cube.sh ../data/texture/debug_arrows.png ../data/texture/debug_arrows.ktx2
