@@ -13,8 +13,8 @@ void SceneEditor::run(ContinuationInfo* cont)
         auto& shaders = engine->shaders;
         engine->appname = "SceneEditor";
         // camera initialization
-        vec3 cameraPosition(0, 0, 0);
-        initCamera(cameraPosition, glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        vec3 cameraPosition(0, 0, 10);
+        initCamera(cameraPosition, glm::vec3(0.0f, 0.0f, -10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         Movement mv;
         camera->setConstantSpeed(mv.runSpeedMS * 8);
         // engine configuration
@@ -51,8 +51,8 @@ void SceneEditor::init()
         //flags.setFlag(MeshFlags::RENDER_TYPE_MOVING);
         MStore& mstore = engine->mstore;
         //engine->mstore.loadMesh("test/cube_single.gltf", "SingleMesh", flags);
-        engine->mstore.loadMesh("DamagedHelmet_cmp.glb", "SingleMesh", flags);
-        //engine->mstore.loadMesh("MirrorCube.glb", "SingleMesh", flags);
+        //engine->mstore.loadMesh("DamagedHelmet_cmp.glb", "SingleMesh", flags);
+        engine->mstore.loadMesh("MirrorCube.glb", "SingleMesh", flags);
         auto loaded = mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
         auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
         const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
@@ -224,6 +224,14 @@ void SceneEditor::buildCustomUI() {
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
+    }
+    if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_None))
+    {
+        auto p = camera->getPosition();
+        auto l = camera->getLookAt();
+        ImGui::Separator();
+        ImGui::Text("Camera Position: (%.1f,%.1f,%.1f)", p.x, p.y, p.z);
+        ImGui::Text("Camera Direction: (%.2f,%.2f,%.2f)", l.x, l.y, l.z);
     }
 }
 

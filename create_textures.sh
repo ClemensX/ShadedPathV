@@ -38,7 +38,6 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #gltf-transform uastc ../data/mesh/box100.glb ../data/mesh/box100_cmp.glb --level 4 --zstd 18 --verbose
 #gltf-transform uastc ../data/mesh/cyberpunk_pistol.glb ../data/mesh/cyberpunk_pistol_cmp.glb --level 4 --zstd 18 --verbose
 #cd ../data/raw
-#toktx --genmipmap --uastc 3 --zcmp 18 --verbose --t2 --cubemap cube_sky.ktx2 px.png nx.png py.png ny.png pz.png nz.png
 #ktx create --format R32_SFLOAT --raw --width 2048 --height 2048 "../data/texture/valley03_Height Map_2048x2048_0_0.raw" ../data/texture/valley_height.ktx2
 #ktx create --format R32_SFLOAT --raw --width 2048 --height 2048 "../WorldCreator/flat_Height Map_2048x2048_0_0.raw" ../data/texture/flat.ktx2
 #gltf-transform uastc ../data/rocks.glb ../data/mesh/rocks_cmp.glb --level 4 --zstd 18 --verbose
@@ -46,9 +45,7 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #gltf-transform uastc ../data/rocks.gltf ./test/rocks_cmp.gltf --level 1 --zstd 10 --verbose
 #gltf-transform uastc ../data/rocks_multi.glb ../data/mesh/rocks_multi_cmp.glb --level 4 --zstd 18 --verbose
 #gltf-transform uastc ../data/mesh/loadingbox.glb ../data/mesh/loadingbox_cmp.glb --level 4 --zstd 18 --verbose
-#toktx --genmipmap --uastc 3 --zcmp 18 --verbose --t2 --cubemap cube.ktx2 px.png nx.png py.png ny.png pz.png nz.png
 #gltf-transform uastc ../data/mesh/DamagedHelmet.glb ../data/mesh/DamagedHelmet_cmp.glb --level 4 --zstd 18 --verbose
-#toktx --genmipmap --uastc 3 --zcmp 18 --verbose --t2 --cubemap ../data/texture/irr.ktx2 ./build/src/app/irradiance.ktx 
 #gltf-transform uastc ../data/mesh/SimpleMaterial.gltf ../data/mesh/SimpleMaterial_cmp.gltf --level 4 --zstd 18 --verbose
 #gltf-transform metalrough ../data/mesh/Material_MetallicRoughness/Material_MetallicRoughness_04.gltf ../data/mesh/mirror.glb
 #gltf-transform uastc ../data/mesh/mirror.glb ../data/mesh/mirror_cmp.glb --level 4 --zstd 18 --verbose
@@ -91,6 +88,11 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #gltf-transform uastc N:/assets/WorldCreator/SmallRock_B_lod.glb ../data/mesh/SmallRock_B_lod_cmp.glb --level 2 --zstd 18 --verbose
 #gltf-transform uastc N:/assets/WorldCreator/SmallRock_C_lod.glb ../data/mesh/SmallRock_C_lod_cmp.glb --level 2 --zstd 18 --verbose
 
-# create cubemap:
-# /c/dev/cpp/data/raw  ../../ShadedPathV/create_textures.sh
-toktx --genmipmap --uastc 3 --zcmp 18 --verbose --t2 --cubemap helipad_debug.ktx2 px.png nx.png py.png ny.png pz.png nz.png
+# create cubemaps:
+#./prep_env_cube.sh ../data/raw/papermill.jpg ../data/texture/papermill.ktx2
+#./prep_env_cube.sh ../data/raw/Arches_E_PineTree_1k.jpg ../data/texture/arches_pinetree_low.ktx2
+#./prep_env_cube.sh ../data/raw/Arches_E_PineTree_8k.jpg ../data/texture/arches_pinetree_high.ktx2
+#./prep_env_cube.sh ../data/raw/Scene_-_Root_diffuse.jpeg ../data/texture/nebula.ktx2
+#./prep_env_cube.sh ../data/raw/sky.png ../data/texture/sky.ktx2
+#./prep_env_cube.sh ../data/raw/ennis.jpg ../data/texture/ennis.ktx2
+#./prep_env_cube.sh ../data/raw/helipad.jpg ../data/texture/helipad.ktx2

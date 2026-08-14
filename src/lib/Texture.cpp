@@ -183,12 +183,28 @@ void TextureStore::createKTXFromStandardImageMemory(
 	*ktxTexAdr = reinterpret_cast<ktxTexture*>(kTexture2);
 }
 
+glm::vec3 rotateDirectionAroundY90(const glm::vec3& dir, int quarterTurnsRight)
+{
+	switch (quarterTurnsRight) {
+	case 1: return glm::vec3(dir.z, dir.y, -dir.x);
+	case 2: return glm::vec3(-dir.x, dir.y, -dir.z);
+	case 3: return glm::vec3(-dir.z, dir.y, dir.x);
+	default: return dir;
+	}
+}
+
 void TextureStore::createKTXCubemapFromPanoramaMemory(
 	const unsigned char* data,
 	int size,
+	int rotationDegrees,
 	VkFormat format,
 	ktxTexture** ktxTexAdr)
 {
+	if ((rotationDegrees % 90) != 0) {
+		Error("Cubemap rotation must be a multiple of 90 degrees");
+	}
+	const int quarterTurnsRight = ((rotationDegrees / 90) % 4 + 4) % 4;
+
 	int width = 0;
 	int height = 0;
 	int channels = 0;
@@ -236,7 +252,8 @@ void TextureStore::createKTXCubemapFromPanoramaMemory(
 			for (uint32_t x = 0; x < faceSize; ++x) {
 				const float u = ((static_cast<float>(x) + 0.5f) / static_cast<float>(faceSize)) * 2.0f - 1.0f;
 				const float v = ((static_cast<float>(y) + 0.5f) / static_cast<float>(faceSize)) * 2.0f - 1.0f;
-				const glm::vec3 dir = cubemapDirection(face, u, v);
+				glm::vec3 dir = cubemapDirection(face, u, v);
+				dir = rotateDirectionAroundY90(dir, quarterTurnsRight);
 				const glm::vec4 sample = sampleEquirectangularBilinear(panorama, width, height, dir);
 				writePixelRGBA8(dst, faceSize, x, y, sample);
 			}
@@ -307,6 +324,7 @@ void TextureStore::loadTexture(string filename, string id, TextureType type, Tex
 		createKTXCubemapFromPanoramaMemory(
 			reinterpret_cast<const unsigned char*>(file_buffer.data()),
 			static_cast<int>(file_buffer.size()),
+			90*3,
 			VK_FORMAT_R8G8B8A8_SRGB,
 			&kTexture);
 	}
@@ -338,40 +356,6 @@ void TextureStore::loadTexture(string filename, string id, TextureType type, Tex
 		texture->flags = flags;
 	}
 
-	setTextureActive(texture->id, true);
-	ktxTexture_Destroy(kTexture);
-}
-
-void TextureStore::loadCubemapFromEquirectangular(std::string filename, std::string id, TextureType type)
-{
-	vector<byte> file_buffer;
-	TextureInfo* texture = createTextureSlot(id);
-	texture->type = type;
-	texture->filename = filename;
-
-	PakEntry* pakFileEntry = engine->files.findFileInPak(filename.c_str());
-	if (pakFileEntry == nullptr) {
-		string binFile = engine->files.findFile(filename.c_str(), FileCategory::TEXTURE);
-		texture->filename = binFile;
-		engine->files.readFile(texture->filename.c_str(), file_buffer, FileCategory::TEXTURE);
-	}
-	else {
-		engine->files.readFile(pakFileEntry, file_buffer, FileCategory::TEXTURE);
-	}
-
-	if (hasKtxExtension(filename)) {
-		Error("loadCubemapFromEquirectangular expects a .jpg/.png panorama, not a .ktx/.ktx2");
-	}
-
-	ktxTexture* kTexture = nullptr;
-	createKTXCubemapFromPanoramaMemory(
-		reinterpret_cast<const unsigned char*>(file_buffer.data()),
-		static_cast<int>(file_buffer.size()),
-		VK_FORMAT_R8G8B8A8_SRGB,
-		&kTexture);
-
-	createVulkanTextureFromKTKTexture(kTexture, texture);
-	texture->hash = generateHash(reinterpret_cast<const unsigned char*>(file_buffer.data()), file_buffer.size());
 	setTextureActive(texture->id, true);
 	ktxTexture_Destroy(kTexture);
 }
@@ -436,52 +420,6 @@ TextureInfo* TextureStore::getTexture(string id)
 	}
 	return ret;
 }
-
-#if defined(NIXOS)
-void TextureStore::loadTexture(string filename, string id, TextureType type, TextureFlags flags)
-{
-	vector<byte> file_buffer;
-	TextureInfo *texture = createTextureSlot(id);
-	texture->type = type;
-
-	// find texture file, look in pak file first:
-	PakEntry *pakFileEntry = nullptr;
-	pakFileEntry = engine->files.findFileInPak(filename.c_str());
-	// try file system if not found in pak:
-	//initialTexture.filename = filename; // TODO check: field not needed? only in this method? --> remove
-	if (pakFileEntry == nullptr) {
-		string binFile = engine->files.findFile(filename.c_str(), FileCategory::TEXTURE);
-		texture->filename = binFile;
-		//initialTexture.filename = binFile;
-		engine->files.readFile(texture->filename.c_str(), file_buffer, FileCategory::TEXTURE);
-	} else {
-		engine->files.readFile(pakFileEntry, file_buffer, FileCategory::TEXTURE);
-	}
-
-	ktxTexture* kTexture;
-	createKTXFromMemory((const ktx_uint8_t*)file_buffer.data(), static_cast<int>(file_buffer.size()), &kTexture);
-	createVulkanTextureFromKTKTexture(kTexture, texture);
-    void* data; size_t size;
-	getAccessToImageDataFromKTX(kTexture, size, &data);
-    texture->hash = generateHash((const unsigned char*)data, size);
-	if (hasFlag(flags, TextureFlags::KEEP_DATA_BUFFER)) {
-		assert(kTexture->numLevels == 1);
-		assert(texture->vulkanTexture.imageFormat == VK_FORMAT_R32_SFLOAT);
-		assert(size == texture->vulkanTexture.width * texture->vulkanTexture.height * sizeof(float));
-		//texture->raw_buffer.insert(texture->raw_buffer.end(), (std::byte*)data, (std::byte*)data + size);
-		//Log("size: " << size << endl);
-		float* floatData = (float*)data;
-		texture->float_buffer.insert(texture->float_buffer.end(), floatData, floatData + (size / sizeof(float)));
-		Log("size float: " << texture->float_buffer.size() << endl);
-		//for (int i = 0; i < size / 4; i++) {
-		//	Log("floatData: " << floatData[i] << endl);
-		//}
-        texture->flags = flags;
-	}
-	setTextureActive(texture->id, true);
-	ktxTexture_Destroy(kTexture);
-}
-#endif
 
 void TextureStore::createKTXFromMemory(const unsigned char* data, int size, ktxTexture** ktxTexAdr)
 {

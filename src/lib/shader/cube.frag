@@ -21,7 +21,10 @@ void main()
     //debugPrintfEXT("Cube dir: %f %f %f\n", dir.x, dir.y, dir.z);
     //debugPrintfEXT("Cube col tex: %f %f %f\n", out_FragColor.x, out_FragColor.y, out_FragColor.z);
     out_FragColor = texture(global_textures3d[nonuniformEXT(texIndex)], dir);
-	//out_FragColor = texture(texture1, dir);
+    // this fixes horizontally flipped textures for ktx2 files:
+    //vec3 sampleDir = normalize(vec3(-dir.x, dir.y, dir.z));
+    //out_FragColor = texture(global_textures3d[nonuniformEXT(texIndex)], sampleDir);
+
     //out_FragColor = vec4( 1.0, 1.0, 1.0, 1.0);
     //debugPrintfEXT("Cube col: %f %f %f %f\n", out_FragColor.x, out_FragColor.y, out_FragColor.z, out_FragColor.w);
 }

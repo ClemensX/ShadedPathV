@@ -121,7 +121,7 @@ vec3 getNormal(GPUMaterial material)
 	tangentNormal = safeNormalize(tangentNormal, vec3(0.0, 0.0, 1.0));
 
 	// If the normal map looks vertically inverted, enable this:
-	tangentNormal.y = -tangentNormal.y;
+	//tangentNormal.y = -tangentNormal.y;
 
 	vec3 q1 = dFdx(inWorldPos);
 	vec3 q2 = dFdy(inWorldPos);
@@ -151,7 +151,7 @@ vec3 getNormal(GPUMaterial material)
 }
 
 // Add near other constants
-const int IBL_DEBUG_DIR_MODE = 3;
+const int IBL_DEBUG_DIR_MODE = 0;
 // 0 = reflect(-v,n)    (expected physical)
 // 1 = -reflect(-v,n)
 // 2 = v
@@ -386,12 +386,12 @@ void main() {
 	//debugPrintfEXT("frag camPos: %f %f %f\n", camPos.x, camPos.y, camPos.z);
 	//debugPrintfEXT("frag inWorldPos: %f %f %f\n", inWorldPos.x, inWorldPos.y, inWorldPos.z);
 	vec3 n = (material.normalTextureSet > -1) ? getNormal(material) : normalize(inNormal);
-	//n.y *= -1.0f;
+	n.y *= -1.0f;
 	vec3 v = normalize(camPos - inWorldPos);    // Vector from surface point to camera
 	vec3 l = normalize(uboParams.lightDir.xyz);     // Vector from surface point to light
 	vec3 h = normalize(l+v);                        // Half vector between both l and v
 	vec3 reflection = normalize(reflect(-v, n));
-	reflection = pickIblDir(n, v);
+	//reflection = pickIblDir(n, v);
 	//reflection.y = -reflection.y;
 
 	float NdotL = clamp(dot(n, l), 0.001, 1.0);
