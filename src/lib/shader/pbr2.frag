@@ -104,7 +104,7 @@ vec3 getNormalNaN(GPUMaterial material)
 vec3 safeNormalize(vec3 v, vec3 fallback)
 {
 	float len2 = dot(v, v);
-	return (len2 > 1e-12) ? v * inversesqrt(len2) : fallback;
+	return (len2 > 1e-30) ? v * inversesqrt(len2) : fallback;
 }
 
 vec3 getNormal(GPUMaterial material)
@@ -134,7 +134,7 @@ vec3 getNormal(GPUMaterial material)
 	float tLen2 = dot(Traw, Traw);
 	float bLen2 = dot(Braw, Braw);
 
-	if (tLen2 <= 1e-12 || bLen2 <= 1e-12) {
+	if (tLen2 <= 1e-30 || bLen2 <= 1e-30) {
 		return N;
 	}
 
