@@ -229,6 +229,11 @@ void PBRShader::uploadToGPU(FrameResources& fr, UniformBufferObject& ubo, Unifor
     }
     ubo.frameNum = static_cast<uint32_t>(fr.frameNum);
     ubo2.frameNum = ubo.frameNum;
+	ubo.pad0 = 42;
+	ubo.pad1 = 43;
+	ubo.pad2 = 44;
+	ubo.pad3 = 45;
+	ubo.pad4 = 46;
 	auto& sub = globalSubShaders[fr.frameIndex];
     sub.uploadToGPU(fr, ubo, ubo2);
 }

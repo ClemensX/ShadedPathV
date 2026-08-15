@@ -157,8 +157,9 @@ layout(binding = 0) uniform UniformBufferObject {
 	uint pad1;          // pad to 16-byte multiple if desired (optional)
 	uint pad2;          // pad to 16-byte multiple if desired (optional)
     GPUMemoryAddressConstants gpuMem;
-    uint pad3;
-    uint pad4;
+//    for unknown reasons we have to omit the pad ints here (they are available in pbrShader.h UniformBufferObject)
+//    uint pad3;
+//    uint pad4;
     vec3 camPos;
 } ubo;
 

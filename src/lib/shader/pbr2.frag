@@ -150,7 +150,8 @@ vec3 getNormal(GPUMaterial material)
 	return safeNormalize(TBN * tangentNormal, N);
 }
 
-// Add near other constants
+// Add near other constants  1: f ok ori wrong
+//                           3: ok (for zero cam)
 const int IBL_DEBUG_DIR_MODE = 0;
 // 0 = reflect(-v,n)    (expected physical)
 // 1 = -reflect(-v,n)
@@ -180,10 +181,10 @@ vec3 pickIblDir(vec3 n, vec3 v)
 // See our README.md on Environment Maps [3] for additional discussion.
 vec3 getIBLContribution(PBRInfo pbrInputs, vec3 n, vec3 reflection, GPUMaterial material)
 {
-//	vec3 nIbl = fixIblCubeDir(n);
-//	vec3 rIbl = fixIblCubeDir(reflection);
-	vec3 nIbl = n;
-	vec3 rIbl = reflection;
+	vec3 nIbl = fixIblCubeDir(n);
+	vec3 rIbl = fixIblCubeDir(reflection);
+//	vec3 nIbl = n;
+//	vec3 rIbl = reflection;
 
 	float lod = (pbrInputs.perceptualRoughness * uboParams.prefilteredCubeMipLevels);
 	// retrieve a scale and bias to F0. See [1], Figure 3
@@ -258,7 +259,22 @@ void test() {
 //	} else {
 //		outColor = vec4(1, 0.1, 0.1, 0.6);
 //	}
-    debugPrintfEXT("pbr frag brdflut %d , env %d (levels %f), irr %d, ibl ambient %f\n", uboParams.brdflut, uboParams.envcube, uboParams.prefilteredCubeMipLevels, uboParams.irradiance, uboParams.scaleIBLAmbient);
+    //debugPrintfEXT("pbr frag brdflut %d , env %d (levels %f), irr %d, ibl ambient %f\n", uboParams.brdflut, uboParams.envcube, uboParams.prefilteredCubeMipLevels, uboParams.irradiance, uboParams.scaleIBLAmbient);
+	//debugPrintfEXT("frag camPos: %f %f %f\n", camPos.x, camPos.y, camPos.z);
+	//debugPrintfEXT("frag inWorldPos: %f %f %f\n", inWorldPos.x, inWorldPos.y, inWorldPos.z);
+	//debugPrintfEXT("frag ubo.camPos: ");
+	vec3 v = ubo.camPos;
+	debugPrintfEXT("frag ubo.camPos: %f %f %f\n", v.x, v.y, v.z);
+	v = ubo.model[3].xyz;
+	//debugPrintfEXT("frag ubo.model4: %f %f %f\n", v.x, v.y, v.z);
+	v = ubo.view[2].xyz;
+	//debugPrintfEXT("frag ubo.view0: %f %f %f\n", v.x, v.y, v.z);
+	v = ubo.baseColor.xyz;
+	//debugPrintfEXT("frag ubo.baseColor: %f %f %f\n", v.x, v.y, v.z);
+	uint i = ubo.frameNum;
+	//debugPrintfEXT("frag ubo.frameNum: %d\n", i);
+	//debugPrintfEXT("frag ubo: pad0: %d pad1: %d pad2: %d pad3: %d pad4: %d\n", ubo.pad0, ubo.pad1, ubo.pad2, ubo.pad3, ubo.pad4);
+	//debugPrintfEXT("frag ubo: padp0: %f padp1: %f padp2: %f padp3: %f padp4: %d padp5: %d padp6: %d padp7: %d\n", ubo.padp0, ubo.padp1, ubo.padp2, ubo.padp3, ubo.padp4, ubo.padp5, ubo.padp6, ubo.padp7);
 }
 
 void main() {
@@ -386,12 +402,14 @@ void main() {
 	//debugPrintfEXT("frag camPos: %f %f %f\n", camPos.x, camPos.y, camPos.z);
 	//debugPrintfEXT("frag inWorldPos: %f %f %f\n", inWorldPos.x, inWorldPos.y, inWorldPos.z);
 	vec3 n = (material.normalTextureSet > -1) ? getNormal(material) : normalize(inNormal);
-	n.y *= -1.0f;
+	//n.y *= -1.0f;
 	vec3 v = normalize(camPos - inWorldPos);    // Vector from surface point to camera
 	vec3 l = normalize(uboParams.lightDir.xyz);     // Vector from surface point to light
 	vec3 h = normalize(l+v);                        // Half vector between both l and v
+
+	// TODO: fix reflection!!!!
 	vec3 reflection = normalize(reflect(-v, n));
-	//reflection = pickIblDir(n, v);
+	reflection = pickIblDir(n, v);
 	//reflection.y = -reflection.y;
 
 	float NdotL = clamp(dot(n, l), 0.001, 1.0);

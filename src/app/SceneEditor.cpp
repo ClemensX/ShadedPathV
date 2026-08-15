@@ -13,10 +13,12 @@ void SceneEditor::run(ContinuationInfo* cont)
         auto& shaders = engine->shaders;
         engine->appname = "SceneEditor";
         // camera initialization
-        vec3 cameraPosition(0, 0, 10);
-        initCamera(cameraPosition, glm::vec3(0.0f, 0.0f, -10.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        //initCamera(vec3(0, 0, 10), vec3(0.0f, 0.0f, -10.0f), vec3(0.0f, 1.0f, 0.0f));
+        // camera initialization, like gltf sample viewer
+        initCamera(vec3(-0.1f, -0.5f, -2.6f), vec3(0.08f, 0.16f, 0.98f), vec3(0.0f, 1.0f, 0.0f));
         Movement mv;
-        camera->setConstantSpeed(mv.runSpeedMS * 8);
+        //camera->setConstantSpeed(mv.runSpeedMS * 8);
+        camera->setConstantSpeed(mv.runSpeedMS);
         // engine configuration
         enableEventsAndModes();
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
@@ -51,14 +53,14 @@ void SceneEditor::init()
         //flags.setFlag(MeshFlags::RENDER_TYPE_MOVING);
         MStore& mstore = engine->mstore;
         //engine->mstore.loadMesh("test/cube_single.gltf", "SingleMesh", flags);
-        //engine->mstore.loadMesh("DamagedHelmet_cmp.glb", "SingleMesh", flags);
-        engine->mstore.loadMesh("MirrorCube.glb", "SingleMesh", flags);
+        engine->mstore.loadMesh("DamagedHelmet_cmp.glb", "SingleMesh", flags);
+        //engine->mstore.loadMesh("MirrorCube.glb", "SingleMesh", flags);
         auto loaded = mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
         auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
         const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
         SceneObject* object = engine->mstore.addObject(meshInfo->index, vec3(0.0f, 0.0f, 0.0f), flags);
         // turn upside down
-        object->rot = vec3(PI_half, 0.0, 0.0f);
+        object->rot = vec3(PI_half, PI_half*2, 0.0f);
         object->scale = vec3(1.0f);
         mat4 baseTransform = mat4(1.0); // get from gltf later
         GPUModel* gpuModel = engine->mstore.getGPUModel(object->index);
