@@ -1,5 +1,13 @@
 #pragma once
 
+struct ObjectParams
+{
+    std::string name;
+    std::string meshFile;
+    glm::vec3 position = glm::vec3(0.0f);
+    glm::vec3 rotation = glm::vec3(0.0f);
+    glm::vec3 scale = glm::vec3(1.0f);
+};
 struct SceneEditorDisplayParams
 {
     bool showGrid = true;
@@ -8,6 +16,7 @@ struct SceneEditorDisplayParams
     bool showNormals = false;
     bool showWireframe = false;
     bool showSunDirBeam = false;
+    bool addFixedObjectToScene = false;
     float sunIntensity = 1.0f;
 
     // environment cube handling:
@@ -45,4 +54,5 @@ private:
     SceneEditorDisplayParams displayParams;
     void loadNewEnvCube(std::string textureFileName);
     GPUFrameParam frameParam;
+    void addObjectToScene(const ObjectParams& params);
 };

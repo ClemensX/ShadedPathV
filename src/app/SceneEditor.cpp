@@ -121,6 +121,15 @@ void SceneEditor::prepareFrame(FrameResources* fr)
         displayParams.loadNewEnvCube = false;
         loadNewEnvCube(displayParams.newEnvCubeFileName);
     }
+    if (displayParams.addFixedObjectToScene) {
+        displayParams.addFixedObjectToScene = false;
+        Log("Adding fixed object to scene" << endl);
+        ObjectParams params;
+        params.name = "FixedObject";
+        params.meshFile = "path/to/mesh.obj";
+        params.position = glm::vec3(0.0f, 0.0f, 0.0f);
+        addObjectToScene(params);
+    }
 
     // cube
     CubeShader::UniformBufferObject cubo{};
@@ -235,6 +244,10 @@ void SceneEditor::buildCustomUI() {
         ImGui::Text("Camera Position: (%.1f,%.1f,%.1f)", p.x, p.y, p.z);
         ImGui::Text("Camera Direction: (%.2f,%.2f,%.2f)", l.x, l.y, l.z);
     }
+    ImGui::Separator();
+    if (ImGui::Button("Mach was!")) {
+        displayParams.addFixedObjectToScene = true;
+    }
 }
 
 void SceneEditor::loadNewEnvCube(string textureFilePathName)
@@ -261,4 +274,23 @@ void SceneEditor::loadNewEnvCube(string textureFilePathName)
 
     engine->shaders.cubeShader.setSkybox("skyboxTexture");
     engine->shaders.cubeShader.setFarPlane(2000.0f);
+}
+
+void SceneEditor::addObjectToScene(const ObjectParams& params)
+{
+    MeshFlagsCollection flags;
+    flags.setFlag(MeshFlags::MESHLET_GENERATE);
+    //flags.setFlag(MeshFlags::RENDER_TYPE_MOVING);
+    MStore& mstore = engine->mstore;
+    engine->mstore.loadMesh("MirrorCube.glb", "SingleMesh2", flags);
+    auto loaded = mstore.getMeshFileByID("SingleMesh2");
+    auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
+    const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
+    SceneObject* object = engine->mstore.addObject(meshInfo->index, vec3(3.0f, 0.0f, 0.0f), flags);
+    object->scale = vec3(1.0f);
+    mat4 baseTransform = mat4(1.0); // get from gltf later
+    GPUModel* gpuModel = engine->mstore.getGPUModel(object->index);
+    object->prepareGPUModel(gpuModel, baseTransform);
+    engine->shaders.pbrShader.recreateGlobalCommandBuffers();
+    engine->shaders.pbrShader.initialUpload(true);
 }
