@@ -29,9 +29,41 @@ void MStore::init() {
     movingSceneObjects.resize(maxMovingModels);
 }
 
-void MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection flags)
+MeshFile* MStore::checkMeshFile(std::string filename, std::string id)
 {
-    assert(engine != nullptr);
+	// search id
+	auto it = meshFileIDs.find(id);
+	if (it != meshFileIDs.end()) {
+		int index = it->second;
+		if (index >= 0 && index < meshFiles.size()) {
+			return &meshFiles[index];
+		}
+	}
+	// id not found - search filename
+    for (MeshFile& mf : meshFiles) {
+        if (mf.filename == filename) {
+            return &mf;
+        }
+    }
+	return nullptr;
+}
+
+MeshFile* MStore::loadMesh(std::string filename, MeshFlagsCollection flags)
+{
+    MeshFile* existingMeshFile = checkMeshFile(filename, "");
+    if (existingMeshFile != nullptr) {
+        return existingMeshFile;
+    }
+    std::string id = "meshfile_" + std::to_string(meshFiles.size());
+    return loadMesh(filename, id, flags);
+}
+
+MeshFile* MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection flags)
+{
+	MeshFile* existingMeshFile = checkMeshFile(filename, id);
+	if (existingMeshFile != nullptr) {
+		return existingMeshFile;
+	}
 	vector<byte> file_buffer;
 	auto path = loadFile(filename, file_buffer);
     
@@ -44,6 +76,8 @@ void MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection 
     MeshFile meshFile{};
     meshFile.id = id;
     meshFile.flags = flags;
+	meshFile.filename = filename;
+
 	for (int i = 0; i < meshNumCount; ++i) {
 		auto meshInfo = getGPUMeshInfoInternal(meshNumStart + i);
         auto metadata = getMeshMetadata(meshNumStart + i);
@@ -80,7 +114,7 @@ void MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection 
 		//meshInfo->index = 3;
 		//meshInfo->next = 4;
 	}
-
+    return &meshFiles.back();
 }
 
 void MStore::uploadMesh(GPUMeshInfo* mi)

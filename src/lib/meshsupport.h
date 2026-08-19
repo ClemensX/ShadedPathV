@@ -178,6 +178,7 @@ struct MeshFileEntry {
 
 struct MeshFile {
     std::string id;
+    std::string filename;
     MeshFlagsCollection flags;
 	std::vector<MeshFileEntry> meshes;
 };

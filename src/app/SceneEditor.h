@@ -18,6 +18,7 @@ struct SceneEditorDisplayParams
     bool showSunDirBeam = false;
     bool addFixedObjectToScene = false;
     float sunIntensity = 1.0f;
+    bool showFileDialog = false;
 
     // environment cube handling:
     bool showEnvCubeDialog = false;
@@ -27,6 +28,11 @@ struct SceneEditorDisplayParams
     // results:
     bool loadNewEnvCube = false; // signal to load new file
     std::string newEnvCubeFileName; // name of new file to load
+
+    // mesh file dialog handling:
+    bool showAddMeshFileDialog = false;
+    bool loadNewMeshFile = false;
+    std::string newMeshFileName;
 };
 
 // Display Logo. May be used while big game loads in the background
@@ -55,4 +61,5 @@ private:
     void loadNewEnvCube(std::string textureFileName);
     GPUFrameParam frameParam;
     void addObjectToScene(const ObjectParams& params);
+    void loadNewMeshFile(std::string meshFilePathName);
 };

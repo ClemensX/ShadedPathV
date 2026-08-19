@@ -14,11 +14,21 @@ public:
     void setLimits(size_t maxMeshes) {
         this->maxMeshes = maxMeshes;
     }
-	// load all meshes from glTF file
-	void loadMesh(std::string filename, std::string id, MeshFlagsCollection flags = MeshFlagsCollection());
+    // load all meshes from glTF file. If already loaded, return pointer to existing MeshFile.
+    MeshFile* loadMesh(std::string filename, std::string id, MeshFlagsCollection flags = MeshFlagsCollection());
+    // don't use id string - will auto generate one from MeshFile index. If already loaded, return pointer to existing MeshFile.
+    MeshFile* loadMesh(std::string filename, MeshFlagsCollection flags = MeshFlagsCollection());
+    // check pre-existing id or filename, return pointer to MeshFile if found, nullptr if not found 
+    MeshFile* checkMeshFile(std::string filename, std::string);
+
     int32_t loadedMeshFileCount() const {
         return static_cast<int32_t>(meshFiles.size());
     }
+
+    std::vector<MeshFile> getMeshFiles() const {
+        return meshFiles;
+    }
+
     int32_t getMeshFileIndexByID(std::string id) const {
         auto it = meshFileIDs.find(id);
         if (it != meshFileIDs.end()) {

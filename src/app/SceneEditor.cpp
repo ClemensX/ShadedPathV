@@ -121,6 +121,10 @@ void SceneEditor::prepareFrame(FrameResources* fr)
         displayParams.loadNewEnvCube = false;
         loadNewEnvCube(displayParams.newEnvCubeFileName);
     }
+    if (displayParams.loadNewMeshFile) {
+        displayParams.loadNewMeshFile = false;
+        loadNewMeshFile(displayParams.newMeshFileName);
+    }
     if (displayParams.addFixedObjectToScene) {
         displayParams.addFixedObjectToScene = false;
         Log("Adding fixed object to scene" << endl);
@@ -245,6 +249,72 @@ void SceneEditor::buildCustomUI() {
         ImGui::Text("Camera Direction: (%.2f,%.2f,%.2f)", l.x, l.y, l.z);
     }
     ImGui::Separator();
+    if (ImGui::Button("Mesh Files"))
+    {
+        displayParams.showFileDialog = true;
+        ImGui::OpenPopup("FileDialog");
+    }
+    if (ImGui::BeginPopupModal("FileDialog", &displayParams.showFileDialog)) {
+        vector<MeshFile> meshFiles = engine->mstore.getMeshFiles();
+        ImGui::Text("Loaded Mesh Files: %d", static_cast<int>(meshFiles.size()));
+
+        const float rowHeight = ImGui::GetTextLineHeightWithSpacing();
+        const ImVec2 listSize(0.0f, rowHeight * 10.0f);
+
+        ImGui::BeginChild("LoadedMeshFilesList", listSize, true, ImGuiWindowFlags_HorizontalScrollbar);
+        for (const MeshFile& meshFile : meshFiles) {
+            string filename = filesystem::path(meshFile.filename).filename().string();
+            string label = filename + " [" + to_string(meshFile.meshes.size()) + "]";
+            ImGui::TextUnformatted(label.c_str());
+        }
+        ImGui::EndChild();
+
+        ImGui::Separator();
+        if (ImGui::Button(displayParams.showAddMeshFileDialog ? "Hide Add Mesh File" : "Add Mesh File")) {
+            displayParams.showAddMeshFileDialog = !displayParams.showAddMeshFileDialog;
+        }
+
+        if (displayParams.showAddMeshFileDialog) {
+            engine->files.findAssetFolder("data");
+            filesystem::path meshFolder = engine->files.getAssetFolderPath() / engine->files.MESH_PATH;
+            displayParams.filePattern = "";
+            displayParams.files = Util::getFilesMatchingPattern(meshFolder, displayParams.filePattern);
+
+            ImGui::Text("Mesh folder: %s", meshFolder.string().c_str());
+            ImGui::Text("Choose a mesh file:");
+            const ImVec2 pickerSize(0.0f, rowHeight * 10.0f);
+
+            static int selectedMeshLine = -1;
+            ImGui::BeginChild("AvailableMeshFilesList", pickerSize, true, ImGuiWindowFlags_HorizontalScrollbar);
+            for (int i = 0; i < static_cast<int>(displayParams.files.size()); ++i) {
+                if (ImGui::Selectable(displayParams.files[i].c_str(), selectedMeshLine == i)) {
+                    selectedMeshLine = i;
+                    displayParams.loadNewMeshFile = true;
+                    displayParams.newMeshFileName = (meshFolder / displayParams.files[i]).string();
+                    displayParams.showAddMeshFileDialog = false;
+                    ImGui::CloseCurrentPopup(); // close FileDialog after selection
+                }
+            }
+            ImGui::EndChild();
+        }
+
+        if (ImGui::Button("Cancel")) {
+            displayParams.showAddMeshFileDialog = false;
+            displayParams.showFileDialog = false;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+    if (ImGui::CollapsingHeader("Objects", ImGuiTreeNodeFlags_None))
+    {
+        auto p = camera->getPosition();
+        auto l = camera->getLookAt();
+        ImGui::Separator();
+        ImGui::Text("Camera Position: (%.1f,%.1f,%.1f)", p.x, p.y, p.z);
+        ImGui::Text("Camera Direction: (%.2f,%.2f,%.2f)", l.x, l.y, l.z);
+    }
+    ImGui::Separator();
     if (ImGui::Button("Mach was!")) {
         displayParams.addFixedObjectToScene = true;
     }
@@ -282,8 +352,8 @@ void SceneEditor::addObjectToScene(const ObjectParams& params)
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
     //flags.setFlag(MeshFlags::RENDER_TYPE_MOVING);
     MStore& mstore = engine->mstore;
-    engine->mstore.loadMesh("MirrorCube.glb", "SingleMesh2", flags);
-    auto loaded = mstore.getMeshFileByID("SingleMesh2");
+    MeshFile* loaded = engine->mstore.loadMesh("MirrorCube.glb", flags);
+    //MeshFile* loaded = engine->mstore.loadMesh("Delfini6.glb", flags);
     auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
     const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
     SceneObject* object = engine->mstore.addObject(meshInfo->index, vec3(3.0f, 0.0f, 0.0f), flags);
@@ -293,4 +363,15 @@ void SceneEditor::addObjectToScene(const ObjectParams& params)
     object->prepareGPUModel(gpuModel, baseTransform);
     engine->shaders.pbrShader.recreateGlobalCommandBuffers();
     engine->shaders.pbrShader.initialUpload(true);
+}
+
+void SceneEditor::loadNewMeshFile(string meshFilePathName)
+{
+    filesystem::path filepath = meshFilePathName;
+    string filename = filepath.filename().string();
+    Log("Loading new mesh file: " << filename << std::endl);
+
+    MeshFlagsCollection flags;
+    flags.setFlag(MeshFlags::MESHLET_GENERATE);
+    engine->mstore.loadMesh(filename, flags);
 }
