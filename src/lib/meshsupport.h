@@ -62,7 +62,8 @@ struct GPUCollectionInfo {
 	uint32_t pad0;
 };
 
-// we no longer use offets, all 64 bit addresses are absolute device addresses, TODO: rename ...offset to ...Address
+// MeshInfoMetadata and GPUMeshInfo are describe loaded meshes. Exactly one each for every mesh in the global mesh buffer.
+// we no longer use offsets, all 64 bit addresses are absolute device addresses, TODO: rename ...offset to ...Address
 struct GPUMeshInfo {
 	uint64_t meshletOffset = 0; // offset into global mesh storage buffer
 	uint64_t localIndexOffset = 0; // offset into global mesh storage buffer
@@ -75,8 +76,10 @@ struct GPUMeshInfo {
 	BoundingBox boundingBox;
 };
 
+
+// GPUModel and SceneObject describe loaded objects. The GPU only sees GPUModel.
 struct GPUModel {
-	glm::mat4 model;
+    glm::mat4 model; // model to world transform, includes position, rotation and scale
     uint32_t flags; // MODEL_RENDER_FLAG_* , see pbrShader.h
 	uint32_t meshNumber; // link to MeshInfo
 	uint32_t material_lod_category;

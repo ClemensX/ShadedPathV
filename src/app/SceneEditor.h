@@ -33,6 +33,7 @@ struct SceneEditorDisplayParams
     bool showAddMeshFileDialog = false;
     bool loadNewMeshFile = false;
     std::string newMeshFileName;
+    std::vector<GPUModel> stationaryModels;
 };
 
 // Display Logo. May be used while big game loads in the background
@@ -62,4 +63,5 @@ private:
     GPUFrameParam frameParam;
     void addObjectToScene(const ObjectParams& params);
     void loadNewMeshFile(std::string meshFilePathName);
+    void fillStationaryModels();
 };

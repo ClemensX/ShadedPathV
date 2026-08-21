@@ -171,7 +171,7 @@ GPUModel* MStore::getGPUModel(int32_t index) {
 	return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::Models, index);
 }
 
-int MStore::getUsedModelCount() const {
+int MStore::getUsedStationaryModelCount() const {
 	return engine->globalRendering.gpuMemory.getElementCount(BufferType::Models);
 }
 
@@ -569,4 +569,19 @@ void SceneObject::prepareGPUModel(GPUModel* gpuModel, glm::mat4& baseTransform)
 	if (flags.hasFlag(MeshFlags::RENDER_DISABLE)) {
 		gpuModel->flags |= PBRShader::MODEL_RENDER_FLAG_DISABLE;
 	}
+}
+
+void MStore::getFileInfosForMesh(int meshIndex, MeshFile& meshFile, MeshFileEntry& meshFileEntry)
+{
+    // we have no backlink from meshIndex to meshFile, so we have to iterate through all meshFiles and their entries
+    for (auto& mf : meshFiles) {
+        for (auto& entry : mf.meshes) {
+            if (entry.meshIndex == meshIndex) {
+                meshFile = mf;
+                meshFileEntry = entry;
+                return;
+            }
+        }
+    }
+    Error("MStore::getFileInfosForMesh: Mesh index not found: " + std::to_string(meshIndex));
 }

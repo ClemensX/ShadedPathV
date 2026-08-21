@@ -46,12 +46,13 @@ public:
     GPUMeshInfo* getGPUMeshInfo(int32_t index) ;
     MeshInfoMetadata* getMeshMetadata(int32_t index);
     GPUModel* getGPUModel(int32_t index);
-    int getUsedModelCount() const;
+    int getUsedStationaryModelCount() const;
     GPUModel* getGPUMovingModel(int32_t index);
     SceneObject* getSceneObject(int32_t index);
     SceneObject* getMovingSceneObject(int32_t index);
     GPUMaterial* getGPUMaterial(int32_t index);
     GPUFrameParam* getGPUFrameParam(int32_t index);
+    void getFileInfosForMesh(int meshIndex, MeshFile& meshFile, MeshFileEntry& meshFileEntry);
     // upload all meshes during init phase, called from PBRShader
     void uploadAllMeshes();
 

@@ -249,6 +249,9 @@ void SceneEditor::buildCustomUI() {
         ImGui::Text("Camera Direction: (%.2f,%.2f,%.2f)", l.x, l.y, l.z);
     }
     ImGui::Separator();
+    const float rowHeight = ImGui::GetTextLineHeightWithSpacing();
+    const ImVec2 listSize(0.0f, rowHeight * 10.0f);
+
     if (ImGui::Button("Mesh Files"))
     {
         displayParams.showFileDialog = true;
@@ -257,9 +260,6 @@ void SceneEditor::buildCustomUI() {
     if (ImGui::BeginPopupModal("FileDialog", &displayParams.showFileDialog)) {
         vector<MeshFile> meshFiles = engine->mstore.getMeshFiles();
         ImGui::Text("Loaded Mesh Files: %d", static_cast<int>(meshFiles.size()));
-
-        const float rowHeight = ImGui::GetTextLineHeightWithSpacing();
-        const ImVec2 listSize(0.0f, rowHeight * 10.0f);
 
         ImGui::BeginChild("LoadedMeshFilesList", listSize, true, ImGuiWindowFlags_HorizontalScrollbar);
         for (const MeshFile& meshFile : meshFiles) {
@@ -308,11 +308,27 @@ void SceneEditor::buildCustomUI() {
     }
     if (ImGui::CollapsingHeader("Objects", ImGuiTreeNodeFlags_None))
     {
-        auto p = camera->getPosition();
-        auto l = camera->getLookAt();
-        ImGui::Separator();
-        ImGui::Text("Camera Position: (%.1f,%.1f,%.1f)", p.x, p.y, p.z);
-        ImGui::Text("Camera Direction: (%.2f,%.2f,%.2f)", l.x, l.y, l.z);
+        fillStationaryModels();
+        ImGui::Text("Choose an obejcts:");
+        const ImVec2 pickerSize(0.0f, rowHeight * 10.0f);
+
+        static int selectedObjLine = -1;
+        ImGui::BeginChild("AvailableObjectList", pickerSize, true, ImGuiWindowFlags_HorizontalScrollbar);
+        for (int i = 0; i < static_cast<int>(displayParams.stationaryModels.size()); ++i) {
+            auto& model = displayParams.stationaryModels[i];
+            auto* so = engine->mstore.getSceneObject(i);
+            int idx = i;
+            string pos = std::to_string(so->pos.x) + ", " + std::to_string(so->pos.y) + ", " + std::to_string(so->pos.z);
+            MeshFile meshFile;
+            MeshFileEntry meshFileEntry;
+
+            engine->mstore.getFileInfosForMesh(model.meshNumber, meshFile, meshFileEntry);
+            string line = to_string(i) + " " + meshFileEntry.name + " [" + std::to_string(meshFileEntry.meshIndex) + "] " + pos;
+            if (ImGui::Selectable(line.c_str(), selectedObjLine == i)) {
+                selectedObjLine = i;
+            }
+        }
+        ImGui::EndChild();
     }
     ImGui::Separator();
     if (ImGui::Button("Mach was!")) {
@@ -374,4 +390,14 @@ void SceneEditor::loadNewMeshFile(string meshFilePathName)
     MeshFlagsCollection flags;
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
     engine->mstore.loadMesh(filename, flags);
+}
+
+void SceneEditor::fillStationaryModels()
+{
+    displayParams.stationaryModels.clear();
+    int statModelNum = engine->mstore.getUsedStationaryModelCount();
+    for (int i = 0; i < statModelNum; ++i) {
+        GPUModel* object = engine->mstore.getGPUModel(i);
+        displayParams.stationaryModels.push_back(*object);
+    }
 }
