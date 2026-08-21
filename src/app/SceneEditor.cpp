@@ -1,4 +1,4 @@
-#include "mainheader.h"
+﻿#include "mainheader.h"
 #include "AppSupport.h"
 #include "SceneEditor.h"
 
@@ -124,6 +124,10 @@ void SceneEditor::prepareFrame(FrameResources* fr)
     if (displayParams.loadNewMeshFile) {
         displayParams.loadNewMeshFile = false;
         loadNewMeshFile(displayParams.newMeshFileName);
+    }
+    if (displayParams.reuploadStationaryObjects) {
+        displayParams.reuploadStationaryObjects = false;
+        redoAllStationaryObjects();
     }
     if (displayParams.addFixedObjectToScene) {
         displayParams.addFixedObjectToScene = false;
@@ -329,6 +333,28 @@ void SceneEditor::buildCustomUI() {
             }
         }
         ImGui::EndChild();
+        // Object detail section
+        if (selectedObjLine >= 0 && selectedObjLine < static_cast<int>(displayParams.stationaryModels.size())) {
+            SceneObject* so = engine->mstore.getSceneObject(selectedObjLine);
+            ImGui::Separator();
+            ImGui::Text("Object %d details:", selectedObjLine);
+
+            float pos[3] = { so->pos.x, so->pos.y, so->pos.z };
+            float rot[3] = { so->rot.x, so->rot.y, so->rot.z };
+            float scl    = so->scale.x;
+
+            ImGui::DragFloat3("Position", pos,  0.01f);
+            so->pos = { pos[0], pos[1], pos[2] };
+            ImGui::DragFloat3("Rotation", rot,  0.01f);
+            so->rot = { rot[0], rot[1], rot[2] };
+            ImGui::DragFloat ("Scale",    &scl, 0.01f, 0.001f, 1000.0f);
+            so->scale = glm::vec3(scl);
+        }
+
+        ImGui::Separator();
+        if (ImGui::Button("Re-upload Stationary Objects")) {
+            displayParams.reuploadStationaryObjects = true;
+        }
     }
     ImGui::Separator();
     if (ImGui::Button("Mach was!")) {
@@ -377,6 +403,21 @@ void SceneEditor::addObjectToScene(const ObjectParams& params)
     mat4 baseTransform = mat4(1.0); // get from gltf later
     GPUModel* gpuModel = engine->mstore.getGPUModel(object->index);
     object->prepareGPUModel(gpuModel, baseTransform);
+    engine->shaders.pbrShader.recreateGlobalCommandBuffers();
+    engine->shaders.pbrShader.initialUpload(true);
+}
+
+void SceneEditor::redoAllStationaryObjects()
+{
+    int num = engine->mstore.getUsedStationaryModelCount();
+    for (int i = 0; i < num; ++i) {
+        SceneObject* so = engine->mstore.getSceneObject(i);
+        GPUModel* gpuModel = engine->mstore.getGPUModel(so->index);
+        mat4 baseTransform = mat4(1.0); // get from gltf later
+        so->prepareGPUModel(gpuModel, baseTransform);
+        engine->globalRendering.gpuMemory.updateElement(BufferType::Models, *gpuModel, so->index);
+        Log("Re-uploaded stationary object " << i << " at position: " << so->pos.x << ", " << so->pos.y << ", " << so->pos.z << std::endl);
+    }
     engine->shaders.pbrShader.recreateGlobalCommandBuffers();
     engine->shaders.pbrShader.initialUpload(true);
 }
