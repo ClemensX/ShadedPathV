@@ -1,6 +1,7 @@
 ﻿#include "mainheader.h"
 #include "AppSupport.h"
 #include "SceneEditor.h"
+#include <random>
 
 using namespace std;
 using namespace glm;
@@ -72,9 +73,8 @@ void SceneEditor::init()
     world.setWorldSize(2048.0f, 382.0f, 2048.0f);
     // Grid with 1m squares, floor on -10m, ceiling on 372m
 
-    PBRShader::LightSource ls;
     ls.color = vec3(1.0f);
-    ls.position = vec3(75.0f, 0.5f, -20.0f);
+    ls.position = vec3(75.0f, 90.5f, -20.0f);
 
     // new
     //engine->shaders.pbrShader.fillStandardFrameParams(frameParam);
@@ -138,6 +138,14 @@ void SceneEditor::prepareFrame(FrameResources* fr)
         params.position = glm::vec3(0.0f, 0.0f, 0.0f);
         addObjectToScene(params);
     }
+    if (displayParams.showSunBeams && !displayParams.sunBeamsInitialized) {
+        displayParams.sunBeamsInitialized = true;
+        initSunRays();
+    }
+
+    if (displayParams.showSunBeams) {
+        advanceSunRays(deltaSeconds, sunRayBox);
+    }
 
     // cube
     CubeShader::UniformBufferObject cubo{};
@@ -162,6 +170,20 @@ void SceneEditor::prepareFrame(FrameResources* fr)
     applyViewProjection(pubo.view, pubo.proj, pubo2.view, pubo2.proj, &pubo.camPos, &pubo2.camPos);
     //Log("Camera position: " << pubo.camPos.x << " " << pubo.camPos.y << " " << pubo.camPos.z << endl); // Camera position: -0.0386716 0.2 0.51695
     engine->shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
+
+    // lines
+    engine->shaders.lineShader.clearLocalLines(tr);
+    LineShader::UniformBufferObject lubo{};
+    LineShader::UniformBufferObject lubo2{};
+    lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    lubo2.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
+    applyViewProjection(lubo.view, lubo.proj, lubo2.view, lubo2.proj);
+    // dynamic lines:
+    if (displayParams.showSunBeams && !sunRays.empty()) {
+        engine->shaders.lineShader.addOneTime(sunRays, tr);
+    }
+    engine->shaders.lineShader.prepareAddLines(tr);
+    engine->shaders.lineShader.uploadToGPU(tr, lubo, lubo2);
 
     postUpdatePerFrame(tr);
     //camera->log();
@@ -212,6 +234,10 @@ void SceneEditor::handleInput(InputState& inputState)
 }
 
 void SceneEditor::buildCustomUI() {
+    if (ImGui::CollapsingHeader("Display Tweaks", ImGuiTreeNodeFlags_None))
+    {
+        ImGui::Checkbox("Sun Beams", &displayParams.showSunBeams);
+    }
     ImGui::Separator();
     if (ImGui::Button("Environment Cube Settings")) {
         displayParams.showEnvCubeDialog = true;
@@ -440,5 +466,72 @@ void SceneEditor::fillStationaryModels()
     for (int i = 0; i < statModelNum; ++i) {
         GPUModel* object = engine->mstore.getGPUModel(i);
         displayParams.stationaryModels.push_back(*object);
+    }
+}
+
+void SceneEditor::initSunRays()
+{
+    sunRays.clear();
+    // Sun-ray simulation box (same dimensions as world extents)
+    sunRayBox.min = glm::vec3(-1024.0f, -191.0f, -1024.0f);
+    sunRayBox.max = glm::vec3(1024.0f, 191.0f, 1024.0f);
+
+    // Initial sun rays
+    vec4 sunColor = vec4(ls.color, 1.0f); // warm sunlight color
+    // calculate sun direction based on light source position:
+    vec3 sunDirection = glm::normalize(ls.position * -1.0f);
+    setupSunRays(sunDirection, 300, 35.0f, 22.0f, sunColor);
+}
+
+bool SceneEditor::isInsideBox(const glm::vec3& p, const BoundingBox& box)
+{
+    return p.x >= box.min.x && p.x <= box.max.x &&
+        p.y >= box.min.y && p.y <= box.max.y &&
+        p.z >= box.min.z && p.z <= box.max.z;
+}
+
+LineDef SceneEditor::createRandomSunRay(const BoundingBox& box) const
+{
+    static thread_local std::mt19937 rng{ std::random_device{}() };
+    std::uniform_real_distribution<float> dx(box.min.x, box.max.x);
+    std::uniform_real_distribution<float> dy(box.min.y, box.max.y);
+    std::uniform_real_distribution<float> dz(box.min.z, box.max.z);
+
+    glm::vec3 start(dx(rng), dy(rng), dz(rng));
+    glm::vec3 end = start + sunRayDirection * sunRayLength;
+    return LineDef{ start, end, sunRayColor };
+}
+
+void SceneEditor::setupSunRays(const glm::vec3& sunDirection, int numberRays, float rayLength, float raySpeed, const glm::vec4& rayColor)
+{
+    sunRayDirection = glm::length(sunDirection) > 0.0001f ? glm::normalize(sunDirection) : glm::vec3(0.0f, -1.0f, 0.0f);
+    sunRayLength = glm::max(0.01f, rayLength);
+    sunRaySpeed = glm::max(0.0f, raySpeed);
+    sunRayColor = rayColor;
+
+    sunRays.clear();
+    sunRays.reserve(glm::max(0, numberRays));
+    for (int i = 0; i < numberRays; ++i) {
+        sunRays.push_back(createRandomSunRay(sunRayBox));
+    }
+}
+
+void SceneEditor::advanceSunRays(float deltaSeconds, const BoundingBox& simulationBox)
+{
+    if (sunRays.empty() || deltaSeconds <= 0.0f) {
+        return;
+    }
+
+    const glm::vec3 step = sunRayDirection * sunRaySpeed * deltaSeconds;
+
+    for (auto& ray : sunRays) {
+        ray.start += step;
+        ray.end = ray.start + sunRayDirection * sunRayLength;
+        ray.color = sunRayColor;
+
+        // Respawn ray when it leaves the simulation box
+        if (!isInsideBox(ray.start, simulationBox)) {
+            ray = createRandomSunRay(simulationBox);
+        }
     }
 }

@@ -19,6 +19,8 @@ struct SceneEditorDisplayParams
     bool addFixedObjectToScene = false;
     float sunIntensity = 1.0f;
     bool showFileDialog = false;
+    bool showSunBeams = false;
+    bool sunBeamsInitialized = false;
 
     // environment cube handling:
     bool showEnvCubeDialog = false;
@@ -68,4 +70,19 @@ private:
     void loadNewMeshFile(std::string meshFilePathName);
     void fillStationaryModels();
     void redoAllStationaryObjects();
+    void initSunRays();
+    PBRShader::LightSource ls;
+
+    // --- Sun ray data ---
+    std::vector<LineDef> sunRays;
+    glm::vec3 sunRayDirection = glm::vec3(0.0f, -1.0f, 0.0f);
+    glm::vec4 sunRayColor = glm::vec4(1.0f);
+    float sunRayLength = 25.0f;
+    float sunRaySpeed = 8.0f;
+    BoundingBox sunRayBox{};
+    // --- Sun ray simulation ---
+    void setupSunRays(const glm::vec3& sunDirection, int numberRays, float rayLength, float raySpeed, const glm::vec4& rayColor);
+    void advanceSunRays(float deltaSeconds, const BoundingBox& simulationBox);
+    LineDef createRandomSunRay(const BoundingBox& box) const;
+    static bool isInsideBox(const glm::vec3& p, const BoundingBox& box);
 };

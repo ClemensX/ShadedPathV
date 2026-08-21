@@ -187,7 +187,7 @@ void UI::buildUI()
             window_flags |= ImGuiWindowFlags_NoMove;
         }
         ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
-        if (ImGui::Begin("ShadedPathV", p_open, window_flags))
+        if (ImGui::Begin("ShadedPathV", p_open, 0/* window_flags */))
         {
             if (hasRenderFlag(UIRenderFlags::UIRender_FPS)) {
                 ImGui::Text(appname.c_str());
