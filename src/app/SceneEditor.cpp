@@ -129,15 +129,15 @@ void SceneEditor::prepareFrame(FrameResources* fr)
         displayParams.reuploadStationaryObjects = false;
         redoAllStationaryObjects();
     }
-    if (displayParams.addFixedObjectToScene) {
-        displayParams.addFixedObjectToScene = false;
-        Log("Adding fixed object to scene" << endl);
-        ObjectParams params;
-        params.name = "FixedObject";
-        params.meshFile = "path/to/mesh.obj";
-        params.position = glm::vec3(0.0f, 0.0f, 0.0f);
-        addObjectToScene(params);
-    }
+    //if (displayParams.addFixedObjectToScene) {
+    //    displayParams.addFixedObjectToScene = false;
+    //    Log("Adding fixed object to scene" << endl);
+    //    ObjectParams params;
+    //    params.name = "FixedObject";
+    //    params.meshFile = "path/to/mesh.obj";
+    //    params.position = glm::vec3(0.0f, 0.0f, 0.0f);
+    //    addObjectToScene(params);
+    //}
     if (displayParams.showSunBeams && !displayParams.sunBeamsInitialized) {
         displayParams.sunBeamsInitialized = true;
         initSunRays();
@@ -145,6 +145,16 @@ void SceneEditor::prepareFrame(FrameResources* fr)
 
     if (displayParams.showSunBeams) {
         advanceSunRays(deltaSeconds, sunRayBox);
+    }
+
+    if (displayParams.addStationaryObjectToScene) {
+        displayParams.addStationaryObjectToScene = false;
+        addObjectToScene(displayParams.selectedLoadedMeshFileLine, false);
+    }
+
+    if (displayParams.addMovingObjectToScene) {
+        displayParams.addMovingObjectToScene = false;
+        addObjectToScene(displayParams.selectedLoadedMeshFileLine, true);
     }
 
     // cube
@@ -292,12 +302,35 @@ void SceneEditor::buildCustomUI() {
         ImGui::Text("Loaded Mesh Files: %d", static_cast<int>(meshFiles.size()));
 
         ImGui::BeginChild("LoadedMeshFilesList", listSize, true, ImGuiWindowFlags_HorizontalScrollbar);
-        for (const MeshFile& meshFile : meshFiles) {
+        for (int i = 0; i < static_cast<int>(meshFiles.size()); ++i) {
+            const MeshFile& meshFile = meshFiles[i];
             string filename = filesystem::path(meshFile.filename).filename().string();
             string label = filename + " [" + to_string(meshFile.meshes.size()) + "]";
-            ImGui::TextUnformatted(label.c_str());
+
+            if (ImGui::Selectable(label.c_str(), displayParams.selectedLoadedMeshFileLine == i)) {
+                displayParams.selectedLoadedMeshFileLine = i;
+            }
         }
         ImGui::EndChild();
+
+        ImGui::Separator();
+        const bool hasMeshSelection =
+            displayParams.selectedLoadedMeshFileLine >= 0 &&
+            displayParams.selectedLoadedMeshFileLine < static_cast<int>(meshFiles.size());
+
+        if (!hasMeshSelection) {
+            ImGui::BeginDisabled();
+        }
+        if (ImGui::Button("Add Stationary Object")) {
+            displayParams.addStationaryObjectToScene = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Add Moving Object")) {
+            displayParams.addMovingObjectToScene = true;
+        }
+        if (!hasMeshSelection) {
+            ImGui::EndDisabled();
+        }
 
         ImGui::Separator();
         if (ImGui::Button(displayParams.showAddMeshFileDialog ? "Hide Add Mesh File" : "Add Mesh File")) {
@@ -336,10 +369,10 @@ void SceneEditor::buildCustomUI() {
 
         ImGui::EndPopup();
     }
-    if (ImGui::CollapsingHeader("Objects", ImGuiTreeNodeFlags_None))
+    if (ImGui::CollapsingHeader("Stationary Objects", ImGuiTreeNodeFlags_None))
     {
         fillStationaryModels();
-        ImGui::Text("Choose an obejcts:");
+        ImGui::Text("Choose an object:");
         const ImVec2 pickerSize(0.0f, rowHeight * 10.0f);
 
         static int selectedObjLine = -1;
@@ -382,10 +415,6 @@ void SceneEditor::buildCustomUI() {
             displayParams.reuploadStationaryObjects = true;
         }
     }
-    ImGui::Separator();
-    if (ImGui::Button("Mach was!")) {
-        displayParams.addFixedObjectToScene = true;
-    }
 }
 
 void SceneEditor::loadNewEnvCube(string textureFilePathName)
@@ -414,21 +443,75 @@ void SceneEditor::loadNewEnvCube(string textureFilePathName)
     engine->shaders.cubeShader.setFarPlane(2000.0f);
 }
 
-void SceneEditor::addObjectToScene(const ObjectParams& params)
+//void SceneEditor::addObjectToScene(const ObjectParams& params)
+//{
+//    MeshFlagsCollection flags;
+//    flags.setFlag(MeshFlags::MESHLET_GENERATE);
+//    //flags.setFlag(MeshFlags::RENDER_TYPE_MOVING);
+//    MStore& mstore = engine->mstore;
+//    MeshFile* loaded = engine->mstore.loadMesh("MirrorCube.glb", flags);
+//    //MeshFile* loaded = engine->mstore.loadMesh("Delfini6.glb", flags);
+//    auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
+//    const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
+//    SceneObject* object = engine->mstore.addObject(meshInfo->index, vec3(3.0f, 0.0f, 0.0f), flags);
+//    object->scale = vec3(1.0f);
+//    mat4 baseTransform = mat4(1.0); // get from gltf later
+//    GPUModel* gpuModel = engine->mstore.getGPUModel(object->index);
+//    object->prepareGPUModel(gpuModel, baseTransform);
+//    engine->shaders.pbrShader.recreateGlobalCommandBuffers();
+//    engine->shaders.pbrShader.initialUpload(true);
+//}
+
+void SceneEditor::addObjectToScene(int meshFileIndex, bool moving)
 {
+    vector<MeshFile> meshFiles = engine->mstore.getMeshFiles();
+    if (meshFileIndex < 0 || meshFileIndex >= static_cast<int>(meshFiles.size())) {
+        Error("SceneEditor::addObjectToScene: invalid mesh file selection");
+        return;
+    }
+
+    const MeshFile& selectedFile = meshFiles[meshFileIndex];
+    if (selectedFile.meshes.empty()) {
+        Error("SceneEditor::addObjectToScene: selected mesh file has no meshes");
+        return;
+    }
+
     MeshFlagsCollection flags;
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
-    //flags.setFlag(MeshFlags::RENDER_TYPE_MOVING);
-    MStore& mstore = engine->mstore;
-    MeshFile* loaded = engine->mstore.loadMesh("MirrorCube.glb", flags);
-    //MeshFile* loaded = engine->mstore.loadMesh("Delfini6.glb", flags);
-    auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
-    const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
-    SceneObject* object = engine->mstore.addObject(meshInfo->index, vec3(3.0f, 0.0f, 0.0f), flags);
+    if (moving) {
+        flags.setFlag(MeshFlags::RENDER_TYPE_MOVING);
+    }
+
+    const int meshIndex = selectedFile.meshes[0].meshIndex;
+    GPUMeshInfo* meshInfo = engine->mstore.getGPUMeshInfo(meshIndex);
+    if (meshInfo == nullptr) {
+        Error("SceneEditor::addObjectToScene: failed to resolve mesh info");
+        return;
+    }
+
+    SceneObject* object = engine->mstore.addObject(meshInfo->index, vec3(0.0f, 0.0f, 0.0f), flags);
+    if (object == nullptr) {
+        Error("SceneEditor::addObjectToScene: failed to add object");
+        return;
+    }
+
+    object->flags = flags;
     object->scale = vec3(1.0f);
-    mat4 baseTransform = mat4(1.0); // get from gltf later
-    GPUModel* gpuModel = engine->mstore.getGPUModel(object->index);
+
+    mat4 baseTransform = mat4(1.0f);
+    GPUModel* gpuModel = moving
+        ? engine->mstore.getGPUMovingModel(object->index)
+        : engine->mstore.getGPUModel(object->index);
+
     object->prepareGPUModel(gpuModel, baseTransform);
+
+    if (moving) {
+        engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, object->index);
+    }
+    else {
+        engine->globalRendering.gpuMemory.updateElement(BufferType::Models, *gpuModel, object->index);
+    }
+
     engine->shaders.pbrShader.recreateGlobalCommandBuffers();
     engine->shaders.pbrShader.initialUpload(true);
 }
@@ -457,6 +540,8 @@ void SceneEditor::loadNewMeshFile(string meshFilePathName)
     MeshFlagsCollection flags;
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
     engine->mstore.loadMesh(filename, flags);
+    engine->shaders.pbrShader.recreateGlobalCommandBuffers();
+    engine->shaders.pbrShader.initialUpload(true);
 }
 
 void SceneEditor::fillStationaryModels()

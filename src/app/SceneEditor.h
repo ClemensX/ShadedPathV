@@ -22,6 +22,11 @@ struct SceneEditorDisplayParams
     bool showSunBeams = false;
     bool sunBeamsInitialized = false;
 
+    // object adding:
+    bool addStationaryObjectToScene = false;
+    bool addMovingObjectToScene = false;
+    int selectedLoadedMeshFileLine = -1;
+
     // environment cube handling:
     bool showEnvCubeDialog = false;
     std::vector<std::string> files;
@@ -66,7 +71,8 @@ private:
     SceneEditorDisplayParams displayParams;
     void loadNewEnvCube(std::string textureFileName);
     GPUFrameParam frameParam;
-    void addObjectToScene(const ObjectParams& params);
+    //void addObjectToScene(const ObjectParams& params);
+    void addObjectToScene(int meshFileIndex, bool moving);
     void loadNewMeshFile(std::string meshFilePathName);
     void fillStationaryModels();
     void redoAllStationaryObjects();
