@@ -47,6 +47,7 @@ public:
     MeshInfoMetadata* getMeshMetadata(int32_t index);
     GPUModel* getGPUModel(int32_t index);
     int getUsedStationaryModelCount() const;
+    int getUsedMovingModelCount() const;
     GPUModel* getGPUMovingModel(int32_t index);
     SceneObject* getSceneObject(int32_t index);
     SceneObject* getMovingSceneObject(int32_t index);
@@ -76,11 +77,6 @@ public:
     // add a new object to the scene, returns pointer to SceneObject. The mesh_index is the index of the mesh in the global mesh buffer.
     // for moving objects, the MeshFlagsCollection should have the RENDER_TYPE_MOVING flag set.
     SceneObject* addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsCollection flags = MeshFlagsCollection());
-
-    // get the full list of stationary objects:
-    std::vector<int32_t> getStationaryObjects() {
-        return stationaryObjectIndices;
-    }
 
     // Meshlets
 
@@ -132,7 +128,6 @@ private:
     std::vector<SceneObject> sceneObjects;
     std::vector<SceneObject> movingSceneObjects;
 
-    std::vector<int32_t> stationaryObjectIndices;
     // no checks, directly access cpp buffer
     GPUMeshInfo* getGPUMeshInfoInternal(int32_t index);
 };

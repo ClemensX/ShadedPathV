@@ -175,6 +175,10 @@ int MStore::getUsedStationaryModelCount() const {
 	return engine->globalRendering.gpuMemory.getElementCount(BufferType::Models);
 }
 
+int MStore::getUsedMovingModelCount() const {
+	return engine->globalRendering.gpuMemory.getElementCount(BufferType::ModelsMoving);
+}
+
 GPUModel* MStore::getGPUMovingModel(int32_t index) {
 	return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::ModelsMoving, index);
 }
@@ -323,7 +327,6 @@ SceneObject* MStore::addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsColle
 		obj->pos = pos;
 		model->meshNumber = mesh_index;
 		engine->globalRendering.gpuMemory.appendElement(BufferType::Models, *model);
-		stationaryObjectIndices.push_back(objectIndex);
 		return obj;
 	}
 }

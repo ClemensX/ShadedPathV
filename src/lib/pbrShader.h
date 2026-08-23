@@ -38,10 +38,10 @@ public:
 
 	// Push constants - Per draw call
 	struct DrawPushConstants {
-		uint32_t objectNum;  // 4 bytes only!
-		uint32_t pad0;          // pad to 16-byte multiple if desired (optional)
-		uint32_t pad1;          // pad to 16-byte multiple if desired (optional)
-		uint32_t pad2;          // pad to 16-byte multiple if desired (optional)
+		uint32_t objectNum;			// 4 bytes only!
+		uint32_t isMovingObject;    // signal moving object if != 0
+		uint32_t pad1;				// pad to 16-byte multiple if desired (optional)
+		uint32_t pad2;				// pad to 16-byte multiple if desired (optional)
 	};
 	
 	// *** new buffer structures end

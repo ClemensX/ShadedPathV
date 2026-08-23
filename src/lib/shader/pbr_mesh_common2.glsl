@@ -202,11 +202,12 @@ layout(buffer_reference, std430) buffer GlobalIndexBuffer {
     uint index[];
 };
 
+// similar to pbrShader.h DrawPushConstants
 layout(push_constant) uniform PushConstants {
-	uint objectNum;  // 4 bytes only!
-	uint pad0;          // pad to 16-byte multiple if desired (optional)
-	uint pad1;          // pad to 16-byte multiple if desired (optional)
-	uint pad2;          // pad to 16-byte multiple if desired (optional)
+	uint objectNum;         // 4 bytes only!
+	uint isMovingObject;    // signal moving object if != 0
+	uint pad1;              // pad to 16-byte multiple if desired (optional)
+	uint pad2;              // pad to 16-byte multiple if desired (optional)
 } pushConstants;
 
 // sentinel value used to signal culled/disabled from task -> mesh shader

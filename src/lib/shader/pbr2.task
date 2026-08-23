@@ -23,6 +23,11 @@ void main() {
     //verifyFrameParam(0);
     //verifyCamPos();
     
+    if (pushConstants.isMovingObject != 0) {
+        debugPrintfEXT("pbr.task: objectNum %u is moving, skipping\n", pushConstants.objectNum);
+        return;
+    }
+
     bool debugIndices = false;
     bool debugInfos = false;
     //debugPrintfEXT("pbr.task ubo: frameNum %u\n", ubo.frameNum);

@@ -478,9 +478,6 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 	}
 	allocateCommandBuffer(tr, &commandBuffer, "PBR COMMAND BUFFER");
 
-	//auto& objs = engine->objectStore.getSortedList();
-	auto statObjects = engine->mstore.getStationaryObjects();
-
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0; // Optional
@@ -513,19 +510,19 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 
 	// add draw commands for all valid objects:
-	for (int32_t objNum : statObjects) {
+	for (int32_t objNum = 0; objNum < engine->mstore.getUsedStationaryModelCount(); objNum++) {
 		pbrShader->drawPush.objectNum = objNum;
-		if (true) {
-			vkCmdPushConstants(
-				commandBuffer,
-				pipelineLayout,
-				gpuMemoryPushConstantRange.stageFlags,
-				0,
-				sizeof(PBRShader::DrawPushConstants),
-				&pbrShader->drawPush
-			);
-		}
+        pbrShader->drawPush.isMovingObject = false;
+		vkCmdPushConstants(commandBuffer,pipelineLayout, gpuMemoryPushConstantRange.stageFlags,	0,sizeof(PBRShader::DrawPushConstants),	&pbrShader->drawPush);
 		SceneObject* obj = engine->mstore.getSceneObject(objNum);
+		recordDrawCommand(commandBuffer, tr, obj, false, update);
+	}
+	// add moving objects:
+	for (int32_t objNum = 0; objNum < engine->mstore.getUsedMovingModelCount(); objNum++) {
+		pbrShader->drawPush.objectNum = objNum;
+		pbrShader->drawPush.isMovingObject = true;
+		vkCmdPushConstants(commandBuffer, pipelineLayout, gpuMemoryPushConstantRange.stageFlags, 0, sizeof(PBRShader::DrawPushConstants), &pbrShader->drawPush);
+		SceneObject* obj = engine->mstore.getMovingSceneObject(objNum);
 		recordDrawCommand(commandBuffer, tr, obj, false, update);
 	}
 	vkCmdEndRenderPass(commandBuffer);
@@ -533,8 +530,19 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 		renderPassInfo.framebuffer = framebuffer2;
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet2, 0, nullptr);
-		for (int32_t objNum : statObjects) {
+		for (int32_t objNum = 0; objNum < engine->mstore.getUsedStationaryModelCount(); objNum++) {
+			pbrShader->drawPush.objectNum = objNum;
+			pbrShader->drawPush.isMovingObject = false;
+			vkCmdPushConstants(commandBuffer, pipelineLayout, gpuMemoryPushConstantRange.stageFlags, 0, sizeof(PBRShader::DrawPushConstants), &pbrShader->drawPush);
 			SceneObject* obj = engine->mstore.getSceneObject(objNum);
+			recordDrawCommand(commandBuffer, tr, obj, true, update);
+		}
+		// add moving objects:
+		for (int32_t objNum = 0; objNum < engine->mstore.getUsedMovingModelCount(); objNum++) {
+			pbrShader->drawPush.objectNum = objNum;
+			pbrShader->drawPush.isMovingObject = true;
+			vkCmdPushConstants(commandBuffer, pipelineLayout, gpuMemoryPushConstantRange.stageFlags, 0, sizeof(PBRShader::DrawPushConstants), &pbrShader->drawPush);
+			SceneObject* obj = engine->mstore.getMovingSceneObject(objNum);
 			recordDrawCommand(commandBuffer, tr, obj, true, update);
 		}
 		vkCmdEndRenderPass(commandBuffer);
