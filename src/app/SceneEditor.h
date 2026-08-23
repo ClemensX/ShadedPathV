@@ -41,6 +41,7 @@ struct SceneEditorDisplayParams
     bool loadNewMeshFile = false;
     std::string newMeshFileName;
     std::vector<GPUModel> stationaryModels;
+    std::vector<GPUModel> movingModels;
 
     // stationary objects re-upload:
     bool reuploadStationaryObjects = false;
@@ -75,6 +76,7 @@ private:
     void addObjectToScene(int meshFileIndex, bool moving);
     void loadNewMeshFile(std::string meshFilePathName);
     void fillStationaryModels();
+    void fillMovingModels();
     void redoAllStationaryObjects();
     void initSunRays();
     PBRShader::LightSource ls;
