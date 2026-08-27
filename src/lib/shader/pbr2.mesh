@@ -18,11 +18,12 @@ layout(triangles) out;
 
 layout(location = 0) out PBRVertexOutFlat outVertFlat[];
 layout(location = 1) out PBRVertexOut outVert[];
+//layout(location = 9) out TaskPayload payloadOut[];
 
 uint meshIndex = payload.meshIndex;
 GPUMeshInfo mesh = gpuInfos.info[meshIndex];
 //GPUMaterial material = gpuMaterials.material[mesh.material];
-GPUModel model = gpuModels.model[pushConstants.objectNum];
+//GPUModel model = gpuModels.model[pushConstants.objectNum];
 
 MeshletDescs meshletDescs = MeshletDescs(mesh.meshletOffset);
 GlobalIndexBuffer globalIndexBuffer = GlobalIndexBuffer(mesh.globalIndexOffset);
@@ -114,14 +115,15 @@ void main() {
         outVertFlat[v].joint0 = vert.joint0;
 
         vec4 locPos;
-        mat4 modelmat = model.model;
+        mat4 modelmat = payload.model;
+        //modelmat = mat4(1.0);
 	    locPos = modelmat * vec4(vert.position, 1.0);
 	    outVert[v].normal = normalize(transpose(inverse(mat3(modelmat))) * vert.normal);
 	    //locPos.y = -locPos.y;
         vec3 worldPos = locPos.xyz / locPos.w;
 	    outVert[v].worldPos = worldPos;
         gl_MeshVerticesEXT[v].gl_Position =  ubo.proj * ubo.view * vec4(worldPos, 1.0);
-        //debugPrintfEXT("vert[%d] position: %f %f %f\n", v, worldPos.x, worldPos.y, worldPos.z);
+        //if (v == 0) debugPrintfEXT("vert[%d] position: %f %f %f\n", v, worldPos.x, worldPos.y, worldPos.z);
 //        change to true for special cases...
 //        if (false && (model_ubo.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) { // if model_ubo.flags & MODEL_FLAG_PRELIGHT_VERTICES
 //            // apply debug colors

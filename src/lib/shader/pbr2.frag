@@ -14,11 +14,14 @@
 
 layout(location = 0) flat in PBRVertexOutFlat inVertFlat;
 layout(location = 1) in PBRVertexOut inVert; // flat removed
+//layout(location = 9) flat in TaskPayload payload;
 
-GPUModel model = gpuModels.model[pushConstants.objectNum];
-GPUMeshInfo mesh = gpuInfos.info[model.meshNumber];
-GPUMaterial material = gpuMaterials.material[mesh.material];
-GPUFrameParam uboParams = gpuFrameParams.frameParam[0];
+//GPUModel model = gpuModels.model[pushConstants.objectNum];
+//uint meshNumber = payload.realMeshIndex;
+//uint modelflags = payload.modelflags;
+uint meshNumber;
+uint modelflags;
+
 
 // mode 0: pbr metallic roughness
 // mode 1: only use vertex color
@@ -75,6 +78,8 @@ const float c_MinRoughness = 0.04;
 
 const float PBR_WORKFLOW_METALLIC_ROUGHNESS = 0.0;
 const float PBR_WORKFLOW_SPECULAR_GLOSSINESS = 1.0;
+
+GPUFrameParam uboParams = gpuFrameParams.frameParam[0];
 
 #include "tonemapping.glsl"
 #include "srgbtolinear.glsl"
@@ -280,7 +285,22 @@ void test() {
 void main() {
 	//test();
 
-	if ((model.flags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) {
+    if (pushConstants.isMovingObject != 0) {
+        GPUModel model = gpuModelsMoving.model[pushConstants.objectNum];
+        meshNumber = model.meshNumber;
+		modelflags = 0;
+        //debugPrintfEXT("pbr.task: moving model mesh %u pos.x %f rot.y %f scale.z %f\n", model.meshNumber, param.pos.x, param.rot.y, param.scale.z);
+        //modelmat = 1.0;
+    } else {
+        GPUModel model = gpuModels.model[pushConstants.objectNum];
+        meshNumber = model.meshNumber;
+		modelflags = model.flags;
+    }
+
+GPUMeshInfo mesh = gpuInfos.info[meshNumber];
+GPUMaterial material = gpuMaterials.material[mesh.material];
+
+	if ((modelflags & MODEL_RENDER_FLAG_USE_VERTEX_COLORS) != 0) {
 		outColor = vec4(1, 1, 1, 1);
 		outColor = inColor0;
 		//debugPrintfEXT("pbr frag MODEL_RENDER_FLAG_USE_VERTEX_COLORS\n");
