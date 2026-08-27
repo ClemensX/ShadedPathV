@@ -87,6 +87,15 @@ struct GPUModel {
 	//BoundingBox boundingBox; // probably not needed
 };
 
+struct GPUModelParam {
+    glm::vec3 pos;
+	float pad0;
+    glm::vec3 rot;
+	float pad1;
+    glm::vec3 scale;
+	float pad2;
+};
+
 // structure for CPU-side representation of objects, not transferred to GPU
 struct SceneObject {
 	glm::vec3 pos;

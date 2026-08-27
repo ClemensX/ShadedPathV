@@ -19,6 +19,7 @@ struct GPUMemoryAddressConstants {
     uint64_t modelsMovingAddress;
     uint64_t materialsAddress;
     uint64_t frameParamsAddress;
+    uint64_t nixos;
 };
 
 // see Object.h for C++ side
@@ -158,8 +159,8 @@ layout(binding = 0) uniform UniformBufferObject {
 	uint pad2;          // pad to 16-byte multiple if desired (optional)
     GPUMemoryAddressConstants gpuMem;
 //    for unknown reasons we have to omit the pad ints here (they are available in pbrShader.h UniformBufferObject)
-//    uint pad3;
-//    uint pad4;
+    //uint pad3;
+    //uint pad4;
     vec3 camPos;
 } ubo;
 

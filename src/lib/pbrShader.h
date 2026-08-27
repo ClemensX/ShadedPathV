@@ -71,8 +71,8 @@ public:
 		uint32_t pad1;          // pad to 16-byte multiple if desired (optional)
 		uint32_t pad2;          // pad to 16-byte multiple if desired (optional)
 		GPUMemoryAddressConstants gpuMem;
-		uint32_t pad3;
-		uint32_t pad4;
+		//uint32_t pad3;
+		//uint32_t pad4;
 		glm::vec3 camPos = glm::vec3(std::numeric_limits<double>::quiet_NaN()); // signal that this is not set
 	};
 

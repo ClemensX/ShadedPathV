@@ -392,6 +392,9 @@ void SceneEditor::buildCustomUI() {
         if (ImGui::Button("Re-upload Stationary Objects")) {
             displayParams.reuploadStationaryObjects = true;
         }
+        if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayShort)) {
+            ImGui::SetTooltip("Changing parameters for stationary objects requires re-uploading all stationary objects.");
+        }
     }
     // Add this new section right after the existing "Stationary Objects" block:
 
@@ -422,6 +425,7 @@ void SceneEditor::buildCustomUI() {
         // Object detail section (live update)
         if (selectedMovingObjLine >= 0 && selectedMovingObjLine < static_cast<int>(displayParams.movingModels.size())) {
             SceneObject* so = engine->mstore.getMovingSceneObject(selectedMovingObjLine);
+            GPUModelParam* gpuModelParam = engine->mstore.getGPUModelParam(so->index);
             ImGui::Separator();
             ImGui::Text("Moving Object %d details:", selectedMovingObjLine);
 
@@ -443,6 +447,18 @@ void SceneEditor::buildCustomUI() {
             mat4 baseTransform = mat4(1.0f);
             so->prepareGPUModel(gpuModel, baseTransform);
             engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, so->index);
+
+            // detect change
+            if (gpuModelParam->pos != so->pos || gpuModelParam->rot != so->rot || gpuModelParam->scale != so->scale) {
+                gpuModelParam->pos = so->pos;
+                gpuModelParam->rot = so->rot;
+                gpuModelParam->scale = so->scale;
+                //Log("change!!\n");
+                engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsParam, *gpuModelParam, so->index);
+                engine->globalRendering.gpuMemory.flushBuffer(BufferType::ModelsParam);
+            }
+            //Log("param update: pos(" << gpuModelParam->pos.x << ", " << gpuModelParam->pos.y << ", " << gpuModelParam->pos.z << "), rot(" << gpuModelParam->rot.x << ", " << gpuModelParam->rot.y << ", " << gpuModelParam->rot.z << "), scale(" << gpuModelParam->scale.z<< ")" << std::endl);
+
         }
     }
 }
@@ -523,10 +539,10 @@ void SceneEditor::addObjectToScene(int meshFileIndex, bool moving)
         engine->globalRendering.gpuMemory.updateElement(BufferType::Models, *gpuModel, object->index);
     }
 
-    if (!moving) {
-        // only for stationary objects we need redo everything
-        engine->shaders.pbrShader.recreateGlobalCommandBuffers();
-        engine->shaders.pbrShader.initialUpload(true);
+    if (moving) {
+        redoAllMovingObjects();
+    } else {
+        redoAllStationaryObjects();
     }
 }
 
@@ -541,6 +557,12 @@ void SceneEditor::redoAllStationaryObjects()
         engine->globalRendering.gpuMemory.updateElement(BufferType::Models, *gpuModel, so->index);
         //Log("Re-uploaded stationary object " << i << " at position: " << so->pos.x << ", " << so->pos.y << ", " << so->pos.z << std::endl);
     }
+    engine->shaders.pbrShader.recreateGlobalCommandBuffers();
+    engine->shaders.pbrShader.initialUpload(true);
+}
+
+void SceneEditor::redoAllMovingObjects()
+{
     engine->shaders.pbrShader.recreateGlobalCommandBuffers();
     engine->shaders.pbrShader.initialUpload(true);
 }

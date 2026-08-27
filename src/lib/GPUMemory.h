@@ -16,7 +16,8 @@ enum BufferType {
     Models,
     ModelsMoving,
     Materials,
-    FrameParams
+    FrameParams,
+    ModelsParam
 };
 
 // Push constants structure for passing GPU buffer addresses to shaders
@@ -29,6 +30,7 @@ struct GPUMemoryAddressConstants {
     uint64_t modelsMovingAddress;
     uint64_t materialsAddress;
     uint64_t frameParamsBufferAddress;
+    uint64_t modelsParamAddress;
 };
 
 // Define the push constant range for GPUMemory

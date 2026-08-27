@@ -21,7 +21,7 @@ void main() {
     //verifyMaterial(0);
     //verifyModel(1);
     //verifyFrameParam(0);
-    //verifyCamPos();
+    verifyCamPos();
     
     if (pushConstants.isMovingObject != 0) {
         debugPrintfEXT("pbr.task: objectNum %u is moving, skipping\n", pushConstants.objectNum);
