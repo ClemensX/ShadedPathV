@@ -49,7 +49,6 @@ public:
     int getUsedStationaryModelCount() const;
     int getUsedMovingModelCount() const;
     GPUModel* getGPUMovingModel(int32_t index);
-    GPUModelParam* getGPUModelParam(int32_t index);
     SceneObject* getSceneObject(int32_t index);
     SceneObject* getMovingSceneObject(int32_t index);
     GPUMaterial* getGPUMaterial(int32_t index);

@@ -15,55 +15,6 @@ taskPayloadSharedEXT TaskPayload payload;
 layout(local_size_x = 1) in; // not using the usual 32 threads per workgroup, but only 1 as we implement object culling and LOD object selection here
 GPUFrameParam uboParams = gpuFrameParams.frameParam[0];
 
-mat4 makeModelMatrix(vec3 pos, vec3 rot, vec3 scale, mat4 baseTransform)
-{
-    float cx = cos(rot.x);
-    float sx = sin(rot.x);
-    float cy = cos(rot.y);
-    float sy = sin(rot.y);
-    float cz = cos(rot.z);
-    float sz = sin(rot.z);
-
-    mat4 rotationX = mat4(
-        1.0, 0.0, 0.0, 0.0,
-        0.0,  cx,  sx, 0.0,
-        0.0, -sx,  cx, 0.0,
-        0.0, 0.0, 0.0, 1.0
-    );
-
-    mat4 rotationY = mat4(
-         cy, 0.0, -sy, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-         sy, 0.0,  cy, 0.0,
-        0.0, 0.0, 0.0, 1.0
-    );
-
-    mat4 rotationZ = mat4(
-         cz,  sz, 0.0, 0.0,
-        -sz,  cz, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0
-    );
-
-    mat4 rotationMatrix = rotationZ * rotationY * rotationX;
-
-    mat4 translation = mat4(
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        pos.x, pos.y, pos.z, 1.0
-    );
-
-    mat4 scaling = mat4(
-        scale.x, 0.0, 0.0, 0.0,
-        0.0, scale.y, 0.0, 0.0,
-        0.0, 0.0, scale.z, 0.0,
-        0.0, 0.0, 0.0, 1.0
-    );
-
-    return translation * rotationMatrix * scaling; // * baseTransform;
-}
-
 void main() {
     //printGPUBufferAddresses();
     //verifyMesh(0);
@@ -72,52 +23,35 @@ void main() {
     //verifyFrameParam(0);
     //verifyCamPos();
     
-//    if (pushConstants.isMovingObject != 0) {
-//        GPUModel model = gpuModelsMoving.model[pushConstants.objectNum];
-//        GPUModelParam param = gpuModelsParam.param[pushConstants.objectNum];
-//        debugPrintfEXT("pbr.task: moving model mesh %u pos.x %f rot.y %f scale.z %f\n", model.meshNumber, param.pos.x, param.rot.y, param.scale.z);
-//        //debugPrintfEXT("pbr.task: objectNum %u is moving, skipping\n", pushConstants.objectNum);
-//        return;
-//    }
-    //debugPrintfEXT("pbr.task: objectNum %u is NOT moving\n", pushConstants.objectNum);
+    if (pushConstants.isMovingObject != 0) {
+        debugPrintfEXT("pbr.task: objectNum %u is moving, skipping\n", pushConstants.objectNum);
+        return;
+    }
+
     bool debugIndices = false;
     bool debugInfos = false;
     //debugPrintfEXT("pbr.task ubo: frameNum %u\n", ubo.frameNum);
     //debugPrintfEXT("pbr.task: objectNum %u\n", pushConstants.objectNum);
 
-    mat4 modelmat;
-    GPUModel model;
-    if (pushConstants.isMovingObject != 0) {
-        model = gpuModelsMoving.model[pushConstants.objectNum];
-        GPUModelParam param = gpuModelsParam.param[pushConstants.objectNum];
-        debugPrintfEXT("pbr.task: moving model mesh %u pos.x %f rot.y %f scale.z %f\n", model.meshNumber, param.pos.x, param.rot.y, param.scale.z);
-        modelmat = makeModelMatrix(param.pos, param.rot, param.scale, model.model);
-        //modelmat = 1.0;
-    } else {
-        model = gpuModels.model[pushConstants.objectNum];
-        modelmat = model.model;
-    }
+    GPUModel model = gpuModels.model[pushConstants.objectNum];
     GPUMeshInfo mesh = gpuInfos.info[model.meshNumber];
     GPUMaterial material = gpuMaterials.material[mesh.material];
     //verifyTextures(material);
 
     // check if object is disabled:
     bool isRenderingDisabled = (model.flags & MODEL_RENDER_FLAG_DISABLE) != 0;
-    if (isRenderingDisabled) {
-        debugPrintfEXT("YYYYYYYYYYYYYYYY pbr.task: objectNum %u is disabled, skipping\n", pushConstants.objectNum);
-        return;
-    }
     // check if irradiance and prefilter are set correctly:
     // usually irradiance and envcube are 0 if not set, but compating them seems more defensive style
     if (uboParams.prefilteredCubeMipLevels == 0 || uboParams.irradiance == uboParams.envcube) {
-        debugPrintfEXT("pbr.task: objectNum %u has invalid irradiance or prefilter texture indices, disabling rendering\n", pushConstants.objectNum);
+        //debugPrintfEXT("pbr.task: objectNum %u has invalid irradiance or prefilter texture indices, disabling rendering\n", pushConstants.objectNum);
         isRenderingDisabled = true;
     }
     if (isRenderingDisabled) {
-        debugPrintfEXT("pbr.task: objectNum %u is disabled, skipping\n", pushConstants.objectNum);
+        //debugPrintfEXT("pbr.task: objectNum %u is disabled, skipping\n", pushConstants.objectNum);
         return;
     }
 
+    mat4 modelmat = model.model;
     mat4 view = ubo.view;
     mat4 proj = ubo.proj;
     mat4 mvp = proj * view * modelmat;
@@ -158,7 +92,7 @@ void main() {
     // Optionally print once for debugging:
     // if (mi == 0u) debugPrintfEXT("TASK: object %u LOD %u selectedCount %u dist %f\n", model_ubo.objectNum, lod, selectedCount, dist);
     EmitMeshTasksEXT(meshletsCount, 1, 1);
-    debugPrintfEXT("TASK[%u:%u] object %u emitting meshl index %u, is disabled == %u\n", gl_WorkGroupID.x, gl_LocalInvocationID.x, pushConstants.objectNum, meshIndex, isRenderingDisabled ? 1 : 0);
+    //debugPrintfEXT("TASK[%u:%u] object %u emitting meshlet %u, is disabled == %u\n", gl_WorkGroupID.x, gl_LocalInvocationID.x, model_ubo.objectNum, meshletIndex, isRenderingDisabled ? 1 : 0);
 
 
     return;

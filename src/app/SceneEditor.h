@@ -78,7 +78,6 @@ private:
     void fillStationaryModels();
     void fillMovingModels();
     void redoAllStationaryObjects();
-    void redoAllMovingObjects();
     void initSunRays();
     PBRShader::LightSource ls;
 

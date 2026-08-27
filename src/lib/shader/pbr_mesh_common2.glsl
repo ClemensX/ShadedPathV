@@ -19,7 +19,6 @@ struct GPUMemoryAddressConstants {
     uint64_t modelsMovingAddress;
     uint64_t materialsAddress;
     uint64_t frameParamsAddress;
-    uint64_t modelsParamAddress;
 };
 
 // see Object.h for C++ side
@@ -47,15 +46,6 @@ struct GPUModel {
 	uint material_lod_category;
 	uint materialIndex; // index into global material array
 	//BoundingBox boundingBox;
-};
-
-struct GPUModelParam {
-    vec3 pos;
-	float pad0;
-    vec3 rot;
-	float pad1;
-    vec3 scale;
-	float pad2;
 };
 
 struct GPUMaterial {
@@ -186,10 +176,6 @@ layout(buffer_reference, std430) buffer GPUModelBuffer {
     GPUModel model[];
 };
 
-layout(buffer_reference, std430) buffer GPUModelParamBuffer {
-    GPUModelParam param[];
-};
-
 layout(buffer_reference, std430) buffer GPUMaterialBuffer {
     GPUMaterial material[];
 };
@@ -238,7 +224,6 @@ GPUCollectionIndexBuffer gpuIndices = GPUCollectionIndexBuffer(ubo.gpuMem.collec
 GPUMeshInfoBuffer gpuInfos = GPUMeshInfoBuffer(ubo.gpuMem.meshInfosAddress + 0);
 GPUModelBuffer gpuModels = GPUModelBuffer(ubo.gpuMem.modelsAddress + 0);
 GPUModelBuffer gpuModelsMoving = GPUModelBuffer(ubo.gpuMem.modelsMovingAddress + 0);
-GPUModelParamBuffer gpuModelsParam = GPUModelParamBuffer(ubo.gpuMem.modelsParamAddress + 0);
 GPUMaterialBuffer gpuMaterials = GPUMaterialBuffer(ubo.gpuMem.materialsAddress + 0);
 GPUFrameParamBuffer gpuFrameParams = GPUFrameParamBuffer(ubo.gpuMem.frameParamsAddress + 0);
 
@@ -349,6 +334,14 @@ void unpackBoundingBox48_from_uvec4(uvec4 packed4, vec3 sceneMin, vec3 sceneMax,
 // info and debug methods
 
 void printGPUBufferAddresses() {
+    uint64_t collectionIndicesAddress;
+    uint64_t collectionInfosAddress;
+    uint64_t meshInfosAddress;
+    uint64_t modelsAddress;
+    uint64_t modelsMovingAddress;
+    uint64_t materialsAddress;
+    uint64_t frameParamsBufferAddress;
+
     debugPrintfEXT("PBR TASK SHADER PUUUUSH Buffer addresses:\n");
     debugPrintfEXT("  collectionIndicesAddress %llx\n", ubo.gpuMem.collectionIndicesAddress);
     debugPrintfEXT("  collectionInfosAddress %llx\n", ubo.gpuMem.collectionInfosAddress);
@@ -357,7 +350,6 @@ void printGPUBufferAddresses() {
     debugPrintfEXT("  modelsMovingAddress %llx\n", ubo.gpuMem.modelsMovingAddress);
     debugPrintfEXT("  materialsAddress %llx\n", ubo.gpuMem.materialsAddress);
     debugPrintfEXT("  frameParamsAddress %llx\n", ubo.gpuMem.frameParamsAddress);
-    debugPrintfEXT("  modelsParamAddress %llx\n", ubo.gpuMem.modelsParamAddress);
 }
 
 void printGPUMeshInfo(GPUMeshInfo info) {

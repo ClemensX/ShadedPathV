@@ -67,7 +67,7 @@ void GPUMemory::defineBuffer(BufferType type, uint32_t elementSize, uint32_t max
     // Add appropriate buffer type usage flags
     switch (type) {
     case ModelsMoving:
-        config.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT; // TODO check if we need uniform buffer usage for moving models
+        config.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
         break;
     case Materials:
     case CollectionIndices:
@@ -75,7 +75,6 @@ void GPUMemory::defineBuffer(BufferType type, uint32_t elementSize, uint32_t max
     case MeshInfos:
     case Models:
     case FrameParams:
-    case ModelsParam:
         config.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
         break;
     case None:
@@ -384,7 +383,6 @@ string GPUMemory::getBufferTypeName(BufferType type) const
     case ModelsMoving:         return "ModelsMoving";
     case Materials:            return "Materials";
     case FrameParams:          return "FrameParams";
-    case ModelsParam:          return "ModelsParam";
     default:                   return "Unknown";
     }
 }
@@ -407,7 +405,6 @@ void GPUMemory::fillGPUMemoryAddressConstants(GPUMemoryAddressConstants* pushCon
     pushConstants->modelsMovingAddress = getDeviceAddress(ModelsMoving);
     pushConstants->materialsAddress = getDeviceAddress(Materials);
     pushConstants->frameParamsBufferAddress = getDeviceAddress(FrameParams);
-    pushConstants->modelsParamAddress = getDeviceAddress(ModelsParam);
 
     //pushConstants->uniformBufferAddress = getDeviceAddress(UniformBuffer);
     //pushConstants->storageBufferAddress = getDeviceAddress(StorageBuffer);

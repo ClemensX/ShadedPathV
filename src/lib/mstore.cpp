@@ -19,7 +19,6 @@ void MStore::init() {
 	engine->globalRendering.gpuMemory.defineBuffer(BufferType::MeshInfos, sizeof(GPUMeshInfo), maxMeshes);
 	engine->globalRendering.gpuMemory.defineBuffer(BufferType::Models, sizeof(GPUModel), maxModels);
 	engine->globalRendering.gpuMemory.defineBuffer(BufferType::ModelsMoving, sizeof(GPUModel), maxMovingModels);
-	engine->globalRendering.gpuMemory.defineBuffer(BufferType::ModelsParam, sizeof(GPUModelParam), maxMovingModels);
 	engine->globalRendering.gpuMemory.defineBuffer(BufferType::Materials, sizeof(GPUMaterial), maxMaterials);
 	engine->globalRendering.gpuMemory.defineBuffer(BufferType::FrameParams, sizeof(GPUFrameParam), MAX_DYNAMIC_LIGHTS);
 	engine->globalRendering.gpuMemory.allocateBuffers();
@@ -184,10 +183,6 @@ GPUModel* MStore::getGPUMovingModel(int32_t index) {
 	return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::ModelsMoving, index);
 }
 
-GPUModelParam* MStore::getGPUModelParam(int32_t index) {
-	return engine->globalRendering.gpuMemory.getElementAddress<GPUModelParam>(BufferType::ModelsParam, index);
-}
-
 GPUFrameParam* MStore::getGPUFrameParam(int32_t index) {
 	auto count = engine->globalRendering.gpuMemory.getElementCount(BufferType::FrameParams);
 	if (index < 0 || index >= count) {
@@ -315,16 +310,11 @@ SceneObject* MStore::addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsColle
 		if (objectIndex >= movingSceneObjects.size()) Error("MStore::addObject: Exceeded maximum number of moving objects");
 
 		GPUModel* model = getGPUMovingModel(objectIndex);
-		GPUModelParam* modelParam = getGPUModelParam(objectIndex);
-		modelParam->pos.x = 0.5f;
-        modelParam->rot.y = 2.0f;
-        modelParam->scale.z = 1.0f;
 		SceneObject* obj = getMovingSceneObject(objectIndex);
 		obj->index = objectIndex;
 		obj->pos = pos;
 		model->meshNumber = mesh_index;
 		engine->globalRendering.gpuMemory.appendElement(BufferType::ModelsMoving, *model);
-		engine->globalRendering.gpuMemory.appendElement(BufferType::ModelsParam, *modelParam);
 		return obj;
 	} else {
 		// current index:
