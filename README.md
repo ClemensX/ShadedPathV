@@ -63,6 +63,18 @@ We plan to implement features according to this list:
 <a id="toc-state"></a>
 ## Current State (Q3 / 2026)
 
+## Reorganized GPU Buffers
+
+### PBR Rendering Data
+
+|            | Data                                                     | CPU Structure | CPU array | GPU Structure | GPU array |
+| --- | --- | --- | --- | --- | --- |
+| **Mesh**   | Global Buffer Offsets: <br>  vertices, indices, meshlets | GPUMeshInfo | BufferType::MeshInfos | GPUMeshInfo | gpuInfos.info[] |
+| **Stationary Model**   | model matrix, flags, mesh number, lod info   | GPUModel | BufferType::Models | GPUModel | gpuModels.model[] |
+| **Moving Model**   | "                                                | GPUModel | BufferType::ModelsMoving | GPUModel | gpuModelsMoving.model[] |
+| **Moving Model Parameters**   | position, rotation, scale             | GPUModelParam | BufferType::ModelsParam | GPUModelParam | gpuModelsParam.param[] |
+
+
 ## Environment Maps
 
 You can now directly use standard image formats like png and jpg for environment maps.
