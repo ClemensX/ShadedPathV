@@ -221,6 +221,105 @@ void SceneEditor::handleInput(InputState& inputState)
     AppSupport::handleInput(inputState);
 }
 
+bool SceneEditor::showFileDialog(bool& loadedNewMeshFile, bool& selectedObjectForAdding, bool showAddObjectButton)
+{
+    loadedNewMeshFile = false;
+    selectedObjectForAdding = false;
+    const float rowHeight = ImGui::GetTextLineHeightWithSpacing();
+    const ImVec2 listSize(0.0f, rowHeight * 10.0f);
+
+    if (ImGui::BeginPopupModal("FileDialog", &displayParams.showFileDialog)) {
+        displayParams.fileDialogWasOpen = true;
+        vector<MeshFile> meshFiles = engine->mstore.getMeshFiles();
+        ImGui::Text("Loaded Mesh Files: %d", static_cast<int>(meshFiles.size()));
+
+        ImGui::BeginChild("LoadedMeshFilesList", listSize, true, ImGuiWindowFlags_HorizontalScrollbar);
+        for (int i = 0; i < static_cast<int>(meshFiles.size()); ++i) {
+            const MeshFile& meshFile = meshFiles[i];
+            string filename = filesystem::path(meshFile.filename).filename().string();
+            string label = filename + " [" + to_string(meshFile.meshes.size()) + "]";
+
+            if (ImGui::Selectable(label.c_str(), displayParams.selectedLoadedMeshFileLine == i)) {
+                displayParams.selectedLoadedMeshFileLine = i;
+            }
+        }
+        ImGui::EndChild();
+
+        ImGui::Separator();
+        const bool hasMeshSelection =
+            displayParams.selectedLoadedMeshFileLine >= 0 &&
+            displayParams.selectedLoadedMeshFileLine < static_cast<int>(meshFiles.size());
+
+        if (!hasMeshSelection) {
+            ImGui::BeginDisabled();
+        }
+        if (showAddObjectButton) {
+            if (ImGui::Button("Add Object")) {
+                //displayParams.addStationaryObjectToScene = true;
+                displayParams.fileDialogSelectedObjectForAddingDuringSession = true;
+            }
+        }
+        //ImGui::SameLine();
+        //if (ImGui::Button("Add Moving Object")) {
+        //    displayParams.addMovingObjectToScene = true;
+        //    displayParams.fileDialogSelectedObjectForAddingDuringSession = true;
+        //}
+        if (!hasMeshSelection) {
+            ImGui::EndDisabled();
+        }
+
+        ImGui::Separator();
+        if (ImGui::Button(displayParams.showAddMeshFileDialog ? "Hide Add Mesh File" : "Add Mesh File")) {
+            displayParams.showAddMeshFileDialog = !displayParams.showAddMeshFileDialog;
+        }
+
+        if (displayParams.showAddMeshFileDialog) {
+            engine->files.findAssetFolder("data");
+            filesystem::path meshFolder = engine->files.getAssetFolderPath() / engine->files.MESH_PATH;
+            displayParams.filePattern = "";
+            displayParams.files = Util::getFilesMatchingPattern(meshFolder, displayParams.filePattern);
+
+            ImGui::Text("Mesh folder: %s", meshFolder.string().c_str());
+            ImGui::Text("Choose a mesh file:");
+            const ImVec2 pickerSize(0.0f, rowHeight * 10.0f);
+
+            static int selectedMeshLine = -1;
+            ImGui::BeginChild("AvailableMeshFilesList", pickerSize, true, ImGuiWindowFlags_HorizontalScrollbar);
+            for (int i = 0; i < static_cast<int>(displayParams.files.size()); ++i) {
+                if (ImGui::Selectable(displayParams.files[i].c_str(), selectedMeshLine == i)) {
+                    selectedMeshLine = i;
+                    displayParams.loadNewMeshFile = true;
+                    displayParams.newMeshFileName = (meshFolder / displayParams.files[i]).string();
+                    displayParams.showAddMeshFileDialog = false;
+                    displayParams.fileDialogLoadedNewMeshFileDuringSession = true;
+                    displayParams.showFileDialog = false;
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+            ImGui::EndChild();
+        }
+
+        if (ImGui::Button("Cancel")) {
+            displayParams.showAddMeshFileDialog = false;
+            displayParams.showFileDialog = false;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+
+    const bool dialogClosed = displayParams.fileDialogWasOpen && !displayParams.showFileDialog;
+    if (dialogClosed) {
+        loadedNewMeshFile = displayParams.fileDialogLoadedNewMeshFileDuringSession;
+        selectedObjectForAdding = displayParams.fileDialogSelectedObjectForAddingDuringSession;
+        displayParams.fileDialogLoadedNewMeshFileDuringSession = false;
+        displayParams.fileDialogSelectedObjectForAddingDuringSession = false;
+        displayParams.fileDialogWasOpen = false;
+    }
+
+    return dialogClosed;
+}
+
 void SceneEditor::buildCustomUI() {
     if (ImGui::CollapsingHeader("Display Tweaks", ImGuiTreeNodeFlags_None))
     {
@@ -268,85 +367,19 @@ void SceneEditor::buildCustomUI() {
     }
     ImGui::Separator();
     const float rowHeight = ImGui::GetTextLineHeightWithSpacing();
-    const ImVec2 listSize(0.0f, rowHeight * 10.0f);
 
     if (ImGui::Button("Mesh Files"))
     {
         displayParams.showFileDialog = true;
+        displayParams.fileDialogLoadedNewMeshFileDuringSession = false;
+        displayParams.fileDialogSelectedObjectForAddingDuringSession = false;
+        displayParams.fileDialogWasOpen = false;
         ImGui::OpenPopup("FileDialog");
     }
-    if (ImGui::BeginPopupModal("FileDialog", &displayParams.showFileDialog)) {
-        vector<MeshFile> meshFiles = engine->mstore.getMeshFiles();
-        ImGui::Text("Loaded Mesh Files: %d", static_cast<int>(meshFiles.size()));
 
-        ImGui::BeginChild("LoadedMeshFilesList", listSize, true, ImGuiWindowFlags_HorizontalScrollbar);
-        for (int i = 0; i < static_cast<int>(meshFiles.size()); ++i) {
-            const MeshFile& meshFile = meshFiles[i];
-            string filename = filesystem::path(meshFile.filename).filename().string();
-            string label = filename + " [" + to_string(meshFile.meshes.size()) + "]";
-
-            if (ImGui::Selectable(label.c_str(), displayParams.selectedLoadedMeshFileLine == i)) {
-                displayParams.selectedLoadedMeshFileLine = i;
-            }
-        }
-        ImGui::EndChild();
-
-        ImGui::Separator();
-        const bool hasMeshSelection =
-            displayParams.selectedLoadedMeshFileLine >= 0 &&
-            displayParams.selectedLoadedMeshFileLine < static_cast<int>(meshFiles.size());
-
-        if (!hasMeshSelection) {
-            ImGui::BeginDisabled();
-        }
-        if (ImGui::Button("Add Stationary Object")) {
-            displayParams.addStationaryObjectToScene = true;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Add Moving Object")) {
-            displayParams.addMovingObjectToScene = true;
-        }
-        if (!hasMeshSelection) {
-            ImGui::EndDisabled();
-        }
-
-        ImGui::Separator();
-        if (ImGui::Button(displayParams.showAddMeshFileDialog ? "Hide Add Mesh File" : "Add Mesh File")) {
-            displayParams.showAddMeshFileDialog = !displayParams.showAddMeshFileDialog;
-        }
-
-        if (displayParams.showAddMeshFileDialog) {
-            engine->files.findAssetFolder("data");
-            filesystem::path meshFolder = engine->files.getAssetFolderPath() / engine->files.MESH_PATH;
-            displayParams.filePattern = "";
-            displayParams.files = Util::getFilesMatchingPattern(meshFolder, displayParams.filePattern);
-
-            ImGui::Text("Mesh folder: %s", meshFolder.string().c_str());
-            ImGui::Text("Choose a mesh file:");
-            const ImVec2 pickerSize(0.0f, rowHeight * 10.0f);
-
-            static int selectedMeshLine = -1;
-            ImGui::BeginChild("AvailableMeshFilesList", pickerSize, true, ImGuiWindowFlags_HorizontalScrollbar);
-            for (int i = 0; i < static_cast<int>(displayParams.files.size()); ++i) {
-                if (ImGui::Selectable(displayParams.files[i].c_str(), selectedMeshLine == i)) {
-                    selectedMeshLine = i;
-                    displayParams.loadNewMeshFile = true;
-                    displayParams.newMeshFileName = (meshFolder / displayParams.files[i]).string();
-                    displayParams.showAddMeshFileDialog = false;
-                    ImGui::CloseCurrentPopup(); // close FileDialog after selection
-                }
-            }
-            ImGui::EndChild();
-        }
-
-        if (ImGui::Button("Cancel")) {
-            displayParams.showAddMeshFileDialog = false;
-            displayParams.showFileDialog = false;
-            ImGui::CloseCurrentPopup();
-        }
-
-        ImGui::EndPopup();
-    }
+    bool loadedNewMeshFile = false;
+    bool selectedObjectForAdding = false;
+    showFileDialog(loadedNewMeshFile, selectedObjectForAdding, false);
     if (ImGui::CollapsingHeader("Stationary Objects", ImGuiTreeNodeFlags_None))
     {
         fillStationaryModels();

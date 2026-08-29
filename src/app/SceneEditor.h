@@ -40,6 +40,9 @@ struct SceneEditorDisplayParams
     bool showAddMeshFileDialog = false;
     bool loadNewMeshFile = false;
     std::string newMeshFileName;
+    bool fileDialogLoadedNewMeshFileDuringSession = false;
+    bool fileDialogSelectedObjectForAddingDuringSession = false;
+    bool fileDialogWasOpen = false;
     std::vector<GPUModel> stationaryModels;
     std::vector<GPUModel> movingModels;
 
@@ -74,6 +77,7 @@ private:
     GPUFrameParam frameParam;
     //void addObjectToScene(const ObjectParams& params);
     void addObjectToScene(int meshFileIndex, bool moving);
+    bool showFileDialog(bool& loadedNewMeshFile, bool& selectedObjectForAdding, bool showAddObjectButton);
     void loadNewMeshFile(std::string meshFilePathName);
     void fillStationaryModels();
     void fillMovingModels();
