@@ -255,8 +255,9 @@ bool SceneEditor::showFileDialog(bool& loadedNewMeshFile, bool& selectedObjectFo
         }
         if (showAddObjectButton) {
             if (ImGui::Button("Add Object")) {
-                //displayParams.addStationaryObjectToScene = true;
                 displayParams.fileDialogSelectedObjectForAddingDuringSession = true;
+                displayParams.showFileDialog = false;
+                ImGui::CloseCurrentPopup();
             }
         }
         //ImGui::SameLine();
@@ -368,21 +369,42 @@ void SceneEditor::buildCustomUI() {
     ImGui::Separator();
     const float rowHeight = ImGui::GetTextLineHeightWithSpacing();
 
+    static bool showAddObjectButtonInFileDialog = false;
+    static bool addObjectToMovingSection = false;
+
     if (ImGui::Button("Mesh Files"))
     {
         displayParams.showFileDialog = true;
         displayParams.fileDialogLoadedNewMeshFileDuringSession = false;
         displayParams.fileDialogSelectedObjectForAddingDuringSession = false;
         displayParams.fileDialogWasOpen = false;
+        showAddObjectButtonInFileDialog = false;
         ImGui::OpenPopup("FileDialog");
     }
 
     bool loadedNewMeshFile = false;
     bool selectedObjectForAdding = false;
-    showFileDialog(loadedNewMeshFile, selectedObjectForAdding, false);
+    const bool fileDialogClosed = showFileDialog(loadedNewMeshFile, selectedObjectForAdding, showAddObjectButtonInFileDialog);
+    if (fileDialogClosed && selectedObjectForAdding) {
+        if (addObjectToMovingSection) {
+            displayParams.addMovingObjectToScene = true;
+        }
+        else {
+            displayParams.addStationaryObjectToScene = true;
+        }
+    }
     if (ImGui::CollapsingHeader("Stationary Objects", ImGuiTreeNodeFlags_None))
     {
         fillStationaryModels();
+        if (ImGui::Button("Add Object to Stationary Objects")) {
+            displayParams.showFileDialog = true;
+            displayParams.fileDialogLoadedNewMeshFileDuringSession = false;
+            displayParams.fileDialogSelectedObjectForAddingDuringSession = false;
+            displayParams.fileDialogWasOpen = false;
+            showAddObjectButtonInFileDialog = true;
+            addObjectToMovingSection = false;
+            ImGui::OpenPopup("FileDialog");
+        }
         ImGui::Text("Choose an object:");
         const ImVec2 pickerSize(0.0f, rowHeight * 10.0f);
 
@@ -434,6 +456,15 @@ void SceneEditor::buildCustomUI() {
     if (ImGui::CollapsingHeader("Moving Objects", ImGuiTreeNodeFlags_None))
     {
         fillMovingModels();
+        if (ImGui::Button("Add Object to Moving Objects")) {
+            displayParams.showFileDialog = true;
+            displayParams.fileDialogLoadedNewMeshFileDuringSession = false;
+            displayParams.fileDialogSelectedObjectForAddingDuringSession = false;
+            displayParams.fileDialogWasOpen = false;
+            showAddObjectButtonInFileDialog = true;
+            addObjectToMovingSection = true;
+            ImGui::OpenPopup("FileDialog");
+        }
         ImGui::Text("Choose an object:");
         const ImVec2 pickerSize(0.0f, rowHeight * 10.0f);
 
