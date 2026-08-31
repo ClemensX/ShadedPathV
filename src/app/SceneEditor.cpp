@@ -543,14 +543,32 @@ void SceneEditor::loadNewEnvCube(string textureFilePathName)
     //engine->textureStore.loadTexture("irradiance.ktx2", engine->textureStore.IRRADIANCE_TEXTURE_ID);
     //engine->textureStore.loadTexture("prefilter.ktx2", engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
 
-    engine->shaders.pbrShader.fillStandardFrameParams(frameParam);
-    frameParam.scaleIBLAmbient = 1.0f; // adjust ambient light intensity
-    engine->shaders.pbrShader.setFrameParam(frameParam, 0);
-    engine->globalRendering.gpuMemory.flushAllBuffers();
+    //engine->shaders.pbrShader.fillStandardFrameParams(frameParam);
+    //frameParam.scaleIBLAmbient = 1.0f; // adjust ambient light intensity
+    //engine->shaders.pbrShader.setFrameParam(frameParam, 0);
+    //engine->globalRendering.gpuMemory.flushAllBuffers();
 
+    reInitPBRGraphics(false);
 
     engine->shaders.cubeShader.setSkybox("skyboxTexture");
     engine->shaders.cubeShader.setFarPlane(2000.0f);
+}
+
+void SceneEditor::reInitPBRGraphics(bool redoCommandBuffers)
+{
+    if (redoCommandBuffers) {
+        engine->shaders.pbrShader.recreateGlobalCommandBuffers();
+        engine->shaders.pbrShader.initialUpload(true);
+    }
+    // if we have an env cube re-init pbr parameters:
+    if (engine->shaders.pbrShader.checkFrameParamsSetup()) {
+        engine->shaders.pbrShader.fillStandardFrameParams(frameParam);
+        frameParam.scaleIBLAmbient = 1.0f; // adjust ambient light intensity
+        engine->shaders.pbrShader.setFrameParam(frameParam, 0);
+        engine->globalRendering.gpuMemory.flushAllBuffers();
+        // TODO: unknown why we need to re-generate cubemaps here, but without this the PBR shader does not work correctly after adding a mesh
+        engine->textureStore.generateCubemaps("skyboxTexture");
+    }
 }
 
 void SceneEditor::addObjectToScene(int meshFileIndex, bool moving)
@@ -621,14 +639,12 @@ void SceneEditor::redoAllStationaryObjects()
         engine->globalRendering.gpuMemory.updateElement(BufferType::Models, *gpuModel, so->index);
         //Log("Re-uploaded stationary object " << i << " at position: " << so->pos.x << ", " << so->pos.y << ", " << so->pos.z << std::endl);
     }
-    engine->shaders.pbrShader.recreateGlobalCommandBuffers();
-    engine->shaders.pbrShader.initialUpload(true);
+    reInitPBRGraphics(true);
 }
 
 void SceneEditor::redoAllMovingObjects()
 {
-    engine->shaders.pbrShader.recreateGlobalCommandBuffers();
-    engine->shaders.pbrShader.initialUpload(true);
+    reInitPBRGraphics(true);
 }
 
 void SceneEditor::loadNewMeshFile(string meshFilePathName)
@@ -640,8 +656,7 @@ void SceneEditor::loadNewMeshFile(string meshFilePathName)
     MeshFlagsCollection flags;
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
     engine->mstore.loadMesh(filename, flags);
-    engine->shaders.pbrShader.recreateGlobalCommandBuffers();
-    engine->shaders.pbrShader.initialUpload(true);
+    reInitPBRGraphics(true);
 }
 
 void SceneEditor::fillStationaryModels()

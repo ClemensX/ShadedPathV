@@ -201,7 +201,15 @@ void CubeShader::addCommandBuffers(FrameResources* fr, DrawResult* drawResult) {
 
 void CubeShader::uploadToGPU(FrameResources& fr, UniformBufferObject& ubo, UniformBufferObject& ubo2, bool outsideMode) {
 	if (!enabled) return;
-    ubo.texIndex = skybox ? skybox->index : -1;
+    if (skyboxTextureName.empty()) {
+		ubo.texIndex = -1;
+	} else {
+		skybox = engine->textureStore.getTexture(skyboxTextureName);
+		if (skybox->vulkanTexture.viewType != VK_IMAGE_VIEW_TYPE_CUBE) {
+			Error("Can only use textures with VK_IMAGE_VIEW_TYPE_CUBE for skybox / cube map");
+		}
+		ubo.texIndex = skybox->index;
+	}
 	ubo2.texIndex = ubo.texIndex;
 	auto& sub = globalSubShaders[fr.frameIndex];
 	sub.uploadToGPU(fr, ubo, ubo2, outsideMode);
@@ -245,10 +253,7 @@ void CubeSubShader::uploadToGPU(FrameResources& tr, CubeShader::UniformBufferObj
 void CubeShader::setSkybox(string texID)
 {
 	if (!enabled) return;
-	skybox = engine->textureStore.getTexture(texID);
-	if (skybox->vulkanTexture.viewType != VK_IMAGE_VIEW_TYPE_CUBE) {
-		Error("Can only use textures with VK_IMAGE_VIEW_TYPE_CUBE for skybox / cube map");
-	}
+    skyboxTextureName = texID;
 }
 
 CubeShader::~CubeShader()

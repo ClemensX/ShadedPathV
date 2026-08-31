@@ -292,6 +292,8 @@ public:
     DrawPushConstants drawPush = {};
     // Public accessor for logging/debugging
     uint64_t getNextFreeDynamicUniformBufferIndex() const { return nextFreeDynamicUniformBufferIndex; }
+	// we need to have a proper setup of frame parameters for PBR rendering
+    bool checkFrameParamsSetup() const;
 
 private:
 	void prefillModelParametersSingleMesh(FrameResources& tr, MeshInfo* mi, WorldObject* obj, int uboIndex);

@@ -86,6 +86,17 @@ void PBRShader::checkForGpuLodCompatibility(WorldObject* wo)
     if (!engine->meshStore.isGPULodCompatible(wo)) Error("PBRShader: Object " + wo->mesh->id + " is not compatible with GPU LOD rendering!");
 }
 
+bool PBRShader::checkFrameParamsSetup() const
+{
+	TextureInfo* tiBrdflut = engine->textureStore.findTextureById(engine->textureStore.BRDFLUT_TEXTURE_ID);
+	TextureInfo* tiIrradiance = engine->textureStore.findTextureById(engine->textureStore.IRRADIANCE_TEXTURE_ID);
+	TextureInfo* tiPrefileterdEnv = engine->textureStore.findTextureById(engine->textureStore.PREFILTEREDENV_TEXTURE_ID);
+    if (tiBrdflut == nullptr || tiIrradiance == nullptr || tiPrefileterdEnv == nullptr) {
+        return false;
+    }
+	return true;
+}
+
 void PBRShader::fillStandardFrameParams(GPUFrameParam& param)
 {
 	TextureInfo* tiBrdflut = engine->textureStore.getTexture(engine->textureStore.BRDFLUT_TEXTURE_ID);

@@ -82,6 +82,7 @@ private:
 
 	VkShaderModule vertShaderModule = nullptr;
 	VkShaderModule fragShaderModule = nullptr;
+	std::string skyboxTextureName;
 
 
 };

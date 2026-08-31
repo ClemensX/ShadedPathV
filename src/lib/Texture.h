@@ -178,6 +178,8 @@ public:
     // free texture id from store - enables re-loading texture with same id.
 	// old texture is still on GPU, but should no longer be accessed
     void freeTextureId(std::string id);
+	::TextureInfo* findTextureById(const std::string& id);
+	const ::TextureInfo* findTextureById(const std::string& id) const;
 private:
 	std::vector<::TextureInfo> textures;
 	ShadedPathEngine* engine = nullptr;
@@ -186,8 +188,6 @@ private:
 	size_t maxTextures = 0;
 	// after adding a texture check that max size is not exceeded
 	void checkStoreSize();
-	::TextureInfo* findTextureById(const std::string& id);
-	const ::TextureInfo* findTextureById(const std::string& id) const;
 	// all creation methods have to call this internally:
 	::TextureInfo* internalCreateTextureSlot(std::string id);
 	// add in class TextureStore private:

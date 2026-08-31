@@ -85,6 +85,9 @@ private:
     void redoAllMovingObjects();
     void initSunRays();
     PBRShader::LightSource ls;
+    // after changing meshes, objects or env cube we must re-init the PBR graphics.
+    // This is NOT something you do in regular gameplay, because it will pause frame rendering until all is updated
+    void reInitPBRGraphics(bool redoCommandBuffers);
 
     // --- Sun ray data ---
     std::vector<LineDef> sunRays;
