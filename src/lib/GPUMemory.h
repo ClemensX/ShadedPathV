@@ -250,7 +250,7 @@ public:
     {
         size = minAlign(size, 16);
         if (chunk->nextFreePos + size > chunk->size) {
-            Error("Global Rendering: out of global mesh storage memory. Increase in engine settings or allocate new chunk.");
+            Error("Global Rendering: out of global mesh storage memory. Increase in engine settings or allocate new chunk. Needed: " + std::to_string(chunk->nextFreePos + size) + ", available: " + std::to_string(chunk->size));
         }
         uint64_t ret = chunk->nextFreePos;
         chunk->nextFreePos += size;

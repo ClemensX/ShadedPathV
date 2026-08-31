@@ -290,7 +290,8 @@ bool SceneEditor::showFileDialog(bool& loadedNewMeshFile, bool& selectedObjectFo
                 if (ImGui::Selectable(displayParams.files[i].c_str(), selectedMeshLine == i)) {
                     selectedMeshLine = i;
                     displayParams.loadNewMeshFile = true;
-                    displayParams.newMeshFileName = (meshFolder / displayParams.files[i]).string();
+                    //displayParams.newMeshFileName = (meshFolder / displayParams.files[i]).string();
+                    displayParams.newMeshFileName = displayParams.files[i];
                     displayParams.showAddMeshFileDialog = false;
                     displayParams.fileDialogLoadedNewMeshFileDuringSession = true;
                     displayParams.showFileDialog = false;
@@ -649,13 +650,9 @@ void SceneEditor::redoAllMovingObjects()
 
 void SceneEditor::loadNewMeshFile(string meshFilePathName)
 {
-    filesystem::path filepath = meshFilePathName;
-    string filename = filepath.filename().string();
-    Log("Loading new mesh file: " << filename << std::endl);
-
     MeshFlagsCollection flags;
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
-    engine->mstore.loadMesh(filename, flags);
+    engine->mstore.loadMesh(meshFilePathName, flags);
     reInitPBRGraphics(true);
 }
 

@@ -1711,7 +1711,10 @@ std::vector<std::string> Util::getFilesMatchingPattern(const fs::path& folder, c
         if (entry.is_regular_file()) {
             // Simple pattern match: ends with extension
             if (pattern == "*" || entry.path().filename().string().find(pattern) != std::string::npos) {
-                result.push_back(entry.path().filename().string());
+                //Log("Found file: " << entry.path() << std::endl);
+                // split path so we have just the path below the folder:
+                string relativePath = fs::relative(entry.path(), folder).string();
+                result.push_back(relativePath);
             }
         }
     }
