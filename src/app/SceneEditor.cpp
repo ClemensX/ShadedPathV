@@ -666,6 +666,19 @@ void SceneEditor::redoAllStationaryObjects()
 
 void SceneEditor::redoAllMovingObjects()
 {
+    int num = engine->mstore.getUsedMovingModelCount();
+    for (int i = 0; i < num; ++i) {
+        SceneObject* so = engine->mstore.getMovingSceneObject(i);
+        GPUModel* gpuModel = engine->mstore.getGPUMovingModel(so->index);
+        mat4 baseTransform = mat4(1.0); // get from gltf later
+        so->prepareGPUModel(gpuModel, baseTransform);
+        engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, so->index);
+        GPUModelParam* gpuModelParam = engine->mstore.getGPUModelParam(so->index);
+        gpuModelParam->pos = so->pos;
+        gpuModelParam->rot = so->rot;
+        gpuModelParam->scale = so->scale;
+        engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsParam, *gpuModelParam, so->index);
+    }
     reInitPBRGraphics(true);
 }
 
@@ -766,11 +779,8 @@ void SceneEditor::advanceSunRays(float deltaSeconds, const BoundingBox& simulati
 
 void SceneEditor::saveSceneToFile(const std::string& sceneFilePathName)
 {
-    engine->files.findAssetFolder("data");
-    std::filesystem::path outputPath(sceneFilePathName);
-    if (outputPath.is_relative()) {
-        outputPath = engine->files.getAssetFolderPath() / outputPath;
-    }
+    string filePath = engine->files.findFile(sceneFilePathName, FileCategory::INSTANCE, false, true);
+    std::filesystem::path outputPath(filePath);
 
     nlohmann::json sceneJson;
     sceneJson["objects"] = nlohmann::json::array();
@@ -832,11 +842,8 @@ void SceneEditor::saveSceneToFile(const std::string& sceneFilePathName)
 
 void SceneEditor::loadSceneFromFile(const std::string& sceneFilePathName)
 {
-    engine->files.findAssetFolder("data");
-    std::filesystem::path inputPath(sceneFilePathName);
-    if (inputPath.is_relative()) {
-        inputPath = engine->files.getAssetFolderPath() / inputPath;
-    }
+    string filePath = engine->files.findFile(sceneFilePathName, FileCategory::INSTANCE, false, true);
+    std::filesystem::path inputPath(filePath);
 
     std::ifstream inFile(inputPath);
     if (!inFile.is_open()) {
