@@ -22,6 +22,11 @@ struct SceneEditorDisplayParams
     bool showSunBeams = false;
     bool sunBeamsInitialized = false;
 
+    // scene handling:
+    std::string sceneFileName = "scene_editor_scene.json";
+    bool loadSceneRequested = false;
+    bool saveSceneRequested = false;
+
     // object adding:
     bool addStationaryObjectToScene = false;
     bool addMovingObjectToScene = false;
@@ -88,6 +93,10 @@ private:
     // after changing meshes, objects or env cube we must re-init the PBR graphics.
     // This is NOT something you do in regular gameplay, because it will pause frame rendering until all is updated
     void reInitPBRGraphics(bool redoCommandBuffers);
+
+    // scene handling:
+    void saveSceneToFile(const std::string& sceneFilePathName);
+    void loadSceneFromFile(const std::string& sceneFilePathName);
 
     // --- Sun ray data ---
     std::vector<LineDef> sunRays;

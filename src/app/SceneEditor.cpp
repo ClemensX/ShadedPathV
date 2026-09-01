@@ -107,15 +107,18 @@ void SceneEditor::prepareFrame(FrameResources* fr)
         displayParams.reuploadStationaryObjects = false;
         redoAllStationaryObjects();
     }
-    //if (displayParams.addFixedObjectToScene) {
-    //    displayParams.addFixedObjectToScene = false;
-    //    Log("Adding fixed object to scene" << endl);
-    //    ObjectParams params;
-    //    params.name = "FixedObject";
-    //    params.meshFile = "path/to/mesh.obj";
-    //    params.position = glm::vec3(0.0f, 0.0f, 0.0f);
-    //    addObjectToScene(params);
-    //}
+    if (displayParams.saveSceneRequested) {
+        displayParams.saveSceneRequested = false;
+        saveSceneToFile(displayParams.sceneFileName);
+    }
+    if (displayParams.loadSceneRequested) {
+        displayParams.loadSceneRequested = false;
+        loadSceneFromFile(displayParams.sceneFileName);
+    }
+    if (displayParams.reuploadStationaryObjects) {
+        displayParams.reuploadStationaryObjects = false;
+        redoAllStationaryObjects();
+    }
     if (displayParams.showSunBeams && !displayParams.sunBeamsInitialized) {
         displayParams.sunBeamsInitialized = true;
         initSunRays();
@@ -328,6 +331,24 @@ void SceneEditor::buildCustomUI() {
         ImGui::Checkbox("Sun Beams", &displayParams.showSunBeams);
     }
     ImGui::Separator();
+    if (ImGui::CollapsingHeader("Scenes", ImGuiTreeNodeFlags_None))
+    {
+        char sceneFileNameBuffer[512]{};
+        std::snprintf(sceneFileNameBuffer, sizeof(sceneFileNameBuffer), "%s", displayParams.sceneFileName.c_str());
+        if (ImGui::InputText("Scene Filename", sceneFileNameBuffer, IM_ARRAYSIZE(sceneFileNameBuffer))) {
+            displayParams.sceneFileName = sceneFileNameBuffer;
+        }
+
+        if (ImGui::Button("Load Scene")) {
+            displayParams.loadSceneRequested = true;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Save Scene")) {
+            displayParams.saveSceneRequested = true;
+        }
+    }
+    ImGui::Separator();
+
     if (ImGui::Button("Environment Cube Settings")) {
         displayParams.showEnvCubeDialog = true;
         ImGui::OpenPopup("EnvCubeSettings");
@@ -741,4 +762,154 @@ void SceneEditor::advanceSunRays(float deltaSeconds, const BoundingBox& simulati
             ray = createRandomSunRay(simulationBox);
         }
     }
+}
+
+void SceneEditor::saveSceneToFile(const std::string& sceneFilePathName)
+{
+    engine->files.findAssetFolder("data");
+    std::filesystem::path outputPath(sceneFilePathName);
+    if (outputPath.is_relative()) {
+        outputPath = engine->files.getAssetFolderPath() / outputPath;
+    }
+
+    nlohmann::json sceneJson;
+    sceneJson["objects"] = nlohmann::json::array();
+
+    auto vec3ToJson = [](const glm::vec3& v) {
+        return nlohmann::json::array({ v.x, v.y, v.z });
+        };
+
+    const int stationaryCount = engine->mstore.getUsedStationaryModelCount();
+    for (int i = 0; i < stationaryCount; ++i) {
+        SceneObject* so = engine->mstore.getSceneObject(i);
+        GPUModel* model = engine->mstore.getGPUModel(i);
+
+        MeshFile meshFile;
+        MeshFileEntry meshFileEntry;
+        engine->mstore.getFileInfosForMesh(model->meshNumber, meshFile, meshFileEntry);
+
+        sceneJson["objects"].push_back({
+            { "moving", false },
+            { "meshFile", meshFile.filename },
+            { "meshName", meshFileEntry.name },
+            { "pos", vec3ToJson(so->pos) },
+            { "rot", vec3ToJson(so->rot) },
+            { "scale", vec3ToJson(so->scale) }
+            });
+    }
+
+    const int movingCount = engine->mstore.getUsedMovingModelCount();
+    for (int i = 0; i < movingCount; ++i) {
+        SceneObject* so = engine->mstore.getMovingSceneObject(i);
+        GPUModel* model = engine->mstore.getGPUMovingModel(i);
+
+        MeshFile meshFile;
+        MeshFileEntry meshFileEntry;
+        engine->mstore.getFileInfosForMesh(model->meshNumber, meshFile, meshFileEntry);
+
+        sceneJson["objects"].push_back({
+            { "moving", true },
+            { "meshFile", meshFile.filename },
+            { "meshName", meshFileEntry.name },
+            { "pos", vec3ToJson(so->pos) },
+            { "rot", vec3ToJson(so->rot) },
+            { "scale", vec3ToJson(so->scale) }
+            });
+    }
+
+    std::ofstream outFile(outputPath);
+    if (!outFile.is_open()) {
+        Error("SceneEditor::saveSceneToFile: failed to open file for writing: " + outputPath.string());
+        return;
+    }
+
+    outFile << sceneJson.dump(2);
+    Log("Scene saved: " << outputPath.string() << std::endl);
+}
+
+void SceneEditor::loadSceneFromFile(const std::string& sceneFilePathName)
+{
+    engine->files.findAssetFolder("data");
+    std::filesystem::path inputPath(sceneFilePathName);
+    if (inputPath.is_relative()) {
+        inputPath = engine->files.getAssetFolderPath() / inputPath;
+    }
+
+    std::ifstream inFile(inputPath);
+    if (!inFile.is_open()) {
+        Error("SceneEditor::loadSceneFromFile: failed to open file for reading: " + inputPath.string());
+        return;
+    }
+
+    nlohmann::json sceneJson;
+    inFile >> sceneJson;
+
+    if (!sceneJson.contains("objects") || !sceneJson["objects"].is_array()) {
+        Error("SceneEditor::loadSceneFromFile: invalid scene json format");
+        return;
+    }
+
+    auto jsonToVec3 = [](const nlohmann::json& j, const char* key, const glm::vec3& fallback) -> glm::vec3 {
+        if (!j.contains(key) || !j[key].is_array() || j[key].size() < 3) {
+            return fallback;
+        }
+        return glm::vec3(j[key][0].get<float>(), j[key][1].get<float>(), j[key][2].get<float>());
+        };
+
+    for (const auto& item : sceneJson["objects"]) {
+        const bool moving = item.value("moving", false);
+        const std::string meshFilePath = item.value("meshFile", "");
+        const std::string meshName = item.value("meshName", "");
+
+        if (meshFilePath.empty()) {
+            continue;
+        }
+
+        MeshFlagsCollection flags;
+        flags.setFlag(MeshFlags::MESHLET_GENERATE);
+        if (moving) {
+            flags.setFlag(MeshFlags::RENDER_TYPE_MOVING);
+        }
+
+        MeshFile* meshFile = engine->mstore.loadMesh(meshFilePath, flags);
+        if (meshFile == nullptr || meshFile->meshes.empty()) {
+            continue;
+        }
+
+        int meshIndex = meshFile->meshes[0].meshIndex;
+        for (const auto& entry : meshFile->meshes) {
+            if (entry.name == meshName) {
+                meshIndex = entry.meshIndex;
+                break;
+            }
+        }
+
+        SceneObject* object = engine->mstore.addObject(meshIndex, glm::vec3(0.0f), flags);
+        if (object == nullptr) {
+            continue;
+        }
+
+        object->flags = flags;
+        object->pos = jsonToVec3(item, "pos", glm::vec3(0.0f));
+        object->rot = jsonToVec3(item, "rot", glm::vec3(0.0f));
+        object->scale = jsonToVec3(item, "scale", glm::vec3(1.0f));
+
+        glm::mat4 baseTransform(1.0f);
+        GPUModel* gpuModel = moving
+            ? engine->mstore.getGPUMovingModel(object->index)
+            : engine->mstore.getGPUModel(object->index);
+
+        object->prepareGPUModel(gpuModel, baseTransform);
+
+        if (moving) {
+            engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, object->index);
+        }
+        else {
+            engine->globalRendering.gpuMemory.updateElement(BufferType::Models, *gpuModel, object->index);
+        }
+    }
+
+    redoAllStationaryObjects();
+    redoAllMovingObjects();
+    Log("Scene loaded: " << inputPath.string() << std::endl);
 }
