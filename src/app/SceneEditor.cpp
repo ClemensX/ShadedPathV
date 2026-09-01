@@ -775,6 +775,9 @@ void SceneEditor::saveSceneToFile(const std::string& sceneFilePathName)
     nlohmann::json sceneJson;
     sceneJson["objects"] = nlohmann::json::array();
 
+    // Persist current env cube (filename only)
+    sceneJson["envCube"] = std::filesystem::path(displayParams.newEnvCubeFileName).filename().string();
+
     auto vec3ToJson = [](const glm::vec3& v) {
         return nlohmann::json::array({ v.x, v.y, v.z });
         };
@@ -794,7 +797,7 @@ void SceneEditor::saveSceneToFile(const std::string& sceneFilePathName)
             { "meshName", meshFileEntry.name },
             { "pos", vec3ToJson(so->pos) },
             { "rot", vec3ToJson(so->rot) },
-            { "scale", vec3ToJson(so->scale) }
+            { "scale", so->scale.x } // uniform scale persisted as one float
             });
     }
 
@@ -813,7 +816,7 @@ void SceneEditor::saveSceneToFile(const std::string& sceneFilePathName)
             { "meshName", meshFileEntry.name },
             { "pos", vec3ToJson(so->pos) },
             { "rot", vec3ToJson(so->rot) },
-            { "scale", vec3ToJson(so->scale) }
+            { "scale", so->scale.x } // uniform scale persisted as one float
             });
     }
 
@@ -856,6 +859,21 @@ void SceneEditor::loadSceneFromFile(const std::string& sceneFilePathName)
         return glm::vec3(j[key][0].get<float>(), j[key][1].get<float>(), j[key][2].get<float>());
         };
 
+    // Replace scene instead of appending:
+    auto& gpuMemory = engine->globalRendering.gpuMemory;
+    gpuMemory.resetElementCount(BufferType::Models);
+    gpuMemory.resetElementCount(BufferType::ModelsMoving);
+    gpuMemory.resetElementCount(BufferType::ModelsParam);
+    displayParams.stationaryModels.clear();
+    displayParams.movingModels.clear();
+
+    // Load env cube from scene if available
+    const std::string envCube = sceneJson.value("envCube", "");
+    if (!envCube.empty()) {
+        displayParams.newEnvCubeFileName = envCube;
+        loadNewEnvCube(displayParams.newEnvCubeFileName);
+    }
+
     for (const auto& item : sceneJson["objects"]) {
         const bool moving = item.value("moving", false);
         const std::string meshFilePath = item.value("meshFile", "");
@@ -892,7 +910,18 @@ void SceneEditor::loadSceneFromFile(const std::string& sceneFilePathName)
         object->flags = flags;
         object->pos = jsonToVec3(item, "pos", glm::vec3(0.0f));
         object->rot = jsonToVec3(item, "rot", glm::vec3(0.0f));
-        object->scale = jsonToVec3(item, "scale", glm::vec3(1.0f));
+
+        // Uniform scale: read float (with backward compatibility for old vec3 format)
+        float scale = 1.0f;
+        if (item.contains("scale")) {
+            if (item["scale"].is_number_float() || item["scale"].is_number_integer()) {
+                scale = item["scale"].get<float>();
+            }
+            else if (item["scale"].is_array() && item["scale"].size() >= 1) {
+                scale = item["scale"][0].get<float>();
+            }
+        }
+        object->scale = glm::vec3(scale);
 
         glm::mat4 baseTransform(1.0f);
         GPUModel* gpuModel = moving
@@ -911,5 +940,5 @@ void SceneEditor::loadSceneFromFile(const std::string& sceneFilePathName)
 
     redoAllStationaryObjects();
     redoAllMovingObjects();
-    Log("Scene loaded: " << inputPath.string() << std::endl);
+    Log("Scene loaded (replaced): " << inputPath.string() << std::endl);
 }
