@@ -71,4 +71,5 @@ private:
 	void parseGltfModel(tinygltf::Model& model);
 
 	inline bool IsMetallicRoughnessWorkflow(const tinygltf::Material& mat);
+	VkSampler getFileSamplerOrDefault(int gltfTextureIndex, tinygltf::Model& model, std::vector<VkSampler>& samplers);
 };

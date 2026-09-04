@@ -1378,6 +1378,25 @@ inline bool glTF::IsMetallicRoughnessWorkflow(const tinygltf::Material& mat)
 	return mat.extensions.find("KHR_materials_pbrSpecularGlossiness") == mat.extensions.end();
 }
 
+VkSampler glTF::getFileSamplerOrDefault(int gltfTextureIndex, tinygltf::Model& model, vector<VkSampler>& samplers) {
+    if (model.textures[gltfTextureIndex].sampler < 0) {
+		Log("WARNING: some glTF textures have no sampler defined, using default sampler" << endl);
+		// create default sampler (will return the old one if already created)
+		tinygltf::Sampler defaultSampler;
+		defaultSampler.magFilter = TINYGLTF_TEXTURE_FILTER_LINEAR;
+		defaultSampler.minFilter = TINYGLTF_TEXTURE_FILTER_LINEAR_MIPMAP_LINEAR;
+		defaultSampler.wrapS = TINYGLTF_TEXTURE_WRAP_REPEAT;
+		defaultSampler.wrapT = TINYGLTF_TEXTURE_WRAP_REPEAT;
+		VkSamplerCreateInfo vkSamplerInfo{};
+		mapTinyGLTFSamplerToVulkan(defaultSampler, vkSamplerInfo);
+		VkSampler defaultVkSampler = engine->globalRendering.samplerCache.getOrCreateSampler(engine->globalRendering.device, vkSamplerInfo);
+		return defaultVkSampler;
+    }
+    else {
+        return samplers[model.textures[gltfTextureIndex].sampler];
+    }
+}
+
 void glTF::parseGltfModel(tinygltf::Model& model)
 {
     // 1st step: count meshes, materials and textures (each primitive is a separate mesh in our system)
@@ -1469,35 +1488,35 @@ void glTF::parseGltfModel(tinygltf::Model& model)
 			tcBase = ResolveTexCoordUsed(mat.pbrMetallicRoughness.baseColorTexture.texCoord, tfBase);
 			auto tindex = mat.pbrMetallicRoughness.baseColorTexture.index;
 			gpuMat.baseColorTextureSet = model.textures[tindex].source;
-			gpuMatMeta.samplerBaseColor = samplers[model.textures[tindex].sampler];
+			gpuMatMeta.samplerBaseColor = getFileSamplerOrDefault(tindex, model, samplers);
 		}
 		if (mat.pbrMetallicRoughness.metallicRoughnessTexture.index >= 0) {
 			tfMR = ParseKHRTextureTransform(mat.pbrMetallicRoughness.metallicRoughnessTexture.extensions);
 			tcMR = ResolveTexCoordUsed(mat.pbrMetallicRoughness.metallicRoughnessTexture.texCoord, tfMR);
 			auto tindex = mat.pbrMetallicRoughness.metallicRoughnessTexture.index;
 			gpuMat.physicalDescriptorTextureSet = model.textures[tindex].source;
-            gpuMatMeta.samplerMetallicRoughness = samplers[model.textures[tindex].sampler];
+            gpuMatMeta.samplerMetallicRoughness = getFileSamplerOrDefault(tindex, model, samplers);
 		}
 		if (mat.normalTexture.index >= 0) {
 			tfNormal = ParseKHRTextureTransform(mat.normalTexture.extensions);
 			tcNormal = ResolveTexCoordUsed(mat.normalTexture.texCoord, tfNormal);
 			auto tindex = mat.normalTexture.index;
 			gpuMat.normalTextureSet = model.textures[tindex].source;
-            gpuMatMeta.samplerNormal = samplers[model.textures[tindex].sampler];
+            gpuMatMeta.samplerNormal = getFileSamplerOrDefault(tindex, model, samplers);
 		}
 		if (mat.occlusionTexture.index >= 0) {
 			tfOcc = ParseKHRTextureTransform(mat.occlusionTexture.extensions);
 			tcOcc = ResolveTexCoordUsed(mat.occlusionTexture.texCoord, tfOcc);
 			auto tindex = mat.occlusionTexture.index;
 			gpuMat.occlusionTextureSet = model.textures[tindex].source;
-            gpuMatMeta.samplerOcclusion = samplers[model.textures[tindex].sampler];
+            gpuMatMeta.samplerOcclusion = getFileSamplerOrDefault(tindex, model, samplers);
 		}
 		if (mat.emissiveTexture.index >= 0) {
 			tfEmi = ParseKHRTextureTransform(mat.emissiveTexture.extensions);
 			tcEmi = ResolveTexCoordUsed(mat.emissiveTexture.texCoord, tfEmi);
 			auto tindex = mat.emissiveTexture.index;
 			gpuMat.emissiveTextureSet = model.textures[tindex].source;
-			gpuMatMeta.samplerEmissive = samplers[model.textures[tindex].sampler];
+			gpuMatMeta.samplerEmissive = getFileSamplerOrDefault(tindex, model, samplers);
 		}
 		// Bake transforms into vertex UVs per channel (only TEXCOORD_0 and TEXCOORD_1 supported).
 		// If multiple textures require different transforms on the same UV set, the first one wins; a warning is logged.
