@@ -376,10 +376,15 @@ bool MStore::checkBoundingBoxPlausibility(int32_t meshIndex)
 		Log("ERROR: Inverted bounding box for mesh " << id << endl);
 		ret = false;
 	}
-	// anything below 1 mm is suspicious:
+    // anything below 1 mm is suspicious, but allow for flat objects (e.g., a plane)
 	if (size.x < 0.001f || size.y < 0.001f || size.z < 0.001f) {
-		Log("ERROR: Very small bounding box for mesh " << id << ": Size(" << size.x << ", " << size.y << ", " << size.z << ")\n");
-		ret = false;
+        // allow for flat objects, but log a warning
+		if (length(size) > 0.001f && (size.x == 0 || size.y == 0 || size.z == 0)) {
+			Log("WARNING: Flat bounding box for mesh " << id << ": Size(" << size.x << ", " << size.y << ", " << size.z << ")\n");
+		} else {
+			Log("ERROR: Very small bounding box for mesh " << id << ": Size(" << size.x << ", " << size.y << ", " << size.z << ")\n");
+			ret = false;
+		}
 	}
 	// anything above 10 km is suspicious:
 	if (size.x > 20000.0f || size.y > 20000.0f || size.z > 20000.0f) {
