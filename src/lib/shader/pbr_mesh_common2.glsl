@@ -38,6 +38,7 @@ struct GPUMeshInfo {
 	uint index; // global mesh index
 	uint next; // next primitive (0 == no next primitive)
     BoundingBox boundingBox;
+	mat4 baseTransform;
 };
 
 struct GPUModel {
@@ -367,6 +368,10 @@ void printGPUMeshInfo(GPUMeshInfo info) {
     debugPrintfEXT("GPUMeshInfo: meshletOffset %llx localIndexOffset %llx globalIndexOffset %llx vertexOffset %llx meshletCount %u material %u index %u next %u\n",
         info.meshletOffset, info.localIndexOffset, info.globalIndexOffset, info.vertexOffset, info.meshletCount, info.material, info.index, info.next);
     debugPrintfEXT("  BB: min %f %f %f max %f %f %f\n", info.boundingBox.min.x, info.boundingBox.min.y, info.boundingBox.min.z, info.boundingBox.max.x, info.boundingBox.max.y, info.boundingBox.max.z);
+    debugPrintfEXT("  baseTransform: %f %f %f %f\n", info.baseTransform[0][0], info.baseTransform[0][1], info.baseTransform[0][2], info.baseTransform[0][3]);
+    debugPrintfEXT("  baseTransform: %f %f %f %f\n", info.baseTransform[1][0], info.baseTransform[1][1], info.baseTransform[1][2], info.baseTransform[1][3]);
+    debugPrintfEXT("  baseTransform: %f %f %f %f\n", info.baseTransform[2][0], info.baseTransform[2][1], info.baseTransform[2][2], info.baseTransform[2][3]);
+    debugPrintfEXT("  baseTransform: %f %f %f %f\n", info.baseTransform[3][0], info.baseTransform[3][1], info.baseTransform[3][2], info.baseTransform[3][3]);
 }
 void printGPUCollectionIndex(uint index) {
     GPUCollectionIndex idx = gpuIndices.index[index];

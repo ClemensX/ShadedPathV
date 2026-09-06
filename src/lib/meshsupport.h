@@ -74,6 +74,7 @@ struct GPUMeshInfo {
 	uint32_t index; // global mesh index
 	uint32_t next; // next primitive (0 == no next primitive)
 	BoundingBox boundingBox;
+	glm::mat4 baseTransform = glm::mat4(1.0f);
 };
 
 

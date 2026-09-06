@@ -62,6 +62,7 @@ private:
 	void validateModel(tinygltf::Model& model, MeshCollection* mesh);
 	// collect scale and rotation info from gltf nodes hierarchy and store in MeshInfo
 	void collectBaseTransform(tinygltf::Model& model, MeshInfo *mesh);
+	glm::mat4 collectBaseTransform(tinygltf::Model& model, int gltfMeshIndex);
 	ShadedPathEngine* engine = nullptr;
 
 	// map local texture index to global texture array index:

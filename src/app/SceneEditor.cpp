@@ -530,8 +530,10 @@ void SceneEditor::buildCustomUI() {
 
             // live GPU update (no re-upload button)
             GPUModel* gpuModel = engine->mstore.getGPUMovingModel(so->index);
-            mat4 baseTransform = mat4(1.0f);
-            so->prepareGPUModel(gpuModel, baseTransform);
+            auto meshIndex = gpuModel->meshNumber;
+            //mat4 baseTransform = engine->mstore.getGPUMeshInfo(meshIndex)->baseTransform;
+            glm::mat4 base(1.0f);
+            so->prepareGPUModel(gpuModel, base);
             engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, so->index);
 
             // detect change

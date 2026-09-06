@@ -61,12 +61,12 @@ mat4 makeModelMatrix(vec3 pos, vec3 rot, vec3 scale, mat4 baseTransform)
         0.0, 0.0, 0.0, 1.0
     );
 
-    return translation * rotationMatrix * scaling; // * baseTransform;
+    return translation * rotationMatrix * scaling * baseTransform;
 }
 
 void main() {
     //printGPUBufferAddresses();
-    //verifyMesh(0);
+    //lverifyMesh(0);
     //verifyMaterial(0);
     //verifyModel(1);
     //verifyFrameParam(0);
@@ -87,19 +87,21 @@ void main() {
 
     mat4 modelmat;
     GPUModel model;
+    GPUMeshInfo mesh;
     if (pushConstants.isMovingObject != 0) {
         model = gpuModelsMoving.model[pushConstants.objectNum];
+        mesh = gpuInfos.info[model.meshNumber];
         GPUModelParam param = gpuModelsParam.param[pushConstants.objectNum];
         //debugPrintfEXT("pbr.task: moving model mesh %u pos.x %f rot.y %f scale.z %f\n", model.meshNumber, param.pos.x, param.rot.y, param.scale.z);
-        modelmat = makeModelMatrix(param.pos, param.rot, param.scale, model.model);
+        modelmat = makeModelMatrix(param.pos, param.rot, param.scale, mesh.baseTransform);
         //modelmat = 1.0;
     } else {
         model = gpuModels.model[pushConstants.objectNum];
-        modelmat = model.model;
+        mesh = gpuInfos.info[model.meshNumber];
+        modelmat = model.model * mesh.baseTransform;
     }
     payload.realMeshIndex = model.meshNumber;
     payload.modelflags = model.flags;
-    GPUMeshInfo mesh = gpuInfos.info[model.meshNumber];
     GPUMaterial material = gpuMaterials.material[mesh.material];
     //verifyTextures(material);
 

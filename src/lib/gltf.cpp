@@ -1173,6 +1173,51 @@ static void BakeWorldTransformIntoVertices(const glm::mat4& world, std::vector<P
 	}
 }
 
+glm::mat4 glTF::collectBaseTransform(tinygltf::Model& model, int gltfMeshIndex)
+{
+	// Build child->parent map.
+	std::unordered_map<int, int> parentOf;
+	parentOf.reserve(model.nodes.size());
+	for (int i = 0; i < static_cast<int>(model.nodes.size()); ++i) {
+		const tinygltf::Node& n = model.nodes[i];
+		for (int c : n.children) {
+			parentOf[c] = i;
+		}
+	}
+
+	int foundNode = -1;
+	for (int i = 0; i < static_cast<int>(model.nodes.size()); ++i) {
+		const tinygltf::Node& n = model.nodes[i];
+		if (n.mesh == gltfMeshIndex) {
+			if (foundNode != -1) {
+				Error("gltf model has multiple nodes referencing the same mesh; not supported for baking.");
+			}
+			foundNode = i;
+		}
+	}
+	if (foundNode == -1) {
+		// No node references this mesh: return identity
+		return glm::mat4(1.0f);
+	}
+
+	// Collect chain bottom-up.
+	std::vector<int> chain;
+	int cur = foundNode;
+	while (cur >= 0) {
+		chain.push_back(cur);
+		auto it = parentOf.find(cur);
+		if (it == parentOf.end()) break;
+		cur = it->second;
+	}
+
+	// Build world: parent first.
+	glm::mat4 world(1.0f);
+	for (auto it = chain.rbegin(); it != chain.rend(); ++it) {
+		world = world * BuildLocalNodeMatrix(model.nodes[*it]);
+	}
+	return world;
+}
+
 void glTF::collectBaseTransform(tinygltf::Model& model, MeshInfo* mesh)
 {
 	// Compute world matrix for the node referencing this mesh.
@@ -1457,8 +1502,9 @@ void glTF::parseGltfModel(tinygltf::Model& model)
             gpuMeshInfos[curMeshIndex].material = p.material;
             gpuMeshInfos[curMeshIndex].index = curMeshIndex;
             gpuMeshInfos[curMeshIndex].next = (prim < (int)m.primitives.size() - 1) ? curMeshIndex + 1 : 0;
-            gpuMeshMetadata[curMeshIndex].name = m.name;
-            loadVerticesCore(model, gpuMeshMetadata[curMeshIndex].vertices, gpuMeshMetadata[curMeshIndex].indices, mi, prim);
+			gpuMeshMetadata[curMeshIndex].name = m.name;
+			gpuMeshInfos[curMeshIndex].baseTransform = collectBaseTransform(model, mi);
+			loadVerticesCore(model, gpuMeshMetadata[curMeshIndex].vertices, gpuMeshMetadata[curMeshIndex].indices, mi, prim);
             curMeshIndex++;
         }
 	}
