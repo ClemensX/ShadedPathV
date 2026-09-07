@@ -639,7 +639,7 @@ void TextureStore::generateCubemaps(std::string skyboxTexture, int32_t dimIrradi
 			cubemap->vulkanTexture.width = dim;
 			cubemap->vulkanTexture.levelCount = numMips;
 			cubemap->isKtxCreated = false;
-			cubemap->imageView = global.createImageViewCube(cubemap->vulkanTexture.image, cubemap->vulkanTexture.imageFormat, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+			cubemap->imageView = global.createImageViewCube(cubemap->vulkanTexture.image, cubemap->vulkanTexture.imageFormat, VK_IMAGE_ASPECT_COLOR_BIT, numMips);
 
 			// Sampler
 			VkSamplerCreateInfo samplerCI{};

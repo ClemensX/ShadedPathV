@@ -1549,6 +1549,9 @@ void glTF::parseGltfModel(tinygltf::Model& model)
 			auto tindex = mat.normalTexture.index;
 			gpuMat.normalTextureSet = model.textures[tindex].source;
             gpuMatMeta.samplerNormal = getFileSamplerOrDefault(tindex, model, samplers);
+            if (mat.normalTexture.scale != 1.0f) {
+				Error("Cannot use material with normalTexture.scale != 1.0f");
+            }
 		}
 		if (mat.occlusionTexture.index >= 0) {
 			tfOcc = ParseKHRTextureTransform(mat.occlusionTexture.extensions);
@@ -1556,6 +1559,9 @@ void glTF::parseGltfModel(tinygltf::Model& model)
 			auto tindex = mat.occlusionTexture.index;
 			gpuMat.occlusionTextureSet = model.textures[tindex].source;
             gpuMatMeta.samplerOcclusion = getFileSamplerOrDefault(tindex, model, samplers);
+			if (mat.occlusionTexture.strength != 1.0f) {
+				Error("Cannot use material with occlusionTexture.strength != 1.0f");
+			}
 		}
 		if (mat.emissiveTexture.index >= 0) {
 			tfEmi = ParseKHRTextureTransform(mat.emissiveTexture.extensions);

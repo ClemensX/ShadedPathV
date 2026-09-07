@@ -67,8 +67,8 @@ struct TextureInfo
 	ktxVulkanTexture vulkanTexture = {};
 	VkImageView imageView = nullptr;
 	// following gltf attributes are only valid during gltf parsing!!
-	const float* gltfTexCoordData = nullptr;
-	int gltfUVByteStride = 0;
+	const float* gltfTexCoordData = nullptr; // TODO: unused  - delete after re-implemetation
+	int gltfUVByteStride = 0; // TODO: unused  - delete after re-implemetation
 	// usually our textures are created through ktx library, but there are some exceptions
 	bool isKtxCreated = true;
 	uint32_t index = 0; // index used for shaders to access the right texture in the global texture array

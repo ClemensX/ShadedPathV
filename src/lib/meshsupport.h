@@ -110,8 +110,8 @@ struct SceneObject {
 struct GPUMaterial {
 	glm::vec4 baseColorFactor;
 	glm::vec4 emissiveFactor;
-	glm::vec4 diffuseFactor;
-	glm::vec4 specularFactor;
+    glm::vec4 diffuseFactorX; // currently unused
+    glm::vec4 specularFactorX; // currently unused
 
 	float workflow;
 

@@ -192,6 +192,7 @@ vec3 getIBLContribution(PBRInfo pbrInputs, vec3 n, vec3 reflection, GPUMaterial 
 //	vec3 rIbl = reflection;
 
 	float lod = (pbrInputs.perceptualRoughness * uboParams.prefilteredCubeMipLevels);
+	//debugPrintfEXT("perc rough %f mips %f lod: %f scale IBL %f\n", pbrInputs.perceptualRoughness, uboParams.prefilteredCubeMipLevels, lod, uboParams.scaleIBLAmbient);
 	// retrieve a scale and bias to F0. See [1], Figure 3
 	//textureBindless2D(material.baseColorTextureSet
 	//n.y -= n.y;
@@ -200,13 +201,17 @@ vec3 getIBLContribution(PBRInfo pbrInputs, vec3 n, vec3 reflection, GPUMaterial 
 
 	vec3 myref = reflection;
 	//myref.y = -myref.y;
+//	vec4 ibl8 = textureBindless3DLod(uboParams.envcube, rIbl, 8.0);
+//	vec4 ibl4 = textureBindless3DLod(uboParams.envcube, rIbl, 4.0);
+//	vec4 ibl2 = textureBindless3DLod(uboParams.envcube, rIbl, 2.0);
+//	debugPrintfEXT(" sampled %f %f %f \n", ibl8.r, ibl4.r, ibl2.r);
+//	return ibl8.rgb;
 	vec3 specularLight = SRGBtoLINEAR(tonemap(textureBindless3DLod(uboParams.envcube, rIbl, lod))).rgb;
 	//specularLight = vec3(0.0); // disable IBL for now
 
 	vec3 diffuse = diffuseLight * pbrInputs.diffuseColor;
 	vec3 specular = specularLight * (pbrInputs.specularColor * brdf.x + brdf.y);
 
-	// For presentation, this allows us to disable IBL terms
 	// For presentation, this allows us to disable IBL terms
 	diffuse *= uboParams.scaleIBLAmbient;
 	specular *= uboParams.scaleIBLAmbient;
@@ -471,9 +476,9 @@ GPUMaterial material = gpuMaterials.material[mesh.material];
 
 	// Calculate lighting contribution from image based lighting source (IBL)
 	vec3 iblcolor = getIBLContribution(pbrInputs, n, reflection, material);
-	color += iblcolor;
-//	outColor = vec4(baseColor.rgb, baseColor.a);
+//	outColor = vec4(iblcolor.rgb, baseColor.a);
 //	return;
+	color += iblcolor;
 
 	const float u_OcclusionStrength = 1.0f;
 	// Apply optional PBR terms for additional (optional) shading

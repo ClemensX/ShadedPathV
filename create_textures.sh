@@ -97,3 +97,5 @@ export PATH="/c/tools/ktx/bin:$PATH"
 #./prep_env_cube.sh ../data/texture/ennis.jpg ../data/texture/ennis.ktx2
 #./prep_env_cube.sh ../data/texture/helipad.jpg ../data/texture/helipad.ktx2
 #./prep_env_cube.sh ../data/texture/debug_arrows.png ../data/texture/debug_arrows.ktx2
+# extract all imaged from ktx2 in exr format to out folder:
+# ktx extract ./texture/prefilter.ktx2 --level all --face all ./out/

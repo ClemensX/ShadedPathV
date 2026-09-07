@@ -62,8 +62,8 @@ struct GPUModelParam {
 struct GPUMaterial {
 	vec4 baseColorFactor;
 	vec4 emissiveFactor;
-	vec4 diffuseFactor;
-	vec4 specularFactor;
+	vec4 diffuseFactorX; // currently unused
+	vec4 specularFactorX; // currently unused
 
 	float workflow;
 
@@ -401,6 +401,11 @@ void verifyMaterial(uint index) {
     debugPrintfEXT("\n  lod: %d", material.lod_category);
     debugPrintfEXT("\n  alphaMask: %f", material.alphaMask);
     //debugPrintfEXT("\n  brdflut: %d irradiance: %d envcube: %d", material.brdflut, material.irradiance, material.envcube);
+    debugPrintfEXT("\n  baseColorFactor: %f %f %f %f", material.baseColorFactor.x, material.baseColorFactor.y, material.baseColorFactor.z, material.baseColorFactor.w);
+    debugPrintfEXT("\n  emissiveFactor: %f %f %f %f", material.emissiveFactor.x, material.emissiveFactor.y, material.emissiveFactor.z, material.emissiveFactor.w);
+    //debugPrintfEXT("\n  diffuseFactor: %f %f %f %f", material.diffuseFactor.x, material.diffuseFactor.y, material.diffuseFactor.z, material.diffuseFactor.w);
+    //debugPrintfEXT("\n  specularFactor: %f %f %f %f", material.specularFactor.x, material.specularFactor.y, material.specularFactor.z, material.specularFactor.w);
+    debugPrintfEXT("\n  metallicFactor: %f  roughnessFactor %f", material.metallicFactor, material.roughnessFactor);
     debugPrintfEXT("\n");
 }
 
