@@ -101,6 +101,15 @@ public:
     void applyDebugMeshletColorsToMeshlets(GPUMeshInfo* mesh);
     void logMeshletStats(GPUMeshInfo* mesh);
 
+    // enable debug graphics for all moving objects
+    void debugGraphics(FrameResources& fr,
+        bool drawBoundingBox, bool drawVertices, bool drawNormals, bool drawMeshletBoundingBoxes,
+        glm::vec4 colorVertices, glm::vec4 colorNormal, glm::vec4 colorBoxes,
+        float normalLineLength);
+    void debugGraphicsObject(SceneObject* so, FrameResources& fr,
+        bool drawBoundingBox, bool drawVertices, bool drawNormals, bool drawMeshletBoundingBoxes,
+        glm::vec4 colorVertices, glm::vec4 colorNormal, glm::vec4 colorBoxes,
+        float normalLineLength);
 private:
     size_t maxMeshes = 0; // maximum number of meshes that can be stored, set setLimits()
     std::optional<std::string> loadFile(std::string filename, std::vector<std::byte>& fileBuffer);

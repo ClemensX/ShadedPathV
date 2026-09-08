@@ -14,9 +14,9 @@ void SceneEditor::run(ContinuationInfo* cont)
         auto& shaders = engine->shaders;
         engine->appname = "SceneEditor";
         // camera initialization
-        //initCamera(vec3(0, 0, 10), vec3(0.0f, 0.0f, -10.0f), vec3(0.0f, 1.0f, 0.0f));
+        initCamera(vec3(0, 0, 10), vec3(0.0f, 0.0f, -10.0f), vec3(0.0f, 1.0f, 0.0f));
         // camera initialization, like gltf sample viewer
-        initCamera(vec3(-0.1f, -0.5f, -2.6f), vec3(0.08f, 0.16f, 0.98f), vec3(0.0f, 1.0f, 0.0f));
+        //initCamera(vec3(-0.1f, -0.5f, -2.6f), vec3(0.08f, 0.16f, 0.98f), vec3(0.0f, 1.0f, 0.0f));
         Movement mv;
         //camera->setConstantSpeed(mv.runSpeedMS * 8);
         camera->setConstantSpeed(mv.runSpeedMS);
@@ -138,6 +138,11 @@ void SceneEditor::prepareFrame(FrameResources* fr)
         addObjectToScene(displayParams.selectedLoadedMeshFileLine, true);
     }
 
+    engine->shaders.lineShader.clearLocalLines(tr);
+
+    engine->mstore.debugGraphics(tr, displayParams.showBoundingBoxes, displayParams.showMeshVertices, displayParams.showNormals, displayParams.showMeshletBoundingBoxes,
+        displayParams.meshVertexColor, displayParams.normalColor, displayParams.boundingBoxColor, displayParams.normalLineLength);
+
     // cube
     CubeShader::UniformBufferObject cubo{};
     CubeShader::UniformBufferObject cubo2{};
@@ -163,7 +168,6 @@ void SceneEditor::prepareFrame(FrameResources* fr)
     engine->shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
 
     // lines
-    engine->shaders.lineShader.clearLocalLines(tr);
     LineShader::UniformBufferObject lubo{};
     LineShader::UniformBufferObject lubo2{};
     lubo.model = glm::mat4(1.0f); // identity matrix, empty parameter list is EMPTY matrix (all 0)!!
@@ -329,6 +333,18 @@ void SceneEditor::buildCustomUI() {
     if (ImGui::CollapsingHeader("Display Tweaks", ImGuiTreeNodeFlags_None))
     {
         ImGui::Checkbox("Sun Beams", &displayParams.showSunBeams);
+
+        ImGui::Separator();
+        ImGui::Text("Debug Graphics");
+        ImGui::Checkbox("Bounding boxes", &displayParams.showBoundingBoxes);
+        ImGui::Checkbox("Mesh vertices", &displayParams.showMeshVertices);
+        ImGui::Checkbox("Normals", &displayParams.showNormals);
+        ImGui::Checkbox("Meshlet Bounding Boxes", &displayParams.showMeshletBoundingBoxes);
+        ImGui::DragFloat("Normal line length", &displayParams.normalLineLength, 0.01f, 0.0f, 1000.0f, "%.3f");
+
+        ImGui::ColorEdit4("Vertices color", &displayParams.meshVertexColor.x);
+        ImGui::ColorEdit4("Normals color", &displayParams.normalColor.x);
+        ImGui::ColorEdit4("Boxes color", &displayParams.boundingBoxColor.x);
     }
     ImGui::Separator();
     if (ImGui::CollapsingHeader("Scenes", ImGuiTreeNodeFlags_None))

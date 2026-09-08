@@ -11,9 +11,6 @@ struct ObjectParams
 struct SceneEditorDisplayParams
 {
     bool showGrid = true;
-    bool showBoundingBoxes = false;
-    bool showMeshletBoundingBoxes = false;
-    bool showNormals = false;
     bool showWireframe = false;
     bool showSunDirBeam = false;
     bool addFixedObjectToScene = false;
@@ -53,6 +50,16 @@ struct SceneEditorDisplayParams
 
     // stationary objects re-upload:
     bool reuploadStationaryObjects = false;
+
+    // debug graphics UI params:
+    bool showBoundingBoxes = false;
+    bool showMeshletBoundingBoxes = false;
+    bool showNormals = false;
+    bool showMeshVertices = false;
+    float normalLineLength = 0.25f;
+    glm::vec4 meshVertexColor = glm::vec4(1.0f, 0.2f, 0.2f, 1.0f);
+    glm::vec4 normalColor = glm::vec4(0.2f, 1.0f, 0.2f, 1.0f);
+    glm::vec4 boundingBoxColor = glm::vec4(1.0f, 1.0f, 0.2f, 1.0f);
 };
 
 // Display Logo. May be used while big game loads in the background

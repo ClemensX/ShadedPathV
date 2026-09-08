@@ -603,3 +603,52 @@ void MStore::getFileInfosForMesh(int meshIndex, MeshFile& meshFile, MeshFileEntr
     }
     Error("MStore::getFileInfosForMesh: Mesh index not found: " + std::to_string(meshIndex));
 }
+
+void MStore::debugGraphics(FrameResources& fr, bool drawBoundingBox, bool drawVertices, bool drawNormals, bool drawMeshletBoundingBoxes, glm::vec4 colorVertices, glm::vec4 colorNormal, glm::vec4 colorBoxes, float normalLineLength)
+{
+    // iterate through all moving objects:
+    for (int i = 0; i < getUsedMovingModelCount(); i++) {
+		SceneObject* so = getMovingSceneObject(i);
+        debugGraphicsObject(so, fr, drawBoundingBox, drawVertices, drawNormals, drawMeshletBoundingBoxes, colorVertices, colorNormal, colorBoxes, normalLineLength);
+	}
+}
+
+void MStore::debugGraphicsObject(SceneObject* so, FrameResources& fr, bool drawBoundingBox, bool drawVertices, bool drawNormals, bool drawMeshletBoundingBoxes, glm::vec4 colorVertices, glm::vec4 colorNormal, glm::vec4 colorBoxes, float normalLineLength)
+{
+	// get access to line shader
+	auto& lineShader = engine->shaders.lineShader;
+	if (!lineShader.enabled) return;
+
+	LineDef l;
+	vector<LineDef> addLines;
+
+	GPUModel* gpuModel = getGPUMovingModel(so->index);
+	GPUMeshInfo* meshInfo = getGPUMeshInfo(gpuModel->meshNumber);
+	MeshInfoMetadata* meta = getMeshMetadata(meshInfo->index);
+	GPUModelParam* gpuModelParam = getGPUModelParam(so->index);
+    //Log("Debug graphics for object " << so->index << " mesh " << gpuModel->meshNumber << " name: " << meta->name  << " # vertices: " << meta->vertices.size() << endl);
+
+    // compute world matrix for this object:
+    so->prepareGPUModel(gpuModel, meshInfo->baseTransform);
+    if (drawVertices) {
+		for (long i = 0; i < meta->indices.size(); i += 3) {
+			l.color = colorVertices;
+			auto& v0 = meta->vertices[meta->indices[i + 0]];
+			auto& v1 = meta->vertices[meta->indices[i + 1]];
+			auto& v2 = meta->vertices[meta->indices[i + 2]];
+			vec3 p0 = vec3(gpuModel->model * vec4(v0.pos, 1.0f));
+			vec3 p1 = vec3(gpuModel->model * vec4(v1.pos, 1.0f));
+			vec3 p2 = vec3(gpuModel->model * vec4(v2.pos, 1.0f));
+			l.start = p0;
+			l.end = p1;
+			addLines.push_back(l);
+			l.start = p1;
+			l.end = p2;
+			addLines.push_back(l);
+			l.start = p2;
+			l.end = p0;
+			addLines.push_back(l);
+		}
+	}
+	lineShader.addOneTime(addLines, fr);
+}
