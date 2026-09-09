@@ -656,7 +656,27 @@ void MStore::debugGraphicsObject(SceneObject* so, FrameResources& fr, bool drawB
 		getBoundingBox(box, *meshInfo);
 		BoundingBoxCorners boundingBoxCorners;
 		Util::drawBoundingBox(addLines, box, boundingBoxCorners, gpuModel->model, colorBoxes);
-
 	}
+    if (drawMeshletBoundingBoxes) {
+        for (auto& packed : meta->outMeshletDesc) {
+			BoundingBoxCorners bbcorners;
+			uint64_t bb = packed.getBoundingBox();
+			BoundingBox meshletBB;
+			BoundingBox objectBB;
+			getBoundingBox(objectBB, *meshInfo);
+			Util::unpackBoundingBox48(bb, meshletBB, objectBB);
+			Util::drawBoundingBox(addLines, meshletBB, bbcorners, gpuModel->model, colorBoxes);
+		}
+    }
+    if (drawNormals) {
+        for (auto& v : meta->vertices) {
+            l.color = colorNormal;
+            vec3 p0 = vec3(gpuModel->model * vec4(v.pos, 1.0f));
+            vec3 p1 = vec3(gpuModel->model * vec4(v.pos + v.normal * normalLineLength, 1.0f));
+            l.start = p0;
+            l.end = p1;
+            addLines.push_back(l);
+        }
+    }
 	lineShader.addOneTime(addLines, fr);
 }
