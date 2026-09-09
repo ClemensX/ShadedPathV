@@ -650,5 +650,13 @@ void MStore::debugGraphicsObject(SceneObject* so, FrameResources& fr, bool drawB
 			addLines.push_back(l);
 		}
 	}
+	if (drawBoundingBox) {
+		BoundingBox box;
+		// get BB in raw object coords:
+		getBoundingBox(box, *meshInfo);
+		BoundingBoxCorners boundingBoxCorners;
+		Util::drawBoundingBox(addLines, box, boundingBoxCorners, gpuModel->model, colorBoxes);
+
+	}
 	lineShader.addOneTime(addLines, fr);
 }
