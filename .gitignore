@@ -38,3 +38,5 @@ local_options.cmake
 .vs
 .vscode
 vcpkg_installed
+/test_samples/texture/irradiance.ktx2
+/test_samples/texture/prefilter.ktx2
