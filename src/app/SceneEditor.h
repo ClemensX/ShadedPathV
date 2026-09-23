@@ -82,6 +82,7 @@ public:
     void handleInput(InputState& inputState) override;
     void buildCustomUI() override;
 private:
+    std::string assetFolderName = "data";
     World world;
     bool shouldStopEngine = false;
     SceneEditorDisplayParams displayParams;

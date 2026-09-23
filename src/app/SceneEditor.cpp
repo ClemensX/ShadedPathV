@@ -23,7 +23,11 @@ void SceneEditor::run(ContinuationInfo* cont)
         // engine configuration
         enableEventsAndModes();
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
-        engine->files.findAssetFolder("data");
+
+        // uncomment to use test_samples folder instead of regular asset folder
+        assetFolderName = "test_samples";
+        
+        engine->files.findAssetFolder(assetFolderName);
         setHighBackbufferResolution();
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 5000.0f);
 
@@ -282,7 +286,7 @@ bool SceneEditor::showFileDialog(bool& loadedNewMeshFile, bool& selectedObjectFo
         }
 
         if (displayParams.showAddMeshFileDialog) {
-            engine->files.findAssetFolder("data");
+            engine->files.findAssetFolder(assetFolderName);
             filesystem::path meshFolder = engine->files.getAssetFolderPath() / engine->files.MESH_PATH;
             displayParams.filePattern = "";
             displayParams.files = Util::getFilesMatchingPattern(meshFolder, displayParams.filePattern);
@@ -371,7 +375,7 @@ void SceneEditor::buildCustomUI() {
     }
     if (ImGui::BeginPopupModal("EnvCubeSettings", &displayParams.showEnvCubeDialog)) {
         // load file list from data folder
-        engine->files.findAssetFolder("data"); // maybe let the user change asset folder name?
+        engine->files.findAssetFolder(assetFolderName); // maybe let the user change asset folder name?
         filesystem::path textureFolder = engine->files.getAssetFolderPath() / engine->files.TEXTURE_PATH;
         //displayParams.filePattern = ".ktx2";
         displayParams.filePattern = "";
