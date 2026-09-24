@@ -2200,6 +2200,14 @@ MeshCollection* MeshStore::getMeshCollection(MeshInfo* mi)
 	return meshCollectionStore.getMeshCollectionByIndex(mi->collectionStoreIndex);
 }
 
+// optional: C++20 lazy view (caller must #include <ranges> and use auto view = coll.majorMeshView(); for(auto *m : view) ...)
+#ifdef __cpp_lib_ranges
+auto MeshCollection::majorMeshView() const {
+	using namespace std::views;
+	return meshInfos_ | filter([](MeshInfo* m) { return m && !m->isAdditionalPrimitive(); });
+}
+#endif
+
 void MeshCollection::fillPrimitiveMap()
 {
 	int lodIndex = 0; // each major mesh is a new lod level

@@ -594,7 +594,7 @@ TEST_F(MeshletTest, BasicValidity) {
         3, 0, 4, 3, 4, 7 // left face
     };
     {
-        MeshletIn in{ vertices, indices, 126, 7 };
+        MeshletIn in{ vertices, indices, 126, 7, {} };
         //MeshletOut out2{ mesh->meshletsForMesh.meshlets, mesh->outMeshletDesc, mesh->outLocalIndexPrimitivesBuffer, mesh->outGlobalIndexBuffer };
         meshlets.calculateTrianglesAndNeighbours(in);
         // test neighbour relations:
@@ -628,12 +628,12 @@ TEST_F(MeshletTest, BasicValidity) {
 
         // create 12 triangles for checking
         std::vector<GlobalMeshletTriangle> chkTriangles = {
-            {0, 1, 2}, {0, 2, 3}, // back face
-            {4, 5, 6}, {4, 6, 7}, // front face
-            {0, 1, 5}, {0, 5, 4}, // bottom face
-            {1, 2, 6}, {1, 6, 5}, // right face
-            {2, 3, 7}, {2, 7, 6}, // top face
-            {3, 0, 4}, {3, 4, 7}  // left face
+            {{0, 1, 2}, {}, {}, {}}, {{0, 2, 3}, {}, {}, {}}, // back face
+            {{4, 5, 6}, {}, {}, {}}, {{4, 6, 7}, {}, {}, {}}, // front face
+            {{0, 1, 5}, {}, {}, {}}, {{0, 5, 4}, {}, {}, {}}, // bottom face
+            {{1, 2, 6}, {}, {}, {}}, {{1, 6, 5}, {}, {}, {}}, // right face
+            {{2, 3, 7}, {}, {}, {}}, {{2, 7, 6}, {}, {}, {}}, // top face
+            {{3, 0, 4}, {}, {}, {}}, {{3, 4, 7}, {}, {}, {}}  // left face
         };
         EXPECT_EQ(12, meshlets.globalTriangles.size());
         for (size_t i = 0; i < chkTriangles.size(); ++i) {
@@ -676,7 +676,7 @@ TEST_F(MeshletTest, ManualCreation) {
         // check that we have more triangles and vertices than fit into one single meshlet:
         EXPECT_TRUE(meshInfo->vertices.size() > GLEXT_MESHLET_VERTEX_COUNT);
         EXPECT_TRUE(meshInfo->indices.size() / 3 > GLEXT_MESHLET_PRIMITIVE_COUNT);
-        MeshletIn in2{ meshInfo->vertices, meshInfo->indices, GLEXT_MESHLET_PRIMITIVE_COUNT - 1, GLEXT_MESHLET_VERTEX_COUNT };
+        MeshletIn in2{ meshInfo->vertices, meshInfo->indices, GLEXT_MESHLET_PRIMITIVE_COUNT - 1, GLEXT_MESHLET_VERTEX_COUNT, {} };
         MeshletOut out2{ m4m.meshlets, meshInfo->outMeshletDesc, meshInfo->outLocalIndexPrimitivesBuffer, meshInfo->outGlobalIndexBuffer };
         m4m.calculateTrianglesAndNeighbours(in2);
         EXPECT_TRUE(m4m.verifyGlobalAdjacency(true));
@@ -728,7 +728,7 @@ TEST_F(MeshletTest, GreedyAlgorithm) {
         EXPECT_TRUE(Util::verifyMesh(meshInfo->vertices, meshInfo->indices));
         auto& m4m = meshInfo->meshletsForMesh;
 
-        MeshletIn in2{ meshInfo->vertices, meshInfo->indices, GLEXT_MESHLET_PRIMITIVE_COUNT - 1, GLEXT_MESHLET_VERTEX_COUNT };
+        MeshletIn in2{ meshInfo->vertices, meshInfo->indices, GLEXT_MESHLET_PRIMITIVE_COUNT - 1, GLEXT_MESHLET_VERTEX_COUNT, {} };
         MeshletOut out2{ m4m.meshlets, meshInfo->outMeshletDesc, meshInfo->outLocalIndexPrimitivesBuffer, meshInfo->outGlobalIndexBuffer };
         m4m.calculateTrianglesAndNeighbours(in2);
         EXPECT_TRUE(m4m.verifyGlobalAdjacency(true));

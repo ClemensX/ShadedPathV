@@ -1302,7 +1302,10 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
     // go over meshes a 2nd time and chain primitives if needed
     // highly inefficient implementation, but gltf files usually have few meshes/primitives and this will only ever be called once per load
     MeshInfo* curChain = nullptr;
-	for (auto* major : coll->majorMeshView()) {
+	for (auto* major : *coll) {
+		if (major->gltfPrimitiveIndex != 0) {
+			continue;
+		}
         curChain = major;
 		for (int i = 0; i < coll->meshCount(); ++i) {
 			auto* mi = coll->getMeshInfoAt(i);
@@ -1320,7 +1323,10 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
 	// for GPU upload we need to have the LODs sorted by primitive
 	size_t majorMeshCount = 0;
     size_t maxPrimCount = 0; // not all primitives for each LOD have same count, find max
-	for (auto* major : coll->majorMeshView()) {
+	for (auto* major : *coll) {
+		if (major->gltfPrimitiveIndex != 0) {
+			continue;
+		}
 		majorMeshCount++;
         int primCount = 0;
         auto* mi = major;

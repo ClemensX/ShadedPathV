@@ -454,7 +454,7 @@ void Incoming::buildCustomUI()
     ImGui::Text("World size [m]: %d * %d", sizeX, sizeX);
     ImGui::Separator();
     double time = ThemedTimer::getInstance()->getLatestTiming(TIMER_PART_GLOBAL_UPDATE);
-    ImGui::Text("Terrain vertices total: %d , ( %d * %d)", uiVerticesTotal, uiVerticesSqrt, uiVerticesSqrt);
+    ImGui::Text("Terrain vertices total: %lu , ( %lu * %lu)", uiVerticesTotal, uiVerticesSqrt, uiVerticesSqrt);
     ImGui::Separator();
     float resolution = (float)sizeX / (float)uiVerticesSqrt;
     ImGui::Text("Terrain resolution: %f [m]", resolution);

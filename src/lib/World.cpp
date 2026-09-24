@@ -267,7 +267,7 @@ glm::vec3 World::calculateBarycentricCoordinates(const glm::vec3& p, const glm::
 
 size_t World::calcGridIndex(UltimateHeightmapInfo& info, float f)
 {
-	size_t ret;
+	size_t ret = 0;
     size_t slot = (size_t)(f / info.calcDist);
 	if (slot <= 0) return 0;
     if (slot >= info.gridIndex.size()) return info.gridIndex.size()-2; // border case

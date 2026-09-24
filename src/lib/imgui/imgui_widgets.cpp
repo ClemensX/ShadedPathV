@@ -4796,10 +4796,10 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
                 // We always use the "Mac" word advance for double-click select vs CTRL+Right which use the platform dependent variant:
                 // FIXME: There are likely many ways to improve this behavior, but there's no "right" behavior (depends on use-case, software, OS)
                 const bool is_bol = (state->Stb->cursor == 0) || ImStb::STB_TEXTEDIT_GETCHAR(state, state->Stb->cursor - 1) == '\n';
-                if (STB_TEXT_HAS_SELECTION(state->Stb) || !is_bol)
+                if (state->HasSelection() || !is_bol)
                     state->OnKeyPressed(STB_TEXTEDIT_K_WORDLEFT);
                 //state->OnKeyPressed(STB_TEXTEDIT_K_WORDRIGHT | STB_TEXTEDIT_K_SHIFT);
-                if (!STB_TEXT_HAS_SELECTION(state->Stb))
+                if (!state->HasSelection())
                     ImStb::stb_textedit_prep_selection_at_cursor(state->Stb);
                 state->Stb->cursor = ImStb::STB_TEXTEDIT_MOVEWORDRIGHT_MAC(state, state->Stb->cursor);
                 state->Stb->select_end = state->Stb->cursor;
@@ -5059,7 +5059,7 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
                 apply_new_text = "";
                 apply_new_text_length = 0;
                 value_changed = true;
-                IMSTB_TEXTEDIT_CHARTYPE empty_string;
+                IMSTB_TEXTEDIT_CHARTYPE empty_string = 0;
                 stb_textedit_replace(state, state->Stb, &empty_string, 0);
             }
             else if (strcmp(buf, state->TextToRevertTo.Data) != 0)

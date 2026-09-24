@@ -264,7 +264,7 @@ void TextureViewer::buildCustomUI()
     bool vr = engine->isVR();
     if (!vr) {
         ImGui::Separator();
-        ImGui::Text("Texture count: %d", textureNames.size());
+        ImGui::Text("Texture count: %zu", textureNames.size());
     }
     if (ImGui::CollapsingHeader("Texture Names"))
     {

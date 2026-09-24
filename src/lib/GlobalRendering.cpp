@@ -174,6 +174,7 @@ bool GlobalRendering::isDeviceSuitable(DeviceInfo& info)
     // check device extensions support:
     for (const auto& extensionName : deviceExtensions) {
         if (std::find(info.extensions.begin(), info.extensions.end(), extensionName) == info.extensions.end()) {
+            Log("WARNING:  " << info.properties.deviceName << " does not support required extension: " << extensionName << endl);
             return false;
         }
     }
@@ -336,7 +337,7 @@ QueueFamilyIndices GlobalRendering::findQueueFamilies(VkPhysicalDevice device, b
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties2(device, &queueFamilyCount, nullptr);
 
-    std::vector<VkQueueFamilyProperties2> queueFamilies(queueFamilyCount, VkQueueFamilyProperties2{VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2});
+    std::vector<VkQueueFamilyProperties2> queueFamilies(queueFamilyCount, VkQueueFamilyProperties2{VK_STRUCTURE_TYPE_QUEUE_FAMILY_PROPERTIES_2, nullptr, {}});
     vkGetPhysicalDeviceQueueFamilyProperties2(device, &queueFamilyCount, queueFamilies.data());
     int i = 0;
     for (const auto& queueFamily2 : queueFamilies) {
@@ -498,6 +499,9 @@ void GlobalRendering::createLogicalDevice()
 
     VkPhysicalDeviceVulkan12Features deviceFeatures12{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
+#       if defined(__APPLE__)
+        .pNext = (void*)&portability,
+#       endif
         .storageBuffer8BitAccess = VK_TRUE,
         .uniformAndStorageBuffer8BitAccess = VK_TRUE,
         .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
@@ -512,9 +516,6 @@ void GlobalRendering::createLogicalDevice()
         .bufferDeviceAddress = VK_TRUE,
         .vulkanMemoryModel = VK_TRUE,
         .vulkanMemoryModelDeviceScope = VK_TRUE,
-#       if defined(__APPLE__)
-        .pNext = (void*)&portability,
-#       endif
     };
 
     VkPhysicalDeviceVulkan13Features deviceFeatures13{

@@ -1184,7 +1184,11 @@ void Util::logGPUStructuresMarkdown(std::string filename)
     auto now = std::chrono::system_clock::now();
     std::time_t now_time = std::chrono::system_clock::to_time_t(now);
     std::tm local_tm;
-    localtime_s(&local_tm, &now_time);
+#if defined(_WIN32)
+localtime_s(&local_tm, &now_time);
+#else
+localtime_r(&now_time, &local_tm);
+#endif
     md << "Generated: " << std::put_time(&local_tm, "%Y-%m-%d %H:%M:%S") << "\n\n";
     md << "---\n\n";
 

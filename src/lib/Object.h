@@ -215,12 +215,10 @@ public:
 	}
 
 	// templated visitor for primary (non-additional) meshes
+	// defined out-of-line below, after MeshInfo is a complete type (m->isAdditionalPrimitive() is non-dependent,
+	// so strict two-phase lookup (clang/gcc) requires the complete type at definition point, unlike MSVC)
 	template<typename Fn>
-	void forEachMajorMesh(Fn&& fn) {
-		for (auto* m : meshInfos_) {
-			if (m && !m->isAdditionalPrimitive()) fn(m);
-		}
-	}
+	void forEachMajorMesh(Fn&& fn);
 
 	// optional: C++20 lazy view (caller must #include <ranges> and use auto view = coll.majorMeshView(); for(auto *m : view) ...)
 #ifdef __cpp_lib_ranges
@@ -391,14 +389,12 @@ struct MeshInfo
 };
 typedef MeshInfo* ObjectID;
 
-// optional: C++20 lazy view (caller must #include <ranges> and use auto view = coll.majorMeshView(); for(auto *m : view) ...)
-#ifdef __cpp_lib_ranges
-auto MeshCollection::majorMeshView() const {
-	using namespace std::views;
-	return meshInfos_ | filter([](MeshInfo* m) { return m && !m->isAdditionalPrimitive(); });
+template<typename Fn>
+void MeshCollection::forEachMajorMesh(Fn&& fn) {
+	for (auto* m : meshInfos_) {
+		if (m && !m->isAdditionalPrimitive()) fn(m);
+	}
 }
-#endif
-
 
 // Bitfield for controlling meshlet behaviour
 enum class MeshletFlags : uint32_t {
@@ -461,9 +457,9 @@ public:
     // comment is left here for reference
     // check if loaded mesh has many vertices that are identical in position, color and uv coords but differ in normal direction.
     // this is a common problem with glTF files that were exported from Blender, where the normals are not recomputed.
-    // •	In edit mode, select all vertices of the mesh, then press "Alt+N" to display normal menu, then merge normals. 
+    // ï¿½	In edit mode, select all vertices of the mesh, then press "Alt+N" to display normal menu, then merge normals. 
 	//      you might want to add normals view in mesh edit mode overlay (use "Display Split Normals")
-	// •	Export Settings : When exporting(e.g., to glTF), ensure normals are exported and modifiers are applied
+	// ï¿½	Export Settings : When exporting(e.g., to glTF), ensure normals are exported and modifiers are applied
     void checkVertexNormalConsistency(std::string id);
 	// debug graphics, bounding box, vertices and normals are added to line shader
 	void debugGraphics(WorldObject* obj, FrameResources& fr, glm::mat4 modelToWorld, bool drawBoundingBox = true, bool drawVertices = true, bool drawNormals = false, bool drawMeshletBoundingBoxes = false, glm::vec4 colorVertices = Colors::Black, glm::vec4 colorNormal = Colors::Red, glm::vec4 colorBoxes = Colors::Yellow, float normalLineLength = 0.01f);

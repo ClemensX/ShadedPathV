@@ -271,7 +271,7 @@ void LandscapeGenerator::buildCustomUI()
     }
     if (!engine->isVR()) {
         ImGui::Separator();
-        ImGui::Text("Line count: %d", lines.size());
+        ImGui::Text("Line count: %zu", lines.size());
         ImGui::Separator();
         double time = ThemedTimer::getInstance()->getLatestTiming(TIMER_PART_GLOBAL_UPDATE);
         ImGui::Text("Last GPU Upload Time: %.1f ms", time / 1000.0f);

@@ -159,9 +159,9 @@ void MeshManager::prepareFrame(FrameResources* fr)
         simObjects.clear();
         Log("Loaded " << coll->meshCount() << " meshes from file" << endl); // <- updated
         float xpos = 0.0f;
-        auto majorMeshes = coll->majorMeshView();
         loadObjectNum += coll->meshCount();
-        for (auto* mi : majorMeshes) {
+        for (size_t meshIndex = 0; meshIndex < coll->meshCount(); meshIndex++) {
+            auto* mi = coll->getMeshInfoAt(meshIndex);
             Log("    Mesh: " << mi->id << " triangles: " << mi->indices.size()/3 << " vertices: " << mi->vertices.size() << endl);
             if (mi->isAdditionalPrimitive()) {
                 Log("        (additional primitive, skipping object creation)" << endl);
@@ -502,7 +502,7 @@ void MeshManager::buildCustomUI() {
         ImGui::Text("Used: %.2f GB", usedStorageGB);
         ImGui::SeparatorText("Meshes");
         ImGui::Text("Max: %llu", maxMeshes);  ImGui::SameLine();
-        ImGui::Text("Used: %u", usedMeshes);
+        ImGui::Text("Used: %zu", usedMeshes);
     }
     ImGui::Separator();
     //ImGui::Checkbox("Show Wireframe if meshlet file missing", &showMeshWireframe);
