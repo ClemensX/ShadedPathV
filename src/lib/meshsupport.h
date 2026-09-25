@@ -22,6 +22,7 @@ enum class MeshFlags : int {
 	MESHLET_GENERATE = 7, // re-generate meshlet data if meshlet data file not found
     RENDER_TYPE_MOVING = 8, // object may change position and rotation
 	RENDER_DISABLE = 9,
+    FORCE_RELOAD = 10, // force reload of mesh from file, even if already loaded (mainly used in testing, e.g. for reloading with changed flags)
 	MESH_TYPE_COUNT = -1 // always last
 };
 
@@ -45,6 +46,10 @@ public:
 
 	bool hasFlag(MeshFlags flag) const {
 		return flags.test(static_cast<size_t>(flag));
+	}
+
+	bool equals(const MeshFlagsCollection& other) const {
+		return flags == other.flags;
 	}
 };
 

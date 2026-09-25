@@ -18,4 +18,4 @@ private:
 };
 
 // Shared test helper functions
-void minimalEngineInitialization(ShadedPathEngine* engine, int maxMeshes = -1);
+void minimalEngineInitialization(ShadedPathEngine* engine, int maxMeshes = -1, std::string assetFolderName = "data");

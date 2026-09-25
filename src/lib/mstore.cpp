@@ -62,7 +62,18 @@ MeshFile* MStore::loadMesh(std::string filename, MeshFlagsCollection flags)
 MeshFile* MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection flags)
 {
 	MeshFile* existingMeshFile = checkMeshFile(filename, id);
-	if (existingMeshFile != nullptr) {
+	if (existingMeshFile != nullptr && !flags.hasFlag(MeshFlags::FORCE_RELOAD)) {
+		if (existingMeshFile->filename == filename) {
+			Log("WARNING: Mesh file " + filename + " with id " + id + " already loaded. Using old instance\n");
+		}
+		if (existingMeshFile->id != id) {
+			Log("WARNING: Mesh file " + filename + " with id " + existingMeshFile->id + " already loaded. Using old instance. New ID: " + id + " is unavailable\n");
+		}
+		if (!existingMeshFile->flags.equals(flags)) {
+			//if (existingMeshFile->flags.hasFlag(MeshFlags::MESHLET_GENERATE) && !flags.hasFlag(MeshFlags::MESHLET_GENERATE)) {
+				// if the existing mesh file has meshlet generation enabled, we cannot load it again without meshlet generation
+            Error("MStore::loadMesh: Mesh file " + filename + " with id " + id + " already loaded with different flags.");
+        }
 		return existingMeshFile;
 	}
 	vector<byte> file_buffer;

@@ -17,7 +17,7 @@ protected:
 
         // Create engine instance
         engine = new ShadedPathEngine();
-        minimalEngineInitialization(engine);
+        minimalEngineInitialization(engine, 50, "test_samples");
 
         // Set up test data folder structure
         //setupTestDataFolder();
@@ -308,7 +308,7 @@ TEST_F(GLTFParserTest, SingleMesh_CheckShaderData) {
     }
 }
 
-// Test access to mesh info, textures, model and material
+// Test meshlet generation and access to meshlet data
 TEST_F(GLTFParserTest, Meshlets) {
     MStore& mstore = engine->mstore;
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh");
@@ -321,6 +321,7 @@ TEST_F(GLTFParserTest, Meshlets) {
     // now load again with meshlet generation enabled:
     MeshFlagsCollection flags;
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
+    flags.setFlag(MeshFlags::FORCE_RELOAD);
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh_Meshlets", flags);
     meshFile = mstore.getMeshFileByID("SingleMesh_Meshlets");
     meshIndex = meshFile->meshes[0].meshIndex;
@@ -348,7 +349,9 @@ TEST_F(GLTFParserTest, Mesh_Indices) {
     EXPECT_EQ(meshInfo->index, meshIndex) << "GPUMeshInfo index should match mesh index";
 
     // now load again and check higher indices:
-    engine->mstore.loadMesh("cube_single.gltf", "SingleMesh_Meshlets");
+    MeshFlagsCollection flags;
+    flags.setFlag(MeshFlags::FORCE_RELOAD);
+    engine->mstore.loadMesh("cube_single.gltf", "SingleMesh_Meshlets", flags);
     meshFile = mstore.getMeshFileByID("SingleMesh_Meshlets");
     meshIndex = meshFile->meshes[0].meshIndex;
     EXPECT_EQ(meshIndex, 1) << "Expected mesh index 1 for second mesh";
