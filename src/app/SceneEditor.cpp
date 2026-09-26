@@ -852,6 +852,15 @@ void SceneEditor::saveSceneToFile(const std::string& sceneFilePathName)
             });
     }
 
+    if (!outputPath.parent_path().empty()) {
+        std::error_code ec;
+        std::filesystem::create_directories(outputPath.parent_path(), ec); // also ok for existing directories
+        if (ec) {
+            Error("SceneEditor::saveSceneToFile: failed to create directory: " + outputPath.parent_path().string());
+            return;
+        }
+    }
+
     std::ofstream outFile(outputPath);
     if (!outFile.is_open()) {
         Error("SceneEditor::saveSceneToFile: failed to open file for writing: " + outputPath.string());

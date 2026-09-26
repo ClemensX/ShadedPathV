@@ -369,6 +369,29 @@ TEST_F(GLTFParserTest, Mesh_Indices) {
     EXPECT_NE(mesh0, mesh1) << "GPUMeshInfo entries should be distinct";
 }
 
+// test gltf files with more than one primitive
+TEST_F(GLTFParserTest, MultiMeshObject) {
+    MStore& mstore = engine->mstore;
+    MeshFlagsCollection flags;
+    flags.setFlag(MeshFlags::MESHLET_GENERATE);
+    engine->mstore.loadMesh("tree_primitives.gltf", "tree", flags);
+    EXPECT_EQ(mstore.getMeshFiles().size(), 1) << "Expected 1 mesh file loaded";
+
+    MeshFile* meshFile = mstore.getMeshFileByID("tree");
+    EXPECT_EQ(meshFile->meshes.size(), 2) << "Expected 2 meshes in tree_primitives.gltf";
+
+    for (size_t i = 0; i < meshFile->meshes.size(); ++i) {
+        int32_t meshIndex = meshFile->meshes[i].meshIndex;
+        MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
+        GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
+        EXPECT_TRUE(meshMetadata->hasMeshlets()) << "meshlet regeneration failed for primitive " << i;
+        // log triangle count and vertex count
+        Log("Primitive " << i << ": vertices = " << meshMetadata->vertices.size()
+            << ", triangles = " << meshMetadata->indices.size() / 3
+            << ", meshlets = " << meshMetadata->meshletsForMesh.meshlets.size() << "\n");
+    }
+}
+
 // Test 2: Single mesh with LOD levels (10 LODs)
 TEST_F(GLTF_OLD, SingleMesh_WithLODs) {
     // This test requires a GLTF file with 10 LOD levels

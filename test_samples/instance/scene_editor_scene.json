@@ -1,0 +1,21 @@
+{
+  "envCube": "debug_arrows.ktx2",
+  "objects": [
+    {
+      "meshFile": "tree_primitives.gltf",
+      "meshName": "Cylinder",
+      "moving": true,
+      "pos": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rot": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": 1.0
+    }
+  ]
+}
