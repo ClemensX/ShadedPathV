@@ -461,7 +461,7 @@ void SceneEditor::buildCustomUI() {
             MeshFileEntry meshFileEntry;
 
             engine->mstore.getFileInfosForMesh(model.meshNumber, meshFile, meshFileEntry);
-            string line = to_string(i) + " " + meshFileEntry.name + " [" + std::to_string(meshFileEntry.meshIndex) + "] " + pos;
+            string line = to_string(i) + " " + meshFileEntry.name + " [" + std::to_string(static_cast<uint32_t>(meshFileEntry.meshIndex)) + "] " + pos;
             if (ImGui::Selectable(line.c_str(), selectedObjLine == i)) {
                 selectedObjLine = i;
             }
@@ -521,7 +521,7 @@ void SceneEditor::buildCustomUI() {
             MeshFileEntry meshFileEntry;
             engine->mstore.getFileInfosForMesh(model.meshNumber, meshFile, meshFileEntry);
 
-            string line = to_string(i) + " " + meshFileEntry.name + " [" + std::to_string(meshFileEntry.meshIndex) + "] " + pos;
+            string line = to_string(i) + " " + meshFileEntry.name + " [" + std::to_string(static_cast<uint32_t>(meshFileEntry.meshIndex)) + "] " + pos;
             if (ImGui::Selectable(line.c_str(), selectedMovingObjLine == i)) {
                 selectedMovingObjLine = i;
             }
@@ -635,7 +635,7 @@ void SceneEditor::addObjectToScene(int meshFileIndex, bool moving)
         flags.setFlag(MeshFlags::RENDER_TYPE_MOVING);
     }
 
-    const int meshIndex = selectedFile.meshes[0].meshIndex;
+    const MeshInfoIndex meshIndex = selectedFile.meshes[0].meshIndex;
     GPUMeshInfo* meshInfo = engine->mstore.getGPUMeshInfo(meshIndex);
     if (meshInfo == nullptr) {
         Error("SceneEditor::addObjectToScene: failed to resolve mesh info");
@@ -932,7 +932,7 @@ void SceneEditor::loadSceneFromFile(const std::string& sceneFilePathName)
             continue;
         }
 
-        int meshIndex = meshFile->meshes[0].meshIndex;
+        MeshInfoIndex meshIndex = meshFile->meshes[0].meshIndex;
         for (const auto& entry : meshFile->meshes) {
             if (entry.name == meshName) {
                 meshIndex = entry.meshIndex;

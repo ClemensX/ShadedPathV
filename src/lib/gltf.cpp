@@ -1506,7 +1506,7 @@ void glTF::parseGltfModel(tinygltf::Model& model)
             auto& p = m.primitives[prim];
             // fill gpuMeshInfos[curMeshIndex] with data from p and m
             gpuMeshInfos[curMeshIndex].material = p.material;
-            gpuMeshInfos[curMeshIndex].index = curMeshIndex;
+            gpuMeshInfos[curMeshIndex].index = static_cast<MeshInfoIndex>(curMeshIndex);
             gpuMeshInfos[curMeshIndex].next = (prim < (int)m.primitives.size() - 1) ? curMeshIndex + 1 : 0;
 			gpuMeshMetadata[curMeshIndex].name = m.name;
 			gpuMeshInfos[curMeshIndex].baseTransform = collectBaseTransform(model, mi);

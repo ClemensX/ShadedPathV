@@ -1695,7 +1695,7 @@ void Util::debugModels(MStore* mstore) {
     int usedModelCount = mstore->getUsedStationaryModelCount();
     for (int i = 0; i < usedModelCount; ++i) {
         GPUModel* model = mstore->getGPUModel(i);
-        Log("GPUModel[" << i << "]: meshIndex=" << model->meshNumber << ", flags=" << model->flags << std::endl);
+        Log("GPUModel[" << i << "]: meshIndex=" << static_cast<uint32_t>(model->meshNumber) << ", flags=" << model->flags << std::endl);
     }
 }
 

@@ -67,6 +67,28 @@ struct GPUCollectionInfo {
 	uint32_t pad0;
 };
 
+template<typename Tag, typename T = uint32_t>
+struct TypedIndex {
+	T value = invalidValue();
+
+	static constexpr T invalidValue() noexcept { return std::numeric_limits<T>::max(); }
+	static constexpr TypedIndex invalid() noexcept { return {}; }
+
+	constexpr explicit TypedIndex(T v) noexcept : value(v) {}
+	constexpr TypedIndex() noexcept = default;
+
+	constexpr explicit operator T() const noexcept { return value; }
+	constexpr bool isValid() const noexcept { return value != invalidValue(); }
+
+	friend constexpr bool operator==(TypedIndex, TypedIndex) noexcept = default;
+};
+
+struct MeshInfoIndexTag {};
+using MeshInfoIndex = TypedIndex<MeshInfoIndexTag, uint32_t>;
+
+static_assert(sizeof(MeshInfoIndex) == sizeof(uint32_t));
+static_assert(std::is_trivially_copyable_v<MeshInfoIndex>);
+
 // MeshInfoMetadata and GPUMeshInfo are describe loaded meshes. Exactly one each for every mesh in the global mesh buffer.
 // we no longer use offsets, all 64 bit addresses are absolute device addresses, TODO: rename ...offset to ...Address
 struct GPUMeshInfo {
@@ -76,7 +98,7 @@ struct GPUMeshInfo {
 	uint64_t vertexOffset = 0; // offset into global mesh storage buffer
 	uint32_t meshletCount; // number of meshlets for this LOD
     uint32_t material; // during parsing: local material index, during GPU upload: global material index
-	uint32_t index; // global mesh index
+	MeshInfoIndex index; // global mesh index
 	uint32_t next; // next primitive (0 == no next primitive)
 	BoundingBox boundingBox;
 	glm::mat4 baseTransform = glm::mat4(1.0f);
@@ -87,7 +109,7 @@ struct GPUMeshInfo {
 struct GPUModel {
     glm::mat4 model; // model to world transform, includes position, rotation and scale
     uint32_t flags; // MODEL_RENDER_FLAG_* , see pbrShader.h
-	uint32_t meshNumber; // link to MeshInfo
+	MeshInfoIndex meshNumber; // link to MeshInfo
 	uint32_t material_lod_category;
 	uint32_t materialIndex; // index into global material array
 	//BoundingBox boundingBox; // probably not needed
@@ -191,7 +213,7 @@ struct GPUFrameParam {
 
 struct MeshFileEntry {
 	std::string name;
-    int32_t meshIndex;
+    MeshInfoIndex meshIndex;
 };
 
 struct MeshFile {

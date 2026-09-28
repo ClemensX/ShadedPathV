@@ -697,7 +697,7 @@ void PBRSubShader::recordDrawCommandInternal(VkCommandBuffer& commandBuffer, Fra
 void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& fr, SceneObject* obj, bool isRightEye, bool update)
 {
 	GPUModel* model = engine->mstore.getGPUModel(obj->index);
-	auto mesh = engine->mstore.getGPUMeshInfo(model->materialIndex);
+	auto mesh = engine->mstore.getGPUMeshInfo(model->meshNumber);
 	recordDrawCommandInternal2(commandBuffer, fr, mesh, obj, isRightEye, update);
  //   MeshInfo* meshInfo = obj->mesh;
 	//MeshInfo* primitiveMesh = engine->meshStore.getNextPrimitiveMeshForObject(obj, nullptr);

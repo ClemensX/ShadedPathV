@@ -262,7 +262,7 @@ TEST_F(GLTFParserTest, SingleMesh_CheckShaderData) {
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh");
 
     MeshFile* meshFile = mstore.getMeshFileByID("SingleMesh");
-    int32_t meshIndex = meshFile->meshes[0].meshIndex;
+    MeshInfoIndex meshIndex = meshFile->meshes[0].meshIndex;
     GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
     MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
     GPUMaterial* material = mstore.getGPUMaterial(meshInfo->material);
@@ -313,7 +313,7 @@ TEST_F(GLTFParserTest, Meshlets) {
     MStore& mstore = engine->mstore;
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh");
     MeshFile* meshFile = mstore.getMeshFileByID("SingleMesh");
-    int32_t meshIndex = meshFile->meshes[0].meshIndex;
+    MeshInfoIndex meshIndex = meshFile->meshes[0].meshIndex;
     MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
 
     EXPECT_FALSE(meshMetadata->hasMeshlets()) << "cube_single.gltf should not have meshlets without generating them";
@@ -340,13 +340,13 @@ TEST_F(GLTFParserTest, Mesh_Indices) {
     MStore& mstore = engine->mstore;
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh");
     MeshFile* meshFile = mstore.getMeshFileByID("SingleMesh");
-    int32_t meshIndex = meshFile->meshes[0].meshIndex;
-    EXPECT_EQ(meshIndex, 0) << "Expected mesh index 0 for first mesh";
+    MeshInfoIndex meshIndex = meshFile->meshes[0].meshIndex;
+    EXPECT_EQ(static_cast<uint32_t>(meshIndex), 0) << "Expected mesh index 0 for first mesh";
     MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
     EXPECT_GT(meshMetadata->vertices.size(), 0) << "Expected non-zero vertex count";
     EXPECT_GT(meshMetadata->indices.size(), 0) << "Expected non-zero index count";
     GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
-    EXPECT_EQ(meshInfo->index, meshIndex) << "GPUMeshInfo index should match mesh index";
+    EXPECT_EQ(static_cast<uint32_t>(meshInfo->index), static_cast<uint32_t>(meshIndex)) << "GPUMeshInfo index should match mesh index";
 
     // now load again and check higher indices:
     MeshFlagsCollection flags;
@@ -354,18 +354,21 @@ TEST_F(GLTFParserTest, Mesh_Indices) {
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh_Meshlets", flags);
     meshFile = mstore.getMeshFileByID("SingleMesh_Meshlets");
     meshIndex = meshFile->meshes[0].meshIndex;
-    EXPECT_EQ(meshIndex, 1) << "Expected mesh index 1 for second mesh";
+    uint32_t mIdx = static_cast<uint32_t>(meshIndex);
+    EXPECT_EQ(mIdx, 1) << "Expected mesh index 1 for second mesh";
     MeshInfoMetadata* meshMetadata2 = mstore.getMeshMetadata(meshIndex);
     EXPECT_NE(meshMetadata2, meshMetadata) << "Expected new MeshInfoMetadata for second mesh";
     meshInfo = mstore.getGPUMeshInfo(meshIndex);
-    EXPECT_EQ(meshInfo->index, meshIndex) << "GPUMeshInfo index should match mesh index for second mesh";
+    EXPECT_EQ(static_cast<uint32_t>(meshInfo->index), mIdx) << "GPUMeshInfo index should match mesh index for second mesh";
 
     // recheck GPUMeshInfo array:
     EXPECT_EQ(engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos), 2) << "Expected 2 GPUMeshInfo entries after loading two meshes";
-    auto mesh0 = mstore.getGPUMeshInfo(0);
-    EXPECT_EQ(mesh0->index, 0) << "First GPUMeshInfo index should be 0";
-    auto mesh1 = mstore.getGPUMeshInfo(1);
-    EXPECT_EQ(mesh1->index, 1) << "Second GPUMeshInfo index should be 1";
+    auto mesh0 = mstore.getGPUMeshInfo(static_cast<MeshInfoIndex>(0));
+    uint32_t mesh0idx = static_cast<uint32_t>(mesh0->index);
+    EXPECT_EQ(mesh0idx, 0) << "First GPUMeshInfo index should be 0";
+    auto mesh1 = mstore.getGPUMeshInfo(static_cast<MeshInfoIndex>(1));
+    uint32_t mesh1idx = static_cast<uint32_t>(mesh1->index);
+    EXPECT_EQ(mesh1idx, 1) << "Second GPUMeshInfo index should be 1";
     EXPECT_NE(mesh0, mesh1) << "GPUMeshInfo entries should be distinct";
 }
 
@@ -381,7 +384,7 @@ TEST_F(GLTFParserTest, MultiMeshObject) {
     EXPECT_EQ(meshFile->meshes.size(), 2) << "Expected 2 meshes in tree_primitives.gltf";
 
     for (size_t i = 0; i < meshFile->meshes.size(); ++i) {
-        int32_t meshIndex = meshFile->meshes[i].meshIndex;
+        MeshInfoIndex meshIndex = meshFile->meshes[i].meshIndex;
         MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
         GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
         EXPECT_TRUE(meshMetadata->hasMeshlets()) << "meshlet regeneration failed for primitive " << i;
@@ -389,6 +392,11 @@ TEST_F(GLTFParserTest, MultiMeshObject) {
         Log("Primitive " << i << ": vertices = " << meshMetadata->vertices.size()
             << ", triangles = " << meshMetadata->indices.size() / 3
             << ", meshlets = " << meshMetadata->meshletsForMesh.meshlets.size() << "\n");
+        // check material and textures
+        GPUMaterial* material = mstore.getGPUMaterial(meshInfo->material);
+        Log("Material for primitive " << i << ": baseColorTextureSet = " << material->baseColorTextureSet
+            << ", physicalDescriptorTextureSet = " << material->physicalDescriptorTextureSet
+            << ", normalTextureSet = " << material->normalTextureSet << "\n");
     }
 }
 
