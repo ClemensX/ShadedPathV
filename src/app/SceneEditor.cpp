@@ -461,7 +461,7 @@ void SceneEditor::buildCustomUI() {
             MeshFileEntry meshFileEntry;
 
             engine->mstore.getFileInfosForMesh(model.meshNumber, meshFile, meshFileEntry);
-            string line = to_string(i) + " " + meshFileEntry.name + " [" + std::to_string(static_cast<uint32_t>(meshFileEntry.meshIndex)) + "] " + pos;
+            string line = to_string(i) + " " + meshFileEntry.name + " [" + std::to_string(meshFileEntry.meshIndex.asSize()) + "] " + pos;
             if (ImGui::Selectable(line.c_str(), selectedObjLine == i)) {
                 selectedObjLine = i;
             }
@@ -521,7 +521,7 @@ void SceneEditor::buildCustomUI() {
             MeshFileEntry meshFileEntry;
             engine->mstore.getFileInfosForMesh(model.meshNumber, meshFile, meshFileEntry);
 
-            string line = to_string(i) + " " + meshFileEntry.name + " [" + std::to_string(static_cast<uint32_t>(meshFileEntry.meshIndex)) + "] " + pos;
+            string line = to_string(i) + " " + meshFileEntry.name + " [" + std::to_string(meshFileEntry.meshIndex.asSize()) + "] " + pos;
             if (ImGui::Selectable(line.c_str(), selectedMovingObjLine == i)) {
                 selectedMovingObjLine = i;
             }

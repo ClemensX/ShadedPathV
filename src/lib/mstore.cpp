@@ -165,13 +165,13 @@ void MStore::uploadAllMeshes()
 }
 
 GPUMeshInfo* MStore::getGPUMeshInfoInternal(MeshInfoIndex index) {
-	return engine->globalRendering.gpuMemory.getElementAddress<GPUMeshInfo>(BufferType::MeshInfos, static_cast<uint32_t>(index));
+	return engine->globalRendering.gpuMemory.getElementAddress<GPUMeshInfo>(BufferType::MeshInfos, index.asSize());
 }
 
 GPUMeshInfo* MStore::getGPUMeshInfo(MeshInfoIndex index) {
 	auto mi = getGPUMeshInfoInternal(index);
 	if (!(mi != nullptr && mi->index == index)) {
-		Error("Invalid GPUMeshInfo index: " + std::to_string(static_cast<uint32_t>(index)));
+		Error("Invalid GPUMeshInfo index: " + std::to_string(index.asSize()));
 	}
 	return mi;
 }
@@ -217,9 +217,9 @@ SceneObject* MStore::getMovingSceneObject(int32_t index) {
 }
 
 MeshInfoMetadata* MStore::getMeshMetadata(MeshInfoIndex tindex) {
-	auto index = static_cast<uint32_t>(tindex);
-	if (index >= 0 && index < meshMetadata.size()) {
-		return &meshMetadata[index];
+	const auto i = tindex.asSize();
+	if (tindex.isValid() && i < meshMetadata.size()) {
+		return &meshMetadata[i];
 	}
 	return nullptr;
 }
@@ -318,7 +318,7 @@ void MStore::handleFlags(GPUMeshInfo& mesh, MeshFlagsCollection flags)
 
 SceneObject* MStore::addObject(MeshInfoIndex mesh_index, glm::vec3 pos, MeshFlagsCollection flags) {
 	auto maxMeshNumber = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos) - 1;
-    auto mNum = static_cast<uint32_t>(mesh_index);
+    auto mNum = mesh_index.asSize();
 	if (mNum < 0 || mNum > maxMeshNumber) {
 		Error("MStore::addObject: Invalid mesh index");
 		return nullptr; // keep compiler happy
@@ -381,7 +381,7 @@ bool MStore::checkBoundingBoxPlausibility(MeshInfoIndex meshIndex)
 {
     GPUMeshInfo* mi = getGPUMeshInfo(meshIndex);
 	getBoundingBox(mi->boundingBox, *mi);
-	string id = std::to_string(static_cast<uint32_t>(meshIndex));
+	string id = std::to_string(meshIndex.asSize());
 	//Log("Bounding box for mesh " << id << ": Min(" << mi->boundingBox.min.x << ", " << mi->boundingBox.min.y << ", " << mi->boundingBox.min.z << "), Max(" << mi->boundingBox.max.x << ", " << mi->boundingBox.max.y << ", " << mi->boundingBox.max.z << ")\n");
 	// check positive size:
 	vec3 size = mi->boundingBox.max - mi->boundingBox.min;
@@ -615,7 +615,7 @@ void MStore::getFileInfosForMesh(MeshInfoIndex meshIndex, MeshFile& meshFile, Me
             }
         }
     }
-    Error("MStore::getFileInfosForMesh: Mesh index not found: " + std::to_string(static_cast<uint32_t>(meshIndex)));
+    Error("MStore::getFileInfosForMesh: Mesh index not found: " + std::to_string(meshIndex.asSize()));
 }
 
 void MStore::debugGraphics(FrameResources& fr, bool drawBoundingBox, bool drawVertices, bool drawNormals, bool drawMeshletBoundingBoxes, glm::vec4 colorVertices, glm::vec4 colorNormal, glm::vec4 colorBoxes, float normalLineLength)

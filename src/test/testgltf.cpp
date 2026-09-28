@@ -341,12 +341,12 @@ TEST_F(GLTFParserTest, Mesh_Indices) {
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh");
     MeshFile* meshFile = mstore.getMeshFileByID("SingleMesh");
     MeshInfoIndex meshIndex = meshFile->meshes[0].meshIndex;
-    EXPECT_EQ(static_cast<uint32_t>(meshIndex), 0) << "Expected mesh index 0 for first mesh";
+    EXPECT_EQ(meshIndex.asSize(), 0) << "Expected mesh index 0 for first mesh";
     MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
     EXPECT_GT(meshMetadata->vertices.size(), 0) << "Expected non-zero vertex count";
     EXPECT_GT(meshMetadata->indices.size(), 0) << "Expected non-zero index count";
     GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
-    EXPECT_EQ(static_cast<uint32_t>(meshInfo->index), static_cast<uint32_t>(meshIndex)) << "GPUMeshInfo index should match mesh index";
+    EXPECT_EQ(meshInfo->index.asSize(), meshIndex.asSize()) << "GPUMeshInfo index should match mesh index";
 
     // now load again and check higher indices:
     MeshFlagsCollection flags;
@@ -354,20 +354,20 @@ TEST_F(GLTFParserTest, Mesh_Indices) {
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh_Meshlets", flags);
     meshFile = mstore.getMeshFileByID("SingleMesh_Meshlets");
     meshIndex = meshFile->meshes[0].meshIndex;
-    uint32_t mIdx = static_cast<uint32_t>(meshIndex);
+    uint32_t mIdx = meshIndex.asSize();
     EXPECT_EQ(mIdx, 1) << "Expected mesh index 1 for second mesh";
     MeshInfoMetadata* meshMetadata2 = mstore.getMeshMetadata(meshIndex);
     EXPECT_NE(meshMetadata2, meshMetadata) << "Expected new MeshInfoMetadata for second mesh";
     meshInfo = mstore.getGPUMeshInfo(meshIndex);
-    EXPECT_EQ(static_cast<uint32_t>(meshInfo->index), mIdx) << "GPUMeshInfo index should match mesh index for second mesh";
+    EXPECT_EQ(meshInfo->index.asSize(), mIdx) << "GPUMeshInfo index should match mesh index for second mesh";
 
     // recheck GPUMeshInfo array:
     EXPECT_EQ(engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos), 2) << "Expected 2 GPUMeshInfo entries after loading two meshes";
     auto mesh0 = mstore.getGPUMeshInfo(static_cast<MeshInfoIndex>(0));
-    uint32_t mesh0idx = static_cast<uint32_t>(mesh0->index);
+    uint32_t mesh0idx = mesh0->index.asSize();
     EXPECT_EQ(mesh0idx, 0) << "First GPUMeshInfo index should be 0";
     auto mesh1 = mstore.getGPUMeshInfo(static_cast<MeshInfoIndex>(1));
-    uint32_t mesh1idx = static_cast<uint32_t>(mesh1->index);
+    uint32_t mesh1idx = mesh1->index.asSize();
     EXPECT_EQ(mesh1idx, 1) << "Second GPUMeshInfo index should be 1";
     EXPECT_NE(mesh0, mesh1) << "GPUMeshInfo entries should be distinct";
 }
