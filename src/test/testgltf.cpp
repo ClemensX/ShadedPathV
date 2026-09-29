@@ -290,21 +290,21 @@ TEST_F(GLTFParserTest, SingleMesh_CheckShaderData) {
     EXPECT_EQ(meshInfo->boundingBox.max, glm::vec3(1.0f, 1.0f, 1.0f));
 
     // stationary objects:
-    for (int i = 0; i < engine->getMaxObjects(); ++i) {
+    for (uint32_t i = 0; i < engine->getMaxObjects(); ++i) {
         auto obj = engine->mstore.addObject(meshIndex, glm::vec3(0.0f, 0.0f, 0.0f));
         EXPECT_TRUE(obj != nullptr) << "Failed to add object at index " << i;
-        EXPECT_EQ(obj->index, i);
+        EXPECT_EQ(obj->index.raw(), i);
     }
     // adding another object should exit()
     //engine->mstore.addObject(meshIndex, glm::vec3(0.0f, 0.0f, 0.0f));
 
     // moving objects:
-    for (int i = 0; i < engine->getMaxMovingObjects(); ++i) {
+    for (uint32_t i = 0; i < engine->getMaxMovingObjects(); ++i) {
         MeshFlagsCollection flagsMoving;
         flagsMoving.setFlag(MeshFlags::RENDER_TYPE_MOVING);
         auto obj = engine->mstore.addObject(meshIndex, glm::vec3(0.0f, 0.0f, 0.0f), flagsMoving);
         EXPECT_TRUE(obj != nullptr) << "Failed to add moving object at index " << i;
-        EXPECT_EQ(obj->index, i);
+        EXPECT_EQ(obj->index.raw(), i);
     }
 }
 

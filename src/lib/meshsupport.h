@@ -67,45 +67,6 @@ struct GPUCollectionInfo {
 	uint32_t pad0;
 };
 
-// define strongly typed index types for C++ side, to avoid accidental mixing of indices. All indices are uint32_t, but we use different types for different index categories.
-// all types are trivially copyable and have the same size as uint32_t, so they can be used in GPU buffers without padding issues.
-
-// template definitions:
-
-template<typename Tag, typename T = uint32_t>
-struct TypedIndex {
-	T value = invalidValue();
-
-	static constexpr T invalidValue() noexcept { return std::numeric_limits<T>::max(); }
-	static constexpr TypedIndex invalid() noexcept { return {}; }
-
-	constexpr explicit TypedIndex(T v) noexcept : value(v) {}
-	constexpr TypedIndex() noexcept = default;
-
-	// keep explicit conversion for type safety
-	constexpr explicit operator T() const noexcept { return value; }
-
-	// named conversion helpers (avoid repeated static_cast at call sites)
-	constexpr T raw() const noexcept { return value; }
-	constexpr size_t asSize() const noexcept { return static_cast<size_t>(value); }
-
-	constexpr bool isValid() const noexcept { return value != invalidValue(); }
-	friend constexpr bool operator==(TypedIndex, TypedIndex) noexcept = default;
-};
-
-template<typename Tag, typename T>
-constexpr T to_raw(TypedIndex<Tag, T> i) noexcept {
-	return i.raw();
-}
-
-// concrete index types:
-
-struct MeshInfoIndexTag {};
-using MeshInfoIndex = TypedIndex<MeshInfoIndexTag, uint32_t>;
-
-static_assert(sizeof(MeshInfoIndex) == sizeof(uint32_t));
-static_assert(std::is_trivially_copyable_v<MeshInfoIndex>);
-
 // MeshInfoMetadata and GPUMeshInfo are describe loaded meshes. Exactly one each for every mesh in the global mesh buffer.
 // we no longer use offsets, all 64 bit addresses are absolute device addresses, TODO: rename ...offset to ...Address
 struct GPUMeshInfo {
@@ -114,7 +75,7 @@ struct GPUMeshInfo {
 	uint64_t globalIndexOffset = 0; // offset into global mesh storage buffer
 	uint64_t vertexOffset = 0; // offset into global mesh storage buffer
 	uint32_t meshletCount; // number of meshlets for this LOD
-    uint32_t material; // during parsing: local material index, during GPU upload: global material index
+    MaterialIndex material; // during parsing: local material index, during GPU upload: global material index
 	MeshInfoIndex index; // global mesh index
 	uint32_t next; // next primitive (0 == no next primitive)
 	BoundingBox boundingBox;
@@ -123,15 +84,18 @@ struct GPUMeshInfo {
 
 
 // GPUModel and SceneObject describe loaded objects. The GPU only sees GPUModel.
+// we have 2 sets of models: stationary and moving. Moving models are updated every frame, stationary models are not updated at all.
+// for moving models we also have a GPUModelParam structure located at  the same index as the GPUModel in the ModelsMoving buffer.
 struct GPUModel {
     glm::mat4 model; // model to world transform, includes position, rotation and scale
     uint32_t flags; // MODEL_RENDER_FLAG_* , see pbrShader.h
 	MeshInfoIndex meshNumber; // link to MeshInfo
 	uint32_t material_lod_category;
-	uint32_t materialIndex; // index into global material array
+	MaterialIndex materialIndex; // index into global material array
 	//BoundingBox boundingBox; // probably not needed
 };
 
+// for moving models we need to handle position, rotation and scale separately from C++ side, so we can update the model matrix on the GPU every frame.
 struct GPUModelParam {
     glm::vec3 pos;
 	float pad0;
@@ -146,7 +110,7 @@ struct SceneObject {
 	glm::vec3 pos;
 	glm::vec3 rot;
 	glm::vec3 scale;
-    int32_t index; // index into global model and object array
+    ModelIndex index; // index into global model and object array
     MeshFlagsCollection flags; // set these flags in app code, they will be translated into GPUModel.flags
 	void prepareGPUModel(GPUModel* gpuModel, glm::mat4& baseTransform);
 };

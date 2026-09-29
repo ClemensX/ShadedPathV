@@ -499,7 +499,7 @@ static void ApplyTransformToMeshUVChannel(std::vector<PBRShader::Vertex>& verts,
 }
 
 // apply transform found in material to all meshes that use this material. Make sure we have no duplicate transforms applied to the same mesh (e.g., if multiple materials reference the same texture with different transforms)
-static void ApplyTransformToMeshUVChannel2(int matIndex, vector<GPUMeshInfo>& gpuMeshInfos, vector<MeshInfoMetadata>& gpuMeshMetadata, vector<bool>& khrTextureTransformApplied, int uvSet, const KHRTextureTransform& t) {
+static void ApplyTransformToMeshUVChannel2(MaterialIndex matIndex, vector<GPUMeshInfo>& gpuMeshInfos, vector<MeshInfoMetadata>& gpuMeshMetadata, vector<bool>& khrTextureTransformApplied, int uvSet, const KHRTextureTransform& t) {
 	if (!t.present) return;
 	if (uvSet < 0) return;
 
@@ -511,7 +511,7 @@ static void ApplyTransformToMeshUVChannel2(int matIndex, vector<GPUMeshInfo>& gp
                 ApplyTransformToMeshUVChannel(verts, uvSet, t);
                 khrTextureTransformApplied[i] = true;
 			} else {
-                Error("Duplicate KHR_texture_transform applied to mesh " + std::to_string(i) + " for material " + std::to_string(matIndex));
+                Error("Duplicate KHR_texture_transform applied to mesh " + std::to_string(i) + " for material " + std::to_string(matIndex.asSize()));
 			}
         }
     }
@@ -1505,8 +1505,8 @@ void glTF::parseGltfModel(tinygltf::Model& model)
         for (int prim = 0; prim < (int)m.primitives.size(); ++prim) {
             auto& p = m.primitives[prim];
             // fill gpuMeshInfos[curMeshIndex] with data from p and m
-            gpuMeshInfos[curMeshIndex].material = p.material;
-            gpuMeshInfos[curMeshIndex].index = static_cast<MeshInfoIndex>(curMeshIndex);
+            gpuMeshInfos[curMeshIndex].material = MaterialIndex { static_cast<uint32_t>(p.material) };
+            gpuMeshInfos[curMeshIndex].index = MeshInfoIndex { static_cast<uint32_t>(curMeshIndex) };
             gpuMeshInfos[curMeshIndex].next = (prim < (int)m.primitives.size() - 1) ? curMeshIndex + 1 : 0;
 			gpuMeshMetadata[curMeshIndex].name = m.name;
 			gpuMeshInfos[curMeshIndex].baseTransform = collectBaseTransform(model, mi);
@@ -1598,14 +1598,16 @@ void glTF::parseGltfModel(tinygltf::Model& model)
 		consider(tcOcc, tfOcc, "occlusion");
 		consider(tcEmi, tfEmi, "emissive");
 
+        MaterialIndex materialIndex{ static_cast<uint32_t>(matIndex) };
+
 		if (perSet[0].has_value()) {
             //Error("WARNING: KHR_texture_transform detected for UV set 0 in material " + mat.name + ". This is not supported in the current implementation. Please bake the transform into the texture or vertex data before loading.");
-			ApplyTransformToMeshUVChannel2(matIndex, gpuMeshInfos, gpuMeshMetadata, khrTextureTransformApplied, 0, perSet[0].value());
+			ApplyTransformToMeshUVChannel2(materialIndex, gpuMeshInfos, gpuMeshMetadata, khrTextureTransformApplied, 0, perSet[0].value());
 		}
 		if (perSet[1].has_value()) {
 			//Error("WARNING: KHR_texture_transform detected for UV set 1 in material " + mat.name + ". This is not supported in the current implementation. Please bake the transform into the texture or vertex data before loading.");
 			//ApplyTransformToMeshUVChannel(mesh->vertices, 1, perSet[1].value());
-			ApplyTransformToMeshUVChannel2(matIndex, gpuMeshInfos, gpuMeshMetadata, khrTextureTransformApplied, 1, perSet[1].value());
+			ApplyTransformToMeshUVChannel2(materialIndex, gpuMeshInfos, gpuMeshMetadata, khrTextureTransformApplied, 1, perSet[1].value());
 		}
         //gpuMat.perSet[0] = perSet[0];
         //gpuMat.perSet[1] = perSet[1];

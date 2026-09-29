@@ -45,14 +45,19 @@ public:
     }
     GPUMeshInfo* getGPUMeshInfo(MeshInfoIndex index) ;
     MeshInfoMetadata* getMeshMetadata(MeshInfoIndex index);
-    GPUModel* getGPUModel(int32_t index);
+    // get stationary GPUModel
+    GPUModel* getGPUModel(ModelIndex index);
+    GPUModel* getGPUMovingModel(ModelIndex index);
+    // get GPUModel - either from stationary or moving model array, depending on SceneObject flags
+    GPUModel* getGPUModel(SceneObject* obj);
+    std::string getGPUModelString(SceneObject* obj);
     int getUsedStationaryModelCount() const;
     int getUsedMovingModelCount() const;
-    GPUModel* getGPUMovingModel(int32_t index);
-    GPUModelParam* getGPUModelParam(int32_t index);
+    //GPUModel* getGPUMovingModel(int32_t index);
+    GPUModelParam* getGPUModelParam(ModelIndex index);
     SceneObject* getSceneObject(int32_t index);
     SceneObject* getMovingSceneObject(int32_t index);
-    GPUMaterial* getGPUMaterial(int32_t index);
+    GPUMaterial* getGPUMaterial(MaterialIndex index);
     GPUFrameParam* getGPUFrameParam(int32_t index);
     void getFileInfosForMesh(MeshInfoIndex meshIndex, MeshFile& meshFile, MeshFileEntry& meshFileEntry);
     // upload all meshes during init phase, called from PBRShader

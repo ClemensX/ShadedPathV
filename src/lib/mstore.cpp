@@ -176,12 +176,27 @@ GPUMeshInfo* MStore::getGPUMeshInfo(MeshInfoIndex index) {
 	return mi;
 }
 
-GPUMaterial* MStore::getGPUMaterial(int32_t index) {
-	return engine->globalRendering.gpuMemory.getElementAddress<GPUMaterial>(BufferType::Materials, index);
+GPUMaterial* MStore::getGPUMaterial(MaterialIndex index) {
+	return engine->globalRendering.gpuMemory.getElementAddress<GPUMaterial>(BufferType::Materials, index.asSize());
 }
 
-GPUModel* MStore::getGPUModel(int32_t index) {
-	return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::Models, index);
+std::string MStore::getGPUModelString(SceneObject* obj)
+{
+	if (obj->flags.hasFlag(MeshFlags::RENDER_TYPE_MOVING))
+		return std::string("Moving ") + std::to_string(obj->index.asSize());
+	else 
+        return std::string("Stationary ") + std::to_string(obj->index.asSize());
+}
+
+GPUModel* MStore::getGPUModel(SceneObject* obj) {
+	if (obj->flags.hasFlag(MeshFlags::RENDER_TYPE_MOVING))
+		return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::ModelsMoving, obj->index.asSize());
+	else
+		return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::Models, obj->index.asSize());
+}
+
+GPUModel* MStore::getGPUModel(ModelIndex index) {
+	return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::Models, index.asSize());
 }
 
 int MStore::getUsedStationaryModelCount() const {
@@ -192,12 +207,12 @@ int MStore::getUsedMovingModelCount() const {
 	return engine->globalRendering.gpuMemory.getElementCount(BufferType::ModelsMoving);
 }
 
-GPUModel* MStore::getGPUMovingModel(int32_t index) {
-	return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::ModelsMoving, index);
+GPUModel* MStore::getGPUMovingModel(ModelIndex index) {
+	return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::ModelsMoving, index.asSize());
 }
 
-GPUModelParam* MStore::getGPUModelParam(int32_t index) {
-	return engine->globalRendering.gpuMemory.getElementAddress<GPUModelParam>(BufferType::ModelsParam, index);
+GPUModelParam* MStore::getGPUModelParam(ModelIndex index) {
+	return engine->globalRendering.gpuMemory.getElementAddress<GPUModelParam>(BufferType::ModelsParam, index.asSize());
 }
 
 GPUFrameParam* MStore::getGPUFrameParam(int32_t index) {
@@ -295,8 +310,9 @@ void MStore::addToGlobalBuffers(const std::vector<GPUMeshInfo>& gpuMeshInfos, co
     int i = 0;
     for (const auto& meshInfo : gpuMeshInfos) {
         GPUMeshInfo globalMeshInfo = meshInfo;
-        globalMeshInfo.material = globalMaterialStart + meshInfo.material; // convert local material index to global material index
-        globalMeshInfo.index = static_cast<MeshInfoIndex>(globalMeshStart + i); // convert local mesh index to global mesh index
+		// convert local material index to global material index
+		globalMeshInfo.material = MaterialIndex { globalMaterialStart + meshInfo.material.raw() };
+        globalMeshInfo.index = MeshInfoIndex { globalMeshStart + i }; // convert local mesh index to global mesh index
         globalMeshInfo.next = (meshInfo.next > 0) ? globalMeshStart + meshInfo.next : 0; // convert local next index to global next index
         engine->globalRendering.gpuMemory.appendElement(BufferType::MeshInfos, globalMeshInfo);
 		meshMetadata[globalMeshStart + i] = gpuMeshMetadata[i];
@@ -328,14 +344,15 @@ SceneObject* MStore::addObject(MeshInfoIndex mesh_index, glm::vec3 pos, MeshFlag
 		auto objectIndex = engine->globalRendering.gpuMemory.getElementCount(BufferType::ModelsMoving);
 		if (objectIndex >= movingSceneObjects.size()) Error("MStore::addObject: Exceeded maximum number of moving objects");
 
-		GPUModel* model = getGPUMovingModel(objectIndex);
-		GPUModelParam* modelParam = getGPUModelParam(objectIndex);
+		GPUModel* model = getGPUMovingModel(ModelIndex{ objectIndex });
+		GPUModelParam* modelParam = getGPUModelParam(ModelIndex{ objectIndex });
 		modelParam->pos.x = 0.5f;
         modelParam->rot.y = 2.0f;
         modelParam->scale.z = 1.0f;
 		SceneObject* obj = getMovingSceneObject(objectIndex);
-		obj->index = objectIndex;
+		obj->index = ModelIndex{ objectIndex };
 		obj->pos = pos;
+        obj->flags = flags;
 		model->meshNumber = mesh_index;
 		engine->globalRendering.gpuMemory.appendElement(BufferType::ModelsMoving, *model);
 		engine->globalRendering.gpuMemory.appendElement(BufferType::ModelsParam, *modelParam);
@@ -345,10 +362,11 @@ SceneObject* MStore::addObject(MeshInfoIndex mesh_index, glm::vec3 pos, MeshFlag
 		auto objectIndex = engine->globalRendering.gpuMemory.getElementCount(BufferType::Models);
 		if (objectIndex >= sceneObjects.size()) Error("MStore::addObject: Exceeded maximum number of stationary objects");
 
-		GPUModel* model = getGPUModel(objectIndex);
+		GPUModel* model = getGPUModel(ModelIndex{ objectIndex });
 		SceneObject* obj = getSceneObject(objectIndex);
-		obj->index = objectIndex;
+		obj->index = ModelIndex{ objectIndex };
 		obj->pos = pos;
+        obj->flags = flags;
 		model->meshNumber = mesh_index;
 		engine->globalRendering.gpuMemory.appendElement(BufferType::Models, *model);
 		return obj;

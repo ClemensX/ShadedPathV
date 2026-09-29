@@ -603,7 +603,7 @@ void PBRSubShader::recordDrawCommandInternal2(VkCommandBuffer& commandBuffer, Fr
 		if (!okTasks || !okMeshlets) {
 			Error("Meshlet count " + to_string(meshletCount) + " exceeds device limits: max task work groups " + to_string(engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxTaskWorkGroupCount[0]) +
 				", max mesh work groups " + to_string(engine->globalRendering.globalDeviceInfo.meshShaderProperties.maxMeshWorkGroupCount[0]) +
-				" for object " + to_string(obj->index));
+				" for object " + engine->mstore.getGPUModelString(obj));
 		}
 	}
 	if (meshletCount > 0) {
@@ -622,7 +622,7 @@ void PBRSubShader::recordDrawCommandInternal2(VkCommandBuffer& commandBuffer, Fr
 		}
 	}
 	else {
-		Log("WARNING: No meshlets found for object: " << obj->index << " Cannot render. (Maybe force enabling debug graphics.)" << endl);
+		Log("WARNING: No meshlets found for object: " << engine->mstore.getGPUModelString(obj) << " Cannot render. (Maybe force enabling debug graphics.)" << endl);
 		//obj->enableDebugGraphics = true;
 	}
 }
@@ -696,7 +696,7 @@ void PBRSubShader::recordDrawCommandInternal(VkCommandBuffer& commandBuffer, Fra
 
 void PBRSubShader::recordDrawCommand(VkCommandBuffer& commandBuffer, FrameResources& fr, SceneObject* obj, bool isRightEye, bool update)
 {
-	GPUModel* model = engine->mstore.getGPUModel(obj->index);
+	GPUModel* model = engine->mstore.getGPUModel(obj);
 	auto mesh = engine->mstore.getGPUMeshInfo(model->meshNumber);
 	recordDrawCommandInternal2(commandBuffer, fr, mesh, obj, isRightEye, update);
  //   MeshInfo* meshInfo = obj->mesh;
