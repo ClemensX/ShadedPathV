@@ -39,13 +39,13 @@ bool LoadImageDataKTX2(Image* image, const int image_idx, std::string* err,
 	const unsigned char* bytes, int size, void* user_data) {
 	auto* userData = (glTF::gltfUserData*)user_data;
 	ktxTexture* kTexture = nullptr;
-	auto hash = userData->engine->textureStore.generateHash(bytes, size);
-	auto* existingTexture = userData->engine->textureStore.getTextureByHash(hash);
-	if (existingTexture) {
+	size_t hash = 0;
+	if (userData->engine->textureStore.findExistingTextureAndGetHash(bytes, size, hash)) {
 		// Texture with the same hash already exists, reuse it
 		//userData->collection->textureInfos[image_idx] = existingTexture;
+        auto* existingTexture = userData->engine->textureStore.getTextureByHash(hash);
 		userData->engine->mstore.gltf.mapFileTextureIndexToGlobalTextureArray(image_idx, existingTexture->index);
-		Log("Warning: Reusing existing global texture " << existingTexture->id << " for collection image index " << image_idx << " with hash " << hash << std::endl);
+		Log("Warning: Reusing existing global texture " << existingTexture->id << " for collection image index " << image_idx << " with hash " << existingTexture->hash << std::endl);
         existingTexture->textureIsReused = true;
 		return true;
 	}
@@ -235,15 +235,15 @@ bool LoadImageDataKTX(Image* image, const int image_idx, std::string* err,
 	const unsigned char* bytes, int size, void* user_data) {
 	auto* userData = (glTF::gltfUserData*)user_data;
 	ktxTexture* kTexture = nullptr;
-    auto hash = userData->engine->textureStore.generateHash(bytes, size);
-    auto* existingTexture = userData->engine->textureStore.getTextureByHash(hash);
 	if (userData->collection->textureInfos.size() <= image_idx) {
 		userData->collection->textureInfos.resize(image_idx + 1);
 	}
-	if (existingTexture) {
+	size_t hash;
+	if (userData->engine->textureStore.findExistingTextureAndGetHash(bytes, size, hash)) {
         // Texture with the same hash already exists, reuse it
+        auto* existingTexture = userData->engine->textureStore.getTextureByHash(hash);
 		userData->collection->textureInfos[image_idx] = existingTexture;
-        Log("Warning: Reusing existing global texture " << existingTexture->id << " for collection image index " << image_idx << " with hash " << hash << std::endl);
+        Log("Warning: Reusing existing global texture " << existingTexture->id << " for collection image index " << image_idx << " with hash " << existingTexture->hash << std::endl);
 		return true;
     }
 

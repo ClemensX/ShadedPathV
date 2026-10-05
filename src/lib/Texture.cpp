@@ -312,6 +312,18 @@ void TextureStore::loadTexture(string filename, string id, TextureType type, Tex
 		engine->files.readFile(pakFileEntry, file_buffer, FileCategory::TEXTURE);
 	}
 
+    size_t hash = 0;
+    if (findExistingTextureAndGetHash(reinterpret_cast<const unsigned char*>(file_buffer.data()), static_cast<int>(file_buffer.size()), hash) != nullptr) {
+        Log("Reusing existing texture for " << filename << endl);
+        Error("Idiot!");
+        //texture->vulkanTexture = existingTexture->vulkanTexture;
+        //texture->imageView = existingTexture->imageView;
+        //texture->hash = existingTexture->hash;
+        //texture->textureIsReused = true;
+        //setTextureActive(texture->id, true);
+        //return;
+    }
+
 	ktxTexture* kTexture = nullptr;
 	const bool isKtx = hasKtxExtension(filename);
 	const bool autoCubemap = !isKtx;
@@ -1498,6 +1510,16 @@ void TextureStore::validateTexture(TextureInfo* ti)
 {
     assert(ti->hash != 0);
     //if (ti->hash == 0) Log("Error: Validating texture: " << ti->id.c_str() << " hash: " << ti->hash << " available: " << ti->available << endl);
+}
+
+TextureInfo* TextureStore::findExistingTextureAndGetHash(const unsigned char* bytes, size_t size, size_t& hash)
+{
+	if (!engine->isTextureReuse()) {
+        hash = 42; // value is irrelevant
+		return nullptr;
+	}
+    hash = generateHash(bytes, size);
+    return getTextureByHash(hash);
 }
 
 size_t TextureStore::generateHash(const unsigned char* bytes, size_t size) {

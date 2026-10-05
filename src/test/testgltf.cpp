@@ -373,12 +373,18 @@ TEST_F(GLTFParserTest, Mesh_Indices) {
 }
 
 // test gltf files with more than one primitive
-TEST_F(GLTFParserTest, MultiMeshObject) {
+TEST_F(GLTFParserTest, MultiMesh_TwoPartTree) {
     MStore& mstore = engine->mstore;
+    TextureStore& tstore = engine->textureStore;
+    engine->setTextureReuse(false); // disable texture reuse for this test (otherwise texture counting is off)
+
+    int numTextures = tstore.size();
+
     MeshFlagsCollection flags;
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
     engine->mstore.loadMesh("tree_primitives.gltf", "tree", flags);
     EXPECT_EQ(mstore.getMeshFiles().size(), 1) << "Expected 1 mesh file loaded";
+    int numTexturesLoaded = tstore.size() - numTextures;
 
     MeshFile* meshFile = mstore.getMeshFileByID("tree");
     EXPECT_EQ(meshFile->meshes.size(), 2) << "Expected 2 meshes in tree_primitives.gltf";
@@ -398,6 +404,12 @@ TEST_F(GLTFParserTest, MultiMeshObject) {
             << ", physicalDescriptorTextureSet = " << material->physicalDescriptorTextureSet
             << ", normalTextureSet = " << material->normalTextureSet << "\n");
     }
+
+    // verify basic gltf parsing data:
+    // assert number of textures loaded: There are 6 textures in the file, but 2 roughnessand normal textures are
+    // the same, so we have to disable texture reuse to get 6 textures loaded!
+    EXPECT_EQ(numTexturesLoaded, 6) << "Expected 6 new textures loaded for tree_primitives.gltf";
+
 }
 
 // Test 2: Single mesh with LOD levels (10 LODs)
