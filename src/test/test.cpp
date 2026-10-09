@@ -36,8 +36,8 @@ class MeshletTest : public WorkingDirectoryTest {};
 class MeshStoreTestDynamic : public WorkingDirectoryTest {};
 
 // Shared helper function - REMOVED 'static' keyword
-void minimalEngineInitialization(ShadedPathEngine* engine, int maxMeshes) {
-    engine->files.findAssetFolder("data");
+void minimalEngineInitialization(ShadedPathEngine* engine, int maxMeshes, std::string assetFolderName) {
+    engine->files.findAssetFolder(assetFolderName);
     engine->setMaxTextures(50);
     engine->setMaxCollections(15);
     engine->overrideCPUCores(4);
@@ -942,7 +942,7 @@ TEST_F(MeshStoreTestDynamic, LoadMultiPrimitiveMesh) {
         // init engine and mesh
         ShadedPathEngine my_engine;
         static ShadedPathEngine* engine = &my_engine;
-        minimalEngineInitialization(engine, 50);
+        minimalEngineInitialization(engine, 50, "test_samples");
 
         engine->files.findAssetFolder("test_samples");
         string glbFile = engine->files.findFile("test_multi_prim_lod_cmp.glb", FileCategory::MESH, false);

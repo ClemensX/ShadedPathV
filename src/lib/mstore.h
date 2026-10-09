@@ -43,18 +43,23 @@ public:
     MeshFile* getMeshFileByID(std::string id) {
                 return &meshFiles[getMeshFileIndexByID(id)];
     }
-    GPUMeshInfo* getGPUMeshInfo(int32_t index) ;
-    MeshInfoMetadata* getMeshMetadata(int32_t index);
-    GPUModel* getGPUModel(int32_t index);
+    GPUMeshInfo* getGPUMeshInfo(MeshInfoIndex index) ;
+    MeshInfoMetadata* getMeshMetadata(MeshInfoIndex index);
+    // get stationary GPUModel
+    GPUModel* getGPUModel(ModelIndex index);
+    GPUModel* getGPUMovingModel(ModelIndex index);
+    // get GPUModel - either from stationary or moving model array, depending on SceneObject flags
+    GPUModel* getGPUModel(SceneObject* obj);
+    std::string getGPUModelString(SceneObject* obj);
     int getUsedStationaryModelCount() const;
     int getUsedMovingModelCount() const;
-    GPUModel* getGPUMovingModel(int32_t index);
-    GPUModelParam* getGPUModelParam(int32_t index);
+    //GPUModel* getGPUMovingModel(int32_t index);
+    GPUModelParam* getGPUModelParam(ModelIndex index);
     SceneObject* getSceneObject(int32_t index);
     SceneObject* getMovingSceneObject(int32_t index);
-    GPUMaterial* getGPUMaterial(int32_t index);
+    GPUMaterial* getGPUMaterial(MaterialIndex index);
     GPUFrameParam* getGPUFrameParam(int32_t index);
-    void getFileInfosForMesh(int meshIndex, MeshFile& meshFile, MeshFileEntry& meshFileEntry);
+    void getFileInfosForMesh(MeshInfoIndex meshIndex, MeshFile& meshFile, MeshFileEntry& meshFileEntry);
     // upload all meshes during init phase, called from PBRShader
     void uploadAllMeshes();
 
@@ -77,7 +82,7 @@ public:
 
     // add a new object to the scene, returns pointer to SceneObject. The mesh_index is the index of the mesh in the global mesh buffer.
     // for moving objects, the MeshFlagsCollection should have the RENDER_TYPE_MOVING flag set.
-    SceneObject* addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsCollection flags = MeshFlagsCollection());
+    SceneObject* addObject(MeshInfoIndex mesh_index, glm::vec3 pos, MeshFlagsCollection flags = MeshFlagsCollection());
 
     // Meshlets
 
@@ -90,7 +95,7 @@ public:
 
     // return the mesh bounding box from raw mesh data. No transforms applied. Will never change after initial calculation.
     void getBoundingBox(BoundingBox& box, GPUMeshInfo& meshInfo);
-    bool checkBoundingBoxPlausibility(int32_t meshIndex);
+    bool checkBoundingBoxPlausibility(MeshInfoIndex meshIndex);
     void logVertex(const PBRShader::Vertex& v);
     void logTriangleFromGlTF(int num, GPUMeshInfo* mesh);
     // apply fixed colors to all vertices of one meshlet (useful for debugging)
@@ -139,5 +144,5 @@ private:
     std::vector<SceneObject> movingSceneObjects;
 
     // no checks, directly access cpp buffer
-    GPUMeshInfo* getGPUMeshInfoInternal(int32_t index);
+    GPUMeshInfo* getGPUMeshInfoInternal(MeshInfoIndex index);
 };

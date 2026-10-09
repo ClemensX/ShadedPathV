@@ -461,7 +461,7 @@ void SceneEditor::buildCustomUI() {
             MeshFileEntry meshFileEntry;
 
             engine->mstore.getFileInfosForMesh(model.meshNumber, meshFile, meshFileEntry);
-            string line = to_string(i) + " " + meshFileEntry.name + " [" + std::to_string(meshFileEntry.meshIndex) + "] " + pos;
+            string line = to_string(i) + " " + meshFileEntry.name + " [" + std::to_string(meshFileEntry.meshIndex.asSize()) + "] " + pos;
             if (ImGui::Selectable(line.c_str(), selectedObjLine == i)) {
                 selectedObjLine = i;
             }
@@ -521,7 +521,7 @@ void SceneEditor::buildCustomUI() {
             MeshFileEntry meshFileEntry;
             engine->mstore.getFileInfosForMesh(model.meshNumber, meshFile, meshFileEntry);
 
-            string line = to_string(i) + " " + meshFileEntry.name + " [" + std::to_string(meshFileEntry.meshIndex) + "] " + pos;
+            string line = to_string(i) + " " + meshFileEntry.name + " [" + std::to_string(meshFileEntry.meshIndex.asSize()) + "] " + pos;
             if (ImGui::Selectable(line.c_str(), selectedMovingObjLine == i)) {
                 selectedMovingObjLine = i;
             }
@@ -554,7 +554,7 @@ void SceneEditor::buildCustomUI() {
             //mat4 baseTransform = engine->mstore.getGPUMeshInfo(meshIndex)->baseTransform;
             glm::mat4 base(1.0f);
             so->prepareGPUModel(gpuModel, base);
-            engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, so->index);
+            engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, so->index.raw());
 
             // detect change
             if (gpuModelParam->pos != so->pos || gpuModelParam->rot != so->rot || gpuModelParam->scale != so->scale) {
@@ -562,7 +562,7 @@ void SceneEditor::buildCustomUI() {
                 gpuModelParam->rot = so->rot;
                 gpuModelParam->scale = so->scale;
                 //Log("change!!\n");
-                engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsParam, *gpuModelParam, so->index);
+                engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsParam, *gpuModelParam, so->index.raw());
                 engine->globalRendering.gpuMemory.flushBuffer(BufferType::ModelsParam);
             }
             //Log("param update: pos(" << gpuModelParam->pos.x << ", " << gpuModelParam->pos.y << ", " << gpuModelParam->pos.z << "), rot(" << gpuModelParam->rot.x << ", " << gpuModelParam->rot.y << ", " << gpuModelParam->rot.z << "), scale(" << gpuModelParam->scale.z<< ")" << std::endl);
@@ -635,7 +635,7 @@ void SceneEditor::addObjectToScene(int meshFileIndex, bool moving)
         flags.setFlag(MeshFlags::RENDER_TYPE_MOVING);
     }
 
-    const int meshIndex = selectedFile.meshes[0].meshIndex;
+    const MeshInfoIndex meshIndex = selectedFile.meshes[0].meshIndex;
     GPUMeshInfo* meshInfo = engine->mstore.getGPUMeshInfo(meshIndex);
     if (meshInfo == nullptr) {
         Error("SceneEditor::addObjectToScene: failed to resolve mesh info");
@@ -659,10 +659,10 @@ void SceneEditor::addObjectToScene(int meshFileIndex, bool moving)
     object->prepareGPUModel(gpuModel, baseTransform);
 
     if (moving) {
-        engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, object->index);
+        engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, object->index.raw());
     }
     else {
-        engine->globalRendering.gpuMemory.updateElement(BufferType::Models, *gpuModel, object->index);
+        engine->globalRendering.gpuMemory.updateElement(BufferType::Models, *gpuModel, object->index.raw());
     }
 
     if (moving) {
@@ -680,7 +680,7 @@ void SceneEditor::redoAllStationaryObjects()
         GPUModel* gpuModel = engine->mstore.getGPUModel(so->index);
         mat4 baseTransform = mat4(1.0); // get from gltf later
         so->prepareGPUModel(gpuModel, baseTransform);
-        engine->globalRendering.gpuMemory.updateElement(BufferType::Models, *gpuModel, so->index);
+        engine->globalRendering.gpuMemory.updateElement(BufferType::Models, *gpuModel, so->index.raw());
         //Log("Re-uploaded stationary object " << i << " at position: " << so->pos.x << ", " << so->pos.y << ", " << so->pos.z << std::endl);
     }
     reInitPBRGraphics(true);
@@ -694,12 +694,12 @@ void SceneEditor::redoAllMovingObjects()
         GPUModel* gpuModel = engine->mstore.getGPUMovingModel(so->index);
         mat4 baseTransform = mat4(1.0); // get from gltf later
         so->prepareGPUModel(gpuModel, baseTransform);
-        engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, so->index);
+        engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, so->index.raw());
         GPUModelParam* gpuModelParam = engine->mstore.getGPUModelParam(so->index);
         gpuModelParam->pos = so->pos;
         gpuModelParam->rot = so->rot;
         gpuModelParam->scale = so->scale;
-        engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsParam, *gpuModelParam, so->index);
+        engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsParam, *gpuModelParam, so->index.raw());
     }
     reInitPBRGraphics(true);
 }
@@ -716,8 +716,8 @@ void SceneEditor::fillStationaryModels()
 {
     displayParams.stationaryModels.clear();
     int statModelNum = engine->mstore.getUsedStationaryModelCount();
-    for (int i = 0; i < statModelNum; ++i) {
-        GPUModel* object = engine->mstore.getGPUModel(i);
+    for (uint32_t i = 0; i < statModelNum; ++i) {
+        GPUModel* object = engine->mstore.getGPUModel(ModelIndex{i});
         displayParams.stationaryModels.push_back(*object);
     }
 }
@@ -726,8 +726,8 @@ void SceneEditor::fillMovingModels()
 {
     displayParams.movingModels.clear();
     int movingModelNum = static_cast<int>(engine->globalRendering.gpuMemory.getElementCount(BufferType::ModelsMoving));
-    for (int i = 0; i < movingModelNum; ++i) {
-        GPUModel* object = engine->mstore.getGPUMovingModel(i);
+    for (uint32_t i = 0; i < movingModelNum; ++i) {
+        GPUModel* object = engine->mstore.getGPUMovingModel(ModelIndex{i});
         displayParams.movingModels.push_back(*object);
     }
 }
@@ -815,9 +815,9 @@ void SceneEditor::saveSceneToFile(const std::string& sceneFilePathName)
         };
 
     const int stationaryCount = engine->mstore.getUsedStationaryModelCount();
-    for (int i = 0; i < stationaryCount; ++i) {
+    for (uint32_t i = 0; i < stationaryCount; ++i) {
         SceneObject* so = engine->mstore.getSceneObject(i);
-        GPUModel* model = engine->mstore.getGPUModel(i);
+        GPUModel* model = engine->mstore.getGPUModel(ModelIndex{i});
 
         MeshFile meshFile;
         MeshFileEntry meshFileEntry;
@@ -834,9 +834,9 @@ void SceneEditor::saveSceneToFile(const std::string& sceneFilePathName)
     }
 
     const int movingCount = engine->mstore.getUsedMovingModelCount();
-    for (int i = 0; i < movingCount; ++i) {
+    for (uint32_t i = 0; i < movingCount; ++i) {
         SceneObject* so = engine->mstore.getMovingSceneObject(i);
-        GPUModel* model = engine->mstore.getGPUMovingModel(i);
+        GPUModel* model = engine->mstore.getGPUMovingModel(ModelIndex{i});
 
         MeshFile meshFile;
         MeshFileEntry meshFileEntry;
@@ -850,6 +850,15 @@ void SceneEditor::saveSceneToFile(const std::string& sceneFilePathName)
             { "rot", vec3ToJson(so->rot) },
             { "scale", so->scale.x } // uniform scale persisted as one float
             });
+    }
+
+    if (!outputPath.parent_path().empty()) {
+        std::error_code ec;
+        std::filesystem::create_directories(outputPath.parent_path(), ec); // also ok for existing directories
+        if (ec) {
+            Error("SceneEditor::saveSceneToFile: failed to create directory: " + outputPath.parent_path().string());
+            return;
+        }
     }
 
     std::ofstream outFile(outputPath);
@@ -923,7 +932,7 @@ void SceneEditor::loadSceneFromFile(const std::string& sceneFilePathName)
             continue;
         }
 
-        int meshIndex = meshFile->meshes[0].meshIndex;
+        MeshInfoIndex meshIndex = meshFile->meshes[0].meshIndex;
         for (const auto& entry : meshFile->meshes) {
             if (entry.name == meshName) {
                 meshIndex = entry.meshIndex;
@@ -960,10 +969,10 @@ void SceneEditor::loadSceneFromFile(const std::string& sceneFilePathName)
         object->prepareGPUModel(gpuModel, baseTransform);
 
         if (moving) {
-            engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, object->index);
+            engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, object->index.raw());
         }
         else {
-            engine->globalRendering.gpuMemory.updateElement(BufferType::Models, *gpuModel, object->index);
+            engine->globalRendering.gpuMemory.updateElement(BufferType::Models, *gpuModel, object->index.raw());
         }
     }
 

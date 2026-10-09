@@ -62,7 +62,18 @@ MeshFile* MStore::loadMesh(std::string filename, MeshFlagsCollection flags)
 MeshFile* MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollection flags)
 {
 	MeshFile* existingMeshFile = checkMeshFile(filename, id);
-	if (existingMeshFile != nullptr) {
+	if (existingMeshFile != nullptr && !flags.hasFlag(MeshFlags::FORCE_RELOAD)) {
+		if (existingMeshFile->filename == filename) {
+			Log("WARNING: Mesh file " + filename + " with id " + id + " already loaded. Using old instance\n");
+		}
+		if (existingMeshFile->id != id) {
+			Log("WARNING: Mesh file " + filename + " with id " + existingMeshFile->id + " already loaded. Using old instance. New ID: " + id + " is unavailable\n");
+		}
+		if (!existingMeshFile->flags.equals(flags)) {
+			//if (existingMeshFile->flags.hasFlag(MeshFlags::MESHLET_GENERATE) && !flags.hasFlag(MeshFlags::MESHLET_GENERATE)) {
+				// if the existing mesh file has meshlet generation enabled, we cannot load it again without meshlet generation
+            Error("MStore::loadMesh: Mesh file " + filename + " with id " + id + " already loaded with different flags.");
+        }
 		return existingMeshFile;
 	}
 	vector<byte> file_buffer;
@@ -80,12 +91,13 @@ MeshFile* MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollec
 	meshFile.filename = filename;
 
 	for (int i = 0; i < meshNumCount; ++i) {
-		auto meshInfo = getGPUMeshInfoInternal(meshNumStart + i);
-        auto metadata = getMeshMetadata(meshNumStart + i);
-		meshInfo->index = meshNumStart + i;
+        MeshInfoIndex miIndex = static_cast<MeshInfoIndex>(meshNumStart + i);
+		auto meshInfo = getGPUMeshInfoInternal(miIndex);
+        auto metadata = getMeshMetadata(miIndex);
+		meshInfo->index = miIndex;
 		MeshFileEntry entry{};
         entry.name = metadata->name;
-        entry.meshIndex = meshNumStart + i;
+        entry.meshIndex = miIndex;
         meshFile.meshes.push_back(entry);
 		metadata->meshFileIndex = meshFiles.size();
     }
@@ -147,29 +159,44 @@ void MStore::uploadAllMeshes()
 {
     auto meshcount = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos);
     for (int i = 0; i < meshcount; i++) {
-        GPUMeshInfo* meshInfo = getGPUMeshInfo(i);
+        GPUMeshInfo* meshInfo = getGPUMeshInfo(static_cast<MeshInfoIndex>(i));
 		uploadMesh(meshInfo);
     }
 }
 
-GPUMeshInfo* MStore::getGPUMeshInfoInternal(int32_t index) {
-	return engine->globalRendering.gpuMemory.getElementAddress<GPUMeshInfo>(BufferType::MeshInfos, index);
+GPUMeshInfo* MStore::getGPUMeshInfoInternal(MeshInfoIndex index) {
+	return engine->globalRendering.gpuMemory.getElementAddress<GPUMeshInfo>(BufferType::MeshInfos, index.asSize());
 }
 
-GPUMeshInfo* MStore::getGPUMeshInfo(int32_t index) {
+GPUMeshInfo* MStore::getGPUMeshInfo(MeshInfoIndex index) {
 	auto mi = getGPUMeshInfoInternal(index);
 	if (!(mi != nullptr && mi->index == index)) {
-		Error("Invalid GPUMeshInfo index: " + std::to_string(index));
+		Error("Invalid GPUMeshInfo index: " + std::to_string(index.asSize()));
 	}
 	return mi;
 }
 
-GPUMaterial* MStore::getGPUMaterial(int32_t index) {
-	return engine->globalRendering.gpuMemory.getElementAddress<GPUMaterial>(BufferType::Materials, index);
+GPUMaterial* MStore::getGPUMaterial(MaterialIndex index) {
+	return engine->globalRendering.gpuMemory.getElementAddress<GPUMaterial>(BufferType::Materials, index.asSize());
 }
 
-GPUModel* MStore::getGPUModel(int32_t index) {
-	return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::Models, index);
+std::string MStore::getGPUModelString(SceneObject* obj)
+{
+	if (obj->flags.hasFlag(MeshFlags::RENDER_TYPE_MOVING))
+		return std::string("Moving ") + std::to_string(obj->index.asSize());
+	else 
+        return std::string("Stationary ") + std::to_string(obj->index.asSize());
+}
+
+GPUModel* MStore::getGPUModel(SceneObject* obj) {
+	if (obj->flags.hasFlag(MeshFlags::RENDER_TYPE_MOVING))
+		return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::ModelsMoving, obj->index.asSize());
+	else
+		return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::Models, obj->index.asSize());
+}
+
+GPUModel* MStore::getGPUModel(ModelIndex index) {
+	return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::Models, index.asSize());
 }
 
 int MStore::getUsedStationaryModelCount() const {
@@ -180,12 +207,12 @@ int MStore::getUsedMovingModelCount() const {
 	return engine->globalRendering.gpuMemory.getElementCount(BufferType::ModelsMoving);
 }
 
-GPUModel* MStore::getGPUMovingModel(int32_t index) {
-	return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::ModelsMoving, index);
+GPUModel* MStore::getGPUMovingModel(ModelIndex index) {
+	return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::ModelsMoving, index.asSize());
 }
 
-GPUModelParam* MStore::getGPUModelParam(int32_t index) {
-	return engine->globalRendering.gpuMemory.getElementAddress<GPUModelParam>(BufferType::ModelsParam, index);
+GPUModelParam* MStore::getGPUModelParam(ModelIndex index) {
+	return engine->globalRendering.gpuMemory.getElementAddress<GPUModelParam>(BufferType::ModelsParam, index.asSize());
 }
 
 GPUFrameParam* MStore::getGPUFrameParam(int32_t index) {
@@ -204,9 +231,10 @@ SceneObject* MStore::getMovingSceneObject(int32_t index) {
 	return &movingSceneObjects[index];
 }
 
-MeshInfoMetadata* MStore::getMeshMetadata(int32_t index) {
-	if (index >= 0 && index < meshMetadata.size()) {
-		return &meshMetadata[index];
+MeshInfoMetadata* MStore::getMeshMetadata(MeshInfoIndex tindex) {
+	const auto i = tindex.asSize();
+	if (tindex.isValid() && i < meshMetadata.size()) {
+		return &meshMetadata[i];
 	}
 	return nullptr;
 }
@@ -282,8 +310,9 @@ void MStore::addToGlobalBuffers(const std::vector<GPUMeshInfo>& gpuMeshInfos, co
     int i = 0;
     for (const auto& meshInfo : gpuMeshInfos) {
         GPUMeshInfo globalMeshInfo = meshInfo;
-        globalMeshInfo.material = globalMaterialStart + meshInfo.material; // convert local material index to global material index
-        globalMeshInfo.index = globalMeshStart + i; // convert local mesh index to global mesh index
+		// convert local material index to global material index
+		globalMeshInfo.material = MaterialIndex { globalMaterialStart + meshInfo.material.raw() };
+        globalMeshInfo.index = MeshInfoIndex { globalMeshStart + i }; // convert local mesh index to global mesh index
         globalMeshInfo.next = (meshInfo.next > 0) ? globalMeshStart + meshInfo.next : 0; // convert local next index to global next index
         engine->globalRendering.gpuMemory.appendElement(BufferType::MeshInfos, globalMeshInfo);
 		meshMetadata[globalMeshStart + i] = gpuMeshMetadata[i];
@@ -303,9 +332,10 @@ void MStore::handleFlags(GPUMeshInfo& mesh, MeshFlagsCollection flags)
 
 }
 
-SceneObject* MStore::addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsCollection flags) {
+SceneObject* MStore::addObject(MeshInfoIndex mesh_index, glm::vec3 pos, MeshFlagsCollection flags) {
 	auto maxMeshNumber = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos) - 1;
-	if (mesh_index < 0 || mesh_index > maxMeshNumber) {
+    auto mNum = mesh_index.asSize();
+	if (mNum < 0 || mNum > maxMeshNumber) {
 		Error("MStore::addObject: Invalid mesh index");
 		return nullptr; // keep compiler happy
 	}
@@ -314,14 +344,15 @@ SceneObject* MStore::addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsColle
 		auto objectIndex = engine->globalRendering.gpuMemory.getElementCount(BufferType::ModelsMoving);
 		if (objectIndex >= movingSceneObjects.size()) Error("MStore::addObject: Exceeded maximum number of moving objects");
 
-		GPUModel* model = getGPUMovingModel(objectIndex);
-		GPUModelParam* modelParam = getGPUModelParam(objectIndex);
+		GPUModel* model = getGPUMovingModel(ModelIndex{ objectIndex });
+		GPUModelParam* modelParam = getGPUModelParam(ModelIndex{ objectIndex });
 		modelParam->pos.x = 0.5f;
         modelParam->rot.y = 2.0f;
         modelParam->scale.z = 1.0f;
 		SceneObject* obj = getMovingSceneObject(objectIndex);
-		obj->index = objectIndex;
+		obj->index = ModelIndex{ objectIndex };
 		obj->pos = pos;
+        obj->flags = flags;
 		model->meshNumber = mesh_index;
 		engine->globalRendering.gpuMemory.appendElement(BufferType::ModelsMoving, *model);
 		engine->globalRendering.gpuMemory.appendElement(BufferType::ModelsParam, *modelParam);
@@ -331,10 +362,11 @@ SceneObject* MStore::addObject(int32_t mesh_index, glm::vec3 pos, MeshFlagsColle
 		auto objectIndex = engine->globalRendering.gpuMemory.getElementCount(BufferType::Models);
 		if (objectIndex >= sceneObjects.size()) Error("MStore::addObject: Exceeded maximum number of stationary objects");
 
-		GPUModel* model = getGPUModel(objectIndex);
+		GPUModel* model = getGPUModel(ModelIndex{ objectIndex });
 		SceneObject* obj = getSceneObject(objectIndex);
-		obj->index = objectIndex;
+		obj->index = ModelIndex{ objectIndex };
 		obj->pos = pos;
+        obj->flags = flags;
 		model->meshNumber = mesh_index;
 		engine->globalRendering.gpuMemory.appendElement(BufferType::Models, *model);
 		return obj;
@@ -363,11 +395,11 @@ void MStore::getBoundingBox(BoundingBox& box, GPUMeshInfo& meshInfo)
 	meta->boundingBoxAlreadySet = true;
 }
 
-bool MStore::checkBoundingBoxPlausibility(int32_t meshIndex)
+bool MStore::checkBoundingBoxPlausibility(MeshInfoIndex meshIndex)
 {
     GPUMeshInfo* mi = getGPUMeshInfo(meshIndex);
 	getBoundingBox(mi->boundingBox, *mi);
-	string id = std::to_string(meshIndex);
+	string id = std::to_string(meshIndex.asSize());
 	//Log("Bounding box for mesh " << id << ": Min(" << mi->boundingBox.min.x << ", " << mi->boundingBox.min.y << ", " << mi->boundingBox.min.z << "), Max(" << mi->boundingBox.max.x << ", " << mi->boundingBox.max.y << ", " << mi->boundingBox.max.z << ")\n");
 	// check positive size:
 	vec3 size = mi->boundingBox.max - mi->boundingBox.min;
@@ -589,7 +621,7 @@ void SceneObject::prepareGPUModel(GPUModel* gpuModel, glm::mat4& baseTransform)
 	}
 }
 
-void MStore::getFileInfosForMesh(int meshIndex, MeshFile& meshFile, MeshFileEntry& meshFileEntry)
+void MStore::getFileInfosForMesh(MeshInfoIndex meshIndex, MeshFile& meshFile, MeshFileEntry& meshFileEntry)
 {
     // we have no backlink from meshIndex to meshFile, so we have to iterate through all meshFiles and their entries
     for (auto& mf : meshFiles) {
@@ -601,7 +633,7 @@ void MStore::getFileInfosForMesh(int meshIndex, MeshFile& meshFile, MeshFileEntr
             }
         }
     }
-    Error("MStore::getFileInfosForMesh: Mesh index not found: " + std::to_string(meshIndex));
+    Error("MStore::getFileInfosForMesh: Mesh index not found: " + std::to_string(meshIndex.asSize()));
 }
 
 void MStore::debugGraphics(FrameResources& fr, bool drawBoundingBox, bool drawVertices, bool drawNormals, bool drawMeshletBoundingBoxes, glm::vec4 colorVertices, glm::vec4 colorNormal, glm::vec4 colorBoxes, float normalLineLength)

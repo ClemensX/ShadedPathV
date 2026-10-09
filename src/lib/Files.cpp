@@ -113,7 +113,7 @@ string Files::findFile(string filename, FileCategory cat, bool errorIfNotFound, 
 		bfile.open(asset_path.c_str(), ios::in | ios::binary);
 		if (bfile) {
 			filesystem::path p = filename.c_str();
-			Log("WARNING: texture " << filesystem::absolute(p) << " not found, replaced by default.dds texture" << endl);
+			Log("WARNING: texture " << filesystem::absolute(p) << " not found, replaced by default texture: " << filesystem::absolute(asset_path) << endl);
 		}
 
 	}

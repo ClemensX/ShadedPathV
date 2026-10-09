@@ -231,3 +231,45 @@ public:
     float pad1;
 };
 
+// define strongly typed index types for C++ side, to avoid accidental mixing of indices. All indices are uint32_t, but we use different types for different index categories.
+// all types are trivially copyable and have the same size as uint32_t, so they can be used in GPU buffers without padding issues.
+
+// template definitions:
+
+template<typename Tag, typename T = uint32_t>
+struct TypedIndex {
+    T value = invalidValue();
+
+    static constexpr T invalidValue() noexcept { return std::numeric_limits<T>::max(); }
+    static constexpr TypedIndex invalid() noexcept { return {}; }
+
+    constexpr explicit TypedIndex(T v) noexcept : value(v) {}
+    constexpr TypedIndex() noexcept = default;
+
+    // keep explicit conversion for type safety
+    constexpr explicit operator T() const noexcept { return value; }
+
+    // named conversion helpers (avoid repeated static_cast at call sites)
+    constexpr T raw() const noexcept { return value; }
+    constexpr size_t asSize() const noexcept { return static_cast<size_t>(value); }
+
+    constexpr bool isValid() const noexcept { return value != invalidValue(); }
+    friend constexpr bool operator==(TypedIndex, TypedIndex) noexcept = default;
+};
+
+template<typename Tag, typename T>
+constexpr T to_raw(TypedIndex<Tag, T> i) noexcept {
+    return i.raw();
+}
+
+// concrete index types:
+
+struct MeshInfoIndexTag {};
+using MeshInfoIndex = TypedIndex<MeshInfoIndexTag, uint32_t>;
+struct MaterialIndexTag {};
+using MaterialIndex = TypedIndex<MaterialIndexTag, uint32_t>;
+struct ModelIndexTag {};
+using ModelIndex = TypedIndex<ModelIndexTag, uint32_t>;
+
+static_assert(sizeof(MeshInfoIndex) == sizeof(uint32_t));
+static_assert(std::is_trivially_copyable_v<MeshInfoIndex>);

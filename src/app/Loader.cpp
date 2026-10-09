@@ -140,7 +140,7 @@ void Loader::init() {
     auto loaded = mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
     auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
     const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
-    Log("Loaded mesh: " << loaded->id << ", mesh index: " << loaded->meshes[0].meshIndex << ", global mesh index: " << meshInfo->index << ", material index: " << meshInfo->material << std::endl);
+    Log("Loaded mesh: " << loaded->id << ", mesh index: " << loaded->meshes[0].meshIndex.asSize() << ", global mesh index: " << static_cast<uint32_t>(meshInfo->index) << ", material index: " << meshInfo->material.asSize() << std::endl);
     Log("Mesh metadata: vertices " << meshMetadata->vertices.size() << " indices: " << meshMetadata->indices.size() << std::endl);
     Log("Mesh meshlets: " << meshMetadata->meshletsForMesh.meshlets.size() << std::endl);
 

@@ -282,7 +282,7 @@ public:
     void logGPUStructuresMarkdown(std::string filename = "");
 
     static void debugModels(MStore* mstore);
-    static void debugMaterial(MStore* mstore, int32_t materialIndex);
+    static void debugMaterial(MStore* mstore, MaterialIndex materialIndex);
 
     // UI helpers
     static std::vector<std::string> getFilesMatchingPattern(const std::filesystem::path& folder, const std::string& pattern);

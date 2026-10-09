@@ -22,6 +22,7 @@ enum class MeshFlags : int {
 	MESHLET_GENERATE = 7, // re-generate meshlet data if meshlet data file not found
     RENDER_TYPE_MOVING = 8, // object may change position and rotation
 	RENDER_DISABLE = 9,
+    FORCE_RELOAD = 10, // force reload of mesh from file, even if already loaded (mainly used in testing, e.g. for reloading with changed flags)
 	MESH_TYPE_COUNT = -1 // always last
 };
 
@@ -45,6 +46,10 @@ public:
 
 	bool hasFlag(MeshFlags flag) const {
 		return flags.test(static_cast<size_t>(flag));
+	}
+
+	bool equals(const MeshFlagsCollection& other) const {
+		return flags == other.flags;
 	}
 };
 
@@ -70,24 +75,30 @@ struct GPUMeshInfo {
 	uint64_t globalIndexOffset = 0; // offset into global mesh storage buffer
 	uint64_t vertexOffset = 0; // offset into global mesh storage buffer
 	uint32_t meshletCount; // number of meshlets for this LOD
-    uint32_t material; // during parsing: local material index, during GPU upload: global material index
-	uint32_t index; // global mesh index
+    MaterialIndex material; // during parsing: local material index, during GPU upload: global material index
+	MeshInfoIndex index; // global mesh index
 	uint32_t next; // next primitive (0 == no next primitive)
 	BoundingBox boundingBox;
 	glm::mat4 baseTransform = glm::mat4(1.0f);
 };
 
+// models and scene objects:
+// we have a 1-1 relation between SceneObject and GPUModel, meaning if their index is the same, they represent the same object.
+// there are 2 sets: stationary models and moving models. Moving models are updated every frame, stationary models are not updated at all.
 
 // GPUModel and SceneObject describe loaded objects. The GPU only sees GPUModel.
+// we have 2 sets of models: stationary and moving. Moving models are updated every frame, stationary models are not updated at all.
+// for moving models we also have a GPUModelParam structure located at  the same index as the GPUModel in the ModelsMoving buffer.
 struct GPUModel {
     glm::mat4 model; // model to world transform, includes position, rotation and scale
     uint32_t flags; // MODEL_RENDER_FLAG_* , see pbrShader.h
-	uint32_t meshNumber; // link to MeshInfo
+	MeshInfoIndex meshNumber; // link to MeshInfo
 	uint32_t material_lod_category;
-	uint32_t materialIndex; // index into global material array
+	MaterialIndex materialIndex; // index into global material array
 	//BoundingBox boundingBox; // probably not needed
 };
 
+// for moving models we need to handle position, rotation and scale separately from C++ side, so we can update the model matrix on the GPU every frame.
 struct GPUModelParam {
     glm::vec3 pos;
 	float pad0;
@@ -102,9 +113,10 @@ struct SceneObject {
 	glm::vec3 pos;
 	glm::vec3 rot;
 	glm::vec3 scale;
-    int32_t index; // index into global model and object array
+    ModelIndex index; // index into global model and object array
     MeshFlagsCollection flags; // set these flags in app code, they will be translated into GPUModel.flags
 	void prepareGPUModel(GPUModel* gpuModel, glm::mat4& baseTransform);
+    ModelIndex next = ModelIndex::invalid(); // index of next primitive
 };
 
 struct GPUMaterial {
@@ -186,7 +198,7 @@ struct GPUFrameParam {
 
 struct MeshFileEntry {
 	std::string name;
-    int32_t meshIndex;
+    MeshInfoIndex meshIndex;
 };
 
 struct MeshFile {

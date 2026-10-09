@@ -1694,14 +1694,14 @@ void Util::drawMeshAsLines(std::vector<LineDef>& lines, const std::vector<PBRVer
 void Util::debugModels(MStore* mstore) {
     int usedModelCount = mstore->getUsedStationaryModelCount();
     for (int i = 0; i < usedModelCount; ++i) {
-        GPUModel* model = mstore->getGPUModel(i);
-        Log("GPUModel[" << i << "]: meshIndex=" << model->meshNumber << ", flags=" << model->flags << std::endl);
+        GPUModel* model = mstore->getGPUModel(ModelIndex{ static_cast<uint32_t>(i) });
+        Log("GPUModel[" << i << "]: meshIndex=" << model->meshNumber.asSize() << ", flags=" << model->flags << std::endl);
     }
 }
 
-void Util::debugMaterial(MStore* mstore, int32_t materialIndex) {
+void Util::debugMaterial(MStore* mstore, MaterialIndex materialIndex) {
     GPUMaterial* material = mstore->getGPUMaterial(materialIndex);
-    Log("GPUMaterial[" << materialIndex << "]: baseColorTextureSet=" << material->baseColorTextureSet);
+    Log("GPUMaterial[" << materialIndex.asSize() << "]: baseColorTextureSet=" << material->baseColorTextureSet);
     Log("\n  coord set base color: " << material->coord_set_baseColor);
     Log("\n  lod: " << material->lod_category);
     Log(std::endl);

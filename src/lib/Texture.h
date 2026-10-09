@@ -151,9 +151,9 @@ public:
     void setTextureActive(std::string id, bool active);
 	// validation: was hash generated?
 	void validateTexture(TextureInfo* ti);
-	// generate hash value from raw image data
-	size_t generateHash(const unsigned char* bytes, size_t size); 
-    // get texture by hash value, used for texture reuse and validation,
+	// given texture file raw data search existing textures to find the same texture already loaded
+	TextureInfo* findExistingTextureAndGetHash(const unsigned char* bytes, size_t size, size_t& hash);
+	// get texture by hash value, used for texture reuse and validation,
     // simply iterates through textures and compares hash values, inefficient, but even for 1000s of textures should be fairly quickly
 	TextureInfo* getTextureByHash(size_t hash);
     // we may reuse a texture with same hash value, we have to make sure that the sampler is the same, otherwise we have a problem with different samplers for same texture data
@@ -186,6 +186,8 @@ private:
 	Util* util = nullptr;
 	ktxVulkanDeviceInfo vdi = {};
 	size_t maxTextures = 0;
+	// generate hash value from raw image data
+	size_t generateHash(const unsigned char* bytes, size_t size);
 	// after adding a texture check that max size is not exceeded
 	void checkStoreSize();
 	// all creation methods have to call this internally:

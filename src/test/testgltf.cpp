@@ -17,7 +17,7 @@ protected:
 
         // Create engine instance
         engine = new ShadedPathEngine();
-        minimalEngineInitialization(engine);
+        minimalEngineInitialization(engine, 50, "test_samples");
 
         // Set up test data folder structure
         //setupTestDataFolder();
@@ -262,7 +262,7 @@ TEST_F(GLTFParserTest, SingleMesh_CheckShaderData) {
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh");
 
     MeshFile* meshFile = mstore.getMeshFileByID("SingleMesh");
-    int32_t meshIndex = meshFile->meshes[0].meshIndex;
+    MeshInfoIndex meshIndex = meshFile->meshes[0].meshIndex;
     GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
     MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
     GPUMaterial* material = mstore.getGPUMaterial(meshInfo->material);
@@ -290,30 +290,30 @@ TEST_F(GLTFParserTest, SingleMesh_CheckShaderData) {
     EXPECT_EQ(meshInfo->boundingBox.max, glm::vec3(1.0f, 1.0f, 1.0f));
 
     // stationary objects:
-    for (int i = 0; i < engine->getMaxObjects(); ++i) {
+    for (uint32_t i = 0; i < engine->getMaxObjects(); ++i) {
         auto obj = engine->mstore.addObject(meshIndex, glm::vec3(0.0f, 0.0f, 0.0f));
         EXPECT_TRUE(obj != nullptr) << "Failed to add object at index " << i;
-        EXPECT_EQ(obj->index, i);
+        EXPECT_EQ(obj->index.raw(), i);
     }
     // adding another object should exit()
     //engine->mstore.addObject(meshIndex, glm::vec3(0.0f, 0.0f, 0.0f));
 
     // moving objects:
-    for (int i = 0; i < engine->getMaxMovingObjects(); ++i) {
+    for (uint32_t i = 0; i < engine->getMaxMovingObjects(); ++i) {
         MeshFlagsCollection flagsMoving;
         flagsMoving.setFlag(MeshFlags::RENDER_TYPE_MOVING);
         auto obj = engine->mstore.addObject(meshIndex, glm::vec3(0.0f, 0.0f, 0.0f), flagsMoving);
         EXPECT_TRUE(obj != nullptr) << "Failed to add moving object at index " << i;
-        EXPECT_EQ(obj->index, i);
+        EXPECT_EQ(obj->index.raw(), i);
     }
 }
 
-// Test access to mesh info, textures, model and material
+// Test meshlet generation and access to meshlet data
 TEST_F(GLTFParserTest, Meshlets) {
     MStore& mstore = engine->mstore;
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh");
     MeshFile* meshFile = mstore.getMeshFileByID("SingleMesh");
-    int32_t meshIndex = meshFile->meshes[0].meshIndex;
+    MeshInfoIndex meshIndex = meshFile->meshes[0].meshIndex;
     MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
 
     EXPECT_FALSE(meshMetadata->hasMeshlets()) << "cube_single.gltf should not have meshlets without generating them";
@@ -321,6 +321,7 @@ TEST_F(GLTFParserTest, Meshlets) {
     // now load again with meshlet generation enabled:
     MeshFlagsCollection flags;
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
+    flags.setFlag(MeshFlags::FORCE_RELOAD);
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh_Meshlets", flags);
     meshFile = mstore.getMeshFileByID("SingleMesh_Meshlets");
     meshIndex = meshFile->meshes[0].meshIndex;
@@ -339,31 +340,76 @@ TEST_F(GLTFParserTest, Mesh_Indices) {
     MStore& mstore = engine->mstore;
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh");
     MeshFile* meshFile = mstore.getMeshFileByID("SingleMesh");
-    int32_t meshIndex = meshFile->meshes[0].meshIndex;
-    EXPECT_EQ(meshIndex, 0) << "Expected mesh index 0 for first mesh";
+    MeshInfoIndex meshIndex = meshFile->meshes[0].meshIndex;
+    EXPECT_EQ(meshIndex.asSize(), 0) << "Expected mesh index 0 for first mesh";
     MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
     EXPECT_GT(meshMetadata->vertices.size(), 0) << "Expected non-zero vertex count";
     EXPECT_GT(meshMetadata->indices.size(), 0) << "Expected non-zero index count";
     GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
-    EXPECT_EQ(meshInfo->index, meshIndex) << "GPUMeshInfo index should match mesh index";
+    EXPECT_EQ(meshInfo->index.asSize(), meshIndex.asSize()) << "GPUMeshInfo index should match mesh index";
 
     // now load again and check higher indices:
-    engine->mstore.loadMesh("cube_single.gltf", "SingleMesh_Meshlets");
+    MeshFlagsCollection flags;
+    flags.setFlag(MeshFlags::FORCE_RELOAD);
+    engine->mstore.loadMesh("cube_single.gltf", "SingleMesh_Meshlets", flags);
     meshFile = mstore.getMeshFileByID("SingleMesh_Meshlets");
     meshIndex = meshFile->meshes[0].meshIndex;
-    EXPECT_EQ(meshIndex, 1) << "Expected mesh index 1 for second mesh";
+    uint32_t mIdx = meshIndex.asSize();
+    EXPECT_EQ(mIdx, 1) << "Expected mesh index 1 for second mesh";
     MeshInfoMetadata* meshMetadata2 = mstore.getMeshMetadata(meshIndex);
     EXPECT_NE(meshMetadata2, meshMetadata) << "Expected new MeshInfoMetadata for second mesh";
     meshInfo = mstore.getGPUMeshInfo(meshIndex);
-    EXPECT_EQ(meshInfo->index, meshIndex) << "GPUMeshInfo index should match mesh index for second mesh";
+    EXPECT_EQ(meshInfo->index.asSize(), mIdx) << "GPUMeshInfo index should match mesh index for second mesh";
 
     // recheck GPUMeshInfo array:
     EXPECT_EQ(engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos), 2) << "Expected 2 GPUMeshInfo entries after loading two meshes";
-    auto mesh0 = mstore.getGPUMeshInfo(0);
-    EXPECT_EQ(mesh0->index, 0) << "First GPUMeshInfo index should be 0";
-    auto mesh1 = mstore.getGPUMeshInfo(1);
-    EXPECT_EQ(mesh1->index, 1) << "Second GPUMeshInfo index should be 1";
+    auto mesh0 = mstore.getGPUMeshInfo(static_cast<MeshInfoIndex>(0));
+    uint32_t mesh0idx = mesh0->index.asSize();
+    EXPECT_EQ(mesh0idx, 0) << "First GPUMeshInfo index should be 0";
+    auto mesh1 = mstore.getGPUMeshInfo(static_cast<MeshInfoIndex>(1));
+    uint32_t mesh1idx = mesh1->index.asSize();
+    EXPECT_EQ(mesh1idx, 1) << "Second GPUMeshInfo index should be 1";
     EXPECT_NE(mesh0, mesh1) << "GPUMeshInfo entries should be distinct";
+}
+
+// test gltf files with more than one primitive
+TEST_F(GLTFParserTest, MultiMesh_TwoPartTree) {
+    MStore& mstore = engine->mstore;
+    TextureStore& tstore = engine->textureStore;
+    engine->setTextureReuse(false); // disable texture reuse for this test (otherwise texture counting is off)
+
+    int numTextures = tstore.size();
+
+    MeshFlagsCollection flags;
+    flags.setFlag(MeshFlags::MESHLET_GENERATE);
+    engine->mstore.loadMesh("tree_primitives.gltf", "tree", flags);
+    EXPECT_EQ(mstore.getMeshFiles().size(), 1) << "Expected 1 mesh file loaded";
+    int numTexturesLoaded = tstore.size() - numTextures;
+
+    MeshFile* meshFile = mstore.getMeshFileByID("tree");
+    EXPECT_EQ(meshFile->meshes.size(), 2) << "Expected 2 meshes in tree_primitives.gltf";
+
+    for (size_t i = 0; i < meshFile->meshes.size(); ++i) {
+        MeshInfoIndex meshIndex = meshFile->meshes[i].meshIndex;
+        MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
+        GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
+        EXPECT_TRUE(meshMetadata->hasMeshlets()) << "meshlet regeneration failed for primitive " << i;
+        // log triangle count and vertex count
+        Log("Primitive " << i << ": vertices = " << meshMetadata->vertices.size()
+            << ", triangles = " << meshMetadata->indices.size() / 3
+            << ", meshlets = " << meshMetadata->meshletsForMesh.meshlets.size() << "\n");
+        // check material and textures
+        GPUMaterial* material = mstore.getGPUMaterial(meshInfo->material);
+        Log("Material for primitive " << i << ": baseColorTextureSet = " << material->baseColorTextureSet
+            << ", physicalDescriptorTextureSet = " << material->physicalDescriptorTextureSet
+            << ", normalTextureSet = " << material->normalTextureSet << "\n");
+    }
+
+    // verify basic gltf parsing data:
+    // assert number of textures loaded: There are 6 textures in the file, but 2 roughnessand normal textures are
+    // the same, so we have to disable texture reuse to get 6 textures loaded!
+    EXPECT_EQ(numTexturesLoaded, 6) << "Expected 6 new textures loaded for tree_primitives.gltf";
+
 }
 
 // Test 2: Single mesh with LOD levels (10 LODs)

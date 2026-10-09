@@ -122,6 +122,8 @@ public:
     ShadedPathEngine& setMaxCollections(uint64_t mc) { fii(); MaxCollections = mc; return *this; }
     // set mesh storage size in GB
     ShadedPathEngine& setMeshStorageSizeGB(float sizeGB) { fii(); meshStorageSize = 1024*1024*1024 * sizeGB; return *this; }
+    // enable texture reuse (can be set any time and applies for any texture loaded after this call)
+    ShadedPathEngine& setTextureReuse(bool enable) { enableTextureReuse = enable; return *this; }
 
     // getters
     bool isDebugWindowPosition() { return debugWindowPosition; }
@@ -132,6 +134,7 @@ public:
     bool isEnforceVR() { return vrEnforce; }
     bool isSoundEnabled() { return enableSound; }
     bool isGlobalWireframeEnabled() { return globalWireframe; }
+    bool isTextureReuse() { return enableTextureReuse; }
 
     bool isMainThread();
     void log_current_thread();
@@ -354,6 +357,7 @@ private:
     bool stereoMode = false;
     bool globalWireframe = false; // everything relying on ShaderBase::createStandardRasterizer() will have wireframe enabled
     bool meshShaderEnabled = false; // enable mesh shaders, if supported by GPU
+    bool enableTextureReuse = true; // if true, we will reuse textures with same byte content
     ImageConsumer* imageConsumer = nullptr;
     ImageConsumerNullify imageConsumerNullify;
     // We have to set max number of objects, as buffers have to be allocated (one entry for each object in a large buffer)
