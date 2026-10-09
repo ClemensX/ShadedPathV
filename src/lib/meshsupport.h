@@ -82,6 +82,9 @@ struct GPUMeshInfo {
 	glm::mat4 baseTransform = glm::mat4(1.0f);
 };
 
+// models and scene objects:
+// we have a 1-1 relation between SceneObject and GPUModel, meaning if their index is the same, they represent the same object.
+// there are 2 sets: stationary models and moving models. Moving models are updated every frame, stationary models are not updated at all.
 
 // GPUModel and SceneObject describe loaded objects. The GPU only sees GPUModel.
 // we have 2 sets of models: stationary and moving. Moving models are updated every frame, stationary models are not updated at all.
@@ -113,6 +116,7 @@ struct SceneObject {
     ModelIndex index; // index into global model and object array
     MeshFlagsCollection flags; // set these flags in app code, they will be translated into GPUModel.flags
 	void prepareGPUModel(GPUModel* gpuModel, glm::mat4& baseTransform);
+    ModelIndex next = ModelIndex::invalid(); // index of next primitive
 };
 
 struct GPUMaterial {
