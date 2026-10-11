@@ -1502,12 +1502,15 @@ void glTF::parseGltfModel(tinygltf::Model& model)
 	size_t curMeshIndex = 0;
 	for (int mi = 0; mi < (int)model.meshes.size(); ++mi) {
 		auto& m = model.meshes[mi];
-        for (int prim = 0; prim < (int)m.primitives.size(); ++prim) {
-            auto& p = m.primitives[prim];
-            // fill gpuMeshInfos[curMeshIndex] with data from p and m
-            gpuMeshInfos[curMeshIndex].material = MaterialIndex { static_cast<uint32_t>(p.material) };
-            gpuMeshInfos[curMeshIndex].index = MeshInfoIndex { static_cast<uint32_t>(curMeshIndex) };
-            gpuMeshInfos[curMeshIndex].next = (prim < (int)m.primitives.size() - 1) ? curMeshIndex + 1 : 0;
+		for (int prim = 0; prim < (int)m.primitives.size(); ++prim) {
+			auto& p = m.primitives[prim];
+			// fill gpuMeshInfos[curMeshIndex] with data from p and m
+			gpuMeshInfos[curMeshIndex].material = MaterialIndex{ static_cast<uint32_t>(p.material) };
+			gpuMeshInfos[curMeshIndex].index = MeshInfoIndex{ static_cast<uint32_t>(curMeshIndex) };
+			// adjuct next index if there are more primitives:
+            if (prim < (int)m.primitives.size() - 1) {
+                gpuMeshInfos[curMeshIndex].next = MeshInfoIndex{ static_cast<uint32_t>(curMeshIndex + 1) };
+            }
 			gpuMeshMetadata[curMeshIndex].name = m.name;
 			gpuMeshInfos[curMeshIndex].baseTransform = collectBaseTransform(model, mi);
 			loadVerticesCore(model, gpuMeshMetadata[curMeshIndex].vertices, gpuMeshMetadata[curMeshIndex].indices, mi, prim);

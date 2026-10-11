@@ -23,7 +23,7 @@ void Loader::run(ContinuationInfo* cont)
         // camera for damaged helmet video recording:
         //vec3 cameraPosition(-0.640809f, - 0.445347f, 2.82217f);
         // camera for acacia tree: -5.60122 5.41301 50.4716 
-        vec3 cameraPosition(-5.60122f, 5.41301f, 50.4716f);
+        vec3 cameraPosition(1.60122f, 5.41301f, 16.4716f);
         initCamera(cameraPosition, glm::vec3(0.0f, 0.5f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
         Movement mv;
@@ -34,7 +34,11 @@ void Loader::run(ContinuationInfo* cont)
         // engine configuration
         enableEventsAndModes();
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
-        engine->files.findAssetFolder("data");
+        if (runWithStandardAssets) {
+            engine->files.findAssetFolder("test_samples");
+        } else {
+            engine->files.findAssetFolder("data");
+        }
         setHighBackbufferResolution();
         camera->saveProjectionParams(glm::radians(45.0f), engine->getAspect(), 0.01f, 5000.0f);
 
@@ -135,8 +139,8 @@ void Loader::init() {
     MeshFlagsCollection flags;
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
     MStore& mstore = engine->mstore;
-    //engine->mstore.loadMesh("test/cube_single.gltf", "SingleMesh", flags);
-    engine->mstore.loadMesh("DamagedHelmet_cmp.glb", "SingleMesh", flags); alterObjectCoords = true;
+    engine->mstore.loadMesh("tree_primitives.gltf", "SingleMesh", flags);
+    //engine->mstore.loadMesh("DamagedHelmet_cmp.glb", "SingleMesh", flags);
     auto loaded = mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
     auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
     const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
@@ -182,7 +186,12 @@ void Loader::init() {
 
     // load skybox cube texture and generate cubemaps
     //engine->textureStore.loadTexture("nebula.ktx2", "skyboxTexture");
-    engine->textureStore.loadTexture("cube_sky.ktx2", "skyboxTexture");
+    if (runWithStandardAssets) {
+        engine->textureStore.loadTexture("debug_arrows.ktx2", "skyboxTexture");
+    }
+    else {
+        engine->textureStore.loadTexture("sky.ktx2", "skyboxTexture");
+    }
     //engine->textureStore.loadTexture("papermill.ktx2", "skyboxTexture");
     //engine->textureStore.loadTexture("arches_pinetree_high.ktx2", "skyboxTexture");
     // generating cubemaps makes shader debugPrintf failing, so we load pre-generated cubemaps
@@ -290,7 +299,7 @@ void Loader::prepareFrame(FrameResources* fr)
 
     // be sure to add cam pos to UBO for PBR shader!!!
     applyViewProjection(pubo.view, pubo.proj, pubo2.view, pubo2.proj, &pubo.camPos, &pubo2.camPos);
-    Log("Camera position: " << pubo.camPos.x << " " << pubo.camPos.y << " " << pubo.camPos.z << endl); // Camera position: -0.0386716 0.2 0.51695
+    //Log("Camera position: " << pubo.camPos.x << " " << pubo.camPos.y << " " << pubo.camPos.z << endl); // Camera position: -0.0386716 0.2 0.51695
 
     engine->shaders.pbrShader.uploadToGPU(tr, pubo, pubo2);
     // change individual objects position:

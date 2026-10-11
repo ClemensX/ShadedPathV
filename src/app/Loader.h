@@ -19,6 +19,7 @@ public:
     bool shouldClose() override;
     void handleInput(InputState& inputState) override;
 private:
+    bool runWithStandardAssets = true; // do not use data folder, but use standard assets from engine
     World world;
     WorldObject *object = nullptr;
     float plus = 0.0f;

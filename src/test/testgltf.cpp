@@ -398,6 +398,7 @@ TEST_F(GLTFParserTest, MultiMesh_TwoPartTree) {
         Log("Primitive " << i << ": vertices = " << meshMetadata->vertices.size()
             << ", triangles = " << meshMetadata->indices.size() / 3
             << ", meshlets = " << meshMetadata->meshletsForMesh.meshlets.size() << "\n");
+        Log("  has next index: " << meshInfo->next.raw() << "\n");
         // check material and textures
         GPUMaterial* material = mstore.getGPUMaterial(meshInfo->material);
         Log("Material for primitive " << i << ": baseColorTextureSet = " << material->baseColorTextureSet
@@ -406,10 +407,16 @@ TEST_F(GLTFParserTest, MultiMesh_TwoPartTree) {
     }
 
     // verify basic gltf parsing data:
-    // assert number of textures loaded: There are 6 textures in the file, but 2 roughnessand normal textures are
+    // assert number of textures loaded: There are 6 textures in the file, but 2 roughnes sand normal textures are
     // the same, so we have to disable texture reuse to get 6 textures loaded!
     EXPECT_EQ(numTexturesLoaded, 6) << "Expected 6 new textures loaded for tree_primitives.gltf";
 
+    // add a stationary object
+    MeshInfoIndex meshIndex = meshFile->meshes[0].meshIndex;
+    GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
+    SceneObject* object = mstore.addObject(meshIndex, vec3(0.0f, 0.0f, 0.0f));
+
+    EXPECT_TRUE(meshInfo->next.isValid()) << "Object mesh should have another primitive";
 }
 
 // Test 2: Single mesh with LOD levels (10 LODs)

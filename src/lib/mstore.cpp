@@ -313,7 +313,9 @@ void MStore::addToGlobalBuffers(const std::vector<GPUMeshInfo>& gpuMeshInfos, co
 		// convert local material index to global material index
 		globalMeshInfo.material = MaterialIndex { globalMaterialStart + meshInfo.material.raw() };
         globalMeshInfo.index = MeshInfoIndex { globalMeshStart + i }; // convert local mesh index to global mesh index
-        globalMeshInfo.next = (meshInfo.next > 0) ? globalMeshStart + meshInfo.next : 0; // convert local next index to global next index
+		if (meshInfo.next.isValid()) {
+            globalMeshInfo.next = MeshInfoIndex{ globalMeshStart + meshInfo.next.raw() }; // convert local next index to global next index
+		}
         engine->globalRendering.gpuMemory.appendElement(BufferType::MeshInfos, globalMeshInfo);
 		meshMetadata[globalMeshStart + i] = gpuMeshMetadata[i];
         i++;
