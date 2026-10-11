@@ -1,0 +1,19 @@
+Gatekeeper on other Macs: your ad-hoc signature (codesign --sign -) runs fine locally, 
+but when the zip lands on a different Mac it gets the com.apple.quarantine attribute and Gatekeeper may block it. 
+Workarounds: right-click → Open (then confirm), or xattr -dr com.apple.quarantine YourAwesomeGame.app. For 
+frictionless distribution you'd need a Developer ID signature plus notarization (xcrun notarytool), 
+but for testing among your own machines the quarantine removal is enough.
+
+running:
+
+No installer needed — the .app is self-contained:
+
+On your Mac (or any Mac):
+
+Unzip if needed: double-click the zip in Finder, or ditto -x -k YourAwesomeGame.zip . (plain unzip also works for archives made with ditto).
+Drag YourAwesomeGame.app into Applications (optional — it runs from any folder).
+Launch it: double-click in Finder, or open YourAwesomeGame.app from Terminal.
+For debugging with console output, run the inner executable directly so you see stdout/stderr:
+
+./YourAwesomeGame.app/Contents/MacOS/YourAwesomeGame
+

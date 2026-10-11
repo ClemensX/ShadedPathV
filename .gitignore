@@ -40,3 +40,7 @@ local_options.cmake
 vcpkg_installed
 /test_samples/texture/irradiance.ktx2
 /test_samples/texture/prefilter.ktx2
+
+#mac build files
+mac/YourAwesomeGame.zip
+mac/YourAwesomeGame.app
