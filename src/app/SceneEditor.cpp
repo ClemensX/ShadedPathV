@@ -553,7 +553,7 @@ void SceneEditor::buildCustomUI() {
             auto meshIndex = gpuModel->meshNumber;
             //mat4 baseTransform = engine->mstore.getGPUMeshInfo(meshIndex)->baseTransform;
             glm::mat4 base(1.0f);
-            so->prepareGPUModel(gpuModel, base);
+            engine->mstore.prepareGPUModels(so, base);
             engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, so->index.raw());
 
             // detect change
@@ -635,7 +635,7 @@ void SceneEditor::addObjectToScene(int meshFileIndex, bool moving)
         flags.setFlag(MeshFlags::RENDER_TYPE_MOVING);
     }
 
-    const MeshInfoIndex meshIndex = selectedFile.meshes[0].meshIndex;
+    const MeshInfoIndex meshIndex = selectedFile.meshes[1].meshIndex;
     GPUMeshInfo* meshInfo = engine->mstore.getGPUMeshInfo(meshIndex);
     if (meshInfo == nullptr) {
         Error("SceneEditor::addObjectToScene: failed to resolve mesh info");
@@ -656,7 +656,7 @@ void SceneEditor::addObjectToScene(int meshFileIndex, bool moving)
         ? engine->mstore.getGPUMovingModel(object->index)
         : engine->mstore.getGPUModel(object->index);
 
-    object->prepareGPUModel(gpuModel, baseTransform);
+    engine->mstore.prepareGPUModels(object, baseTransform);
 
     if (moving) {
         engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, object->index.raw());
@@ -679,7 +679,7 @@ void SceneEditor::redoAllStationaryObjects()
         SceneObject* so = engine->mstore.getSceneObject(i);
         GPUModel* gpuModel = engine->mstore.getGPUModel(so->index);
         mat4 baseTransform = mat4(1.0); // get from gltf later
-        so->prepareGPUModel(gpuModel, baseTransform);
+        engine->mstore.prepareGPUModels(so, baseTransform);
         engine->globalRendering.gpuMemory.updateElement(BufferType::Models, *gpuModel, so->index.raw());
         //Log("Re-uploaded stationary object " << i << " at position: " << so->pos.x << ", " << so->pos.y << ", " << so->pos.z << std::endl);
     }
@@ -693,7 +693,7 @@ void SceneEditor::redoAllMovingObjects()
         SceneObject* so = engine->mstore.getMovingSceneObject(i);
         GPUModel* gpuModel = engine->mstore.getGPUMovingModel(so->index);
         mat4 baseTransform = mat4(1.0); // get from gltf later
-        so->prepareGPUModel(gpuModel, baseTransform);
+        engine->mstore.prepareGPUModels(so, baseTransform);
         engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, so->index.raw());
         GPUModelParam* gpuModelParam = engine->mstore.getGPUModelParam(so->index);
         gpuModelParam->pos = so->pos;
@@ -904,6 +904,7 @@ void SceneEditor::loadSceneFromFile(const std::string& sceneFilePathName)
     gpuMemory.resetElementCount(BufferType::ModelsParam);
     displayParams.stationaryModels.clear();
     displayParams.movingModels.clear();
+    // TODO: handle vars like MStore::usedStationaryModelCount
 
     // Load env cube from scene if available
     const std::string envCube = sceneJson.value("envCube", "");
@@ -933,12 +934,12 @@ void SceneEditor::loadSceneFromFile(const std::string& sceneFilePathName)
         }
 
         MeshInfoIndex meshIndex = meshFile->meshes[0].meshIndex;
-        for (const auto& entry : meshFile->meshes) {
-            if (entry.name == meshName) {
-                meshIndex = entry.meshIndex;
-                break;
-            }
-        }
+        //for (const auto& entry : meshFile->meshes) {
+        //    if (entry.name == meshName) {
+        //        meshIndex = entry.meshIndex;
+        //        break;
+        //    }
+        //}
 
         SceneObject* object = engine->mstore.addObject(meshIndex, glm::vec3(0.0f), flags);
         if (object == nullptr) {
@@ -966,7 +967,7 @@ void SceneEditor::loadSceneFromFile(const std::string& sceneFilePathName)
             ? engine->mstore.getGPUMovingModel(object->index)
             : engine->mstore.getGPUModel(object->index);
 
-        object->prepareGPUModel(gpuModel, baseTransform);
+        engine->mstore.prepareGPUModels(object, baseTransform);
 
         if (moving) {
             engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, object->index.raw());

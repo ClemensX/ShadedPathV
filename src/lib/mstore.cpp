@@ -26,8 +26,8 @@ void MStore::init() {
 
     // we need a 1 to 1 mapping of GPUMeshInfo to MeshInfoMetadata for CPU side operations, so we preallocate the vector to maxMeshes
     meshMetadata.resize(maxMeshes);
-    sceneObjects.resize(maxModels);
-    movingSceneObjects.resize(maxMovingModels);
+    sceneObjects.reserve(maxModels);
+    movingSceneObjects.reserve(maxMovingModels);
 }
 
 MeshFile* MStore::checkMeshFile(std::string filename, std::string id)
@@ -190,9 +190,17 @@ std::string MStore::getGPUModelString(SceneObject* obj)
 
 GPUModel* MStore::getGPUModel(SceneObject* obj) {
 	if (obj->flags.hasFlag(MeshFlags::RENDER_TYPE_MOVING))
-		return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::ModelsMoving, obj->index.asSize());
+		return getGPUMovingModel(obj->index);
 	else
-		return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::Models, obj->index.asSize());
+		return getGPUModel(obj->index);
+}
+
+GPUModel* MStore::getGPUModel(SceneObject* obj, ModelIndex index)
+{
+	if (obj->flags.hasFlag(MeshFlags::RENDER_TYPE_MOVING))
+		return getGPUMovingModel(index);
+	else
+		return getGPUModel(index);
 }
 
 GPUModel* MStore::getGPUModel(ModelIndex index) {
@@ -229,6 +237,20 @@ SceneObject* MStore::getSceneObject(int32_t index) {
 
 SceneObject* MStore::getMovingSceneObject(int32_t index) {
 	return &movingSceneObjects[index];
+}
+
+SceneObject* MStore::addSceneObject() {
+    size_t index = sceneObjects.size();
+    sceneObjects.emplace_back();
+    auto so = &sceneObjects[index];
+	return so;
+}
+
+SceneObject* MStore::addMovingSceneObject() {
+    size_t index = movingSceneObjects.size();
+    movingSceneObjects.emplace_back();
+    auto so = &movingSceneObjects[index];
+	return so;
 }
 
 MeshInfoMetadata* MStore::getMeshMetadata(MeshInfoIndex tindex) {
@@ -341,38 +363,95 @@ SceneObject* MStore::addObject(MeshInfoIndex mesh_index, glm::vec3 pos, MeshFlag
 		Error("MStore::addObject: Invalid mesh index");
 		return nullptr; // keep compiler happy
 	}
+	GPUModel* model = nullptr;
+	GPUModel* oldModel = nullptr;
+	GPUModelParam* modelParam = nullptr;
+    SceneObject* obj = nullptr;
+	if (flags.hasFlag(MeshFlags::RENDER_TYPE_MOVING)) {
+		obj = addMovingSceneObject();
+	} else {
+		obj = addSceneObject();
+	}
+	obj->pos = pos;
+	obj->flags = flags;
+	// now append models (and model params if moving) to this scene object:
+	while (mesh_index.isValid()) {
+		GPUMeshInfo* meshInfo = getGPUMeshInfo(mesh_index);
+		//assert(meshInfo->index == mesh_index);
+		ModelIndex modelIndex;
+		if (flags.hasFlag(MeshFlags::RENDER_TYPE_MOVING)) {
+			auto mIndex = engine->globalRendering.gpuMemory.getElementCount(BufferType::ModelsMoving);
+			if (mIndex >= engine->globalRendering.gpuMemory.getMaxElementCount(BufferType::ModelsMoving)) Error("MStore::addObject: Exceeded maximum number of moving models");
+            modelIndex = ModelIndex{ mIndex };
+			model = getGPUMovingModel(modelIndex);
+			modelParam = getGPUModelParam(modelIndex);
+		} else {
+			auto mIndex = engine->globalRendering.gpuMemory.getElementCount(BufferType::Models);
+			if (mIndex >= engine->globalRendering.gpuMemory.getMaxElementCount(BufferType::Models)) Error("MStore::addObject: Exceeded maximum number of stationary models");
+			modelIndex = ModelIndex{ mIndex };
+			model = getGPUModel(modelIndex);
+		}
+		// initialize model instance:
+		*model = GPUModel{};
+		model->meshNumber = mesh_index;
+        // only set the first model index to the scene object, subsequent models will be linked via meshInfo->next
+		if (!obj->index.isValid()) obj->index = modelIndex;
+		if (flags.hasFlag(MeshFlags::RENDER_TYPE_MOVING)) {
+			engine->globalRendering.gpuMemory.appendElement(BufferType::ModelsMoving, *model);
+			engine->globalRendering.gpuMemory.appendElement(BufferType::ModelsParam, *modelParam);
+		} else {
+			engine->globalRendering.gpuMemory.appendElement(BufferType::Models, *model);
+		}
+		Log("add model index " << modelIndex.raw() << " and mesh index " << meshInfo->index.raw() << " to scene object " << obj->index.raw() << endl);
+        mesh_index = meshInfo->next; // prepare for next iteration
+        if (oldModel != nullptr) {
+            oldModel->next = modelIndex; // link previous model to this one
+        }
+        oldModel = model; // keep track of the last model for linking
+	}
+    return obj;
+
+#if 0
 	if (flags.hasFlag(MeshFlags::RENDER_TYPE_MOVING)) {
 		// current index:
 		auto objectIndex = engine->globalRendering.gpuMemory.getElementCount(BufferType::ModelsMoving);
 		if (objectIndex >= movingSceneObjects.size()) Error("MStore::addObject: Exceeded maximum number of moving objects");
 
 		GPUModel* model = getGPUMovingModel(ModelIndex{ objectIndex });
+		// initialize model instance:
+		*model = GPUModel{};
 		GPUModelParam* modelParam = getGPUModelParam(ModelIndex{ objectIndex });
 		modelParam->pos.x = 0.5f;
-        modelParam->rot.y = 2.0f;
-        modelParam->scale.z = 1.0f;
+		modelParam->rot.y = 20.0f;
+		modelParam->scale.z = 1.0f;
 		SceneObject* obj = getMovingSceneObject(objectIndex);
 		obj->index = ModelIndex{ objectIndex };
 		obj->pos = pos;
-        obj->flags = flags;
+		obj->flags = flags;
 		model->meshNumber = mesh_index;
 		engine->globalRendering.gpuMemory.appendElement(BufferType::ModelsMoving, *model);
 		engine->globalRendering.gpuMemory.appendElement(BufferType::ModelsParam, *modelParam);
 		return obj;
-	} else {
+	}
+	else {
 		// current index:
 		auto objectIndex = engine->globalRendering.gpuMemory.getElementCount(BufferType::Models);
 		if (objectIndex >= sceneObjects.size()) Error("MStore::addObject: Exceeded maximum number of stationary objects");
 
 		GPUModel* model = getGPUModel(ModelIndex{ objectIndex });
+		// initialize model instance:
+		*model = GPUModel{};
 		SceneObject* obj = getSceneObject(objectIndex);
 		obj->index = ModelIndex{ objectIndex };
 		obj->pos = pos;
-        obj->flags = flags;
+		obj->flags = flags;
 		model->meshNumber = mesh_index;
 		engine->globalRendering.gpuMemory.appendElement(BufferType::Models, *model);
 		return obj;
 	}
+
+#endif // 0
+
 }
 
 // Util methods
@@ -598,28 +677,33 @@ void MStore::logMeshletStats(GPUMeshInfo* mesh)
 	Log("  vertices: " << meta->meshletsForMesh.globalVertices.size() << endl);
 }
 
-void SceneObject::prepareGPUModel(GPUModel* gpuModel, glm::mat4& baseTransform)
+void MStore::prepareGPUModels(SceneObject* obj, glm::mat4& baseTransform)
 {
-	glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), rot.x, glm::vec3(1.0f, 0.0f, 0.0f));
-	glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), rot.y, glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), rot.z, glm::vec3(0.0f, 0.0f, 1.0f));
+	glm::mat4 rotationX = glm::rotate(glm::mat4(1.0f), obj->rot.x, glm::vec3(1.0f, 0.0f, 0.0f));
+	glm::mat4 rotationY = glm::rotate(glm::mat4(1.0f), obj->rot.y, glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 rotationZ = glm::rotate(glm::mat4(1.0f), obj->rot.z, glm::vec3(0.0f, 0.0f, 1.0f));
 
 	glm::mat4 rotationMatrix = rotationZ * rotationY * rotationX;
-	glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, pos.z));
-	glm::mat4 scaled = glm::scale(glm::mat4(1.0f), scale);
+	glm::mat4 trans = glm::translate(glm::mat4(1.0f), glm::vec3(obj->pos.x, obj->pos.y, obj->pos.z));
+	glm::mat4 scaled = glm::scale(glm::mat4(1.0f), obj->scale);
 
-	// Apply baseTransform first (rightmost), then Scale, then Rotate, then Translate:
-	gpuModel->model = trans * rotationMatrix * scaled * baseTransform;
+    mat4 modelMatrix = trans * rotationMatrix * scaled * baseTransform;
 
-	// convert flags to GPUModel.flags:
-	if (flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
-		gpuModel->flags |= PBRShader::MODEL_RENDER_FLAG_USE_VERTEX_COLORS; // no textures, use vertex colors
-	}
-	if (flags.hasFlag(MeshFlags::MESHLET_DEBUG_COLORS)) {
-		gpuModel->flags |= PBRShader::MODEL_RENDER_FLAG_USE_VERTEX_COLORS; // no textures, use vertex colors
-	}
-	if (flags.hasFlag(MeshFlags::RENDER_DISABLE)) {
-		gpuModel->flags |= PBRShader::MODEL_RENDER_FLAG_DISABLE;
+	ModelIndex mi = obj->index;
+	while (mi.isValid()) {
+		GPUModel* gpuModel = getGPUModel(obj, mi);
+        gpuModel->model = modelMatrix;
+		// convert flags to GPUModel.flags:
+		if (obj->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
+			gpuModel->flags |= PBRShader::MODEL_RENDER_FLAG_USE_VERTEX_COLORS; // no textures, use vertex colors
+		}
+		if (obj->flags.hasFlag(MeshFlags::MESHLET_DEBUG_COLORS)) {
+			gpuModel->flags |= PBRShader::MODEL_RENDER_FLAG_USE_VERTEX_COLORS; // no textures, use vertex colors
+		}
+		if (obj->flags.hasFlag(MeshFlags::RENDER_DISABLE)) {
+			gpuModel->flags |= PBRShader::MODEL_RENDER_FLAG_DISABLE;
+		}
+		mi = gpuModel->next;
 	}
 }
 
@@ -663,7 +747,7 @@ void MStore::debugGraphicsObject(SceneObject* so, FrameResources& fr, bool drawB
     //Log("Debug graphics for object " << so->index << " mesh " << gpuModel->meshNumber << " name: " << meta->name  << " # vertices: " << meta->vertices.size() << endl);
 
     // compute world matrix for this object:
-    so->prepareGPUModel(gpuModel, meshInfo->baseTransform);
+    prepareGPUModels(so, meshInfo->baseTransform);
     if (drawVertices) {
 		for (long i = 0; i < meta->indices.size(); i += 3) {
 			l.color = colorVertices;

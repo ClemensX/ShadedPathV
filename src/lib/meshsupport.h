@@ -1,5 +1,5 @@
 // support structures for mesh handling
-
+// has to be similar to GPU side sructures in pbr_mesh_common2.glsl
 #pragma once
 
 struct KHRTextureTransform {
@@ -67,6 +67,18 @@ struct GPUCollectionInfo {
 	uint32_t pad0;
 };
 
+
+// structure overview:
+// We have GPUMeshInfo for each mesh - each primitive in agltf file has its own.
+// Each primitive has its own element in buffers: 
+//   for moving objects: ModelsMoving --> GPUModel, ModelParamsMoving --> GPUModelParam
+//   for stationary objects: Models --> GPUModel
+// ON CPU side we have MeshInfoMetadata for each mesh, and SceneObject for each object instance (moving or stationary).
+// One SceneObject is used for the whole object and may contain mutliple mesh primitives
+//   moving objects: SceneObject in movingSceneObjects
+//   stationary objects: SceneObject in sceneObjects
+// Primitives are linked 
+
 // MeshInfoMetadata and GPUMeshInfo describe loaded meshes. Exactly one each for every mesh in the global mesh buffer.
 // we no longer use offsets, all 64 bit addresses are absolute device addresses, TODO: rename ...offset to ...Address
 struct GPUMeshInfo {
@@ -95,6 +107,7 @@ struct GPUModel {
 	MeshInfoIndex meshNumber; // link to MeshInfo
 	uint32_t material_lod_category;
 	MaterialIndex materialIndex; // index into global material array
+    ModelIndex next = ModelIndex::invalid(); // next primitive (== -1 on GPU side)
 	//BoundingBox boundingBox; // probably not needed
 };
 
@@ -113,9 +126,8 @@ struct SceneObject {
 	glm::vec3 pos;
 	glm::vec3 rot;
 	glm::vec3 scale;
-    ModelIndex index; // index into global model and object array
+    ModelIndex index; // index into global model array
     MeshFlagsCollection flags; // set these flags in app code, they will be translated into GPUModel.flags
-	void prepareGPUModel(GPUModel* gpuModel, glm::mat4& baseTransform);
 };
 
 struct GPUMaterial {

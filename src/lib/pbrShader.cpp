@@ -521,7 +521,8 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet, 0, nullptr);
 
 	// add draw commands for all valid objects:
-	for (int32_t objNum = 0; objNum < engine->mstore.getUsedStationaryModelCount(); objNum++) {
+	for (int32_t objNum = 0; objNum < engine->mstore.getSceneObjectCount(); objNum++) {
+        Log("PBRSubShader moving models: " << engine->mstore.getSceneObjectCount() << std::endl);
 		pbrShader->drawPush.objectNum = objNum;
         pbrShader->drawPush.isMovingObject = false;
 		vkCmdPushConstants(commandBuffer,pipelineLayout, gpuMemoryPushConstantRange.stageFlags,	0,sizeof(PBRShader::DrawPushConstants),	&pbrShader->drawPush);
@@ -529,7 +530,7 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 		recordDrawCommand(commandBuffer, tr, obj, false, update);
 	}
 	// add moving objects:
-	for (int32_t objNum = 0; objNum < engine->mstore.getUsedMovingModelCount(); objNum++) {
+	for (int32_t objNum = 0; objNum < engine->mstore.getMovingSceneObjectCount(); objNum++) {
 		pbrShader->drawPush.objectNum = objNum;
 		pbrShader->drawPush.isMovingObject = true;
 		vkCmdPushConstants(commandBuffer, pipelineLayout, gpuMemoryPushConstantRange.stageFlags, 0, sizeof(PBRShader::DrawPushConstants), &pbrShader->drawPush);

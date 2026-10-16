@@ -95,10 +95,18 @@ void main() {
         //debugPrintfEXT("pbr.task: moving model mesh %u pos.x %f rot.y %f scale.z %f\n", model.meshNumber, param.pos.x, param.rot.y, param.scale.z);
         modelmat = makeModelMatrix(param.pos, param.rot, param.scale, mesh.baseTransform);
         //modelmat = 1.0;
+        debugPrintfEXT("pbr.task: moving model mesh %u next %u  mesh next %u\n", model.meshNumber, model.next, mesh.next);
+        if (mesh.next == -1) {
+            debugPrintfEXT("pbr.task: moving model mesh %u has next == -1\n", model.meshNumber);
+        }
     } else {
         model = gpuModels.model[pushConstants.objectNum];
         mesh = gpuInfos.info[model.meshNumber];
         modelmat = model.model * mesh.baseTransform;
+        debugPrintfEXT("pbr.task: stationary model mesh %u next %u  mesh next %u\n", model.meshNumber, model.next, mesh.next);
+        if (mesh.next == -1) {
+            debugPrintfEXT("pbr.task: stationary model mesh %u has next == -1\n", model.meshNumber);
+        }
     }
     payload.realMeshIndex = model.meshNumber;
     payload.modelflags = model.flags;

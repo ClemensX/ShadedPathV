@@ -415,8 +415,25 @@ TEST_F(GLTFParserTest, MultiMesh_TwoPartTree) {
     MeshInfoIndex meshIndex = meshFile->meshes[0].meshIndex;
     GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
     SceneObject* object = mstore.addObject(meshIndex, vec3(0.0f, 0.0f, 0.0f));
+    EXPECT_TRUE(!object->flags.hasFlag(MeshFlags::RENDER_TYPE_MOVING)) << "Object should be stationary";
 
+    // check linking to next primitive:
+    MeshInfoIndex meshIndex2 = meshFile->meshes[1].meshIndex;
+    GPUMeshInfo* meshInfo2 = mstore.getGPUMeshInfo(meshIndex2);
+    GPUModel* model = mstore.getGPUModel(object);
     EXPECT_TRUE(meshInfo->next.isValid()) << "Object mesh should have another primitive";
+    EXPECT_EQ(meshInfo2->index, meshInfo->next) << "Next primitive index should match";
+    EXPECT_EQ(model->meshNumber, meshInfo->index) << "Model's mesh index should match first primitive";
+    ASSERT_TRUE(model->next.isValid()) << "Model should have next primitive";
+    // get next stationary model:
+    GPUModel* model2 = mstore.getGPUModel(model->next);
+    EXPECT_EQ(model2->meshNumber, meshInfo2->index) << "Second model's mesh index should match second primitive";
+
+    // check transform:
+    mat4 baseTransform = mat4(1.0); // use unmodified base transform from gltf
+    mstore.prepareGPUModels(object, baseTransform);
+    EXPECT_NE(model->model, mat4(1.0)) << "Model transform should be updated";
+    EXPECT_NE(model->model, model2->model) << "Models transform should be different for each primitive";
 }
 
 // Test 2: Single mesh with LOD levels (10 LODs)

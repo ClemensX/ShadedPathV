@@ -140,6 +140,7 @@ void Loader::init() {
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
     MStore& mstore = engine->mstore;
     engine->mstore.loadMesh("tree_primitives.gltf", "SingleMesh", flags);
+    //engine->mstore.loadMesh("cube_single.gltf", "SingleMesh", flags);
     //engine->mstore.loadMesh("DamagedHelmet_cmp.glb", "SingleMesh", flags);
     auto loaded = mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
     auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
@@ -165,12 +166,12 @@ void Loader::init() {
     }
     object->scale = vec3(1.0f);
     //object2->flags.setFlag(MeshFlags::MESHLET_DEBUG_COLORS);
-    mat4 baseTransform = mat4(1.0); // get from gltf later
+    mat4 baseTransform = mat4(1.0); // use unmodified base transform from gltf
     GPUModel* gpuModel = engine->mstore.getGPUModel(object->index);
     //GPUModel* gpuModel2 = engine->mstore.getGPUModel(object2->index);
     //gpuModel2->material_lod_category = 42;
 
-    object->prepareGPUModel(gpuModel, baseTransform);
+    engine->mstore.prepareGPUModels(object, baseTransform);
     //object2->prepareGPUModel(gpuModel2, baseTransform);
 
     // debug info material:

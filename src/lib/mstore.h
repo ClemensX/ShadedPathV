@@ -48,8 +48,10 @@ public:
     // get stationary GPUModel
     GPUModel* getGPUModel(ModelIndex index);
     GPUModel* getGPUMovingModel(ModelIndex index);
-    // get GPUModel - either from stationary or moving model array, depending on SceneObject flags
+    // get first GPUModel - either from stationary or moving model array, depending on SceneObject flags
     GPUModel* getGPUModel(SceneObject* obj);
+    // get GPUModel with given index - either from stationary or moving model array, depending on SceneObject flags
+    GPUModel* getGPUModel(SceneObject* obj, ModelIndex index);
     std::string getGPUModelString(SceneObject* obj);
     int getUsedStationaryModelCount() const;
     int getUsedMovingModelCount() const;
@@ -84,6 +86,9 @@ public:
     // for moving objects, the MeshFlagsCollection should have the RENDER_TYPE_MOVING flag set.
     SceneObject* addObject(MeshInfoIndex mesh_index, glm::vec3 pos, MeshFlagsCollection flags = MeshFlagsCollection());
 
+    // apply transform to all models of an object:
+    void prepareGPUModels(SceneObject* obj, glm::mat4& baseTransform);
+
     // Meshlets
 
     // write meshlet data for all meshes in the collection to file, return true if successful
@@ -115,6 +120,12 @@ public:
         bool drawBoundingBox, bool drawVertices, bool drawNormals, bool drawMeshletBoundingBoxes,
         glm::vec4 colorVertices, glm::vec4 colorNormal, glm::vec4 colorBoxes,
         float normalLineLength);
+    size_t getSceneObjectCount() const {
+        return sceneObjects.size();
+    }
+    size_t getMovingSceneObjectCount() const {
+        return movingSceneObjects.size();
+    }
 private:
     size_t maxMeshes = 0; // maximum number of meshes that can be stored, set setLimits()
     std::optional<std::string> loadFile(std::string filename, std::vector<std::byte>& fileBuffer);
@@ -139,9 +150,11 @@ private:
     // maintain a list of mesh metadata for each loaded mesh, used for CPU-side operations
     std::vector<MeshInfoMetadata> meshMetadata;
 
-    // maintain a list of scene objects. Used for CPU-side of GPUModels. These are GPU buffers. always allocated with their max entries
+    // maintain a list of scene objects. Used only on CPU-side
     std::vector<SceneObject> sceneObjects;
     std::vector<SceneObject> movingSceneObjects;
+    SceneObject* addSceneObject();
+    SceneObject* addMovingSceneObject();
 
     // no checks, directly access cpp buffer
     GPUMeshInfo* getGPUMeshInfoInternal(MeshInfoIndex index);

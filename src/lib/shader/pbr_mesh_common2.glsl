@@ -47,6 +47,7 @@ struct GPUModel {
 	uint meshNumber; // link to MeshInfo
 	uint material_lod_category;
 	uint materialIndex; // index into global material array
+    uint next; // next model in linked list (-1 == no next model)
 	//BoundingBox boundingBox;
 };
 
