@@ -52,6 +52,8 @@ public:
     GPUModel* getGPUModel(SceneObject* obj);
     // get GPUModel with given index - either from stationary or moving model array, depending on SceneObject flags
     GPUModel* getGPUModel(SceneObject* obj, ModelIndex index);
+    // try to find the right model for a given mesh index in the scene object. Returns nullptr if not found.
+    ModelIndex getModelIndexForMesh(SceneObject* obj, MeshInfoIndex meshIndex);
     std::string getGPUModelString(SceneObject* obj);
     int getUsedStationaryModelCount() const;
     int getUsedMovingModelCount() const;

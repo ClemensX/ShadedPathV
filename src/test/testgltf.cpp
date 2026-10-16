@@ -433,7 +433,7 @@ TEST_F(GLTFParserTest, MultiMesh_TwoPartTree) {
     mat4 baseTransform = mat4(1.0); // use unmodified base transform from gltf
     mstore.prepareGPUModels(object, baseTransform);
     EXPECT_NE(model->model, mat4(1.0)) << "Model transform should be updated";
-    EXPECT_NE(model->model, model2->model) << "Models transform should be different for each primitive";
+    EXPECT_EQ(model->model, model2->model) << "Models transform should be the same for each primitive (gltf transform will be applied in shader)";
 }
 
 // Test 2: Single mesh with LOD levels (10 LODs)

@@ -203,6 +203,20 @@ GPUModel* MStore::getGPUModel(SceneObject* obj, ModelIndex index)
 		return getGPUModel(index);
 }
 
+ModelIndex MStore::getModelIndexForMesh(SceneObject* obj, MeshInfoIndex meshIndex)
+{
+    ModelIndex currentIndex = obj->index;
+    while (currentIndex.isValid()) {
+        GPUModel* model = getGPUModel(obj, currentIndex);
+        if (model->meshNumber == meshIndex) {
+            return currentIndex;
+        }
+        currentIndex = model->next;
+    }
+	Error("MStore::getModelIndexForMesh: Model not found for mesh index: " + std::to_string(meshIndex.asSize()));
+	return ModelIndex();
+}
+
 GPUModel* MStore::getGPUModel(ModelIndex index) {
 	return engine->globalRendering.gpuMemory.getElementAddress<GPUModel>(BufferType::Models, index.asSize());
 }
@@ -693,6 +707,7 @@ void MStore::prepareGPUModels(SceneObject* obj, glm::mat4& baseTransform)
 	while (mi.isValid()) {
 		GPUModel* gpuModel = getGPUModel(obj, mi);
         gpuModel->model = modelMatrix;
+        //gpuModel->model[0][0] = 42.0f; // debug value to check if model matrix is set correctly
 		// convert flags to GPUModel.flags:
 		if (obj->flags.hasFlag(MeshFlags::MESH_TYPE_NO_TEXTURES)) {
 			gpuModel->flags |= PBRShader::MODEL_RENDER_FLAG_USE_VERTEX_COLORS; // no textures, use vertex colors
@@ -725,7 +740,7 @@ void MStore::getFileInfosForMesh(MeshInfoIndex meshIndex, MeshFile& meshFile, Me
 void MStore::debugGraphics(FrameResources& fr, bool drawBoundingBox, bool drawVertices, bool drawNormals, bool drawMeshletBoundingBoxes, glm::vec4 colorVertices, glm::vec4 colorNormal, glm::vec4 colorBoxes, float normalLineLength)
 {
     // iterate through all moving objects:
-    for (int i = 0; i < getUsedMovingModelCount(); i++) {
+    for (int i = 0; i < getMovingSceneObjectCount(); i++) {
 		SceneObject* so = getMovingSceneObject(i);
         debugGraphicsObject(so, fr, drawBoundingBox, drawVertices, drawNormals, drawMeshletBoundingBoxes, colorVertices, colorNormal, colorBoxes, normalLineLength);
 	}

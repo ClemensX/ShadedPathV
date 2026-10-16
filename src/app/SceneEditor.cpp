@@ -674,7 +674,7 @@ void SceneEditor::addObjectToScene(int meshFileIndex, bool moving)
 
 void SceneEditor::redoAllStationaryObjects()
 {
-    int num = engine->mstore.getUsedStationaryModelCount();
+    int num = engine->mstore.getSceneObjectCount();
     for (int i = 0; i < num; ++i) {
         SceneObject* so = engine->mstore.getSceneObject(i);
         GPUModel* gpuModel = engine->mstore.getGPUModel(so->index);
@@ -688,7 +688,7 @@ void SceneEditor::redoAllStationaryObjects()
 
 void SceneEditor::redoAllMovingObjects()
 {
-    int num = engine->mstore.getUsedMovingModelCount();
+    int num = engine->mstore.getMovingSceneObjectCount();
     for (int i = 0; i < num; ++i) {
         SceneObject* so = engine->mstore.getMovingSceneObject(i);
         GPUModel* gpuModel = engine->mstore.getGPUMovingModel(so->index);

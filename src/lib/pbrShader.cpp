@@ -45,6 +45,19 @@ void PBRShader::initSingle(FrameResources& tr, ShaderState& shaderState)
 
 void PBRShader::initialUpload(bool listUploadedMeshes)
 {
+	// debug:
+	//for (uint32_t i = 0; i < 2; i++) {
+	//	auto* m = engine->mstore.getGPUModel(ModelIndex{ i });
+ //       Log("GPUModel " << i << " " << endl);
+ //       if (i == 1) {
+ //           m->materialIndex = MaterialIndex{1};
+ //           m->material_lod_category = 2;
+	//		m->model[0][0] = 3.0f; m->model[0][1] = 4.0f; m->model[0][2] = 5.0f; m->model[0][3] = 6.0f;
+	//		m->model[1][0] = 7.0f; m->model[1][1] = 7.1f; m->model[1][2] = 8.0f; m->model[1][3] = 9.0f;
+	//		m->model[2][0] = 13.0f; m->model[2][1] = 14.0f; m->model[2][2] = 15.0f; m->model[2][3] = 16.0f;
+	//		m->model[3][0] = 23.0f; m->model[3][1] = 24.0f; m->model[3][2] = 25.0f; m->model[3][3] = 26.0f;
+	//	}
+	//}
 	// new
 	engine->globalRendering.gpuMemory.fillGPUMemoryAddressConstants(&gpuAddresses);
 	engine->mstore.uploadAllMeshes();
@@ -523,17 +536,11 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 	// add draw commands for all valid objects:
 	for (int32_t objNum = 0; objNum < engine->mstore.getSceneObjectCount(); objNum++) {
         Log("PBRSubShader moving models: " << engine->mstore.getSceneObjectCount() << std::endl);
-		pbrShader->drawPush.objectNum = objNum;
-        pbrShader->drawPush.isMovingObject = false;
-		vkCmdPushConstants(commandBuffer,pipelineLayout, gpuMemoryPushConstantRange.stageFlags,	0,sizeof(PBRShader::DrawPushConstants),	&pbrShader->drawPush);
 		SceneObject* obj = engine->mstore.getSceneObject(objNum);
 		recordDrawCommand(commandBuffer, tr, obj, false, update);
 	}
 	// add moving objects:
 	for (int32_t objNum = 0; objNum < engine->mstore.getMovingSceneObjectCount(); objNum++) {
-		pbrShader->drawPush.objectNum = objNum;
-		pbrShader->drawPush.isMovingObject = true;
-		vkCmdPushConstants(commandBuffer, pipelineLayout, gpuMemoryPushConstantRange.stageFlags, 0, sizeof(PBRShader::DrawPushConstants), &pbrShader->drawPush);
 		SceneObject* obj = engine->mstore.getMovingSceneObject(objNum);
 		recordDrawCommand(commandBuffer, tr, obj, false, update);
 	}
@@ -543,17 +550,11 @@ void PBRSubShader::createGlobalCommandBufferAndRenderPass(FrameResources& tr, bo
 		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSet2, 0, nullptr);
 		for (int32_t objNum = 0; objNum < engine->mstore.getUsedStationaryModelCount(); objNum++) {
-			pbrShader->drawPush.objectNum = objNum;
-			pbrShader->drawPush.isMovingObject = false;
-			vkCmdPushConstants(commandBuffer, pipelineLayout, gpuMemoryPushConstantRange.stageFlags, 0, sizeof(PBRShader::DrawPushConstants), &pbrShader->drawPush);
 			SceneObject* obj = engine->mstore.getSceneObject(objNum);
 			recordDrawCommand(commandBuffer, tr, obj, true, update);
 		}
 		// add moving objects:
 		for (int32_t objNum = 0; objNum < engine->mstore.getUsedMovingModelCount(); objNum++) {
-			pbrShader->drawPush.objectNum = objNum;
-			pbrShader->drawPush.isMovingObject = true;
-			vkCmdPushConstants(commandBuffer, pipelineLayout, gpuMemoryPushConstantRange.stageFlags, 0, sizeof(PBRShader::DrawPushConstants), &pbrShader->drawPush);
 			SceneObject* obj = engine->mstore.getMovingSceneObject(objNum);
 			recordDrawCommand(commandBuffer, tr, obj, true, update);
 		}
@@ -584,6 +585,12 @@ void PBRSubShader::uploadToGPU(FrameResources& tr, PBRShader::UniformBufferObjec
 
 void PBRSubShader::recordDrawCommandInternal2(VkCommandBuffer& commandBuffer, FrameResources& tr, GPUMeshInfo* meshInfo, SceneObject* obj, bool isRightEye, bool update)
 {
+	// be sure to push model index, not mesh index!!
+    ModelIndex modelIndex = engine->mstore.getModelIndexForMesh(obj, meshInfo->index);
+    assert(modelIndex.isValid());
+	pbrShader->drawPush.objectNum = modelIndex.raw();
+	pbrShader->drawPush.isMovingObject = false;
+	vkCmdPushConstants(commandBuffer, pipelineLayout, gpuMemoryPushConstantRange.stageFlags, 0, sizeof(PBRShader::DrawPushConstants), &pbrShader->drawPush);
 	GPUMaterial* material = engine->mstore.getGPUMaterial(meshInfo->material);
 	VkCullModeFlags cullMode = material->isDoubleSided ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT;
 	// only change cull mode if necessary
