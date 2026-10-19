@@ -372,6 +372,9 @@ void MStore::handleFlags(GPUMeshInfo& mesh, MeshFlagsCollection flags)
 
 void MStore::updateMovingModelParams(SceneObject* so)
 {
+    if (!so->flags.hasFlag(MeshFlags::RENDER_TYPE_MOVING)) {
+        return;
+    }
 	ModelIndex modelIndex = so->index;
 	while (modelIndex.isValid()) {
 		GPUModel* model = getGPUMovingModel(modelIndex);

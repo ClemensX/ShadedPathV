@@ -172,6 +172,7 @@ void Loader::init() {
     //GPUModel* gpuModel2 = engine->mstore.getGPUModel(object2->index);
     //gpuModel2->material_lod_category = 42;
 
+    mstore.updateMovingModelParams(object);
     engine->mstore.prepareGPUModels(object, baseTransform);
     //object2->prepareGPUModel(gpuModel2, baseTransform);
 
