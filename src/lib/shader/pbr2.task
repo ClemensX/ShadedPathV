@@ -108,10 +108,10 @@ void main() {
 
         mesh = gpuInfos.info[model.meshNumber];
         modelmat = model.model * mesh.baseTransform;
-//        debugPrintfEXT("pbr.task: stationary model %u next %u  mesh next %u\n", model.meshNumber, model.next, mesh.next);
-//        if (mesh.next == -1) {
-//            debugPrintfEXT("pbr.task: stationary model mesh %u has next == -1\n", model.meshNumber);
-//        }
+        debugPrintfEXT("pbr.task: stationary model %u next %u  mesh next %u\n", model.meshNumber, model.next, mesh.next);
+        if (mesh.next == -1) {
+            debugPrintfEXT("pbr.task: stationary model mesh %u has next == -1\n", model.meshNumber);
+        }
     }
     payload.realMeshIndex = model.meshNumber;
     payload.modelflags = model.flags;

@@ -452,15 +452,15 @@ void SceneEditor::buildCustomUI() {
 
         static int selectedObjLine = -1;
         ImGui::BeginChild("AvailableObjectList", pickerSize, true, ImGuiWindowFlags_HorizontalScrollbar);
-        for (int i = 0; i < static_cast<int>(displayParams.stationaryModels.size()); ++i) {
-            auto& model = displayParams.stationaryModels[i];
-            auto* so = engine->mstore.getSceneObject(i);
+        for (int i = 0; i < static_cast<int>(displayParams.stationaryObjects.size()); ++i) {
+            SceneObject* so = &displayParams.stationaryObjects[i];
+            GPUModel* model = engine->mstore.getGPUModel(so->index);
             int idx = i;
             string pos = std::to_string(so->pos.x) + ", " + std::to_string(so->pos.y) + ", " + std::to_string(so->pos.z);
             MeshFile meshFile;
             MeshFileEntry meshFileEntry;
 
-            engine->mstore.getFileInfosForMesh(model.meshNumber, meshFile, meshFileEntry);
+            engine->mstore.getFileInfosForMesh(model->meshNumber, meshFile, meshFileEntry);
             string line = to_string(i) + " " + meshFileEntry.name + " [" + std::to_string(meshFileEntry.meshIndex.asSize()) + "] " + pos;
             if (ImGui::Selectable(line.c_str(), selectedObjLine == i)) {
                 selectedObjLine = i;
@@ -468,7 +468,7 @@ void SceneEditor::buildCustomUI() {
         }
         ImGui::EndChild();
         // Object detail section
-        if (selectedObjLine >= 0 && selectedObjLine < static_cast<int>(displayParams.stationaryModels.size())) {
+        if (selectedObjLine >= 0 && selectedObjLine < static_cast<int>(displayParams.stationaryObjects.size())) {
             SceneObject* so = engine->mstore.getSceneObject(selectedObjLine);
             ImGui::Separator();
             ImGui::Text("Object %d details:", selectedObjLine);
@@ -512,14 +512,14 @@ void SceneEditor::buildCustomUI() {
 
         static int selectedMovingObjLine = -1;
         ImGui::BeginChild("AvailableMovingObjectList", pickerSize, true, ImGuiWindowFlags_HorizontalScrollbar);
-        for (int i = 0; i < static_cast<int>(displayParams.movingModels.size()); ++i) {
-            auto& model = displayParams.movingModels[i];
-            auto* so = engine->mstore.getMovingSceneObject(i);
+        for (int i = 0; i < static_cast<int>(displayParams.movingObjects.size()); ++i) {
+            auto* so = &displayParams.movingObjects[i];
             string pos = std::to_string(so->pos.x) + ", " + std::to_string(so->pos.y) + ", " + std::to_string(so->pos.z);
+            GPUModel* model = engine->mstore.getGPUMovingModel(so->index);
 
             MeshFile meshFile;
             MeshFileEntry meshFileEntry;
-            engine->mstore.getFileInfosForMesh(model.meshNumber, meshFile, meshFileEntry);
+            engine->mstore.getFileInfosForMesh(model->meshNumber, meshFile, meshFileEntry);
 
             string line = to_string(i) + " " + meshFileEntry.name + " [" + std::to_string(meshFileEntry.meshIndex.asSize()) + "] " + pos;
             if (ImGui::Selectable(line.c_str(), selectedMovingObjLine == i)) {
@@ -529,7 +529,7 @@ void SceneEditor::buildCustomUI() {
         ImGui::EndChild();
 
         // Object detail section (live update)
-        if (selectedMovingObjLine >= 0 && selectedMovingObjLine < static_cast<int>(displayParams.movingModels.size())) {
+        if (selectedMovingObjLine >= 0 && selectedMovingObjLine < static_cast<int>(displayParams.movingObjects.size())) {
             SceneObject* so = engine->mstore.getMovingSceneObject(selectedMovingObjLine);
             GPUModelParam* gpuModelParam = engine->mstore.getGPUModelParam(so->index);
             ImGui::Separator();
@@ -635,7 +635,7 @@ void SceneEditor::addObjectToScene(int meshFileIndex, bool moving)
         flags.setFlag(MeshFlags::RENDER_TYPE_MOVING);
     }
 
-    const MeshInfoIndex meshIndex = selectedFile.meshes[1].meshIndex;
+    const MeshInfoIndex meshIndex = selectedFile.meshes[0].meshIndex;
     GPUMeshInfo* meshInfo = engine->mstore.getGPUMeshInfo(meshIndex);
     if (meshInfo == nullptr) {
         Error("SceneEditor::addObjectToScene: failed to resolve mesh info");
@@ -714,21 +714,19 @@ void SceneEditor::loadNewMeshFile(string meshFilePathName)
 
 void SceneEditor::fillStationaryModels()
 {
-    displayParams.stationaryModels.clear();
-    int statModelNum = engine->mstore.getUsedStationaryModelCount();
-    for (uint32_t i = 0; i < statModelNum; ++i) {
-        GPUModel* object = engine->mstore.getGPUModel(ModelIndex{i});
-        displayParams.stationaryModels.push_back(*object);
+    displayParams.stationaryObjects.clear();
+    for (uint32_t i = 0; i < engine->mstore.getSceneObjectCount(); ++i) {
+        SceneObject* so = engine->mstore.getSceneObject(i);
+        displayParams.stationaryObjects.push_back(*so);
     }
 }
 
 void SceneEditor::fillMovingModels()
 {
-    displayParams.movingModels.clear();
-    int movingModelNum = static_cast<int>(engine->globalRendering.gpuMemory.getElementCount(BufferType::ModelsMoving));
-    for (uint32_t i = 0; i < movingModelNum; ++i) {
-        GPUModel* object = engine->mstore.getGPUMovingModel(ModelIndex{i});
-        displayParams.movingModels.push_back(*object);
+    displayParams.movingObjects.clear();
+    for (uint32_t i = 0; i < engine->mstore.getMovingSceneObjectCount(); ++i) {
+        SceneObject* so = engine->mstore.getMovingSceneObject(i);
+        displayParams.movingObjects.push_back(*so);
     }
 }
 
@@ -902,8 +900,8 @@ void SceneEditor::loadSceneFromFile(const std::string& sceneFilePathName)
     gpuMemory.resetElementCount(BufferType::Models);
     gpuMemory.resetElementCount(BufferType::ModelsMoving);
     gpuMemory.resetElementCount(BufferType::ModelsParam);
-    displayParams.stationaryModels.clear();
-    displayParams.movingModels.clear();
+    displayParams.stationaryObjects.clear();
+    displayParams.movingObjects.clear();
     // TODO: handle vars like MStore::usedStationaryModelCount
 
     // Load env cube from scene if available

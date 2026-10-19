@@ -45,8 +45,8 @@ struct SceneEditorDisplayParams
     bool fileDialogLoadedNewMeshFileDuringSession = false;
     bool fileDialogSelectedObjectForAddingDuringSession = false;
     bool fileDialogWasOpen = false;
-    std::vector<GPUModel> stationaryModels;
-    std::vector<GPUModel> movingModels;
+    std::vector<SceneObject> stationaryObjects;
+    std::vector<SceneObject> movingObjects;
 
     // stationary objects re-upload:
     bool reuploadStationaryObjects = false;
