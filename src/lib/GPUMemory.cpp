@@ -122,6 +122,29 @@ void GPUMemory::flushBuffer(BufferType type)
         if (engine->isRenderingPhase()) {
             Log("WARNING: Flushed buffer " << getBufferTypeName(type) << " from staging to device buffer during rendering phase" << endl);
         }
+        if (type == BufferType::ModelsParam) {
+            Log("INFO: Flushed ModelsParam buffer, current element count: " << state->currentElementCount << endl);
+            for (uint32_t i = 0; i < state->currentElementCount; ++i) {
+                const GPUModelParam* param = getElementAddress<GPUModelParam>(BufferType::ModelsParam, i);
+                // log pos rot and scale of each model param
+                Log("INFO: ModelsParam[" << i << "]: pos=" << param->pos.x << "," << param->pos.y << "," << param->pos.z
+                    << ", rot=" << param->rot.x << "," << param->rot.y << "," << param->rot.z
+                    << ", scale=" << param->scale.x << "," << param->scale.y << "," << param->scale.z << endl);
+            }
+        }
+        if (type == BufferType::ModelsMoving) {
+            Log("INFO: Flushed ModelsMoving buffer, current element count: " << state->currentElementCount << endl);
+            for (uint32_t i = 0; i < state->currentElementCount; ++i) {
+                const GPUModel* model = getElementAddress<GPUModel>(BufferType::ModelsMoving, i);
+                // log GPUModel fields:
+                Log("INFO: ModelsMoving[" << i << "]: flags=" << model->flags
+                    << ", meshNumber=" << model->meshNumber.raw()
+                    << ", material_lod_category=" << model->material_lod_category
+                    << ", materialIndex=" << model->materialIndex.raw()
+                    << ", next=" << model->next.raw()
+                    << endl);
+            }
+        }
     }
     // For host-visible buffers, data is already in place
 

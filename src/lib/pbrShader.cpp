@@ -260,6 +260,9 @@ void PBRShader::uploadToGPU(FrameResources& fr, UniformBufferObject& ubo, Unifor
 	//ubo.pad4 = 46;
 	auto& sub = globalSubShaders[fr.frameIndex];
     sub.uploadToGPU(fr, ubo, ubo2);
+#if defined(_DEBUG)
+	engine->mstore.validate();
+#endif
 }
 
 PBRShader::DynamicModelUBO* PBRShader::getAccessToModel(FrameResources& fr, UINT num)
@@ -589,7 +592,7 @@ void PBRSubShader::recordDrawCommandInternal2(VkCommandBuffer& commandBuffer, Fr
     ModelIndex modelIndex = engine->mstore.getModelIndexForMesh(obj, meshInfo->index);
     assert(modelIndex.isValid());
 	pbrShader->drawPush.objectNum = modelIndex.raw();
-	pbrShader->drawPush.isMovingObject = false;
+    pbrShader->drawPush.isMovingObject = obj->flags.hasFlag(MeshFlags::RENDER_TYPE_MOVING) ? 1 : 0;
 	vkCmdPushConstants(commandBuffer, pipelineLayout, gpuMemoryPushConstantRange.stageFlags, 0, sizeof(PBRShader::DrawPushConstants), &pbrShader->drawPush);
 	GPUMaterial* material = engine->mstore.getGPUMaterial(meshInfo->material);
 	VkCullModeFlags cullMode = material->isDoubleSided ? VK_CULL_MODE_NONE : VK_CULL_MODE_BACK_BIT;

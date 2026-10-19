@@ -128,6 +128,10 @@ public:
     size_t getMovingSceneObjectCount() const {
         return movingSceneObjects.size();
     }
+    // should be used only in debug builds: validate some internal data structures and Error() if found
+    void validate();
+    // update all moving model params for scene object.
+    void updateMovingModelParams(SceneObject* so);
 private:
     size_t maxMeshes = 0; // maximum number of meshes that can be stored, set setLimits()
     std::optional<std::string> loadFile(std::string filename, std::vector<std::byte>& fileBuffer);

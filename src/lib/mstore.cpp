@@ -370,6 +370,20 @@ void MStore::handleFlags(GPUMeshInfo& mesh, MeshFlagsCollection flags)
 
 }
 
+void MStore::updateMovingModelParams(SceneObject* so)
+{
+	ModelIndex modelIndex = so->index;
+	while (modelIndex.isValid()) {
+		GPUModel* model = getGPUMovingModel(modelIndex);
+		GPUModelParam* modelParam = getGPUModelParam(modelIndex);
+        modelParam->pos = so->pos;
+		modelParam->rot = so->rot;
+		modelParam->scale = so->scale;
+		engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsParam, *modelParam, modelIndex.raw());
+		modelIndex = model->next;
+	}
+}
+
 SceneObject* MStore::addObject(MeshInfoIndex mesh_index, glm::vec3 pos, MeshFlagsCollection flags) {
 	auto maxMeshNumber = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos) - 1;
     auto mNum = mesh_index.asSize();
@@ -412,6 +426,9 @@ SceneObject* MStore::addObject(MeshInfoIndex mesh_index, glm::vec3 pos, MeshFlag
 		if (!obj->index.isValid()) obj->index = modelIndex;
 		if (flags.hasFlag(MeshFlags::RENDER_TYPE_MOVING)) {
 			engine->globalRendering.gpuMemory.appendElement(BufferType::ModelsMoving, *model);
+			modelParam->pos = obj->pos;
+			modelParam->rot = obj->rot;
+			modelParam->scale = obj->scale;
 			engine->globalRendering.gpuMemory.appendElement(BufferType::ModelsParam, *modelParam);
 		} else {
 			engine->globalRendering.gpuMemory.appendElement(BufferType::Models, *model);
@@ -469,6 +486,27 @@ SceneObject* MStore::addObject(MeshInfoIndex mesh_index, glm::vec3 pos, MeshFlag
 }
 
 // Util methods
+
+void MStore::validate()
+{
+	// check moving object parameters:
+	for (SceneObject& obj : movingSceneObjects) {
+        ModelIndex modelIndex = obj.index;
+        while (modelIndex.isValid()) {
+            GPUModel* model = getGPUMovingModel(modelIndex);
+            GPUModelParam* modelParam = getGPUModelParam(modelIndex);
+            GPUMeshInfo* meshInfo = getGPUMeshInfo(model->meshNumber);
+			//if (model->flags & RenderFlags::) {
+			//	Error("MStore::validate: Invalid ModelParam for moving model " + std::to_string(modelIndex.asSize()) + " in scene object " + std::to_string(obj.index.asSize()));
+			//}
+			if (modelParam->scale.x == 0.0f || modelParam->scale.y == 0.0f || modelParam->scale.z == 0.0f) {
+                Error("MStore::validate: Invalid ModelParam for moving model " + std::to_string(modelIndex.asSize()) + " in scene object " + std::to_string(obj.index.asSize()));
+            }
+            modelIndex = model->next;
+        }
+	}
+}
+
 void MStore::getBoundingBox(BoundingBox& box, GPUMeshInfo& meshInfo)
 {
     auto meta = getMeshMetadata(meshInfo.index);

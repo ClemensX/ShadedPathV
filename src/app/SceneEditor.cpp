@@ -558,11 +558,8 @@ void SceneEditor::buildCustomUI() {
 
             // detect change
             if (gpuModelParam->pos != so->pos || gpuModelParam->rot != so->rot || gpuModelParam->scale != so->scale) {
-                gpuModelParam->pos = so->pos;
-                gpuModelParam->rot = so->rot;
-                gpuModelParam->scale = so->scale;
                 //Log("change!!\n");
-                engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsParam, *gpuModelParam, so->index.raw());
+                engine->mstore.updateMovingModelParams(so);
                 engine->globalRendering.gpuMemory.flushBuffer(BufferType::ModelsParam);
             }
             //Log("param update: pos(" << gpuModelParam->pos.x << ", " << gpuModelParam->pos.y << ", " << gpuModelParam->pos.z << "), rot(" << gpuModelParam->rot.x << ", " << gpuModelParam->rot.y << ", " << gpuModelParam->rot.z << "), scale(" << gpuModelParam->scale.z<< ")" << std::endl);
@@ -666,6 +663,7 @@ void SceneEditor::addObjectToScene(int meshFileIndex, bool moving)
     }
 
     if (moving) {
+        engine->mstore.updateMovingModelParams(object);
         redoAllMovingObjects();
     } else {
         redoAllStationaryObjects();
@@ -695,11 +693,7 @@ void SceneEditor::redoAllMovingObjects()
         mat4 baseTransform = mat4(1.0); // get from gltf later
         engine->mstore.prepareGPUModels(so, baseTransform);
         engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, so->index.raw());
-        GPUModelParam* gpuModelParam = engine->mstore.getGPUModelParam(so->index);
-        gpuModelParam->pos = so->pos;
-        gpuModelParam->rot = so->rot;
-        gpuModelParam->scale = so->scale;
-        engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsParam, *gpuModelParam, so->index.raw());
+        engine->mstore.updateMovingModelParams(so);
     }
     reInitPBRGraphics(true);
 }

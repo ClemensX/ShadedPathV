@@ -106,7 +106,7 @@ struct GPUModel {
     uint32_t flags; // MODEL_RENDER_FLAG_* , see pbrShader.h
 	MeshInfoIndex meshNumber; // link to MeshInfo
 	uint32_t material_lod_category;
-	MaterialIndex materialIndex; // index into global material array
+    MaterialIndex materialIndex; // index into global material array TODO: seems unused, remove this field
     ModelIndex next = ModelIndex::invalid(); // next primitive (== -1 on GPU side)
 	float pad0;
 	float pad1;

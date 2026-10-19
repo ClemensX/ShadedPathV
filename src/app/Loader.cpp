@@ -138,6 +138,7 @@ void Loader::init() {
     // use new mstore:
     MeshFlagsCollection flags;
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
+    flags.setFlag(MeshFlags::RENDER_TYPE_MOVING);
     MStore& mstore = engine->mstore;
     engine->mstore.loadMesh("tree_primitives.gltf", "SingleMesh", flags);
     //engine->mstore.loadMesh("cube_single.gltf", "SingleMesh", flags);
@@ -155,7 +156,7 @@ void Loader::init() {
     // add mesh vertices to line shader for debug display:
     vector<LineDef> lines;
     //Util::drawMeshAsLines(lines, meshMetadata->vertices, meshMetadata->indices, Colors::Yellow);
-    SceneObject* object = engine->mstore.addObject(meshInfo->index, vec3(0.0f, 0.0f, 0.0f));
+    SceneObject* object = engine->mstore.addObject(meshInfo->index, vec3(0.0f, 0.0f, 0.0f), flags);
     //SceneObject* object2 = engine->mstore.addObject(meshInfo->index, vec3(20.1f, 0.2f, 0.3f));
     // disable first object:
     //object->flags.setFlag(MeshFlags::RENDER_DISABLE);
