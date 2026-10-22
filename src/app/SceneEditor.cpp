@@ -25,7 +25,7 @@ void SceneEditor::run(ContinuationInfo* cont)
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
 
         // uncomment to use test_samples folder instead of regular asset folder
-        assetFolderName = "test_samples";
+        //assetFolderName = "test_samples";
         
         engine->files.findAssetFolder(assetFolderName);
         setHighBackbufferResolution();
@@ -806,10 +806,10 @@ void SceneEditor::saveSceneToFile(const std::string& sceneFilePathName)
         return nlohmann::json::array({ v.x, v.y, v.z });
         };
 
-    const int stationaryCount = engine->mstore.getUsedStationaryModelCount();
+    const int stationaryCount = engine->mstore.getSceneObjectCount();
     for (uint32_t i = 0; i < stationaryCount; ++i) {
         SceneObject* so = engine->mstore.getSceneObject(i);
-        GPUModel* model = engine->mstore.getGPUModel(ModelIndex{i});
+        GPUModel* model = engine->mstore.getGPUModel(so->index);
 
         MeshFile meshFile;
         MeshFileEntry meshFileEntry;
@@ -825,10 +825,10 @@ void SceneEditor::saveSceneToFile(const std::string& sceneFilePathName)
             });
     }
 
-    const int movingCount = engine->mstore.getUsedMovingModelCount();
+    const int movingCount = engine->mstore.getMovingSceneObjectCount();
     for (uint32_t i = 0; i < movingCount; ++i) {
         SceneObject* so = engine->mstore.getMovingSceneObject(i);
-        GPUModel* model = engine->mstore.getGPUMovingModel(ModelIndex{i});
+        GPUModel* model = engine->mstore.getGPUMovingModel(so->index);
 
         MeshFile meshFile;
         MeshFileEntry meshFileEntry;
