@@ -78,12 +78,13 @@ int mainOne(int argc, char* argv[])
         .setMaxTextures(50)
         .setMaxMeshes(1000)
         .setMaxCollections(100)
-        .setMeshStorageSizeGB(0.19999f) //        .setMeshStorageSizeGB(3.9999f)
+        .setMeshStorageSizeGB(0.29999f) //        .setMeshStorageSizeGB(3.9999f)
         //.setMeshStorageSizeGB(4.0f)
         //.setFixedPhysicalDeviceIndex(1) // if GPU card is available it should be device 0. device 1 is usually the integrated Intel/AMD GPU
         //.enableGlobalWireframe()
         .enableMeshShader()
         .setMaxObjects(301000)
+        .setMaxMovingObjects(50)
         ;
 
     engine.initGlobal();

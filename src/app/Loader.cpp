@@ -140,13 +140,15 @@ void Loader::init() {
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
     flags.setFlag(MeshFlags::RENDER_TYPE_MOVING);
     MStore& mstore = engine->mstore;
-    engine->mstore.loadMesh("tree_primitives.gltf", "SingleMesh", flags);
+    engine->mstore.loadMesh("multiple_objects.gltf", "Mesh", flags);
+    //engine->mstore.loadMesh("tree_primitives.gltf", "Mesh", flags);
     //engine->mstore.loadMesh("cube_single.gltf", "SingleMesh", flags);
     //engine->mstore.loadMesh("DamagedHelmet_cmp.glb", "SingleMesh", flags);
-    auto loaded = mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
-    auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
-    const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
-    Log("Loaded mesh: " << loaded->id << ", mesh index: " << loaded->meshes[0].meshIndex.asSize() << ", global mesh index: " << static_cast<uint32_t>(meshInfo->index) << ", material index: " << meshInfo->material.asSize() << std::endl);
+    int meshNum = 0;
+    auto loaded = mstore.getMeshFileByID("Mesh"); // ensure we can retrieve the mesh file by ID
+    auto meshInfo = mstore.getGPUMeshInfo(loaded->allMeshes[meshNum].meshIndex);
+    const auto meshMetadata = mstore.getMeshMetadata(loaded->allMeshes[meshNum].meshIndex);
+    Log("Loaded mesh: " << loaded->id << ", mesh index: " << loaded->allMeshes[meshNum].meshIndex.asSize() << ", global mesh index: " << static_cast<uint32_t>(meshInfo->index) << ", material index: " << meshInfo->material.asSize() << std::endl);
     Log("Mesh metadata: vertices " << meshMetadata->vertices.size() << " indices: " << meshMetadata->indices.size() << std::endl);
     Log("Mesh meshlets: " << meshMetadata->meshletsForMesh.meshlets.size() << std::endl);
 

@@ -49,7 +49,7 @@ void GlobalRendering::gatherDeviceInfos()
 
         Log("Mesh Shader max output vertices: " << meshShaderProperties.maxMeshOutputVertices << endl);
         Log("Mesh Shader max output primitives: " << meshShaderProperties.maxMeshOutputPrimitives << endl);
-        Log("Mesh Shader max workgroup count (do not generate more meshes at once): x " << meshShaderProperties.maxMeshWorkGroupCount[0]
+        Log("Mesh Shader max workgroup count (do not generate more allMeshes at once): x " << meshShaderProperties.maxMeshWorkGroupCount[0]
             << " y " << meshShaderProperties.maxMeshWorkGroupCount[1]
             << " z " << meshShaderProperties.maxMeshWorkGroupCount[2]
             << endl);

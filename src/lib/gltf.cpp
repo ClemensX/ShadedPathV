@@ -1358,7 +1358,7 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
 	}
 	coll->fillPrimitiveMap();
 	// another loop for logging:
-	Log(" # major meshes: " << majorMeshCount << " max primitives: " << maxPrimCount << endl);
+	Log(" # major allMeshes: " << majorMeshCount << " max primitives: " << maxPrimCount << endl);
 	for (auto* mi : *coll) {
 		Log("Found mesh: " << mi->id << " gltfCollectionIndex: " << mi->gltfCollectionIndex << " gltfPrimitiveIndex: " << mi->gltfPrimitiveIndex
 			<< " gltfNextPrimitive: " << mi->gltfNextPrimitiveIndex << " meshletDesc size: " << mi->outMeshletDesc.size() << endl);
@@ -1368,7 +1368,7 @@ void glTF::load(const unsigned char* data, int size, MeshCollection* coll, strin
 
 	for (auto* mi : *coll) {
 		if (majorMeshCount == 10 && !mi->flags.hasFlag(MeshFlags::MESH_TYPE_LOD)) {
-			Log("INFO: LOD meshes detected based on major mesh count. Switching on LOD flag for mesh: " << mi->id << " Consider switching on LOD flag in app code." << endl);
+			Log("INFO: LOD allMeshes detected based on major mesh count. Switching on LOD flag for mesh: " << mi->id << " Consider switching on LOD flag in app code." << endl);
             mi->flags.setFlag(MeshFlags::MESH_TYPE_LOD);
 		}
 	}
@@ -1474,7 +1474,7 @@ void glTF::parseGltfModel(tinygltf::Model& model)
 		//Log("  " << m.name.c_str() << endl);
         meshCount += m.primitives.size();
 	}
-	Log("glTF file contains " << meshCount << " meshes, " << materialCount << " materials, " << textureCount << " textures" << endl);
+	Log("glTF file contains " << meshCount << " allMeshes, " << materialCount << " materials, " << textureCount << " textures" << endl);
 
 	// initialize std::vector for infos and materials. Textures are already in global buffer, we just have to adapt texture indices
 	vector<GPUMeshInfo> gpuMeshInfos(meshCount);

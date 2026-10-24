@@ -72,7 +72,7 @@ MeshCollection* MeshStore::initMeshCollection(std::string id, MeshFlagsCollectio
 MeshInfo* MeshStore::initMeshInfo(MeshCollection* coll, std::string id, int lodLevel)
 {
 	if (!(meshes.size() < engine->getMaxMeshes())) {
-        Error("MeshStore: too many meshes, increase max meshes in engine settings.");
+        Error("MeshStore: too many allMeshes, increase max allMeshes in engine settings.");
 	}
 	MeshInfo initialObject;  // only used to initialize struct in texture store - do not access this after assignment to store
 
@@ -90,7 +90,7 @@ MeshInfo* MeshStore::initMeshInfo(MeshCollection* coll, std::string id, int lodL
 MeshCollection* MeshStore::loadMeshFile(string filename, string id, vector<byte>& fileBuffer, MeshFlagsCollection flags)
 {
 	if (getMesh(id) != nullptr) {
-		Error("Cannot store 2 meshes with same ID in MeshStore.");
+		Error("Cannot store 2 allMeshes with same ID in MeshStore.");
 	}
 	if (ok_meshid_short_format(id) == false) {
 		stringstream s;
@@ -160,7 +160,7 @@ void MeshStore::loadMesh(string filename, string id, MeshFlagsCollection flags)
 	gltf.load((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), coll, fileAndPath);
 	coll->available = true;
 	if (coll->meshCount() == 0) { // <- updated
-		Error("No meshes found in glTF file " + filename);
+		Error("No allMeshes found in glTF file " + filename);
     }
 #if defined(DEBUG)
 	for (auto& mesh : *coll) { // <- updated to iterate via accessor/iterators
@@ -297,8 +297,8 @@ void MeshStore::uploadMesh(MeshInfo* mesh_ptr)
 		//collIndex.gpuCollectionInfoIndex = coll->getMajorMeshes()[0]->meshNum;
         //collIndex.mainMeshCount = coll->getMajorMeshes().size();
 
-		Log("Update mesh collection info for collection id " << coll->id << " index " << collectionIndex << " major meshes # " << collIndex.mainMeshCount << " all meshes # " << coll->meshCount() << endl);
-		Log("Upload mesh global idx " << index << " to GPU (collection id " << coll->id << " index " << collectionIndex << "), info start at index " << collIndex.gpuCollectionInfoIndex << ", # main meshes: " << collIndex.mainMeshCount << endl);
+		Log("Update mesh collection info for collection id " << coll->id << " index " << collectionIndex << " major allMeshes # " << collIndex.mainMeshCount << " all allMeshes # " << coll->meshCount() << endl);
+		Log("Upload mesh global idx " << index << " to GPU (collection id " << coll->id << " index " << collectionIndex << "), info start at index " << collIndex.gpuCollectionInfoIndex << ", # main allMeshes: " << collIndex.mainMeshCount << endl);
 		if (index == 0x0b) {
 			Log("[" << index << "] " << Util::to_string(gpuMeshInfos[index]) << endl);
 		}

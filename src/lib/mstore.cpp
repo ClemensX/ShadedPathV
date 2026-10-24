@@ -83,7 +83,7 @@ MeshFile* MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollec
 	string fileOrPath = (path) ? path.value() : filename;
 	gltf.load2((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), fileOrPath);
 	auto meshNumCount = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos) - meshNumStart;
-    Log("MStore::loadMesh: Loaded " << meshNumCount << " meshes from file: " << filename << "\n");
+    Log("MStore::loadMesh: Loaded " << meshNumCount << " allMeshes from file: " << filename << "\n");
  
     MeshFile meshFile{};
     meshFile.id = id;
@@ -98,14 +98,14 @@ MeshFile* MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollec
 		MeshFileEntry entry{};
         entry.name = metadata->name;
         entry.meshIndex = miIndex;
-        meshFile.meshes.push_back(entry);
+        meshFile.allMeshes.push_back(entry);
 		metadata->meshFileIndex = meshFiles.size();
     }
     meshFiles.push_back(meshFile);
     addMeshFileID(id, meshFiles.size() - 1);
 
 #if defined(DEBUG)
-	for (auto& m : meshFile.meshes) {
+	for (auto& m : meshFile.allMeshes) {
 		if (!checkBoundingBoxPlausibility(m.meshIndex)) {
 			Error("Bounding box plausibility check failed for mesh " + m.name);
 		}
@@ -114,7 +114,7 @@ MeshFile* MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollec
 	aquireMeshletData(&meshFile, flags.hasFlag(MeshFlags::MESHLET_GENERATE));
 
 	// work on flags:
-    for (MeshFileEntry & entry : meshFile.meshes) {
+    for (MeshFileEntry & entry : meshFile.allMeshes) {
         GPUMeshInfo* meshInfo = const_cast<GPUMeshInfo*>(getGPUMeshInfo(entry.meshIndex));
         handleFlags(*meshInfo, flags);
 		// debug test
@@ -127,7 +127,24 @@ MeshFile* MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollec
 		//meshInfo->index = 3;
 		//meshInfo->next = 4;
 	}
-    return &meshFiles.back();
+	MeshFile* mfile = &meshFiles.back();
+    // fill in the mainMeshes vector with only the main meshes (not additional primitives)
+    // create bool vector for all meshes inficating whether they are additional primitives or not
+    vector<bool> isAdditionalPrimitive(mfile->allMeshes.size(), false);
+    for (int i = 0; i < mfile->allMeshes.size(); ++i) {
+        GPUMeshInfo* meshInfo = const_cast<GPUMeshInfo*>(getGPUMeshInfo(mfile->allMeshes[i].meshIndex));
+        if (meshInfo->next.isValid()) {
+            isAdditionalPrimitive[i+1] = true;
+        }
+    }
+    // now go through meshes and add all to mainMeshes that are not additional primitives
+	for (int i = 0; i < mfile->allMeshes.size(); ++i) {
+		GPUMeshInfo* meshInfo = const_cast<GPUMeshInfo*>(getGPUMeshInfo(mfile->allMeshes[i].meshIndex));
+		if (!isAdditionalPrimitive[i]) {
+			mfile->mainMeshes.push_back(mfile->allMeshes[i]);
+		}
+	}
+	return &meshFiles.back();
 }
 
 void MStore::uploadMesh(GPUMeshInfo* mi)
@@ -621,7 +638,7 @@ void MStore::aquireMeshletData(MeshFile* mfile, bool regenerateMeshletData)
 	uint32_t meshletFlags = (uint32_t)MeshletFlags::MESHLET_ALG_GREEDY_DISTANCE; // | (uint32_t)MeshletFlags::MESHLET_SORT;
 
     // generate meshlet data for each mesh in the file:
-	for (MeshFileEntry& entry : mfile->meshes) {
+	for (MeshFileEntry& entry : mfile->allMeshes) {
         auto meshInfo = getGPUMeshInfo(entry.meshIndex);
 		calculateMeshlets(meshInfo, meshletFlags, GLEXT_MESHLET_VERTEX_COUNT, GLEXT_MESHLET_PRIMITIVE_COUNT - 1);
 	}
@@ -767,7 +784,7 @@ void MStore::getFileInfosForMesh(MeshInfoIndex meshIndex, MeshFile& meshFile, Me
 {
     // we have no backlink from meshIndex to meshFile, so we have to iterate through all meshFiles and their entries
     for (auto& mf : meshFiles) {
-        for (auto& entry : mf.meshes) {
+        for (auto& entry : mf.allMeshes) {
             if (entry.meshIndex == meshIndex) {
                 meshFile = mf;
                 meshFileEntry = entry;

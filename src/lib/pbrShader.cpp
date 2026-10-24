@@ -74,7 +74,7 @@ void PBRShader::initialUpload(bool listUploadedMeshes)
 		}
 		engine->globalRendering.gpuMemory.flushAllBuffers();
 		if (listUploadedMeshes) {
-			Log("" << list.size() << " uploaded meshes:\n");
+			Log("" << list.size() << " uploaded allMeshes:\n");
 			int i = 0;
 			for (auto meshptr : list) {
 				Log(" " << i << " ");

@@ -72,7 +72,7 @@ protected:
         ASSERT_NE(coll, nullptr) << "MeshCollection should not be null for id: " << expectedId;
         EXPECT_EQ(coll->id, expectedId);
         EXPECT_TRUE(coll->available);
-        EXPECT_GT(coll->meshCount(), 0) << "Collection should contain meshes";
+        EXPECT_GT(coll->meshCount(), 0) << "Collection should contain allMeshes";
     }
 
     // Helper to count major meshes (non-additional primitives)
@@ -181,7 +181,7 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives) {
 
     // check mesh count in file:
     MeshFile* meshFile = mstore.getMeshFileByID("SingleMesh");
-    EXPECT_EQ(meshFile->meshes.size(), 1) << "Expected 1 mesh in gltf file cube_single.gltf";
+    EXPECT_EQ(meshFile->allMeshes.size(), 1) << "Expected 1 mesh in gltf file cube_single.gltf";
 
     // access textures of the mesh:
     size_t textureCount = mstore.gltf.getTextureCount();
@@ -195,9 +195,9 @@ TEST_F(GLTFParserTest, SingleMesh_NoPrimitives) {
     EXPECT_GT(meshCountAfterLoad, meshCount) << "Expected mesh count to increase after loading";
 
     auto loaded = mstore.getMeshFileByID("SingleMesh"); // ensure we can retrieve the mesh file by ID
-    EXPECT_EQ(loaded->meshes.size(), 1); // should be 1 mesh
-    auto meshInfo = mstore.getGPUMeshInfo(loaded->meshes[0].meshIndex);
-    const auto meshMetadata = mstore.getMeshMetadata(loaded->meshes[0].meshIndex);
+    EXPECT_EQ(loaded->allMeshes.size(), 1); // should be 1 mesh
+    auto meshInfo = mstore.getGPUMeshInfo(loaded->allMeshes[0].meshIndex);
+    const auto meshMetadata = mstore.getMeshMetadata(loaded->allMeshes[0].meshIndex);
     EXPECT_EQ(meshMetadata->name, "Cube");
 
     // access newest mesh info, from the file just loaded:
@@ -262,7 +262,7 @@ TEST_F(GLTFParserTest, SingleMesh_CheckShaderData) {
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh");
 
     MeshFile* meshFile = mstore.getMeshFileByID("SingleMesh");
-    MeshInfoIndex meshIndex = meshFile->meshes[0].meshIndex;
+    MeshInfoIndex meshIndex = meshFile->allMeshes[0].meshIndex;
     GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
     MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
     GPUMaterial* material = mstore.getGPUMaterial(meshInfo->material);
@@ -313,7 +313,7 @@ TEST_F(GLTFParserTest, Meshlets) {
     MStore& mstore = engine->mstore;
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh");
     MeshFile* meshFile = mstore.getMeshFileByID("SingleMesh");
-    MeshInfoIndex meshIndex = meshFile->meshes[0].meshIndex;
+    MeshInfoIndex meshIndex = meshFile->allMeshes[0].meshIndex;
     MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
 
     EXPECT_FALSE(meshMetadata->hasMeshlets()) << "cube_single.gltf should not have meshlets without generating them";
@@ -324,7 +324,7 @@ TEST_F(GLTFParserTest, Meshlets) {
     flags.setFlag(MeshFlags::FORCE_RELOAD);
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh_Meshlets", flags);
     meshFile = mstore.getMeshFileByID("SingleMesh_Meshlets");
-    meshIndex = meshFile->meshes[0].meshIndex;
+    meshIndex = meshFile->allMeshes[0].meshIndex;
     meshMetadata = mstore.getMeshMetadata(meshIndex);
 
     EXPECT_TRUE(meshMetadata->hasMeshlets()) << "cube_single.gltf meshlet regeneration failed";
@@ -340,7 +340,7 @@ TEST_F(GLTFParserTest, Mesh_Indices) {
     MStore& mstore = engine->mstore;
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh");
     MeshFile* meshFile = mstore.getMeshFileByID("SingleMesh");
-    MeshInfoIndex meshIndex = meshFile->meshes[0].meshIndex;
+    MeshInfoIndex meshIndex = meshFile->allMeshes[0].meshIndex;
     EXPECT_EQ(meshIndex.asSize(), 0) << "Expected mesh index 0 for first mesh";
     MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
     EXPECT_GT(meshMetadata->vertices.size(), 0) << "Expected non-zero vertex count";
@@ -353,7 +353,7 @@ TEST_F(GLTFParserTest, Mesh_Indices) {
     flags.setFlag(MeshFlags::FORCE_RELOAD);
     engine->mstore.loadMesh("cube_single.gltf", "SingleMesh_Meshlets", flags);
     meshFile = mstore.getMeshFileByID("SingleMesh_Meshlets");
-    meshIndex = meshFile->meshes[0].meshIndex;
+    meshIndex = meshFile->allMeshes[0].meshIndex;
     uint32_t mIdx = meshIndex.asSize();
     EXPECT_EQ(mIdx, 1) << "Expected mesh index 1 for second mesh";
     MeshInfoMetadata* meshMetadata2 = mstore.getMeshMetadata(meshIndex);
@@ -362,7 +362,7 @@ TEST_F(GLTFParserTest, Mesh_Indices) {
     EXPECT_EQ(meshInfo->index.asSize(), mIdx) << "GPUMeshInfo index should match mesh index for second mesh";
 
     // recheck GPUMeshInfo array:
-    EXPECT_EQ(engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos), 2) << "Expected 2 GPUMeshInfo entries after loading two meshes";
+    EXPECT_EQ(engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos), 2) << "Expected 2 GPUMeshInfo entries after loading two allMeshes";
     auto mesh0 = mstore.getGPUMeshInfo(static_cast<MeshInfoIndex>(0));
     uint32_t mesh0idx = mesh0->index.asSize();
     EXPECT_EQ(mesh0idx, 0) << "First GPUMeshInfo index should be 0";
@@ -387,10 +387,10 @@ TEST_F(GLTFParserTest, MultiMesh_TwoPartTree) {
     int numTexturesLoaded = tstore.size() - numTextures;
 
     MeshFile* meshFile = mstore.getMeshFileByID("tree");
-    EXPECT_EQ(meshFile->meshes.size(), 2) << "Expected 2 meshes in tree_primitives.gltf";
+    EXPECT_EQ(meshFile->allMeshes.size(), 2) << "Expected 2 allMeshes in tree_primitives.gltf";
 
-    for (size_t i = 0; i < meshFile->meshes.size(); ++i) {
-        MeshInfoIndex meshIndex = meshFile->meshes[i].meshIndex;
+    for (size_t i = 0; i < meshFile->allMeshes.size(); ++i) {
+        MeshInfoIndex meshIndex = meshFile->allMeshes[i].meshIndex;
         MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
         GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
         EXPECT_TRUE(meshMetadata->hasMeshlets()) << "meshlet regeneration failed for primitive " << i;
@@ -412,13 +412,13 @@ TEST_F(GLTFParserTest, MultiMesh_TwoPartTree) {
     EXPECT_EQ(numTexturesLoaded, 6) << "Expected 6 new textures loaded for tree_primitives.gltf";
 
     // add a stationary object
-    MeshInfoIndex meshIndex = meshFile->meshes[0].meshIndex;
+    MeshInfoIndex meshIndex = meshFile->allMeshes[0].meshIndex;
     GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
     SceneObject* object = mstore.addObject(meshIndex, vec3(0.0f, 0.0f, 0.0f));
     EXPECT_TRUE(!object->flags.hasFlag(MeshFlags::RENDER_TYPE_MOVING)) << "Object should be stationary";
 
     // check linking to next primitive:
-    MeshInfoIndex meshIndex2 = meshFile->meshes[1].meshIndex;
+    MeshInfoIndex meshIndex2 = meshFile->allMeshes[1].meshIndex;
     GPUMeshInfo* meshInfo2 = mstore.getGPUMeshInfo(meshIndex2);
     GPUModel* model = mstore.getGPUModel(object);
     EXPECT_TRUE(meshInfo->next.isValid()) << "Object mesh should have another primitive";
@@ -434,6 +434,46 @@ TEST_F(GLTFParserTest, MultiMesh_TwoPartTree) {
     mstore.prepareGPUModels(object, baseTransform);
     EXPECT_NE(model->model, mat4(1.0)) << "Model transform should be updated";
     EXPECT_EQ(model->model, model2->model) << "Models transform should be the same for each primitive (gltf transform will be applied in shader)";
+
+    // check main meshes list:
+    EXPECT_EQ(meshFile->mainMeshes.size(), 1) << "Expected 1 main mesh";
+    EXPECT_EQ(meshFile->mainMeshes[0].meshIndex, meshFile->allMeshes[0].meshIndex) << "Main mesh should be the first mesh";
+
+}
+
+// test gltf files with more multiple meshes
+TEST_F(GLTFParserTest, MultiMesh) {
+    MStore& mstore = engine->mstore;
+    TextureStore& tstore = engine->textureStore;
+    engine->setTextureReuse(false); // disable texture reuse for this test (otherwise texture counting is off)
+
+    int numTextures = tstore.size();
+
+    MeshFlagsCollection flags;
+    flags.setFlag(MeshFlags::MESHLET_GENERATE);
+    engine->mstore.loadMesh("multiple_objects.gltf", "multi", flags);
+    EXPECT_EQ(mstore.getMeshFiles().size(), 1) << "Expected 1 mesh file loaded";
+    int numTexturesLoaded = tstore.size() - numTextures;
+
+    MeshFile* meshFile = mstore.getMeshFileByID("multi");
+    EXPECT_EQ(meshFile->allMeshes.size(), 3) << "Expected 3 allMeshes in multiple_objects.gltf";
+
+    for (size_t i = 0; i < meshFile->allMeshes.size(); ++i) {
+        MeshInfoIndex meshIndex = meshFile->allMeshes[i].meshIndex;
+        MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
+        GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
+    }
+    // verify mesh names from the gltf file:
+    EXPECT_EQ(meshFile->allMeshes[0].name, "Cube");
+    EXPECT_EQ(meshFile->allMeshes[1].name, "Sphere");
+    EXPECT_EQ(meshFile->allMeshes[2].name, "Cylinder");
+
+    EXPECT_EQ(meshFile->byName("Cube").meshIndex, meshFile->allMeshes[0].meshIndex);
+    EXPECT_EQ(meshFile->byName("Sphere").meshIndex, meshFile->allMeshes[1].meshIndex);
+    EXPECT_EQ(meshFile->byName("Cylinder").meshIndex, meshFile->allMeshes[2].meshIndex);
+
+    // we don't have additional primitives in this file, so all meshes should be main meshes:
+    EXPECT_EQ(meshFile->mainMeshes.size(), 3) << "Expected 3 main meshes";
 }
 
 // Test 2: Single mesh with LOD levels (10 LODs)
@@ -446,7 +486,7 @@ TEST_F(GLTF_OLD, SingleMesh_WithLODs) {
     // engine->meshStore.loadMeshLod("mesh_with_lods.gltf", "TestLOD");
 
     Log("Test requires GLTF file: mesh_with_lods.gltf with 10 LOD levels\n");
-    Log("File should contain meshes: mesh_lod_0, mesh_lod_1, ... mesh_lod_9\n");
+    Log("File should contain allMeshes: mesh_lod_0, mesh_lod_1, ... mesh_lod_9\n");
 
     // Once file exists, uncomment:
     /*
@@ -506,7 +546,7 @@ TEST_F(GLTF_OLD, Complex_LODsAndPrimitives) {
     // Expected file: "tree_lod_primitives.gltf"
 
     Log("Test requires GLTF file: tree_lod_primitives.gltf\n");
-    Log("File should contain 10 meshes (LODs), each with 2 primitives\n");
+    Log("File should contain 10 allMeshes (LODs), each with 2 primitives\n");
 
     // Once file exists, uncomment:
     /*
@@ -575,7 +615,7 @@ TEST_F(GLTF_OLD, MultipleSeparateMeshes) {
     // e.g., cube, sphere, cylinder in one file
 
     Log("Test requires GLTF file: multiple_objects.gltf\n");
-    Log("File should contain 3 separate meshes (not LODs or primitives)\n");
+    Log("File should contain 3 separate allMeshes (not LODs or primitives)\n");
 
     // Once file exists, uncomment:
     /*

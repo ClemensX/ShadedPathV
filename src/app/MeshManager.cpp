@@ -157,7 +157,7 @@ void MeshManager::prepareFrame(FrameResources* fr)
         auto* coll = engine->meshStore.getMeshCollection(newid);
         objects.clear();
         simObjects.clear();
-        Log("Loaded " << coll->meshCount() << " meshes from file" << endl); // <- updated
+        Log("Loaded " << coll->meshCount() << " allMeshes from file" << endl); // <- updated
         float xpos = 0.0f;
         loadObjectNum += coll->meshCount();
         for (size_t meshIndex = 0; meshIndex < coll->meshCount(); meshIndex++) {

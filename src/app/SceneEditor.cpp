@@ -25,7 +25,7 @@ void SceneEditor::run(ContinuationInfo* cont)
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
 
         // uncomment to use test_samples folder instead of regular asset folder
-        //assetFolderName = "test_samples";
+        assetFolderName = "test_samples";
         
         engine->files.findAssetFolder(assetFolderName);
         setHighBackbufferResolution();
@@ -248,7 +248,7 @@ bool SceneEditor::showFileDialog(bool& loadedNewMeshFile, bool& selectedObjectFo
         for (int i = 0; i < static_cast<int>(meshFiles.size()); ++i) {
             const MeshFile& meshFile = meshFiles[i];
             string filename = filesystem::path(meshFile.filename).filename().string();
-            string label = filename + " [" + to_string(meshFile.meshes.size()) + "]";
+            string label = filename + " [" + to_string(meshFile.allMeshes.size()) + "]";
 
             if (ImGui::Selectable(label.c_str(), displayParams.selectedLoadedMeshFileLine == i)) {
                 displayParams.selectedLoadedMeshFileLine = i;
@@ -621,8 +621,8 @@ void SceneEditor::addObjectToScene(int meshFileIndex, bool moving)
     }
 
     const MeshFile& selectedFile = meshFiles[meshFileIndex];
-    if (selectedFile.meshes.empty()) {
-        Error("SceneEditor::addObjectToScene: selected mesh file has no meshes");
+    if (selectedFile.allMeshes.empty()) {
+        Error("SceneEditor::addObjectToScene: selected mesh file has no allMeshes");
         return;
     }
 
@@ -632,38 +632,44 @@ void SceneEditor::addObjectToScene(int meshFileIndex, bool moving)
         flags.setFlag(MeshFlags::RENDER_TYPE_MOVING);
     }
 
-    const MeshInfoIndex meshIndex = selectedFile.meshes[0].meshIndex;
-    GPUMeshInfo* meshInfo = engine->mstore.getGPUMeshInfo(meshIndex);
-    if (meshInfo == nullptr) {
-        Error("SceneEditor::addObjectToScene: failed to resolve mesh info");
-        return;
+    // add all (major) mesh files to scene:
+    for (int i = 0; i < selectedFile.mainMeshes.size(); i++) {
+        const MeshInfoIndex meshIndex = selectedFile.allMeshes[i].meshIndex;
+        GPUMeshInfo* meshInfo = engine->mstore.getGPUMeshInfo(meshIndex);
+        if (meshInfo == nullptr) {
+            Error("SceneEditor::addObjectToScene: failed to resolve mesh info");
+            return;
+        }
+
+        SceneObject* object = engine->mstore.addObject(meshInfo->index, vec3(0.0f, 0.0f, 0.0f), flags);
+        if (object == nullptr) {
+            Error("SceneEditor::addObjectToScene: failed to add object");
+            return;
+        }
+
+        object->flags = flags;
+        object->scale = vec3(1.0f);
+
+        mat4 baseTransform = mat4(1.0f);
+        GPUModel* gpuModel = moving
+            ? engine->mstore.getGPUMovingModel(object->index)
+            : engine->mstore.getGPUModel(object->index);
+
+        engine->mstore.prepareGPUModels(object, baseTransform);
+
+        if (moving) {
+            engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, object->index.raw());
+        }
+        else {
+            engine->globalRendering.gpuMemory.updateElement(BufferType::Models, *gpuModel, object->index.raw());
+        }
+
+        if (moving) {
+            engine->mstore.updateMovingModelParams(object);
+        }
     }
-
-    SceneObject* object = engine->mstore.addObject(meshInfo->index, vec3(0.0f, 0.0f, 0.0f), flags);
-    if (object == nullptr) {
-        Error("SceneEditor::addObjectToScene: failed to add object");
-        return;
-    }
-
-    object->flags = flags;
-    object->scale = vec3(1.0f);
-
-    mat4 baseTransform = mat4(1.0f);
-    GPUModel* gpuModel = moving
-        ? engine->mstore.getGPUMovingModel(object->index)
-        : engine->mstore.getGPUModel(object->index);
-
-    engine->mstore.prepareGPUModels(object, baseTransform);
-
+    
     if (moving) {
-        engine->globalRendering.gpuMemory.updateElement(BufferType::ModelsMoving, *gpuModel, object->index.raw());
-    }
-    else {
-        engine->globalRendering.gpuMemory.updateElement(BufferType::Models, *gpuModel, object->index.raw());
-    }
-
-    if (moving) {
-        engine->mstore.updateMovingModelParams(object);
         redoAllMovingObjects();
     } else {
         redoAllStationaryObjects();
@@ -921,11 +927,11 @@ void SceneEditor::loadSceneFromFile(const std::string& sceneFilePathName)
         }
 
         MeshFile* meshFile = engine->mstore.loadMesh(meshFilePath, flags);
-        if (meshFile == nullptr || meshFile->meshes.empty()) {
+        if (meshFile == nullptr || meshFile->allMeshes.empty()) {
             continue;
         }
 
-        MeshInfoIndex meshIndex = meshFile->meshes[0].meshIndex;
+        MeshInfoIndex meshIndex = meshFile->allMeshes[0].meshIndex;
         //for (const auto& entry : meshFile->meshes) {
         //    if (entry.name == meshName) {
         //        meshIndex = entry.meshIndex;

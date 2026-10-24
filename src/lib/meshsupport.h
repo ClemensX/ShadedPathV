@@ -219,5 +219,18 @@ struct MeshFile {
     std::string id;
     std::string filename;
     MeshFlagsCollection flags;
-	std::vector<MeshFileEntry> meshes;
+	// only main meshes. If there are mutliple primitives they should be auto handled, only add the main mesh to a scene
+	std::vector<MeshFileEntry> mainMeshes;
+	// all meshes separateyly, including all primitives belonging together
+	std::vector<MeshFileEntry> allMeshes;
+	MeshFileEntry& byName(const std::string& name) {
+        for (auto& entry : allMeshes) {
+            if (entry.name == name) {
+                return entry;
+            }
+        }
+        Error("MeshFile::getMeshEntryByName: Mesh name not found: " + name);
+		auto& entry = allMeshes[0];
+        return entry; // keep compiler happy
+    }
 };
