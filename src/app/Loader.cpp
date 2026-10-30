@@ -140,7 +140,8 @@ void Loader::init() {
     flags.setFlag(MeshFlags::MESHLET_GENERATE);
     flags.setFlag(MeshFlags::RENDER_TYPE_MOVING);
     MStore& mstore = engine->mstore;
-    engine->mstore.loadMesh("multiple_objects.gltf", "Mesh", flags);
+    mstore.loadMeshCylinder("Mesh", flags);
+    //mstore.loadMesh("multiple_objects.gltf", "Mesh", flags);
     //engine->mstore.loadMesh("tree_primitives.gltf", "Mesh", flags);
     //engine->mstore.loadMesh("cube_single.gltf", "SingleMesh", flags);
     //engine->mstore.loadMesh("DamagedHelmet_cmp.glb", "SingleMesh", flags);
@@ -283,6 +284,9 @@ void Loader::prepareFrame(FrameResources* fr)
         //object->enabled = false;
     }
     engine->shaders.lineShader.clearLocalLines(tr);
+    engine->mstore.debugGraphics(tr, false, true, true, false);
+
+
     // cube
     CubeShader::UniformBufferObject cubo{};
     CubeShader::UniformBufferObject cubo2{};

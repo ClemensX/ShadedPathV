@@ -527,6 +527,109 @@ void MStore::validate()
 	}
 }
 
+void validateMeshMetadata(MeshInfoMetadata* m) {
+	assert(m->indices.size() % 3 == 0); // triangles
+	for (int i = 0; i < m->indices.size(); i++) {
+        assert(m->indices[i] < m->vertices.size());
+	}
+    for (int i = 0; i < m->vertices.size(); i++) {
+		assert(!isnan(m->vertices[i].pos.x));
+		assert(!isnan(m->vertices[i].pos.y));
+		assert(!isnan(m->vertices[i].pos.z));
+    }
+}
+
+void MStore::validateMeshFile(std::string id)
+{
+	MStore& mstore = engine->mstore;
+	MeshFile* meshFile = mstore.getMeshFileByID(id);
+
+	for (size_t i = 0; i < meshFile->allMeshes.size(); ++i) {
+		MeshInfoIndex meshIndex = meshFile->allMeshes[i].meshIndex;
+        assert(meshIndex.isValid());
+		MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
+        assert(meshMetadata != nullptr);
+		validateMeshMetadata(meshMetadata);
+		GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
+        assert(meshInfo != nullptr);
+		// check material and textures
+		GPUMaterial* material = mstore.getGPUMaterial(meshInfo->material);
+        assert(material != nullptr);
+	}
+}
+
+MeshInfoIndex MStore::createMeshFromVertsAndIndices(std::string id, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indices, MeshFlagsCollection flags, std::string baseColorTextureId)
+{
+	MeshFile meshFile{};
+	meshFile.id = id;
+	meshFile.flags = flags;
+	meshFile.filename = id;
+
+	// create all instances like in gltf.cpp:
+	vector<GPUMeshInfo> gpuMeshInfos(1);
+	vector<MeshInfoMetadata> gpuMeshMetadata(1);
+	vector<GPUMaterial> gpuMaterialInfos(1);
+	vector<MaterialMetadata> gpuMaterialMetadata(1);
+
+    GPUMeshInfo& meshInfo = gpuMeshInfos[0];
+    meshInfo = GPUMeshInfo{};
+    MeshInfoMetadata& meshMeta = gpuMeshMetadata[0];
+    meshMeta = MeshInfoMetadata{};
+    GPUMaterial& materialInfo = gpuMaterialInfos[0];
+    materialInfo = GPUMaterial{};
+    MaterialMetadata& materialMeta = gpuMaterialMetadata[0];
+    materialMeta = MaterialMetadata{};
+
+	// MeshInfoMetadata:
+	// copy all Vertices from verts paramter to meshMeta.vertices:
+    meshMeta.vertices = verts;
+	meshMeta.indices = indices;
+    string meshName = id + "_mesh";
+    meshMeta.name = meshName;
+
+    // GPUMaterial:
+	materialInfo.baseColorTextureSet = -1;
+    materialInfo.physicalDescriptorTextureSet = -1;
+    materialInfo.normalTextureSet = -1;
+    materialInfo.occlusionTextureSet = -1;
+    materialInfo.emissiveTextureSet = -1;
+	materialInfo.isDoubleSided = false;
+    materialInfo.emissiveFactor = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+	materialInfo.emissiveStrength = 0.0f;
+    materialInfo.workflow = 0.0f; // PBR metallic-roughness
+    materialInfo.baseColorFactor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    materialInfo.metallicFactor = 0.0f;
+    materialInfo.roughnessFactor = 1.0f;
+    materialInfo.alphaMask = 0.0f; // OPAQUE
+    materialInfo.alphaMaskCutoff = 0.5f;
+
+	// GPUMeshinfo:
+	meshInfo.index = MeshInfoIndex{ static_cast<uint32_t>(0) }; // will be updated later when added to global buffers
+	meshInfo.material = MaterialIndex{ static_cast<uint32_t>(0) }; // will be updated later when added to global buffers
+
+	engine->mstore.addToGlobalBuffers(gpuMeshInfos, gpuMeshMetadata, gpuMaterialInfos, gpuMaterialMetadata);
+
+	//engine->globalRendering.gpuMemory.appendElement(BufferType::MeshInfos, meshInfo);
+	//MeshInfoIndex miIndex = static_cast<MeshInfoIndex>(meshNumStart + i);
+	//auto meshInfo = getGPUMeshInfoInternal(miIndex);
+	//auto metadata = getMeshMetadata(miIndex);
+	//meshInfo->index = miIndex;
+	MeshFileEntry entry{};
+	entry.name = meshName;
+	entry.meshIndex = gpuMeshInfos[0].index;
+	meshFile.allMeshes.push_back(entry);
+    meshFile.mainMeshes.push_back(entry);
+	//metadata->meshFileIndex = meshFiles.size();
+
+	meshFiles.push_back(meshFile);
+
+	addMeshFileID(id, meshFiles.size() - 1);
+
+	aquireMeshletData(&meshFile, flags.hasFlag(MeshFlags::MESHLET_GENERATE));
+
+	return MeshInfoIndex();
+}
+
 void MStore::getBoundingBox(BoundingBox& box, GPUMeshInfo& meshInfo)
 {
     auto meta = getMeshMetadata(meshInfo.index);
@@ -870,4 +973,42 @@ void MStore::debugGraphicsObject(SceneObject* so, FrameResources& fr, bool drawB
         }
     }
 	lineShader.addOneTime(addLines, fr);
+}
+
+void MStore::loadMeshCylinder(std::string id, MeshFlagsCollection flags, std::string baseColorTextureId, bool produceCrack, int segments, int heightDivs, float radius, float height)
+{
+	MeshInfoMetadata meshInfo;
+	meshInfo.name = id;
+    flags.setFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER); // always flip winding order for cylinder mesh
+
+	Util::GenerateCylinderMesh(segments, heightDivs, radius, height, meshInfo.vertices, meshInfo.indices, produceCrack);
+
+	if (flags.hasFlag(MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER)) {
+		// Flip winding order
+		for (size_t i = 0; i < meshInfo.indices.size(); i += 3) {
+			std::swap(meshInfo.indices[i], meshInfo.indices[i + 2]);
+		}
+	}
+    createMeshFromVertsAndIndices(id, meshInfo.vertices, meshInfo.indices, flags, baseColorTextureId);
+    validateMeshFile(id);
+	//// Set all default material values
+	//setDefaultMaterial(meshInfo.material);
+
+	//// Assign base color texture if provided
+	//if (!baseColorTextureId.empty()) {
+	//	meshInfo.baseColorTexture = engine->textureStore.getTexture(baseColorTextureId);
+	//	if (!meshInfo.baseColorTexture) {
+	//		Log("WARNING: Could not find base color texture with id: " << baseColorTextureId << endl);
+	//	}
+	//}
+
+	//meshInfo.available = true;
+	//meshInfo.collectionStoreIndex = initMeshCollection(id, flags)->index;
+	//meshes[id] = std::move(meshInfo);
+	//if (flags.hasFlag(MeshFlags::MESHLET_GENERATE)) {
+	//	aquireMeshletData(id, id, true);
+	//}
+	//else {
+	//	aquireMeshletData(id, id);
+	//}
 }

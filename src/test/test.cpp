@@ -849,7 +849,7 @@ TEST_F(MeshletTest, MeshletStorageFile) {
         engine->meshStore.loadMeshCylinder("TestObject", meshFlags);
         MeshInfo* meshInfo = engine->meshStore.getMesh("TestObject");
         EXPECT_FALSE(meshInfo->meshletStorageFileFound);
-        
+
         EXPECT_TRUE(meshInfo->meshletsForMesh.meshlets.size() > 0);
 
         // call the write method:
@@ -870,6 +870,71 @@ TEST_F(MeshletTest, MeshletStorageFile) {
         EXPECT_EQ(meshInfo2->outMeshletDesc.size(), meshInfo->outMeshletDesc.size());
         EXPECT_EQ(meshInfo2->outLocalIndexPrimitivesBuffer.size(), meshInfo->outLocalIndexPrimitivesBuffer.size());
         EXPECT_EQ(meshInfo2->outGlobalIndexBuffer.size(), meshInfo->outGlobalIndexBuffer.size());
+    }
+}
+
+// test for new mstore
+TEST_F(MeshletTest, MeshletStorageFile2) {
+    {
+        // init engine and mesh
+        ShadedPathEngine my_engine;
+        static ShadedPathEngine* engine = &my_engine;
+        minimalEngineInitialization(engine);
+
+        // look for meshlet file and delete if found:
+        // we should be in test name subfolder: MeshletStorageFile
+        auto cur_path = std::filesystem::current_path();
+        // test if cur_path ends with folder name 'MeshletStorageFile'
+        EXPECT_TRUE(cur_path.filename() == "MeshletStorageFile2");
+        // if there is no data_test folder below "MeshletStorageFile", we need to create it:
+        auto data_test_path = cur_path / "data_test";
+        if (!std::filesystem::exists(data_test_path)) {
+            std::filesystem::create_directory(data_test_path);
+        }
+        // if there is no "mesh" folder below data_test_path, we need to create it:
+        auto mesh_path = data_test_path / "mesh";
+        if (!std::filesystem::exists(mesh_path)) {
+            std::filesystem::create_directory(mesh_path);
+        }
+        // if there is "TestObject.meshlet" file in mesh folder, we need to delete it:
+        auto meshlet_path = mesh_path / "TestObject.meshlet";
+        if (std::filesystem::exists(meshlet_path)) {
+            std::filesystem::remove(meshlet_path);
+        }
+
+        engine->files.findAssetFolder("data_test");
+        string meshletFile = engine->files.findFile("TestObject.meshlet", FileCategory::MESH, false);
+        EXPECT_EQ(0, meshletFile.size());
+
+        // load mesh with meshlet creation
+        MeshFlagsCollection meshFlags = MeshFlags::MESH_TYPE_FLIP_WINDING_ORDER;
+        meshFlags.setFlag(MeshFlags::MESHLET_GENERATE);
+        engine->mstore.loadMeshCylinder("TestFile", meshFlags);
+        MeshFile* loaded = engine->mstore.getMeshFileByID("TestFile");
+        GPUMeshInfo* meshInfo = engine->mstore.getGPUMeshInfo(loaded->allMeshes[0].meshIndex);
+        MeshInfoMetadata* meshInfoMeta = engine->mstore.getMeshMetadata(loaded->allMeshes[0].meshIndex);
+        EXPECT_FALSE(meshInfoMeta->meshletStorageFileFound);
+        EXPECT_TRUE(meshInfoMeta->hasMeshlets());
+        EXPECT_EQ(meshInfoMeta->name, "TestFile_mesh");
+
+        // call the write method:
+        //EXPECT_TRUE(engine->meshStore.writeMeshletStorageFile("TestObject", "TestObject"));
+        //// assert that file now exists:
+        //EXPECT_TRUE(std::filesystem::exists(meshlet_path));
+        //// assert that file has size >= 16 bytes (file type identifier)
+        //auto fsize = std::filesystem::file_size(meshlet_path);
+        //EXPECT_TRUE(fsize >= 16);
+
+        //// load save file again:
+        //EXPECT_TRUE(engine->meshStore.loadMeshletStorageFile("TestObject", "TestObject"));
+        //meshInfo = engine->meshStore.getMesh("TestObject");
+
+        //// generate 2nd mesh and compare:
+        //engine->meshStore.loadMeshCylinder("TestObject2", meshFlags);
+        //MeshInfo* meshInfo2 = engine->meshStore.getMesh("TestObject2");
+        //EXPECT_EQ(meshInfo2->outMeshletDesc.size(), meshInfo->outMeshletDesc.size());
+        //EXPECT_EQ(meshInfo2->outLocalIndexPrimitivesBuffer.size(), meshInfo->outLocalIndexPrimitivesBuffer.size());
+        //EXPECT_EQ(meshInfo2->outGlobalIndexBuffer.size(), meshInfo->outGlobalIndexBuffer.size());
     }
 }
 

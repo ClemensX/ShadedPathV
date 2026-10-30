@@ -17,6 +17,7 @@ struct MeshInfoMetadata {
     std::vector<uint32_t> outGlobalIndexBuffer; // vertex indices into vertex buffer
     uint32_t meshFileIndex; // link back to MeshFile vector
     bool boundingBoxAlreadySet = false;
+    bool meshletStorageFileFound = false; // true if meshlet storage file was found and loaded
     const bool hasMeshlets() const {
         return meshletsForMesh.meshlets.size() > 0 && outMeshletDesc.size() > 0;
     }

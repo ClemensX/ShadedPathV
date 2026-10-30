@@ -441,7 +441,7 @@ TEST_F(GLTFParserTest, MultiMesh_TwoPartTree) {
 
 }
 
-// test gltf files with more multiple meshes
+// test gltf files with multiple objects
 TEST_F(GLTFParserTest, MultiMesh) {
     MStore& mstore = engine->mstore;
     TextureStore& tstore = engine->textureStore;
@@ -474,6 +474,41 @@ TEST_F(GLTFParserTest, MultiMesh) {
 
     // we don't have additional primitives in this file, so all meshes should be main meshes:
     EXPECT_EQ(meshFile->mainMeshes.size(), 3) << "Expected 3 main meshes";
+}
+
+// test gltf files with multiple objects and LOD details. One obejct has 2 primitives.
+TEST_F(GLTFParserTest, MultiMesh2) {
+    MStore& mstore = engine->mstore;
+    TextureStore& tstore = engine->textureStore;
+
+    int numTextures = tstore.size();
+
+    MeshFlagsCollection flags;
+    //flags.setFlag(MeshFlags::MESHLET_GENERATE);
+    // we do not set GENERATE: test should fail if meshlet data is not found
+    engine->mstore.loadMesh("test_multi_prim_lod.gltf", "multi", flags);
+    EXPECT_EQ(mstore.getMeshFiles().size(), 1) << "Expected 1 mesh file loaded";
+
+    MeshFile* meshFile = mstore.getMeshFileByID("multi");
+    EXPECT_EQ(meshFile->allMeshes.size(), 30) << "Expected 30 allMeshes in test_multi_prim_lod.gltf";
+
+    for (size_t i = 0; i < meshFile->allMeshes.size(); ++i) {
+        MeshInfoIndex meshIndex = meshFile->allMeshes[i].meshIndex;
+        MeshInfoMetadata* meshMetadata = mstore.getMeshMetadata(meshIndex);
+        GPUMeshInfo* meshInfo = mstore.getGPUMeshInfo(meshIndex);
+        ASSERT_TRUE(meshMetadata->hasMeshlets()) << "Meshlet data needs to be pre-calculated for this test";
+    }
+    // verify mesh names from the gltf file:
+    //EXPECT_EQ(meshFile->allMeshes[0].name, "Cube");
+    //EXPECT_EQ(meshFile->allMeshes[1].name, "Sphere");
+    //EXPECT_EQ(meshFile->allMeshes[2].name, "Cylinder");
+
+    //EXPECT_EQ(meshFile->byName("Cube").meshIndex, meshFile->allMeshes[0].meshIndex);
+    //EXPECT_EQ(meshFile->byName("Sphere").meshIndex, meshFile->allMeshes[1].meshIndex);
+    //EXPECT_EQ(meshFile->byName("Cylinder").meshIndex, meshFile->allMeshes[2].meshIndex);
+
+    //// we don't have additional primitives in this file, so all meshes should be main meshes:
+    //EXPECT_EQ(meshFile->mainMeshes.size(), 3) << "Expected 3 main meshes";
 }
 
 // Test 2: Single mesh with LOD levels (10 LODs)

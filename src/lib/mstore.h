@@ -99,6 +99,12 @@ public:
     bool loadMeshletStorageFile(MeshFile* mfile);
 
     // Util methods
+    // Generate and register a grid mesh with the given id
+    void loadMeshGrid(std::string id, MeshFlagsCollection flags = MeshFlagsCollection(), std::string baseColorTextureId = "", int gridSize = 9, float scale = 1.0f);
+    // Generate and register a cylinder mesh with the given id
+    void loadMeshCylinder(std::string id, MeshFlagsCollection flags = MeshFlagsCollection(), std::string baseColorTextureId = "", bool produceCrack = false, int segments = 16, int heightDivs = 8, float radius = 1.0f, float height = 2.0f);	// get sorted object list (sorted by type)
+    // for on-the-fly generated meshes we need to create internal GPU mesh structures from verts and indices
+    MeshInfoIndex createMeshFromVertsAndIndices(std::string id, std::vector<PBRShader::Vertex>& verts, std::vector<uint32_t>& indices, MeshFlagsCollection flags = MeshFlagsCollection(), std::string baseColorTextureId = "");
 
     // return the mesh bounding box from raw mesh data. No transforms applied. Will never change after initial calculation.
     void getBoundingBox(BoundingBox& box, GPUMeshInfo& meshInfo);
@@ -116,8 +122,8 @@ public:
     // enable debug graphics for all moving objects
     void debugGraphics(FrameResources& fr,
         bool drawBoundingBox, bool drawVertices, bool drawNormals, bool drawMeshletBoundingBoxes,
-        glm::vec4 colorVertices, glm::vec4 colorNormal, glm::vec4 colorBoxes,
-        float normalLineLength);
+        glm::vec4 colorVertices = glm::vec4(1.0f, 0.2f, 0.2f, 1.0f), glm::vec4 colorNormal = glm::vec4(0.2f, 1.0f, 0.2f, 1.0f), glm::vec4 colorBoxes = glm::vec4(1.0f, 1.0f, 0.2f, 1.0f),
+        float normalLineLength = 0.25f);
     void debugGraphicsObject(SceneObject* so, FrameResources& fr,
         bool drawBoundingBox, bool drawVertices, bool drawNormals, bool drawMeshletBoundingBoxes,
         glm::vec4 colorVertices, glm::vec4 colorNormal, glm::vec4 colorBoxes,
@@ -130,6 +136,7 @@ public:
     }
     // should be used only in debug builds: validate some internal data structures and Error() if found
     void validate();
+    void validateMeshFile(std::string fileName);
     // update all moving model params for scene object.
     void updateMovingModelParams(SceneObject* so);
 private:
