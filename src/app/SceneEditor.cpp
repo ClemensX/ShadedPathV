@@ -271,6 +271,18 @@ bool SceneEditor::showFileDialog(bool& loadedNewMeshFile, bool& selectedObjectFo
                 ImGui::CloseCurrentPopup();
             }
         }
+        if (showAddObjectButton) {
+            ImGui::SameLine();
+        }
+        if (ImGui::Button("Save Meshlet Data")) {
+            MeshFile& selected = meshFiles[displayParams.selectedLoadedMeshFileLine];
+            if (engine->mstore.writeMeshletStorageFile(&selected)) {
+                Log("Meshlet data saved for " << selected.filename << endl);
+            }
+            else {
+                Log("ERROR: Failed to save meshlet data for " << selected.filename << endl);
+            }
+        }
         //ImGui::SameLine();
         //if (ImGui::Button("Add Moving Object")) {
         //    displayParams.addMovingObjectToScene = true;

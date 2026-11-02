@@ -93,10 +93,12 @@ public:
 
     // Meshlets
 
-    // write meshlet data for all meshes in the collection to file, return true if successful
+    // write meshlet data for all meshes of an MeshFile to <filename>.meshlet, return true if successful
     bool writeMeshletStorageFile(MeshFile* mfile);
     // load meshlet data for all meshes of a collection from file, return true if successful, error if #items and #meshlet data sets do not match
     bool loadMeshletStorageFile(MeshFile* mfile);
+    // check meshlet data is available for all meshes of a MeshFile, return true if successful
+    bool checkMeshletDataAvailable(MeshFile* mfile);
 
     // Util methods
     // Generate and register a grid mesh with the given id

@@ -33,6 +33,7 @@ void MStore::init() {
 MeshFile* MStore::checkMeshFile(std::string filename, std::string id)
 {
 	// search id
+
 	auto it = meshFileIDs.find(id);
 	if (it != meshFileIDs.end()) {
 		int index = it->second;
@@ -83,7 +84,7 @@ MeshFile* MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollec
 	string fileOrPath = (path) ? path.value() : filename;
 	gltf.load2((const unsigned char*)file_buffer.data(), (int)file_buffer.size(), fileOrPath);
 	auto meshNumCount = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos) - meshNumStart;
-    Log("MStore::loadMesh: Loaded " << meshNumCount << " allMeshes from file: " << filename << "\n");
+    Log("MStore::loadMesh: Loaded " << meshNumCount << " Meshes from file: " << filename << "\n");
  
     MeshFile meshFile{};
     meshFile.id = id;
@@ -609,14 +610,11 @@ MeshInfoIndex MStore::createMeshFromVertsAndIndices(std::string id, std::vector<
 
 	engine->mstore.addToGlobalBuffers(gpuMeshInfos, gpuMeshMetadata, gpuMaterialInfos, gpuMaterialMetadata);
 
-	//engine->globalRendering.gpuMemory.appendElement(BufferType::MeshInfos, meshInfo);
-	//MeshInfoIndex miIndex = static_cast<MeshInfoIndex>(meshNumStart + i);
-	//auto meshInfo = getGPUMeshInfoInternal(miIndex);
-	//auto metadata = getMeshMetadata(miIndex);
-	//meshInfo->index = miIndex;
+    // we know we added one mesh, so index is the latest mesh index in the global buffer:
+    MeshInfoIndex latestMeshIndex = MeshInfoIndex{ static_cast<uint32_t>(engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos) - 1) };
 	MeshFileEntry entry{};
 	entry.name = meshName;
-	entry.meshIndex = gpuMeshInfos[0].index;
+	entry.meshIndex = latestMeshIndex;
 	meshFile.allMeshes.push_back(entry);
     meshFile.mainMeshes.push_back(entry);
 	//metadata->meshFileIndex = meshFiles.size();
@@ -628,6 +626,140 @@ MeshInfoIndex MStore::createMeshFromVertsAndIndices(std::string id, std::vector<
 	aquireMeshletData(&meshFile, flags.hasFlag(MeshFlags::MESHLET_GENERATE));
 
 	return MeshInfoIndex();
+}
+
+bool MStore::writeMeshletStorageFile(MeshFile* mfile)
+{
+    // check that all meshes have meshlet data:
+	for (MeshFileEntry& mfe : mfile->allMeshes) {
+		const GPUMeshInfo* meshInfo = getGPUMeshInfo(mfe.meshIndex);
+		const MeshInfoMetadata* meshMetadata = getMeshMetadata(mfe.meshIndex);
+		if (!meshMetadata->hasMeshlets()) {
+			Error("Cannot write meshlet file: MeshFile " + mfile->filename + " Mesh " + meshMetadata->name + " does not have meshlet data.");
+		}
+	}
+	// write meshlet data for each mesh
+
+	// open meshlet file for write:
+	// concatenate mesh name with .meshlet extension
+	string fileName = mfile->filename + ".meshlet";
+	string meshFile = engine->files.findFile(fileName, FileCategory::MESH, false, true);
+	// open meshFile for writing:
+	std::ofstream mf(meshFile, std::ios::binary);
+	// write file type identifier:
+	const char fileType[16] = "SPMESHLETFILEv1";
+	mf.write(fileType, 16); // write file type string and trailing zero
+	// write number of meshes (NOT meshlets):
+	uint32_t numMeshes = mfile->allMeshes.size();
+	mf.write((char*)&numMeshes, sizeof(uint32_t));
+
+	for (MeshFileEntry& mfe : mfile->allMeshes) {
+		const GPUMeshInfo* meshInfo = getGPUMeshInfo(mfe.meshIndex);
+		const MeshInfoMetadata* meshMetadata = getMeshMetadata(mfe.meshIndex);
+		MeshletStorageData meshletData;
+		meshletData.numMeshlets = meshMetadata->outMeshletDesc.size();
+		meshletData.numLocalIndices = meshMetadata->outLocalIndexPrimitivesBuffer.size();
+		meshletData.numGlobalIndices = meshMetadata->outGlobalIndexBuffer.size();
+		if (meshletData.numMeshlets == 0 || meshletData.numGlobalIndices == 0 || meshletData.numLocalIndices == 0) {
+			Log("ERROR: Trying to write meshlet file for empty mesh " << mfe.name << endl);
+			return false;
+		}
+		// write buffer lengths:
+		mf.write((char*)&meshletData, sizeof(MeshletStorageData));
+		// write meshlet descriptors:
+		mf.write((char*)meshMetadata->outMeshletDesc.data(), sizeof(PBRShader::PackedMeshletDesc) * meshletData.numMeshlets);
+		// write local index buffer:
+		mf.write((char*)meshMetadata->outLocalIndexPrimitivesBuffer.data(), sizeof(uint8_t) * meshletData.numLocalIndices);
+		// write global index buffer:
+		mf.write((char*)meshMetadata->outGlobalIndexBuffer.data(), sizeof(uint32_t) * meshletData.numGlobalIndices);
+	}
+	// close file:
+	mf.close();
+	return true;
+}
+
+bool MStore::loadMeshletStorageFile(MeshFile* mfile)
+{
+	// open meshlet file for read:
+	// concatenate mesh name with .meshlet extension
+	string fileName = mfile->filename + ".meshlet";
+	string meshFile = engine->files.findFile(fileName, FileCategory::MESH, false, false);
+	if (meshFile.empty()) {
+		Log("ERROR: Meshlet file not found for mesh " << mfile->filename << endl);
+		return false;
+	}
+	vector<byte> file_buffer;
+	engine->files.readFile(fileName, file_buffer, FileCategory::MESH);
+	const char fileType[16] = "SPMESHLETFILEv1";
+	// check file_buffer for correct header:
+	if (file_buffer.size() < 16) {
+		Log("ERROR: Meshlet file too small for mesh " << mfile->filename << endl);
+		return false;
+	}
+	if (memcmp(file_buffer.data(), fileType, 16) != 0) {
+		Log("ERROR: Meshlet file has incorrect header for mesh " << mfile->filename << endl);
+		return false;
+	}
+	size_t offset = 16;
+	// check number of meshlet data sets
+	uint32_t numMeshesInCollection = mfile->allMeshes.size();
+	uint32_t numMeshesFromeFile;
+	memcpy(&numMeshesFromeFile, file_buffer.data() + offset, sizeof(numMeshesFromeFile));
+	offset += sizeof(numMeshesFromeFile);
+	assert(numMeshesInCollection == numMeshesFromeFile);
+
+	for (MeshFileEntry& mfe : mfile->allMeshes) {
+		const GPUMeshInfo* meshInfo = getGPUMeshInfo(mfe.meshIndex);
+		MeshInfoMetadata* meshMetadata = getMeshMetadata(mfe.meshIndex);
+		// read meshlet buffer sizes:
+		MeshletStorageData meshletData;
+		if (file_buffer.size() < offset + sizeof(MeshletStorageData)) {
+			Log("ERROR: Meshlet file too small for mesh " << mfe.name << endl);
+			return false;
+		}
+		memcpy(&meshletData, file_buffer.data() + offset, sizeof(MeshletStorageData));
+		offset += sizeof(MeshletStorageData);
+		if (meshletData.numMeshlets == 0 || meshletData.numGlobalIndices == 0 || meshletData.numLocalIndices == 0) {
+			Log("ERROR: Meshlet file has zero sizes for mesh " << mfe.name << endl);
+			return false;
+		}
+		// resize mesh buffers:
+		meshMetadata->outMeshletDesc.resize(meshletData.numMeshlets);
+		meshMetadata->outLocalIndexPrimitivesBuffer.resize(meshletData.numLocalIndices);
+		meshMetadata->outGlobalIndexBuffer.resize(meshletData.numGlobalIndices);
+		size_t expectedSize = offset + sizeof(PBRShader::PackedMeshletDesc) * meshletData.numMeshlets
+			+ sizeof(uint8_t) * meshletData.numLocalIndices
+			+ sizeof(uint32_t) * meshletData.numGlobalIndices;
+		if (file_buffer.size() < expectedSize) {
+			Log("ERROR: Meshlet file too small for mesh " << mfe.name << endl);
+			return false;
+		}
+		// read meshlet descriptors:
+		memcpy(meshMetadata->outMeshletDesc.data(), file_buffer.data() + offset, sizeof(PBRShader::PackedMeshletDesc) * meshletData.numMeshlets);
+		offset += sizeof(PBRShader::PackedMeshletDesc) * meshletData.numMeshlets;
+		// read local index buffer:
+		memcpy(meshMetadata->outLocalIndexPrimitivesBuffer.data(), file_buffer.data() + offset, sizeof(uint8_t) * meshletData.numLocalIndices);
+		offset += sizeof(uint8_t) * meshletData.numLocalIndices;
+		// read global index buffer:
+		memcpy(meshMetadata->outGlobalIndexBuffer.data(), file_buffer.data() + offset, sizeof(uint32_t) * meshletData.numGlobalIndices);
+		offset += sizeof(uint32_t) * meshletData.numGlobalIndices;
+		meshMetadata->meshletStorageFileFound = true;
+	}
+
+	return true;
+}
+
+bool MStore::checkMeshletDataAvailable(MeshFile* meshFile)
+{
+	for (size_t i = 0; i < meshFile->allMeshes.size(); ++i) {
+		MeshInfoIndex meshIndex = meshFile->allMeshes[i].meshIndex;
+		MeshInfoMetadata* meshMetadata = engine->mstore.getMeshMetadata(meshIndex);
+		if (!meshMetadata->hasMeshlets()) {
+            Log("WARNING: Meshlet data not available for mesh " << meshMetadata->name << " in mesh file " << meshFile->filename << endl);
+            return false;
+		}
+	}
+	return true;
 }
 
 void MStore::getBoundingBox(BoundingBox& box, GPUMeshInfo& meshInfo)
@@ -747,11 +879,6 @@ void MStore::aquireMeshletData(MeshFile* mfile, bool regenerateMeshletData)
 	}
 }
 
-bool MStore::loadMeshletStorageFile(MeshFile* mfile)
-{
-	return false;
-}
-
 void MStore::calculateMeshlets(GPUMeshInfo* mesh, uint32_t meshlet_flags, uint32_t vertexLimit, uint32_t primitiveLimit)
 {
 #   if defined(DEBUG)
@@ -775,6 +902,9 @@ void MStore::calculateMeshlets(GPUMeshInfo* mesh, uint32_t meshlet_flags, uint32
 	auto meta = getMeshMetadata(mesh->index);
 	MeshletIn in{ meta->vertices, meta->indices, primitiveLimit, vertexLimit, box };
 	MeshletOut out{ meta->meshletsForMesh.meshlets, meta->outMeshletDesc, meta->outLocalIndexPrimitivesBuffer, meta->outGlobalIndexBuffer };
+    if (meta->meshletsForMesh.meshlets.size() > 0 || meta->outMeshletDesc.size() > 0 || meta->outLocalIndexPrimitivesBuffer.size() > 0 || meta->outGlobalIndexBuffer.size() > 0) {
+		Error("Trying to regenerate meshlets that are already existing: Mesh " + string(meta->name) + string(" already has meshlet data\n"));
+	}
 	meta->meshletsForMesh.calculateTrianglesAndNeighbours(in);
 
 

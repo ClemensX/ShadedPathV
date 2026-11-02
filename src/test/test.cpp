@@ -896,14 +896,14 @@ TEST_F(MeshletTest, MeshletStorageFile2) {
         if (!std::filesystem::exists(mesh_path)) {
             std::filesystem::create_directory(mesh_path);
         }
-        // if there is "TestObject.meshlet" file in mesh folder, we need to delete it:
-        auto meshlet_path = mesh_path / "TestObject.meshlet";
+        // if there is "TestFile.meshlet" file in mesh folder, we need to delete it:
+        auto meshlet_path = mesh_path / "TestFile.meshlet";
         if (std::filesystem::exists(meshlet_path)) {
             std::filesystem::remove(meshlet_path);
         }
 
         engine->files.findAssetFolder("data_test");
-        string meshletFile = engine->files.findFile("TestObject.meshlet", FileCategory::MESH, false);
+        string meshletFile = engine->files.findFile("TestFile.meshlet", FileCategory::MESH, false);
         EXPECT_EQ(0, meshletFile.size());
 
         // load mesh with meshlet creation
@@ -918,23 +918,25 @@ TEST_F(MeshletTest, MeshletStorageFile2) {
         EXPECT_EQ(meshInfoMeta->name, "TestFile_mesh");
 
         // call the write method:
-        //EXPECT_TRUE(engine->meshStore.writeMeshletStorageFile("TestObject", "TestObject"));
-        //// assert that file now exists:
-        //EXPECT_TRUE(std::filesystem::exists(meshlet_path));
-        //// assert that file has size >= 16 bytes (file type identifier)
-        //auto fsize = std::filesystem::file_size(meshlet_path);
-        //EXPECT_TRUE(fsize >= 16);
+        EXPECT_TRUE(engine->mstore.writeMeshletStorageFile(loaded));
+        // assert that file now exists:
+        EXPECT_TRUE(std::filesystem::exists(meshlet_path));
+        // assert that file has size >= 16 bytes (file type identifier)
+        auto fsize = std::filesystem::file_size(meshlet_path);
+        EXPECT_TRUE(fsize >= 16);
 
-        //// load save file again:
-        //EXPECT_TRUE(engine->meshStore.loadMeshletStorageFile("TestObject", "TestObject"));
-        //meshInfo = engine->meshStore.getMesh("TestObject");
+        // load save file again:
+        ASSERT_TRUE(engine->mstore.loadMeshletStorageFile(loaded));
 
-        //// generate 2nd mesh and compare:
-        //engine->meshStore.loadMeshCylinder("TestObject2", meshFlags);
-        //MeshInfo* meshInfo2 = engine->meshStore.getMesh("TestObject2");
-        //EXPECT_EQ(meshInfo2->outMeshletDesc.size(), meshInfo->outMeshletDesc.size());
-        //EXPECT_EQ(meshInfo2->outLocalIndexPrimitivesBuffer.size(), meshInfo->outLocalIndexPrimitivesBuffer.size());
-        //EXPECT_EQ(meshInfo2->outGlobalIndexBuffer.size(), meshInfo->outGlobalIndexBuffer.size());
+        // generate 2nd mesh and compare:
+        engine->mstore.loadMeshCylinder("TestFile2", meshFlags);
+        MeshFile* loaded2 = engine->mstore.getMeshFileByID("TestFile2");
+        GPUMeshInfo* meshInfo2 = engine->mstore.getGPUMeshInfo(loaded2->allMeshes[0].meshIndex);
+        MeshInfoMetadata* meshInfoMeta2 = engine->mstore.getMeshMetadata(loaded2->allMeshes[0].meshIndex);
+
+        EXPECT_EQ(meshInfoMeta2->outMeshletDesc.size(), meshInfoMeta->outMeshletDesc.size());
+        EXPECT_EQ(meshInfoMeta2->outLocalIndexPrimitivesBuffer.size(), meshInfoMeta->outLocalIndexPrimitivesBuffer.size());
+        EXPECT_EQ(meshInfoMeta2->outGlobalIndexBuffer.size(), meshInfoMeta->outGlobalIndexBuffer.size());
     }
 }
 

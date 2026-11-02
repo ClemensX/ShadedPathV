@@ -1474,7 +1474,7 @@ void glTF::parseGltfModel(tinygltf::Model& model)
 		//Log("  " << m.name.c_str() << endl);
         meshCount += m.primitives.size();
 	}
-	Log("glTF file contains " << meshCount << " allMeshes, " << materialCount << " materials, " << textureCount << " textures" << endl);
+	Log("glTF file contains " << meshCount << " Meshes, " << materialCount << " materials, " << textureCount << " textures" << endl);
 
 	// initialize std::vector for infos and materials. Textures are already in global buffer, we just have to adapt texture indices
 	vector<GPUMeshInfo> gpuMeshInfos(meshCount);

@@ -19,6 +19,6 @@ struct MeshInfoMetadata {
     bool boundingBoxAlreadySet = false;
     bool meshletStorageFileFound = false; // true if meshlet storage file was found and loaded
     const bool hasMeshlets() const {
-        return meshletsForMesh.meshlets.size() > 0 && outMeshletDesc.size() > 0;
+        return meshletStorageFileFound || (meshletsForMesh.meshlets.size() > 0 && outMeshletDesc.size() > 0);
     }
 };
