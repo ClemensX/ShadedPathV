@@ -646,7 +646,7 @@ void SceneEditor::addObjectToScene(int meshFileIndex, bool moving)
 
     // add all (major) mesh files to scene:
     for (int i = 0; i < selectedFile.mainMeshes.size(); i++) {
-        const MeshInfoIndex meshIndex = selectedFile.allMeshes[i].meshIndex;
+        const MeshInfoIndex meshIndex = selectedFile.mainMeshes[i].meshIndex;
         GPUMeshInfo* meshInfo = engine->mstore.getGPUMeshInfo(meshIndex);
         if (meshInfo == nullptr) {
             Error("SceneEditor::addObjectToScene: failed to resolve mesh info");

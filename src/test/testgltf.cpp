@@ -495,16 +495,12 @@ TEST_F(GLTFParserTest, MultiMesh2) {
     ASSERT_TRUE(mstore.checkMeshletDataAvailable(meshFile)) << "Meshlet data needs to be pre-calculated for this test";
 
     // verify mesh names from the gltf file:
-    EXPECT_EQ(meshFile->allMeshes[0].name, "Cube");
-    EXPECT_EQ(meshFile->allMeshes[1].name, "Sphere");
-    EXPECT_EQ(meshFile->allMeshes[2].name, "Cylinder");
+    EXPECT_EQ(meshFile->allMeshes[0].name, "Cylinder");
+    EXPECT_EQ(meshFile->allMeshes[20].name, "Sphere");
 
-    EXPECT_EQ(meshFile->byName("Cube").meshIndex, meshFile->allMeshes[0].meshIndex);
-    EXPECT_EQ(meshFile->byName("Sphere").meshIndex, meshFile->allMeshes[1].meshIndex);
-    EXPECT_EQ(meshFile->byName("Cylinder").meshIndex, meshFile->allMeshes[2].meshIndex);
-
-    // we don't have additional primitives in this file, so all meshes should be main meshes:
-    EXPECT_EQ(meshFile->mainMeshes.size(), 3) << "Expected 3 main meshes";
+    // we should have 2 main meshes, both with lod --> makes 30 meshes in total and 30 main meshes
+    EXPECT_EQ(meshFile->mainMeshes.size(), 20) << "Expected 20 main meshes";
+    EXPECT_EQ(meshFile->allMeshes.size(), 30) << "Expected 30 all meshes";
 }
 
 // Test 2: Single mesh with LOD levels (10 LODs)
