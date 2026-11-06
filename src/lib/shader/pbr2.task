@@ -92,13 +92,17 @@ void main() {
         model = gpuModelsMoving.model[pushConstants.objectNum];
         mesh = gpuInfos.info[model.meshNumber];
         GPUModelParam param = gpuModelsParam.param[pushConstants.objectNum];
+        debugPrintfEXT("pbr.task: moving model mesh %u material_lod_category %u %u\n", model.meshNumber, model.material_lod_category, LOD_CATEGORY_SMALL_GRASS);
+        float max = LOD_ENTRIES[0].maxDistance;
+        int index = calculateLODIndex(0, max);
+        debugPrintfEXT("pbr.task: lod 0 maxDistance %f %d\n", max, index);
         //debugPrintfEXT("pbr.task: moving model mesh %u pos.x %f rot.y %f scale.z %f\n", model.meshNumber, param.pos.x, param.rot.y, param.scale.z);
         modelmat = makeModelMatrix(param.pos, param.rot, param.scale, mesh.baseTransform);
         //modelmat = 1.0;
-        debugPrintfEXT("pbr.task: moving model mesh %u next %u  mesh next %u\n", model.meshNumber, model.next, mesh.next);
-        if (mesh.next == -1) {
-            debugPrintfEXT("pbr.task: moving model mesh %u has next == -1\n", model.meshNumber);
-        }
+//        debugPrintfEXT("pbr.task: moving model mesh %u next %u  mesh next %u\n", model.meshNumber, model.next, mesh.next);
+//        if (mesh.next == -1) {
+//            debugPrintfEXT("pbr.task: moving model mesh %u has next == -1\n", model.meshNumber);
+//        }
     } else {
         model = gpuModels.model[pushConstants.objectNum];
 //        debugPrintfEXT("pbr.task: mdl %d  %f %f %f %f\n", pushConstants.objectNum, model.model[0][0], model.model[0][1], model.model[0][2], model.model[0][3]);
@@ -108,10 +112,10 @@ void main() {
 
         mesh = gpuInfos.info[model.meshNumber];
         modelmat = model.model * mesh.baseTransform;
-        debugPrintfEXT("pbr.task: stationary model %u next %u  mesh next %u\n", model.meshNumber, model.next, mesh.next);
-        if (mesh.next == -1) {
-            debugPrintfEXT("pbr.task: stationary model mesh %u has next == -1\n", model.meshNumber);
-        }
+//        debugPrintfEXT("pbr.task: stationary model %u next %u  mesh next %u\n", model.meshNumber, model.next, mesh.next);
+//        if (mesh.next == -1) {
+//            debugPrintfEXT("pbr.task: stationary model mesh %u has next == -1\n", model.meshNumber);
+//        }
     }
     payload.realMeshIndex = model.meshNumber;
     payload.modelflags = model.flags;

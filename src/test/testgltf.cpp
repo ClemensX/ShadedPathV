@@ -503,6 +503,31 @@ TEST_F(GLTFParserTest, MultiMesh2) {
     EXPECT_EQ(meshFile->allMeshes.size(), 30) << "Expected 30 all meshes";
 }
 
+// test LOD definitions and handling
+TEST_F(GLTFParserTest, LOD) {
+    MStore& mstore = engine->mstore;
+    TextureStore& tstore = engine->textureStore;
+
+    const LodEntry& lod = LOD_ENTRIES[0];
+    EXPECT_EQ(lod.category, 0);
+    int lodIndex = calculateLODIndex(lod.category, 0.0f);
+    EXPECT_EQ(lodIndex, 0) << "LOD index for category 0 at distance 0.0 should be 0";
+    int lodIndexFar = calculateLODIndex(lod.category, 10000.0f);
+    EXPECT_EQ(lodIndexFar, -1) << "LOD index for category 0 at distance 10000.0 should be -1";
+    // test lod index calculations:
+    /*
+    * { 0, 1, 5, 10, 15, 25, 30, 50, 70, 150 }, // LOD_CATEGORY_GENERAL
+    * { 0, 15, 40, 50, 60, -1, -1, -1, -1, -1 }, // LOD_CATEGORY_SMALL_GRASS
+    * { 0, 70, 170, 300, 500, -1, -1, -1, -1, -1 }, // LOD_CATEGORY_SIMPLE_STONE
+    */
+    EXPECT_EQ(9, calculateLODIndex(0, 150.0f));
+    EXPECT_EQ(8, calculateLODIndex(0, 149.0f));
+    EXPECT_EQ(0, calculateLODIndex(0, 0.4f));
+
+    EXPECT_EQ(-1, calculateLODIndex(1, 72.0f));
+    EXPECT_EQ(1, calculateLODIndex(2, 75.0f));
+}
+
 // Test 2: Single mesh with LOD levels (10 LODs)
 TEST_F(GLTF_OLD, SingleMesh_WithLODs) {
     // This test requires a GLTF file with 10 LOD levels

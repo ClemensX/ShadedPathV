@@ -28,12 +28,68 @@
 #define GLEXT_MESHLET_ENCODING NVMESHLET_ENCODING_PACKBASIC
 #endif
 
-// ShaderMaterial.lod_category:
+// LOD definitions:
 
 #define LOD_CATEGORY_GENERAL 0
 #define LOD_CATEGORY_SMALL_GRASS 1
 #define LOD_CATEGORY_SIMPLE_STONE 2
 #define LOD_CATEGORY_INVISIBLE 100 // used to mark objects too far away to render
+
+#ifdef __cplusplus
+
+struct LodCategoryDef {
+	int id;
+	std::string_view name;
+};
+// strings are not usable in shaders!!
+inline constexpr LodCategoryDef LOD_CATEGORIES[] = {
+	{ LOD_CATEGORY_GENERAL,      "general" },
+	{ LOD_CATEGORY_SMALL_GRASS,  "small grass" },
+	{ LOD_CATEGORY_SIMPLE_STONE, "simple stone" },
+	{ LOD_CATEGORY_INVISIBLE,    "invisible" },
+};
+#endif
+
+struct LodEntry {
+    int category;
+	int max_index_used; // the highest index in dist_map being used (== lowest available lod)
+    float minDistance;  // if >0 means disable view if too close ot within object boundaries
+	float maxDistance;  // invisible if distance it greater than this 
+    float dist_map[10]; // map distance to LOD level, 10 levels max, -1 indicates no LOD for this distance
+};
+
+#define LOD_ENTRIES_COUNT 3
+
+#ifdef __cplusplus
+inline constexpr
+#endif
+LodEntry LOD_ENTRIES[LOD_ENTRIES_COUNT] = {
+    { LOD_CATEGORY_GENERAL, 9, 0.0f, 1000.0f,{ 0, 1, 5, 10, 15, 25, 30, 50, 70, 150 } },
+    { LOD_CATEGORY_SMALL_GRASS, 4, 0.0f, 70.0f,{ 0, 15, 40, 50, 60, -1, -1, -1, -1, -1 } },
+    { LOD_CATEGORY_SIMPLE_STONE, 4, 0.0f, 700.0f,{ 0, 70, 170, 300, 500, -1, -1, -1, -1, -1 } }
+};
+
+#ifdef __cplusplus
+inline
+#endif
+int calculateLODIndex(int lod_category, float distance) {
+	if (distance >= LOD_ENTRIES[lod_category].maxDistance) {
+		return -1; // do not render this object at all
+	}
+	// we go back from max_index_used to 0 and find the first entry where the distance is greater
+	int max_index = LOD_ENTRIES[lod_category].max_index_used;
+	for (int i = max_index; i >= 0; --i) {
+		float v = LOD_ENTRIES[lod_category].dist_map[i];
+        if (v < 0) {
+			return -1; // we reached a too small distance to display this object 
+        }
+		//if (v < 0) debugPrintfEXT("TASK SHADER: ERROR: invalid fixed_lod value %f for category %u index %d\n", v, lod_category, i);
+		if (distance >= v) {
+			return i;
+		}
+	}
+	return 0;
+}
 
 
 #ifdef __cplusplus
