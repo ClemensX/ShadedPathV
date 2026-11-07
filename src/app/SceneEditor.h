@@ -8,8 +8,18 @@ struct ObjectParams
     glm::vec3 rotation = glm::vec3(0.0f);
     glm::vec3 scale = glm::vec3(1.0f);
 };
+
+struct SceneEditorLodDefinition
+{
+    int id;
+    std::string name;
+    std::optional<LodEntry> distances;
+};
+
 struct SceneEditorDisplayParams
 {
+    SceneEditorDisplayParams();
+
     bool showGrid = true;
     bool showWireframe = false;
     bool showSunDirBeam = false;
@@ -47,6 +57,14 @@ struct SceneEditorDisplayParams
     bool fileDialogWasOpen = false;
     std::vector<SceneObject> stationaryObjects;
     std::vector<SceneObject> movingObjects;
+
+    // LOD edits are editor-only and are not saved or applied to the renderer.
+    MeshFile* lodObject = nullptr;
+    std::string lodObjectId;
+    bool showLodObjectDialog = false;
+    std::vector<SceneEditorLodDefinition> lodDefinitions;
+    size_t selectedLodDefinition = 0;
+    std::unordered_map<std::string, size_t> lodObjectCategories;
 
     // stationary objects re-upload:
     bool reuploadStationaryObjects = false;

@@ -514,12 +514,7 @@ TEST_F(GLTFParserTest, LOD) {
     EXPECT_EQ(lodIndex, 0) << "LOD index for category 0 at distance 0.0 should be 0";
     int lodIndexFar = calculateLODIndex(lod.category, 10000.0f);
     EXPECT_EQ(lodIndexFar, -1) << "LOD index for category 0 at distance 10000.0 should be -1";
-    // test lod index calculations:
-    /*
-    * { 0, 1, 5, 10, 15, 25, 30, 50, 70, 150 }, // LOD_CATEGORY_GENERAL
-    * { 0, 15, 40, 50, 60, -1, -1, -1, -1, -1 }, // LOD_CATEGORY_SMALL_GRASS
-    * { 0, 70, 170, 300, 500, -1, -1, -1, -1, -1 }, // LOD_CATEGORY_SIMPLE_STONE
-    */
+    // test lod index calculations: (see common_cpp_shader.h for details)
     EXPECT_EQ(9, calculateLODIndex(0, 150.0f));
     EXPECT_EQ(8, calculateLODIndex(0, 149.0f));
     EXPECT_EQ(0, calculateLODIndex(0, 0.4f));

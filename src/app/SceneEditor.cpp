@@ -6,6 +6,20 @@
 using namespace std;
 using namespace glm;
 
+SceneEditorDisplayParams::SceneEditorDisplayParams()
+{
+    for (const LodCategoryDef& category : LOD_CATEGORIES) {
+        SceneEditorLodDefinition definition{ category.id, string(category.name), nullopt };
+        for (const LodEntry& entry : LOD_ENTRIES) {
+            if (entry.category == category.id) {
+                definition.distances = entry;
+                break;
+            }
+        }
+        lodDefinitions.push_back(std::move(definition));
+    }
+}
+
 void SceneEditor::run(ContinuationInfo* cont)
 {
     Log("SceneEditor started" << endl);
@@ -105,7 +119,11 @@ void SceneEditor::prepareFrame(FrameResources* fr)
     }
     if (displayParams.loadNewMeshFile) {
         displayParams.loadNewMeshFile = false;
+        displayParams.lodObject = nullptr;
         loadNewMeshFile(displayParams.newMeshFileName);
+        if (!displayParams.lodObjectId.empty()) {
+            displayParams.lodObject = engine->mstore.getMeshFileByID(displayParams.lodObjectId);
+        }
     }
     if (displayParams.reuploadStationaryObjects) {
         displayParams.reuploadStationaryObjects = false;
@@ -117,7 +135,11 @@ void SceneEditor::prepareFrame(FrameResources* fr)
     }
     if (displayParams.loadSceneRequested) {
         displayParams.loadSceneRequested = false;
+        displayParams.lodObject = nullptr;
         loadSceneFromFile(displayParams.sceneFileName);
+        if (!displayParams.lodObjectId.empty()) {
+            displayParams.lodObject = engine->mstore.getMeshFileByID(displayParams.lodObjectId);
+        }
     }
     if (displayParams.reuploadStationaryObjects) {
         displayParams.reuploadStationaryObjects = false;
@@ -577,6 +599,101 @@ void SceneEditor::buildCustomUI() {
             //Log("param update: pos(" << gpuModelParam->pos.x << ", " << gpuModelParam->pos.y << ", " << gpuModelParam->pos.z << "), rot(" << gpuModelParam->rot.x << ", " << gpuModelParam->rot.y << ", " << gpuModelParam->rot.z << "), scale(" << gpuModelParam->scale.z<< ")" << std::endl);
 
         }
+    }
+
+    if (ImGui::CollapsingHeader("LOD", ImGuiTreeNodeFlags_None)) {
+        ImGui::TextWrapped("Editor-only settings: changes are not saved or applied to rendering.");
+        if (ImGui::Button("Select LOD object")) {
+            displayParams.showLodObjectDialog = true;
+            ImGui::OpenPopup("Select LOD object");
+        }
+        if (displayParams.lodObject != nullptr) {
+            ImGui::Text("Selected: %s", displayParams.lodObject->filename.c_str());
+            const auto selected = displayParams.lodObjectCategories.find(displayParams.lodObjectId);
+            size_t selectedIndex = selected == displayParams.lodObjectCategories.end()
+                ? displayParams.lodDefinitions.size() : selected->second;
+            const char* currentName = selectedIndex == displayParams.lodDefinitions.size()
+                ? "Not set" : displayParams.lodDefinitions[selectedIndex].name.c_str();
+            if (ImGui::BeginCombo("Object LOD category", currentName)) {
+                for (size_t i = 0; i < displayParams.lodDefinitions.size(); ++i) {
+                    ImGui::PushID(static_cast<int>(i));
+                    if (ImGui::Selectable(displayParams.lodDefinitions[i].name.c_str(), selectedIndex == i)) {
+                        displayParams.lodObjectCategories[displayParams.lodObjectId] = i;
+                        selectedIndex = i;
+                    }
+                    ImGui::PopID();
+                }
+                ImGui::EndCombo();
+            }
+        }
+        else {
+            ImGui::TextUnformatted("No LOD object selected.");
+        }
+
+        ImGui::TextUnformatted("LOD definitions");
+        ImGui::BeginChild("LodDefinitions", ImVec2(0.0f, rowHeight * 5.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
+        for (size_t i = 0; i < displayParams.lodDefinitions.size(); ++i) {
+            const auto& definition = displayParams.lodDefinitions[i];
+            ImGui::PushID(static_cast<int>(i));
+            const string label = to_string(definition.id) + " - " + definition.name;
+            if (ImGui::Selectable(label.c_str(), displayParams.selectedLodDefinition == i)) {
+                displayParams.selectedLodDefinition = i;
+            }
+            ImGui::PopID();
+        }
+        ImGui::EndChild();
+
+        // details are drawn directly (no child window) so every line is visible without inner scrolling
+        if (displayParams.selectedLodDefinition < displayParams.lodDefinitions.size()) {
+            auto& definition = displayParams.lodDefinitions[displayParams.selectedLodDefinition];
+            ImGui::Separator();
+            ImGui::Text("Definition details: %s", definition.name.c_str());
+            ImGui::PushID(static_cast<int>(displayParams.selectedLodDefinition));
+            if (ImGui::InputInt("ID", &definition.id) && definition.distances) {
+                definition.distances->category = definition.id;
+            }
+            char name[256]{};
+            std::snprintf(name, sizeof(name), "%s", definition.name.c_str());
+            if (ImGui::InputText("Name", name, IM_ARRAYSIZE(name))) {
+                definition.name = name;
+            }
+            if (definition.distances) {
+                LodEntry& distances = *definition.distances;
+                ImGui::SliderInt("Maximum LOD index", &distances.max_index_used, 0, IM_ARRAYSIZE(distances.dist_map) - 1);
+                ImGui::InputFloat("Minimum distance", &distances.minDistance);
+                ImGui::InputFloat("Maximum distance", &distances.maxDistance);
+                for (int level = 0; level < IM_ARRAYSIZE(distances.dist_map); ++level) {
+                    ImGui::PushID(level);
+                    ImGui::InputFloat(("LOD " + to_string(level) + " distance").c_str(), &distances.dist_map[level]);
+                    ImGui::PopID();
+                }
+            }
+            else {
+                ImGui::TextUnformatted("No distance definition for this category.");
+            }
+            ImGui::PopID();
+        }
+    }
+    if (ImGui::BeginPopupModal("Select LOD object", &displayParams.showLodObjectDialog)) {
+        const vector<MeshFile> meshFiles = engine->mstore.getMeshFiles();
+        ImGui::TextUnformatted("Choose a loaded mesh file:");
+        ImGui::BeginChild("LodObjectList", ImVec2(0.0f, rowHeight * 10.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
+        for (const MeshFile& meshFile : meshFiles) {
+            ImGui::PushID(meshFile.id.c_str());
+            if (ImGui::Selectable(meshFile.filename.c_str(), displayParams.lodObjectId == meshFile.id)) {
+                displayParams.lodObjectId = meshFile.id;
+                displayParams.lodObject = engine->mstore.getMeshFileByID(meshFile.id);
+                displayParams.showLodObjectDialog = false;
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::PopID();
+        }
+        ImGui::EndChild();
+        if (ImGui::Button("Cancel")) {
+            displayParams.showLodObjectDialog = false;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
     }
 }
 
