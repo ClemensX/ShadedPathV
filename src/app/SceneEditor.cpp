@@ -602,6 +602,17 @@ void SceneEditor::buildCustomUI() {
     }
 
     if (ImGui::CollapsingHeader("LOD", ImGuiTreeNodeFlags_None)) {
+        vector<size_t> sortedLodDefinitions;
+        for (size_t i = 0; i < displayParams.lodDefinitions.size(); ++i) {
+            sortedLodDefinitions.push_back(i);
+        }
+        const auto sortLodDefinitions = [&]() {
+            std::stable_sort(sortedLodDefinitions.begin(), sortedLodDefinitions.end(), [&](size_t a, size_t b) {
+                return displayParams.lodDefinitions[a].id < displayParams.lodDefinitions[b].id;
+            });
+        };
+        sortLodDefinitions();
+
         ImGui::TextWrapped("Editor-only settings: changes are not saved or applied to rendering.");
         if (ImGui::Button("Select LOD object")) {
             displayParams.showLodObjectDialog = true;
@@ -615,7 +626,7 @@ void SceneEditor::buildCustomUI() {
             const char* currentName = selectedIndex == displayParams.lodDefinitions.size()
                 ? "Not set" : displayParams.lodDefinitions[selectedIndex].name.c_str();
             if (ImGui::BeginCombo("Object LOD category", currentName)) {
-                for (size_t i = 0; i < displayParams.lodDefinitions.size(); ++i) {
+                for (size_t i : sortedLodDefinitions) {
                     ImGui::PushID(static_cast<int>(i));
                     if (ImGui::Selectable(displayParams.lodDefinitions[i].name.c_str(), selectedIndex == i)) {
                         displayParams.lodObjectCategories[displayParams.lodObjectId] = i;
@@ -630,9 +641,15 @@ void SceneEditor::buildCustomUI() {
             ImGui::TextUnformatted("No LOD object selected.");
         }
 
+        if (ImGui::Button("Add LOD category")) {
+            displayParams.lodDefinitions.push_back({ 0, "New category", LodEntry{} });
+            displayParams.selectedLodDefinition = displayParams.lodDefinitions.size() - 1;
+            sortedLodDefinitions.push_back(displayParams.selectedLodDefinition);
+            sortLodDefinitions();
+        }
         ImGui::TextUnformatted("LOD definitions");
         ImGui::BeginChild("LodDefinitions", ImVec2(0.0f, rowHeight * 5.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
-        for (size_t i = 0; i < displayParams.lodDefinitions.size(); ++i) {
+        for (size_t i : sortedLodDefinitions) {
             const auto& definition = displayParams.lodDefinitions[i];
             ImGui::PushID(static_cast<int>(i));
             const string label = to_string(definition.id) + " - " + definition.name;
