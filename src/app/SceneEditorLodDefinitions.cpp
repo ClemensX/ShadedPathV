@@ -27,6 +27,23 @@ std::string cppStringLiteral(const std::string& value)
     return result + '"';
 }
 
+std::string categoryMacroName(const std::string& name)
+{
+    std::string result = "LOD_CATEGORY_";
+    for (unsigned char ch : name) {
+        if (ch >= 'a' && ch <= 'z') {
+            result += static_cast<char>(ch - 'a' + 'A');
+        }
+        else if ((ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '_') {
+            result += static_cast<char>(ch);
+        }
+        else {
+            result += '_';
+        }
+    }
+    return result;
+}
+
 std::string cppFloatLiteral(float value)
 {
     if (std::isnan(value)) {
@@ -57,9 +74,17 @@ std::string formatLodDefinitions(const std::vector<SceneEditorLodDefinition>& de
     std::stable_sort(sortedCategories.begin(), sortedCategories.end(), [](const auto* a, const auto* b) {
         return a->id < b->id;
     });
-    out << "inline constexpr LodCategoryDef LOD_CATEGORIES[] = {\n";
+    std::unordered_set<std::string> macroNames;
     for (const auto* definition : sortedCategories) {
-        out << "    { " << definition->id << ", " << cppStringLiteral(definition->name) << " },\n";
+        const std::string macroName = categoryMacroName(definition->name);
+        if (!macroNames.insert(macroName).second) {
+            out << "#error Duplicate LOD category macro " << macroName << "; rename the category\n";
+        }
+        out << "#define " << macroName << " " << definition->id << "\n";
+    }
+    out << "\ninline constexpr LodCategoryDef LOD_CATEGORIES[] = {\n";
+    for (const auto* definition : sortedCategories) {
+        out << "    { " << categoryMacroName(definition->name) << ", " << cppStringLiteral(definition->name) << " },\n";
     }
     out << "};\n\n";
 

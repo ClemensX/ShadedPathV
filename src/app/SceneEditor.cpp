@@ -645,12 +645,17 @@ void SceneEditor::buildCustomUI() {
             ImGui::TextUnformatted("No LOD object selected.");
         }
 
+        const bool hasLodDefinitionSelection = displayParams.selectedLodDefinition < displayParams.lodDefinitions.size();
+        ImGui::BeginDisabled(!hasLodDefinitionSelection);
         if (ImGui::Button("Add LOD category")) {
-            displayParams.lodDefinitions.push_back({ 0, "New category", LodEntry{} });
+            SceneEditorLodDefinition definition = displayParams.lodDefinitions[displayParams.selectedLodDefinition];
+            definition.name = "New category";
+            displayParams.lodDefinitions.push_back(std::move(definition));
             displayParams.selectedLodDefinition = displayParams.lodDefinitions.size() - 1;
             sortedLodDefinitions.push_back(displayParams.selectedLodDefinition);
             sortLodDefinitions();
         }
+        ImGui::EndDisabled();
         ImGui::TextUnformatted("LOD definitions");
         ImGui::BeginChild("LodDefinitions", ImVec2(0.0f, rowHeight * 5.0f), true, ImGuiWindowFlags_HorizontalScrollbar);
         for (size_t i : sortedLodDefinitions) {
@@ -720,8 +725,9 @@ void SceneEditor::buildCustomUI() {
         const string definitions = formatLodDefinitions(displayParams.lodDefinitions);
         ImGui::SetNextWindowSize(ImVec2(750.0f, 500.0f), ImGuiCond_FirstUseEver);
         if (ImGui::Begin("C++ LOD Definitions", &displayParams.showLodDefinitionsWindow)) {
-            ImGui::TextWrapped("Replace the existing LOD_ENTRIES_COUNT definition along with the arrays. "
-                "LOD_ENTRIES is indexed by category ID, so IDs must match their entry indices.");
+            ImGui::TextWrapped("Replace the existing LOD category defines and LOD_ENTRIES_COUNT along with the arrays. "
+                "LOD_ENTRIES is indexed by category ID, so IDs must match their entry indices. "
+                "Non-ASCII and punctuation characters in macro names become underscores; rename categories if macros collide.");
             if (ImGui::Button("Copy to clipboard")) {
                 ImGui::SetClipboardText(definitions.c_str());
             }
