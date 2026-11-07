@@ -18,6 +18,8 @@ file(GLOB VULKAN_SHADERS
 add_executable(my_test
   test.cpp
   testgltf.cpp
+  testSceneEditorLodDefinitions.cpp
+  ../app/SceneEditorLodDefinitions.cpp
   ${VULKAN_SHADERS}
 )
 include_directories("${PROJECT_SOURCE_DIR}/src/lib")

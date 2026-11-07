@@ -1,5 +1,7 @@
 #pragma once
 
+#include "SceneEditorLodDefinitions.h"
+
 struct ObjectParams
 {
     std::string name;
@@ -7,13 +9,6 @@ struct ObjectParams
     glm::vec3 position = glm::vec3(0.0f);
     glm::vec3 rotation = glm::vec3(0.0f);
     glm::vec3 scale = glm::vec3(1.0f);
-};
-
-struct SceneEditorLodDefinition
-{
-    int id;
-    std::string name;
-    std::optional<LodEntry> distances;
 };
 
 struct SceneEditorDisplayParams
@@ -62,6 +57,7 @@ struct SceneEditorDisplayParams
     MeshFile* lodObject = nullptr;
     std::string lodObjectId;
     bool showLodObjectDialog = false;
+    bool showLodDefinitionsWindow = false;
     std::vector<SceneEditorLodDefinition> lodDefinitions;
     size_t selectedLodDefinition = 0;
     std::unordered_map<std::string, size_t> lodObjectCategories;

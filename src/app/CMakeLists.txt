@@ -80,6 +80,7 @@ add_executable(app
   Forest.cpp
   glbLodMerger.cpp
   SceneEditor.cpp
+  SceneEditorLodDefinitions.cpp
   ShadedPathV.cpp
   ${VULKAN_SHADERS}
   ${SHADERINCLUDE_FILES}  # Add include files to the target

@@ -618,6 +618,10 @@ void SceneEditor::buildCustomUI() {
             displayParams.showLodObjectDialog = true;
             ImGui::OpenPopup("Select LOD object");
         }
+        ImGui::SameLine();
+        if (ImGui::Button("Display C++ Definitions")) {
+            displayParams.showLodDefinitionsWindow = true;
+        }
         if (displayParams.lodObject != nullptr) {
             ImGui::Text("Selected: %s", displayParams.lodObject->filename.c_str());
             const auto selected = displayParams.lodObjectCategories.find(displayParams.lodObjectId);
@@ -711,6 +715,21 @@ void SceneEditor::buildCustomUI() {
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
+    }
+    if (displayParams.showLodDefinitionsWindow) {
+        const string definitions = formatLodDefinitions(displayParams.lodDefinitions);
+        ImGui::SetNextWindowSize(ImVec2(750.0f, 500.0f), ImGuiCond_FirstUseEver);
+        if (ImGui::Begin("C++ LOD Definitions", &displayParams.showLodDefinitionsWindow)) {
+            ImGui::TextWrapped("Replace the existing LOD_ENTRIES_COUNT definition along with the arrays. "
+                "LOD_ENTRIES is indexed by category ID, so IDs must match their entry indices.");
+            if (ImGui::Button("Copy to clipboard")) {
+                ImGui::SetClipboardText(definitions.c_str());
+            }
+            vector<char> text(definitions.begin(), definitions.end());
+            text.push_back('\0');
+            ImGui::InputTextMultiline("##LodCppDefinitions", text.data(), text.size(), ImVec2(-1.0f, -1.0f), ImGuiInputTextFlags_ReadOnly);
+        }
+        ImGui::End();
     }
 }
 
