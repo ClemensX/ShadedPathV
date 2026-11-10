@@ -92,10 +92,11 @@ void main() {
         model = gpuModelsMoving.model[pushConstants.objectNum];
         mesh = gpuInfos.info[model.meshNumber];
         GPUModelParam param = gpuModelsParam.param[pushConstants.objectNum];
-        debugPrintfEXT("pbr.task: moving model mesh %u material_lod_category %u %u\n", model.meshNumber, model.material_lod_category, LOD_CATEGORY_SMALL_GRASS);
+        debugPrintfEXT("pbr.task: mesh %u next %x lod table index %x #meshlets: %d\n", mesh.index, mesh.next, mesh.lodIndex, mesh.meshletCount);
+        //debugPrintfEXT("pbr.task: moving model mesh %u material_lod_category %u %u\n", model.meshNumber, model.material_lod_category, LOD_CATEGORY_SMALL_GRASS);
         float max = LOD_ENTRIES[0].maxDistance;
         int index = calculateLODIndex(0, max);
-        debugPrintfEXT("pbr.task: lod 0 maxDistance %f %d\n", max, index);
+        //debugPrintfEXT("pbr.task: lod 0 maxDistance %f %d\n", max, index);
         //debugPrintfEXT("pbr.task: moving model mesh %u pos.x %f rot.y %f scale.z %f\n", model.meshNumber, param.pos.x, param.rot.y, param.scale.z);
         modelmat = makeModelMatrix(param.pos, param.rot, param.scale, mesh.baseTransform);
         //modelmat = 1.0;

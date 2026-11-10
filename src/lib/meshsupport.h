@@ -92,6 +92,15 @@ struct GPUMeshInfo {
 	MeshInfoIndex next = MeshInfoIndex::invalid(); // next primitive (0 == no next primitive)
 	BoundingBox boundingBox;
 	glm::mat4 baseTransform = glm::mat4(1.0f);
+    LodIndex lodIndex = LodIndex::invalid(); // index into global LOD table, if this mesh is part of a LOD streak 
+	uint32_t pad0;
+	uint32_t pad1;
+};
+
+// LOD info: Every mesh needs to link back to it's LOD table
+struct GPULodInfo {
+	// table containing mesh index of all LOD from 0 to 9. Invaild LODs are ::invalid();
+    MeshInfoIndex lodMeshInfoIndex[10] = {MeshInfoIndex::invalid()};
 };
 
 // models and scene objects:

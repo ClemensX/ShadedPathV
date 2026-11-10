@@ -270,6 +270,8 @@ struct MaterialIndexTag {};
 using MaterialIndex = TypedIndex<MaterialIndexTag, uint32_t>;
 struct ModelIndexTag {};
 using ModelIndex = TypedIndex<ModelIndexTag, uint32_t>;
+struct LodIndexTag {};
+using LodIndex = TypedIndex<LodIndexTag, uint32_t>;
 
 static_assert(sizeof(MeshInfoIndex) == sizeof(uint32_t));
 static_assert(std::is_trivially_copyable_v<MeshInfoIndex>);
