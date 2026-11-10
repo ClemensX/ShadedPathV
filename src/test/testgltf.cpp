@@ -504,7 +504,7 @@ TEST_F(GLTFParserTest, MultiMesh2) {
 }
 
 // test LOD definitions and handling
-TEST_F(GLTFParserTest, LOD) {
+TEST_F(GLTFParserTest, LOD_Global_Definitions) {
     MStore& mstore = engine->mstore;
     TextureStore& tstore = engine->textureStore;
 
@@ -521,6 +521,29 @@ TEST_F(GLTFParserTest, LOD) {
 
     EXPECT_EQ(-1, calculateLODIndex(1, 72.0f));
     EXPECT_EQ(1, calculateLODIndex(2, 75.0f));
+}
+
+// test LOD Parsing
+TEST_F(GLTFParserTest, LOD_Parsing) {
+    MStore& mstore = engine->mstore;
+    TextureStore& tstore = engine->textureStore;
+
+    MeshFlagsCollection flags;
+    MeshFile* meshFile = engine->mstore.loadMesh("test_multi_prim_lod.gltf", "multi", flags);
+    ASSERT_EQ(meshFile->mainMeshes.size(), 20);
+    ASSERT_EQ(meshFile->allMeshes.size(), 30);
+    // get first lod mesh (Cylinder) and check its LOD structure:
+    MeshFileEntry& entry = meshFile->mainMeshes[0];
+    GPUMeshInfo* meshInfo = const_cast<GPUMeshInfo*>(mstore.getGPUMeshInfo(entry.meshIndex));
+    MeshInfoMetadata* metadata = mstore.getMeshMetadata(entry.meshIndex);
+    ASSERT_NE(meshInfo, nullptr);
+    ASSERT_NE(metadata, nullptr);
+    for (auto& entry : meshFile->mainMeshes) {
+        GPUMeshInfo* mi = const_cast<GPUMeshInfo*>(mstore.getGPUMeshInfo(entry.meshIndex));
+        MeshInfoMetadata* md = mstore.getMeshMetadata(entry.meshIndex);
+        ASSERT_NE(mi, nullptr);
+        ASSERT_NE(md->lodInfo, nullptr);
+    }
 }
 
 // Test 2: Single mesh with LOD levels (10 LODs)

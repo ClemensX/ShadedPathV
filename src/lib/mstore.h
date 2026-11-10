@@ -164,6 +164,8 @@ private:
 
     // maintain a list of mesh metadata for each loaded mesh, used for CPU-side operations
     std::vector<MeshInfoMetadata> meshMetadata;
+    std::vector<LodMeshInfoMetadata> lodMeshMetadata;
+    void validateLods(LodMeshInfoMetadata& lodInfo);
 
     // maintain a list of scene objects. Used only on CPU-side
     std::vector<SceneObject> sceneObjects;
@@ -173,4 +175,6 @@ private:
 
     // no checks, directly access cpp buffer
     GPUMeshInfo* getGPUMeshInfoInternal(MeshInfoIndex index);
+    // go through main meshes and determine LOD infos
+    void collectLodInfos(MeshFile* mfile);
 };

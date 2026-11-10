@@ -3,8 +3,18 @@
 // Must be included after pbrShader.h and Object.h
 
 #pragma once
+// all info we need for lod handling, each MeshInfoMetadata links to this
+struct LodMeshInfoMetadata {
+    std::string basename;
+    MeshInfoIndex startIndex;
+    MeshInfoIndex endIndex;
+    int startLodLevel;
+    int endLodLevel;
+};
 
 struct MeshInfoMetadata {
+    MeshInfoMetadata() {
+    };
     std::string name;
     std::vector<PBRVertex> vertices;
     std::vector<uint32_t> indices;
@@ -21,4 +31,5 @@ struct MeshInfoMetadata {
     const bool hasMeshlets() const {
         return meshletStorageFileFound || (meshletsForMesh.meshlets.size() > 0 && outMeshletDesc.size() > 0);
     }
+    LodMeshInfoMetadata* lodInfo = nullptr; // pointer to LOD info for this mesh, if any
 };

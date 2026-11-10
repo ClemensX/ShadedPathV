@@ -26,8 +26,12 @@ void MStore::init() {
 
     // we need a 1 to 1 mapping of GPUMeshInfo to MeshInfoMetadata for CPU side operations, so we preallocate the vector to maxMeshes
     meshMetadata.resize(maxMeshes);
+    lodMeshMetadata.resize(maxMeshes);
     sceneObjects.reserve(maxModels);
     movingSceneObjects.reserve(maxMovingModels);
+    meshFiles.clear();
+    lodMeshMetadata.clear();
+    meshFileIDs.clear();
 }
 
 MeshFile* MStore::checkMeshFile(std::string filename, std::string id)
@@ -145,7 +149,126 @@ MeshFile* MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollec
 			mfile->mainMeshes.push_back(mfile->allMeshes[i]);
 		}
 	}
-	return &meshFiles.back();
+    collectLodInfos(mfile);
+	return mfile;
+}
+
+bool namesSimilar(const std::string& name1, const std::string& name2)
+{
+    // simple heuristic: check if names are equal ignoring case and trailing numbers
+	auto stripTrailingNumbers = [](const std::string& name) {
+		size_t end = name.size();
+		while (end > 0 && isdigit(name[end - 1])) {
+			--end;
+		}
+		return name.substr(0, end);
+		};
+	auto stripTrailingDots = [](const std::string& name) {
+		size_t end = name.size();
+		while (end > 0 && name[end - 1] == '.') {
+			--end;
+		}
+		return name.substr(0, end);
+		};
+	std::string base1 = stripTrailingNumbers(name1);
+	std::string base2 = stripTrailingNumbers(name2);
+	base1 = stripTrailingDots(base1);
+	base2 = stripTrailingDots(base2);
+	std::transform(base1.begin(), base1.end(), base1.begin(), ::tolower);
+    std::transform(base2.begin(), base2.end(), base2.begin(), ::tolower);
+    return base1 == base2;
+}
+
+void MStore::collectLodInfos(MeshFile* mfile)
+{
+	struct streakDef {
+		bool baseNameChanged = true;
+		string baseName = "";
+		MeshInfoIndex streakStart = MeshInfoIndex::invalid();
+		MeshInfoIndex streakEnd = MeshInfoIndex::invalid();
+	};
+
+	streakDef streak;
+
+    auto streakEnded = [this](streakDef& streak, MeshInfoIndex newStartIndex, string newBaseName) {
+        if (streak.streakStart != MeshInfoIndex::invalid() && streak.streakEnd != MeshInfoIndex::invalid() && streak.streakStart != streak.streakEnd) {
+			Log("LOD streak from " << getMeshMetadata(streak.streakStart)->name << " to " << getMeshMetadata(streak.streakEnd)->name << endl);
+            LodMeshInfoMetadata lodInfo{};
+            lodInfo.basename = streak.baseName;
+            lodInfo.startIndex = streak.streakStart;
+            lodInfo.endIndex = streak.streakEnd;
+            lodInfo.startLodLevel = 0;
+            lodInfo.endLodLevel = lodInfo.startLodLevel + (1 + lodInfo.endIndex.asSize() - lodInfo.startIndex.asSize());
+            validateLods(lodInfo);
+            lodMeshMetadata.push_back(lodInfo);
+			// set this LOD info for all meshes in the streak:
+            for (size_t i = lodInfo.startIndex.asSize(); i <= lodInfo.endIndex.asSize(); ++i) {
+                MeshInfoMetadata* metadata = getMeshMetadata(static_cast<MeshInfoIndex>(i));
+                metadata->lodInfo = &lodMeshMetadata.back();
+            }
+
+		}
+        streak.baseNameChanged = false;
+        streak.baseName = newBaseName;
+        streak.streakStart = newStartIndex;
+		streak.streakEnd = newStartIndex;
+    };
+
+	// 2 meshes is the absolute minimium to be considered LOD meshes
+	if (mfile->mainMeshes.size() < 2) return;
+
+	for (MeshFileEntry& entry : mfile->mainMeshes) {
+		GPUMeshInfo* meshInfo = const_cast<GPUMeshInfo*>(getGPUMeshInfo(entry.meshIndex));
+		MeshInfoMetadata* metadata = getMeshMetadata(entry.meshIndex);
+		//Log("LOD name: " << metadata->name << endl);
+        if (streak.baseNameChanged) {
+            streakEnded(streak, entry.meshIndex, metadata->name);
+        }
+        else {
+			if (namesSimilar(streak.baseName, metadata->name)) {
+                // continue streak
+				streak.streakEnd = entry.meshIndex;
+			}
+			else {
+                // streak ended, check if we have a valid LOD streak:
+				if (streak.streakStart != MeshInfoIndex::invalid() && streak.streakEnd != MeshInfoIndex::invalid() && streak.streakStart != streak.streakEnd) {
+                    streakEnded(streak, entry.meshIndex, metadata->name);
+				}
+			}
+        }
+	}
+    if (!streak.baseNameChanged && streak.streakStart != MeshInfoIndex::invalid() && streak.streakEnd != MeshInfoIndex::invalid() && streak.streakStart != streak.streakEnd) {
+        streakEnded(streak, MeshInfoIndex::invalid(), "");
+    }
+	// list lod infos:
+    for (auto& entry : mfile->allMeshes) {
+        MeshInfoMetadata* metadata = getMeshMetadata(entry.meshIndex);
+        if (metadata->lodInfo != nullptr) {
+            Log("Mesh " << metadata->name << " meshIndex " << entry.meshIndex.asSize() << " is part of LOD streak: " << metadata->lodInfo->basename << " from index " << metadata->lodInfo->startIndex.asSize() << " to " << metadata->lodInfo->endIndex.asSize() << endl);
+        }
+    }
+}
+
+void MStore::validateLods(LodMeshInfoMetadata& lodInfo)
+{
+    if (lodInfo.startIndex == MeshInfoIndex::invalid() || lodInfo.endIndex == MeshInfoIndex::invalid()) {
+        Error("MStore::validateLods: Invalid LOD indices");
+        return;
+    }
+    if (lodInfo.startIndex.asSize() >= lodInfo.endIndex.asSize()) {
+        Error("MStore::validateLods: Start index is greater than or equal to end index");
+        return;
+    }
+    for (size_t i = lodInfo.startIndex.asSize(); i <= lodInfo.endIndex.asSize(); ++i) {
+        MeshInfoMetadata* metadata = getMeshMetadata(static_cast<MeshInfoIndex>(i));
+        if (!namesSimilar(lodInfo.basename, metadata->name)) {
+            Error("MStore::validateLods: LOD name mismatch for mesh " + metadata->name + " in streak " + lodInfo.basename);
+        }
+		// make sure we have consecutive meshes for the lods:
+        if (i > lodInfo.startIndex.asSize()) {
+            MeshInfoMetadata* prevMetadata = getMeshMetadata(static_cast<MeshInfoIndex>(i - 1));
+        }
+    }
 }
 
 void MStore::uploadMesh(GPUMeshInfo* mi)
