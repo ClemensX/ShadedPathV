@@ -63,6 +63,7 @@ public:
     SceneObject* getMovingSceneObject(int32_t index);
     GPUMaterial* getGPUMaterial(MaterialIndex index);
     GPUFrameParam* getGPUFrameParam(int32_t index);
+    GPULodInfo* getGPULodInfo(LodIndex index);
     void getFileInfosForMesh(MeshInfoIndex meshIndex, MeshFile& meshFile, MeshFileEntry& meshFileEntry);
     // upload all meshes during init phase, called from PBRShader
     void uploadAllMeshes();
@@ -176,5 +177,6 @@ private:
     // no checks, directly access cpp buffer
     GPUMeshInfo* getGPUMeshInfoInternal(MeshInfoIndex index);
     // go through main meshes and determine LOD infos
+    void collectLodInfosX(MeshFile* mfile);
     void collectLodInfos(MeshFile* mfile);
 };

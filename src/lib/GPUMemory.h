@@ -17,7 +17,8 @@ enum BufferType {
     ModelsMoving,
     Materials,
     FrameParams,
-    ModelsParam
+    ModelsParam,
+    Lods
 };
 
 // Push constants structure for passing GPU buffer addresses to shaders

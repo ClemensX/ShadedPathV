@@ -222,6 +222,8 @@ struct GPUFrameParam {
 struct MeshFileEntry {
 	std::string name;
     MeshInfoIndex meshIndex;
+    bool isMainMesh = true;
+    int fileIndex = -1; // index into meshFiles vector
 };
 
 struct MeshFile {
@@ -233,13 +235,23 @@ struct MeshFile {
 	// all meshes separateyly, including all primitives belonging together
 	std::vector<MeshFileEntry> allMeshes;
 	MeshFileEntry& byName(const std::string& name) {
-        for (auto& entry : allMeshes) {
-            if (entry.name == name) {
-                return entry;
-            }
-        }
-        Error("MeshFile::getMeshEntryByName: Mesh name not found: " + name);
+		for (auto& entry : allMeshes) {
+			if (entry.name == name) {
+				return entry;
+			}
+		}
+		Error("MeshFile::getMeshEntryByName: Mesh name not found: " + name);
 		auto& entry = allMeshes[0];
-        return entry; // keep compiler happy
-    }
+		return entry; // keep compiler happy
+	}
+	MeshFileEntry& byMeshInfoIndex(MeshInfoIndex index) {
+		for (auto& entry : allMeshes) {
+			if (entry.meshIndex == index) {
+				return entry;
+			}
+		}
+		Error("MeshFile::getMeshEntryByMeshInfoIndex: MeshInfoIndex not found: " + std::to_string(index.asSize()));
+		auto& entry = allMeshes[0];
+		return entry; // keep compiler happy
+	}
 };

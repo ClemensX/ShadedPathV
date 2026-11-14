@@ -12,6 +12,7 @@ void MStore::init() {
 
 	// set array sizes, these are guarded and user needs to adjust them if too small at runtime
 	size_t maxMeshes = engine->getMaxMeshes() * 10; // max meshes is a user setting, roughly we need 10 meshes as each 'user mesh' has 10 LOD
+    size_t maxLods = engine->getMaxMeshes(); // almost all meshes have LODs, so we need to reserve space for them
     size_t maxModels = engine->getMaxObjects();
     size_t maxMovingModels = engine->getMaxMovingObjects();
 	size_t maxMaterials = engine->getMaxCollections();
@@ -22,6 +23,7 @@ void MStore::init() {
 	engine->globalRendering.gpuMemory.defineBuffer(BufferType::ModelsParam, sizeof(GPUModelParam), maxMovingModels);
 	engine->globalRendering.gpuMemory.defineBuffer(BufferType::Materials, sizeof(GPUMaterial), maxMaterials);
 	engine->globalRendering.gpuMemory.defineBuffer(BufferType::FrameParams, sizeof(GPUFrameParam), MAX_DYNAMIC_LIGHTS);
+	engine->globalRendering.gpuMemory.defineBuffer(BufferType::Lods, sizeof(GPULodInfo), maxLods);
 	engine->globalRendering.gpuMemory.allocateBuffers();
 
     // we need a 1 to 1 mapping of GPUMeshInfo to MeshInfoMetadata for CPU side operations, so we preallocate the vector to maxMeshes
@@ -103,6 +105,7 @@ MeshFile* MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollec
 		MeshFileEntry entry{};
         entry.name = metadata->name;
         entry.meshIndex = miIndex;
+        entry.fileIndex = i;
         meshFile.allMeshes.push_back(entry);
 		metadata->meshFileIndex = meshFiles.size();
     }
@@ -134,18 +137,17 @@ MeshFile* MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollec
 	}
 	MeshFile* mfile = &meshFiles.back();
     // fill in the mainMeshes vector with only the main meshes (not additional primitives)
-    // create bool vector for all meshes inficating whether they are additional primitives or not
-    vector<bool> isAdditionalPrimitive(mfile->allMeshes.size(), false);
     for (int i = 0; i < mfile->allMeshes.size(); ++i) {
         GPUMeshInfo* meshInfo = const_cast<GPUMeshInfo*>(getGPUMeshInfo(mfile->allMeshes[i].meshIndex));
         if (meshInfo->next.isValid()) {
-            isAdditionalPrimitive[i+1] = true;
+			// everything reached by 'next' cannot be a main mesh
+			mfile->byMeshInfoIndex(meshInfo->next).isMainMesh = false;
         }
     }
     // now go through meshes and add all to mainMeshes that are not additional primitives
 	for (int i = 0; i < mfile->allMeshes.size(); ++i) {
 		GPUMeshInfo* meshInfo = const_cast<GPUMeshInfo*>(getGPUMeshInfo(mfile->allMeshes[i].meshIndex));
-		if (!isAdditionalPrimitive[i]) {
+		if (mfile->allMeshes[i].isMainMesh) {
 			mfile->mainMeshes.push_back(mfile->allMeshes[i]);
 		}
 	}
@@ -181,94 +183,128 @@ bool namesSimilar(const std::string& name1, const std::string& name2)
 
 void MStore::collectLodInfos(MeshFile* mfile)
 {
-	struct streakDef {
-		bool baseNameChanged = true;
-		string baseName = "";
-		MeshInfoIndex streakStart = MeshInfoIndex::invalid();
-		MeshInfoIndex streakEnd = MeshInfoIndex::invalid();
-	};
-
-	streakDef streak;
-
-    auto streakEnded = [this](streakDef& streak, MeshInfoIndex newStartIndex, string newBaseName) {
-        if (streak.streakStart != MeshInfoIndex::invalid() && streak.streakEnd != MeshInfoIndex::invalid() && streak.streakStart != streak.streakEnd) {
-			Log("LOD streak from " << getMeshMetadata(streak.streakStart)->name << " to " << getMeshMetadata(streak.streakEnd)->name << endl);
-            LodMeshInfoMetadata lodInfo{};
-            lodInfo.basename = streak.baseName;
-            lodInfo.startIndex = streak.streakStart;
-            lodInfo.endIndex = streak.streakEnd;
-            lodInfo.startLodLevel = 0;
-            lodInfo.endLodLevel = lodInfo.startLodLevel + (1 + lodInfo.endIndex.asSize() - lodInfo.startIndex.asSize());
-            validateLods(lodInfo);
-            lodMeshMetadata.push_back(lodInfo);
-			// set this LOD info for all meshes in the streak:
-            for (size_t i = lodInfo.startIndex.asSize(); i <= lodInfo.endIndex.asSize(); ++i) {
-                MeshInfoMetadata* metadata = getMeshMetadata(static_cast<MeshInfoIndex>(i));
-                metadata->lodInfo = &lodMeshMetadata.back();
-            }
-
-		}
-        streak.baseNameChanged = false;
-        streak.baseName = newBaseName;
-        streak.streakStart = newStartIndex;
-		streak.streakEnd = newStartIndex;
-    };
-
 	// 2 meshes is the absolute minimium to be considered LOD meshes
 	if (mfile->mainMeshes.size() < 2) return;
-
-	for (MeshFileEntry& entry : mfile->mainMeshes) {
-		GPUMeshInfo* meshInfo = const_cast<GPUMeshInfo*>(getGPUMeshInfo(entry.meshIndex));
+    struct NameIndexPair {
+        std::string name;
+        int index;
+    };
+	vector<NameIndexPair> uniqueNames;
+	for (int i = 0; i < mfile->mainMeshes.size(); ++i) {
+		auto& entry = mfile->mainMeshes[i];
 		MeshInfoMetadata* metadata = getMeshMetadata(entry.meshIndex);
-		//Log("LOD name: " << metadata->name << endl);
-        if (streak.baseNameChanged) {
-            streakEnded(streak, entry.meshIndex, metadata->name);
+		GPUMeshInfo* meshInfo = getGPUMeshInfo(entry.meshIndex);
+		// find similar name in uniqueNames:
+		bool found = false;
+		for (auto& pair : uniqueNames) {
+			if (namesSimilar(pair.name, metadata->name)) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			uniqueNames.push_back({ metadata->name, static_cast<int>(uniqueNames.size()) });
+		}
+	}
+	struct gatherInfo {
+		int nameIndex;
+		int primIndex;
+		int lodLevel;
+	};
+	// now create a gatherInfo entry for all meshes and assign nameIndex and lodPrimIndex
+    vector<gatherInfo> lodGather;
+    lodGather.resize(mfile->allMeshes.size());
+    for (int i = 0; i < mfile->allMeshes.size(); ++i) {
+        auto& entry = mfile->allMeshes[i];
+        MeshInfoMetadata* metadata = getMeshMetadata(entry.meshIndex);
+        GPUMeshInfo* meshInfo = getGPUMeshInfo(entry.meshIndex);
+        int nameIndex = -1;
+        for (auto& pair : uniqueNames) {
+            if (namesSimilar(pair.name, metadata->name)) {
+                nameIndex = pair.index;
+                break;
+            }
         }
-        else {
-			if (namesSimilar(streak.baseName, metadata->name)) {
-                // continue streak
-				streak.streakEnd = entry.meshIndex;
-			}
-			else {
-                // streak ended, check if we have a valid LOD streak:
-				if (streak.streakStart != MeshInfoIndex::invalid() && streak.streakEnd != MeshInfoIndex::invalid() && streak.streakStart != streak.streakEnd) {
-                    streakEnded(streak, entry.meshIndex, metadata->name);
-				}
-			}
+        lodGather[i].nameIndex = nameIndex;
+        lodGather[i].primIndex = -1;
+        lodGather[i].lodLevel = -1; // TODO: determine lod level if needed
+    }
+
+	// now set primIndex by starting from main mesh and then follow the next index:
+	for (int mmi = 0; mmi < mfile->allMeshes.size(); ++mmi) {
+		auto& entry = mfile->allMeshes[mmi];
+        if (!entry.isMainMesh) {
+            continue;
+        }
+		auto& gatherEntry = lodGather[mmi];
+		MeshInfoMetadata* metadata = getMeshMetadata(entry.meshIndex);
+		GPUMeshInfo* meshInfo = getGPUMeshInfo(entry.meshIndex);
+		lodGather[mmi].primIndex = 0; // all main meshes have prim level 0
+        MeshInfoIndex nextIndex = meshInfo->next;
+		int primIndex = 0;
+        while (nextIndex.isValid()) {
+			auto& fileEntry = mfile->byMeshInfoIndex(nextIndex);
+			// found, now set prim:
+			primIndex++;
+			lodGather[fileEntry.fileIndex].primIndex = primIndex;
+			GPUMeshInfo* meshInfo = getGPUMeshInfo(fileEntry.meshIndex);
+			nextIndex = meshInfo->next;
+		}
+	}
+
+	// we need highest prim to know how often we need to iterate through the table
+    int highestPrimCount = 0;
+	for (int i = 0; i < lodGather.size(); i++) {
+		auto& entry = lodGather[i];
+        if (entry.primIndex > highestPrimCount) {
+            highestPrimCount = entry.primIndex;
         }
 	}
-    if (!streak.baseNameChanged && streak.streakStart != MeshInfoIndex::invalid() && streak.streakEnd != MeshInfoIndex::invalid() && streak.streakStart != streak.streakEnd) {
-        streakEnded(streak, MeshInfoIndex::invalid(), "");
-    }
+
+	// lastly set lod Level - we simply assume that lod detail gets lower with increasing file index.
+	for (int baseNameIndex = 0; baseNameIndex < uniqueNames.size(); ++baseNameIndex) {
+        for (int prim = 0; prim <= highestPrimCount; ++prim) {
+            int lod = 0;
+			for (int i = 0; i < lodGather.size(); i++) {
+				auto& entry = lodGather[i];
+				if (entry.nameIndex == baseNameIndex && entry.primIndex == prim) {
+					entry.lodLevel = lod;
+					lod++;
+				}
+			}
+		}
+	}
+
+
 	// list lod infos:
-    for (auto& entry : mfile->allMeshes) {
-        MeshInfoMetadata* metadata = getMeshMetadata(entry.meshIndex);
-        if (metadata->lodInfo != nullptr) {
-            Log("Mesh " << metadata->name << " meshIndex " << entry.meshIndex.asSize() << " is part of LOD streak: " << metadata->lodInfo->basename << " from index " << metadata->lodInfo->startIndex.asSize() << " to " << metadata->lodInfo->endIndex.asSize() << endl);
-        }
-    }
+	for (auto& entry : mfile->allMeshes) {
+		MeshInfoMetadata* metadata = getMeshMetadata(entry.meshIndex);
+		GPUMeshInfo* meshInfo = getGPUMeshInfo(entry.meshIndex);
+        auto& gatherEntry = lodGather[entry.fileIndex];
+		Log("Mesh " << metadata->name << " meshIndex " << meshInfo->index.asSize() << " material " << meshInfo->material.asSize() << " is LOD / prim:  " << gatherEntry.lodLevel << " / " << gatherEntry.primIndex << endl);
+	}
 }
 
 void MStore::validateLods(LodMeshInfoMetadata& lodInfo)
 {
-    if (lodInfo.startIndex == MeshInfoIndex::invalid() || lodInfo.endIndex == MeshInfoIndex::invalid()) {
-        Error("MStore::validateLods: Invalid LOD indices");
-        return;
-    }
-    if (lodInfo.startIndex.asSize() >= lodInfo.endIndex.asSize()) {
-        Error("MStore::validateLods: Start index is greater than or equal to end index");
-        return;
-    }
-    for (size_t i = lodInfo.startIndex.asSize(); i <= lodInfo.endIndex.asSize(); ++i) {
-        MeshInfoMetadata* metadata = getMeshMetadata(static_cast<MeshInfoIndex>(i));
-        if (!namesSimilar(lodInfo.basename, metadata->name)) {
-            Error("MStore::validateLods: LOD name mismatch for mesh " + metadata->name + " in streak " + lodInfo.basename);
-        }
-		// make sure we have consecutive meshes for the lods:
-        if (i > lodInfo.startIndex.asSize()) {
-            MeshInfoMetadata* prevMetadata = getMeshMetadata(static_cast<MeshInfoIndex>(i - 1));
-        }
-    }
+  //  if (lodInfo.startIndex == MeshInfoIndex::invalid() || lodInfo.endIndex == MeshInfoIndex::invalid()) {
+  //      Error("MStore::validateLods: Invalid LOD indices");
+  //      return;
+  //  }
+  //  if (lodInfo.startIndex.asSize() >= lodInfo.endIndex.asSize()) {
+  //      Error("MStore::validateLods: Start index is greater than or equal to end index");
+  //      return;
+  //  }
+  //  for (size_t i = lodInfo.startIndex.asSize(); i <= lodInfo.endIndex.asSize(); ++i) {
+  //      MeshInfoMetadata* metadata = getMeshMetadata(static_cast<MeshInfoIndex>(i));
+  //      if (!namesSimilar(lodInfo.basename, metadata->name)) {
+  //          Error("MStore::validateLods: LOD name mismatch for mesh " + metadata->name + " in streak " + lodInfo.basename);
+  //      }
+		//// make sure we have consecutive meshes for the lods:
+  //      if (i > lodInfo.startIndex.asSize()) {
+  //          MeshInfoMetadata* prevMetadata = getMeshMetadata(static_cast<MeshInfoIndex>(i - 1));
+  //      }
+  //  }
 }
 
 void MStore::uploadMesh(GPUMeshInfo* mi)
@@ -298,11 +334,11 @@ void MStore::uploadMesh(GPUMeshInfo* mi)
 
 void MStore::uploadAllMeshes()
 {
-    auto meshcount = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos);
-    for (int i = 0; i < meshcount; i++) {
-        GPUMeshInfo* meshInfo = getGPUMeshInfo(static_cast<MeshInfoIndex>(i));
+	auto meshcount = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos);
+	for (int i = 0; i < meshcount; i++) {
+		GPUMeshInfo* meshInfo = getGPUMeshInfo(static_cast<MeshInfoIndex>(i));
 		uploadMesh(meshInfo);
-    }
+	}
 }
 
 GPUMeshInfo* MStore::getGPUMeshInfoInternal(MeshInfoIndex index) {
@@ -319,6 +355,10 @@ GPUMeshInfo* MStore::getGPUMeshInfo(MeshInfoIndex index) {
 
 GPUMaterial* MStore::getGPUMaterial(MaterialIndex index) {
 	return engine->globalRendering.gpuMemory.getElementAddress<GPUMaterial>(BufferType::Materials, index.asSize());
+}
+
+GPULodInfo* MStore::getGPULodInfo(LodIndex index) {
+	return engine->globalRendering.gpuMemory.getElementAddress<GPULodInfo>(BufferType::Lods, index.asSize());
 }
 
 std::string MStore::getGPUModelString(SceneObject* obj)

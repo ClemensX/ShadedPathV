@@ -6,10 +6,7 @@
 // all info we need for lod handling, each MeshInfoMetadata links to this
 struct LodMeshInfoMetadata {
     std::string basename;
-    MeshInfoIndex startIndex;
-    MeshInfoIndex endIndex;
-    int startLodLevel;
-    int endLodLevel;
+    int lodLevels[10] = {-1};
 };
 
 struct MeshInfoMetadata {

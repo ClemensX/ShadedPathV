@@ -39,7 +39,7 @@ void SceneEditor::run(ContinuationInfo* cont)
         engine->gameTime.init(GameTime::GAMEDAY_REALTIME);
 
         // uncomment to use test_samples folder instead of regular asset folder
-        assetFolderName = "test_samples";
+        //assetFolderName = "test_samples";
         
         engine->files.findAssetFolder(assetFolderName);
         setHighBackbufferResolution();
