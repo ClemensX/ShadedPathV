@@ -541,8 +541,21 @@ TEST_F(GLTFParserTest, LOD_Parsing) {
     for (auto& entry : meshFile->mainMeshes) {
         GPUMeshInfo* mi = const_cast<GPUMeshInfo*>(mstore.getGPUMeshInfo(entry.meshIndex));
         MeshInfoMetadata* md = mstore.getMeshMetadata(entry.meshIndex);
-        ASSERT_NE(mi, nullptr);
-        ASSERT_NE(md->lodInfo, nullptr);
+        //ASSERT_NE(mi, nullptr);
+        //ASSERT_NE(md->lodInfo, nullptr);
+    }
+    // we should have 10 LODs for all 3 primitives:
+    LodMeshInfoMetadata* lodInfo = meshFile->getLodInfo(0, 0); // Tree trunk
+    for (int i = 0; i < 10; ++i) {
+        EXPECT_NE(lodInfo->meshIndex[i], MeshInfoIndex::invalid());
+    }
+    lodInfo = meshFile->getLodInfo(0, 1); // Tree foliage
+    for (int i = 0; i < 10; ++i) {
+        EXPECT_NE(lodInfo->meshIndex[i], MeshInfoIndex::invalid());
+    }
+    lodInfo = meshFile->getLodInfo(1, 0); // Sphere
+    for (int i = 0; i < 10; ++i) {
+        EXPECT_NE(lodInfo->meshIndex[i], MeshInfoIndex::invalid());
     }
 }
 

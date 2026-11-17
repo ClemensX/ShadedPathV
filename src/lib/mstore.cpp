@@ -275,6 +275,38 @@ void MStore::collectLodInfos(MeshFile* mfile)
 		}
 	}
 
+	// create the final lod structures:
+	// first we need lod info for each main mesh/primitive:
+	for (auto& entry : mfile->allMeshes) {
+		MeshInfoMetadata* metadata = getMeshMetadata(entry.meshIndex);
+		GPUMeshInfo* meshInfo = getGPUMeshInfo(entry.meshIndex);
+		auto& gatherEntry = lodGather[entry.fileIndex];
+        mfile->getCreateLodInfo(gatherEntry.nameIndex, gatherEntry.primIndex);
+		//Log("Lod info created for " << gatherEntry.nameIndex << " " << gatherEntry.primIndex << endl);
+	}
+	// now assign the correct mesh info for each lod level and link back from mesh to lod info
+	for (auto& entry : mfile->allMeshes) {
+		MeshInfoMetadata* metadata = getMeshMetadata(entry.meshIndex);
+		GPUMeshInfo* meshInfo = getGPUMeshInfo(entry.meshIndex);
+		auto& gatherEntry = lodGather[entry.fileIndex];
+		LodMeshInfoMetadata* lod = mfile->getLodInfo(gatherEntry.nameIndex, gatherEntry.primIndex);
+		// we assume that meshes appear in decreasing detail in the gltf file, se we can just add them in natural order:
+		int nextLodIndex = -1;
+		for (int i = 0; i < 10; i++) {
+			if (lod->lodLevels[i] == -1) {
+				// found unused slot: use it
+				nextLodIndex = i;
+				break;
+			}
+		}
+		if (nextLodIndex < 0) Error("MStore::collectLodInfos could not find index for LOD info");
+		lod->lodLevels[nextLodIndex] = nextLodIndex;
+        lod->meshIndex[nextLodIndex] = entry.meshIndex;
+	}
+
+    // validate lod info:
+	debugListMeshes();
+	validateLods(mfile);
 
 	// list lod infos:
 	for (auto& entry : mfile->allMeshes) {
@@ -285,26 +317,67 @@ void MStore::collectLodInfos(MeshFile* mfile)
 	}
 }
 
-void MStore::validateLods(LodMeshInfoMetadata& lodInfo)
+void MStore::validateLods(MeshFile* mfile)
 {
-  //  if (lodInfo.startIndex == MeshInfoIndex::invalid() || lodInfo.endIndex == MeshInfoIndex::invalid()) {
-  //      Error("MStore::validateLods: Invalid LOD indices");
-  //      return;
-  //  }
-  //  if (lodInfo.startIndex.asSize() >= lodInfo.endIndex.asSize()) {
-  //      Error("MStore::validateLods: Start index is greater than or equal to end index");
-  //      return;
-  //  }
-  //  for (size_t i = lodInfo.startIndex.asSize(); i <= lodInfo.endIndex.asSize(); ++i) {
-  //      MeshInfoMetadata* metadata = getMeshMetadata(static_cast<MeshInfoIndex>(i));
-  //      if (!namesSimilar(lodInfo.basename, metadata->name)) {
-  //          Error("MStore::validateLods: LOD name mismatch for mesh " + metadata->name + " in streak " + lodInfo.basename);
-  //      }
-		//// make sure we have consecutive meshes for the lods:
-  //      if (i > lodInfo.startIndex.asSize()) {
-  //          MeshInfoMetadata* prevMetadata = getMeshMetadata(static_cast<MeshInfoIndex>(i - 1));
-  //      }
-  //  }
+	for (int baseIndex = 0; baseIndex < mfile->lodInfos.size(); baseIndex++) {
+        auto& primVector = mfile->lodInfos[baseIndex];
+        for (int primIndex = 0; primIndex < primVector.size(); primIndex++) {
+            auto& lodInfo = primVector[primIndex];
+			validateLod(lodInfo);
+        }
+	}
+}
+
+void MStore::validateLod(LodMeshInfoMetadata& lodInfo)
+{
+	// ensure at least 2 levels available:
+	if (lodInfo.meshIndex[0] == MeshInfoIndex::invalid() || lodInfo.meshIndex[1] == MeshInfoIndex::invalid()) {
+        Error("MStore::validateLod: Lod info has less than 2 valid levels");
+	}
+	for (int i = 1; i < 10; i++) {
+		MeshInfoIndex curIndex = lodInfo.meshIndex[i - 1];
+        if (lodInfo.meshIndex[i] == MeshInfoIndex::invalid()) {
+            // no more lods, we are done
+            break;
+        }
+		MeshInfoIndex nextIndex = lodInfo.meshIndex[i];
+		GPUMeshInfo* highMesh = getGPUMeshInfo(curIndex);
+		MeshInfoMetadata* highMeta = getMeshMetadata(curIndex);
+		GPUMeshInfo* lowMesh = getGPUMeshInfo(nextIndex);
+		MeshInfoMetadata* lowMeta = getMeshMetadata(nextIndex);
+        string lowName = lowMeta->name;
+        string highName = highMeta->name;
+        size_t lowMeshNumber = lowMesh->index.asSize();
+        size_t highMeshNumber = highMesh->index.asSize();
+        string errorMsg = " low: " + lowName + " (" + std::to_string(lowMeshNumber) + ") vs high " + highName + " (" + std::to_string(highMeshNumber) + ")\n";
+		// check if lower mesh has increased detail:
+		if (lowMeta->vertices.size() > highMeta->vertices.size()) {
+			Error("MStore::validateLod: Lower LOD mesh has more vertices than higher LOD mesh" + errorMsg);
+		}
+		if (lowMeta->indices.size() > highMeta->indices.size()) {
+			Error("MStore::validateLod: Lower LOD mesh has more indices than higher LOD mesh" + errorMsg);
+		}
+		if (lowMesh->meshletCount > highMesh->meshletCount) {
+			Error("MStore::validateLod: Lower LOD mesh has more meshlets than higher LOD mesh");
+		}
+
+		// warn for same detail meshes:
+		if (lowMeta->vertices.size() == highMeta->vertices.size()) {
+			Log("WARNING: MStore::validateLod: Lower LOD mesh has same vertex count as higher LOD mesh" + errorMsg);
+		}
+		if (lowMeta->indices.size() == highMeta->indices.size()) {
+			Log("WARNING: MStore::validateLod: Lower LOD mesh has same index count as higher LOD mesh" + errorMsg);
+		}
+		if (lowMesh->meshletCount == highMesh->meshletCount) {
+			// disabled, happens all the time for lower level LODs
+			//Log("WARNING: MStore::validateLod: Lower LOD mesh has same meshlet count as higher LOD mesh" + errorMsg);
+		}
+
+		// all lod meshes (for one primitive) should have the same material:
+		if (lowMesh->material != highMesh->material) {
+			Error("MStore::validateLod: LOD meshes have different materials");
+		}
+	}
 }
 
 void MStore::uploadMesh(GPUMeshInfo* mi)
@@ -1304,4 +1377,14 @@ void MStore::loadMeshCylinder(std::string id, MeshFlagsCollection flags, std::st
 	//else {
 	//	aquireMeshletData(id, id);
 	//}
+}
+
+void MStore::debugListMeshes()
+{
+	uint32_t meshcount = engine->globalRendering.gpuMemory.getElementCount(BufferType::MeshInfos);
+	for (int i = 0; i < meshcount; i++) {
+		GPUMeshInfo* meshInfo = getGPUMeshInfo(static_cast<MeshInfoIndex>(i));
+        MeshInfoMetadata* meta = getMeshMetadata(static_cast<MeshInfoIndex>(i));
+        Log("Mesh " << i << ": " << meta->name << ", vertices: " << meta->vertices.size() << ", indices: " << meta->indices.size() << ", meshlets: " << meta->meshletsForMesh.meshlets.size() << endl);
+	}
 }

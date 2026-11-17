@@ -219,6 +219,13 @@ struct GPUFrameParam {
 };
 
 
+// all info we need for lod handling, each MeshInfoMetadata links to this
+struct LodMeshInfoMetadata {
+	std::string basename;
+	int lodLevels[10] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+	MeshInfoIndex meshIndex[10] = {MeshInfoIndex::invalid(), MeshInfoIndex::invalid(), MeshInfoIndex::invalid(), MeshInfoIndex::invalid(), MeshInfoIndex::invalid(), MeshInfoIndex::invalid(), MeshInfoIndex::invalid(), MeshInfoIndex::invalid(), MeshInfoIndex::invalid(), MeshInfoIndex::invalid()};
+};
+
 struct MeshFileEntry {
 	std::string name;
     MeshInfoIndex meshIndex;
@@ -254,4 +261,29 @@ struct MeshFile {
 		auto& entry = allMeshes[0];
 		return entry; // keep compiler happy
 	}
+	// lod info for this file:
+    std::vector<std::vector<LodMeshInfoMetadata>> lodInfos; // vector of main meshes that contain a vector of LODs for each primitive: 1st vector is via index og main mesh in file, then 2nd vector is via index of primitive
+    LodMeshInfoMetadata* getLodInfo(int mainMeshIndex, int primLevel) {
+        if (mainMeshIndex < 0 || mainMeshIndex >= lodInfos.size()) {
+            Error("MeshFile::getLodInfo: mainMeshIndex out of range: " + std::to_string(mainMeshIndex));
+        }
+        auto& lodVector = lodInfos[mainMeshIndex];
+        if (primLevel < 0 || primLevel >= lodVector.size()) {
+            Error("MeshFile::getLodInfo: primLevel out of range: " + std::to_string(primLevel));
+        }
+        return &lodVector[primLevel];
+    }
+	LodMeshInfoMetadata* getCreateLodInfo(int mainMeshIndex, int primLevel) {
+		while (mainMeshIndex >= lodInfos.size()) {
+			lodInfos.push_back({});
+		}
+		auto& lodVector = lodInfos[mainMeshIndex];
+		while (primLevel >= lodVector.size()) {
+			lodVector.push_back({});
+			Log("Lod info created for " << mainMeshIndex << " " << primLevel << std::endl);
+		}
+		return &lodVector[primLevel];
+	}
+	//LodMeshInfoMetadata lod;
+	//std::vector<LodMeshInfoMetadata> lodInfos;
 };

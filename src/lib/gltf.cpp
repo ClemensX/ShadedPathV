@@ -740,8 +740,8 @@ void glTF::loadVerticesCore(tinygltf::Model& model, std::vector<PBRShader::Verte
 		Error("Index component type not supported!");
 	}
 
-	Log("Verts loaded: " << verts.size() << endl);
-	Log("Indices loaded: " << indexBuffer.size() << endl);
+	Log("Verts loaded: " << verts.size() << " (primitive " << primitiveIndex << ")" << endl);
+	Log("Indices loaded: " << indexBuffer.size() << " (primitive " << primitiveIndex << ")" << endl);
 	assert(indexBuffer.size() % 3 == 0); // Ensure triangles
 }
 

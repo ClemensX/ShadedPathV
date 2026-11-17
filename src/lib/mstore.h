@@ -142,6 +142,8 @@ public:
     void validateMeshFile(std::string fileName);
     // update all moving model params for scene object.
     void updateMovingModelParams(SceneObject* so);
+    // output list of all moaded meshes
+    void debugListMeshes();
 private:
     size_t maxMeshes = 0; // maximum number of meshes that can be stored, set setLimits()
     std::optional<std::string> loadFile(std::string filename, std::vector<std::byte>& fileBuffer);
@@ -166,7 +168,8 @@ private:
     // maintain a list of mesh metadata for each loaded mesh, used for CPU-side operations
     std::vector<MeshInfoMetadata> meshMetadata;
     std::vector<LodMeshInfoMetadata> lodMeshMetadata;
-    void validateLods(LodMeshInfoMetadata& lodInfo);
+    void validateLods(MeshFile* mfile);
+    void validateLod(LodMeshInfoMetadata& lodInfo);
 
     // maintain a list of scene objects. Used only on CPU-side
     std::vector<SceneObject> sceneObjects;

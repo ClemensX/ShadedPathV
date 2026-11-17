@@ -3,11 +3,6 @@
 // Must be included after pbrShader.h and Object.h
 
 #pragma once
-// all info we need for lod handling, each MeshInfoMetadata links to this
-struct LodMeshInfoMetadata {
-    std::string basename;
-    int lodLevels[10] = {-1};
-};
 
 struct MeshInfoMetadata {
     MeshInfoMetadata() {
