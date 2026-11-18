@@ -151,7 +151,9 @@ MeshFile* MStore::loadMesh(std::string filename, std::string id, MeshFlagsCollec
 			mfile->mainMeshes.push_back(mfile->allMeshes[i]);
 		}
 	}
-    collectLodInfos(mfile);
+	if (flags.hasFlag(MeshFlags::MESH_TYPE_LOD)) {
+		collectLodInfos(mfile);
+	}
 	return mfile;
 }
 
@@ -308,12 +310,47 @@ void MStore::collectLodInfos(MeshFile* mfile)
 	debugListMeshes();
 	validateLods(mfile);
 
+	//// list lod infos:
+	//for (auto& entry : mfile->allMeshes) {
+	//	MeshInfoMetadata* metadata = getMeshMetadata(entry.meshIndex);
+	//	GPUMeshInfo* meshInfo = getGPUMeshInfo(entry.meshIndex);
+	//  auto& gatherEntry = lodGather[entry.fileIndex];
+	//	Log("Mesh " << metadata->name << " meshIndex " << meshInfo->index.asSize() << " material " << meshInfo->material.asSize() << " is LOD / prim:  " << gatherEntry.lodLevel << " / " << gatherEntry.primIndex << endl);
+	//}
+
 	// list lod infos:
-	for (auto& entry : mfile->allMeshes) {
-		MeshInfoMetadata* metadata = getMeshMetadata(entry.meshIndex);
-		GPUMeshInfo* meshInfo = getGPUMeshInfo(entry.meshIndex);
-        auto& gatherEntry = lodGather[entry.fileIndex];
-		Log("Mesh " << metadata->name << " meshIndex " << meshInfo->index.asSize() << " material " << meshInfo->material.asSize() << " is LOD / prim:  " << gatherEntry.lodLevel << " / " << gatherEntry.primIndex << endl);
+	debugListLodsOfFile(mfile);
+    // assign lod info to materials:
+    // we can be sure, that every lod 0..9 points to the same material, so we can just assign the first lod mesh to the material:
+	for (int basevec = 0; basevec < mfile->lodInfos.size(); basevec++) {
+		for (int prim = 0; prim < mfile->lodInfos[basevec].size(); prim++) {
+			LodMeshInfoMetadata* lodInfo = mfile->getLodInfo(basevec, prim);
+			//Log("  base index " << basevec << " prim " << prim << " : \n");
+            MeshInfoIndex meshIndex = lodInfo->meshIndex[0];
+			// lod 0 should always be present:
+			assert(meshIndex != MeshInfoIndex::invalid());
+			GPUMeshInfo* minfo = getGPUMeshInfo(meshIndex);
+            GPUMaterial* material = getGPUMaterial(minfo->material);
+            for (int i = 0; i < 10; i++) {
+                material->lodInfo.lodMeshInfoIndex[i] = lodInfo->meshIndex[i];
+            }
+		}
+	}
+}
+
+void MStore::debugListLodsOfFile(MeshFile* mfile)
+{
+	Log("LOD INFO " << mfile->filename << " : \n");
+	for (int basevec = 0; basevec < mfile->lodInfos.size(); basevec++) {
+		for (int prim = 0; prim < mfile->lodInfos[basevec].size(); prim++) {
+			LodMeshInfoMetadata* lodInfo = mfile->getLodInfo(basevec, prim);
+			Log("  base index " << basevec << " prim " << prim << " : \n");
+			for (int i = 0; i < 10; i++) {
+				if (lodInfo->lodLevels[i] != -1) {
+					Log("    LOD " << lodInfo->lodLevels[i] << " meshIndex " << lodInfo->meshIndex[i].asSize() << endl);
+				}
+			}
+		}
 	}
 }
 

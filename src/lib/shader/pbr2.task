@@ -67,7 +67,8 @@ mat4 makeModelMatrix(vec3 pos, vec3 rot, vec3 scale, mat4 baseTransform)
 void main() {
     //printGPUBufferAddresses();
     //lverifyMesh(0);
-    //verifyMaterial(0);
+    verifyMaterial(0);
+    verifyMaterial(1);
     //verifyModel(1);
     //verifyFrameParam(0);
     //verifyCamPos();
@@ -118,9 +119,16 @@ void main() {
 //            debugPrintfEXT("pbr.task: stationary model mesh %u has next == -1\n", model.meshNumber);
 //        }
     }
+    GPUMaterial material = gpuMaterials.material[mesh.material];
+    debugPrintfEXT("pbr.task: material: %d lod9 mesh: %d\n", mesh.material, material.lodInfo.lodMeshInfoIndex[9]);
+
     payload.realMeshIndex = model.meshNumber;
     payload.modelflags = model.flags;
-    GPUMaterial material = gpuMaterials.material[mesh.material];
+    // test lods:
+    mesh = gpuInfos.info[material.lodInfo.lodMeshInfoIndex[9]];
+    payload.realMeshIndex = mesh.index;
+    uint meshIndex = mesh.index;
+
     //verifyTextures(material);
 
     // check if object is disabled:
@@ -167,7 +175,6 @@ void main() {
     vec3 realObjPos = posw.xyz;
     float diameter = posw.w;
 
-    uint meshIndex = model.meshNumber; // default to exact mesh specified in model_ubo (for non-LOD rendering)
     uint meshletsCount = mesh.meshletCount;
     //debugPrintfEXT("TASK SHADER: render mesh index %u with meshletsCount %u lodEnabled=%d\n", meshIndex, meshletsCount, isGpuLodEnabled ? 1 : 0);
     // Emit selectedCount mesh shader workgroups.

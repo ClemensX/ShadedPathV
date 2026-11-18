@@ -529,6 +529,7 @@ TEST_F(GLTFParserTest, LOD_Parsing) {
     TextureStore& tstore = engine->textureStore;
 
     MeshFlagsCollection flags;
+    flags.setFlag(MeshFlags::MESH_TYPE_LOD);
     MeshFile* meshFile = engine->mstore.loadMesh("test_multi_prim_lod.gltf", "multi", flags);
     ASSERT_EQ(meshFile->mainMeshes.size(), 20);
     ASSERT_EQ(meshFile->allMeshes.size(), 30);
@@ -544,6 +545,8 @@ TEST_F(GLTFParserTest, LOD_Parsing) {
         //ASSERT_NE(mi, nullptr);
         //ASSERT_NE(md->lodInfo, nullptr);
     }
+    // make sure LODs were gathered:
+    ASSERT_TRUE(meshFile->lodInfos.size() > 0) << "Mesh file should have LOD info";
     // we should have 10 LODs for all 3 primitives:
     LodMeshInfoMetadata* lodInfo = meshFile->getLodInfo(0, 0); // Tree trunk
     for (int i = 0; i < 10; ++i) {

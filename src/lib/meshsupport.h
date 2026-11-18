@@ -178,6 +178,9 @@ struct GPUMaterial {
 	uint32_t coord_set_emissive = 0;
 	bool isDoubleSided;
 	uint32_t pad1; // 4 bytes of padding to align the next member to 16 bytes. Do not use array on glsl side!!!
+	GPULodInfo lodInfo;
+	uint32_t pad2;
+    uint32_t pad3;
 };
 
 // additional fields we need on C++ side for gltf parsing

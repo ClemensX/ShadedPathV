@@ -141,11 +141,13 @@ void Loader::init() {
     flags.setFlag(MeshFlags::RENDER_TYPE_MOVING);
     MStore& mstore = engine->mstore;
     //mstore.loadMeshCylinder("Mesh", flags);
-    mstore.loadMesh("multiple_objects.gltf", "Mesh", flags);
+    //mstore.loadMesh("multiple_objects.gltf", "Mesh", flags);
     //engine->mstore.loadMesh("tree_primitives.gltf", "Mesh", flags);
     //engine->mstore.loadMesh("cube_single.gltf", "SingleMesh", flags);
     //engine->mstore.loadMesh("DamagedHelmet_cmp.glb", "SingleMesh", flags);
-    int meshNum = 2;
+    flags.setFlag(MeshFlags::MESH_TYPE_LOD);
+    engine->mstore.loadMesh("test_multi_prim_lod.gltf", "Mesh", flags);
+    int meshNum = 0;
     auto loaded = mstore.getMeshFileByID("Mesh"); // ensure we can retrieve the mesh file by ID
     auto meshInfo = mstore.getGPUMeshInfo(loaded->allMeshes[meshNum].meshIndex);
     const auto meshMetadata = mstore.getMeshMetadata(loaded->allMeshes[meshNum].meshIndex);

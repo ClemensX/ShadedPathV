@@ -144,6 +144,7 @@ public:
     void updateMovingModelParams(SceneObject* so);
     // output list of all moaded meshes
     void debugListMeshes();
+    void debugListLodsOfFile(MeshFile* mfile);
 private:
     size_t maxMeshes = 0; // maximum number of meshes that can be stored, set setLimits()
     std::optional<std::string> loadFile(std::string filename, std::vector<std::byte>& fileBuffer);

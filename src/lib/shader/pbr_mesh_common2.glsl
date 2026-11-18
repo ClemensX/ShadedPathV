@@ -103,6 +103,9 @@ struct GPUMaterial {
 	uint coord_set_emissive;
 	bool isDoubleSided;
 	uint pad1; // 4 bytes of padding to align the next member to 16 bytes. Do not use array on glsl side!!!
+	GPULodInfo lodInfo;
+	uint pad2;
+    uint pad3;
 };
 
 struct GPUFrameParam {
@@ -414,6 +417,7 @@ void verifyMaterial(uint index) {
     //debugPrintfEXT("\n  diffuseFactor: %f %f %f %f", material.diffuseFactor.x, material.diffuseFactor.y, material.diffuseFactor.z, material.diffuseFactor.w);
     //debugPrintfEXT("\n  specularFactor: %f %f %f %f", material.specularFactor.x, material.specularFactor.y, material.specularFactor.z, material.specularFactor.w);
     debugPrintfEXT("\n  metallicFactor: %f  roughnessFactor %f", material.metallicFactor, material.roughnessFactor);
+    debugPrintfEXT("\n  mesh index lod 0: %d  lod 1: %d", material.lodInfo.lodMeshInfoIndex[0], material.lodInfo.lodMeshInfoIndex[1]);
     debugPrintfEXT("\n");
 }
 
